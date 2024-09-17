@@ -1,6 +1,6 @@
 class TeachingPeriod < ApplicationRecord
   # Relationships
-  has_many :units
+  has_many :units, dependent: :restrict_with_exception
   has_many :breaks, dependent: :delete_all
 
   # Callbacks - methods called are private
@@ -130,37 +130,6 @@ class TeachingPeriod < ApplicationRecord
 
   def future_teaching_periods
     TeachingPeriod.where("start_date > :end_date", end_date: end_date)
-  end
-
-  def rollover(rollover_to, search_forward = true, rollover_inactive = false)
-    if rollover_to.start_date < Time.zone.now || rollover_to.start_date <= start_date
-      self.errors.add(:base, "Units can only be rolled over to future teaching periods")
-
-      false
-    else
-      units_to_rollover = units
-
-      unless rollover_inactive
-        units_to_rollover = units_to_rollover.where(active: true)
-      end
-
-      if search_forward
-        ftp = future_teaching_periods.where("start_date < :date", date: rollover_to.start_date).order(start_date: "desc")
-
-        units_to_rollover = units_to_rollover.map do |u|
-          ftp.map { |tp| tp.units.where(code: u.code).first }.select { |u| u.present? }.first || u
-        end
-      end
-
-      for unit in units_to_rollover do
-        # skip if the unit already exists in the teaching period
-        next if rollover_to.units.where(code: unit.code).count > 0
-
-        unit.rollover(rollover_to, nil, nil)
-      end
-
-      true
-    end
   end
 
   private

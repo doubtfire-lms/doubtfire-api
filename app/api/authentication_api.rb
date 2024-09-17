@@ -11,6 +11,7 @@ require 'entities/user_entity'
 class AuthenticationApi < Grape::API
   helpers LogHelper
   helpers AuthenticationHelpers
+  helpers AuthorisationHelpers
 
   #
   # Sign in - only mounted if AAF auth is NOT used
@@ -71,7 +72,7 @@ class AuthenticationApi < Grape::API
 
       # Return user details
       present :user, user, with: Entities::UserEntity
-      present :auth_token, user.generate_authentication_token!(remember).authentication_token
+      present :auth_token, user.generate_authentication_token!(remember: remember).authentication_token
     end
   end
 
@@ -102,7 +103,7 @@ class AuthenticationApi < Grape::API
       # Lookup using email otherwise and set login_id
       # Otherwise create new
       user = User.find_by(login_id: login_id) ||
-             User.find_by_username(email[/(.*)@/, 1]) ||
+             User.find_by(username: email[/(.*)@/, 1]) ||
              User.find_by(email: email) ||
              User.find_or_create_by(login_id: login_id) do |new_user|
                role_response = attributes.fetch(/role/) || attributes.fetch(/userRole/)
@@ -177,7 +178,7 @@ class AuthenticationApi < Grape::API
       # Lookup using email otherwise and set login_id
       # Otherwise create new
       user = User.find_by(login_id: login_id) ||
-             User.find_by_username(email[/(.*)@/, 1]) ||
+             User.find_by(username: email[/(.*)@/, 1]) ||
              User.find_by(email: email) ||
              User.find_or_create_by(login_id: login_id) do |new_user|
                role = Role.aaf_affiliation_to_role_id(attrs[:edupersonscopedaffiliation])
@@ -237,18 +238,18 @@ class AuthenticationApi < Grape::API
       requires :auth_token, type: String, desc: 'The user\'s temporary auth token'
     end
     post '/auth' do
-      error!({ error: 'Invalid token.' }, 404) if params[:auth_token].nil?
-      logger.info "Get user via auth_token from #{request.ip}"
+      error!({ error: 'Invalid authentication details.' }, 404) if params[:auth_token].blank? || params[:username].blank?
+      logger.info "Get user via auth_token from #{request.ip} - #{params[:username]}"
 
       # Authenticate that the token is okay
-      if authenticated?
-        user = User.find_by_username(params[:username])
-        token = user.token_for_text?(params[:auth_token]) unless user.nil?
-        error!({ error: 'Invalid token.' }, 404) if token.nil?
+      if authenticated?(:login)
+        user = User.find_by(username: params[:username])
+        token = user.token_for_text?(params[:auth_token], :login) unless user.nil?
+        error!({ error: 'Invalid authentication details.' }, 404) if token.nil?
 
         # Invalidate the token and regenrate a new one
         token.destroy!
-        token = user.generate_authentication_token! true
+        token = user.generate_authentication_token!
 
         logger.info "Login #{params[:username]} from #{request.ip}"
 
@@ -323,8 +324,8 @@ class AuthenticationApi < Grape::API
     logger.info "Update token #{token_param} from #{request.ip} for #{user_param}"
 
     # Find user
-    user = User.find_by_username(user_param)
-    token = user.token_for_text?(token_param) unless user.nil?
+    user = User.find_by(username: user_param)
+    token = user.token_for_text?(token_param, :general) unless user.nil?
     remember = params[:remember] || false
 
     # Token does not match user
@@ -358,8 +359,8 @@ class AuthenticationApi < Grape::API
          }
        }
   delete '/auth' do
-    user = User.find_by_username(headers['username'] || headers['Username'])
-    token = user.token_for_text?(headers['auth-token'] || headers['Auth-Token']) unless user.nil?
+    user = User.find_by(username: headers['username'] || headers['Username'])
+    token = user.token_for_text?(headers['auth-token'] || headers['Auth-Token'], :general) unless user.nil?
 
     if token.present?
       logger.info "Sign out #{user.username} from #{request.ip}"
@@ -367,5 +368,22 @@ class AuthenticationApi < Grape::API
     end
 
     present nil
+  end
+
+  desc 'Get SCORM authentication token'
+  get '/auth/scorm' do
+    if authenticated?(:general)
+      unless authorise? current_user, User, :get_scorm_token
+        error!({ error: 'You cannot get SCORM tokens' }, 403)
+      end
+
+      token = current_user.auth_tokens.find_by(token_type: :scorm)
+      if token.nil? || token.auth_token_expiry <= Time.zone.now
+        token&.destroy
+        token = current_user.generate_scorm_authentication_token!
+      end
+
+      present :scorm_auth_token, token.authentication_token
+    end
   end
 end

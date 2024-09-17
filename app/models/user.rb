@@ -92,19 +92,24 @@ class User < ApplicationRecord
   # Force-generates a new authentication token, regardless of whether or not
   # it is actually expired
   #
-  def generate_authentication_token!(remember = false)
+  def generate_authentication_token!(remember: false, expiry: Time.zone.now + 2.hours, token_type: :general)
     # Ensure this user is saved... so it has an id
     self.save unless self.persisted?
-    AuthToken.generate(self, remember)
+    AuthToken.generate(self, remember, expiry, token_type)
   end
 
   #
   # Generate an authentication token that will expire in 30 seconds
   #
   def generate_temporary_authentication_token!
-    # Ensure this user is saved... so it has an id
-    self.save unless self.persisted?
-    AuthToken.generate(self, false, Time.zone.now + 30.seconds)
+    generate_authentication_token!(expiry: Time.zone.now + 30.seconds, token_type: :login)
+  end
+
+  #
+  # Generate an authentication token for scorm asset retrieval
+  #
+  def generate_scorm_authentication_token!
+    generate_authentication_token!(token_type: :scorm)
   end
 
   #
@@ -117,8 +122,11 @@ class User < ApplicationRecord
   #
   # Returns authentication of the user
   #
-  def token_for_text?(a_token)
-    self.auth_tokens.each do |token|
+  def token_for_text?(a_token, token_type)
+    tokens_to_check = self.auth_tokens
+    tokens_to_check = tokens_to_check.where(token_type: token_type) if token_type.present?
+
+    tokens_to_check.each do |token|
       if a_token == token.authentication_token
         return token
       end
@@ -132,10 +140,10 @@ class User < ApplicationRecord
 
   # Model associations
   belongs_to  :role, optional: false # Foreign Key
-  has_many    :unit_roles, dependent: :destroy
-  has_many    :projects, dependent: :destroy
-  has_many    :auth_tokens, dependent: :destroy
-  has_one     :webcal, dependent: :destroy
+  has_many    :unit_roles, dependent: :destroy, inverse_of: :user
+  has_many    :projects, dependent: :restrict_with_exception, inverse_of: :user
+  has_many    :auth_tokens, dependent: :destroy, inverse_of: :user
+  has_one     :webcal, dependent: :destroy, inverse_of: :user
 
   # Model validations/constraints
   validates :first_name,  presence: true
@@ -301,7 +309,9 @@ class User < ApplicationRecord
       :get_teaching_periods,
 
       :admin_overseer,
-      :use_overseer
+      :use_overseer,
+
+      :get_scorm_token
     ]
 
     # What can auditors do with users?
@@ -315,11 +325,13 @@ class User < ApplicationRecord
       :audit_units,
 
       :get_teaching_periods,
-      :use_overseer
+      :use_overseer,
+      :get_scorm_token
     ]
 
     # What can convenors do with users?
     convenor_role_permissions = [
+      :get_all_units,
       :promote_user,
       :list_users,
       :create_user,
@@ -332,20 +344,22 @@ class User < ApplicationRecord
       :convene_units,
       :get_staff_list,
       :get_teaching_periods,
-      :use_overseer
+      :use_overseer,
+      :get_scorm_token
     ]
 
     # What can tutors do with users?
     tutor_role_permissions = [
       :get_unit_roles,
       :download_unit_csv,
-      :get_teaching_periods
+      :get_teaching_periods,
+      :get_scorm_token
     ]
 
     # What can students do with users?
     student_role_permissions = [
-      :get_teaching_periods
-
+      :get_teaching_periods,
+      :get_scorm_token
     ]
 
     # Return the permissions hash
@@ -461,7 +475,7 @@ class User < ApplicationRecord
 
         pass_checks = true
         %w(username email role first_name).each do |col|
-          next unless row[col].nil? || row[col].empty?
+          next if row[col].present?
 
           errors << { row: row, message: "The #{col} cannot be blank or empty" }
           pass_checks = false

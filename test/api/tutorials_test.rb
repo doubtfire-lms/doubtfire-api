@@ -1194,11 +1194,11 @@ class TutorialsTest < ActiveSupport::TestCase
     delete_json "/api/tutorials/#{tutorial_id}"
 
     # Check number of tutorials does not change
-    assert_equal number_of_tutorials , Tutorial.all.length
+    assert_equal number_of_tutorials, Tutorial.all.length
 
     # Check on error of incorrect tutorial ID
-    assert_equal 400, last_response.status
-    assert_equal 'id is invalid', last_response_body['error']
+    assert_equal 404, last_response.status
+    assert last_response.body.include?('Not Found'), last_response.body
   end
 
   def test_delete_tutorials_with_empty_auth_token

@@ -19,7 +19,7 @@ class TaskDefinition < ApplicationRecord
   has_many :learning_outcome_task_links, dependent: :destroy # links to learning outcomes
   has_many :learning_outcomes, -> { where('learning_outcome_task_links.task_id is NULL') }, through: :learning_outcome_task_links # only link staff relations
 
-  has_many :tii_group_attachments, dependent: :destroy
+  has_many :tii_group_attachments, dependent: :destroy # destroy uploaded files to tii - after the tasks
   has_many :tii_actions, as: :entity, dependent: :destroy
 
   serialize :upload_requirements, coder: JSON
@@ -95,6 +95,10 @@ class TaskDefinition < ApplicationRecord
       new_td.add_task_resources(task_resources, copy: true)
     end
 
+    if has_scorm_data?
+      new_td.add_scorm_data(task_scorm_data, copy: true)
+    end
+
     new_td.save!
 
     new_td
@@ -132,6 +136,10 @@ class TaskDefinition < ApplicationRecord
 
     if File.exist? task_assessment_resources_with_abbreviation(old_abbr)
       FileUtils.mv(task_assessment_resources_with_abbreviation(old_abbr), task_assessment_resources())
+    end
+
+    if File.exist? task_scorm_data_with_abbreviation(old_abbr)
+      FileUtils.mv(task_scorm_data_with_abbreviation(old_abbr), task_scorm_data())
     end
   end
 
@@ -174,6 +182,26 @@ class TaskDefinition < ApplicationRecord
       # Check keys only contain key, type, name, tii_check, and tii_pct
       unless req.keys.excluding('key', 'type', 'name', 'tii_check', 'tii_pct').empty?
         errors.add(:upload_requirements, "has additional values for item #{i + 1} --> #{req.keys.join(' ')}.")
+      end
+
+      # Check the name matches a valid filename format
+      unless req['name'].match?(/^[a-zA-Z0-9_\- \.]+$/)
+        errors.add(:upload_requirements, "the name for item #{i + 1} does not seem to be a valid filename --> #{req['name']}.")
+      end
+
+      # Check the type is either document or image or code
+      unless %w(document image code).include? req['type']
+        errors.add(:upload_requirements, "the type for item #{i + 1} is not valid --> #{req['type']}.")
+      end
+
+      # Check that tii check is a boolean
+      unless req['tii_check'].blank? || [true, false].include?(req['tii_check'])
+        errors.add(:upload_requirements, "the tii_check for item #{i + 1} is not a boolean --> #{req['tii_check']}.")
+      end
+
+      # Check that tii_pct is a non-negative number
+      unless req['tii_pct'].blank? || (req['tii_pct'].is_a?(Numeric) && req['tii_pct'] >= 0)
+        errors.add(:upload_requirements, "the tii_pct for item #{i + 1} is not a non-negative number --> #{req['tii_pct']}.")
       end
 
       i += 1
@@ -278,7 +306,7 @@ class TaskDefinition < ApplicationRecord
                   .map { |column| attributes[column.to_s] } +
       [
         group_set.nil? ? "" : group_set.name,
-        upload_requirements.to_s,
+        upload_requirements.to_json,
         start_week,
         start_day,
         target_week,
@@ -292,7 +320,10 @@ class TaskDefinition < ApplicationRecord
   end
 
   def self.csv_columns
-    [:name, :abbreviation, :description, :weighting, :target_grade, :restrict_status_updates, :max_quality_pts, :is_graded, :plagiarism_warn_pct, :group_set, :upload_requirements, :start_week, :start_day, :target_week, :target_day, :due_week, :due_day, :tutorial_stream]
+    [:name, :abbreviation, :description, :weighting, :target_grade, :restrict_status_updates, :max_quality_pts,
+     :is_graded, :plagiarism_warn_pct, :scorm_enabled, :scorm_allow_review, :scorm_bypass_test, :scorm_time_delay_enabled,
+     :scorm_attempt_limit, :group_set, :upload_requirements, :start_week, :start_day, :target_week, :target_day,
+     :due_week, :due_day, :tutorial_stream]
   end
 
   def self.task_def_for_csv_row(unit, row)
@@ -301,7 +332,7 @@ class TaskDefinition < ApplicationRecord
     new_task = false
     abbreviation = row[:abbreviation].strip
     name = row[:name].strip
-    tutorial_stream = unit.tutorial_streams.find_by_abbr_or_name("#{row[:tutorial_stream]}".strip)
+    tutorial_stream = unit.tutorial_streams.find_by('abbreviation = :name OR name = :name', name: "#{row[:tutorial_stream]}".strip)
     target_date = unit.date_for_week_and_day row[:target_week].to_i, "#{row[:target_day]}".strip
     return [nil, false, "Unable to determine target date for #{abbreviation} -- need week number, and day short text eg. 'Wed'"] if target_date.nil?
 
@@ -337,6 +368,12 @@ class TaskDefinition < ApplicationRecord
     result.target_date                 = target_date
     result.upload_requirements         = JSON.parse(row[:upload_requirements]) unless row[:upload_requirements].nil?
     result.due_date                    = due_date
+
+    result.scorm_enabled               = %w(Yes y Y yes true TRUE 1).include? "#{row[:scorm_enabled]}".strip
+    result.scorm_allow_review          = %w(Yes y Y yes true TRUE 1).include? "#{row[:scorm_allow_review]}".strip
+    result.scorm_bypass_test           = %w(Yes y Y yes true TRUE 1).include? "#{row[:scorm_bypass_test]}".strip
+    result.scorm_time_delay_enabled    = %w(Yes y Y yes true TRUE 1).include? "#{row[:scorm_time_delay_enabled]}".strip
+    result.scorm_attempt_limit         = row[:scorm_attempt_limit].to_i
 
     result.plagiarism_warn_pct         = row[:plagiarism_warn_pct].to_i
 
@@ -382,6 +419,30 @@ class TaskDefinition < ApplicationRecord
 
   def has_task_sheet?
     File.exist? task_sheet
+  end
+
+  def has_scorm_data?
+    File.exist? task_scorm_data
+  end
+
+  def scorm_enabled?
+    scorm_enabled
+  end
+
+  def scorm_allow_review?
+    scorm_allow_review
+  end
+
+  def scorm_bypass_test?
+    scorm_bypass_test
+  end
+
+  def scorm_time_delay_enabled?
+    scorm_time_delay_enabled
+  end
+
+  def scorm_attempt_limit?
+    scorm_attempt_limit
   end
 
   def is_graded?
@@ -436,6 +497,22 @@ class TaskDefinition < ApplicationRecord
     end
   end
 
+  def add_scorm_data(file, copy: false)
+    if copy
+      FileUtils.cp file, task_scorm_data
+    else
+      FileUtils.mv file, task_scorm_data
+    end
+  end
+
+  def remove_scorm_data()
+    if has_scorm_data?
+      FileUtils.rm task_scorm_data
+    end
+
+    reset_scorm_config()
+  end
+
   # Get the path to the task sheet - using the current abbreviation
   def task_sheet
     task_sheet_with_abbreviation(abbreviation)
@@ -449,6 +526,10 @@ class TaskDefinition < ApplicationRecord
     task_assessment_resources_with_abbreviation(abbreviation)
   end
 
+  def task_scorm_data
+    task_scorm_data_with_abbreviation(abbreviation)
+  end
+
   def related_tasks_with_files(consolidate_groups = true)
     tasks_with_files = tasks.select(&:has_pdf)
 
@@ -460,7 +541,7 @@ class TaskDefinition < ApplicationRecord
         if t.group.nil?
           result = false
         else
-          result = !seen_groups.include?(t.group)
+          result = seen_groups.exclude?(t.group)
           seen_groups << t.group if result
         end
         result
@@ -491,6 +572,7 @@ class TaskDefinition < ApplicationRecord
     remove_task_sheet()
     remove_task_resources()
     remove_task_assessment_resources()
+    remove_scorm_data()
   end
 
   # Calculate the path to the task sheet using the provided abbreviation
@@ -536,5 +618,29 @@ class TaskDefinition < ApplicationRecord
     else
       result_with_sanitised_file
     end
+  end
+
+  # Calculate the path to the SCORM containzer zip file using the provided abbreviation
+  # This allows the path to be calculated on abbreviation change to allow files to
+  # be moved
+  def task_scorm_data_with_abbreviation(abbr)
+    task_path = FileHelper.task_file_dir_for_unit unit, create = true
+
+    result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}.scorm.zip"
+    result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}.scorm.zip"
+
+    if File.exist? result_with_sanitised_path
+      result_with_sanitised_path
+    else
+      result_with_sanitised_file
+    end
+  end
+
+  def reset_scorm_config()
+    self.scorm_enabled = false
+    self.scorm_allow_review = false
+    self.scorm_bypass_test = false
+    self.scorm_time_delay_enabled = false
+    self.scorm_attempt_limit = 0
   end
 end

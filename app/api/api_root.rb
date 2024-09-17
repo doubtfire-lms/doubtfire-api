@@ -33,8 +33,13 @@ class ApiRoot < Grape::API
     when ActionController::ParameterMissing
       message = "Missing value for #{e.param}"
       status = 400
+    when ActiveRecord::ConnectionTimeoutError
+      message = 'There is currently high load on the system. Please wait a moment and try again.'
+      status = 503
     else
+      # rubocop:disable Rails/Output
       puts e.inspect unless Rails.env.production?
+      # rubocop:enable Rails/Output
 
       logger.error "Unhandled exception: #{e.class}"
       logger.error e.inspect
@@ -55,6 +60,7 @@ class ApiRoot < Grape::API
   mount BreaksApi
   mount DiscussionCommentApi
   mount ExtensionCommentsApi
+  mount ScormExtensionCommentsApi
   mount GroupSetsApi
   mount LearningOutcomesApi
   mount LearningAlignmentApi
@@ -76,6 +82,8 @@ class ApiRoot < Grape::API
   mount Tii::TiiGroupAttachmentApi
   mount Tii::TiiActionApi
 
+  mount ScormApi
+  mount TestAttemptsApi
   mount CampusesPublicApi
   mount CampusesAuthenticatedApi
   mount TutorialsApi
@@ -96,6 +104,7 @@ class ApiRoot < Grape::API
   AuthenticationHelpers.add_auth_to BreaksApi
   AuthenticationHelpers.add_auth_to DiscussionCommentApi
   AuthenticationHelpers.add_auth_to ExtensionCommentsApi
+  AuthenticationHelpers.add_auth_to ScormExtensionCommentsApi
   AuthenticationHelpers.add_auth_to GroupSetsApi
   AuthenticationHelpers.add_auth_to LearningOutcomesApi
   AuthenticationHelpers.add_auth_to LearningAlignmentApi
@@ -122,6 +131,8 @@ class ApiRoot < Grape::API
   AuthenticationHelpers.add_auth_to UnitRolesApi
   AuthenticationHelpers.add_auth_to UnitsApi
   AuthenticationHelpers.add_auth_to WebcalApi
+  AuthenticationHelpers.add_auth_to ScormApi
+  AuthenticationHelpers.add_auth_to TestAttemptsApi
 
   add_swagger_documentation \
     base_path: nil,

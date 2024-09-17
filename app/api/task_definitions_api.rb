@@ -28,6 +28,11 @@ class TaskDefinitionsApi < Grape::API
       requires :restrict_status_updates,  type: Boolean,  desc: 'Restrict updating of the status to staff'
       optional :upload_requirements,      type: String,   desc: 'Task file upload requirements'
       requires :plagiarism_warn_pct,      type: Integer,  desc: 'The percent at which to record and warn about plagiarism'
+      requires :scorm_enabled,            type: Boolean,  desc: 'Whether SCORM assessment is enabled for this task'
+      requires :scorm_allow_review,       type: Boolean,  desc: 'Whether a student is allowed to review their completed test attempts'
+      requires :scorm_bypass_test,        type: Boolean,  desc: 'Whether a student is allowed to upload files before passing SCORM test'
+      requires :scorm_time_delay_enabled, type: Boolean,  desc: 'Whether there is an incremental time delay between SCORM test attempts'
+      requires :scorm_attempt_limit,      type: Integer,  desc: 'The number of times a SCORM test can be attempted'
       requires :is_graded,                type: Boolean,  desc: 'Whether or not this task definition is a graded task'
       requires :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
       optional :assessment_enabled,       type: Boolean,  desc: 'Enable or disable assessment'
@@ -42,8 +47,6 @@ class TaskDefinitionsApi < Grape::API
       error!({ error: 'Not authorised to create a task definition of this unit' }, 403)
     end
 
-    params[:task_def][:upload_requirements] = [] if params[:task_def][:upload_requirements].nil?
-
     task_params = ActionController::Parameters.new(params)
                                               .require(:task_def)
                                               .permit(
@@ -57,15 +60,22 @@ class TaskDefinitionsApi < Grape::API
                                                 :abbreviation,
                                                 :restrict_status_updates,
                                                 :plagiarism_warn_pct,
+                                                :scorm_enabled,
+                                                :scorm_allow_review,
+                                                :scorm_bypass_test,
+                                                :scorm_time_delay_enabled,
+                                                :scorm_attempt_limit,
                                                 :is_graded,
                                                 :max_quality_pts,
                                                 :assessment_enabled,
                                                 :overseer_image_id,
-                                                :moss_language
+                                                :moss_language,
+                                                :upload_requirements,
+                                                :unit_id
                                               )
 
     task_params[:unit_id] = unit.id
-    task_params[:upload_requirements] = JSON.parse(params[:task_def][:upload_requirements]) unless params[:task_def][:upload_requirements].nil?
+    task_params[:upload_requirements] = params[:task_def][:upload_requirements].present? ? JSON.parse(params[:task_def][:upload_requirements]) : []
 
     task_def = TaskDefinition.new(task_params)
 
@@ -106,6 +116,11 @@ class TaskDefinitionsApi < Grape::API
       optional :restrict_status_updates,  type: Boolean,  desc: 'Restrict updating of the status to staff'
       optional :upload_requirements,      type: String,   desc: 'Task file upload requirements'
       optional :plagiarism_warn_pct,      type: Integer,  desc: 'The percent at which to record and warn about plagiarism'
+      optional :scorm_enabled,            type: Boolean,  desc: 'Whether or not SCORM test assessment is enabled for this task'
+      optional :scorm_allow_review,       type: Boolean,  desc: 'Whether a student is allowed to review their completed test attempts'
+      optional :scorm_bypass_test,        type: Boolean,  desc: 'Whether a student is allowed to upload files before passing SCORM test'
+      optional :scorm_time_delay_enabled, type: Boolean,  desc: 'Whether or not there is an incremental time delay between SCORM test attempts'
+      optional :scorm_attempt_limit,      type: Integer,  desc: 'The number of times a SCORM test can be attempted'
       optional :is_graded,                type: Boolean,  desc: 'Whether or not this task definition is a graded task'
       optional :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
       optional :assessment_enabled,       type: Boolean,  desc: 'Enable or disable assessment'
@@ -134,20 +149,26 @@ class TaskDefinitionsApi < Grape::API
                                                 :abbreviation,
                                                 :restrict_status_updates,
                                                 :plagiarism_warn_pct,
+                                                :scorm_enabled,
+                                                :scorm_allow_review,
+                                                :scorm_bypass_test,
+                                                :scorm_time_delay_enabled,
+                                                :scorm_attempt_limit,
                                                 :is_graded,
                                                 :max_quality_pts,
                                                 :assessment_enabled,
                                                 :overseer_image_id,
-                                                :moss_language
+                                                :moss_language,
+                                                :upload_requirements
                                               )
 
-    task_params[:upload_requirements] = JSON.parse(params[:task_def][:upload_requirements]) unless params[:task_def][:upload_requirements].nil?
+    task_params[:upload_requirements] = params[:task_def][:upload_requirements].present? ? JSON.parse(params[:task_def][:upload_requirements]) : []
 
-    # Ensure changes to a TD defined as a "draft task definition" are validated
+    # Ensure changes to a TD defined as a 'draft task definition' are validated
     if unit.draft_task_definition_id == params[:id]
-      if params[:task_def][:upload_requirements]
-        requirements = params[:task_def][:upload_requirements]
-        if requirements.length != 1 || requirements[0]["type"] != "document"
+      if task_params[:upload_requirements]
+        requirements = task_params[:upload_requirements]
+        if requirements.length != 1 || requirements[0]['type'] != 'document'
           error!({ error: 'Task is marked as the draft learning summary task definition. A draft learning summary task can only contain a single document upload.' }, 403)
         end
       end
@@ -179,7 +200,6 @@ class TaskDefinitionsApi < Grape::API
       end
     end
 
-    puts task_def.upload_requirements
     present task_def, with: Entities::TaskDefinitionEntity, my_role: unit.role_for(current_user)
   end
 
@@ -195,8 +215,8 @@ class TaskDefinitionsApi < Grape::API
       error!({ error: 'Not authorised to upload CSV of tasks' }, 403)
     end
 
-    unless params[:file].present?
-      error!({ error: "No file uploaded" }, 403)
+    if params[:file].blank?
+      error!({ error: 'No file uploaded' }, 403)
     end
 
     path = params[:file][:tempfile].path
@@ -274,7 +294,7 @@ class TaskDefinitionsApi < Grape::API
     # This API accepts more than 2 files, file0 and file1 are just examples.
   end
   post '/units/:unit_id/task_definitions/:task_def_id/test_overseer_assessment' do
-    logger.info "********* - Starting overseer test"
+    logger.info '********* - Starting overseer test'
     return 'Overseer is not enabled' if !Doubtfire::Application.config.overseer_enabled
 
     unit = Unit.find(params[:unit_id])
@@ -297,9 +317,9 @@ class TaskDefinitionsApi < Grape::API
     upload_reqs = task.upload_requirements
 
     # Copy files to be PDFed
-    task.accept_submission(current_user, scoop_files(params, upload_reqs), current_user, self, nil, 'ready_for_feedback', nil, accepted_tii_eula: false)
+    task.accept_submission(current_user, scoop_files(params, upload_reqs), self, nil, 'ready_for_feedback', nil, accepted_tii_eula: false)
 
-    logger.info "********* - about to perform overseer submission"
+    logger.info '********* - about to perform overseer submission'
     overseer_assessment = OverseerAssessment.create_for(task)
     if overseer_assessment.present?
       response = overseer_assessment.send_to_overseer
@@ -351,8 +371,8 @@ class TaskDefinitionsApi < Grape::API
 
     task_def = unit.task_definitions.find(params[:task_def_id])
 
-    unless params[:file].present?
-      error!({ error: "No file uploaded" }, 403)
+    if params[:file].blank?
+      error!({ error: 'No file uploaded' }, 403)
     end
 
     file_path = params[:file][:tempfile].path
@@ -438,8 +458,8 @@ class TaskDefinitionsApi < Grape::API
       error!({ error: 'Not authorised to upload tasks of unit' }, 403)
     end
 
-    unless params[:file].present?
-      error!({ error: "No file uploaded" }, 403)
+    if params[:file].blank?
+      error!({ error: 'No file uploaded' }, 403)
     end
 
     file = params[:file][:tempfile].path
@@ -548,13 +568,12 @@ class TaskDefinitionsApi < Grape::API
       path = task_def.task_sheet
       filename = "#{task_def.unit.code}-#{task_def.abbreviation}.pdf"
     else
-      path = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
-      filename = "FileNotFound.pdf"
+      path = Rails.root.join('public/resources/FileNotFound.pdf')
+      filename = 'FileNotFound.pdf'
     end
 
     if params[:as_attachment]
       header['Content-Disposition'] = "attachment; filename=#{filename}"
-      header['Access-Control-Expose-Headers'] = 'Content-Disposition'
     end
 
     content_type 'application/pdf'
@@ -579,11 +598,10 @@ class TaskDefinitionsApi < Grape::API
       content_type 'application/octet-stream'
       header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}-resources.zip"
     else
-      path = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
+      path = Rails.root.join('public/resources/FileNotFound.pdf')
       content_type 'application/pdf'
       header['Content-Disposition'] = 'attachment; filename=FileNotFound.pdf'
     end
-    header['Access-Control-Expose-Headers'] = 'Content-Disposition'
 
     stream_file path
   end
@@ -606,12 +624,86 @@ class TaskDefinitionsApi < Grape::API
       content_type 'application/octet-stream'
       header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}-assessment-resources.zip"
     else
-      path = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
+      path = Rails.root.join('public/resources/FileNotFound.pdf')
+      content_type 'application/pdf'
+      header['Content-Disposition'] = 'attachment; filename=FileNotFound.pdf'
+    end
+
+    stream_file path
+  end
+
+  desc 'Upload the SCORM container (zip file) for a task'
+  params do
+    requires :unit_id, type: Integer, desc: 'The related unit'
+    requires :task_def_id, type: Integer, desc: 'The related task definition'
+    requires :file, type: File, desc: 'The SCORM data container'
+  end
+  post '/units/:unit_id/task_definitions/:task_def_id/scorm_data' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :add_task_def
+      error!({ error: 'Not authorised to upload SCORM data for the unit' }, 403)
+    end
+
+    task_def = unit.task_definitions.find(params[:task_def_id])
+
+    if params[:file].blank?
+      error!({ error: "No file uploaded" }, 403)
+    end
+
+    file_path = params[:file][:tempfile].path
+
+    check_mime_against_list! file_path, 'zip', ['application/zip', 'multipart/x-gzip', 'multipart/x-zip', 'application/x-gzip', 'application/octet-stream']
+
+    # Actually import...
+    task_def.add_scorm_data(file_path)
+    true
+  end
+
+  desc 'Download the SCORM test data'
+  params do
+    requires :unit_id, type: Integer, desc: 'The unit to modify tasks for'
+    requires :task_def_id, type: Integer, desc: 'The task definition to get the SCORM test data of'
+  end
+  get '/units/:unit_id/task_definitions/:task_def_id/scorm_data' do
+    unit = Unit.find(params[:unit_id])
+    task_def = unit.task_definitions.find(params[:task_def_id])
+
+    unless authorise? current_user, unit, :get_unit
+      error!({ error: 'Not authorised to download task details of unit' }, 403)
+    end
+
+    if task_def.has_scorm_data?
+      path = task_def.task_scorm_data
+      content_type 'application/octet-stream'
+      header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}-scorm.zip"
+    else
+      path = Rails.root.join('public/resources/FileNotFound.pdf')
       content_type 'application/pdf'
       header['Content-Disposition'] = 'attachment; filename=FileNotFound.pdf'
     end
     header['Access-Control-Expose-Headers'] = 'Content-Disposition'
 
-    stream_file path
+    env['api.format'] = :binary
+    File.read(path)
+  end
+
+  desc 'Remove the SCORM test data for a given task'
+  params do
+    requires :unit_id, type: Integer, desc: 'The related unit'
+    requires :task_def_id, type: Integer, desc: 'The related task definition'
+  end
+  delete '/units/:unit_id/task_definitions/:task_def_id/scorm_data' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :add_task_def
+      error!({ error: 'Not authorised to remove task SCORM data of unit' }, 403)
+    end
+
+    task_def = unit.task_definitions.find(params[:task_def_id])
+
+    # Actually remove...
+    task_def.remove_scorm_data
+    true
   end
 end

@@ -400,11 +400,61 @@ class TasksApiTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status, last_response_body
 
     task = project.task_for_task_definition(td)
-    task.convert_submission_to_pdf
+    task.convert_submission_to_pdf(log_to_stdout: false)
     assert File.exist? task.final_pdf_path
 
-    td.destroy
+    unit.destroy
   end
 
+  def test_download_task_pdf
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
+    td = TaskDefinition.create!({
+        unit_id: unit.id,
+        tutorial_stream: unit.tutorial_streams.first,
+        name: 'Code task',
+        description: 'Code task',
+        weighting: 4,
+        target_grade: 0,
+        start_date: Time.zone.now - 2.weeks,
+        target_date: Time.zone.now + 1.week,
+        abbreviation: 'CodeTask',
+        restrict_status_updates: false,
+        upload_requirements: [ { "key" => 'file0', "name" => 'Shape Class', "type" => 'code' } ],
+        plagiarism_warn_pct: 0.8,
+        is_graded: true,
+        max_quality_pts: 0
+      })
 
+    project = unit.active_projects.first
+    task = project.task_for_task_definition(td)
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: project.user)
+
+    get "/api/projects/#{project.id}/task_def_id/#{td.id}/submission"
+
+    assert_equal 200, last_response.status
+    assert_equal File.size(Rails.root.join('public/resources/FileNotFound.pdf')), last_response.length
+
+    dir = FileHelper.student_work_dir(:new, task, true)
+
+    get "/api/projects/#{project.id}/task_def_id/#{td.id}/submission"
+
+    assert_equal 200, last_response.status
+    assert_equal File.size(Rails.root.join('public/resources/AwaitingProcessing.pdf')), last_response.length
+
+    FileUtils.rm_r dir
+
+    src_file = Rails.root.join('test_files/submissions/1.2P.pdf')
+    FileUtils.cp src_file, task.final_pdf_path
+    task.portfolio_evidence_path = task.final_pdf_path
+    task.save
+
+    get "/api/projects/#{project.id}/task_def_id/#{td.id}/submission"
+
+    assert_equal 200, last_response.status
+    assert_equal File.size(src_file), last_response.length
+
+    unit.destroy
+  end
 end

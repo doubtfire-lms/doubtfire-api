@@ -52,8 +52,7 @@ module Tii
       case params[:action]
       when 'retry'
         error!({ error: 'Retry in progress. Please wait.' }, 403) if action.retry
-        action.update(retry: true)
-        action.perform_async
+        action.perform_retry
       else
         error!({ error: 'Invalid action' }, 400)
       end

@@ -66,7 +66,7 @@ class UnitRole < ApplicationRecord
   end
 
   def self.tasks_to_review(user)
-    Tutorial.find_by_user(user)
+    Tutorial.find_by(user: user)
             .map(&:projects)
             .flatten
             .map(&:tasks)
@@ -145,7 +145,11 @@ class UnitRole < ApplicationRecord
   def send_weekly_status_email(summary_stats)
     return unless user.receive_feedback_notifications
 
-    NotificationsMailer.weekly_staff_summary(self, summary_stats).deliver_now
+    begin
+      NotificationsMailer.weekly_staff_summary(self, summary_stats).deliver_now
+    rescue StandardError => e
+      Rails.logger.error "Failed to send weekly staff summary email to #{user.email} - #{e.message}"
+    end
   end
 
   def ensure_valid_user_for_role

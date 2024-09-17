@@ -7,7 +7,7 @@ class Tutorial < ApplicationRecord
 
   has_one    :tutor, through: :unit_role, source: :user
 
-  has_many   :groups
+  has_many   :groups, dependent: :restrict_with_exception
   has_many   :tutorial_enrolments, dependent: :destroy
   has_many   :projects, through: :tutorial_enrolments
 

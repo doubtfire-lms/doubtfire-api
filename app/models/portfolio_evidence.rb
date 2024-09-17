@@ -22,7 +22,7 @@ class PortfolioEvidence
     pid_folder = File.join(student_work_dir(:in_process), "pid_#{Process.pid}")
 
     # Move everything in "new" to "pid" folder but retain the old "new" folder
-    FileHelper.move_files(student_work_dir(:new), pid_folder, true, DateTime.now - 1.minute)
+    FileHelper.move_files(student_work_dir(:new), pid_folder, true, DateTime.now - 30.minutes)
     pid_folder
   end
 
@@ -50,9 +50,6 @@ class PortfolioEvidence
         logger.error "Failed to process folder_id = #{folder_id}. #{message}"
 
         if task
-          task.add_text_comment task.project.tutor_for(task.task_definition), "**Automated Comment**: Something went wrong with your submission. Check the files and resubmit this task. #{message}"
-          task.trigger_transition trigger: 'fix', by_user: task.project.tutor_for(task.task_definition)
-
           errors[task.project] = [] if errors[task.project].nil?
           errors[task.project] << task
         end
@@ -60,7 +57,7 @@ class PortfolioEvidence
 
       begin
         logger.info "creating pdf for task #{task.id}"
-        success = task.convert_submission_to_pdf(my_source)
+        success = task.convert_submission_to_pdf(source_folder: my_source, log_to_stdout: true)
 
         if success
           done[task.project] = [] if done[task.project].nil?
@@ -73,20 +70,15 @@ class PortfolioEvidence
       end
     end
 
-    # Remove email of task notification success - only email on fail
-    # done.each do |project, tasks|
-    #   logger.info "checking email for project #{project.id}"
-    #   if project.student.receive_task_notifications
-    #     logger.info "emailing task notification to #{project.student.name}"
-    #     PortfolioEvidenceMailer.task_pdf_ready_message(project, tasks).deliver
-    #   end
-    # end
-
     errors.each do |project, tasks|
-      logger.info "checking email for project #{project.id}"
-      if project.student.receive_task_notifications
-        logger.info "emailing task notification to #{project.student.name}"
+      logger.debug "checking email for project #{project.id}"
+      next unless project.student.receive_task_notifications
+
+      logger.info "emailing task notification to #{project.student.name}"
+      begin
         PortfolioEvidenceMailer.task_pdf_failed(project, tasks).deliver
+      rescue StandardError => e
+        logger.error "Failed to send task pdf failed email for project #{project.id}!\n#{e.message}"
       end
     end
   end

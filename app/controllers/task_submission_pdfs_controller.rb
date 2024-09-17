@@ -37,7 +37,7 @@ class TaskSubmissionPdfsController < ApplicationController
 
     # Set download headers...
     # content_type "application/octet-stream"
-    download_id = "#{Time.new.strftime('%Y-%m-%d %H:%m:%S')}-#{unit.code}-#{td.abbreviation}-#{current_user.username}-pdfs"
+    download_id = "#{Time.zone.now.strftime('%Y-%m-%d %H:%m:%S')}-#{unit.code}-#{td.abbreviation}-#{current_user.username}-pdfs"
     download_id.gsub! /[\\\/]/, '-'
     download_id = FileHelper.sanitized_filename(download_id)
     # header['Content-Disposition'] = "attachment; filename=#{download_id}.zip"

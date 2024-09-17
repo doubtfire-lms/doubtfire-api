@@ -84,10 +84,6 @@ class DeakinInstitutionSettings
     result
   end
 
-  def default_online_campus_abbr
-    'Online-01'
-  end
-
   # Multi code units have a stream for unit - and do not sync with star
   def setup_multi_code_streams unit
     logger.info("Setting up multi unit for #{unit.code}")
@@ -135,7 +131,19 @@ class DeakinInstitutionSettings
     url = "#{@star_url}/#{server}/rest/activities"
 
     logger.info("Fetching #{unit.name} timetable from #{url}")
-    response = RestClient.post(url, { username: @star_user, password: @star_secret, where_clause: "subject_code LIKE '#{unit.code}%_#{tp.period.last}'" })
+
+    # Try to contact the server up to 3 times...
+    for i in 0..2 do
+      begin
+        response = RestClient.post(url, { username: @star_user, password: @star_secret, where_clause: "subject_code LIKE '#{unit.code}%_#{tp.period.last}'" })
+        break if response.code == 200
+        logger.error "Error in sync #{unit.code} - #{response.code}"
+      rescue StandardError => e
+        logger.error "Error in sync #{unit.code} - #{e.message}"
+      end
+
+      sleep(5 + (5 * i)) # wait 5+ seconds before retrying
+    end
 
     if response.code == 200
       jsonData = JSON.parse(response.body)
@@ -265,37 +273,36 @@ class DeakinInstitutionSettings
 
       username_user
     elsif username_user.present? && student_id_user.present?
-      # Both present, but different...
-      # Most likely updated username with existing student id
-      if username_user.projects.count == 0 && student_id_user.projects.count > 0
-        # Change the student id user to use the new username and email
-        student_id_user.username = username_user.username
-        student_id_user.email = username_user.email
-        student_id_user.login_id = nil
-        student_id_user.auth_tokens.destroy_all
 
-        # Correct the new username user record - so we mark this as a duplicate and move to the old record
-        username_user.username = "OLD-#{username_user.username}"
-        username_user.email = "DUP-#{username_user.email}"
-        username_user.login_id = nil
-
-        unless username_user.save
-          logger.error("Unable to fix user #{row_data} - username_user.save failed")
-          return nil
-        end
-        username_user.auth_tokens.destroy_all
-
-        unless student_id_user.save
-          logger.error("Unable to fix user #{row_data} - student_id_user.save failed")
-          return nil
-        end
-
-        # We keep the student id user... so return this
-        student_id_user
-      else
-        logger.error("Unable to fix user #{row_data} - both username and student id users present. Need manual fix.")
-        nil
+      # Check if the username user student id contains the student id
+      unless username_user.student_id.blank? || username_user.student_id.include?(student_id_user.student_id)
+        logger.error("Unable to fix user #{row_data} - username user has an unrelated student id. Cannot merge records - Need manual fix.")
+        return nil
       end
+
+      # Both present, but different...
+      # Merge them into the username user, as the student id user does not have the new username
+
+      # Change the username user...
+      username_user.student_id = student_id_user.student_id
+
+      # Correct the older student id record
+      student_id_user.student_id = "DUP-#{student_id_user.student_id}"
+
+      # Save student id user first - free student id from duplicate error
+      unless student_id_user.save
+        logger.error("Unable to fix user #{row_data} - student_id_user.save failed")
+        return nil
+      end
+
+      # Update the username user
+      unless username_user.save
+        logger.error("Unable to fix user #{row_data} - username_user.save failed")
+        return nil
+      end
+
+      # We keep the student id user... so return this
+      username_user
     else
       logger.error("Unable to fix user #{row_data} - Need manual fix.")
       nil
@@ -312,7 +319,7 @@ class DeakinInstitutionSettings
     # Get the first one
     # Return its abbreviation
     list = tutorial_stats.sort_by { |r|
-      capacity = r[:capacity].present? ? r[:capacity] : 0
+      capacity = r[:capacity].presence || 0
       capacity = 10000 if capacity <= 0
       (r[:enrolment_count] + r[:added]) / capacity
     }
@@ -340,7 +347,7 @@ class DeakinInstitutionSettings
     # subsequently withdrawn
     already_enrolled = {}
 
-    unless tp.present?
+    if tp.blank?
       logger.error "Failing to sync unit #{unit.code} as not in teaching period"
       return
     end
@@ -354,13 +361,28 @@ class DeakinInstitutionSettings
         timetable_data = {}
       end
 
+      # Get the list of students
+      student_list = []
+
       for code in codes do
         # Get URL to enrolment data for this code
         url = "#{@base_url}?academicYear=#{tp.year}&periodType=trimester&period=#{tp.period.last}&unitCode=#{code}"
         logger.info("Requesting #{url}")
 
         # Get json from enrolment server
-        response = RestClient.get(url, headers = { "client_id" => @client_id, "client_secret" => @client_secret })
+
+        # Try to contact the server up to 3 times...
+        for i in 0..2 do
+          begin
+            response = RestClient.get(url, headers = { "client_id" => @client_id, "client_secret" => @client_secret })
+            break if response.code == 200
+            logger.error "Error in sync #{unit.code} - #{response.code}"
+            sleep(5 + (5 * i)) # wait 5+ seconds before retrying
+          rescue StandardError => e
+            logger.error "Error in sync #{unit.code} - #{e.message}"
+            sleep(5)
+          end
+        end
 
         # Check we get a valid response
         if response.code == 200
@@ -384,9 +406,6 @@ class DeakinInstitutionSettings
           end
 
           logger.info "Syncing enrolment for #{code} - #{tp.year} #{tp.period}"
-
-          # Get the list of students
-          student_list = []
 
           # Get the timetable data ()
           if multi_unit
@@ -416,39 +435,46 @@ class DeakinInstitutionSettings
             # We need to determine the stats here before the enrolments.
             # This is not needed for multi unit as we do not setup the tutorials for multi units
 
-            if is_online && !multi_unit && unit.enable_sync_timetable
-              if unit.tutorials.where(campus_id: campus.id).count == 0
-                unit.add_tutorial(
-                  'Asynchronous', # day
-                  '', # time
-                  'Online', # location
-                  unit.main_convenor_user, # tutor
-                  online_campus, # campus
-                  -1, # capacity
-                  default_online_campus_abbr, # abbrev
-                  nil # tutorial_stream=nil
-                )
-              end
+            # TODO: redesign online tutorial enrolements
+            # if is_online && !multi_unit && unit.enable_sync_timetable
+            #   if unit.tutorials.where(campus_id: campus.id).count == 0
+            #     # Add an online campus tutorial to each tutorial stream that has an allocated task
 
-              # Get stats for distribution of students across tutorials - for enrolment of online students
-              tutorial_stats = unit.tutorials
-                                   .joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.tutorial_id = tutorials.id')
-                                   .where(campus_id: campus.id)
-                                   .select(
-                                     'tutorials.abbreviation AS abbreviation',
-                                     'capacity',
-                                     'COUNT(tutorial_enrolments.id) AS enrolment_count'
-                                   )
-                                   .group('tutorials.abbreviation', 'capacity')
-                                   .map { |row|
-                {
-                  abbreviation: row.abbreviation,
-                  enrolment_count: row.enrolment_count,
-                  added: 0.0, # float to force float division in % full calc
-                  capacity: row.capacity
-                }
-              }
-            end # is online
+            #     streams_to_add = unit.tutorial_streams.select { |ts| ts.tutorials.count > 0 }
+
+            #     streams_to_add.each do |stream|
+            #       unit.add_tutorial(
+            #         'Asynchronous', # day
+            #         '', # time
+            #         'Online', # location
+            #         unit.main_convenor_user, # tutor
+            #         online_campus, # campus
+            #         -1, # capacity
+            #         "#{stream.abbreviation}-online-01", # abbrev
+            #         stream # tutorial_stream=nil
+            #       )
+            #     end
+            #   end
+
+            #   # Get stats for distribution of students across tutorials - for enrolment of online students
+            #   tutorial_stats = unit.tutorials
+            #                        .joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.tutorial_id = tutorials.id')
+            #                        .where(campus_id: campus.id)
+            #                        .select(
+            #                          'tutorials.abbreviation AS abbreviation',
+            #                          'capacity',
+            #                          'COUNT(tutorial_enrolments.id) AS enrolment_count'
+            #                        )
+            #                        .group('tutorials.abbreviation', 'capacity')
+            #                        .map { |row|
+            #     {
+            #       abbreviation: row.abbreviation,
+            #       enrolment_count: row.enrolment_count,
+            #       added: 0.0, # float to force float division in % full calc
+            #       capacity: row.capacity
+            #     }
+            #   }
+            # end # is online
 
             # For each of the enrolments...
             location['enrolments'].each do |enrolment|
@@ -490,6 +516,11 @@ class DeakinInstitutionSettings
               # Record details for students already enrolled to work with multi-units
               if row_data[:enrolled]
                 already_enrolled[row_data[:username]] = true
+
+                if multi_unit
+                  # Ensure student list does not already contain this student as a withdrawal
+                  student_list.delete_if { |student| student[:username] == row_data[:username] }
+                end
               elsif already_enrolled[row_data[:username]]
                 # skip to the next enrolment... this person was enrolled in an earlier unit nested within this unit... so skip this row as it would result in withdrawal
                 next
@@ -497,32 +528,34 @@ class DeakinInstitutionSettings
 
               user = sync_student_user_from_callista(row_data)
 
-              # if they are enrolled, but not timetabled and online...
-              if is_online && row_data[:enrolled] && !multi_unit && unit.enable_sync_timetable && timetable_data[enrolment['studentId']].nil? # Is this an online user that we have the user data for?
-                # try to get their exising data
-                project = unit.projects.where(user_id: user.id).first unless user.nil?
+              # TODO: redesign online tutorial enrolements
+              # # if they are enrolled, but not timetabled and online...
+              # if is_online && row_data[:enrolled] && !multi_unit && unit.enable_sync_timetable && timetable_data[enrolment['studentId']].nil? # Is this an online user that we have the user data for?
+              #   # try to get their exising data
+              #   project = unit.projects.where(user_id: user.id).first unless user.nil?
 
-                if project.nil? || project.tutorial_enrolments.count == 0
-                  # not present (so new), or has no enrolment... so we can enrol it into the online tutorial
-                  tutorial = find_online_tutorial(unit, tutorial_stats)
-                  row_data[:tutorials] = [tutorial] unless tutorial.nil?
-                end
-              end
+              #   if project.nil? || project.tutorial_enrolments.count == 0
+              #     # not present (so new), or has no enrolment... so we can enrol it into the online tutorial
+              #     tutorial = find_online_tutorial(unit, tutorial_stats)
+              #     row_data[:tutorials] = [tutorial] unless tutorial.nil?
+              #   end
+              # end
 
               student_list << row_data
             end
           end
 
-          import_settings = {
-            replace_existing_tutorial: false
-          }
-
-          # Now get unit to sync
-          unit.sync_enrolment_with(student_list, import_settings, result)
         else
           logger.error "Failed to sync #{unit.code} - #{response}"
         end # if response 200
       end # for each code
+
+      import_settings = {
+        replace_existing_tutorial: false
+      }
+
+      # Now get unit to sync
+      unit.sync_enrolment_with(student_list, import_settings, result)
     rescue Exception => e
       logger.error "Failed to sync unit: #{e.message}"
     end
@@ -547,7 +580,17 @@ class DeakinInstitutionSettings
 
     unit.tutorial_streams.each do |tutorial_stream|
       logger.info("Fetching #{tutorial_stream.abbreviation} from #{url}")
-      response = RestClient.post(url, { username: @star_user, password: @star_secret, where_clause: "subject_code LIKE '#{unit.code}%' AND activity_group_code LIKE '#{tutorial_stream.abbreviation}'" })
+      for i in 0..2 do
+        begin
+          response = RestClient.post(url, { username: @star_user, password: @star_secret, where_clause: "subject_code LIKE '#{unit.code}%' AND activity_group_code LIKE '#{tutorial_stream.abbreviation}'" })
+          break if response.code == 200
+          logger.error "Error in sync #{unit.code} - #{response.code}"
+        rescue StandardError => e
+          logger.error "Error in sync #{unit.code} - #{e.message}"
+        end
+
+        sleep(5 + (5 * i)) # wait 5+ seconds before retrying
+      end
 
       if response.code == 200
         jsonData = JSON.parse(response.body)

@@ -1,3 +1,4 @@
+# rubocop:disable Rails/Output
 class OverseerAssessment < ApplicationRecord
   belongs_to :task, optional: false
 
@@ -8,7 +9,7 @@ class OverseerAssessment < ApplicationRecord
   validates :task_id,                 presence: true
   validates :submission_timestamp,    presence: true
 
-  validates_uniqueness_of :submission_timestamp, scope: :task_id
+  validates :submission_timestamp, uniqueness: { scope: :task_id }
 
   enum status: { pre_queued: 0, queued: 1, queue_failed: 2, done: 3 }
 
@@ -25,10 +26,7 @@ class OverseerAssessment < ApplicationRecord
     task_definition = task.task_definition
     unit = task_definition.unit
 
-    return nil unless unit.assessment_enabled
-    return nil unless task_definition.assessment_enabled
-    return nil unless task_definition.has_task_assessment_resources?
-    return nil unless task.has_new_files? || task.has_done_file?
+    return nil unless task.overseer_enabled?
 
     docker_image_name_tag = task_definition.docker_image_name_tag || unit.docker_image_name_tag
     assessment_resources_path = task_definition.task_assessment_resources
@@ -83,7 +81,7 @@ class OverseerAssessment < ApplicationRecord
 
   def add_assessment_comment(text = 'Automated Assessment Started')
     text.strip!
-    return nil if text.nil? || text.empty?
+    return nil if text.blank?
 
     tutor = project.tutor_for(task.task_definition)
 
@@ -103,7 +101,7 @@ class OverseerAssessment < ApplicationRecord
 
   def update_assessment_comment(text)
     text.strip!
-    return nil if text.nil? || text.empty?
+    return nil if text.blank?
 
     assessment_comment = assessment_comments.last
 
@@ -264,3 +262,4 @@ class OverseerAssessment < ApplicationRecord
     FileUtils.rm_rf output_path
   end
 end
+# rubocop:enable Rails/Output

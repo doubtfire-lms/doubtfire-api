@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_05_28_223908) do
+ActiveRecord::Schema[7.1].define(version: 2024_07_01_221318) do
   create_table "activity_types", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -24,6 +24,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_28_223908) do
     t.datetime "auth_token_expiry", null: false
     t.bigint "user_id"
     t.string "authentication_token", null: false
+    t.integer "token_type", default: 0, null: false
+    t.index ["token_type"], name: "index_auth_tokens_on_token_type"
     t.index ["user_id"], name: "index_auth_tokens_on_user_id"
   end
 
@@ -82,6 +84,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_28_223908) do
     t.datetime "updated_at"
     t.integer "capacity"
     t.boolean "locked", default: false, null: false
+    t.index ["name", "unit_id"], name: "index_group_sets_on_name_and_unit_id", unique: true
     t.index ["unit_id"], name: "index_group_sets_on_unit_id"
   end
 
@@ -106,6 +109,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_28_223908) do
     t.integer "capacity_adjustment", default: 0, null: false
     t.boolean "locked", default: false, null: false
     t.index ["group_set_id"], name: "index_groups_on_group_set_id"
+    t.index ["name", "group_set_id"], name: "index_groups_on_name_and_group_set_id", unique: true
     t.index ["tutorial_id"], name: "index_groups_on_tutorial_id"
   end
 
@@ -128,6 +132,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_28_223908) do
     t.string "name"
     t.string "description", limit: 4096
     t.string "abbreviation"
+    t.index ["abbreviation", "unit_id"], name: "index_learning_outcomes_on_abbreviation_and_unit_id", unique: true
     t.index ["unit_id"], name: "index_learning_outcomes_on_unit_id"
   end
 
@@ -158,6 +163,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_28_223908) do
     t.text "pulled_image_text"
     t.integer "pulled_image_status"
     t.datetime "last_pulled_date"
+    t.index ["name"], name: "index_overseer_images_on_name", unique: true
+    t.index ["tag"], name: "index_overseer_images_on_tag", unique: true
   end
 
   create_table "projects", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
@@ -215,6 +222,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_28_223908) do
     t.string "extension_response"
     t.bigint "reply_to_id"
     t.bigint "overseer_assessment_id"
+    t.integer "test_attempt_id"
     t.index ["assessor_id"], name: "index_task_comments_on_assessor_id"
     t.index ["discussion_comment_id"], name: "index_task_comments_on_discussion_comment_id"
     t.index ["overseer_assessment_id"], name: "index_task_comments_on_overseer_assessment_id"
@@ -222,6 +230,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_28_223908) do
     t.index ["reply_to_id"], name: "index_task_comments_on_reply_to_id"
     t.index ["task_id"], name: "index_task_comments_on_task_id"
     t.index ["task_status_id"], name: "index_task_comments_on_task_status_id"
+    t.index ["test_attempt_id"], name: "index_task_comments_on_test_attempt_id"
     t.index ["user_id"], name: "index_task_comments_on_user_id"
   end
 
@@ -250,7 +259,14 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_28_223908) do
     t.bigint "overseer_image_id"
     t.string "tii_group_id"
     t.string "moss_language"
+    t.boolean "scorm_enabled", default: false
+    t.boolean "scorm_allow_review", default: false
+    t.boolean "scorm_bypass_test", default: false
+    t.boolean "scorm_time_delay_enabled", default: false
+    t.integer "scorm_attempt_limit", default: 0
+    t.index ["abbreviation", "unit_id"], name: "index_task_definitions_on_abbreviation_and_unit_id", unique: true
     t.index ["group_set_id"], name: "index_task_definitions_on_group_set_id"
+    t.index ["name", "unit_id"], name: "index_task_definitions_on_name_and_unit_id", unique: true
     t.index ["overseer_image_id"], name: "index_task_definitions_on_overseer_image_id"
     t.index ["tutorial_stream_id"], name: "index_task_definitions_on_tutorial_stream_id"
     t.index ["unit_id"], name: "index_task_definitions_on_unit_id"
@@ -328,6 +344,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_28_223908) do
     t.integer "contribution_pts", default: 3
     t.integer "quality_pts", default: -1
     t.integer "extensions", default: 0, null: false
+    t.integer "scorm_extensions", default: 0, null: false
     t.index ["group_submission_id"], name: "index_tasks_on_group_submission_id"
     t.index ["project_id", "task_definition_id"], name: "tasks_uniq_proj_task_def", unique: true
     t.index ["project_id"], name: "index_tasks_on_project_id"
@@ -342,6 +359,17 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_28_223908) do
     t.integer "year", null: false
     t.datetime "active_until", null: false
     t.index ["period", "year"], name: "index_teaching_periods_on_period_and_year", unique: true
+  end
+
+  create_table "test_attempts", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "task_id"
+    t.datetime "attempted_time", null: false
+    t.boolean "terminated", default: false
+    t.boolean "completion_status", default: false
+    t.boolean "success_status", default: false
+    t.float "score_scaled", default: 0.0
+    t.text "cmi_datamodel"
+    t.index ["task_id"], name: "index_test_attempts_on_task_id"
   end
 
   create_table "tii_actions", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
@@ -431,6 +459,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_28_223908) do
     t.integer "capacity", default: -1
     t.bigint "campus_id"
     t.bigint "tutorial_stream_id"
+    t.index ["abbreviation", "unit_id"], name: "index_tutorials_on_abbreviation_and_unit_id", unique: true
     t.index ["campus_id"], name: "index_tutorials_on_campus_id"
     t.index ["tutorial_stream_id"], name: "index_tutorials_on_tutorial_stream_id"
     t.index ["unit_id"], name: "index_tutorials_on_unit_id"
@@ -474,6 +503,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_28_223908) do
     t.bigint "overseer_image_id"
     t.datetime "portfolio_auto_generation_date"
     t.string "tii_group_context_id"
+    t.boolean "archived", default: false
     t.index ["draft_task_definition_id"], name: "index_units_on_draft_task_definition_id"
     t.index ["main_convenor_id"], name: "index_units_on_main_convenor_id"
     t.index ["overseer_image_id"], name: "index_units_on_overseer_image_id"
@@ -509,8 +539,11 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_28_223908) do
     t.string "tii_eula_version"
     t.datetime "tii_eula_date"
     t.boolean "tii_eula_version_confirmed", default: false, null: false
+    t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["login_id"], name: "index_users_on_login_id", unique: true
     t.index ["role_id"], name: "index_users_on_role_id"
+    t.index ["student_id"], name: "index_users_on_student_id", unique: true
+    t.index ["username"], name: "index_users_on_username", unique: true
   end
 
   create_table "webcal_unit_exclusions", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|

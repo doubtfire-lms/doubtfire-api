@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class UnitsTest < ActiveSupport::TestCase
+class WebcalApiTest < ActiveSupport::TestCase
   include Rack::Test::Methods
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
@@ -14,6 +14,7 @@ class UnitsTest < ActiveSupport::TestCase
   end
 
   teardown do
+    @student.projects.find_each { |project| project.destroy }
     @student.destroy
   end
 

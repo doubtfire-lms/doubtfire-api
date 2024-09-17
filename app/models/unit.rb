@@ -98,7 +98,7 @@ class Unit < ApplicationRecord
     elsif active_projects.where('projects.user_id=:id', id: user.id).count == 1
       Role.student
     elsif user.has_auditor_capability? &&
-          start_date >= Date.today - Doubtfire::Application.config.auditor_unit_access_years &&
+          start_date >= Time.zone.today - Doubtfire::Application.config.auditor_unit_access_years &&
           end_date < DateTime.now
       Role.auditor
     elsif user.has_admin_capability?
@@ -114,20 +114,20 @@ class Unit < ApplicationRecord
     delete_associated_files
   end
 
+  after_update :move_files_on_code_change, if: :saved_change_to_code?
   after_update :propogate_date_changes_to_tasks, if: :saved_change_to_start_date?
 
   # Model associations.
   # When a Unit is destroyed, any TaskDefinitions, Tutorials, and ProjectConvenor instances will also be destroyed.
-  has_many :projects, dependent: :destroy # projects first to remove tasks
-  has_many :active_projects, -> { where enrolled: true }, class_name: 'Project'
-  has_many :group_sets, dependent: :destroy # group sets next to remove groups
-  has_many :task_definitions, -> { order 'start_date ASC, abbreviation ASC' }, dependent: :destroy
-  has_many :tutorials, dependent: :destroy # tutorials need groups and tasks deleted before it...
-  has_many :tutorial_streams, dependent: :destroy
-  has_many :unit_roles, dependent: :destroy
-  has_many :learning_outcomes, dependent: :destroy
-  has_many :comments, through: :projects
+  has_many :projects, dependent: :destroy, inverse_of: :unit # projects first to remove tasks
+  has_many :group_sets, dependent: :destroy, inverse_of: :unit # group sets next to remove groups
+  has_many :task_definitions, dependent: :destroy, inverse_of: :unit
+  has_many :tutorials, dependent: :destroy, inverse_of: :unit # tutorials need groups and tasks deleted before it...
+  has_many :tutorial_streams, dependent: :destroy, inverse_of: :unit
+  has_many :unit_roles, dependent: :destroy, inverse_of: :unit
+  has_many :learning_outcomes, dependent: :destroy, inverse_of: :unit
 
+  has_many :comments, through: :projects
   has_many :tasks, through: :projects
   has_many :groups, through: :group_sets
   has_many :tutorial_enrolments, through: :tutorials
@@ -138,9 +138,6 @@ class Unit < ApplicationRecord
   has_many :tii_submissions, through: :tasks
   has_many :tii_group_attachments, through: :task_definitions
   has_many :campuses, through: :tutorials
-
-  has_many :convenors, -> { joins(:role).where('roles.name = :role', role: 'Convenor') }, class_name: 'UnitRole'
-  has_many :staff, ->     { joins(:role).where('roles.name = :role_convenor or roles.name = :role_tutor', role_convenor: 'Convenor', role_tutor: 'Tutor') }, class_name: 'UnitRole'
 
   # Unit has a teaching period
   belongs_to :teaching_period, optional: true
@@ -164,7 +161,7 @@ class Unit < ApplicationRecord
   validate :validate_end_date_after_start_date
   validate :ensure_teaching_period_dates_match, if: :has_teaching_period?
 
-  validate :ensure_main_convenor_is_appropriate
+  validate :ensure_main_convenor_is_appropriate, if: :main_convenor_id_changed?
 
   # Portfolio autogen date validations, must be after start date and before or equal to end date
   validate :autogen_date_within_unit_active_period, if: -> { start_date_changed? || end_date_changed? || teaching_period_id_changed? || portfolio_auto_generation_date_changed? }
@@ -181,6 +178,22 @@ class Unit < ApplicationRecord
 
   def detailed_name
     "#{name} #{teaching_period.present? ? teaching_period.detailed_name : start_date.strftime('%Y-%m-%d')}"
+  end
+
+  def active_projects
+    projects.where(enrolled: true)
+  end
+
+  def ordered_task_definitions
+    task_definitions.order('start_date ASC, abbreviation ASC')
+  end
+
+  def convenors
+    unit_roles.where(role_id: Role.convenor_id)
+  end
+
+  def staff
+    unit_roles.where(role_id: [Role.convenor_id, Role.tutor_id])
   end
 
   def docker_image_name_tag
@@ -218,9 +231,9 @@ class Unit < ApplicationRecord
 
   def teaching_period=(tp)
     if tp.present?
-      write_attribute(:start_date, tp.start_date)
-      write_attribute(:end_date, tp.end_date)
-      write_attribute(:teaching_period_id, tp.id)
+      self[:start_date] = tp.start_date
+      self[:end_date] = tp.end_date
+      self[:teaching_period_id] = tp.id
     end
     super(tp)
   end
@@ -230,10 +243,10 @@ class Unit < ApplicationRecord
   end
 
   def ensure_teaching_period_dates_match
-    if read_attribute(:start_date) != teaching_period.start_date
+    if self[:start_date] != teaching_period.start_date
       errors.add(:start_date, "should match teaching period date")
     end
-    if read_attribute(:end_date) != teaching_period.end_date
+    if self[:end_date] != teaching_period.end_date
       errors.add(:end_date, "should match teaching period date")
     end
   end
@@ -258,12 +271,15 @@ class Unit < ApplicationRecord
     end
   end
 
-  def rollover(teaching_period, start_date, end_date)
+  def rollover(teaching_period, start_date, end_date, new_code)
     new_unit = self.dup
+
+    new_unit.code = new_code if new_code.present?
 
     if teaching_period.present?
       new_unit.teaching_period = teaching_period
     else
+      new_unit.teaching_period = nil
       new_unit.start_date = start_date
       new_unit.end_date = end_date
     end
@@ -331,7 +347,7 @@ class Unit < ApplicationRecord
       Unit.all
     elsif user.has_auditor_capability?
       # Limit range of units that the auditor has access to
-      earliest_unit_start_date = Date.today - Doubtfire::Application.config.auditor_unit_access_years
+      earliest_unit_start_date = Time.zone.today - Doubtfire::Application.config.auditor_unit_access_years
       Unit.all.where('start_date >= :earliest_unit_start_date AND end_date < :today', earliest_unit_start_date: earliest_unit_start_date, today: DateTime.now)
     else
       Unit.joins(:unit_roles).where('unit_roles.user_id = :user_id AND unit_roles.role_id = :convenor_role', user_id: user.id, convenor_role: Role.convenor.id)
@@ -343,7 +359,7 @@ class Unit < ApplicationRecord
 
     unit.name         = 'New Unit'
     unit.description  = 'Enter a description for this unit.'
-    unit.start_date   = Date.today
+    unit.start_date   = Time.zone.today
     unit.end_date     = 13.weeks.from_now
 
     unit
@@ -356,9 +372,7 @@ class Unit < ApplicationRecord
     User.teaching(self)
   end
 
-  def main_convenor_user
-    main_convenor.user
-  end
+  delegate :user, to: :main_convenor, prefix: true
 
   def students
     projects
@@ -557,7 +571,6 @@ class Unit < ApplicationRecord
     csv = CSV.new(File.read(file), headers: true,
                                    header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
                                    converters: [->(i) { i.nil? ? '' : i }, ->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }])
-
     # Read the header row to determine what kind of file it is
     if csv.header_row?
       csv.shift
@@ -788,7 +801,7 @@ class Unit < ApplicationRecord
         end
 
         # Find the campus
-        campus = campus_data.present? ? Campus.find_by_abbr_or_name(campus_data) : nil
+        campus = campus_data.present? ? Campus.find_by('abbreviation = :name OR name = :name', name: campus_data) : nil
         if campus_data.present? && campus.nil?
           errors << { row: row, message: "Unable to find campus (#{campus_data})" }
           next
@@ -815,7 +828,7 @@ class Unit < ApplicationRecord
         #
         if project_participant.persisted?
           # Add in the student id if it was supplied...
-          if (project_participant.student_id.nil? || project_participant.student_id.empty? || project_participant.student_id != student_id) && student_id.present?
+          if (project_participant.student_id.blank? || project_participant.student_id != student_id) && student_id.present?
             project_participant.student_id = student_id
             project_participant.save!
           end
@@ -1155,7 +1168,7 @@ class Unit < ApplicationRecord
           change += ' Created new tutorial.'
 
           campus_data = row['campus'].strip unless row['campus'].nil?
-          campus = Campus.find_by_abbr_or_name(campus_data)
+          campus = Campus.find_by('abbreviation = :name OR name = :name', name: campus_data)
 
           tutorial = add_tutorial(
             'Monday',
@@ -1881,7 +1894,7 @@ class Unit < ApplicationRecord
   def _calculate_task_completion_stats(data)
     values = data.map { |r| r[:num] }
 
-    if values && !values.empty?
+    if values.present?
       values.sort!
 
       median_value = if values.length.even?
@@ -2146,7 +2159,7 @@ class Unit < ApplicationRecord
   end
 
   def readme_text
-    path = Rails.root.join('public', 'resources', 'marking_package_readme.txt')
+    path = Rails.root.join("public/resources/marking_package_readme.txt")
     File.read path
   end
 
@@ -2182,7 +2195,7 @@ class Unit < ApplicationRecord
 
         src_path = task.portfolio_evidence_path
 
-        next if src_path.nil? || src_path.empty?
+        next if src_path.blank?
         next unless File.exist? src_path
 
         # make dst path of "<student id>/<task abbrev>.pdf"
@@ -2205,7 +2218,7 @@ class Unit < ApplicationRecord
 
         src_path = task.portfolio_evidence_path
 
-        next if src_path.nil? || src_path.empty?
+        next if src_path.blank?
         next unless File.exist? src_path
 
         # make dst path of "<student id>/<task abbrev>.pdf"
@@ -2321,7 +2334,7 @@ class Unit < ApplicationRecord
         task.trigger_transition(trigger: task_entry['status'], by_user: user, quality: task_entry['new quality'].to_i) # saves task
         task.grade_task(task_entry['new grade']) # try to grade task if need be
 
-        if task_entry['new comment'].nil? || task_entry['new comment'].empty?
+        if task_entry['new comment'].blank?
           success << { row: task_entry, message: "Updated task #{task.task_definition.abbreviation} for #{owner_text}" }
         else
           task.add_text_comment user, task_entry['new comment']
@@ -2539,6 +2552,13 @@ class Unit < ApplicationRecord
     summary_stats[:staff] = {}
   end
 
+  def archive_submissions(out)
+    out.puts "Unit: #{code} - #{name}"
+    projects.each do |project|
+      project.archive_submissions(out)
+    end
+  end
+
   private
 
   def delete_associated_files
@@ -2558,5 +2578,19 @@ class Unit < ApplicationRecord
     task_definitions.each do |td|
       td.propogate_date_changes date_diff
     end
+  end
+
+  def move_files_on_code_change
+    return unless saved_change_to_code?
+
+    old_dir = FileHelper.dir_for_unit_code_and_id(saved_change_to_code[0], id, false)
+    if File.exist? old_dir
+      new_dir = FileHelper.unit_dir(self, false)
+      FileUtils.mv(old_dir, new_dir) unless File.exist?(new_dir)
+    end
+
+    # rubocop:disable Rails/SkipsModelValidations
+    tasks.update_all("portfolio_evidence = REPLACE(portfolio_evidence, '#{saved_change_to_code[0]}-#{id}', '#{code}-#{id}')")
+    # rubocop:enable Rails/SkipsModelValidations
   end
 end

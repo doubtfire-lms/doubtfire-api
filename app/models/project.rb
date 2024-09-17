@@ -22,13 +22,12 @@ class Project < ApplicationRecord
 
   # has_one :user, through: :student
   has_many :tasks, dependent: :destroy # Destroying a project will also nuke all of its tasks
-
   has_many :group_memberships, dependent: :destroy
+  has_many :tutorial_enrolments, dependent: :destroy
+
   has_many :groups, -> { where('group_memberships.active = :value', value: true) }, through: :group_memberships
   has_many :task_engagements, through: :tasks
   has_many :comments, through: :tasks
-  has_many :tutorial_enrolments, dependent: :destroy
-
   has_many :learning_outcome_task_links, through: :tasks
 
   # Callbacks - methods called are private
@@ -225,9 +224,7 @@ class Project < ApplicationRecord
     (tutorial.present? and tutorial.tutor.present?) ? tutorial.tutor : main_convenor_user
   end
 
-  def main_convenor_user
-    unit.main_convenor_user
-  end
+  delegate :main_convenor_user, to: :unit
 
   def user_role(user)
     if user == student then :student
@@ -292,6 +289,7 @@ class Project < ApplicationRecord
           num_new_comments: r.number_unread,
           similarity_flag: AuthorisationHelpers.authorise?(user, t, :view_plagiarism) ? r.similar_to_count > 0 : false,
           extensions: t.extensions,
+          scorm_extensions: t.scorm_extensions,
           due_date: t.due_date,
           submission_date: t.submission_date,
           completion_date: t.completion_date
@@ -659,7 +657,18 @@ class Project < ApplicationRecord
     return unless student.receive_feedback_notifications
     return if portfolio_exists? && !middle_of_unit
 
-    NotificationsMailer.weekly_student_summary(self, summary_stats, did_revert_to_pass).deliver_now
+    begin
+      NotificationsMailer.weekly_student_summary(self, summary_stats, did_revert_to_pass).deliver_now
+    rescue StandardError => e
+      logger.error "Failed to send weekly status email for project #{id}!\n#{e.message}"
+    end
+  end
+
+  def archive_submissions(out)
+    out.puts " - Archiving submissions for project #{id}"
+    tasks.each(&:archive_submission)
+
+    FileUtils.rm_f(portfolio_path) if portfolio_available
   end
 
   private
@@ -679,7 +688,7 @@ class Project < ApplicationRecord
     group_memberships.each do |gm|
       next unless gm.active
 
-      if !gm.valid? || gm.group.beyond_capacity?
+      if gm.invalid? || gm.group.beyond_capacity?
         gm.update(active: false)
       end
     end

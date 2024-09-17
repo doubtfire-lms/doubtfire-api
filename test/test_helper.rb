@@ -73,7 +73,6 @@ class ActiveSupport::TestCase
 
     # Ensure turn it in states is cleared
     TurnItIn.reset_rate_limit
-    TurnItIn.global_error = nil
 
     TestHelpers::TiiTestHelper.setup_tii_eula
     TestHelpers::TiiTestHelper.setup_tii_features_enabled

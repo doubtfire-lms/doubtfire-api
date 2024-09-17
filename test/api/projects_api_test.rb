@@ -165,7 +165,7 @@ class ProjectsApiTest < ActiveSupport::TestCase
     get "/api/submission/project/#{project.id}/portfolio", data_to_put
     assert_equal 200, last_response.status
     assert last_response.headers['Content-Disposition'].starts_with?('attachment; filename=')
-    assert last_response.headers['Access-Control-Expose-Headers'] == 'Content-Disposition'
+    assert_equal 'Content-Disposition', last_response.headers['Access-Control-Expose-Headers']
     assert last_response.headers['Content-Type'] == 'application/pdf'
     assert 10_485_760, last_response.length
 
@@ -185,7 +185,7 @@ class ProjectsApiTest < ActiveSupport::TestCase
     assert 500, last_response.length
     assert_equal 206, last_response.status
     assert_nil last_response.headers['Content-Disposition']
-    assert_nil last_response.headers['Access-Control-Expose-Headers']
+    assert_equal 'Content-Range,Accept-Ranges', last_response.headers['Access-Control-Expose-Headers']
     assert last_response.headers['Content-Type'] == 'application/pdf'
 
     unit.destroy!

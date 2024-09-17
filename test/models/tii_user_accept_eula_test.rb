@@ -4,6 +4,7 @@ class TiiUserAcceptEulaTest < ActiveSupport::TestCase
   include TestHelpers::TiiTestHelper
 
   def test_can_accept_tii_eula
+    setup_tii_features_enabled
     setup_tii_eula
 
     assert TurnItIn.eula_version.present?
@@ -15,7 +16,7 @@ class TiiUserAcceptEulaTest < ActiveSupport::TestCase
 
     assert user.tii_eula_date.present?
     assert_equal TurnItIn.eula_version, user.tii_eula_version
-    refute user.tii_eula_version_confirmed
+    assert_not user.tii_eula_version_confirmed
 
     assert_equal 1, TiiActionJob.jobs.count
 
@@ -35,6 +36,8 @@ class TiiUserAcceptEulaTest < ActiveSupport::TestCase
   end
 
   def test_eula_accept_will_retry
+    TiiAction.destroy_all
+    setup_tii_features_enabled
     setup_tii_eula
 
     user = FactoryBot.create(:user)
@@ -45,10 +48,10 @@ class TiiUserAcceptEulaTest < ActiveSupport::TestCase
     # Get the action tracking this progress...
     action = TiiActionAcceptEula.last
 
-    refute action.complete
+    assert_not action.complete
     assert action.retry
 
-    refute user.tii_eula_version_confirmed
+    assert_not user.tii_eula_version_confirmed
 
     assert_equal 1, TiiActionJob.jobs.count
     assert_equal user, action.entity
@@ -67,7 +70,7 @@ class TiiUserAcceptEulaTest < ActiveSupport::TestCase
     action.reload
 
     assert_requested accept_stub, times: 1
-    refute action.complete
+    assert_not action.complete
     assert action.retry
 
     # Reset to retry with check progress sweep
@@ -77,11 +80,11 @@ class TiiUserAcceptEulaTest < ActiveSupport::TestCase
     check_job.perform # Second fails
     action.reload
 
-    refute user.reload.tii_eula_version_confirmed
+    assert_not user.reload.tii_eula_version_confirmed
 
     assert_requested accept_stub, times: 2
-    refute action.complete
-    refute action.retry
+    assert_not action.complete
+    assert_not action.retry
 
     # Reset to retry with check progress sweep
     action.update(last_run: DateTime.now - 31.minutes, retry: true)
@@ -91,7 +94,7 @@ class TiiUserAcceptEulaTest < ActiveSupport::TestCase
 
     assert_requested accept_stub, times: 3
     assert action.complete
-    refute action.retry
+    assert_not action.retry
 
     # Reload our copy of user
     user.reload
@@ -101,6 +104,7 @@ class TiiUserAcceptEulaTest < ActiveSupport::TestCase
   end
 
   def test_eula_accept_rate_limit
+    setup_tii_features_enabled
     setup_tii_eula
 
     # Prepare stub for call when eula is accepted and it fails
@@ -131,48 +135,6 @@ class TiiUserAcceptEulaTest < ActiveSupport::TestCase
     # When cleared, the job will run
     TurnItIn.reset_rate_limit
 
-    action.perform
-    assert_requested accept_stub, times: 2
-  end
-
-  def test_eula_respects_global_errors
-    setup_tii_eula
-
-    # Prepare stub for call when eula is accepted and it fails
-    accept_stub = stub_request(:post, "https://#{ENV['TCA_HOST']}/api/v1/eula/v1beta/accept").
-      with(tii_headers).
-      to_return(
-        {status: 403, body: "", headers: {} },
-        {status: 200, body: "", headers: {} }, # should not occur, until end
-      )
-
-    user = FactoryBot.create(:user)
-    # Queue job to accept eula
-    user.accept_tii_eula
-
-    action = TiiActionAcceptEula.last
-
-    # Make sure we have the right action
-    assert_equal user, action.entity
-
-    # Perform manually
-    TiiActionJob.jobs.clear
-    action.perform
-
-    assert_requested accept_stub, times: 1
-    refute TurnItIn.functional?
-
-    refute action.retry
-
-    action.perform
-    # Call does not go to tii as limit applied
-    assert_requested accept_stub, times: 1
-
-    # Clear global error
-    TurnItIn.global_error = nil
-    assert TurnItIn.functional?
-
-    # When cleared, the job will run
     action.perform
     assert_requested accept_stub, times: 2
   end

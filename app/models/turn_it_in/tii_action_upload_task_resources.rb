@@ -25,7 +25,7 @@ class TiiActionUploadTaskResources < TiiAction
   private
 
   def run
-    unless tii_group_id.present?
+    if tii_group_id.blank?
       save_and_log_custom_error "Group id does not exist for task definition #{task_definition.id} - cannot upload group attachments"
       return
     end

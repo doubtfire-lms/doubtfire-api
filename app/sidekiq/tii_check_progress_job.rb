@@ -7,6 +7,10 @@ class TiiCheckProgressJob
   include Sidekiq::Job
 
   def perform
+    return unless TurnItIn.enabled?
+
+    TurnItIn.check_and_retry_submissions_with_updated_eula
+
     run_waiting_actions
     TurnItIn.check_and_update_eula
     TurnItIn.check_and_update_features
@@ -16,7 +20,7 @@ class TiiCheckProgressJob
     # Get the actions waiting to retry, where last run is more than 30 minutes ago, and run them
     TiiAction.where(retry: true, complete: false)
              .where('(last_run IS NULL AND created_at < :date) OR last_run < :date', date: DateTime.now - 30.minutes)
-             .each do |action|
+             .find_each do |action|
       action.perform
 
       # Stop if the service is not available

@@ -11,10 +11,10 @@ module FileHelper
   extend MimeCheckHelpers
 
   def known_extension?(extn)
-    allow_extensions = %w(pdf ps csv xls xlsx pas cpp c cs csv h hpp java py js html coffee scss yaml yml xml json ts r rb rmd rnw rhtml rpres tex vb sql txt md jack hack asm hdl tst out cmp vm sh bat dat ipynb css png bmp tiff tif jpeg jpg gif zip gz tar wav ogg mp3 mp4 webm aac pcm aiff flac wma alac pml)
+    allow_extensions = %w(pdf ps csv xls xlsx pas cpp c cs csv h hpp java py js html coffee scss yaml yml xml json ts r rb rmd rnw rhtml rpres tex vb sql txt md jack hack asm hdl tst out cmp vm sh bat dat ipynb css png bmp tiff tif jpeg jpg gif zip gz tar wav ogg mp3 mp4 webm aac pcm aiff flac wma alac pml vue)
 
     # Allow empty or nil extensions for blobs otherwise check that it matches the allowed list
-    extn.nil? || extn.empty? || allow_extensions.include?(extn)
+    extn.blank? || allow_extensions.include?(extn)
   end
 
   #
@@ -211,14 +211,18 @@ module FileHelper
     dst
   end
 
-  def unit_dir(unit, create = true)
+  def dir_for_unit_code_and_id(unit_code, unit_id, create = true)
     file_server = Doubtfire::Application.config.student_work_dir
     dst = "#{file_server}/" # trust the server config and passed in type for paths
-    dst << sanitized_path("#{unit.code}-#{unit.id}") << '/'
+    dst << sanitized_path("#{unit_code}-#{unit_id}") << '/'
 
-    FileUtils.mkdir_p dst if create && (!Dir.exist? dst)
+    FileUtils.mkdir_p dst if create && !Dir.exist?(dst)
 
     dst
+  end
+
+  def unit_dir(unit, create = true)
+    dir_for_unit_code_and_id(unit.code, unit.id, create)
   end
 
   def unit_portfolio_dir(unit, create = true)
@@ -357,7 +361,13 @@ module FileHelper
   # - only_before = date for files to move (only if retain from is true)
   def move_files(from_path, to_path, retain_from = false, only_before = nil)
     # move into the new dir - and mv files to the in_process_dir
-    pwd = FileUtils.pwd
+    begin
+      pwd = FileUtils.pwd
+    rescue
+      # if no pwd, reset to the root
+      pwd = Rails.root
+    end
+
     begin
       FileUtils.mkdir_p(to_path)
       Dir.chdir(from_path)
@@ -366,7 +376,7 @@ module FileHelper
       begin
         # remove from_path as files are now "in process"
         # these can be retained when the old folder wants to be kept
-        FileUtils.rm_r(from_path) unless retain_from
+        FileUtils.rm_rf(from_path) unless retain_from
       rescue
         logger.warn "failed to rm #{from_path}"
       end
@@ -624,6 +634,7 @@ module FileHelper
   module_function :student_group_work_dir
   module_function :student_work_dir
   module_function :student_work_root
+  module_function :dir_for_unit_code_and_id
   module_function :unit_dir
   module_function :unit_portfolio_dir
   module_function :student_portfolio_dir

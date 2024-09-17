@@ -3,6 +3,8 @@ module FileStreamHelper
   # file_path is the path to the file to be streamed
   # this will set the headers and return the content
   def stream_file(file_path)
+    # Ensure we have a file path string
+    file_path = file_path.to_s
     # Work out what part to return
     file_size = File.size(file_path)
     begin_point = 0
@@ -31,13 +33,15 @@ module FileStreamHelper
       begin_point = 0
       end_point = 10_485_760
     else
+      header['Access-Control-Expose-Headers'] = 'Content-Disposition' if header.key?('Content-Disposition')
       sendfile file_path
 
       return
     end
 
     # Return the requested content
-    content_length = end_point - begin_point + 1
+    content_length = [end_point - begin_point + 1, 0].max # Ensure we don't attempt to read a negative length
+    header['Access-Control-Expose-Headers'] = header.key?('Content-Disposition') ? 'Content-Disposition,Content-Range,Accept-Ranges' : 'Content-Range,Accept-Ranges'
     header['Content-Range'] = "bytes #{begin_point}-#{end_point}/#{file_size}"
     header['Content-Length'] = content_length.to_s
     header['Accept-Ranges'] = 'bytes'

@@ -16,7 +16,9 @@ class InstitutionSettings
   end
 
   def sync_enrolments(unit)
+    # rubocop:disable Rails/Output
     puts 'Unit sync not enabled'
+    # rubocop:enable Rails/Output
   end
 
   def details_for_next_tutorial_stream(unit, activity_type)

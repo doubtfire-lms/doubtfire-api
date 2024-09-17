@@ -17,14 +17,15 @@ module Tii
       }
     }
     post 'tii_hook' do
-      data = JSON.parse(env['api.request.input'])
+      raw_data = env['api.request.input']
+      data = JSON.parse(raw_data)
       digest = OpenSSL::Digest.new('sha256')
 
-      # puts data
-      hmac = OpenSSL::HMAC.hexdigest(digest, ENV.fetch('TCA_SIGNING_KEY', nil), data.to_json)
+      logger.debug("TII_HOOK_DEBUG:#{raw_data}")
+      hmac = OpenSSL::HMAC.hexdigest(digest, ENV.fetch('TCA_SIGNING_KEY', nil), raw_data)
 
-      # puts hmac
-      # puts headers['x-turnitin-signature']
+      logger.debug("TII_HOOK_DEBUG:#{hmac}")
+      logger.debug("TII_HOOK_DEBUG:#{headers['x-turnitin-signature']}")
 
       if hmac != headers["x-turnitin-signature"]
         logger.error("TII: HMAC does not match")

@@ -14,7 +14,7 @@ module Submission::GenerateHelpers
     #
     upload_reqs.each do |detail|
       key = detail['key']
-      next unless files.key? key
+      next unless files.key?(key) && files[key].is_a?(Hash)
 
       files[key][:id]   = files[key]['name']
       files[key][:name] = detail['name']

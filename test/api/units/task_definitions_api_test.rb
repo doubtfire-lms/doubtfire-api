@@ -49,7 +49,12 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
         upload_requirements:      '[ { "key": "file0", "name": "Shape Class", "type": "document" } ]',
         plagiarism_warn_pct:      80,
         is_graded:                false,
-        max_quality_pts:          0
+        max_quality_pts:          0,
+        scorm_enabled:            false,
+        scorm_allow_review:       false,
+        scorm_bypass_test:        false,
+        scorm_time_delay_enabled: false,
+        scorm_attempt_limit:      0
       }
     }
 
@@ -63,9 +68,9 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     td = unit.task_definitions.first
 
     assert_json_matches_model td, last_response_body, all_task_def_keys
+    assert_equal [{ "key" => "file0", "name" => "Shape Class", "type" => "document" }], td.upload_requirements
     assert_equal unit.tutorial_streams.first.id, td.tutorial_stream_id
     assert_equal 4, td.weighting
-
 
     data_to_put = {
       task_def: {
@@ -97,6 +102,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
 
     assert_json_matches_model td, last_response_body, all_task_def_keys
     assert_equal unit.tutorial_streams.last.id, td.tutorial_stream_id
+    assert_equal [{ "key" => "file0", "name" => "Other Class", "type" => "document" }], td.upload_requirements
     assert_equal 2, td.weighting
   end
 
@@ -218,6 +224,25 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_requested delete_stub, times: 1
   end
 
+  def test_post_scorm
+    test_unit = Unit.first
+    test_task_definition = TaskDefinition.first
+
+    data_to_post = {
+      file: upload_file('test_files/numbas.zip', 'application/zip')
+    }
+
+    # Add auth_token and username to header
+    add_auth_header_for(user: Unit.first.main_convenor_user)
+
+    post "/api/units/#{test_unit.id}/task_definitions/#{test_task_definition.id}/scorm_data", data_to_post
+
+    assert_equal 201, last_response.status
+    assert test_task_definition.task_scorm_data
+
+    assert_equal File.size(data_to_post[:file]), File.size(TaskDefinition.first.task_scorm_data)
+  end
+
   def test_submission_creates_folders
     unit = Unit.first
     td = TaskDefinition.new({
@@ -308,7 +333,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status
 
     task = project.task_for_task_definition(td)
-    assert task.convert_submission_to_pdf
+    assert task.convert_submission_to_pdf(log_to_stdout: false)
     path = task.zip_file_path_for_done_task
     assert path
     assert File.exist? path
