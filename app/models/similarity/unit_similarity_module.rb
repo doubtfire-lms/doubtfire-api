@@ -44,7 +44,7 @@ module UnitSimilarityModule
         tasks = tasks_for_definition(td)
         tasks_with_files = tasks.select(&:has_pdf)
 
-        #JPLAG
+        # JPLAG
         run_jplag_on_done_files(td, tasks_dir, tasks_with_files, unit_code)
 
         # Skip if not due yet
@@ -252,8 +252,32 @@ module UnitSimilarityModule
       end
       puts "Starting JPLAG container to run on #{tasks_dir}"
       tasks_dir_split = tasks_dir.to_s.split('/workspace/doubtfire-api')[1]
-      `sudo docker exec jplag java -jar /jplag/jplag-5.1.0-jar-with-dependencies.jar #{tasks_dir_split} -l #{type_data[1]} --similarity-threshold=0.8 -r /jplag/results/#{unit_code}_#{task_definition.id}-result`
+
+      # Check if the directory exists and create it if it doesn't
+      results_dir = "/jplag/results/#{unit_code}"
+      `sudo docker exec jplag sh -c 'if [ ! -d "#{results_dir}" ]; then mkdir -p "#{results_dir}"; fi'`
+
+      # Remove existing result file if it exists
+      result_file = "#{results_dir}/#{task_definition.id}-result.zip"
+      `sudo docker exec jplag sh -c 'if [ -f "#{result_file}" ]; then rm "#{result_file}"; fi'`
+
+      case type_data[1]
+      when 'csharp'
+        file_lang = 'csharp'
+      when 'cc'
+        file_lang = 'cpp'
+      end
+
+      # Run JPLAG
+      puts "THE FILE TYPE IN MOSS: #{type_data[1]}"
+      `sudo docker exec jplag java -jar /jplag/myJplag.jar #{tasks_dir_split} -l #{file_lang} --similarity-threshold=0.8 -nobr -M RUN -r #{results_dir}/#{task_definition.id}-result`
     end
+
+    # Delete the extracted code files from tmp
+    tmp_dir = Rails.root.join("tmp", "jplag")
+    puts "Deleting files in: #{tmp_dir}"
+    puts "Files to delete: #{Dir.glob("#{tmp_dir}/*")}"
+    FileUtils.rm_rf(Dir.glob("#{tmp_dir}/*"))
 
     self
   end
