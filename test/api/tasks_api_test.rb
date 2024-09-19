@@ -406,6 +406,47 @@ class TasksApiTest < ActiveSupport::TestCase
     unit.destroy
   end
 
+  def test_invalid_latex_in_ipynb
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
+    td = TaskDefinition.create!({
+        unit_id: unit.id,
+        tutorial_stream: unit.tutorial_streams.first,
+        name: 'Code task',
+        description: 'Code task',
+        weighting: 4,
+        target_grade: 0,
+        start_date: Time.zone.now - 2.weeks,
+        target_date: Time.zone.now + 1.week,
+        abbreviation: 'CodeTask',
+        restrict_status_updates: false,
+        upload_requirements: [ { "key" => 'file0', "name" => 'Shape Class', "type" => 'code' } ],
+        plagiarism_warn_pct: 0.8,
+        is_graded: true,
+        max_quality_pts: 0
+      })
+
+    project = unit.active_projects.first
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: project.user)
+
+    data_to_post = {
+      trigger: 'ready_for_feedback'
+    }
+
+    data_to_post = with_file('test_files/submissions/invalid_notebook.ipynb', 'application/json', data_to_post)
+
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
+
+    assert_equal 201, last_response.status, last_response_body
+
+    task = project.task_for_task_definition(td)
+    task.convert_submission_to_pdf(log_to_stdout: true)
+    assert File.exist? task.final_pdf_path
+
+    unit.destroy
+  end
+
   def test_download_task_pdf
     unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
     td = TaskDefinition.create!({
