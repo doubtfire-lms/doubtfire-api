@@ -271,7 +271,7 @@ module UnitSimilarityModule
 
       # Run JPLAG
       puts "THE FILE TYPE IN MOSS: #{type_data[1]}"
-      `sudo docker exec jplag java -jar /jplag/myJplag.jar #{tasks_dir_split} -l #{file_lang} --similarity-threshold=0.8 -nobr -M RUN -r #{results_dir}/#{task_definition.id}-result`
+      `sudo docker exec jplag java -jar /jplag/myJplag.jar #{tasks_dir_split} -l #{file_lang} --similarity-threshold=0.8 -M RUN -r #{results_dir}/#{task_definition.id}-result`
     end
 
     # Delete the extracted code files from tmp
