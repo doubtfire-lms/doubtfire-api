@@ -44,8 +44,6 @@ module UnitSimilarityModule
         tasks = tasks_for_definition(td)
         tasks_with_files = tasks.select(&:has_pdf)
 
-        # JPLAG
-        run_jplag_on_done_files(td, tasks_dir, tasks_with_files, unit_code)
 
         # Skip if not due yet
         next if td.due_date > Time.zone.now
@@ -59,6 +57,9 @@ module UnitSimilarityModule
                     )
 
         # There are new tasks, check these
+
+        # JPLAG
+        run_jplag_on_done_files(td, tasks_dir, tasks_with_files, unit_code)
 
         logger.debug 'Contacting MOSS for new checks'
 
