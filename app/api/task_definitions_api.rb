@@ -614,4 +614,33 @@ class TaskDefinitionsApi < Grape::API
 
     stream_file path
   end
+
+  desc 'Download the JPLAG report for a given task'
+  params do
+    requires :unit_id, type: Integer, desc: 'The unit to download JPLAG report for'
+    requires :task_def_id, type: Integer, desc: 'The task definition to get the JPLAG report of'
+  end
+  get '/units/:unit_id/task_definitions/:task_def_id/jplag_report' do
+    unit = Unit.find(params[:unit_id])
+    task_def = unit.task_definitions.find(params[:task_def_id])
+
+    unless authorise? current_user, unit, :download_jplag_report
+      error!({ error: 'Not authorised to download JPLAG reports of unit' }, 403)
+    end
+
+    file_loc = FileHelper.task_jplag_report_path(unit, task_def)
+    logger.debug "JPLAG report file location: #{file_loc}"
+
+    if file_loc.nil? || !File.exist?(file_loc)
+      file_loc = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
+      header['Content-Disposition'] = 'attachment; filename=FileNotFound.pdf'
+    else
+      header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}-jplag-report.zip"
+    end
+    header['Access-Control-Expose-Headers'] = 'Content-Disposition'
+
+    content_type 'application/octet-stream'
+
+    stream_file file_loc
+  end
 end

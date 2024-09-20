@@ -249,6 +249,16 @@ module FileHelper
     File.join(student_portfolio_dir(unit, username, create), FileHelper.sanitized_filename("#{username}-portfolio.pdf"))
   end
 
+  def task_jplag_report_dir(unit)
+    file_server = Doubtfire::Application.config.jplag_report_dir
+    dst = "#{file_server}/#{unit.code}-#{unit.id}/" # trust the server config and passed in type for paths
+    dst
+  end
+
+  def task_jplag_report_path(unit, task)
+    File.join(task_jplag_report_dir(unit), FileHelper.sanitized_filename("#{task.id}-result.zip"))
+  end
+
   def comment_attachment_path(task_comment, attachment_extension)
     "#{File.join(student_work_dir(:comment, task_comment.task), "#{task_comment.id.to_s}#{attachment_extension}")}"
   end
@@ -658,4 +668,6 @@ module FileHelper
   module_function :known_extension?
   module_function :pages_in_pdf
   module_function :line_wrap
+  module_function :task_jplag_report_dir
+  module_function :task_jplag_report_path
 end

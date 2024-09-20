@@ -28,6 +28,7 @@ class Unit < ApplicationRecord
       :download_stats,
       :download_unit_csv,
       :download_grades,
+      :download_jplag_report,
       :exceed_capacity
     ]
 
@@ -46,6 +47,7 @@ class Unit < ApplicationRecord
       :change_project_enrolment,
       :download_stats,
       :download_grades,
+      :download_jplag_report,
       :rollover_unit,
       :exceed_capacity,
       :perform_overseer_assessment_test
@@ -66,6 +68,7 @@ class Unit < ApplicationRecord
       :download_stats,
       :download_unit_csv,
       :download_grades,
+      :download_jplag_report,
       :exceed_capacity
     ]
 
@@ -178,9 +181,7 @@ class Unit < ApplicationRecord
 
   include UnitTiiModule
 
-  ## Change this back to the OG unit_similarity_module once the jplag version is working. i.e., copy the jplag ver into the OG
-  require_relative 'similarity/JPlag/unit_similarity_module_jplag'
-  include UnitSimilarityModuleJPLAG
+  include UnitSimilarityModule
 
   def detailed_name
     "#{name} #{teaching_period.present? ? teaching_period.detailed_name : start_date.strftime('%Y-%m-%d')}"
