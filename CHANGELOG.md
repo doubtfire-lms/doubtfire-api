@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.34](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v8.0.33...v8.0.34) (2024-09-21)
+
+
+### Features
+
+* send latex log on convert failure ([166690f](https://github.com/doubtfire-lms/doubtfire-deploy/commit/166690fffe8160146f734d6a7df42dda4174866b))
+
+
+### Bug Fixes
+
+* correct error reporting with AAF failure ([58b6391](https://github.com/doubtfire-lms/doubtfire-deploy/commit/58b6391c5658b80ef4e803cd955bdde90c79d87c))
+* ensure unicode control characters work in pdf gen ([cd32b06](https://github.com/doubtfire-lms/doubtfire-deploy/commit/cd32b0672a4491bdc9b1d0ebef192abc4726ccf0))
+* migration to fix invalid task upload filenames ([ac80fec](https://github.com/doubtfire-lms/doubtfire-deploy/commit/ac80fec11a6748671821b8d82beae016464eec0b))
+
 ### [8.0.33](https://github.com/macite/doubtfire-deploy/compare/v8.0.32...v8.0.33) (2024-09-13)
 
 
