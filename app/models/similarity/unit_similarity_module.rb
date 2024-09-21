@@ -44,6 +44,8 @@ module UnitSimilarityModule
         tasks = tasks_for_definition(td)
         tasks_with_files = tasks.select(&:has_pdf)
 
+        # JPLAG
+        run_jplag_on_done_files(td, tasks_dir, tasks_with_files, unit_code)
 
         # Skip if not due yet
         next if td.due_date > Time.zone.now
@@ -58,8 +60,6 @@ module UnitSimilarityModule
 
         # There are new tasks, check these
 
-        # JPLAG
-        run_jplag_on_done_files(td, tasks_dir, tasks_with_files, unit_code)
 
         logger.debug 'Contacting MOSS for new checks'
 
@@ -240,6 +240,16 @@ module UnitSimilarityModule
   def run_jplag_on_done_files(task_definition, tasks_dir, tasks_with_files, unit_code)
     type_data = task_definition.moss_language.split
     return if type_data.nil? || (type_data.length != 2) || (type_data[0] != 'moss')
+    similarity_pct = task_definition.plagiarism_warn_pct
+    return if similarity_pct.nil?
+
+    # Check if the directory exists and create it if it doesn't
+    results_dir = "/jplag/results/#{unit_code}"
+    `sudo docker exec jplag sh -c 'if [ ! -d "#{results_dir}" ]; then mkdir -p "#{results_dir}"; fi'`
+
+    # Remove existing result file if it exists
+    result_file = "#{results_dir}/#{task_definition.id}-result.zip"
+    `sudo docker exec jplag sh -c 'if [ -f "#{result_file}" ]; then rm "#{result_file}"; fi'`
 
     # get each code file for each task
     task_definition.upload_requirements.each_with_index do |upreq, idx|
@@ -251,33 +261,32 @@ module UnitSimilarityModule
       tasks_with_files.each do |t|
         t.extract_file_from_done(tasks_dir, pattern, ->(_task, to_path, name) { File.join(to_path.to_s, t.student.username.to_s, name.to_s) })
       end
-      puts "Starting JPLAG container to run on #{tasks_dir}"
-      tasks_dir_split = tasks_dir.to_s.split('/workspace/doubtfire-api')[1]
 
-      # Check if the directory exists and create it if it doesn't
-      results_dir = "/jplag/results/#{unit_code}"
-      `sudo docker exec jplag sh -c 'if [ ! -d "#{results_dir}" ]; then mkdir -p "#{results_dir}"; fi'`
+      logger.info "Starting JPLAG container to run on #{tasks_dir}"
+      root_dir = Rails.root.to_s
+      tasks_dir_split = tasks_dir.to_s.split(root_dir)[1]
 
-      # Remove existing result file if it exists
-      result_file = "#{results_dir}/#{task_definition.id}-result.zip"
-      `sudo docker exec jplag sh -c 'if [ -f "#{result_file}" ]; then rm "#{result_file}"; fi'`
+      # Set the file language based on the type
+      # Currently only supporting C/C++/C#/Python
+      # MOSS and JPLAG use different names for some languages, need to be converted
+      # If new MOSS languages options are added to task-defintion-upload, this will need to be updated
+      file_lang = case type_data[1]
+                  when 'cc'
+                    'cpp'
+                  when 'python'
+                    'python3'
+                  else
+                    type_data[1]
+                  end
 
-      case type_data[1]
-      when 'csharp'
-        file_lang = 'csharp'
-      when 'cc'
-        file_lang = 'cpp'
-      end
-
-      # Run JPLAG
-      puts "THE FILE TYPE IN MOSS: #{type_data[1]}"
-      `sudo docker exec jplag java -jar /jplag/myJplag.jar #{tasks_dir_split} -l #{file_lang} --similarity-threshold=0.8 -M RUN -r #{results_dir}/#{task_definition.id}-result`
+      # Run JPLAG on the extracted files
+      `sudo docker exec jplag java -jar /jplag/myJplag.jar #{tasks_dir_split} -l #{file_lang} --similarity-threshold=#{similarity_pct} -M RUN -r #{results_dir}/#{task_definition.id}-result`
     end
 
     # Delete the extracted code files from tmp
     tmp_dir = Rails.root.join("tmp", "jplag")
-    puts "Deleting files in: #{tmp_dir}"
-    puts "Files to delete: #{Dir.glob("#{tmp_dir}/*")}"
+    logger.info "Deleting files in: #{tmp_dir}"
+    logger.info "Files to delete: #{Dir.glob("#{tmp_dir}/*")}"
     FileUtils.rm_rf(Dir.glob("#{tmp_dir}/*"))
 
     self
