@@ -27,6 +27,8 @@ env:
   DF_ENCRYPTION_DETERMINISTIC_KEY: "anlmuJ6cB3bN3biXRbYvmPsC5ALPFqGG"
   DF_ENCRYPTION_KEY_DERIVATION_SALT: "hzPR8D4qpOnAg7VeAhkhWw6JmmzKJB10"
   DF_REDIS_SIDEKIQ_URL: "redis://redis:6379/0"
+  LATEX_CONTAINER_NAME: doubtfire-texlive
+  LATEX_BUILD_PATH: /texlive/shell/latex_build.sh
 
 jobs:
   unit-tests:
@@ -49,6 +51,16 @@ jobs:
         uses: actions/checkout@v4
       - name: Set up docker buildx
         uses: docker/setup-buildx-action@v3
+      - name: Build TexLive image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: texlive.Dockerfile
+          push: false
+          load: true
+          tags: doubtfire-texlive-development:local
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
       - name: Build base doubtfire-api development image
         uses: docker/build-push-action@v5
         with:
@@ -58,12 +70,34 @@ jobs:
           tags: doubtfire-api-development:local
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: Start TexLive service
+        uses: addnab/docker-run-action@v3
+        with:
+          image: doubtfire-texlive-development:local
+          options: >
+            --name ${{ env.LATEX_CONTAINER_NAME }}
+            -v ${{ github.workspace }}/student-work:/student-work
+            -v ${{ github.workspace }}/public/assets/images:/doubtfire/public/assets/images
+            -v ${{ github.workspace }}/test_files:/doubtfire/test_files
+            -v ${{ github.workspace }}/tmp/rails-latex:/workdir/texlive-latex
+            --detach
+          run: /bin/sh -c "while sleep 5000; do :; done"
+      - name: Test TexLive container
+        uses: addnab/docker-run-action@v3
+        with:
+          image: doubtfire-api-development:local
+          options: >
+            -v ${{ github.workspace }}:/doubtfire
+            -v /var/run/docker.sock:/var/run/docker.sock
+          run: docker exec -t ${{ env.LATEX_CONTAINER_NAME }} lualatex -v
       - name: Populate database
         uses: addnab/docker-run-action@v3
         with:
           image: doubtfire-api-development:local
           options: >
             -v ${{ github.workspace }}:/doubtfire
+            -v ${{ github.workspace }}/student-work:/student-work
+            -v /var/run/docker.sock:/var/run/docker.sock
             -e RAILS_ENV
             -e DF_STUDENT_WORK_DIR
             -e DF_INSTITUTION_HOST
@@ -81,6 +115,8 @@ jobs:
             -e DF_ENCRYPTION_DETERMINISTIC_KEY
             -e DF_ENCRYPTION_KEY_DERIVATION_SALT
             -e DF_REDIS_SIDEKIQ_URL
+            -e LATEX_CONTAINER_NAME
+            -e LATEX_BUILD_PATH
           run: bundle exec rake db:populate
       - name: Run unit tests
         uses: addnab/docker-run-action@v3
@@ -88,6 +124,8 @@ jobs:
           image: doubtfire-api-development:local
           options: >
             -v ${{ github.workspace }}:/doubtfire
+            -v ${{ github.workspace }}/student-work:/student-work
+            -v /var/run/docker.sock:/var/run/docker.sock
             -e RAILS_ENV
             -e DF_STUDENT_WORK_DIR
             -e DF_INSTITUTION_HOST
@@ -105,4 +143,6 @@ jobs:
             -e DF_ENCRYPTION_DETERMINISTIC_KEY
             -e DF_ENCRYPTION_KEY_DERIVATION_SALT
             -e DF_REDIS_SIDEKIQ_URL
+            -e LATEX_CONTAINER_NAME
+            -e LATEX_BUILD_PATH
           run: TERM=xterm bundle exec rails test

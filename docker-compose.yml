@@ -79,7 +79,7 @@ services:
 
   texlive:
     container_name: doubtfire-texlive
-    build: 
+    build:
       context: .
       dockerfile: texlive.Dockerfile
     volumes:
