@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# This script is copied into the TeX Live container and remotely executed by run_latex.sh
+# This script is copied into the TeX Live container and remotely executed by latex_run.sh
 
 OUTPUT_DIR=$1
 
@@ -17,6 +17,7 @@ echo "Running lualatex a second time to remove temporary last page..."
 lualatex -shell-escape -interaction=batchmode -halt-on-error input.tex
 
 # Copy PDF to parent directory and cleanup
-cp *.pdf *.log ../
+cp *.log ../
+cp *.pdf ../
 cd ..
 rm -rf work
