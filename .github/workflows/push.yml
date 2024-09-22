@@ -59,8 +59,8 @@ jobs:
           push: false
           load: true
           tags: doubtfire-texlive-development:local
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=texlive
+          cache-to: type=gha,mode=max,scope=texlive
       - name: Build base doubtfire-api development image
         uses: docker/build-push-action@v5
         with:
@@ -68,8 +68,8 @@ jobs:
           push: false
           load: true
           tags: doubtfire-api-development:local
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=doubtfire-api
+          cache-to: type=gha,mode=max,scope=doubtfire-api
       - name: Start TexLive service
         uses: addnab/docker-run-action@v3
         with:
