@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.35](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v8.0.34...v8.0.35) (2024-09-23)
+
+
+### Bug Fixes
+
+* ensure default lsr task def can be updated ([491691f](https://github.com/doubtfire-lms/doubtfire-deploy/commit/491691f2b7b5d51c838d22299099f3725d2ee47e))
+
 ### [8.0.34](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v8.0.33...v8.0.34) (2024-09-21)
 
 
