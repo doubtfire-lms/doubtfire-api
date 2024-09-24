@@ -5,7 +5,7 @@
     Rails.root.join('lib', 'shell', 'latex_run.sh')
   ],
   :recipe => [
-    { :command => "./latex_run.sh", :runs => 1 }
+    { :command => './latex_run.sh', :runs => 1 }
   ],
   :preservework => false,
   :workdir => -> { "#{Process.pid}-#{Thread.current.object_id}-#{Time.now.to_i}" }

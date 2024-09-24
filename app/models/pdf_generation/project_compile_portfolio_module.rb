@@ -68,10 +68,9 @@ module PdfGeneration
       end
 
       def make_pdf
-        logger.debug "Running make_pdf: (portfolio)"
-        generate_pdf(template: "/portfolio/portfolio_pdf")
+        logger.debug 'Running make_pdf: (portfolio)'
+        generate_pdf(template: '/portfolio/portfolio_pdf')
       end
-
     end
 
     # Create the portfolio for this project

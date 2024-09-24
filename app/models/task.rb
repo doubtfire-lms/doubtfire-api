@@ -1088,8 +1088,8 @@ class Task < ApplicationRecord
           FileHelper.qpdf(f[:path])
         end
       end
-      logger.debug "Preprocessing complete, rendering file."
-      generate_pdf(template: "/task/task_pdf")
+      logger.debug 'Preprocessing complete, rendering file.'
+      generate_pdf(template: '/task/task_pdf')
     end
   end
 
