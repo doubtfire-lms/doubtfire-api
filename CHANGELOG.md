@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.36](https://github.com/macite/doubtfire-deploy/compare/v8.0.35...v8.0.36) (2024-09-24)
+
+
+### Bug Fixes
+
+* markdown in ipynb ([4fd4ed3](https://github.com/macite/doubtfire-deploy/commit/4fd4ed3c633e7aa4ee801e5d274c82aa840f31ac))
+
 ### [8.0.35](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v8.0.34...v8.0.35) (2024-09-23)
 
 
