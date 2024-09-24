@@ -27,11 +27,9 @@ RUN apt-get update \
     cron \
     msmtp-mta bsd-mailx \
     redis \
-    librsvg2-bin \
     docker-ce \
     docker-ce-cli \
     containerd.io \
-    librsvg2-bin \
   && apt-get clean
 
 # Setup the folder where we will deploy the code

@@ -24,7 +24,6 @@ RUN apt-get update \
     wget \
     redis \
     libc6-dev \
-    librsvg2-bin \
     docker-ce \
     docker-ce-cli \
     containerd.io \
