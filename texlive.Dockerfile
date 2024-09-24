@@ -11,4 +11,4 @@ RUN apt-get update \
 COPY ./lib/shell/latex_build.sh /texlive/shell/latex_build.sh
 RUN chmod +x /texlive/shell/latex_build.sh
 
-CMD ["sh", "-c", "while sleep 5000; do :; done"]
+CMD ["sh", "-c", "sleep infinity"]

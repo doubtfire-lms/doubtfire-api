@@ -81,7 +81,7 @@ jobs:
             -v ${{ github.workspace }}/test_files:/doubtfire/test_files
             -v ${{ github.workspace }}/tmp/rails-latex:/workdir/texlive-latex
             --detach
-          run: /bin/sh -c "while sleep 5000; do :; done"
+          run: sleep infinity
       - name: Test TexLive container
         uses: addnab/docker-run-action@v3
         with:
