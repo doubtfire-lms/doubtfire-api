@@ -89,4 +89,4 @@ services:
       - ./tmp/rails-latex:/workdir/texlive-latex
     depends_on:
       - df-api
-    command: /bin/sh -c "while sleep 5000; do :; done"
+    command: sleep infinity
