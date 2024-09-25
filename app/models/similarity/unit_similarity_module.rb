@@ -34,10 +34,7 @@ module UnitSimilarityModule
         tasks_dir = root_work_dir.join(td.id.to_s)
         FileUtils.mkdir_p(tasks_dir)
 
-        next if td.moss_language.nil? || td.upload_requirements.nil? || td.upload_requirements.select { |upreq| upreq['type'] == 'code' && upreq['tii_check'] }.empty?
-
-        type_data = td.moss_language.split
-        next if type_data.nil? || (type_data.length != 2) || (type_data[0] != 'moss')
+        next if td.jplag_language.nil? || td.upload_requirements.nil? || td.upload_requirements.select { |upreq| upreq['type'] == 'code' && upreq['tii_check'] }.empty?
 
         # Is there anything to check?
         logger.debug "Checking plagiarism for #{td.name} (id=#{td.id})"
@@ -60,47 +57,46 @@ module UnitSimilarityModule
 
         # There are new tasks, check these
 
-
         logger.debug 'Contacting MOSS for new checks'
 
         # Create the MossRuby object
-        moss_key = Doubtfire::Application.secrets.secret_key_moss
-        raise "No moss key set. Check ENV['DF_SECRET_KEY_MOSS'] first." if moss_key.nil?
-
-        moss = MossRuby.new(moss_key)
-
-        # Set options  -- the options will already have these default values
-        moss.options[:max_matches] = 7
-        moss.options[:directory_submission] = true
-        moss.options[:show_num_matches] = 500
-        moss.options[:experimental_server] = false
-        moss.options[:comment] = ''
-        moss.options[:language] = type_data[1]
-
-        tmp_path = File.join(Dir.tmpdir, 'doubtfire', "check-#{id}-#{td.id}")
-
-        begin
-          # Create a file hash, with the files to be processed
-          to_check = MossRuby.empty_file_hash
-          add_done_files_for_plagiarism_check_of(td, tmp_path, to_check, tasks_with_files)
-
-          FileUtils.chdir(tmp_path)
-
-          # Get server to process files
-          logger.debug 'Sending to MOSS...'
-          url = moss.check(to_check, ->(_) { print '.' })
-
-          logger.info "MOSS check for #{code} #{td.abbreviation} url: #{url}"
-
-          td.plagiarism_report_url = url
-          td.plagiarism_updated = true
-          td.save
-        rescue StandardError => e
-          logger.error "Failed to check plagiarism for task #{td.name} (id=#{td.id}). Error: #{e.message}"
-        ensure
-          FileUtils.chdir(pwd)
-          FileUtils.rm_rf tmp_path
-        end
+        # moss_key = Doubtfire::Application.secrets.secret_key_moss
+        # raise "No moss key set. Check ENV['DF_SECRET_KEY_MOSS'] first." if moss_key.nil?
+#
+        # moss = MossRuby.new(moss_key)
+#
+        # # Set options  -- the options will already have these default values
+        # moss.options[:max_matches] = 7
+        # moss.options[:directory_submission] = true
+        # moss.options[:show_num_matches] = 500
+        # moss.options[:experimental_server] = false
+        # moss.options[:comment] = ''
+        # moss.options[:language] = type_data[1]
+#
+        # tmp_path = File.join(Dir.tmpdir, 'doubtfire', "check-#{id}-#{td.id}")
+#
+        # begin
+        #   # Create a file hash, with the files to be processed
+        #   to_check = MossRuby.empty_file_hash
+        #   add_done_files_for_plagiarism_check_of(td, tmp_path, to_check, tasks_with_files)
+#
+        #   FileUtils.chdir(tmp_path)
+#
+        #   # Get server to process files
+        #   logger.debug 'Sending to MOSS...'
+        #   url = moss.check(to_check, ->(_) { print '.' })
+#
+        #   logger.info "MOSS check for #{code} #{td.abbreviation} url: #{url}"
+#
+        #   td.plagiarism_report_url = url
+        #   td.plagiarism_updated = true
+        #   td.save
+        # rescue StandardError => e
+        #   logger.error "Failed to check plagiarism for task #{td.name} (id=#{td.id}). Error: #{e.message}"
+        # ensure
+        #   FileUtils.chdir(pwd)
+        #   FileUtils.rm_rf tmp_path
+        # end
       end
       self.last_plagarism_scan = Time.zone.now
       save!
@@ -214,9 +210,6 @@ module UnitSimilarityModule
   # Returns an array of files
   #
   def add_done_files_for_plagiarism_check_of(task_definition, tmp_path, to_check, tasks_with_files)
-    type_data = task_definition.moss_language.split
-    return if type_data.nil? || (type_data.length != 2) || (type_data[0] != 'moss')
-
     # get each code file for each task
     task_definition.upload_requirements.each_with_index do |upreq, idx|
       # only check code files marked for similarity checks
@@ -238,18 +231,16 @@ module UnitSimilarityModule
 
   # JPLAG Function - extracts "done" files for each task and packages them into a directory for JPLAG to run on
   def run_jplag_on_done_files(task_definition, tasks_dir, tasks_with_files, unit_code)
-    type_data = task_definition.moss_language.split
-    return if type_data.nil? || (type_data.length != 2) || (type_data[0] != 'moss')
     similarity_pct = task_definition.plagiarism_warn_pct
     return if similarity_pct.nil?
 
     # Check if the directory exists and create it if it doesn't
     results_dir = "/jplag/results/#{unit_code}"
-    `sudo docker exec jplag sh -c 'if [ ! -d "#{results_dir}" ]; then mkdir -p "#{results_dir}"; fi'`
+    `docker exec jplag sh -c 'if [ ! -d "#{results_dir}" ]; then mkdir -p "#{results_dir}"; fi'`
 
     # Remove existing result file if it exists
     result_file = "#{results_dir}/#{task_definition.id}-result.zip"
-    `sudo docker exec jplag sh -c 'if [ -f "#{result_file}" ]; then rm "#{result_file}"; fi'`
+    `docker exec jplag sh -c 'if [ -f "#{result_file}" ]; then rm "#{result_file}"; fi'`
 
     # get each code file for each task
     task_definition.upload_requirements.each_with_index do |upreq, idx|
@@ -265,22 +256,10 @@ module UnitSimilarityModule
       logger.info "Starting JPLAG container to run on #{tasks_dir}"
       root_dir = Rails.root.to_s
       tasks_dir_split = tasks_dir.to_s.split(root_dir)[1]
-
-      # Set the file language based on the type
-      # Currently only supporting C/C++/C#/Python
-      # MOSS and JPLAG use different names for some languages, need to be converted
-      # If new MOSS languages options are added to task-defintion-upload, this will need to be updated
-      file_lang = case type_data[1]
-                  when 'cc'
-                    'cpp'
-                  when 'python'
-                    'python3'
-                  else
-                    type_data[1]
-                  end
+      file_lang = task_definition.jplag_language.to_s
 
       # Run JPLAG on the extracted files
-      `sudo docker exec jplag java -jar /jplag/myJplag.jar #{tasks_dir_split} -l #{file_lang} --similarity-threshold=#{similarity_pct} -M RUN -r #{results_dir}/#{task_definition.id}-result`
+      `docker exec jplag java -jar /jplag/myJplag.jar #{tasks_dir_split} -l #{file_lang} --similarity-threshold=#{similarity_pct} -M RUN -r #{results_dir}/#{task_definition.id}-result`
     end
 
     # Delete the extracted code files from tmp
@@ -288,7 +267,6 @@ module UnitSimilarityModule
     logger.info "Deleting files in: #{tmp_dir}"
     logger.info "Files to delete: #{Dir.glob("#{tmp_dir}/*")}"
     FileUtils.rm_rf(Dir.glob("#{tmp_dir}/*"))
-
     self
   end
 end

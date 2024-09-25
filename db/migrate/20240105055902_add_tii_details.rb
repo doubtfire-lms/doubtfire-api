@@ -7,7 +7,7 @@ class AddTiiDetails < ActiveRecord::Migration[7.1]
     add_column :units, :tii_group_context_id, :string
 
     add_column :task_definitions, :tii_group_id, :string
-    add_column :task_definitions, :moss_language, :string
+    add_column :task_definitions, :jplag_language, :string
 
     rename_table :plagiarism_match_links, :task_similarities
 
@@ -88,7 +88,7 @@ class AddTiiDetails < ActiveRecord::Migration[7.1]
 
         next unless plagiarism_checks.any?
 
-        task_definition.update(moss_language: plagiarism_checks.first['type'])
+        task_definition.update(jplag_language: plagiarism_checks.first['type'])
         task_definition.upload_requirements.each do |upload_requirement|
           next unless upload_requirement['type'] == 'code'
           upload_requirement['tii_check'] = true

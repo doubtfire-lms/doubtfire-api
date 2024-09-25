@@ -43,6 +43,6 @@ module Entities
     expose :max_quality_pts
     expose :overseer_image_id, if: ->(unit, options) { staff?(options[:my_role]) }
     expose :assessment_enabled, if: ->(unit, options) { staff?(options[:my_role]) }
-    expose :moss_language, if: ->(unit, options) { staff?(options[:my_role]) }
+    expose :jplag_language, if: ->(unit, options) { staff?(options[:my_role]) }
   end
 end

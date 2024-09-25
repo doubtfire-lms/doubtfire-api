@@ -249,7 +249,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_28_223908) do
     t.boolean "assessment_enabled", default: false
     t.bigint "overseer_image_id"
     t.string "tii_group_id"
-    t.string "moss_language"
+    t.string "jplag_language"
     t.index ["group_set_id"], name: "index_task_definitions_on_group_set_id"
     t.index ["overseer_image_id"], name: "index_task_definitions_on_overseer_image_id"
     t.index ["tutorial_stream_id"], name: "index_task_definitions_on_tutorial_stream_id"
