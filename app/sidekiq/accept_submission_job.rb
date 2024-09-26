@@ -29,7 +29,7 @@ class AcceptSubmissionJob
 
       begin
         # Notify system admin
-        mail = ErrorLogMailer.error_message('Accept Submission', "Failed to convert submission to PDF for task #{task.id} by user #{user.id}", e)
+        mail = ErrorLogMailer.error_message('Accept Submission', "Failed to convert submission to PDF for task #{task.log_details}", e)
         mail.deliver if mail.present?
 
         logger.error e
