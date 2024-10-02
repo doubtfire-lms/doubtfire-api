@@ -43,6 +43,8 @@ module UnitSimilarityModule
 
         # JPLAG
         run_jplag_on_done_files(td, tasks_dir, tasks_with_files, unit_code)
+        report_path = "#{Doubtfire::Application.config.jplag_report_dir}/#{unit_code}/#{td.id}-result.zip"
+        create_jplag_plagiarism_link(report_path, td.plagiarism_warn_pct)
 
         # Skip if not due yet
         next if td.due_date > Time.zone.now
@@ -62,9 +64,9 @@ module UnitSimilarityModule
         # Create the MossRuby object
         # moss_key = Doubtfire::Application.secrets.secret_key_moss
         # raise "No moss key set. Check ENV['DF_SECRET_KEY_MOSS'] first." if moss_key.nil?
-#
+        #
         # moss = MossRuby.new(moss_key)
-#
+        #
         # # Set options  -- the options will already have these default values
         # moss.options[:max_matches] = 7
         # moss.options[:directory_submission] = true
@@ -72,22 +74,22 @@ module UnitSimilarityModule
         # moss.options[:experimental_server] = false
         # moss.options[:comment] = ''
         # moss.options[:language] = type_data[1]
-#
+        #
         # tmp_path = File.join(Dir.tmpdir, 'doubtfire', "check-#{id}-#{td.id}")
-#
+        #
         # begin
         #   # Create a file hash, with the files to be processed
         #   to_check = MossRuby.empty_file_hash
         #   add_done_files_for_plagiarism_check_of(td, tmp_path, to_check, tasks_with_files)
-#
+        #
         #   FileUtils.chdir(tmp_path)
-#
+        #
         #   # Get server to process files
         #   logger.debug 'Sending to MOSS...'
         #   url = moss.check(to_check, ->(_) { print '.' })
-#
+        #
         #   logger.info "MOSS check for #{code} #{td.abbreviation} url: #{url}"
-#
+        #
         #   td.plagiarism_report_url = url
         #   td.plagiarism_updated = true
         #   td.save
@@ -162,48 +164,48 @@ module UnitSimilarityModule
 
   private
 
-  def create_plagiarism_link(task1, task2, match, warn_pct)
-    plk1 = MossTaskSimilarity.where(task_id: task1.id, other_task_id: task2.id).first
-    plk2 = MossTaskSimilarity.where(task_id: task2.id, other_task_id: task1.id).first
-
-    if plk1.nil? || plk2.nil?
-      # Delete old links between tasks
-      plk1&.destroy ## will delete its pair
-      plk2&.destroy
-
-      plk1 = MossTaskSimilarity.create do |plm|
-        plm.task = task1
-        plm.other_task = task2
-        plm.pct = match[0][:pct]
-        plm.flagged = plm.pct >= warn_pct
-      end
-
-      plk2 = MossTaskSimilarity.create do |plm|
-        plm.task = task2
-        plm.other_task = task1
-        plm.pct = match[1][:pct]
-        plm.flagged = plm.pct >= warn_pct
-      end
-    else
-      # puts "#{plk1.pct} != #{match[0][:pct]}, #{plk1.pct != match[0][:pct]}"
-
-      # Flag is larger than warn pct and larger than previous pct
-      plk1.flagged = match[0][:pct] >= warn_pct && match[0][:pct] >= plk1.pct
-      plk2.flagged = match[1][:pct] >= warn_pct && match[1][:pct] >= plk2.pct
-
-      plk1.pct = match[0][:pct]
-      plk2.pct = match[1][:pct]
-    end
-
-    plk1.plagiarism_report_url = match[0][:url]
-    plk2.plagiarism_report_url = match[1][:url]
-
-    plk1.save!
-    plk2.save!
-
-    FileHelper.save_plagiarism_html(plk1, match[0][:html])
-    FileHelper.save_plagiarism_html(plk2, match[1][:html])
-  end
+  # def create_plagiarism_link(task1, task2, match, warn_pct)
+  #   plk1 = MossTaskSimilarity.where(task_id: task1.id, other_task_id: task2.id).first
+  #   plk2 = MossTaskSimilarity.where(task_id: task2.id, other_task_id: task1.id).first
+  #
+  #   if plk1.nil? || plk2.nil?
+  #     # Delete old links between tasks
+  #     plk1&.destroy ## will delete its pair
+  #     plk2&.destroy
+  #
+  #     plk1 = MossTaskSimilarity.create do |plm|
+  #       plm.task = task1
+  #       plm.other_task = task2
+  #       plm.pct = match[0][:pct]
+  #       plm.flagged = plm.pct >= warn_pct
+  #     end
+  #
+  #     plk2 = MossTaskSimilarity.create do |plm|
+  #       plm.task = task2
+  #       plm.other_task = task1
+  #       plm.pct = match[1][:pct]
+  #       plm.flagged = plm.pct >= warn_pct
+  #     end
+  #   else
+  #     # puts "#{plk1.pct} != #{match[0][:pct]}, #{plk1.pct != match[0][:pct]}"
+  #
+  #     # Flag is larger than warn pct and larger than previous pct
+  #     plk1.flagged = match[0][:pct] >= warn_pct && match[0][:pct] >= plk1.pct
+  #     plk2.flagged = match[1][:pct] >= warn_pct && match[1][:pct] >= plk2.pct
+  #
+  #     plk1.pct = match[0][:pct]
+  #     plk2.pct = match[1][:pct]
+  #   end
+  #
+  #   plk1.plagiarism_report_url = match[0][:url]
+  #   plk2.plagiarism_report_url = match[1][:url]
+  #
+  #   plk1.save!
+  #   plk2.save!
+  #
+  #   FileHelper.save_plagiarism_html(plk1, match[0][:html])
+  #   FileHelper.save_plagiarism_html(plk2, match[1][:html])
+  # end
 
   #
   # Extract all done files related to a task definition matching a pattern into a given directory.
@@ -268,5 +270,79 @@ module UnitSimilarityModule
     logger.info "Files to delete: #{Dir.glob("#{tmp_dir}/*")}"
     FileUtils.rm_rf(Dir.glob("#{tmp_dir}/*"))
     self
+  end
+
+  def create_jplag_plagiarism_link(path, warn_pct)
+    # Extract overview json from report zip
+    Zip::File.open(path) do |zip_file|
+      overview_entry = zip_file.find_entry('overview.json')
+
+      if overview_entry
+        # Read the contents of overview.json
+        overview_content = overview_entry.get_input_stream.read
+
+        # Parse the JSON into a Ruby hash
+        overview_data = JSON.parse(overview_content)
+
+        # Iterate over the "top_comparisons" array and collect the required fields
+        top_comparisons = overview_data['top_comparisons'].map do |comparison|
+          {
+            first_submission: comparison['first_submission'],
+            second_submission: comparison['second_submission'],
+            max_similarity: comparison['similarities']['MAX']
+          }
+        end
+        task_path = overview_data['submission_folder_path']
+
+        # Save the results to the database
+        top_comparisons.each do |comparison|
+
+          # TODO: Figure out why the task id is even being used.
+          task_id = task_path.split('/')[-1]
+          puts "Task ID: #{task_id}"
+          first_submission = Task.find(task_id)
+          second_submission = Task.find(task_id)
+
+          if first_submission.nil? || second_submission.nil?
+            logger.error "Could not find tasks #{comparison[:first_submission]} or #{comparison[:second_submission]} for plagiarism stats check!"
+            next
+          end
+
+          # Create a new plagiarism link between the two tasks
+          plk1 = MossTaskSimilarity.where(task_id: first_submission.id, other_task_id: second_submission.id).first
+          plk2 = MossTaskSimilarity.where(task_id: second_submission.id, other_task_id: first_submission.id).first
+          if plk1.nil? || plk2.nil?
+            # Delete old links between tasks
+            plk1&.destroy ## will delete its pair
+            plk2&.destroy
+            plk1 = JplagTaskSimilarity.create do |plm|
+              plm.task = first_submission
+              plm.other_task = second_submission
+              plm.pct = comparison[:max_similarity]
+              plm.flagged = plm.pct >= warn_pct
+            end
+            plk2 = JplagTaskSimilarity.create do |plm|
+              plm.task = second_submission
+              plm.other_task = first_submission
+              plm.pct = comparison[:max_similarity]
+              plm.flagged = plm.pct >= warn_pct
+            end
+          else
+            # puts "#{plk1.pct} != #{match[0][:pct]}, #{plk1.pct != match[0][:pct]}"
+            # Flag is larger than warn pct and larger than previous pct
+            first_submission.flagged = comparison[:max_similarity] >= warn_pct && comparison[:max_similarity] >= first_submission.pct
+            second_submission.flagged = comparison[:max_similarity] >= warn_pct && comparison[:max_similarity] >= second_submission.pct
+            first_submission.pct = comparison[:max_similarity]
+            second_submission.pct = comparison[:max_similarity]
+          end
+          plk1.save!
+          plk2.save!
+        end
+      else
+        puts 'overview.json not found in the zip file'
+      end
+
+      self
+    end
   end
 end
