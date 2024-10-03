@@ -44,7 +44,9 @@ module UnitSimilarityModule
         # JPLAG
         run_jplag_on_done_files(td, tasks_dir, tasks_with_files, unit_code)
         report_path = "#{Doubtfire::Application.config.jplag_report_dir}/#{unit_code}/#{td.id}-result.zip"
-        create_jplag_plagiarism_link(report_path, td.plagiarism_warn_pct)
+        warn_pct = td.plagiarism_warn_pct || 50
+        puts "Warn PCT: #{warn_pct}"
+        create_jplag_plagiarism_link(report_path, warn_pct)
 
         # Skip if not due yet
         next if td.due_date > Time.zone.now
@@ -289,19 +291,23 @@ module UnitSimilarityModule
           {
             first_submission: comparison['first_submission'],
             second_submission: comparison['second_submission'],
-            max_similarity: comparison['similarities']['MAX']
+            max_similarity: comparison['similarities']['MAX'] * 100
           }
         end
-        task_path = overview_data['submission_folder_path']
 
         # Save the results to the database
         top_comparisons.each do |comparison|
-
-          # TODO: Figure out why the task id is even being used.
-          task_id = task_path.split('/')[-1]
-          puts "Task ID: #{task_id}"
-          first_submission = Task.find(task_id)
-          second_submission = Task.find(task_id)
+          task1_id = nil
+          task2_id = nil
+          zip_file.each do |entry|
+            if entry.name =~ %r{\Afiles/#{comparison[:first_submission]}/}
+              task1_id = entry.name.split('/')[2].to_i
+            elsif entry.name =~ %r{\Afiles/#{comparison[:second_submission]}/}
+              task2_id = entry.name.split('/')[2].to_i
+            end
+          end
+          first_submission = Task.find(task1_id) if task1_id
+          second_submission = Task.find(task2_id) if task2_id
 
           if first_submission.nil? || second_submission.nil?
             logger.error "Could not find tasks #{comparison[:first_submission]} or #{comparison[:second_submission]} for plagiarism stats check!"
@@ -309,8 +315,8 @@ module UnitSimilarityModule
           end
 
           # Create a new plagiarism link between the two tasks
-          plk1 = MossTaskSimilarity.where(task_id: first_submission.id, other_task_id: second_submission.id).first
-          plk2 = MossTaskSimilarity.where(task_id: second_submission.id, other_task_id: first_submission.id).first
+          plk1 = JplagTaskSimilarity.where(task_id: task1_id, other_task_id: task2_id).first
+          plk2 = JplagTaskSimilarity.where(task_id: task2_id, other_task_id: task1_id).first
           if plk1.nil? || plk2.nil?
             # Delete old links between tasks
             plk1&.destroy ## will delete its pair
@@ -330,10 +336,10 @@ module UnitSimilarityModule
           else
             # puts "#{plk1.pct} != #{match[0][:pct]}, #{plk1.pct != match[0][:pct]}"
             # Flag is larger than warn pct and larger than previous pct
-            first_submission.flagged = comparison[:max_similarity] >= warn_pct && comparison[:max_similarity] >= first_submission.pct
-            second_submission.flagged = comparison[:max_similarity] >= warn_pct && comparison[:max_similarity] >= second_submission.pct
-            first_submission.pct = comparison[:max_similarity]
-            second_submission.pct = comparison[:max_similarity]
+            plk1.flagged = comparison[:max_similarity] >= warn_pct && comparison[:max_similarity] >= plk1.pct
+            plk2.flagged = comparison[:max_similarity] >= warn_pct && comparison[:max_similarity] >= plk2.pct
+            plk1.pct = comparison[:max_similarity]
+            plk2.pct = comparison[:max_similarity]
           end
           plk1.save!
           plk2.save!
