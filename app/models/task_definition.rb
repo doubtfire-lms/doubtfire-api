@@ -384,6 +384,10 @@ class TaskDefinition < ApplicationRecord
     File.exist? task_sheet
   end
 
+  def has_jplag_report?
+    File.exist? jplag_report
+  end
+
   def is_graded?
     is_graded
   end
@@ -447,6 +451,10 @@ class TaskDefinition < ApplicationRecord
 
   def task_assessment_resources
     task_assessment_resources_with_abbreviation(abbreviation)
+  end
+
+  def jplag_report
+    task_jplag_report_with_abbreviation(abbreviation)
   end
 
   def related_tasks_with_files(consolidate_groups = true)
@@ -530,6 +538,19 @@ class TaskDefinition < ApplicationRecord
 
     result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}-assessment.zip"
     result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}-assessment.zip"
+
+    if File.exist? result_with_sanitised_path
+      result_with_sanitised_path
+    else
+      result_with_sanitised_file
+    end
+  end
+
+  def task_jplag_report_with_abbreviation(abbr)
+    task_path = FileHelper.task_jplag_report_dir unit
+
+    result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}-result.zip"
+    result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}-result.zip"
 
     if File.exist? result_with_sanitised_path
       result_with_sanitised_path

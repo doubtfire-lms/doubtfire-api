@@ -39,6 +39,7 @@ module Entities
     expose :has_task_sheet?, as: :has_task_sheet
     expose :has_task_resources?, as: :has_task_resources
     expose :has_task_assessment_resources?, as: :has_task_assessment_resources, if: ->(unit, options) { staff?(options[:my_role]) }
+    expose :has_jplag_report?, as: :has_jplag_report, if: ->(unit, options) { staff?(options[:my_role]) }
     expose :is_graded
     expose :max_quality_pts
     expose :overseer_image_id, if: ->(unit, options) { staff?(options[:my_role]) }

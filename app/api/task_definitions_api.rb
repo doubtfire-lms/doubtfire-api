@@ -628,19 +628,18 @@ class TaskDefinitionsApi < Grape::API
       error!({ error: 'Not authorised to download JPLAG reports of unit' }, 403)
     end
 
-    file_loc = FileHelper.task_jplag_report_path(unit, task_def)
-    logger.debug "JPLAG report file location: #{file_loc}"
-
-    if file_loc.nil? || !File.exist?(file_loc)
-      file_loc = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
-      header['Content-Disposition'] = 'attachment; filename=FileNotFound.pdf'
-    else
+    if task_def.has_jplag_report?
+      path = FileHelper.task_jplag_report_path(unit, task_def)
       header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}-jplag-report.zip"
+    else
+      path = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
+      content_type 'application/pdf'
+      header['Content-Disposition'] = 'attachment; filename=FileNotFound.pdf'
     end
     header['Access-Control-Expose-Headers'] = 'Content-Disposition'
 
     content_type 'application/octet-stream'
 
-    stream_file file_loc
+    stream_file path
   end
 end

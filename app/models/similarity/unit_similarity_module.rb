@@ -42,7 +42,7 @@ module UnitSimilarityModule
         tasks_with_files = tasks.select(&:has_pdf)
 
         run_jplag_on_done_files(td, tasks_dir, tasks_with_files, unit_code)
-        report_path = "#{Doubtfire::Application.config.jplag_report_dir}/#{unit_code}/#{td.id}-result.zip"
+        report_path = "#{Doubtfire::Application.config.jplag_report_dir}/#{unit_code}/#{td.abbreviation}-result.zip"
         warn_pct = td.plagiarism_warn_pct || 50
         puts "Warn PCT: #{warn_pct}"
         process_jplag_plagiarism_report(report_path, warn_pct, td.group_set)
@@ -100,7 +100,7 @@ module UnitSimilarityModule
     `docker exec jplag sh -c 'if [ ! -d "#{results_dir}" ]; then mkdir -p "#{results_dir}"; fi'`
 
     # Remove existing result file if it exists
-    result_file = "#{results_dir}/#{task_definition.id}-result.zip"
+    result_file = "#{results_dir}/#{task_definition.abbreviation}-result.zip"
     `docker exec jplag sh -c 'if [ -f "#{result_file}" ]; then rm "#{result_file}"; fi'`
 
     # get each code file for each task
@@ -120,7 +120,7 @@ module UnitSimilarityModule
       file_lang = task_definition.jplag_language.to_s
 
       # Run JPLAG on the extracted files
-      `docker exec jplag java -jar /jplag/myJplag.jar #{tasks_dir_split} -l #{file_lang} --similarity-threshold=#{similarity_pct} -M RUN -r #{results_dir}/#{task_definition.id}-result`
+      `docker exec jplag java -jar /jplag/myJplag.jar #{tasks_dir_split} -l #{file_lang} --similarity-threshold=#{similarity_pct} -M RUN -r #{results_dir}/#{task_definition.abbreviation}-result`
     end
 
     # Delete the extracted code files from tmp
