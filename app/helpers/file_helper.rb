@@ -252,12 +252,11 @@ module FileHelper
   def task_jplag_report_dir(unit)
     file_server = Doubtfire::Application.config.jplag_report_dir
     dst = "#{file_server}/#{unit.code}-#{unit.id}/" # trust the server config and passed in type for paths
-    dst << sanitized_path("#{unit.code}-#{unit.id}") << '/'
     dst
   end
 
   def task_jplag_report_path(unit, task)
-    File.join(task_jplag_report_dir(unit), FileHelper.sanitized_filename("#{task.id}-result.zip"))
+    File.join(task_jplag_report_dir(unit), FileHelper.sanitized_filename("#{task.abbreviation}-result.zip"))
   end
 
   def comment_attachment_path(task_comment, attachment_extension)

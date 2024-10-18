@@ -32,7 +32,7 @@ class TaskDefinitionsApi < Grape::API
       requires :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
       optional :assessment_enabled,       type: Boolean,  desc: 'Enable or disable assessment'
       optional :overseer_image_id,        type: Integer,  desc: 'The id of the Docker image for overseer'
-      optional :jplag_language,            type: String,   desc: 'The language to use for code similarity checks'
+      optional :jplag_language,           type: String,   desc: 'The language to use for code similarity checks'
     end
   end
   post '/units/:unit_id/task_definitions/' do
@@ -110,7 +110,7 @@ class TaskDefinitionsApi < Grape::API
       optional :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
       optional :assessment_enabled,       type: Boolean,  desc: 'Enable or disable assessment'
       optional :overseer_image_id,        type: Integer,  desc: 'The id of the Docker image name for overseer'
-      optional :jplag_language,            type: String,   desc: 'The language to use for code similarity checks'
+      optional :jplag_language,           type: String,   desc: 'The language to use for code similarity checks'
     end
   end
   put '/units/:unit_id/task_definitions/:id' do
@@ -623,11 +623,10 @@ class TaskDefinitionsApi < Grape::API
   get '/units/:unit_id/task_definitions/:task_def_id/jplag_report' do
     unit = Unit.find(params[:unit_id])
     task_def = unit.task_definitions.find(params[:task_def_id])
-
     unless authorise? current_user, unit, :download_jplag_report
       error!({ error: 'Not authorised to download JPLAG reports of unit' }, 403)
     end
-
+    logger.debug "This is the has_jplag_report? #{task_def.has_jplag_report?}"
     if task_def.has_jplag_report?
       path = FileHelper.task_jplag_report_path(unit, task_def)
       header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}-jplag-report.zip"
@@ -637,9 +636,23 @@ class TaskDefinitionsApi < Grape::API
       header['Content-Disposition'] = 'attachment; filename=FileNotFound.pdf'
     end
     header['Access-Control-Expose-Headers'] = 'Content-Disposition'
-
     content_type 'application/octet-stream'
-
     stream_file path
+  end
+
+  desc 'Get hasJplagReport boolean for a given task'
+  params do
+    requires :unit_id, type: Integer, desc: 'The unit to get JPLAG report for'
+    requires :task_def_id, type: Integer, desc: 'The task definition to get the JPLAG report of'
+  end
+  get '/units/:unit_id/task_definitions/:task_def_id/has_jplag_report' do
+    unit = Unit.find(params[:unit_id])
+    task_def = unit.task_definitions.find(params[:task_def_id])
+
+    unless authorise? current_user, unit, :download_jplag_report
+      error!({ error: 'Not authorised to download JPLAG reports of unit' }, 403)
+    end
+
+    task_def.has_jplag_report?
   end
 end
