@@ -1167,8 +1167,11 @@ class Task < ApplicationRecord
       begin
         pdf_text = tac.make_pdf
       rescue => e
-        # Try again... with convert to ascic
-        #
+        # Try again...
+        # Without newpax
+        # Ensure latex aux file is removed
+        Dir.glob(Rails.root.join('tmp/rails-latex/**/input.aux')).each { |f| File.delete(f) }
+
         tac2 = TaskAppController.new
         tac2.init(self, true)
 
@@ -1234,6 +1237,9 @@ class Task < ApplicationRecord
       add_text_comment project.tutor_for(task_definition), "**Automated Comment**: Something went wrong with your submission. Check the files and resubmit this task. #{e.message}"
       raise e
     ensure
+      # Ensure latex aux file is removed - if broken will cause issues for next submission in sidekiq
+      Dir.glob(Rails.root.join('tmp/rails-latex/**/input.aux')).each { |f| File.delete(f) }
+
       clear_in_process
     end
   end
