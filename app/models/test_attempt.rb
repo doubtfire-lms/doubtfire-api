@@ -6,7 +6,7 @@ class TestAttempt < ApplicationRecord
 
   has_one :task_definition, through: :task
 
-  has_one :scorm_comment, dependent: :destroy
+  has_one :scorm_comment, as: :commentable, dependent: :destroy
 
   delegate :role_for, to: :task
   delegate :student, to: :task
@@ -130,7 +130,7 @@ class TestAttempt < ApplicationRecord
     comment.user = task.tutor
     comment.comment = success_status_description
     comment.recipient = task.student
-    comment.test_attempt = self
+    comment.commentable = self
     comment.save!
 
     comment
