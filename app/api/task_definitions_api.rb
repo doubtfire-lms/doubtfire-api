@@ -28,6 +28,11 @@ class TaskDefinitionsApi < Grape::API
       requires :restrict_status_updates,  type: Boolean,  desc: 'Restrict updating of the status to staff'
       optional :upload_requirements,      type: String,   desc: 'Task file upload requirements'
       requires :plagiarism_warn_pct,      type: Integer,  desc: 'The percent at which to record and warn about plagiarism'
+      requires :scorm_enabled,            type: Boolean,  desc: 'Whether SCORM assessment is enabled for this task'
+      requires :scorm_allow_review,       type: Boolean,  desc: 'Whether a student is allowed to review their completed test attempts'
+      requires :scorm_bypass_test,        type: Boolean,  desc: 'Whether a student is allowed to upload files before passing SCORM test'
+      requires :scorm_time_delay_enabled, type: Boolean,  desc: 'Whether there is an incremental time delay between SCORM test attempts'
+      requires :scorm_attempt_limit,      type: Integer,  desc: 'The number of times a SCORM test can be attempted'
       requires :is_graded,                type: Boolean,  desc: 'Whether or not this task definition is a graded task'
       requires :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
       optional :assessment_enabled,       type: Boolean,  desc: 'Enable or disable assessment'
@@ -55,6 +60,11 @@ class TaskDefinitionsApi < Grape::API
                                                 :abbreviation,
                                                 :restrict_status_updates,
                                                 :plagiarism_warn_pct,
+                                                :scorm_enabled,
+                                                :scorm_allow_review,
+                                                :scorm_bypass_test,
+                                                :scorm_time_delay_enabled,
+                                                :scorm_attempt_limit,
                                                 :is_graded,
                                                 :max_quality_pts,
                                                 :assessment_enabled,
@@ -106,6 +116,11 @@ class TaskDefinitionsApi < Grape::API
       optional :restrict_status_updates,  type: Boolean,  desc: 'Restrict updating of the status to staff'
       optional :upload_requirements,      type: String,   desc: 'Task file upload requirements'
       optional :plagiarism_warn_pct,      type: Integer,  desc: 'The percent at which to record and warn about plagiarism'
+      optional :scorm_enabled,            type: Boolean,  desc: 'Whether or not SCORM test assessment is enabled for this task'
+      optional :scorm_allow_review,       type: Boolean,  desc: 'Whether a student is allowed to review their completed test attempts'
+      optional :scorm_bypass_test,        type: Boolean,  desc: 'Whether a student is allowed to upload files before passing SCORM test'
+      optional :scorm_time_delay_enabled, type: Boolean,  desc: 'Whether or not there is an incremental time delay between SCORM test attempts'
+      optional :scorm_attempt_limit,      type: Integer,  desc: 'The number of times a SCORM test can be attempted'
       optional :is_graded,                type: Boolean,  desc: 'Whether or not this task definition is a graded task'
       optional :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
       optional :assessment_enabled,       type: Boolean,  desc: 'Enable or disable assessment'
@@ -134,6 +149,11 @@ class TaskDefinitionsApi < Grape::API
                                                 :abbreviation,
                                                 :restrict_status_updates,
                                                 :plagiarism_warn_pct,
+                                                :scorm_enabled,
+                                                :scorm_allow_review,
+                                                :scorm_bypass_test,
+                                                :scorm_time_delay_enabled,
+                                                :scorm_attempt_limit,
                                                 :is_graded,
                                                 :max_quality_pts,
                                                 :assessment_enabled,
@@ -615,5 +635,80 @@ class TaskDefinitionsApi < Grape::API
     end
 
     stream_file path
+  end
+
+  desc 'Upload the SCORM container (zip file) for a task'
+  params do
+    requires :unit_id, type: Integer, desc: 'The related unit'
+    requires :task_def_id, type: Integer, desc: 'The related task definition'
+    requires :file, type: File, desc: 'The SCORM data container'
+  end
+  post '/units/:unit_id/task_definitions/:task_def_id/scorm_data' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :add_task_def
+      error!({ error: 'Not authorised to upload SCORM data for the unit' }, 403)
+    end
+
+    task_def = unit.task_definitions.find(params[:task_def_id])
+
+    if params[:file].blank?
+      error!({ error: "No file uploaded" }, 403)
+    end
+
+    file_path = params[:file][:tempfile].path
+
+    check_mime_against_list! file_path, 'zip', ['application/zip', 'multipart/x-gzip', 'multipart/x-zip', 'application/x-gzip', 'application/octet-stream']
+
+    # Actually import...
+    task_def.add_scorm_data(file_path)
+    true
+  end
+
+  desc 'Download the SCORM test data'
+  params do
+    requires :unit_id, type: Integer, desc: 'The unit to modify tasks for'
+    requires :task_def_id, type: Integer, desc: 'The task definition to get the SCORM test data of'
+  end
+  get '/units/:unit_id/task_definitions/:task_def_id/scorm_data' do
+    unit = Unit.find(params[:unit_id])
+    task_def = unit.task_definitions.find(params[:task_def_id])
+
+    unless authorise? current_user, unit, :get_unit
+      error!({ error: 'Not authorised to download task details of unit' }, 403)
+    end
+
+    if task_def.has_scorm_data?
+      path = task_def.task_scorm_data
+      content_type 'application/octet-stream'
+      header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}-scorm.zip"
+    else
+      path = Rails.root.join('public/resources/FileNotFound.pdf')
+      content_type 'application/pdf'
+      header['Content-Disposition'] = 'attachment; filename=FileNotFound.pdf'
+    end
+    header['Access-Control-Expose-Headers'] = 'Content-Disposition'
+
+    env['api.format'] = :binary
+    File.read(path)
+  end
+
+  desc 'Remove the SCORM test data for a given task'
+  params do
+    requires :unit_id, type: Integer, desc: 'The related unit'
+    requires :task_def_id, type: Integer, desc: 'The related task definition'
+  end
+  delete '/units/:unit_id/task_definitions/:task_def_id/scorm_data' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :add_task_def
+      error!({ error: 'Not authorised to remove task SCORM data of unit' }, 403)
+    end
+
+    task_def = unit.task_definitions.find(params[:task_def_id])
+
+    # Actually remove...
+    task_def.remove_scorm_data
+    true
   end
 end
