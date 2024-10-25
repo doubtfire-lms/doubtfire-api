@@ -2,6 +2,41 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.36](https://github.com/macite/doubtfire-deploy/compare/v8.0.35...v8.0.36) (2024-09-24)
+
+
+### Bug Fixes
+
+* markdown in ipynb ([4fd4ed3](https://github.com/macite/doubtfire-deploy/commit/4fd4ed3c633e7aa4ee801e5d274c82aa840f31ac))
+
+### [8.0.35](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v8.0.34...v8.0.35) (2024-09-23)
+
+
+### Bug Fixes
+
+* ensure default lsr task def can be updated ([491691f](https://github.com/doubtfire-lms/doubtfire-deploy/commit/491691f2b7b5d51c838d22299099f3725d2ee47e))
+
+### [8.0.34](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v8.0.33...v8.0.34) (2024-09-21)
+
+
+### Features
+
+* send latex log on convert failure ([166690f](https://github.com/doubtfire-lms/doubtfire-deploy/commit/166690fffe8160146f734d6a7df42dda4174866b))
+
+
+### Bug Fixes
+
+* correct error reporting with AAF failure ([58b6391](https://github.com/doubtfire-lms/doubtfire-deploy/commit/58b6391c5658b80ef4e803cd955bdde90c79d87c))
+* ensure unicode control characters work in pdf gen ([cd32b06](https://github.com/doubtfire-lms/doubtfire-deploy/commit/cd32b0672a4491bdc9b1d0ebef192abc4726ccf0))
+* migration to fix invalid task upload filenames ([ac80fec](https://github.com/doubtfire-lms/doubtfire-deploy/commit/ac80fec11a6748671821b8d82beae016464eec0b))
+
+### [8.0.33](https://github.com/macite/doubtfire-deploy/compare/v8.0.32...v8.0.33) (2024-09-13)
+
+
+### Bug Fixes
+
+* correct access to moss and devise secrets ([8fae9c6](https://github.com/macite/doubtfire-deploy/commit/8fae9c6f02a08e27daa141d448a4dae0ef62b241))
+
 ### [8.0.32](https://github.com/macite/doubtfire-deploy/compare/v8.0.31...v8.0.32) (2024-09-05)
 
 

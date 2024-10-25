@@ -151,7 +151,7 @@ module Doubtfire
               "DF_AAF_CALLBACK_URL          => #{!ENV['DF_AAF_CALLBACK_URL'].nil?}\n  " \
               "DF_AAF_IDENTITY_PROVIDER_URL => #{!ENV['DF_AAF_IDENTITY_PROVIDER_URL'].nil?}\n  " \
               "DF_AAF_UNIQUE_URL            => #{!ENV['DF_AAF_UNIQUE_URL'].nil?}\n  " \
-              "DF_SECRET_KEY_AAF            => #{!secrets.secret_key_aaf.nil?}\n"
+              "DF_SECRET_KEY_AAF            => #{!credentials.secret_key_aaf.nil?}\n"
       end
     end
     # Check secrets set for DF_SECRET_KEY_BASE, DF_SECRET_KEY_ATTR, DF_SECRET_KEY_DEVISE

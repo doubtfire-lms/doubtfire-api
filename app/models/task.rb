@@ -1141,6 +1141,16 @@ class Task < ApplicationRecord
     end
   end
 
+  # A custom error to capture the log message from the latex error
+  class LatexError < StandardError
+    attr_reader :log_message
+
+    def initialize(log_message)
+      super
+      @log_message = log_message
+    end
+  end
+
   # Convert a submission to pdf - the source folder is the root folder in which the submission folder will be found (not the submission folder itself)
   def convert_submission_to_pdf(source_folder: FileHelper.student_work_dir(:new), log_to_stdout: true)
     logger.info "Converting task #{self.id} to pdf"
@@ -1168,20 +1178,24 @@ class Task < ApplicationRecord
           logger.error "Failed to create PDF for task #{log_details}. Error: #{e.message}"
 
           log_file = e.message.scan(/\/.*\.log/).first
-          # puts "log file is ... #{log_file}"
-          if log_to_stdout && log_file && File.exist?(log_file)
-            # puts "exists"
-            begin
-              # rubocop:disable Rails/Output
-              puts "--- Latex Log ---\n"
-              puts File.read(log_file)
-              puts "---    End    ---\n\n"
-              # rubocop:enable Rails/Output
-            rescue
+          if log_file && File.exist?(log_file)
+            log_message = File.read(log_file)
+
+            # puts "log file is ... #{log_file}"
+            if log_to_stdout
+              # puts "exists"
+              begin
+                # rubocop:disable Rails/Output
+                puts "--- Latex Log ---\n"
+                puts log_message
+                puts "---    End    ---\n\n"
+                # rubocop:enable Rails/Output
+              rescue
+              end
             end
           end
 
-          raise 'Failed to convert your submission to PDF. Check code files submitted for invalid characters, that documents are valid pdfs, and that images are valid.'
+          raise LatexError.new(log_message), 'Failed to convert your submission to PDF. Check code files submitted for invalid characters, that documents are valid pdfs, and that images are valid.'
         end
       end
 

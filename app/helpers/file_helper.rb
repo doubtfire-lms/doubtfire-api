@@ -547,12 +547,50 @@ module FileHelper
     task.extract_file_from_done student_work_dir(:new), '*', ->(_task, to_path, name) { "#{to_path}#{name}" }
   end
 
+  REPLACEMENTS_SED_COMMAND = [
+    ['[\\]u0000','␀'],
+    ['[\\]u0001','␁'],
+    ['[\\]u0002','␂'],
+    ['[\\]u0003','␃'],
+    ['[\\]u0004','␄'],
+    ['[\\]u0005','␅'],
+    ['[\\]u0006','␆'],
+    ['[\\]u0007','␇'],
+    ['[\\]u0008','␈'],
+    ['[\\]b','␈'],
+    ['[\\]u0009','␉'],
+    ['[\\]u000A','␊'],
+    ['[\\]u000B','␋'],
+    ['[\\]u000C','␌'],
+    ['[\\]f','␌'],
+    ['[\\]u000D','␍'],
+    ['[\\]r','␍'],
+    ['[\\]u000E','␎'],
+    ['[\\]u000F','␏'],
+    ['[\\]u0010','␐'],
+    ['[\\]u0011','␑'],
+    ['[\\]u0012','␒'],
+    ['[\\]u0013','␓'],
+    ['[\\]u0014','␔'],
+    ['[\\]u0015','␕'],
+    ['[\\]u0016','␖'],
+    ['[\\]u0017','␗'],
+    ['[\\]u0018','␘'],
+    ['[\\]u0019','␙'],
+    ['[\\]u001A','␚'],
+    ['[\\]u001B','␛'],
+    ['[\\]u001C','␜'],
+    ['[\\]u001D','␝'],
+    ['[\\]u001E','␞'],
+    ['[\\]u001F','␟']
+  ].map { |r| "s/#{r[0]}/#{r[1]}/gI" }.join('; ').freeze
+
   #
   # Ensure that the contents of a file appear to be valid UTF8, on retry convert to ASCII to ensure
   #
   def ensure_utf8_code(output_filename, force_ascii)
     # puts "Converting #{output_filename} to utf8"
-    tmp_filename = Dir::Tmpname.create(["new", ".code"]) { |name| raise Errno::EEXIST if File.exist?(name)  }
+    tmp_filename = Dir::Tmpname.create(["new", ".code"]) { |name| raise Errno::EEXIST if File.exist?(name) }
 
     # Convert to utf8 from read encoding
     if force_ascii
@@ -560,6 +598,9 @@ module FileHelper
     else
       `iconv -c -t UTF-8 "#{output_filename}" > "#{tmp_filename}"`
     end
+
+    # Remove utf8 control character sequences
+    `sed -i '#{FileHelper::REPLACEMENTS_SED_COMMAND}' "#{tmp_filename}"`
 
     # Move into place
     FileUtils.mv(tmp_filename, output_filename)
