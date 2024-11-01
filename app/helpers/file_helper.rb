@@ -225,9 +225,13 @@ module FileHelper
     dir_for_unit_code_and_id(unit.code, unit.id, create)
   end
 
-  def unit_portfolio_dir(unit, create = true)
+  def root_portfolio_dir
     file_server = Doubtfire::Application.config.student_work_dir
-    dst = "#{file_server}/portfolio/" # trust the server config and passed in type for paths
+    "#{file_server}/portfolio/" # trust the server config and passed in type for paths
+  end
+
+  def unit_portfolio_dir(unit, create = true)
+    dst = root_portfolio_dir
 
     dst << sanitized_path("#{unit.code}-#{unit.id}") << '/'
 
@@ -674,6 +678,7 @@ module FileHelper
   module_function :student_work_root
   module_function :dir_for_unit_code_and_id
   module_function :unit_dir
+  module_function :root_portfolio_dir
   module_function :unit_portfolio_dir
   module_function :student_portfolio_dir
   module_function :student_portfolio_path
