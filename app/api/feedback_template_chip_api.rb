@@ -1,0 +1,81 @@
+require 'grape'
+
+class FeedbackTemplateChipApi < Grape::API
+  helpers AuthenticationHelpers
+  helpers AuthorisationHelpers
+
+  before do
+    authenticated?
+  end
+
+  desc 'Get all feedback template chips'
+  get '/feedback_template_chips' do
+    chips = FeedbackChip.all
+    present chips, with: Entities::FeedbackTemplateChipEntity
+  end
+
+  desc 'Get a feedback template chip'
+  params do
+    requires :id, type: Integer, desc: 'The ID of the feedback template chip'
+  end
+  get '/feedback_template_chips/:id' do
+    chip = FeedbackChip.find(params[:id])
+    present chip, with: Entities::FeedbackTemplateChipEntity
+  end
+
+  desc 'Add a feedback template chip'
+  params do
+    requires :abbreviation, type: String, desc: 'The abbreviation of the feedback template chip'
+    requires :order, type: Integer, desc: 'The order of the feedback template chip'
+    requires :chipText, type: String, desc: 'The text of the feedback template chip'
+    requires :description, type: String, desc: 'The description of the feedback template chip'
+    requires :commentText, type: String, desc: 'The comment text of the feedback template chip'
+    requires :summaryText, type: String, desc: 'The summary text of the feedback template chip'
+    requires :taskStatus, type: String, desc: 'The task status of the feedback template chip'
+  end
+  post '/feedback_template_chips' do
+    unless authorise? current_user, FeedbackChip, :create
+      error!({ error: 'You are not authorised to create feedback template chips.' }, 403)
+    end
+
+    chip = FeedbackChip.create(declared(params))
+    present chip, with: Entities::FeedbackTemplateChipEntity
+  end
+
+  desc 'Update a feedback template chip'
+  params do
+    requires :id, type: Integer, desc: 'The ID of the feedback template chip'
+    requires :abbreviation, type: String, desc: 'The abbreviation of the feedback template chip'
+    requires :order, type: Integer, desc: 'The order of the feedback template chip'
+    requires :chipText, type: String, desc: 'The text of the feedback template chip'
+    requires :description, type: String, desc: 'The description of the feedback template chip'
+    requires :commentText, type: String, desc: 'The comment text of the feedback template chip'
+    requires :summaryText, type: String, desc: 'The summary text of the feedback template chip'
+    requires :taskStatus, type: String, desc: 'The task status of the feedback template chip'
+  end
+  put '/feedback_template_chips/:id' do
+    chip = FeedbackChip.find(params[:id])
+
+    unless authorise? current_user, chip, :update
+      error!({ error: 'You are not authorised to update this feedback template chip.' }, 403)
+    end
+
+    chip.update(declared(params))
+    present chip, with: Entities::FeedbackTemplateChipEntity
+  end
+
+  desc 'Delete a feedback template chip'
+  params do
+    requires :id, type: Integer, desc: 'The ID of the feedback template chip'
+  end
+  delete '/feedback_template_chips/:id' do
+    chip = FeedbackChip.find(params[:id])
+
+    unless authorise? current_user, chip, :destroy
+      error!({ error: 'You are not authorised to delete this feedback template chip.' }, 403)
+    end
+
+    chip.destroy
+    nil
+  end
+end
