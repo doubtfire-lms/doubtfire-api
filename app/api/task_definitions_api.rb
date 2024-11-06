@@ -28,16 +28,16 @@ class TaskDefinitionsApi < Grape::API
       requires :restrict_status_updates,  type: Boolean,  desc: 'Restrict updating of the status to staff'
       optional :upload_requirements,      type: String,   desc: 'Task file upload requirements'
       requires :plagiarism_warn_pct,      type: Integer,  desc: 'The percent at which to record and warn about plagiarism'
-      requires :scorm_enabled,            type: Boolean,  desc: 'Whether SCORM assessment is enabled for this task'
-      requires :scorm_allow_review,       type: Boolean,  desc: 'Whether a student is allowed to review their completed test attempts'
-      requires :scorm_bypass_test,        type: Boolean,  desc: 'Whether a student is allowed to upload files before passing SCORM test'
-      requires :scorm_time_delay_enabled, type: Boolean,  desc: 'Whether there is an incremental time delay between SCORM test attempts'
-      requires :scorm_attempt_limit,      type: Integer,  desc: 'The number of times a SCORM test can be attempted'
       requires :is_graded,                type: Boolean,  desc: 'Whether or not this task definition is a graded task'
       requires :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
       optional :assessment_enabled,       type: Boolean,  desc: 'Enable or disable assessment'
       optional :overseer_image_id,        type: Integer,  desc: 'The id of the Docker image for overseer'
       optional :moss_language,            type: String,   desc: 'The language to use for code similarity checks'
+      optional :scorm_enabled,            type: Boolean,  desc: 'Whether SCORM assessment is enabled for this task'
+      optional :scorm_allow_review,       type: Boolean,  desc: 'Whether a student is allowed to review their completed test attempts'
+      optional :scorm_bypass_test,        type: Boolean,  desc: 'Whether a student is allowed to upload files before passing SCORM test'
+      optional :scorm_time_delay_enabled, type: Boolean,  desc: 'Whether there is an incremental time delay between SCORM test attempts'
+      optional :scorm_attempt_limit,      type: Integer,  desc: 'The number of times a SCORM test can be attempted'
     end
   end
   post '/units/:unit_id/task_definitions/' do
