@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.38](https://github.com/macite/doubtfire-deploy/compare/v8.0.37...v8.0.38) (2024-11-06)
+
+
+### Bug Fixes
+
+* ensure task definitions can be created without scorm details ([b45f0fa](https://github.com/macite/doubtfire-deploy/commit/b45f0fa15d790396f0ba3dbfebb1c059bffe622d))
+
 ### [8.0.37](https://github.com/macite/doubtfire-deploy/compare/v8.0.36...v8.0.37) (2024-10-25)
 
 
