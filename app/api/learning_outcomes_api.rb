@@ -30,20 +30,20 @@ class LearningOutcomesApi < Grape::API
   desc "Add an outcome to a specified context (unit, course, task, ect.)"
   params do
     requires :context_id, type: Integer, desc: 'The id of the context'
-    requires :context_string, type: String, desc: 'The type of the context'
+    requires :context_string, type: String, values: ['unit', 'course', 'task'], desc: 'The type of the context'
     requires :name, type: String, desc: 'The ILO''s name'
     requires :description, type: String, desc: 'The ILO''s description'
     optional :abbreviation, type: String, desc: 'The ILO''s new abbreviation'
   end
   post '/:context_string/:context_id/outcomes' do
     # find context model dynamically
-    context_model = params[:context_string].classify.constantize.find(params[:context_id])
+    context_model = params[:context_string].classify.constantize.find(id: params[:context_id])
 
     unless authorise? current_user, context_model, :update
       error!({ error: 'You are not authorised to create outcomes in this context.' }, 403)
     end
 
-    ilo = context_model.add_ilo(params[:name], params[:description], params[:abbreviation])
+    ilo = context_model.add_ilo(params[:name], params[:description], params[:abbreviation]) # need to check if this is implemented across the other models
     present ilo, with: Entities::LearningOutcomeEntity
   end
 
@@ -80,7 +80,7 @@ class LearningOutcomesApi < Grape::API
   desc 'Update an outcome in a specified context (unit, course, task, ect.)'
   params do
     requires :context_id, type: Integer, desc: 'The id of the context'
-    requires :context_string, type: String, desc: 'The type of the context'
+    requires :context_string, type: String, values: ['unit', 'course', 'task'], desc: 'The type of the context'
     optional :name, type: String, desc: 'The ILO''s new name'
     optional :description, type: String, desc: 'The ILO''s new description'
     optional :abbreviation, type: String, desc: 'The ILO''s new abbreviation'
@@ -88,7 +88,7 @@ class LearningOutcomesApi < Grape::API
   end
   put '/:context_string/:context_id/outcomes/:id' do
     # find context model dynamically
-    context_model = params[:context_string].classify.constantize.find(params[:context_id])
+    context_model = params[:context_string].classify.constantize.find(id: params[:context_id])
 
     unless authorise? current_user, context_model, :update
       error!({ error: 'You are not authorised to update outcomes in this context.' }, 403)
@@ -131,12 +131,12 @@ class LearningOutcomesApi < Grape::API
   desc 'Delete an outcome from a specified context (unit, course, task, ect.)'
   params do
     requires :context_id, type: Integer, desc: 'The id of the context'
-    requires :context_string, type: String, desc: 'The type of the context'
+    requires :context_string, type: String, values: ['unit', 'course', 'task'], desc: 'The type of the context'
     requires :id, type: Integer, desc: 'The id for the outcome you wish to delete'
   end
   delete '/:context_string/:context_id/outcomes/:id' do
     # find context model dynamically
-    context_model = params[:context_string].classify.constantize.find(params[:context_id])
+    context_model = params[:context_string].classify.constantize.find(id: params[:context_id])
 
     unless authorise? current_user, context_model, :update
       error!({ error: 'You are not authorised to delete outcomes in this context.' }, 403)
@@ -168,11 +168,11 @@ class LearningOutcomesApi < Grape::API
   desc 'Download the outcomes for a specified context (unit, course, task, ect.) to a csv'
   params do
     requires :context_id, type: Integer, desc: 'The id of the context'
-    requires :context_string, type: String, desc: 'The type of the context'
+    requires :context_string, type: String, values: ['unit', 'course', 'task'], desc: 'The type of the context'
   end
   get '/:context_string/:context_id/outcomes/csv' do
     # find context model dynamically
-    context_model = params[:context_string].classify.constantize.find(params[:context_id])
+    context_model = params[:context_string].classify.constantize.find(id: params[:context_id])
 
     unless authorise? current_user, context_model, :update
       error!({ error: 'You are not authorised to download outcomes for this context.' }, 403)
@@ -208,14 +208,14 @@ class LearningOutcomesApi < Grape::API
   params do
     requires :file, type: File, desc: 'CSV upload file.'
     requires :context_id, type: Integer, desc: 'The id of the context'
-    requires :context_string, type: String, desc: 'The type of the context'
+    requires :context_string, type: String, values: ['unit', 'course', 'task'], desc: 'The type of the context'
   end
   post '/:context_string/:context_id/outcomes/csv' do
     # check mime is correct before uploading
     ensure_csv!(params[:file][:tempfile])
 
     # find context model dynamically
-    context_model = params[:context_string].classify.constantize.find(params[:context_id])
+    context_model = params[:context_string].classify.constantize.find(id: params[:context_id])
 
     unless authorise? current_user, context_model, :upload_csv
       error!({ error: 'Not authorised to upload CSV of outcomes' }, 403)
