@@ -1,7 +1,9 @@
 class LearningOutcome < ApplicationRecord
   include ApplicationHelper
 
-  belongs_to :unit, optional: false
+  belongs_to :context, polymorphic: true
+  belongs_to :parent_learning_outcome, class_name: 'LearningOutcome', optional: true
+  has_many :child_learning_outcomes, class_name: 'LearningOutcome', foreign_key: 'parent_learning_outcome_id'
 
   has_many :learning_outcome_task_links, dependent: :destroy # links to learning outcomes
   has_many :related_task_definitions, -> { where('learning_outcome_task_links.task_id is NULL') }, through: :learning_outcome_task_links, source: :task_definition # only link staff relations
