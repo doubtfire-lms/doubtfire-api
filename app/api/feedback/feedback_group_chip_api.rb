@@ -10,26 +10,35 @@ module Feedback
     end
 
     desc 'Get all feedback chips'
-    get '/feedback_chips' do
+    get '/feedback_group_chips' do
       chips = FeedbackGroupChip.all
-      present chips, with: Entities::FeedbackChipEntity
-    end
-
-    desc 'Get all feedback chips for a specific belongs_to'
-    params do
-      requires :belongs_to, type: String, desc: 'The belongs_to of the feedback chips'
-    end
-    get '/feedback_chips/belongs_to/:belongs_to' do
-      chips = FeedbackGroupChip.where(belongs_to: params[:belongs_to])
       present chips, with: Entities::FeedbackGroupChipEntity
     end
 
-    desc 'Get all feedback chips for a specific belongs_to_tlo'
+    desc 'Get all feedback chips for a specific related_entity'
     params do
-      requires :belongs_to_tlo, type: String, desc: 'The belongs_to_tlo of the feedback chips'
+      requires :related_entity, type: String, desc: 'The related_entity of the feedback chips'
     end
-    get '/feedback_chips/belongs_to_tlo/:belongs_to_tlo' do
-      chips = FeedbackGroupChip.where(belongs_to_tlo: params[:belongs_to_tlo])
+    get '/feedback_group_chips/related_entity/:related_entity' do
+      chips = FeedbackGroupChip.where(related_entity: params[:related_entity])
+      present chips, with: Entities::FeedbackGroupChipEntity
+    end
+
+    desc 'Get all feedback chips for a specific learning_outcome'
+    params do
+      requires :learning_outcome, type: String, desc: 'The learning_outcome of the feedback chips'
+    end
+    get '/feedback_group_chips/learning_outcome/:learning_outcome' do
+      chips = FeedbackGroupChip.where(learning_outcome: params[:learning_outcome])
+      present chips, with: Entities::FeedbackGroupChipEntity
+    end
+
+    desc 'Get all feedback chips for a specific section'
+    params do
+      requires :section, type: String, desc: 'The section of the feedback chips'
+    end
+    get '/feedback_group_chips/section/:section' do
+      chips = FeedbackGroupChip.where(section: params[:section])
       present chips, with: Entities::FeedbackGroupChipEntity
     end
 
@@ -37,7 +46,7 @@ module Feedback
     params do
       requires :parent_chip_id, type: Integer, desc: 'The parentChipId of the feedback chips'
     end
-    get '/feedback_chips/parent_chip_id/:parent_chip_id' do
+    get '/feedback_group_chips/parent_chip_id/:parent_chip_id' do
       chips = FeedbackGroupChip.where(parent_chip_id: params[:parent_chip_id])
       present chips, with: Entities::FeedbackGroupChipEntity
     end
@@ -46,22 +55,22 @@ module Feedback
     params do
       requires :id, type: Integer, desc: 'The ID of the feedback chip'
     end
-    get '/feedback_chips/:id' do
+    get '/feedback_group_chips/:id' do
       chip = FeedbackGroupChip.find(params[:id])
       present chip, with: Entities::FeedbackGroupChipEntity
     end
 
     desc 'Add a feedback chip'
     params do
-      requires :title, type: String, desc: 'The title of the feedback chip'
+      requires :chip_text, type: String, desc: 'The title of the feedback chip'
       requires :parent_chip_id, type: Integer, desc: 'The parent chip ID of the feedback chip'
-      requires :child_chip_id, type: Integer, desc: 'The child chip ID of the feedback chip'
-      requires :belongs_to, type: String, desc: 'The belongs to of the feedback chip'
-      requires :belongs_to_tlo, type: String, desc: 'The belongs to TLO of the feedback chip'
+      requires :related_entity, type: String, desc: 'The related entity of the feedback chip'
+      requires :learning_outcome, type: String, desc: 'The learning outcome of the feedback chip'
+      requires :section, type: String, desc: 'The section of the feedback chip'
     end
-    post '/feedback_chips' do
-      unless authorise? current_user, FeedbackChip, :create
-        error!({ error: 'You are not authorised to create feedback chips.' }, 403)
+    post '/feedback_group_chips' do
+      unless authorise? current_user, User, :feedback_chips
+        error!({ error: 'You are not authorised to create feedback template chips.' }, 403)
       end
 
       chip = FeedbackGroupChip.create(declared(params))
@@ -71,17 +80,17 @@ module Feedback
     desc 'Update a feedback chip'
     params do
       requires :id, type: Integer, desc: 'The ID of the feedback chip'
-      requires :title, type: String, desc: 'The title of the feedback chip'
+      requires :chip_text, type: String, desc: 'The title of the feedback chip'
       requires :parent_chip_id, type: Integer, desc: 'The parent chip ID of the feedback chip'
-      requires :child_chip_id, type: Integer, desc: 'The child chip ID of the feedback chip'
-      requires :belongs_to, type: String, desc: 'The belongs to of the feedback chip'
-      requires :belongs_to_tlo, type: String, desc: 'The belongs to TLO of the feedback chip'
+      requires :related_entity, type: String, desc: 'The related_entity of the feedback chip'
+      requires :learning_outcome, type: String, desc: 'The learning_outcome of the feedback chip'
+      requires :section, type: String, desc: 'The section of the feedback chip'
     end
-    put '/feedback_chips/:id' do
+    put '/feedback_group_chips/:id' do
       chip = FeedbackGroupChip.find(params[:id])
 
-      unless authorise? current_user, FeedbackChip, :update
-        error!({ error: 'You are not authorised to update this feedback chip.' }, 403)
+      unless authorise? current_user, User, :feedback_chips
+        error!({ error: 'You are not authorised to create feedback template chips.' }, 403)
       end
 
       chip.update(declared(params))
@@ -92,11 +101,11 @@ module Feedback
     params do
       requires :id, type: Integer, desc: 'The ID of the feedback chip'
     end
-    delete '/feedback_chips/:id' do
+    delete '/feedback_group_chips/:id' do
       chip = FeedbackGroupChip.find(params[:id])
 
-      unless authorise? current_user, FeedbackChip, :destroy
-        error!({ error: 'You are not authorised to delete this feedback chip.' }, 403)
+      unless authorise? current_user, User, :feedback_chips
+        error!({ error: 'You are not authorised to create feedback template chips.' }, 403)
       end
 
       chip.destroy

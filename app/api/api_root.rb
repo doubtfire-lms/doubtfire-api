@@ -95,6 +95,9 @@ class ApiRoot < Grape::API
   mount WebcalApi
   mount WebcalPublicApi
 
+  mount Feedback::FeedbackTemplateChipApi
+  mount Feedback::FeedbackGroupChipApi
+
   #
   # Add auth details to all end points
   #
@@ -133,6 +136,9 @@ class ApiRoot < Grape::API
   AuthenticationHelpers.add_auth_to WebcalApi
   AuthenticationHelpers.add_auth_to ScormApi
   AuthenticationHelpers.add_auth_to TestAttemptsApi
+
+  AuthenticationHelpers.add_auth_to Feedback::FeedbackTemplateChipApi
+  AuthenticationHelpers.add_auth_to Feedback::FeedbackGroupChipApi
 
   add_swagger_documentation \
     base_path: nil,

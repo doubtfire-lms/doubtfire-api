@@ -2,11 +2,13 @@ module Feedback
   module Entities
     class FeedbackGroupChipEntity < Grape::Entity
       expose :id
-      expose :title
+      expose :type
+      expose :chip_text
+      expose :description
       expose :parent_chip_id
-      expose :child_chip_id
-      expose :belongs_to
-      expose :belongs_to_tlo
+      expose :learning_outcome
+      expose :related_entity
+      expose :section
     end
   end
 end
