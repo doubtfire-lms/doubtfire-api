@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_11_19_004548) do
+ActiveRecord::Schema[7.1].define(version: 2024_11_24_144752) do
   create_table "activity_types", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -66,21 +66,17 @@ ActiveRecord::Schema[7.1].define(version: 2024_11_19_004548) do
 
   create_table "feedback_chips", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "type"
-    t.string "abbreviation"
-    t.integer "order"
     t.text "chip_text"
     t.text "description"
     t.text "comment_text"
     t.text "summary_text"
     t.string "task_status"
-    t.string "title"
     t.bigint "parent_chip_id"
-    t.bigint "child_chip_id"
-    t.string "belongs_to"
-    t.string "belongs_to_tlo"
+    t.string "related_entity"
+    t.string "learning_outcome"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["child_chip_id"], name: "fk_rails_bc89672e41"
+    t.string "section"
     t.index ["parent_chip_id"], name: "fk_rails_a01973d8a0"
   end
 
@@ -585,7 +581,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_11_19_004548) do
     t.index ["user_id"], name: "index_webcals_on_user_id", unique: true
   end
 
-  add_foreign_key "feedback_chips", "feedback_chips", column: "child_chip_id"
   add_foreign_key "feedback_chips", "feedback_chips", column: "parent_chip_id"
   add_foreign_key "learning_outcomes", "learning_outcomes", column: "parent_learning_outcome_id"
 end
