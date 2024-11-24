@@ -311,6 +311,8 @@ class User < ApplicationRecord
       :admin_overseer,
       :use_overseer,
 
+      :feedback_chips,
+
       :get_scorm_token
     ]
 
