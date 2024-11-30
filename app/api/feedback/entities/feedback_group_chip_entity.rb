@@ -6,9 +6,9 @@ module Feedback
       expose :chip_text
       expose :description
       expose :parent_chip_id
-      expose :learning_outcome
-      expose :related_entity
-      expose :section
+      expose :learning_outcome_id # becomes id
+      expose :related_entity # removed
+      expose :section # removed
     end
   end
 end

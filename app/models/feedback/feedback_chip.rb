@@ -4,7 +4,7 @@ module Feedback
 
     validates :chip_text, presence: true
     validates :description, presence: true
-    validates :section, presence: true
+    validates :section, presence: true # removed
 
     belongs_to :parent_chip, class_name: 'FeedbackChip', optional: true
 
