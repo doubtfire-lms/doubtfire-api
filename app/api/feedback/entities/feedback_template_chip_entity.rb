@@ -7,7 +7,7 @@ module Feedback
       expose :description
       expose :task_status
       expose :parent_chip_id
-      expose :learning_outcome # becomes id
+      expose :learning_outcome_id # becomes id
       expose :related_entity # can be gotten from learning outcome
       expose :section # removed
 
