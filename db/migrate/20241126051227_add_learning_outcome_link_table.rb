@@ -1,6 +1,5 @@
 class AddLearningOutcomeLinkTable < ActiveRecord::Migration[7.1]
   def change
-    remove_column :learning_outcomes, :parent_learning_outcome_id
 
     create_table :learning_outcome_links do |t|
       t.references :source, null: false, foreign_key: { to_table: :learning_outcomes }
