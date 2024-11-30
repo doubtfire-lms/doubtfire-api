@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_11_24_144752) do
+ActiveRecord::Schema[7.1].define(version: 2024_11_26_051227) do
   create_table "activity_types", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -129,6 +129,17 @@ ActiveRecord::Schema[7.1].define(version: 2024_11_24_144752) do
     t.index ["tutorial_id"], name: "index_groups_on_tutorial_id"
   end
 
+  create_table "learning_outcome_links", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "source_id", null: false
+    t.bigint "target_id", null: false
+    t.string "link_type"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["source_id", "target_id"], name: "index_learning_outcome_links_on_source_id_and_target_id", unique: true
+    t.index ["source_id"], name: "index_learning_outcome_links_on_source_id"
+    t.index ["target_id"], name: "index_learning_outcome_links_on_target_id"
+  end
+
   create_table "learning_outcome_task_links", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
     t.text "description"
     t.integer "rating"
@@ -146,12 +157,10 @@ ActiveRecord::Schema[7.1].define(version: 2024_11_24_144752) do
     t.integer "ilo_number"
     t.string "name"
     t.string "description", limit: 4096
-    t.string "abbreviation"
+    t.string "tag"
     t.bigint "context_id"
     t.string "context_type"
-    t.bigint "parent_learning_outcome_id"
     t.index ["context_id", "context_type"], name: "index_learning_outcomes_on_context_id_and_context_type"
-    t.index ["parent_learning_outcome_id"], name: "index_learning_outcomes_on_parent_learning_outcome_id"
   end
 
   create_table "logins", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
@@ -582,5 +591,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_11_24_144752) do
   end
 
   add_foreign_key "feedback_chips", "feedback_chips", column: "parent_chip_id"
-  add_foreign_key "learning_outcomes", "learning_outcomes", column: "parent_learning_outcome_id"
+  add_foreign_key "learning_outcome_links", "learning_outcomes", column: "source_id"
+  add_foreign_key "learning_outcome_links", "learning_outcomes", column: "target_id"
 end
