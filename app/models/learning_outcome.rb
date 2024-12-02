@@ -12,19 +12,20 @@ class LearningOutcome < ApplicationRecord
   has_many :feedback_group_chips, class_name: 'Feedback::FeedbackGroupChip', dependent: :destroy
   has_many :feedback_template_chips, class_name: 'Feedback::FeedbackTemplateChip', dependent: :destroy
 
-  # has_many :learning_outcome_task_links, dependent: :destroy # links to learning outcomes
-  # has_many :related_task_definitions, -> { where('learning_outcome_task_links.task_id is NULL') }, through: :learning_outcome_task_links, source: :task_definition # only link staff relations
+  has_many :learning_outcome_task_links, dependent: :destroy # links to learning outcomes
+  has_many :related_task_definitions, -> { where('learning_outcome_task_links.task_id is NULL') }, through: :learning_outcome_task_links, source: :task_definition # only link staff relations
 
   # validates :abbreviation, uniqueness: { scope: :unit_id } # abbreviation was changed to tag, and now we want to use context type
   # validates :tag, uniqueness: { scope: :context_type } # outcome names within a unit must be unique
-  validates :description, length: { maximum: 4095, allow_blank: true }
+  validates :short_description, length: { maximum: 4095, allow_blank: true }
+  validates :full_outcome_description, length: { maximum: 4095, allow_blank: true }
 
   def self.csv_header
-    %w(context_type context_id ilo_number tag name description)
+    %w(context_type, context_id, abbreviation, short_description, full_outcome_description)
   end
 
   def add_csv_row(row)
-    row << [context_type, context_id, ilo_number, tag, name, description]
+    row << [context_type, context_id, abbreviation, short_description, full_outcome_description]
   end
 
   def self.create_from_csv(context, row, result)
@@ -41,9 +42,10 @@ class LearningOutcome < ApplicationRecord
     #  return
     # end
 
-    ilo_number = row['ilo_number'].to_i
+    # ilo_number = row['ilo_number'].to_i
 
-    tag = row['tag']
+=begin
+  tag = row['tag']
     if tag.nil?
       result[:errors] << { row: row, message: 'Missing tag' }
       return
@@ -60,19 +62,37 @@ class LearningOutcome < ApplicationRecord
       result[:errors] << { row: row, message: 'Missing description' }
       return
     end
+=end
 
-    outcome = LearningOutcome.find_or_create_by(context_id: context_id, context_type: context_type, tag: tag) do |outcome|
-      outcome.name = name
-      outcome.description = description
-      outcome.ilo_number = ilo_number
+    abbreviation = row['abbreviation']
+    if abbreviation.nil?
+      result[:errors] << { row: row, message: 'Missing abbreviation' }
+      return
+    end
+
+    short_description = row['short_description']
+    if short_description.nil?
+      result[:errors] << { row: row, message: 'Missing short_description' }
+      return
+    end
+
+    full_outcome_description = row['full_outcome_description']
+    if full_outcome_description.nil?
+      result[:errors] << { row: row, message: 'Missing full_outcome_description' }
+      return
+    end
+
+    outcome = LearningOutcome.find_or_create_by(context_id: context_id, context_type: context_type, abbreviation: abbreviation) do |outcome|
+      outcome.short_description = short_description
+      outcome.full_outcome_description = full_outcome_description
     end
 
     outcome.save!
 
     result[:success] << if outcome.new_record?
-                          { row: row, message: "Outcome #{tag} created" }
+                          { row: row, message: "Outcome #{abbreviation} created" }
                         else
-                          { row: row, message: "Outcome #{tag} updated" }
+                          { row: row, message: "Outcome #{abbreviation} updated" }
                         end
   end
 end

@@ -19,10 +19,9 @@ class LearningOutcomeNewTest < ActiveSupport::TestCase
     data_to_post = {
       context_type: 'Unit',
       context_id: unit.id,
-      name: 'name',
-      description: 'description',
-      tag: 'tag',
-      ilo_number: 1
+      abbreviation: 'changed abbreviation',
+      short_description: 'changed short_description',
+      full_outcome_description: 'changed full_outcome_description'
     }
     add_auth_header_for user: User.first
     post_json "api/units/#{unit.id}/outcomes", data_to_post
@@ -32,12 +31,11 @@ class LearningOutcomeNewTest < ActiveSupport::TestCase
 
   def test_update_outcome
     unit = FactoryBot.create(:unit, name: 'i like units', code: 'abcde', description: 'test unit')
-    learning_outcome = FactoryBot.create(:learning_outcome, context_id: unit.id, context_type: 'Unit', name: 'name', description: 'description', tag: 'tag', ilo_number: 1)
+    learning_outcome = FactoryBot.create(:learning_outcome, context_id: unit.id, context_type: 'Unit', abbreviation: 'abbreviation', short_description: 'short_description', full_outcome_description: 'full_outcome_description')
     data_to_put = {
-      name: 'changed name',
-      description: 'changed description',
-      tag: 'changed tag',
-      ilo_number: 2
+      abbreviation: 'changed abbreviation',
+      short_description: 'changed short_description',
+      full_outcome_description: 'changed full_outcome_description'
     }
     add_auth_header_for user: User.first
     put_json "api/units/#{unit.id}/outcomes/#{learning_outcome.id}", data_to_put
@@ -48,7 +46,7 @@ class LearningOutcomeNewTest < ActiveSupport::TestCase
 
   def test_delete_outcome
     unit = FactoryBot.create(:unit, name: 'i like units', code: 'abcde', description: 'test unit')
-    learning_outcome = FactoryBot.create(:learning_outcome, context_id: unit.id, context_type: 'Unit', name: 'name', description: 'description', tag: 'tag', ilo_number: 1)
+    learning_outcome = FactoryBot.create(:learning_outcome, context_id: unit.id, context_type: 'Unit', abbreviation: 'abbreviation', short_description: 'short_description', full_outcome_description: 'full_outcome_description')
     add_auth_header_for user: User.first
     delete "api/units/#{unit.id}/outcomes/#{learning_outcome.id}"
     assert_equal 204, last_response.status

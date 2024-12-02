@@ -30,10 +30,9 @@ factory :learning_outcome do
   factory :learning_outcome do
     context_type { 'Unit' }
     context_id { 1 }
-    name { Faker::Lorem.unique.words(number: 3).join(' ') }
-    sequence(:tag) { |n| "tag-#{n}" }
-    sequence(:ilo_number) { |n| n }
-    description { Faker::Lorem.sentence }
+    abbreviation { Faker::Lorem.unique.words(number: 3).join(' ') }
+    short_description { Faker::Lorem.sentence }
+    full_outcome_description { Faker::Lorem.sentence }
   end
 
   factory :unit_role do

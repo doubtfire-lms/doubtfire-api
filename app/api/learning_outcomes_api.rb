@@ -36,9 +36,9 @@ class LearningOutcomesApi < Grape::API
   params do
     requires :context_id, type: Integer, desc: 'The id of the context'
     requires :context_type, type: String, values: ['Unit', 'Course', 'Task'], desc: 'The type of the context'
-    requires :name, type: String, desc: 'The ILO''s name'
-    requires :description, type: String, desc: 'The ILO''s description'
-    optional :tag, type: String, desc: 'The ILO''s tag'
+    requires :abbreviation, type: String, desc: 'The ILO''s abbreviation'
+    requires :short_description, type: String, desc: 'The ILO''s short_description'
+    optional :full_outcome_description, type: String, desc: 'The ILO''s full_outcome_description'
   end
   post '/:context_type_plural/:context_id/outcomes' do
     # find context model dynamically
@@ -50,7 +50,7 @@ class LearningOutcomesApi < Grape::API
       error!({ error: 'You are not authorised to create outcomes in this context.' }, 403)
     end
 
-    ilo = context_model.add_ilo(params[:name], params[:description], params[:tag]) # need to check if this is implemented across the other models
+    ilo = context_model.add_ilo(params[:abbreviation], params[:short_description], params[:full_outcome_description]) # need to check if this is implemented across the other models
     present ilo, with: Entities::LearningOutcomeEntity
   end
 
@@ -89,10 +89,10 @@ class LearningOutcomesApi < Grape::API
   desc 'Update an outcome in a specified context (unit, course, task, ect.)'
   params do
     requires :context_id, type: Integer, desc: 'The id of the context'
-    optional :name, type: String, desc: 'The ILO''s new name'
-    optional :description, type: String, desc: 'The ILO''s new description'
-    optional :tag, type: String, desc: 'The ILO''s new tag'
-    optional :ilo_number, type: Integer, desc: 'The ILO''s new sequence number'
+    requires :abbreviation, type: String, desc: 'The ILO''s abbreviation'
+    requires :short_description, type: String, desc: 'The ILO''s short_description'
+    optional :full_outcome_description, type: String, desc: 'The ILO''s full_outcome_description'
+    # optional :ilo_number, type: Integer, desc: 'The ILO''s new sequence number'
   end
   put '/:context_type_plural/:context_id/outcomes/:id' do
     # find context model dynamically
@@ -108,11 +108,11 @@ class LearningOutcomesApi < Grape::API
 
     ilo_parameters = ActionController::Parameters.new(params)
                                                  .permit(
-                                                   :name,
-                                                   :description,
-                                                   :tag
+                                                   :abbreviation,
+                                                   :short_description,
+                                                   :full_outcome_description
                                                  )
-    context_model.move_ilo(ilo, params[:ilo_number]) if params[:ilo_number]
+    # context_model.move_ilo(ilo, params[:ilo_number]) if params[:ilo_number]
     ilo.update!(ilo_parameters)
     present ilo, with: Entities::LearningOutcomeEntity
   end
@@ -181,11 +181,11 @@ class LearningOutcomesApi < Grape::API
   desc 'Download the outcomes for a specified context (unit, course, task, ect.) to a csv'
   params do
     requires :context_id, type: Integer, desc: 'The id of the context'
-    requires :context_type, type: String, values: ['unit', 'course', 'task'], desc: 'The type of the context'
   end
   get '/:context_type_plural/:context_id/outcomes/csv' do
     # find context model dynamically
-    context_model = params[:context_type].classify.constantize.find(id: params[:context_id])
+    context_type = params[:context_type_plural].singularize
+    context_model = context_type.classify.constantize.find(params[:context_id])
 
     unless authorise? current_user, context_model, :update
       error!({ error: 'You are not authorised to download outcomes for this context.' }, 403)
@@ -223,14 +223,14 @@ desc 'Upload the outcomes for a unit from a csv'
   params do
     requires :file, type: File, desc: 'CSV upload file.'
     requires :context_id, type: Integer, desc: 'The id of the context'
-    requires :context_type, type: String, values: ['unit', 'course', 'task'], desc: 'The type of the context'
   end
   post '/:context_type_plural/:context_id/outcomes/csv' do
     # check mime is correct before uploading
     ensure_csv!(params[:file][:tempfile])
 
     # find context model dynamically
-    context_model = params[:context_string].classify.constantize.find(id: params[:context_id])
+    context_type = params[:context_type_plural].singularize
+    context_model = params[context_type].classify.constantize.find(params[:context_id])
 
     unless authorise? current_user, context_model, :upload_csv
       error!({ error: 'Not authorised to upload CSV of outcomes' }, 403)

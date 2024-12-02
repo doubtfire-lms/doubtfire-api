@@ -3,9 +3,8 @@ module Entities
     expose :id
     expose :context_type
     expose :context_id
-    expose :ilo_number
-    expose :tag
-    expose :name
-    expose :description
+    expose :abbreviation
+    expose :short_description
+    expose :full_outcome_description
   end
 end

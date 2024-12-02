@@ -59,7 +59,7 @@ module PdfGeneration
         @ordered_tasks = project.tasks.joins(:task_definition).order('task_definitions.start_date, task_definitions.abbreviation').where("task_definitions.target_grade <= #{project.target_grade}")
         @portfolio_tasks = project.portfolio_tasks
         @task_defs = project.unit.task_definitions.order(:start_date)
-        @outcomes = project.unit.learning_outcomes.order(:ilo_number)
+        @outcomes = project.unit.learning_outcomes # .order(:ilo_number)
         @institution_name = Doubtfire::Application.config.institution[:name]
         @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
         @is_retry = is_retry
