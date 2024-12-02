@@ -16,7 +16,7 @@ class LearningOutcome < ApplicationRecord
   # has_many :related_task_definitions, -> { where('learning_outcome_task_links.task_id is NULL') }, through: :learning_outcome_task_links, source: :task_definition # only link staff relations
 
   # validates :abbreviation, uniqueness: { scope: :unit_id } # abbreviation was changed to tag, and now we want to use context type
-  validates :tag, uniqueness: { scope: :context_type } # outcome names within a unit must be unique
+  # validates :tag, uniqueness: { scope: :context_type } # outcome names within a unit must be unique
   validates :description, length: { maximum: 4095, allow_blank: true }
 
   def self.csv_header
