@@ -15,30 +15,12 @@ module Feedback
       present chips, with: Entities::FeedbackGroupChipEntity
     end
 
-    desc 'Get all feedback chips for a specific related_entity'
+    desc 'Get all feedback chips for a specific learning_outcome_id'
     params do
-      requires :related_entity, type: String, desc: 'The related_entity of the feedback chips'
+      requires :learning_outcome_id, type: Integer, desc: 'The learning_outcome_id of the feedback chips'
     end
-    get '/feedback_group_chips/related_entity/:related_entity' do
-      chips = FeedbackGroupChip.where(related_entity: params[:related_entity])
-      present chips, with: Entities::FeedbackGroupChipEntity
-    end
-
-    desc 'Get all feedback chips for a specific learning_outcome'
-    params do
-      requires :learning_outcome, type: String, desc: 'The learning_outcome of the feedback chips'
-    end
-    get '/feedback_group_chips/learning_outcome/:learning_outcome' do
-      chips = FeedbackGroupChip.where(learning_outcome: params[:learning_outcome])
-      present chips, with: Entities::FeedbackGroupChipEntity
-    end
-
-    desc 'Get all feedback chips for a specific section'
-    params do
-      requires :section, type: String, desc: 'The section of the feedback chips'
-    end
-    get '/feedback_group_chips/section/:section' do
-      chips = FeedbackGroupChip.where(section: params[:section])
+    get '/feedback_group_chips/learning_outcome/:learning_outcome_id' do
+      chips = FeedbackGroupChip.where(learning_outcome_id: params[:learning_outcome_id])
       present chips, with: Entities::FeedbackGroupChipEntity
     end
 
@@ -64,9 +46,7 @@ module Feedback
     params do
       requires :chip_text, type: String, desc: 'The title of the feedback chip'
       requires :parent_chip_id, type: Integer, desc: 'The parent chip ID of the feedback chip'
-      requires :related_entity, type: String, desc: 'The related entity of the feedback chip'
-      requires :learning_outcome, type: String, desc: 'The learning outcome of the feedback chip'
-      requires :section, type: String, desc: 'The section of the feedback chip'
+      requires :learning_outcome_id, type: Integer, desc: 'The learning outcome of the feedback chip'
     end
     post '/feedback_group_chips' do
       unless authorise? current_user, User, :feedback_chips
@@ -82,9 +62,7 @@ module Feedback
       requires :id, type: Integer, desc: 'The ID of the feedback chip'
       requires :chip_text, type: String, desc: 'The title of the feedback chip'
       requires :parent_chip_id, type: Integer, desc: 'The parent chip ID of the feedback chip'
-      requires :related_entity, type: String, desc: 'The related_entity of the feedback chip'
-      requires :learning_outcome, type: String, desc: 'The learning_outcome of the feedback chip'
-      requires :section, type: String, desc: 'The section of the feedback chip'
+      requires :learning_outcome_id, type: Integer, desc: 'The learning_outcome of the feedback chip'
     end
     put '/feedback_group_chips/:id' do
       chip = FeedbackGroupChip.find(params[:id])

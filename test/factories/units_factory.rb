@@ -17,12 +17,23 @@ FactoryBot.define do
     tutorial_stream           { unit.tutorial_streams.sample }
   end
 
-  factory :learning_outcome do
+=begin
+factory :learning_outcome do
     unit
     name                      { Faker::Lorem.unique.words(number: 3).join(' ') }
     sequence(:abbreviation)   { |n| "ULO-#{n}" }
     sequence(:ilo_number)     { |n| n }
     description               { Faker::Lorem.sentence }
+  end
+=end
+
+  factory :learning_outcome do
+    context_type { 'Unit' }
+    context_id { 1 }
+    name { Faker::Lorem.unique.words(number: 3).join(' ') }
+    sequence(:tag) { |n| "tag-#{n}" }
+    sequence(:ilo_number) { |n| n }
+    description { Faker::Lorem.sentence }
   end
 
   factory :unit_role do
@@ -89,7 +100,7 @@ FactoryBot.define do
       campuses = Campus.all.sample(eval.campus_count)
 
       create_list(:group_set, group_sets, unit: unit)
-      outcomes = create_list(:learning_outcome, eval.outcome_count, unit: unit)
+      outcomes = create_list(:learning_outcome, eval.outcome_count, context_type: 'Unit', context_id: unit.id)
       tutorial_streams = create_list(:tutorial_stream, eval.stream_count, unit: unit)
       task_definitions = create_list(:task_definition, task_count, unit: unit)
 
@@ -101,7 +112,7 @@ FactoryBot.define do
       while unit.task_outcome_alignments.count < eval.task_alignment_links do
         td = task_definitions.sample
         o = outcomes.sample
-        LearningOutcomeTaskLink.create task_definition: td, learning_outcome: o, rating: (1..5).to_a.sample, description: "Justification"
+        # SLearningOutcomeTaskLink.create task_definition: td, learning_outcome: o, rating: (1..5).to_a.sample, description: "Justification"
       end
 
       # Create tutorials at campus in each stream

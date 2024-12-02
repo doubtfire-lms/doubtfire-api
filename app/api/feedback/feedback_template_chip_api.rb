@@ -30,9 +30,7 @@ module Feedback
       requires :description, type: String, desc: 'The description of the feedback template chip'
       requires :task_status, type: String, desc: 'The task status of the feedback template chip'
       requires :parent_chip_id, type: Integer, desc: 'The parent chip ID of the feedback template chip'
-      requires :learning_outcome, type: String, desc: 'The learning outcome of the feedback template chip'
-      requires :related_entity, type: String, desc: 'The related entity of the feedback template chip'
-      requires :section, type: String, desc: 'The section of the feedback template chip'
+      requires :learning_outcome_id, type: Integer, desc: 'The learning outcome of the feedback template chip'
       requires :comment_text, type: String, desc: 'The comment text of the feedback template chip'
       requires :summary_text, type: String, desc: 'The summary text of the feedback template chip'
     end
@@ -52,9 +50,7 @@ module Feedback
       requires :description, type: String, desc: 'The description of the feedback template chip'
       requires :task_status, type: String, desc: 'The task status of the feedback template chip'
       requires :parent_chip_id, type: Integer, desc: 'The parent chip ID of the feedback template chip'
-      requires :learning_outcome, type: String, desc: 'The learning outcome of the feedback template chip'
-      requires :related_entity, type: String, desc: 'The related entity of the feedback template chip'
-      requires :section, type: String, desc: 'The section of the feedback template chip'
+      requires :learning_outcome_id, type: Integer, desc: 'The learning outcome of the feedback template chip'
       requires :comment_text, type: String, desc: 'The comment text of the feedback template chip'
       requires :summary_text, type: String, desc: 'The summary text of the feedback template chip'
     end

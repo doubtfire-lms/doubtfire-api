@@ -32,9 +32,7 @@ class FeedbackTemplateChipApiTest < ActiveSupport::TestCase
       description: 'Sample description',
       task_status: 'In Progress',
       parent_chip_id: nil,
-      learning_outcome: 'Sample lo',
-      related_entity: 'Sample related entity',
-      section: 'Sample section',
+      learning_outcome_id: 1,
       comment_text: 'Sample comment text',
       summary_text: 'Sample summary text'
     }
@@ -66,9 +64,7 @@ class FeedbackTemplateChipApiTest < ActiveSupport::TestCase
       description: 'Sample description',
       task_status: 'In Progress',
       parent_chip_id: nil,
-      learning_outcome: 'Sample lo',
-      related_entity: 'Sample related entity',
-      section: 'Sample section',
+      learning_outcome_id: 1,
       comment_text: 'Sample comment text',
       summary_text: 'Sample summary text'
     }
@@ -91,9 +87,7 @@ class FeedbackTemplateChipApiTest < ActiveSupport::TestCase
       description: 'Sample description',
       task_status: 'In Progress',
       parent_chip_id: nil,
-      learning_outcome: 'Sample lo',
-      related_entity: 'Sample related entity',
-      section: 'Sample section',
+      learning_outcome_id: 1,
       comment_text: 'Sample comment text',
       summary_text: 'Sample summary text'
     }
@@ -107,9 +101,7 @@ class FeedbackTemplateChipApiTest < ActiveSupport::TestCase
       description: 'Sample description',
       task_status: 'In Progress',
       parent_chip_id: nil,
-      learning_outcome: 'Sample lo',
-      related_entity: 'Sample related entity',
-      section: 'Sample section',
+      learning_outcome_id: 1,
       comment_text: 'Sample comment text',
       summary_text: 'Sample summary text'
     }

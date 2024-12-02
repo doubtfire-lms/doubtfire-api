@@ -4,8 +4,6 @@ FactoryBot.define do
     description { "Sample description" }
     parent_chip_id { nil }
     learning_outcome_id { 1 }
-    related_entity { "Sample related entity" } # removed
-    section { "Sample section" } # removed
   end
 
   factory :feedback_template_chip, class: 'Feedback::FeedbackTemplateChip' do
@@ -13,9 +11,7 @@ FactoryBot.define do
     description { "Sample description" }
     task_status { "In Progress" }
     parent_chip_id { nil }
-    learning_outcome_id { 1 } # becomes an id
-    related_entity { "Sample related entity" } # removed
-    section { "Sample section" } # removed
+    learning_outcome_id { 1 }
 
     comment_text { "Sample comment text" }
     summary_text { "Sample summary text" }
