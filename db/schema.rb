@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_11_26_051227) do
+ActiveRecord::Schema[7.1].define(version: 2024_12_02_022554) do
   create_table "activity_types", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -72,11 +72,10 @@ ActiveRecord::Schema[7.1].define(version: 2024_11_26_051227) do
     t.text "summary_text"
     t.string "task_status"
     t.bigint "parent_chip_id"
-    t.string "related_entity"
-    t.string "learning_outcome"
+    t.bigint "learning_outcome_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "section"
+    t.index ["learning_outcome_id"], name: "fk_rails_142ab222e0"
     t.index ["parent_chip_id"], name: "fk_rails_a01973d8a0"
   end
 
@@ -591,6 +590,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_11_26_051227) do
   end
 
   add_foreign_key "feedback_chips", "feedback_chips", column: "parent_chip_id"
+  add_foreign_key "feedback_chips", "learning_outcomes"
   add_foreign_key "learning_outcome_links", "learning_outcomes", column: "source_id"
   add_foreign_key "learning_outcome_links", "learning_outcomes", column: "target_id"
 end

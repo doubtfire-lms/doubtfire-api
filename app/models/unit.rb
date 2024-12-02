@@ -125,7 +125,7 @@ class Unit < ApplicationRecord
   has_many :tutorials, dependent: :destroy, inverse_of: :unit # tutorials need groups and tasks deleted before it...
   has_many :tutorial_streams, dependent: :destroy, inverse_of: :unit
   has_many :unit_roles, dependent: :destroy, inverse_of: :unit
-  has_many :learning_outcomes, dependent: :destroy, inverse_of: :unit
+  has_many :learning_outcomes, as: :context, dependent: :destroy # inverse_of: :unit
 
   has_many :comments, through: :projects
   has_many :tasks, through: :projects
@@ -1076,11 +1076,11 @@ class Unit < ApplicationRecord
           next
         end
 
-        outcome_abbr = row['learning_outcome']
-        outcome = learning_outcomes.where('abbreviation = :abbr', abbr: outcome_abbr).first
+        outcome_tag = row['learning_outcome']
+        outcome = learning_outcomes.where('tag = :tag', abbr: outcome_tag).first
 
         if outcome.nil?
-          errors << { row: row, message: "Unable to locate learning outcome with abbreviation #{outcome_abbr}" }
+          errors << { row: row, message: "Unable to locate learning outcome with tag #{outcome_tag}" }
           next
         end
 
@@ -1613,14 +1613,15 @@ class Unit < ApplicationRecord
   #
   # Create an ILO
   #
-  def add_ilo(name, desc, abbr)
+  def add_ilo(name, desc, tag)
     next_num = learning_outcomes.count + 1
 
     LearningOutcome.create!(
-      unit_id: id,
+      context_id: id,
+      context_type: 'Unit',
       name: name,
       description: desc,
-      abbreviation: abbr,
+      tag: tag,
       ilo_number: next_num
     )
   end
