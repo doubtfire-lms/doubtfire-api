@@ -9,7 +9,7 @@ class LearningOutcomesApi < Grape::API
     authenticated?
   end
 
-  route :context_type_plural, values: ['units', 'tasks', 'courses'] do
+  route :context_type_plural, values: ['units', 'task_definitions', 'courses'] do
     params[:context_type].pluralize
   end
 
@@ -32,10 +32,10 @@ class LearningOutcomesApi < Grape::API
   end
 =end
 
-  desc "Add an outcome to a specified context (unit, course, task, ect.)"
+  desc "Add an outcome to a specified context (unit, course, task_definition, ect.)"
   params do
     requires :context_id, type: Integer, desc: 'The id of the context'
-    requires :context_type, type: String, values: ['Unit', 'Course', 'Task'], desc: 'The type of the context'
+    requires :context_type, type: String, values: ['Unit', 'Course', 'Task_Definition'], desc: 'The type of the context'
     requires :abbreviation, type: String, desc: 'The ILO''s abbreviation'
     requires :short_description, type: String, desc: 'The ILO''s short_description'
     optional :full_outcome_description, type: String, desc: 'The ILO''s full_outcome_description'
@@ -86,7 +86,7 @@ class LearningOutcomesApi < Grape::API
   end
 =end
 
-  desc 'Update an outcome in a specified context (unit, course, task, ect.)'
+  desc 'Update an outcome in a specified context (unit, course, task_definition, ect.)'
   params do
     requires :context_id, type: Integer, desc: 'The id of the context'
     requires :abbreviation, type: String, desc: 'The ILO''s abbreviation'
@@ -139,7 +139,7 @@ class LearningOutcomesApi < Grape::API
   end
 =end
 
-  desc 'Delete an outcome from a specified context (unit, course, task, ect.)'
+  desc 'Delete an outcome from a specified context (unit, course, task_definition, ect.)'
   params do
     requires :context_id, type: Integer, desc: 'The id of the context'
     requires :id, type: Integer, desc: 'The id for the outcome you wish to delete'
@@ -178,7 +178,7 @@ class LearningOutcomesApi < Grape::API
   end
 =end
 
-  desc 'Download the outcomes for a specified context (unit, course, task, ect.) to a csv'
+  desc 'Download the outcomes for a specified context (unit, course, task_definition, ect.) to a csv'
   params do
     requires :context_id, type: Integer, desc: 'The id of the context'
   end
@@ -219,7 +219,7 @@ desc 'Upload the outcomes for a unit from a csv'
   end
 =end
 
-  desc 'Upload the outcomes for a specified context (unit, course, task, ect.) from a csv'
+  desc 'Upload the outcomes for a specified context (unit, course, task_definition, ect.) from a csv'
   params do
     requires :file, type: File, desc: 'CSV upload file.'
     requires :context_id, type: Integer, desc: 'The id of the context'

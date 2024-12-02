@@ -6,6 +6,7 @@ class TaskStatus < ApplicationRecord
 
   # Model associations
   has_many :tasks, dependent: :restrict_with_exception
+  has_many :feedback_chips, dependent: :restrict_with_exception
 
   #
   # Override find to ensure that task status objects are cached - these do not change
