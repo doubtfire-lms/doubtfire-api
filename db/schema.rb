@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_12_02_022554) do
+ActiveRecord::Schema[7.1].define(version: 2024_12_02_120204) do
   create_table "activity_types", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -153,12 +153,11 @@ ActiveRecord::Schema[7.1].define(version: 2024_12_02_022554) do
   end
 
   create_table "learning_outcomes", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
-    t.integer "ilo_number"
-    t.string "name"
-    t.string "description", limit: 4096
-    t.string "tag"
     t.bigint "context_id"
     t.string "context_type"
+    t.string "abbreviation"
+    t.string "short_description"
+    t.string "full_outcome_description"
     t.index ["context_id", "context_type"], name: "index_learning_outcomes_on_context_id_and_context_type"
   end
 

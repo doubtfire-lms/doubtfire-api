@@ -330,9 +330,9 @@ class Unit < ApplicationRecord
     new_unit
   end
 
-  def ordered_ilos
-    learning_outcomes.order(:ilo_number)
-  end
+  #def ordered_ilos
+  #  learning_outcomes.order(:ilo_number)
+  #end
 
   def task_outcome_alignments
     learning_outcome_task_links.where('task_id is NULL')
@@ -1076,11 +1076,11 @@ class Unit < ApplicationRecord
           next
         end
 
-        outcome_tag = row['learning_outcome']
-        outcome = learning_outcomes.where('tag = :tag', abbr: outcome_tag).first
+        outcome_abbreviation= row['learning_outcome']
+        outcome = learning_outcomes.where('abbreviation = :abbreviation', abbr: outcome_abbreviation).first
 
         if outcome.nil?
-          errors << { row: row, message: "Unable to locate learning outcome with tag #{outcome_tag}" }
+          errors << { row: row, message: "Unable to locate learning outcome with abbreviation #{outcome_abbreviation}" }
           next
         end
 
@@ -1613,23 +1613,21 @@ class Unit < ApplicationRecord
   #
   # Create an ILO
   #
-  def add_ilo(name, desc, tag)
-    next_num = learning_outcomes.count + 1
+  def add_ilo(abbreviation, short_description, full_outcome_description)
 
     LearningOutcome.create!(
       context_id: id,
       context_type: 'Unit',
-      name: name,
-      description: desc,
-      tag: tag,
-      ilo_number: next_num
+      abbreviation: abbreviation,
+      short_description: short_description,
+      full_outcome_description: full_outcome_description,
     )
   end
 
   #
   # Reorder ILO sequence numbers based on ILO update
   #
-  def move_ilo(ilo, new_num)
+=begin   def move_ilo(ilo, new_num)
     if ilo.ilo_number < new_num
       logger.debug "Moving ILOs up #{ilo.ilo_number} to #{new_num}"
       learning_outcomes.where("ilo_number > #{ilo.ilo_number} and ilo_number <= #{new_num}").find_each { |ilo| ilo.ilo_number -= 1; ilo.save }
@@ -1639,6 +1637,7 @@ class Unit < ApplicationRecord
     ilo.ilo_number = new_num
     ilo.save
   end
+=end
 
   #
   # Get all of the related tasks

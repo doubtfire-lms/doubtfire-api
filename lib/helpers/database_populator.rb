@@ -636,11 +636,10 @@ class DatabasePopulator
         # unit_id: unit.id,
         context_id: unit.id,
         context_type: 'Unit',
-        ilo_number: ilo_number,
-        # abbreviation: "ILO#{ilo_number}",
-        tag: "ILO#{ilo_number}",
-        name: faker_random_sentence(1, 4).capitalize,
-        description: faker_random_sentence(10, 15)
+        abbreviation: "ILO#{ilo_number}",
+        # tag: "ILO#{ilo_number}",
+        short_description: faker_random_sentence(1, 4).capitalize,
+        full_outcome_description: faker_random_sentence(10, 15)
       )
       ilo_cache[ilo.id] = ilo
       echo "."
