@@ -28,7 +28,7 @@ module Feedback
     params do
       requires :chip_text, type: String, desc: 'The text of the feedback template chip'
       requires :description, type: String, desc: 'The description of the feedback template chip'
-      requires :task_status, type: String, desc: 'The task status of the feedback template chip'
+      requires :task_status_id, type: Integer, desc: 'The task status of the feedback template chip'
       requires :parent_chip_id, type: Integer, desc: 'The parent chip ID of the feedback template chip'
       requires :learning_outcome_id, type: Integer, desc: 'The learning outcome of the feedback template chip'
       requires :comment_text, type: String, desc: 'The comment text of the feedback template chip'
@@ -48,7 +48,7 @@ module Feedback
       requires :id, type: Integer, desc: 'The ID of the feedback template chip'
       requires :chip_text, type: String, desc: 'The text of the feedback template chip'
       requires :description, type: String, desc: 'The description of the feedback template chip'
-      requires :task_status, type: String, desc: 'The task status of the feedback template chip'
+      requires :task_status_id, type: Integer, desc: 'The task status of the feedback template chip'
       requires :parent_chip_id, type: Integer, desc: 'The parent chip ID of the feedback template chip'
       requires :learning_outcome_id, type: Integer, desc: 'The learning outcome of the feedback template chip'
       requires :comment_text, type: String, desc: 'The comment text of the feedback template chip'

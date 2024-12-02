@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_12_02_120204) do
+ActiveRecord::Schema[7.1].define(version: 2024_12_02_130212) do
   create_table "activity_types", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -70,13 +70,14 @@ ActiveRecord::Schema[7.1].define(version: 2024_12_02_120204) do
     t.text "description"
     t.text "comment_text"
     t.text "summary_text"
-    t.string "task_status"
     t.bigint "parent_chip_id"
     t.bigint "learning_outcome_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "task_status_id"
     t.index ["learning_outcome_id"], name: "fk_rails_142ab222e0"
     t.index ["parent_chip_id"], name: "fk_rails_a01973d8a0"
+    t.index ["task_status_id"], name: "index_feedback_chips_on_task_status_id"
   end
 
   create_table "group_memberships", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
@@ -590,6 +591,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_12_02_120204) do
 
   add_foreign_key "feedback_chips", "feedback_chips", column: "parent_chip_id"
   add_foreign_key "feedback_chips", "learning_outcomes"
+  add_foreign_key "feedback_chips", "task_statuses"
   add_foreign_key "learning_outcome_links", "learning_outcomes", column: "source_id"
   add_foreign_key "learning_outcome_links", "learning_outcomes", column: "target_id"
 end

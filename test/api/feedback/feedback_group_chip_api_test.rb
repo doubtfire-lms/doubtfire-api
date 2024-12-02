@@ -29,7 +29,7 @@ class FeedbackGroupChipApiTest < ActiveSupport::TestCase
       chip_text: 'Sample chip text',
       description: 'Sample description',
       parent_chip_id: nil,
-      learning_outcome_id: 1,
+      learning_outcome_id: 1
     }
     add_auth_header_for user: User.first
     post_json 'api/feedback_group_chips', data_to_post
@@ -58,7 +58,7 @@ class FeedbackGroupChipApiTest < ActiveSupport::TestCase
       chip_text: 'Sample chip text',
       description: 'Sample description',
       parent_chip_id: nil,
-      learning_outcome_id: 1,
+      learning_outcome_id: 1
     }
     add_auth_header_for user: User.first
     put_json "api/feedback_group_chips/#{group_chip.id}", data_to_post
@@ -89,7 +89,7 @@ class FeedbackGroupChipApiTest < ActiveSupport::TestCase
       chip_text: 'Sample chip text',
       description: 'Sample description',
       parent_chip_id: nil,
-      learning_outcome_id: 1,
+      learning_outcome_id: 1
     }
     add_auth_header_for user: User.last
     post_json 'api/feedback_group_chips', data_to_post
