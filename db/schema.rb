@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_12_02_130212) do
+ActiveRecord::Schema[7.1].define(version: 2024_12_03_012602) do
   create_table "activity_types", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -44,6 +44,16 @@ ActiveRecord::Schema[7.1].define(version: 2024_12_02_130212) do
     t.index ["abbreviation"], name: "index_campuses_on_abbreviation", unique: true
     t.index ["active"], name: "index_campuses_on_active"
     t.index ["name"], name: "index_campuses_on_name", unique: true
+  end
+
+  create_table "chip_usage_analytics", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "feedback_chip_id", null: false
+    t.bigint "tutor_id", null: false
+    t.integer "usage_count", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["feedback_chip_id"], name: "index_chip_usage_analytics_on_feedback_chip_id"
+    t.index ["tutor_id"], name: "index_chip_usage_analytics_on_tutor_id"
   end
 
   create_table "comments_read_receipts", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
@@ -589,6 +599,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_12_02_130212) do
     t.index ["user_id"], name: "index_webcals_on_user_id", unique: true
   end
 
+  add_foreign_key "chip_usage_analytics", "feedback_chips"
+  add_foreign_key "chip_usage_analytics", "users", column: "tutor_id"
   add_foreign_key "feedback_chips", "feedback_chips", column: "parent_chip_id"
   add_foreign_key "feedback_chips", "learning_outcomes"
   add_foreign_key "feedback_chips", "task_statuses"
