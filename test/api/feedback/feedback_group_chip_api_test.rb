@@ -78,7 +78,7 @@ class FeedbackGroupChipApiTest < ActiveSupport::TestCase
       chip_text: 'Sample chip text',
       description: 'Sample description',
       parent_chip_id: nil,
-      learning_outcome_id: 1,
+      learning_outcome_id: 1
     }
     post_json 'api/feedback_group_chips', data_to_post
     assert_equal 419, last_response.status
