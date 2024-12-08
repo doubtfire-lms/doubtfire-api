@@ -80,14 +80,14 @@ ActiveRecord::Schema[7.1].define(version: 2024_12_03_012602) do
     t.text "description"
     t.text "comment_text"
     t.text "summary_text"
+    t.bigint "task_statuses_id", null: false
+    t.bigint "learning_outcomes_id", null: false
     t.bigint "parent_chip_id"
-    t.bigint "learning_outcome_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "task_status_id"
-    t.index ["learning_outcome_id"], name: "fk_rails_142ab222e0"
-    t.index ["parent_chip_id"], name: "fk_rails_a01973d8a0"
-    t.index ["task_status_id"], name: "index_feedback_chips_on_task_status_id"
+    t.index ["learning_outcomes_id"], name: "index_feedback_chips_on_learning_outcomes_id"
+    t.index ["parent_chip_id"], name: "index_feedback_chips_on_parent_chip_id"
+    t.index ["task_statuses_id"], name: "index_feedback_chips_on_task_statuses_id"
   end
 
   create_table "group_memberships", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
@@ -164,11 +164,11 @@ ActiveRecord::Schema[7.1].define(version: 2024_12_03_012602) do
   end
 
   create_table "learning_outcomes", charset: "utf8mb3", collation: "utf8mb3_unicode_ci", force: :cascade do |t|
+    t.string "short_description"
+    t.string "full_outcome_description", limit: 4096
+    t.string "abbreviation"
     t.bigint "context_id"
     t.string "context_type"
-    t.string "abbreviation"
-    t.string "short_description"
-    t.string "full_outcome_description"
     t.index ["context_id", "context_type"], name: "index_learning_outcomes_on_context_id_and_context_type"
   end
 
@@ -599,11 +599,4 @@ ActiveRecord::Schema[7.1].define(version: 2024_12_03_012602) do
     t.index ["user_id"], name: "index_webcals_on_user_id", unique: true
   end
 
-  add_foreign_key "chip_usage_analytics", "feedback_chips"
-  add_foreign_key "chip_usage_analytics", "users", column: "tutor_id"
-  add_foreign_key "feedback_chips", "feedback_chips", column: "parent_chip_id"
-  add_foreign_key "feedback_chips", "learning_outcomes"
-  add_foreign_key "feedback_chips", "task_statuses"
-  add_foreign_key "learning_outcome_links", "learning_outcomes", column: "source_id"
-  add_foreign_key "learning_outcome_links", "learning_outcomes", column: "target_id"
 end
