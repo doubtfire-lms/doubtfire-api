@@ -79,5 +79,18 @@ module Feedback
       chip.destroy
       nil
     end
+
+    desc 'Track feedback template chip usage by a tutor'
+    params do
+      requires :feedback_template_chip_id, type: Integer, desc: 'The ID of the feedback group chip'
+      requires :tutor_id, type: Integer, desc: 'The ID of the tutor'
+    end
+    post '/feedback_template_chip/:feedback_template_chip_id/track_usage' do
+      feedback_template_chip = FeedbackTemplateChip.find(params[:feedback_template_chip_id])
+      tutor = Tutor.find(params[:tutor_id])
+      feedback_template_chip.track_usage_by(tutor)
+      nil
+    end
+
   end
 end

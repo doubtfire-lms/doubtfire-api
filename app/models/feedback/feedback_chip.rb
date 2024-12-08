@@ -26,5 +26,19 @@ module Feedback
       analytics.save
     end
 
+    def serialize
+      {
+        id: self.id,
+        type: self.type,
+        chip_text: self.chip_text,
+        description: self.description,
+        task_status_id: self.task_status_id,
+        parent_chip_id: self.parent_chip_id,
+        learning_outcome_id: self.learning_outcome_id,
+        created_at: self.created_at,
+        updated_at: self.updated_at
+      }
+    end
+
   end
 end

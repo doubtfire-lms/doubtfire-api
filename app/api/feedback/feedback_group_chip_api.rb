@@ -89,5 +89,6 @@ module Feedback
       chip.destroy
       nil
     end
+
   end
 end
