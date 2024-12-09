@@ -313,6 +313,7 @@ class User < ApplicationRecord
       :use_overseer,
 
       :feedback_chips,
+      :get_glos,
 
       :get_scorm_token
     ]
