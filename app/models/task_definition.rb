@@ -1,6 +1,31 @@
 require 'json'
 
 class TaskDefinition < ApplicationRecord
+
+  def self.permissions
+    convenor_role_permissions = [
+      :update
+    ]
+
+    admin_role_permissions = [
+      :update
+    ]
+
+    nil_role_permissions = []
+
+    {
+      convenor: convenor_role_permissions,
+      admin: admin_role_permissions,
+      nil: nil_role_permissions
+    }
+  end
+
+  def role_for(user)
+    return :admin if user.has_admin_capability?
+
+    return nil
+  end
+
   before_destroy :delete_associated_files
 
   after_update :move_files_on_abbreviation_change, if: :saved_change_to_abbreviation?
@@ -17,7 +42,8 @@ class TaskDefinition < ApplicationRecord
   has_many :tasks, dependent:  :destroy # Destroying a task definition will also nuke any instances
   has_many :group_submissions, dependent: :destroy # Destroying a task definition will also nuke any group submissions
   has_many :learning_outcome_task_links, dependent: :destroy # links to learning outcomes
-  has_many :learning_outcomes, -> { where('learning_outcome_task_links.task_id is NULL') }, through: :learning_outcome_task_links # only link staff relations
+  # has_many :learning_outcomes, -> { where('learning_outcome_task_links.task_id is NULL') }, through: :learning_outcome_task_links # only link staff relations
+  has_many :learning_outcomes, as: :context, dependent: :destroy
 
   has_many :tii_group_attachments, dependent: :destroy # destroy uploaded files to tii - after the tasks
   has_many :tii_actions, as: :entity, dependent: :destroy
@@ -564,6 +590,17 @@ class TaskDefinition < ApplicationRecord
     end
 
     nil
+  end
+
+  def add_ilo(abbreviation, short_description, full_outcome_description)
+
+    LearningOutcome.create!(
+      context_id: id,
+      context_type: 'TaskDefinition',
+      abbreviation: abbreviation,
+      short_description: short_description,
+      full_outcome_description: full_outcome_description,
+    )
   end
 
   private

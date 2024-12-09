@@ -63,16 +63,20 @@ class LearningOutcomesApi < Grape::API
   desc "Add an outcome to a specified context (unit, course, task_definition, ect.)"
   params do
     requires :context_id, type: Integer, desc: 'The id of the context'
-    requires :context_type, type: String, values: ['Unit', 'Course', 'Task_Definition'], desc: 'The type of the context'
+    requires :context_type, type: String, values: ['Unit', 'Course', 'TaskDefinition'], desc: 'The type of the context'
     requires :abbreviation, type: String, desc: 'The ILO''s abbreviation'
     requires :short_description, type: String, desc: 'The ILO''s short_description'
     optional :full_outcome_description, type: String, desc: 'The ILO''s full_outcome_description'
   end
   post '/:context_type_plural/:context_id/outcomes' do
     # find context model dynamically
+    # context_type_plural = params[:context_type_plural]
+    # context_type_singular = context_type_plural.singularize
+    # context_type = context_type_singular.split('_').map(&:capitalize).join('_')
+    # context_model = context_type.constantize.find(params[:context_id])
+
     context_type = params[:context_type_plural].singularize.camelize
     context_model = context_type.classify.constantize.find(params[:context_id])
-    # context = context_model.find(params[:context_id])
 
     unless authorise? current_user, context_model, :update
       error!({ error: 'You are not authorised to create outcomes in this context.' }, 403)
@@ -124,7 +128,7 @@ class LearningOutcomesApi < Grape::API
   end
   put '/:context_type_plural/:context_id/outcomes/:id' do
     # find context model dynamically
-    context_type = params[:context_type_plural].singularize
+    context_type = params[:context_type_plural].singularize.camelize
     context_model = context_type.classify.constantize.find(params[:context_id])
 
     unless authorise? current_user, context_model, :update
@@ -132,6 +136,7 @@ class LearningOutcomesApi < Grape::API
     end
 
     ilo = context_model.learning_outcomes.find(params[:id])
+    puts ilo
     error!({ error: 'Unable to locate outcome requested.' }, 405) if ilo.nil?
 
     ilo_parameters = ActionController::Parameters.new(params)
@@ -174,7 +179,7 @@ class LearningOutcomesApi < Grape::API
   end
   delete '/:context_type_plural/:context_id/outcomes/:id' do
     # find context model dynamically
-    context_type = params[:context_type_plural].singularize
+    context_type = params[:context_type_plural].singularize.camelize
     context_model = context_type.classify.constantize.find(params[:context_id])
 
     unless authorise? current_user, context_model, :update
@@ -212,7 +217,7 @@ class LearningOutcomesApi < Grape::API
   end
   get '/:context_type_plural/:context_id/outcomes/csv' do
     # find context model dynamically
-    context_type = params[:context_type_plural].singularize
+    context_type = params[:context_type_plural].singularize.camelize
     context_model = context_type.classify.constantize.find(params[:context_id])
 
     unless authorise? current_user, context_model, :update
@@ -257,8 +262,8 @@ desc 'Upload the outcomes for a unit from a csv'
     ensure_csv!(params[:file][:tempfile])
 
     # find context model dynamically
-    context_type = params[:context_type_plural].singularize
-    context_model = params[context_type].classify.constantize.find(params[:context_id])
+    context_type = params[:context_type_plural].singularize.camelize
+    context_model = context_type.classify.constantize.find(params[:context_id])
 
     unless authorise? current_user, context_model, :upload_csv
       error!({ error: 'Not authorised to upload CSV of outcomes' }, 403)
