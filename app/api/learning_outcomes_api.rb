@@ -13,6 +13,34 @@ class LearningOutcomesApi < Grape::API
     params[:context_type].pluralize
   end
 
+  desc "Get all outcomes for a specified context (unit, course, task_definition, ect.)"
+  params do
+    requires :context_id, type: Integer, desc: 'The id of the context'
+  end
+  get '/:context_type_plural/:context_id/outcomes' do
+    # find context model dynamically
+    context_type = params[:context_type_plural].singularize.camelize
+    context_model = context_type.classify.constantize.find(params[:context_id])
+
+    unless authorise? current_user, context_model, :update
+      error!({ error: 'You are not authorised to view outcomes in this context.' }, 403)
+    end
+
+    present context_model.learning_outcomes, with: Entities::LearningOutcomeEntity
+  end
+
+  desc "Get all global outcomes"
+  get '/global/outcomes' do
+    # find learning outcomes with a null context_type and context_id
+    glos = LearningOutcome.where(context_type: nil, context_id: nil)
+
+    unless authorise? current_user, User, :get_glos
+      error!({ error: 'You are not authorised to view global outcomes.' }, 403)
+    end
+
+    present glos, with: Entities::LearningOutcomeEntity
+  end
+
 =begin   desc 'Add an outcome to a unit'
   params do
     requires :unit_id, type: Integer, desc: 'The unit ID for which the ILO belongs to'

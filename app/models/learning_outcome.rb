@@ -1,7 +1,7 @@
 class LearningOutcome < ApplicationRecord
   include ApplicationHelper
 
-  belongs_to :context, polymorphic: true
+  belongs_to :context, polymorphic: true, optional: true
 
   has_many :outgoing_links, class_name: 'LearningOutcomeLink', foreign_key: 'source_id', dependent: :destroy
   has_many :linked_outcomes, through: :outgoing_links, source: :target

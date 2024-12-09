@@ -9,6 +9,34 @@ class LearningOutcomeNewTest < ActiveSupport::TestCase
     Rails.application
   end
 
+  def test_get_all_outcomes
+    unit = FactoryBot.create(:unit, name: 'i like units', code: 'abcde', description: 'test unit')
+    learning_outcome1 = FactoryBot.create(:learning_outcome, context_id: unit.id, context_type: 'Unit', abbreviation: 'test1', short_description: 'sd', full_outcome_description: 'fod')
+    learning_outcome2 = FactoryBot.create(:learning_outcome, context_id: unit.id, context_type: 'Unit', abbreviation: 'test2', short_description: 'sd', full_outcome_description: 'fod')
+    learning_outcome3 = FactoryBot.create(:learning_outcome, context_id: unit.id, context_type: 'Unit', abbreviation: 'test3', short_description: 'sd', full_outcome_description: 'fod')
+    add_auth_header_for user: User.first
+    get "api/units/#{unit.id}/outcomes"
+    puts last_response.body
+    assert_equal 200, last_response.status
+    unit.destroy
+    learning_outcome1.destroy
+    learning_outcome2.destroy
+    learning_outcome3.destroy
+  end
+
+  def test_get_global_outcomes
+    learning_outcome1 = FactoryBot.create(:learning_outcome, context_id: nil, context_type: nil, abbreviation: 'test1', short_description: 'sd', full_outcome_description: 'fod')
+    learning_outcome2 = FactoryBot.create(:learning_outcome, context_id: nil, context_type: nil, abbreviation: 'test2', short_description: 'sd', full_outcome_description: 'fod')
+    learning_outcome3 = FactoryBot.create(:learning_outcome, context_id: nil, context_type: nil, abbreviation: 'test3', short_description: 'sd', full_outcome_description: 'fod')
+    add_auth_header_for user: User.first
+    get "api/global/outcomes"
+    puts last_response.body
+    assert_equal 200, last_response.status
+    learning_outcome1.destroy
+    learning_outcome2.destroy
+    learning_outcome3.destroy
+  end
+
   def test_default_create
     learning_outcome = FactoryBot.create(:learning_outcome)
     assert learning_outcome.valid?

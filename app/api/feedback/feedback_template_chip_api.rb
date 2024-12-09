@@ -15,6 +15,22 @@ module Feedback
       present chips, with: Entities::FeedbackTemplateChipEntity
     end
 
+    desc 'Get all feedback template chips for a specific context'
+    params do
+      requires :context_id, type: Integer, desc: 'The context_id of the feedback template chips'
+      requires :context_type, type: String, desc: 'The context_type of the feedback template chips'
+    end
+    get '/feedback_template_chips/context/:context_type/:context_id' do
+      learning_outcomes = LearningOutcome.where(context_id: params[:context_id], context_type: params[:context_type])
+
+      if learning_outcomes.empty?
+        error!({ error: 'No learning outcomes found for this context.' }, 404)
+      end
+
+      chips = FeedbackTemplateChip.where(learning_outcome_id: learning_outcomes.pluck(:id))
+      present chips, with: Entities::FeedbackTemplateChipEntity
+    end
+
     desc 'Get a feedback template chip'
     params do
       requires :id, type: Integer, desc: 'The ID of the feedback template chip'
