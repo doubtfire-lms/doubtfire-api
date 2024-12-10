@@ -2,6 +2,8 @@ module Feedback
   class FeedbackTemplateChip < FeedbackChip
     validates :comment_text, presence: true
     validates :summary_text, presence: true
+
+    belongs_to :learning_outcome
     # validates :parent_chip_id, presence: true # template chips require a parent chip
 
     def serialize

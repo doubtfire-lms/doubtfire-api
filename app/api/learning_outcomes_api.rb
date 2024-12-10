@@ -136,7 +136,6 @@ class LearningOutcomesApi < Grape::API
     end
 
     ilo = context_model.learning_outcomes.find(params[:id])
-    puts ilo
     error!({ error: 'Unable to locate outcome requested.' }, 405) if ilo.nil?
 
     ilo_parameters = ActionController::Parameters.new(params)

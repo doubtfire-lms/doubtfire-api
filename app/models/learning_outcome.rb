@@ -9,8 +9,8 @@ class LearningOutcome < ApplicationRecord
   has_many :incoming_links, class_name: 'LearningOutcomeLink', foreign_key: 'target_id', dependent: :destroy
   has_many :linked_by_outcomes, through: :incoming_links, source: :source
 
-  has_many :feedback_group_chips, class_name: 'Feedback::FeedbackGroupChip', dependent: :destroy
-  has_many :feedback_template_chips, class_name: 'Feedback::FeedbackTemplateChip', dependent: :destroy
+  has_many :feedback_group_chips, foreign_key: :learning_outcome_id, class_name: 'FeedbackGroupChip', dependent: :nullify
+  has_many :feedback_template_chips, foreign_key: :learning_outcome_id, class_name: 'FeedbackTemplateChip', dependent: :nullify
 
   has_many :learning_outcome_task_links, dependent: :destroy # links to learning outcomes
   has_many :related_task_definitions, -> { where('learning_outcome_task_links.task_id is NULL') }, through: :learning_outcome_task_links, source: :task_definition # only link staff relations
