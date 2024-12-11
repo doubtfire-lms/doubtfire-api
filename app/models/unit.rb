@@ -48,7 +48,8 @@ class Unit < ApplicationRecord
       :download_grades,
       :rollover_unit,
       :exceed_capacity,
-      :perform_overseer_assessment_test
+      :perform_overseer_assessment_test,
+      :get_glos
     ]
 
     # What can admin do with units?
