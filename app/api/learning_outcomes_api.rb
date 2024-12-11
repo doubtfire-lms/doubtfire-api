@@ -34,7 +34,7 @@ class LearningOutcomesApi < Grape::API
     # find learning outcomes with a null context_type and context_id
     glos = LearningOutcome.where(context_type: nil, context_id: nil)
 
-    unless authorise? current_user, User, :get_glos
+    unless authorise? current_user, glos.first, :get_glos
       error!({ error: 'You are not authorised to view global outcomes.' }, 403)
     end
 
@@ -84,6 +84,23 @@ class LearningOutcomesApi < Grape::API
 
     ilo = context_model.add_ilo(params[:abbreviation], params[:short_description], params[:full_outcome_description]) # need to check if this is implemented across the other models
     present ilo, with: Entities::LearningOutcomeEntity
+  end
+
+  desc "Add a global outcome"
+  params do
+    requires :abbreviation, type: String, desc: 'The ILO''s abbreviation'
+    requires :short_description, type: String, desc: 'The ILO''s short_description'
+    optional :full_outcome_description, type: String, desc: 'The ILO''s full_outcome_description'
+  end
+  post '/global/outcomes' do
+    # find learning outcomes with a null context_type and context_id
+    glo = LearningOutcome.create!(context_type: nil, context_id: nil, abbreviation: params[:abbreviation], short_description: params[:short_description], full_outcome_description: params[:full_outcome_description])
+
+    unless authorise? current_user, glo, :update
+      error!({ error: 'You are not authorised to create global outcomes.' }, 403)
+    end
+
+    present glo, with: Entities::LearningOutcomeEntity
   end
 
 =begin
@@ -149,6 +166,30 @@ class LearningOutcomesApi < Grape::API
     present ilo, with: Entities::LearningOutcomeEntity
   end
 
+  desc 'Update a global outcome'
+  params do
+    requires :abbreviation, type: String, desc: 'The ILO''s abbreviation'
+    requires :short_description, type: String, desc: 'The ILO''s short_description'
+    optional :full_outcome_description, type: String, desc: 'The ILO''s full_outcome_description'
+  end
+  put '/global/outcomes/:id' do
+    # find learning outcomes with a null context_type and context_id
+    glo = LearningOutcome.find(params[:id])
+
+    unless authorise? current_user, glo, :update
+      error!({ error: 'You are not authorised to update global outcomes.' }, 403)
+    end
+
+    ilo_parameters = ActionController::Parameters.new(params)
+                                                 .permit(
+                                                   :abbreviation,
+                                                   :short_description,
+                                                   :full_outcome_description
+                                                 )
+    glo.update!(ilo_parameters)
+    present glo, with: Entities::LearningOutcomeEntity
+  end
+
 =begin
   desc 'Delete an outcome from a unit'
   params do
@@ -189,6 +230,22 @@ class LearningOutcomesApi < Grape::API
     error!({ error: 'Unable to locate outcome requested.' }, 405) if ilo.nil?
 
     ilo.destroy
+    nil
+  end
+
+  desc 'Delete a global outcome'
+  params do
+    requires :id, type: Integer, desc: 'The id for the outcome you wish to delete'
+  end
+  delete '/global/outcomes/:id' do
+    # find learning outcomes with a null context_type and context_id
+    glo = LearningOutcome.find(params[:id])
+
+    unless authorise? current_user, glo, :update
+      error!({ error: 'You are not authorised to delete global outcomes.' }, 403)
+    end
+
+    glo.destroy
     nil
   end
 

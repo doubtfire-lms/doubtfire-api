@@ -1,6 +1,33 @@
 class LearningOutcome < ApplicationRecord
   include ApplicationHelper
 
+  def self.permissions
+    convenor_role_permissions = [
+      :update,
+      :get_glos
+    ]
+
+    admin_role_permissions = [
+      :update,
+      :get_glos
+    ]
+
+    nil_role_permissions = []
+
+    {
+      convenor: convenor_role_permissions,
+      admin: admin_role_permissions,
+      nil: nil_role_permissions
+    }
+  end
+
+  def role_for(user)
+    return :admin if user.has_admin_capability?
+    return :convenor if user.has_convenor_capability?
+
+    return nil
+  end
+
   belongs_to :context, polymorphic: true, optional: true
 
   has_many :outgoing_links, class_name: 'LearningOutcomeLink', foreign_key: 'source_id', dependent: :destroy
@@ -9,14 +36,12 @@ class LearningOutcome < ApplicationRecord
   has_many :incoming_links, class_name: 'LearningOutcomeLink', foreign_key: 'target_id', dependent: :destroy
   has_many :linked_by_outcomes, through: :incoming_links, source: :source
 
-  has_many :feedback_group_chips, foreign_key: :learning_outcome_id, class_name: 'FeedbackGroupChip', dependent: :nullify
-  has_many :feedback_template_chips, foreign_key: :learning_outcome_id, class_name: 'FeedbackTemplateChip', dependent: :nullify
+  has_many :feedback_group_chips, class_name: 'Feedback::FeedbackGroupChip', dependent: :nullify
+  has_many :feedback_template_chips, class_name: 'Feedback::FeedbackTemplateChip', dependent: :nullify
 
   has_many :learning_outcome_task_links, dependent: :destroy # links to learning outcomes
   has_many :related_task_definitions, -> { where('learning_outcome_task_links.task_id is NULL') }, through: :learning_outcome_task_links, source: :task_definition # only link staff relations
 
-  # validates :abbreviation, uniqueness: { scope: :unit_id } # abbreviation was changed to tag, and now we want to use context type
-  # validates :tag, uniqueness: { scope: :context_type } # outcome names within a unit must be unique
   validates :short_description, length: { maximum: 4095, allow_blank: true }
   validates :full_outcome_description, length: { maximum: 4095, allow_blank: true }
 

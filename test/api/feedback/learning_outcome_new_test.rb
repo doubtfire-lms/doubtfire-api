@@ -25,10 +25,11 @@ class LearningOutcomeNewTest < ActiveSupport::TestCase
   end
 
   def test_get_global_outcomes
+    unit = FactoryBot.create(:unit, name: 'i like units', code: 'abcde', description: 'test unit')
     learning_outcome1 = FactoryBot.create(:learning_outcome, context_id: nil, context_type: nil, abbreviation: 'test1', short_description: 'sd', full_outcome_description: 'fod')
     learning_outcome2 = FactoryBot.create(:learning_outcome, context_id: nil, context_type: nil, abbreviation: 'test2', short_description: 'sd', full_outcome_description: 'fod')
     learning_outcome3 = FactoryBot.create(:learning_outcome, context_id: nil, context_type: nil, abbreviation: 'test3', short_description: 'sd', full_outcome_description: 'fod')
-    add_auth_header_for user: User.first
+    add_auth_header_for user: unit.main_convenor_user
     get "api/global/outcomes"
     puts last_response.body
     assert_equal 200, last_response.status
