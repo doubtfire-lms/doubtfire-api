@@ -61,4 +61,51 @@ class D2lTest < ActiveSupport::TestCase
     post "/api/units/#{unit.id}/d2l", { org_unit_id: '12345' }
     assert_equal 403, last_response.status, last_response.inspect
   end
+
+  def test_can_get_d2l_details_for_unit
+    unit = FactoryBot.create(:unit)
+    d2l = D2lAssessmentMapping.create(unit: unit, org_unit_id: '12345')
+
+    add_auth_header_for(user: unit.main_convenor_user)
+
+    get "/api/units/#{unit.id}/d2l"
+    assert_equal 200, last_response.status, last_response.inspect
+
+    assert_equal '12345', last_response_body['org_unit_id'], last_response_body
+    assert_equal d2l.id, last_response_body['id']
+  end
+
+  def test_can_delete_d2l_details_for_unit
+    unit = FactoryBot.create(:unit)
+    d2l = D2lAssessmentMapping.create(unit: unit, org_unit_id: '12345')
+
+    add_auth_header_for(user: unit.main_convenor_user)
+
+    initial_count = D2lAssessmentMapping.count
+
+    delete "/api/units/#{unit.id}/d2l"
+    assert_equal 204, last_response.status, last_response.inspect
+
+    assert_equal initial_count - 1, D2lAssessmentMapping.count
+
+    unit.reload
+    assert_nil unit.d2l_assessment_mapping
+  end
+
+  def test_can_update_d2l_details_for_unit
+    unit = FactoryBot.create(:unit)
+    d2l = D2lAssessmentMapping.create(unit: unit, org_unit_id: '12345')
+
+    add_auth_header_for(user: unit.main_convenor_user)
+
+    initial_count = D2lAssessmentMapping.count
+
+    put "/api/units/#{unit.id}/d2l", { org_unit_id: '54321' }
+    assert_equal 200, last_response.status, last_response.inspect
+
+    assert_equal initial_count, D2lAssessmentMapping.count
+
+    unit.reload
+    assert_equal '54321', unit.d2l_assessment_mapping.org_unit_id
+  end
 end
