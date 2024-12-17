@@ -312,6 +312,10 @@ class Unit < ApplicationRecord
     task_definitions.each do |td|
       new_td = td.copy_to(new_unit)
 
+      td.learning_outcomes.each do |learning_outcome| # for each old task definition, duplicate the learning outcomes associated with it aswell
+        new_td.learning_outcomes << learning_outcome.dup # this will need to be tested, but im not sure if this is all we need to change aswell
+      end
+
       # Update default task definition if necessary
       if self.draft_task_definition == td
         new_unit.update(draft_task_definition: new_td)
@@ -320,7 +324,7 @@ class Unit < ApplicationRecord
 
     # Duplicate unit learning outcomes
     learning_outcomes.each do |learning_outcome|
-      new_unit.learning_outcomes << learning_outcome.dup
+      new_unit.learning_outcomes << learning_outcome.dup # i dont see why this wouldn't still work, but it will need to be tested
     end
 
     # Duplicate alignments
@@ -1612,8 +1616,9 @@ class Unit < ApplicationRecord
   end
 
   #
-  # Create an ILO
+  # Create an ILO # i think we just move this to learning outcomes directly rather than in each context
   #
+=begin
   def add_ilo(abbreviation, short_description, full_outcome_description)
 
     LearningOutcome.create!(
@@ -1624,9 +1629,10 @@ class Unit < ApplicationRecord
       full_outcome_description: full_outcome_description,
     )
   end
+=end
 
   #
-  # Reorder ILO sequence numbers based on ILO update
+  # Reorder ILO sequence numbers based on ILO update # ilonumber was removed from the learning outcomes so this is irrelevant now
   #
 =begin   def move_ilo(ilo, new_num)
     if ilo.ilo_number < new_num
