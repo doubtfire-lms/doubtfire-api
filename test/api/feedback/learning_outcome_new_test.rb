@@ -213,4 +213,17 @@ class LearningOutcomeNewTest < ActiveSupport::TestCase
     source_learning_outcome.destroy
     task_definition.destroy
   end
+
+  def test_delete_chips_for_learning_outcome
+    task_definition = FactoryBot.create(:task_definition)
+    learning_outcome = FactoryBot.create(:learning_outcome, context_id: task_definition.id, context_type: 'TaskDefinition', abbreviation: 'abbr', short_description: 'sd', full_outcome_description: 'fod')
+    group_chip1 = FactoryBot.create(:feedback_group_chip, learning_outcome_id: learning_outcome.id, parent_chip_id: nil, chip_text: 'chip1')
+    template_chip2 = FactoryBot.create(:feedback_template_chip, learning_outcome_id: learning_outcome.id, parent_chip_id: group_chip1.id, chip_text: 'chip2')
+    template_chip3 = FactoryBot.create(:feedback_template_chip, learning_outcome_id: learning_outcome.id, parent_chip_id: group_chip1.id, chip_text: 'chip3')
+    add_auth_header_for user: User.first
+    delete "api/task_definitions/#{task_definition.id}/outcomes/#{learning_outcome.id}"
+    assert_equal 204, last_response.status
+  ensure
+    task_definition.destroy
+  end
 end
