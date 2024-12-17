@@ -42,7 +42,7 @@ Doubtfire::Application.configure do
       domain: ENV.fetch('DF_SMTP_DOMAIN', nil),
       user_name: ENV.fetch('DF_SMTP_USERNAME', nil),
       password: ENV.fetch('DF_SMTP_PASSWORD', nil),
-      authentication: ENV.fetch('DF_SMTP_AUTHENTICATION', 'plain'),
+      authentication: ENV.fetch('DF_SMTP_AUTHENTICATION', nil),
       enable_starttls_auto: true
     }
   end
