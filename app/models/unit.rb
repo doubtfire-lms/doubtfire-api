@@ -139,6 +139,8 @@ class Unit < ApplicationRecord
   has_many :tii_group_attachments, through: :task_definitions
   has_many :campuses, through: :tutorials
 
+  has_one :d2l_assessment_mapping, dependent: :destroy
+
   # Unit has a teaching period
   belongs_to :teaching_period, optional: true
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_10_25_050957) do
+ActiveRecord::Schema[7.1].define(version: 2024_12_17_091744) do
   create_table "activity_types", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -54,6 +54,15 @@ ActiveRecord::Schema[7.1].define(version: 2024_10_25_050957) do
     t.index ["task_comment_id", "user_id"], name: "index_comments_read_receipts_on_task_comment_id_and_user_id", unique: true
     t.index ["task_comment_id"], name: "index_comments_read_receipts_on_task_comment_id"
     t.index ["user_id"], name: "index_comments_read_receipts_on_user_id"
+  end
+
+  create_table "d2l_assessment_mappings", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "unit_id", null: false
+    t.string "org_unit_id"
+    t.string "grade_object_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["unit_id"], name: "index_d2l_assessment_mappings_on_unit_id"
   end
 
   create_table "discussion_comments", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
@@ -563,4 +572,5 @@ ActiveRecord::Schema[7.1].define(version: 2024_10_25_050957) do
     t.index ["user_id"], name: "index_webcals_on_user_id", unique: true
   end
 
+  add_foreign_key "d2l_assessment_mappings", "units"
 end
