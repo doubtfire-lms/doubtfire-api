@@ -26,4 +26,18 @@ class D2lTest < ActiveSupport::TestCase
 
     assert_equal unit.d2l_assessment_mapping, D2lAssessmentMapping.last
   end
+
+  def test_ensure_only_one_d2l_mapping_per_unit
+    unit = FactoryBot.create(:unit)
+    d2l = D2lAssessmentMapping.create(unit: unit, org_unit_id: '12345')
+
+    add_auth_header_for(user: User.first)
+
+    initial_count = D2lAssessmentMapping.count
+
+    post "/api/units/#{unit.id}/d2l", { org_unit_id: '54321' }
+    assert_equal 400, last_response.status, last_response.inspect
+
+    assert_equal initial_count, D2lAssessmentMapping.count
+  end
 end
