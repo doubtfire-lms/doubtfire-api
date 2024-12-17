@@ -25,7 +25,6 @@ factory :learning_outcome do
     sequence(:ilo_number)     { |n| n }
     description               { Faker::Lorem.sentence }
   end
-=end
 
   factory :learning_outcome do
     context_type { 'Unit' }
@@ -34,6 +33,7 @@ factory :learning_outcome do
     short_description { Faker::Lorem.sentence }
     full_outcome_description { Faker::Lorem.sentence }
   end
+=end
 
   factory :unit_role do
     unit

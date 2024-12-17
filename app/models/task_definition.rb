@@ -22,6 +22,7 @@ class TaskDefinition < ApplicationRecord
 
   def role_for(user)
     return :admin if user.has_admin_capability?
+    return :convenor if user.has_convenor_capability?
 
     return nil
   end
@@ -592,7 +593,8 @@ class TaskDefinition < ApplicationRecord
     nil
   end
 
-  def add_ilo(abbreviation, short_description, full_outcome_description)
+=begin
+  def add_ilo(abbreviation, short_description, full_outcome_description) # will move implementation of this directly to the learning outcomes api rather than splintered everywhere
 
     LearningOutcome.create!(
       context_id: id,
@@ -602,6 +604,7 @@ class TaskDefinition < ApplicationRecord
       full_outcome_description: full_outcome_description,
     )
   end
+=end
 
   private
 

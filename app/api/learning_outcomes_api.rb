@@ -41,6 +41,21 @@ class LearningOutcomesApi < Grape::API
     present glos, with: Entities::LearningOutcomeEntity
   end
 
+  desc "Get all feedback chips for a learning outcome"
+  get '/:context_type_plural/:context_id/outcomes/:id/feedback_chips' do
+    # find context model dynamically
+    context_type = params[:context_type_plural].singularize.camelize
+    context_model = context_type.classify.constantize.find(params[:context_id])
+
+    unless authorise? current_user, context_model, :update
+      error!({ error: 'You are not authorised to view feedback chips in this context.' }, 403)
+    end
+
+    ilo = context_model.learning_outcomes.find(params[:id])
+    feedback_chips = Feedback::FeedbackChip.where(learning_outcome_id: ilo.id)
+    present feedback_chips, with: Feedback::Entities::FeedbackChipEntity
+  end
+
 =begin   desc 'Add an outcome to a unit'
   params do
     requires :unit_id, type: Integer, desc: 'The unit ID for which the ILO belongs to'
@@ -67,14 +82,10 @@ class LearningOutcomesApi < Grape::API
     requires :abbreviation, type: String, desc: 'The ILO''s abbreviation'
     requires :short_description, type: String, desc: 'The ILO''s short_description'
     optional :full_outcome_description, type: String, desc: 'The ILO''s full_outcome_description'
+    optional :linked_outcome_ids, type: Array[Integer], desc: 'The ids of the linked outcome ids'
   end
   post '/:context_type_plural/:context_id/outcomes' do
     # find context model dynamically
-    # context_type_plural = params[:context_type_plural]
-    # context_type_singular = context_type_plural.singularize
-    # context_type = context_type_singular.split('_').map(&:capitalize).join('_')
-    # context_model = context_type.constantize.find(params[:context_id])
-
     context_type = params[:context_type_plural].singularize.camelize
     context_model = context_type.classify.constantize.find(params[:context_id])
 
@@ -82,8 +93,17 @@ class LearningOutcomesApi < Grape::API
       error!({ error: 'You are not authorised to create outcomes in this context.' }, 403)
     end
 
-    ilo = context_model.add_ilo(params[:abbreviation], params[:short_description], params[:full_outcome_description]) # need to check if this is implemented across the other models
-    present ilo, with: Entities::LearningOutcomeEntity
+    learning_outcome = context_model.learning_outcomes.create!(abbreviation: params[:abbreviation], short_description: params[:short_description], full_outcome_description: params[:full_outcome_description])
+
+    if params[:linked_outcome_ids]
+      params[:linked_outcome_ids].each do |linked_outcome_id|
+        LearningOutcomeLink.create!(source_id: learning_outcome.id, target_id: linked_outcome_id)
+      rescue ActiveRecord::RecordInvalid => e
+        Rails.logger.warn "Failed to link learning outcome #{learning_outcome.id} to learning outcome #{linked_outcome_id}: #{e.message}"
+      end
+    end
+
+    present learning_outcome, with: Entities::LearningOutcomeEntity
   end
 
   desc "Add a global outcome"
@@ -138,9 +158,10 @@ class LearningOutcomesApi < Grape::API
   desc 'Update an outcome in a specified context (unit, course, task_definition, ect.)'
   params do
     requires :context_id, type: Integer, desc: 'The id of the context'
-    requires :abbreviation, type: String, desc: 'The ILO''s abbreviation'
-    requires :short_description, type: String, desc: 'The ILO''s short_description'
+    optional :abbreviation, type: String, desc: 'The ILO''s abbreviation'
+    optional :short_description, type: String, desc: 'The ILO''s short_description'
     optional :full_outcome_description, type: String, desc: 'The ILO''s full_outcome_description'
+    optional :linked_outcome_ids, type: Array[Integer], desc: 'The ids of the linked outcome ids'
     # optional :ilo_number, type: Integer, desc: 'The ILO''s new sequence number'
   end
   put '/:context_type_plural/:context_id/outcomes/:id' do
@@ -152,24 +173,37 @@ class LearningOutcomesApi < Grape::API
       error!({ error: 'You are not authorised to update outcomes in this context.' }, 403)
     end
 
-    ilo = context_model.learning_outcomes.find(params[:id])
-    error!({ error: 'Unable to locate outcome requested.' }, 405) if ilo.nil?
+    learning_outcome = context_model.learning_outcomes.find(params[:id])
+    error!({ error: 'Unable to locate outcome requested.' }, 405) if learning_outcome.nil?
 
-    ilo_parameters = ActionController::Parameters.new(params)
+    learning_outcome_parameters = ActionController::Parameters.new(params)
                                                  .permit(
                                                    :abbreviation,
                                                    :short_description,
                                                    :full_outcome_description
                                                  )
     # context_model.move_ilo(ilo, params[:ilo_number]) if params[:ilo_number]
-    ilo.update!(ilo_parameters)
-    present ilo, with: Entities::LearningOutcomeEntity
+    learning_outcome.update!(learning_outcome_parameters)
+
+    if params[:linked_outcome_ids]
+      # delete all existing links
+      LearningOutcomeLink.where(source_id: learning_outcome.id).destroy_all
+
+      # create new links
+      params[:linked_outcome_ids].each do |linked_outcome_id|
+        LearningOutcomeLink.create!(source_id: learning_outcome.id, target_id: linked_outcome_id)
+      rescue ActiveRecord::RecordInvalid => e
+        Rails.logger.warn "Failed to link learning outcome #{learning_outcome.id} to learning outcome #{linked_outcome_id}: #{e.message}"
+      end
+    end
+
+    present learning_outcome, with: Entities::LearningOutcomeEntity
   end
 
   desc 'Update a global outcome'
   params do
-    requires :abbreviation, type: String, desc: 'The ILO''s abbreviation'
-    requires :short_description, type: String, desc: 'The ILO''s short_description'
+    optional :abbreviation, type: String, desc: 'The ILO''s abbreviation'
+    optional :short_description, type: String, desc: 'The ILO''s short_description'
     optional :full_outcome_description, type: String, desc: 'The ILO''s full_outcome_description'
   end
   put '/global/outcomes/:id' do

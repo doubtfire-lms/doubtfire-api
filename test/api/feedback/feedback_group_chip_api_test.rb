@@ -10,17 +10,23 @@ class FeedbackGroupChipApiTest < ActiveSupport::TestCase
   end
 
   def test_default_create
-    group_chip = FactoryBot.create(:feedback_group_chip)
+    learning_outcome = FactoryBot.create(:learning_outcome, context_id: TaskDefinition.first.id, context_type: 'TaskDefinition')
+    group_chip = FactoryBot.create(:feedback_group_chip, learning_outcome_id: learning_outcome.id)
     assert group_chip.valid?
+  ensure
+    learning_outcome.destroy
     group_chip.destroy
   end
 
   def test_specific_create
-    group_chip = FactoryBot.create(:feedback_group_chip, chip_text: 'Sample chip_text', parent_chip_id: nil, learning_outcome_id: 1)
+    learning_outcome = FactoryBot.create(:learning_outcome, context_id: TaskDefinition.first.id, context_type: 'TaskDefinition')
+    group_chip = FactoryBot.create(:feedback_group_chip, chip_text: 'Sample chip_text', parent_chip_id: nil, learning_outcome_id: learning_outcome.id)
     assert_equal group_chip.chip_text, 'Sample chip_text'
-    assert_equal group_chip.parent_chip_id, nil
-    assert_equal group_chip.learning_outcome_id, 1
+    assert_nil group_chip.parent_chip_id
+    assert_equal group_chip.learning_outcome_id, learning_outcome.id
     assert group_chip.valid?
+  ensure
+    learning_outcome.destroy
     group_chip.destroy
   end
 
@@ -41,6 +47,7 @@ class FeedbackGroupChipApiTest < ActiveSupport::TestCase
     add_auth_header_for user: User.first
     get "api/feedback_group_chips"
     assert_equal 200, last_response.status
+  ensure
     group_chip.destroy
   end
 
@@ -49,6 +56,7 @@ class FeedbackGroupChipApiTest < ActiveSupport::TestCase
     add_auth_header_for user: User.first
     get "api/feedback_group_chips/#{group_chip.id}"
     assert_equal 200, last_response.status
+  ensure
     group_chip.destroy
   end
 
@@ -63,6 +71,7 @@ class FeedbackGroupChipApiTest < ActiveSupport::TestCase
     add_auth_header_for user: User.first
     put_json "api/feedback_group_chips/#{group_chip.id}", data_to_post
     assert_equal 200, last_response.status
+  ensure
     group_chip.destroy
   end
 
