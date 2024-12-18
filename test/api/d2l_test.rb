@@ -176,4 +176,212 @@ class D2lTest < ActiveSupport::TestCase
 
     assert_nil UserOauthToken.find_by(id: token.id)
   end
+
+  def test_post_grades_requires_org_unit_id
+    unit = FactoryBot.create(:unit, with_students: false)
+
+    assert_raises(StandardError) do
+      D2lIntegration.post_grades(unit, unit.main_convenor_user)
+    end
+  end
+
+  def test_post_grades_requires_user_oauth_token
+    unit = FactoryBot.create(:unit, with_students: false)
+    d2l = D2lAssessmentMapping.create(unit: unit, org_unit_id: '12345')
+
+    assert_raise(StandardError) do
+      D2lIntegration.post_grades(unit, unit.main_convenor_user)
+    end
+
+    UserOauthToken.create(user: unit.main_convenor_user, provider: :d2l, token: 'test', expires_at: 30.minutes.from_now)
+
+    assert_raises(StandardError) do
+      D2lIntegration.post_grades(unit, User.first)
+    end
+  end
+
+  def test_does_grade_item_exist
+    unit = FactoryBot.create(:unit, with_students: false)
+    d2l = D2lAssessmentMapping.create(unit: unit, org_unit_id: '12345', grade_object_id: '54321')
+    UserOauthToken.create(user: unit.main_convenor_user, provider: :d2l, token: 'test', expires_at: 30.minutes.from_now)
+
+    grade_request = stub_request(:get, "https://api.brightspace.com/d2l/api/le/1.47/12345/grades/54321")
+                    .to_return(
+                      { status: 404, headers: {} },
+                      { status: 200, body: { id: '54321' }.to_json, headers: { 'Content-Type' => 'application/json;charset=UTF-8' } }
+                    )
+
+    assert_not D2lIntegration.does_grade_item_exist?(d2l, UserOauthToken.last.access_token)
+    assert_requested(grade_request, times: 1)
+
+    # restore grade object id
+    d2l.grade_object_id = '54321'
+    d2l.save
+
+    assert D2lIntegration.does_grade_item_exist?(d2l, UserOauthToken.last.access_token)
+    assert_requested(grade_request, times: 2)
+  end
+
+  def test_create_grade_item
+    unit = FactoryBot.create(:unit, with_students: false)
+    d2l = D2lAssessmentMapping.create(unit: unit, org_unit_id: '12345')
+    UserOauthToken.create(user: unit.main_convenor_user, provider: :d2l, token: 'test', expires_at: 30.minutes.from_now)
+
+    post_grade_request =  stub_request(:post, "https://api.brightspace.com/d2l/api/le/1.47/12345/grades/")
+                          .to_return(
+                            status: 200,
+                            body: {
+                              "Id" => "jskldfj081123"
+                            }.to_json,
+                            headers: { 'Content-Type' => 'application/json;charset=UTF-8' }
+                          )
+
+    D2lIntegration.create_grade_item(d2l, UserOauthToken.last.access_token)
+
+    assert_requested post_grade_request, times: 1
+    assert_equal 'jskldfj081123', d2l.grade_object_id
+    assert d2l.persisted?
+  end
+
+  def test_get_class_list
+    unit = FactoryBot.create(:unit, with_students: false)
+    d2l = D2lAssessmentMapping.create(unit: unit, org_unit_id: '12345')
+    UserOauthToken.create(user: unit.main_convenor_user, provider: :d2l, token: 'test', expires_at: 30.minutes.from_now)
+
+    class_list_request =  stub_request(:get, "https://api.brightspace.com/d2l/api/le/1.47/12345/classlist/")
+                          .to_return(
+                            status: 200,
+                            body: [
+                              {
+                                "Identifier" => "12345",
+                                "FirstName" => "John",
+                                "LastName" => "Doe",
+                                "UserName" => "johndoe",
+                                "OrgDefinedId" => "s12345",
+                                "Email" => "s12345@test.com"
+                              },
+                              {
+                                "Identifier" => "12346",
+                                "FirstName" => "Jane",
+                                "LastName" => "Doe",
+                                "UserName" => "johndoe",
+                                "OrgDefinedId" => "s12346",
+                                "Email" => "s12346@test.com"
+                              }
+                            ].to_json,
+                            headers: { 'Content-Type' => 'application/json;charset=UTF-8' }
+                          )
+
+    list = D2lIntegration.get_class_list(d2l, UserOauthToken.last.access_token)
+
+    assert_requested class_list_request, times: 1
+    assert_equal 2, list.count
+  end
+
+  def test_post_grades
+    # Create unit, d2l mapping, and user oauth token
+    unit = FactoryBot.create(:unit, with_students: false)
+
+    p1 = unit.enrol_student(FactoryBot.create(:user, :student), Campus.first)
+    p2 = unit.enrol_student(FactoryBot.create(:user, :student), Campus.first)
+    p3 = unit.enrol_student(FactoryBot.create(:user, :student), Campus.first)
+    p4 = unit.enrol_student(FactoryBot.create(:user, :student), Campus.first)
+
+    s1 = other_student = FactoryBot.create(:user, :student)
+
+    p1.update(grade: 50)
+    p2.update(grade: 60)
+    p3.update(enrolled: false)
+    p4.update(grade: 70)
+
+    assert_equal 3, unit.active_projects.count
+    assert_equal 4, unit.projects.count
+
+    post_grade_request =  stub_request(:post, "https://api.brightspace.com/d2l/api/le/1.47/12345/grades/")
+                          .to_return(
+                            status: 200,
+                            body: {
+                              "Id" => "jskldfj081123"
+                            }.to_json,
+                            headers: { 'Content-Type' => 'application/json;charset=UTF-8' }
+                          )
+
+    class_list_request =  stub_request(:get, "https://api.brightspace.com/d2l/api/le/1.47/12345/classlist/")
+                          .to_return(
+                            status: 200,
+                            body: [
+                              {
+                                "Identifier" => "12345",
+                                "FirstName" => p1.student.first_name,
+                                "LastName" => p1.student.last_name,
+                                "UserName" => p1.student.username,
+                                "OrgDefinedId" => p1.student.student_id,
+                                "Email" => p1.student.email
+                              },
+                              {
+                                "Identifier" => "12346",
+                                "FirstName" => p2.student.first_name,
+                                "LastName" => p2.student.last_name,
+                                "UserName" => p2.student.username,
+                                "OrgDefinedId" => "#{p2.student.student_id} - somehow mismatch",
+                                "Email" => p2.student.email
+                              },
+                              {
+                                "Identifier" => "12347",
+                                "FirstName" => p3.student.first_name,
+                                "LastName" => p3.student.last_name,
+                                "UserName" => "#{p3.student.username} - somehow mismatch",
+                                "OrgDefinedId" => "#{p3.student.student_id} - somehow mismatch",
+                                "Email" => p3.student.email
+                              },
+                              {
+                                "Identifier" => "12348",
+                                "FirstName" => s1.first_name,
+                                "LastName" => s1.last_name,
+                                "UserName" => s1.username,
+                                "OrgDefinedId" => s1.student_id,
+                                "Email" => s1.email
+                              }
+                            ].to_json,
+                            headers: { 'Content-Type' => 'application/json;charset=UTF-8' }
+                          )
+
+    assert_equal p1, D2lIntegration.find_project_for_d2l_user(unit, { "OrgDefinedId" => p1.student.student_id, "UserName" => p1.student.username, "Email" => p1.student.email } )
+    assert_equal p2, D2lIntegration.find_project_for_d2l_user(unit, { "OrgDefinedId" => 'BLAH', "UserName" => p2.student.username, "Email" => p2.student.email } )
+    assert_equal p3, D2lIntegration.find_project_for_d2l_user(unit, { "OrgDefinedId" => 'BLAH', "UserName" => 'BLEE', "Email" => p3.student.email } )
+    assert_nil D2lIntegration.find_project_for_d2l_user(unit, { "OrgDefinedId" => 'BLAH', "UserName" => 'BLEE', "Email" => 'BLAH' } )
+
+    p1_put_request =  stub_request(:put, "https://api.brightspace.com/d2l/api/le/1.47/12345/grades/jskldfj081123/values/12345")
+                      .with(
+                        body: { "GradeObjectType" => "1", "PointsNumerator" => "50" }
+                      ).to_return(
+                        status: 200,
+                        headers: {
+                          'X-Rate-Limit-Remaining' => 2,
+                          'X-Request-Cost' => 1,
+                          'X-Rate-Limit-Reset' => 1
+                        }
+                      )
+
+    p2_put_request =  stub_request(:put, "https://api.brightspace.com/d2l/api/le/1.47/12345/grades/jskldfj081123/values/12346")
+                      .with(
+                        body: { "GradeObjectType" => "1", "PointsNumerator" => "60" }
+                      ).to_return(status: 200, headers: {})
+
+    d2l = D2lAssessmentMapping.create(unit: unit, org_unit_id: '12345')
+    UserOauthToken.create(user: unit.main_convenor_user, provider: :d2l, token: 'test', expires_at: 30.minutes.from_now)
+
+    result = D2lIntegration.post_grades(unit, unit.main_convenor_user)
+
+    assert_requested post_grade_request, times: 1
+    assert_requested class_list_request, times: 1
+
+    assert_equal 5, result.count, result
+
+    assert_includes result[0], "Success, Posted grade for #{p1.student.username}"
+    assert_includes result[1], "Success, Posted grade for #{p2.student.username}"
+    assert_includes result[2], "Skipped, No grade for #{p3.student.username}"
+    assert_includes result[3], "Not Found in OnTrack, No OnTrack details for #{s1.username}"
+    assert_includes result[4], "Not Found in D2L, #{p4.student.username}"
+  end
 end

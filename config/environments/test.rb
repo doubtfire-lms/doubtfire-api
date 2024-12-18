@@ -55,5 +55,6 @@ Doubtfire::Application.configure do
   ENV.store('D2L_OAUTH_SITE', 'https://auth.brightspace.com/')
   ENV.store('D2L_OAUTH_SITE_AUTHORIZE_URL', 'oauth2/auth')
   ENV.store('D2L_OAUTH_SITE_TOKEN_URL', 'core/connect/token')
+  ENV.store('D2L_API_HOST', 'https://api.brightspace.com')
   ENV.store('D2L_API_VERSION', '1.47')
 end
