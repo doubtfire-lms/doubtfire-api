@@ -294,4 +294,7 @@ class D2lIntegration
     result
   end
 
+  def self.result_file_path(unit)
+    "#{FileHelper.unit_dir(unit)}/d2l_post_grades_job_result.csv"
+  end
 end

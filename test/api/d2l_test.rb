@@ -128,8 +128,8 @@ class D2lTest < ActiveSupport::TestCase
         headers: { 'Content-Type' => 'application/json;charset=UTF-8' }
       )
 
-    get '/api/d2l/login_url'
-    assert_equal 200, last_response.status, last_response.inspect
+    post '/api/d2l/login_url'
+    assert_equal 201, last_response.status, last_response.inspect
 
     # State is created for callback
     assert_equal init_states + 1, UserOauthState.count
@@ -371,17 +371,62 @@ class D2lTest < ActiveSupport::TestCase
     d2l = D2lAssessmentMapping.create(unit: unit, org_unit_id: '12345')
     UserOauthToken.create(user: unit.main_convenor_user, provider: :d2l, token: 'test', expires_at: 30.minutes.from_now)
 
-    result = D2lIntegration.post_grades(unit, unit.main_convenor_user)
+    # result = D2lIntegration.post_grades(unit, unit.main_convenor_user)
+    D2lPostGradesJob.perform_async(unit.id, unit.main_convenor_user.id)
+    D2lPostGradesJob.drain
+
+    assert File.exist?(D2lIntegration.result_file_path(unit))
+    result = File.read(D2lIntegration.result_file_path(unit)).split("\n")
 
     assert_requested post_grade_request, times: 1
     assert_requested class_list_request, times: 1
 
-    assert_equal 5, result.count, result
+    assert_equal 6, result.count, result
 
-    assert_includes result[0], "Success, Posted grade for #{p1.student.username}"
-    assert_includes result[1], "Success, Posted grade for #{p2.student.username}"
-    assert_includes result[2], "Skipped, No grade for #{p3.student.username}"
-    assert_includes result[3], "Not Found in OnTrack, No OnTrack details for #{s1.username}"
-    assert_includes result[4], "Not Found in D2L, #{p4.student.username}"
+    assert_includes result[1], "Success, Posted grade for #{p1.student.username}"
+    assert_includes result[2], "Success, Posted grade for #{p2.student.username}"
+    assert_includes result[3], "Skipped, No grade for #{p3.student.username}"
+    assert_includes result[4], "Not Found in OnTrack, No OnTrack details for #{s1.username}"
+    assert_includes result[5], "Not Found in D2L, #{p4.student.username}"
+
+    add_auth_header_for(user: unit.main_convenor_user)
+    get "/api/units/#{unit.id}/d2l/grades"
+    assert_equal 200, last_response.status, last_response.inspect
+
+    assert_equal 'text/csv', last_response.headers['Content-Type']
+    result = last_response.body.split("\n")
+    assert_equal 6, result.count, result
+    assert_includes result[1], "Success, Posted grade for #{p1.student.username}"
+  end
+
+  def test_request_grade_transfer
+    unit = FactoryBot.create(:unit, with_students: false)
+
+    add_auth_header_for(user: unit.main_convenor_user)
+
+    # Call without d2l mapping
+    post "/api/units/#{unit.id}/d2l/grades"
+    assert_equal 403, last_response.status, last_response.inspect
+
+    d2l = D2lAssessmentMapping.create(unit: unit, org_unit_id: '12345')
+
+    # Call without user oauth token
+
+    post "/api/units/#{unit.id}/d2l/grades"
+    assert_equal 403, last_response.status, last_response.inspect
+
+    token = UserOauthToken.create(user: unit.main_convenor_user, provider: :d2l, token: 'test', expires_at: 2.minutes.from_now)
+
+    # Call with old token
+    post "/api/units/#{unit.id}/d2l/grades"
+    assert_equal 403, last_response.status, last_response.inspect
+
+    # Call with everything set up
+    token.update(expires_at: 30.minutes.from_now)
+
+    post "/api/units/#{unit.id}/d2l/grades"
+    assert_equal 202, last_response.status, last_response.inspect
+
+    assert_equal 1, D2lPostGradesJob.jobs.count
   end
 end

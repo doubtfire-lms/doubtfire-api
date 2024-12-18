@@ -1,13 +1,13 @@
 require 'grape'
 
 module D2lIntegrationApi
-
   # The D2l API provides the frontend with the ability to register
   # integration details to connect units with D2L. This will allow
   # grade book items to be copied from portfolio results to D2L.
   class D2lApi < Grape::API
     helpers AuthenticationHelpers
     helpers AuthorisationHelpers
+    helpers FileStreamHelper
     include LogHelper
 
     before do
@@ -82,6 +82,46 @@ module D2lIntegrationApi
       end
 
       present response, with: Grape::Presenters::Presenter
+    end
+
+    desc 'Trigger the posting of grades to D2L'
+    post '/units/:unit_id/d2l/grades' do
+      unit = Unit.find(params[:unit_id])
+
+      unless authorise?(current_user, unit, :update)
+        error!({ error: 'Not authorised to post grades to D2L' }, 403)
+      end
+
+      if unit.d2l_assessment_mapping.blank?
+        error!({ error: 'Configure D2L details for unit before starting transfer' }, 403)
+      end
+
+      token = current_user.user_oauth_tokens.find_by(provider: :d2l)
+      if token.blank? || token.expires_at < 10.minutes.from_now
+        error!({ error: 'Login to D2L before transferring results' }, 403)
+      end
+
+      D2lPostGradesJob.perform_async(unit.id, current_user.id)
+
+      status 202
+    end
+
+    desc 'Get the result of a grade transfer to D2L'
+    get '/units/:unit_id/d2l/grades' do
+      unit = Unit.find(params[:unit_id])
+
+      unless authorise?(current_user, unit, :update)
+        error!({ error: 'Not authorised to view grade transfer results' }, 403)
+      end
+
+      file_path = D2lIntegration.result_file_path(unit)
+      unless File.exist?(file_path)
+        error!({ error: 'No grade transfer result found' }, 404)
+      end
+
+      content_type 'text/csv'
+
+      stream_file(file_path)
     end
   end
 end

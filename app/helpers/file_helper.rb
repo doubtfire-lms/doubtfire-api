@@ -214,7 +214,7 @@ module FileHelper
   def dir_for_unit_code_and_id(unit_code, unit_id, create = true)
     file_server = Doubtfire::Application.config.student_work_dir
     dst = "#{file_server}/" # trust the server config and passed in type for paths
-    dst << sanitized_path("#{unit_code}-#{unit_id}") << '/'
+    dst << sanitized_path("#{unit_code}-#{unit_id}")
 
     FileUtils.mkdir_p dst if create && !Dir.exist?(dst)
 
@@ -229,7 +229,7 @@ module FileHelper
     file_server = Doubtfire::Application.config.student_work_dir
     dst = "#{file_server}/portfolio/" # trust the server config and passed in type for paths
 
-    dst << sanitized_path("#{unit.code}-#{unit.id}") << '/'
+    dst << sanitized_path("#{unit.code}-#{unit.id}")
 
     # Create current dst directory should it not exist
     FileUtils.mkdir_p(dst) if create
