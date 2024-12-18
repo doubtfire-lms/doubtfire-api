@@ -46,4 +46,14 @@ Doubtfire::Application.configure do
   ENV.store('TII_ENABLED', '1')
   ENV.store('TCA_API_KEY', '1234')
   ENV.store('TCA_HOST', 'localhost')
+
+  # Setup D2L integration environment
+  ENV.store('D2L_ENABLED', '1')
+  ENV.store('D2L_CLIENT_ID', '1234')
+  ENV.store('D2L_CLIENT_SECRET', '1234')
+  ENV.store('D2L_REDIRECT_URI',  'https://our/api/d2l/callback') # 'https://vast-lands-jam.loca.lt/api/d2l/callback')
+  ENV.store('D2L_OAUTH_SITE', 'https://auth.brightspace.com/')
+  ENV.store('D2L_OAUTH_SITE_AUTHORIZE_URL', 'oauth2/auth')
+  ENV.store('D2L_OAUTH_SITE_TOKEN_URL', 'core/connect/token')
+  ENV.store('D2L_API_VERSION', '1.47')
 end

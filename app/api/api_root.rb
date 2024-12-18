@@ -92,7 +92,8 @@ class ApiRoot < Grape::API
   mount UnitRolesApi
   mount UnitsApi
 
-  mount D2lIntegration::D2lApi
+  mount D2lIntegrationApi::D2lApi
+  mount D2lIntegrationApi::OauthPublicApi
 
   mount UsersApi
   mount WebcalApi
@@ -137,7 +138,7 @@ class ApiRoot < Grape::API
   AuthenticationHelpers.add_auth_to ScormApi
   AuthenticationHelpers.add_auth_to TestAttemptsApi
 
-  AuthenticationHelpers.add_auth_to D2lIntegration::D2lApi
+  AuthenticationHelpers.add_auth_to D2lIntegrationApi::D2lApi
 
   add_swagger_documentation \
     base_path: nil,

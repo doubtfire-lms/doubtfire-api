@@ -518,6 +518,25 @@ ActiveRecord::Schema[7.1].define(version: 2024_12_17_091744) do
     t.index ["teaching_period_id"], name: "index_units_on_teaching_period_id"
   end
 
+  create_table "user_oauth_states", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "state"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["state"], name: "index_user_oauth_states_on_state", unique: true
+    t.index ["user_id"], name: "index_user_oauth_states_on_user_id"
+  end
+
+  create_table "user_oauth_tokens", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.integer "provider", default: 0, null: false
+    t.text "token"
+    t.datetime "expires_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_user_oauth_tokens_on_user_id"
+  end
+
   create_table "users", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
@@ -573,4 +592,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_12_17_091744) do
   end
 
   add_foreign_key "d2l_assessment_mappings", "units"
+  add_foreign_key "user_oauth_states", "users"
+  add_foreign_key "user_oauth_tokens", "users"
 end

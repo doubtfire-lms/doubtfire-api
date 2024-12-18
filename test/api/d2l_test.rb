@@ -108,4 +108,61 @@ class D2lTest < ActiveSupport::TestCase
     unit.reload
     assert_equal '54321', unit.d2l_assessment_mapping.org_unit_id
   end
+
+  def test_can_login_to_d2l
+    user = FactoryBot.create(:user, :convenor)
+    add_auth_header_for(user: user)
+
+    init_states = UserOauthState.count
+
+    stub_request(:post, "https://auth.brightspace.com/core/connect/token")
+      .to_return(
+        status: 200,
+        body: {
+          'access_token' => "blah",
+          'expires_at' => '1734493629',
+          'refresh_token' => "blee.bloo",
+          'scope' => "core:*:* enrollment:orgunit:read grades:*:*",
+          'token_type' => "Bearer"
+        }.to_json,
+        headers: { 'Content-Type' => 'application/json;charset=UTF-8' }
+      )
+
+    get '/api/d2l/login_url'
+    assert_equal 200, last_response.status, last_response.inspect
+
+    # State is created for callback
+    assert_equal init_states + 1, UserOauthState.count
+
+    state = UserOauthState.last.state
+
+    init_tokens = user.user_oauth_tokens.count
+
+    # When the user logs in, they are redirected to the callback
+    get '/api/d2l/callback', { code: '12345', state: state }
+    assert_equal 200, last_response.status, last_response.inspect
+
+    # The user should now have an oauth token
+    user.reload
+    assert_equal init_tokens + 1, user.user_oauth_tokens.count
+  end
+
+  def test_old_state_and_oauth_tokens_are_destroyed
+    user = FactoryBot.create(:user, :convenor)
+    add_auth_header_for(user: user)
+
+    state = UserOauthState.create(user: user, state: '12345')
+    state.created_at = 31.minutes.ago
+    state.save
+
+    UserOauthState.destroy_old_states
+
+    assert_nil UserOauthState.find_by(id: state.id)
+
+    token = UserOauthToken.create(user: user, provider: :d2l, token: 'test', expires_at: 31.minutes.ago)
+
+    UserOauthToken.destroy_old_tokens
+
+    assert_nil UserOauthToken.find_by(id: token.id)
+  end
 end

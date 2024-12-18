@@ -1,4 +1,4 @@
-module D2lIntegration
+module D2lIntegrationApi
   module Entities
     class D2lEntity < Grape::Entity
       expose :id

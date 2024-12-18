@@ -112,3 +112,6 @@ gem 'shellwords'
 
 # PDF reader for validating PDF file submissions
 gem 'pdf-reader'
+
+# oauth gem for OAuth2 authentication - D2L
+gem 'oauth2'

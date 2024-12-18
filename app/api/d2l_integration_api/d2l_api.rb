@@ -1,6 +1,6 @@
 require 'grape'
 
-module D2lIntegration
+module D2lIntegrationApi
 
   # The D2l API provides the frontend with the ability to register
   # integration details to connect units with D2L. This will allow
@@ -22,7 +22,7 @@ module D2lIntegration
         error!({ error: 'Not authorised to view D2L details' }, 403)
       end
 
-      present unit.d2l_assessment_mapping, with: D2lIntegration::Entities::D2lEntity
+      present unit.d2l_assessment_mapping, with: D2lIntegrationApi::Entities::D2lEntity
     end
 
     desc 'Create a D2L assessment mapping for a unit'
@@ -37,7 +37,7 @@ module D2lIntegration
       end
 
       d2l = D2lAssessmentMapping.create!(unit: unit, org_unit_id: params[:org_unit_id])
-      present d2l, with: D2lIntegration::Entities::D2lEntity
+      present d2l, with: D2lIntegrationApi::Entities::D2lEntity
     end
 
     desc 'Delete a D2L assessment mapping for a unit'
@@ -66,7 +66,22 @@ module D2lIntegration
 
       d2l = unit.d2l_assessment_mapping
       d2l.update!(org_unit_id: params[:org_unit_id])
-      present d2l, with: D2lIntegration::Entities::D2lEntity
+      present d2l, with: D2lIntegrationApi::Entities::D2lEntity
+    end
+
+    desc 'Initiate a login to D2L as a convenor or admin'
+    get '/d2l/login_url' do
+      unless authorise? current_user, User, :convene_units
+        error!({ error: 'Not authorised to login to D2L' }, 403)
+      end
+
+      begin
+        response = D2lIntegration.login_url(current_user)
+      rescue StandardError => e
+        error!({ error: e.message }, 500)
+      end
+
+      present response, with: Grape::Presenters::Presenter
     end
   end
 end
