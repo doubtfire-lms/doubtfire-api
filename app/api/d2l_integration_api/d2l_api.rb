@@ -70,7 +70,7 @@ module D2lIntegrationApi
     end
 
     desc 'Initiate a login to D2L as a convenor or admin'
-    get '/d2l/login_url' do
+    post '/d2l/login_url' do
       unless authorise? current_user, User, :convene_units
         error!({ error: 'Not authorised to login to D2L' }, 403)
       end

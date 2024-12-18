@@ -11,7 +11,7 @@ class D2lTest < ActiveSupport::TestCase
   end
 
   def test_can_add_d2l_details_to_unit
-    unit = FactoryBot.create(:unit)
+    unit = FactoryBot.create(:unit, with_students: false)
 
     add_auth_header_for(user: User.first)
 
@@ -28,7 +28,7 @@ class D2lTest < ActiveSupport::TestCase
   end
 
   def test_ensure_only_one_d2l_mapping_per_unit
-    unit = FactoryBot.create(:unit)
+    unit = FactoryBot.create(:unit, with_students: false)
     d2l = D2lAssessmentMapping.create(unit: unit, org_unit_id: '12345')
 
     add_auth_header_for(user: User.first)
@@ -42,7 +42,7 @@ class D2lTest < ActiveSupport::TestCase
   end
 
   def test_convenor_needed_for_d2l_details
-    unit = FactoryBot.create(:unit)
+    unit = FactoryBot.create(:unit, with_students: false)
     user = FactoryBot.create(:user, :student)
     add_auth_header_for(user: user)
 
@@ -63,7 +63,7 @@ class D2lTest < ActiveSupport::TestCase
   end
 
   def test_can_get_d2l_details_for_unit
-    unit = FactoryBot.create(:unit)
+    unit = FactoryBot.create(:unit, with_students: false)
     d2l = D2lAssessmentMapping.create(unit: unit, org_unit_id: '12345')
 
     add_auth_header_for(user: unit.main_convenor_user)
@@ -76,7 +76,7 @@ class D2lTest < ActiveSupport::TestCase
   end
 
   def test_can_delete_d2l_details_for_unit
-    unit = FactoryBot.create(:unit)
+    unit = FactoryBot.create(:unit, with_students: false)
     d2l = D2lAssessmentMapping.create(unit: unit, org_unit_id: '12345')
 
     add_auth_header_for(user: unit.main_convenor_user)
@@ -93,7 +93,7 @@ class D2lTest < ActiveSupport::TestCase
   end
 
   def test_can_update_d2l_details_for_unit
-    unit = FactoryBot.create(:unit)
+    unit = FactoryBot.create(:unit, with_students: false)
     d2l = D2lAssessmentMapping.create(unit: unit, org_unit_id: '12345')
 
     add_auth_header_for(user: unit.main_convenor_user)
@@ -145,6 +145,17 @@ class D2lTest < ActiveSupport::TestCase
     # The user should now have an oauth token
     user.reload
     assert_equal init_tokens + 1, user.user_oauth_tokens.count
+  end
+
+  def test_login_to_d2l_exposed_over_api
+    unit = FactoryBot.create(:unit, with_students: false)
+
+    add_auth_header_for(user: unit.main_convenor_user)
+
+    post '/api/d2l/login_url'
+    assert_equal 201, last_response.status, last_response.inspect
+
+    assert_equal unit.main_convenor_user, UserOauthState.last.user
   end
 
   def test_old_state_and_oauth_tokens_are_destroyed
