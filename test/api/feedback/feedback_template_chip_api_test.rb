@@ -23,7 +23,7 @@ class FeedbackTemplateChipApiTest < ActiveSupport::TestCase
   def test_specific_create
     learning_outcome = FactoryBot.create(:learning_outcome)
     group_chip = FactoryBot.create(:feedback_group_chip, learning_outcome_id: learning_outcome.id)
-    template_chip = FactoryBot.create(:feedback_template_chip, chip_text: 'Sample chip text', description: 'Sample description', comment_text: 'Sample comment text', summary_text: 'Sample summary text', task_status: TaskStatus.complete, learning_outcome_id: learning_outcome.id, parent_chip_id: group_chip.id)
+    template_chip = FactoryBot.create(:feedback_template_chip, chip_text: 'Sample chip text', description: 'Sample description', comment_text: 'Sample comment text', summary_text: 'Sample summary text', task_status: TaskStatus.complete.name, learning_outcome_id: learning_outcome.id, parent_chip_id: group_chip.id)
     assert_equal template_chip.chip_text, 'Sample chip text'
     assert_equal template_chip.description, 'Sample description'
     assert_equal template_chip.comment_text, 'Sample comment text'
@@ -33,9 +33,9 @@ class FeedbackTemplateChipApiTest < ActiveSupport::TestCase
     assert_equal template_chip.parent_chip_id, group_chip.id
     assert template_chip.valid?
   ensure
-    learning_outcome.destroy
     group_chip.destroy
     template_chip.destroy
+    learning_outcome.destroy
   end
 
   def test_get_feedback_chip_by_context
@@ -54,9 +54,7 @@ class FeedbackTemplateChipApiTest < ActiveSupport::TestCase
     get "api/feedback_template_chips/context/Unit/#{unit.id}"
     assert_equal 200, last_response.status
   ensure
-    unit.destroy
-    learning_outcome.destroy
-    learning_outcome2.destroy
+
     group_chip.destroy
     group_chip2.destroy
     template_chip1.destroy
@@ -65,6 +63,9 @@ class FeedbackTemplateChipApiTest < ActiveSupport::TestCase
     template_chip11.destroy
     template_chip12.destroy
     template_chip13.destroy
+    unit.destroy
+    learning_outcome.destroy
+    learning_outcome2.destroy
   end
 
   def test_create_feedback_template_chip
@@ -73,7 +74,7 @@ class FeedbackTemplateChipApiTest < ActiveSupport::TestCase
     data_to_post = {
       chip_text: 'Sample chip text',
       description: 'Sample description',
-      task_status: TaskStatus.complete,
+      task_status: TaskStatus.complete.name,
       parent_chip_id: group_chip.id,
       learning_outcome_id: learning_outcome.id,
       comment_text: 'Sample comment text',
@@ -83,9 +84,6 @@ class FeedbackTemplateChipApiTest < ActiveSupport::TestCase
     post_json 'api/feedback_template_chips', data_to_post
     puts last_response.body
     assert_equal 201, last_response.status
-  ensure
-    group_chip.destroy
-    learning_outcome.destroy
   end
 
   def test_get_all_feedback_template_chip
@@ -104,7 +102,7 @@ class FeedbackTemplateChipApiTest < ActiveSupport::TestCase
   def test_get_specific_feedback_template_chip
     learning_outcome = FactoryBot.create(:learning_outcome)
     group_chip = FactoryBot.create(:feedback_group_chip, learning_outcome_id: learning_outcome.id)
-    template_chip = FactoryBot.create(:feedback_template_chip, chip_text: 'chippy', description: 'blah blah', comment_text: 'your work is horrible', summary_text: 'just plain bad', task_status: TaskStatus.complete, learning_outcome_id: learning_outcome.id, parent_chip_id: group_chip.id)
+    template_chip = FactoryBot.create(:feedback_template_chip, chip_text: 'chippy', description: 'blah blah', comment_text: 'your work is horrible', summary_text: 'just plain bad', task_status: TaskStatus.complete.name, learning_outcome_id: learning_outcome.id, parent_chip_id: group_chip.id)
     add_auth_header_for user: User.first
     get "api/feedback_template_chips/#{template_chip.id}"
     assert_equal 200, last_response.status
@@ -117,11 +115,11 @@ class FeedbackTemplateChipApiTest < ActiveSupport::TestCase
   def test_update_feedback_template_chip
     learning_outcome = FactoryBot.create(:learning_outcome)
     group_chip = FactoryBot.create(:feedback_group_chip, learning_outcome_id: learning_outcome.id)
-    template_chip = FactoryBot.create(:feedback_template_chip, chip_text: 'chippy', description: 'blah blah', comment_text: 'your work is horrible', summary_text: 'just plain bad', task_status: TaskStatus.complete, learning_outcome_id: learning_outcome.id, parent_chip_id: group_chip.id)
+    template_chip = FactoryBot.create(:feedback_template_chip, chip_text: 'chippy', description: 'blah blah', comment_text: 'your work is horrible', summary_text: 'just plain bad', task_status: TaskStatus.complete.name, learning_outcome_id: learning_outcome.id, parent_chip_id: group_chip.id)
     data_to_post = {
       chip_text: 'Sample chip text',
       description: 'Sample description',
-      task_status: TaskStatus.complete,
+      task_status: TaskStatus.complete.name,
       parent_chip_id: nil,
       learning_outcome_id: 1,
       comment_text: 'Sample comment text',
@@ -154,7 +152,7 @@ class FeedbackTemplateChipApiTest < ActiveSupport::TestCase
     data_to_post = {
       chip_text: 'Sample chip text',
       description: 'Sample description',
-      task_status: TaskStatus.complete,
+      task_status: TaskStatus.complete.name,
       parent_chip_id: group_chip.id,
       learning_outcome_id: learning_outcome.id,
       comment_text: 'Sample comment text',
@@ -173,7 +171,7 @@ class FeedbackTemplateChipApiTest < ActiveSupport::TestCase
     data_to_post = {
       chip_text: 'Sample chip text',
       description: 'Sample description',
-      task_status: TaskStatus.complete,
+      task_status: TaskStatus.complete.name,
       parent_chip_id: group_chip.id,
       learning_outcome_id: learning_outcome.id,
       comment_text: 'Sample comment text',

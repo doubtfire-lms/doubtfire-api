@@ -4,8 +4,6 @@ module Feedback
     validates :summary_text, presence: true
 
     validates :parent_chip_id, presence: true # template chips require a parent chip
-    belongs_to :task_status, class_name: 'TaskStatus', optional: true
-    before_save :set_task_status_name
 
     def serialize
       super.merge({
@@ -15,10 +13,5 @@ module Feedback
       })
     end
 
-    private
-
-    def set_task_status_name
-      self.task_status = task_status&.name
-    end
   end
 end
