@@ -28,6 +28,7 @@ module D2lIntegrationApi
     desc 'Create a D2L assessment mapping for a unit'
     params do
       requires :org_unit_id, type: String, desc: 'The org unit id for the D2L unit'
+      optional :grade_object_id, type: String, desc: 'The grade object id for the D2L unit'
     end
     post '/units/:unit_id/d2l' do
       unit = Unit.find(params[:unit_id])
@@ -36,12 +37,14 @@ module D2lIntegrationApi
         error!({ error: 'Not authorised to add D2L details' }, 403)
       end
 
-      d2l = D2lAssessmentMapping.create!(unit: unit, org_unit_id: params[:org_unit_id])
+      accepted_params = ActionController::Parameters.new(params).permit(:unit_id, :org_unit_id, :grade_object_id)
+
+      d2l = D2lAssessmentMapping.create!(accepted_params)
       present d2l, with: D2lIntegrationApi::Entities::D2lEntity
     end
 
     desc 'Delete a D2L assessment mapping for a unit'
-    delete '/units/:unit_id/d2l' do
+    delete '/units/:unit_id/d2l/:id' do
       unit = Unit.find(params[:unit_id])
 
       unless authorise?(current_user, unit, :update)
@@ -49,15 +52,21 @@ module D2lIntegrationApi
       end
 
       d2l = unit.d2l_assessment_mapping
+
+      if d2l.id != params[:id].to_i
+        error!({ error: 'D2L details not found' }, 404)
+      end
+
       d2l.destroy if d2l.present?
       status 204
     end
 
     desc 'Update a D2L assessment mapping for a unit'
     params do
-      requires :org_unit_id, type: String, desc: 'The org unit id for the D2L unit'
+      optional :org_unit_id, type: String, desc: 'The org unit id for the D2L unit'
+      optional :grade_object_id, type: String, desc: 'The grade object id for the D2L unit'
     end
-    put '/units/:unit_id/d2l' do
+    put '/units/:unit_id/d2l/:id' do
       unit = Unit.find(params[:unit_id])
 
       unless authorise?(current_user, unit, :update)
@@ -65,7 +74,14 @@ module D2lIntegrationApi
       end
 
       d2l = unit.d2l_assessment_mapping
-      d2l.update!(org_unit_id: params[:org_unit_id])
+
+      if d2l.id != params[:id].to_i
+        error!({ error: 'D2L details not found' }, 404)
+      end
+
+      accepted_params = ActionController::Parameters.new(params).permit(:org_unit_id, :grade_object_id)
+
+      d2l.update!(accepted_params)
       present d2l, with: D2lIntegrationApi::Entities::D2lEntity
     end
 

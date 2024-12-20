@@ -6,4 +6,7 @@ class D2lAssessmentMapping < ApplicationRecord
   # Ensure only one D2L mapping per unit
   validates :unit_id, uniqueness: true
 
+  # Ensure org_unit_id is present
+  validates :org_unit_id, presence: true
+
 end
