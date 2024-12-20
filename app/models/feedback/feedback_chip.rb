@@ -7,7 +7,6 @@ module Feedback
 
     belongs_to :parent_chip, class_name: 'FeedbackChip', optional: true
     belongs_to :learning_outcome, class_name: 'LearningOutcome', optional: true
-    belongs_to :task_status, class_name: 'TaskStatus', optional: true
 
     has_many :child_chips, class_name: 'FeedbackChip', foreign_key: 'parent_chip_id', dependent: :nullify
     has_many :chip_usage_analytics, class_name: 'ChipUsageAnalytics', dependent: :destroy
@@ -34,18 +33,25 @@ module Feedback
     def serialize
       {
         id: self.id,
-        type: self.type,
+        type: feedback_type,
         chip_text: self.chip_text,
         description: self.description,
-        task_status_id: self.task_status_id,
         parent_chip_id: self.parent_chip_id,
-        learning_outcome_id: self.learning_outcome_id,
-        created_at: self.created_at,
-        updated_at: self.updated_at
+        learning_outcome_id: self.learning_outcome_id
       }
     end
 
     private
+
+    def feedback_type
+      if is_a?(Feedback::FeedbackGroupChip)
+        'Group'
+      elsif is_a?(Feedback::FeedbackTemplateChip)
+        'Template'
+      else
+        'Something went wrong'
+      end
+    end
 
     def parent_is_group_chip
       if parent_chip_id.present?

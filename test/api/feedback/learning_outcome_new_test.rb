@@ -193,6 +193,37 @@ class LearningOutcomeNewTest < ActiveSupport::TestCase
     task_definition.destroy
   end
 
+  def test_overwrite_linked_learning_outcomes
+    task_definition = FactoryBot.create(:task_definition)
+    unit = FactoryBot.create(:unit, name: 'i like units', code: 'abcde', description: 'test unit')
+    target_learning_outcome = FactoryBot.create(:learning_outcome, context_id: unit.id, context_type: 'Unit', abbreviation: 'target', short_description: 'target learning outcome', full_outcome_description: 'this outcome will be linked to source')
+    target_learning_outcome2 = FactoryBot.create(:learning_outcome, context_id: unit.id, context_type: 'Unit', abbreviation: 'target2', short_description: 'target learning outcome 2', full_outcome_description: 'this outcome will be linked to source')
+    data_to_post = {
+      context_id: task_definition.id,
+      context_type: 'TaskDefinition',
+      abbreviation: 'source',
+      short_description: 'source learning outcome',
+      full_outcome_description: 'this outcome will be linked to target',
+      linked_outcome_ids: [target_learning_outcome.id, target_learning_outcome2.id]
+    }
+    add_auth_header_for user: User.first
+    post_json "api/task_definitions/#{task_definition.id}/outcomes", data_to_post
+
+    target_learning_outcome3 = FactoryBot.create(:learning_outcome, context_id: unit.id, context_type: 'Unit', abbreviation: 'target3', short_description: 'target learning outcome 3', full_outcome_description: 'this outcome will be linked to source')
+
+    data_to_put = {
+      linked_outcome_ids: [target_learning_outcome.id, target_learning_outcome3.id]
+    }
+    put_json "api/task_definitions/#{task_definition.id}/outcomes/#{task_definition.learning_outcomes.first.id}", data_to_put
+    assert_equal 200, last_response.status
+  ensure
+    unit.destroy
+    target_learning_outcome.destroy
+    target_learning_outcome2.destroy
+    target_learning_outcome3.destroy
+    task_definition.destroy
+  end
+
   def test_update_learning_outcome_links
     task_definition = FactoryBot.create(:task_definition)
     unit = FactoryBot.create(:unit, name: 'i like units', code: 'abcde', description: 'test unit')
