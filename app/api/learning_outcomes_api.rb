@@ -187,13 +187,21 @@ class LearningOutcomesApi < Grape::API
 
     if params[:linked_outcome_ids]
       # delete all existing links
-      LearningOutcomeLink.where(source_id: learning_outcome.id).destroy_all
+      # LearningOutcomeLink.where(source_id: learning_outcome.id).destroy_all # change for different method, move to learning outcome link
 
-      # create new links
-      params[:linked_outcome_ids].each do |linked_outcome_id|
-        LearningOutcomeLink.create!(source_id: learning_outcome.id, target_id: linked_outcome_id)
-      rescue ActiveRecord::RecordInvalid => e
-        Rails.logger.warn "Failed to link learning outcome #{learning_outcome.id} to learning outcome #{linked_outcome_id}: #{e.message}"
+      existing_links = LearningOutcomeLink.where(source_id: learning_outcome.id).pluck(:target_id)
+
+      links_to_delete = existing_links - params[:linked_outcome_ids]
+      links_to_create = params[:linked_outcome_ids] - existing_links
+
+      LearningOutcomeLink.where(source_id: learning_outcome.id, target_id: links_to_delete).destroy_all
+
+      links_to_create.each do |linked_outcome_id|
+        begin
+          LearningOutcomeLink.create!(source_id: learning_outcome.id, target_id: linked_outcome_id)
+        rescue ActiveRecord::RecordInvalid => e
+          Rails.logger.warn "Failed to link learning outcome #{learning_outcome.id} to learning outcome #{linked_outcome_id}: #{e.message}"
+        end
       end
     end
 

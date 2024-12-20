@@ -312,8 +312,21 @@ class Unit < ApplicationRecord
     task_definitions.each do |td|
       new_td = td.copy_to(new_unit)
 
+      task_definition_outcome_mapping = {}
+
       td.learning_outcomes.each do |learning_outcome| # for each old task definition, duplicate the learning outcomes associated with it aswell
-        new_td.learning_outcomes << learning_outcome.dup # this will need to be tested, but im not sure if this is all we need to change aswell
+        new_outcome = learning_outcome.dup
+        new_td.learning_outcomes << new_outcome
+        task_definition_outcome_mapping[learning_outcome.id] = new_outcome.id
+      end
+
+      LearningOutcomeLink.where(source_id: task_definition_outcome_mapping.keys).find_each do |link|
+        new_source_id = task_definition_outcome_mapping[link.source_id]
+        new_target_id = task_definition_outcome_mapping[link.target_id]
+
+        if new_source_id && new_target_id
+          LearningOutcomeLink.create!(source_id: new_source_id, target_id: new_target_id)
+        end
       end
 
       # Update default task definition if necessary
@@ -323,8 +336,20 @@ class Unit < ApplicationRecord
     end
 
     # Duplicate unit learning outcomes
+    unit_learning_outcome_mapping = {}
     learning_outcomes.each do |learning_outcome|
-      new_unit.learning_outcomes << learning_outcome.dup # i dont see why this wouldn't still work, but it will need to be tested
+      new_outcome = learning_outcome.dup
+      new_unit.learning_outcomes << new_outcome
+      unit_learning_outcome_mapping[learning_outcome.id] = new_outcome.id
+    end
+
+    LearningOutcomeLink.where(source_id: unit_learning_outcome_mapping.keys).each do |link|
+      new_source_id = unit_learning_outcome_mapping[link.source_id]
+      new_target_id = unit_learning_outcome_mapping[link.target_id]
+
+      if new_source_id && new_target_id
+        LearningOutcomeLink.create!(source_id: new_source_id, target_id: new_target_id)
+      end
     end
 
     # Duplicate alignments

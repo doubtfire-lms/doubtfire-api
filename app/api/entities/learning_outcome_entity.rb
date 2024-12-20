@@ -6,8 +6,8 @@ module Entities
     expose :abbreviation
     expose :short_description
     expose :full_outcome_description
-
-    #expose :feedback_template_chips, using: Feedback::FeedbackTemplateChipEntity, as: :template_chips
-    #expose :feedback_group_chips, using: Feedback::FeedbackGroupChipEntity, as: :group_chips
+    expose :linked_outcomes, using: LearningOutcomeEntity do |learning_outcome, options|
+      learning_outcome.linked_outcomes
+    end
   end
 end

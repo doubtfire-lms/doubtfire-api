@@ -5,7 +5,7 @@ module Feedback
       expose :type
       expose :chip_text
       expose :description
-      expose :task_status_id
+      expose :task_status
       expose :parent_chip_id
       expose :learning_outcome_id
       expose :summary_text

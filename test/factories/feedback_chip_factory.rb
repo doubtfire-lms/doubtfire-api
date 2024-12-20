@@ -9,7 +9,7 @@ FactoryBot.define do
   factory :feedback_template_chip, class: 'Feedback::FeedbackTemplateChip' do
     chip_text { "Template Chip Text #{Faker::Lorem.word}" }
     description { Faker::Lorem.sentence }
-    task_status_id { TaskStatus.complete.id }
+    task_status { TaskStatus.complete }
     parent_chip_id { nil }
     learning_outcome_id { 1 }
 
