@@ -177,12 +177,21 @@ module Doubtfire
       Rails.root.join('app', 'models', 'similarity')
 
     # CORS config
-    config.middleware.insert_before Warden::Manager, Rack::Cors do
+    # config.middleware.insert_before Warden::Manager, Rack::Cors do
+    #  allow do
+    #    origins '*'
+    #    resource '*', headers: :any, methods: %i(get post put delete options)
+    #  end
+    # end
+
+    # Updated CORS Security Patch Fix
+     config.middleware.insert_before Warden::Manager, Rack::Cors do
       allow do
-        origins '*'
+        origins ENV['DF_ALLOWED_ORIGINS'].split(',')
         resource '*', headers: :any, methods: %i(get post put delete options)
       end
-    end
+     end
+
     # Generators for test framework
     if Rails.env.test?
       config.generators do |g|
