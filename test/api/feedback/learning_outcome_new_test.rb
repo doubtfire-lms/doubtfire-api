@@ -218,18 +218,13 @@ class LearningOutcomeNewTest < ActiveSupport::TestCase
     }
     put_json "api/task_definitions/#{task_definition.id}/outcomes/#{task_definition.learning_outcomes.first.id}", data_to_put
     puts last_response.body
-    puts LearningOutcomeLink.where(source_id: task_definition.learning_outcomes.first.id).count
+    link_count = LearningOutcomeLink.where(source_id: task_definition.learning_outcomes.first.id).count
+    puts "Link count: #{link_count}"
     all_links = LearningOutcomeLink.all
     for link in all_links
       puts link.inspect
     end
     assert_equal 200, last_response.status
-  ensure
-    unit.destroy
-    target_learning_outcome.destroy
-    target_learning_outcome2.destroy
-    target_learning_outcome3.destroy
-    task_definition.destroy
   end
 
   def test_update_learning_outcome_links
