@@ -13,6 +13,17 @@ class LearningOutcomesApi < Grape::API
     params[:context_type].pluralize
   end
 
+  desc "Get a specific learning outcome"
+  get '/learning_outcomes/:id' do
+    ilo = LearningOutcome.find(params[:id])
+
+    unless authorise? current_user, ilo, :update
+      error!({ error: 'You are not authorised to view this outcome.' }, 403)
+    end
+
+    present ilo, with: Entities::LearningOutcomeEntity
+  end
+
   desc "Get all outcomes for a specified context (unit, course, task_definition, ect.)"
   params do
     requires :context_id, type: Integer, desc: 'The id of the context'
@@ -111,13 +122,23 @@ class LearningOutcomesApi < Grape::API
     requires :abbreviation, type: String, desc: 'The ILO''s abbreviation'
     requires :short_description, type: String, desc: 'The ILO''s short_description'
     optional :full_outcome_description, type: String, desc: 'The ILO''s full_outcome_description'
+    optional :linked_outcome_ids, type: Array[Integer], desc: 'The ids of the linked outcome ids'
   end
   post '/global/outcomes' do
     # find learning outcomes with a null context_type and context_id
-    glo = LearningOutcome.create!(context_type: nil, context_id: nil, abbreviation: params[:abbreviation], short_description: params[:short_description], full_outcome_description: params[:full_outcome_description])
 
     unless authorise? current_user, glo, :update
       error!({ error: 'You are not authorised to create global outcomes.' }, 403)
+    end
+
+    glo = LearningOutcome.create!(context_type: nil, context_id: nil, abbreviation: params[:abbreviation], short_description: params[:short_description], full_outcome_description: params[:full_outcome_description])
+
+    if params[:linked_outcome_ids]
+      params[:linked_outcome_ids].each do |linked_outcome_id|
+        LearningOutcomeLink.create!(source_id: glo.id, target_id: linked_outcome_id)
+      rescue ActiveRecord::RecordInvalid => e
+        Rails.logger.warn "Failed to link learning outcome #{glo.id} to learning outcome #{linked_outcome_id}: #{e.message}"
+      end
     end
 
     present glo, with: Entities::LearningOutcomeEntity
@@ -213,6 +234,7 @@ class LearningOutcomesApi < Grape::API
     optional :abbreviation, type: String, desc: 'The ILO''s abbreviation'
     optional :short_description, type: String, desc: 'The ILO''s short_description'
     optional :full_outcome_description, type: String, desc: 'The ILO''s full_outcome_description'
+    optional :linked_outcome_ids, type: Array[Integer], desc: 'The ids of the linked outcome ids'
   end
   put '/global/outcomes/:id' do
     # find learning outcomes with a null context_type and context_id
@@ -229,6 +251,26 @@ class LearningOutcomesApi < Grape::API
                                                    :full_outcome_description
                                                  )
     glo.update!(ilo_parameters)
+
+    if params[:linked_outcome_ids]
+      # delete all existing links
+      # LearningOutcomeLink.where(source_id: learning_outcome.id).destroy_all # change for different method, move to learning outcome link
+
+      existing_links = LearningOutcomeLink.where(source_id: glo.id).pluck(:target_id)
+
+      links_to_delete = existing_links - params[:linked_outcome_ids]
+      links_to_create = params[:linked_outcome_ids] - existing_links
+
+      LearningOutcomeLink.where(source_id: glo.id, target_id: links_to_delete).destroy_all
+
+      links_to_create.each do |linked_outcome_id|
+        begin
+          LearningOutcomeLink.create!(source_id: glo.id, target_id: linked_outcome_id)
+        rescue ActiveRecord::RecordInvalid => e
+          Rails.logger.warn "Failed to link learning outcome #{glo.id} to learning outcome #{linked_outcome_id}: #{e.message}"
+        end
+      end
+    end
     present glo, with: Entities::LearningOutcomeEntity
   end
 
