@@ -185,6 +185,7 @@ class LearningOutcomeNewTest < ActiveSupport::TestCase
     }
     add_auth_header_for user: User.first
     post_json "api/task_definitions/#{task_definition.id}/outcomes", data_to_post
+    puts last_response.body
     assert_equal 201, last_response.status
   ensure
     unit.destroy
@@ -236,6 +237,7 @@ class LearningOutcomeNewTest < ActiveSupport::TestCase
     }
     add_auth_header_for user: User.first
     put_json "api/task_definitions/#{task_definition.id}/outcomes/#{source_learning_outcome.id}", data_to_put
+    puts last_response.body
     assert_equal 200, last_response.status
   ensure
     unit.destroy
@@ -256,5 +258,34 @@ class LearningOutcomeNewTest < ActiveSupport::TestCase
     assert_equal 204, last_response.status
   ensure
     task_definition.destroy
+  end
+
+  def test_print_all_task_links_data
+    task_links = LearningOutcomeTaskLink.all
+    task_links.each do |task_link|
+      puts "Task Definition ID: #{task_link.task_definition_id}, Learning Outcome ID: #{task_link.learning_outcome_id}"
+
+      learning_outcome = LearningOutcome.find(task_link.learning_outcome_id)
+      puts "Learning Outcome: #{learning_outcome.abbreviation}, Context Type: #{learning_outcome.context_type}, Context Id: #{learning_outcome.context_id}"
+    end
+  end
+
+  def test_task_link_migration
+    task_links = LearningOutcomeTaskLink.all
+    task_links.each do |task_link|
+      task_definition = TaskDefinition.find(task_link.task_definition_id)
+      unit_learning_outcome = LearningOutcome.find(task_link.learning_outcome_id)
+      data_to_post = {
+        context_type: 'TaskDefinition',
+        context_id: task_definition.id,
+        abbreviation: "legacy",
+        short_description: "legacy",
+        full_outcome_description: "legacy",
+        linked_outcome_ids: [unit_learning_outcome.id]
+      }
+      add_auth_header_for user: User.first
+      post_json "api/task_definitions/#{task_definition.id}/outcomes", data_to_post
+      puts last_response.body
+    end
   end
 end
