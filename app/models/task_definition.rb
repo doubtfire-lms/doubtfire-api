@@ -14,6 +14,7 @@ class TaskDefinition < ApplicationRecord
     ]
 
     tutor_role_permissions = [
+      :update,
       :get_los
     ]
 
@@ -27,13 +28,16 @@ class TaskDefinition < ApplicationRecord
     }
   end
 
-
   def role_for(user)
-    return :admin if user.has_admin_capability?
-    return :convenor if user.has_convenor_capability?
-    return :tutor if user.has_tutor_capability?
-
-    return nil
+    if user.has_admin_capability?
+      Role.admin
+    elsif user.has_convenor_capability?
+      Role.convenor
+    elsif user.has_tutor_capability?
+      Role.tutor
+    else
+      nil
+    end
   end
 
 =begin

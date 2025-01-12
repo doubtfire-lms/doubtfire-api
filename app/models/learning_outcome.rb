@@ -16,7 +16,8 @@ class LearningOutcome < ApplicationRecord
 
     tutor_role_permissions = [
       :update,
-      :get_los
+      :get_los,
+      :update_glos
     ]
 
     nil_role_permissions = []
@@ -29,7 +30,19 @@ class LearningOutcome < ApplicationRecord
     }
   end
 
+  def role_for(user)
+    if user.has_admin_capability?
+      Role.admin
+    elsif user.has_convenor_capability?
+      Role.convenor
+    elsif user.has_tutor_capability?
+      Role.tutor
+    else
+      nil
+    end
+  end
 
+=begin
   def role_for(user)
     return :admin if user.has_admin_capability?
     return :convenor if user.has_convenor_capability?
@@ -37,6 +50,7 @@ class LearningOutcome < ApplicationRecord
 
     return nil
   end
+=end
 
 =begin
   def role_for(user)
