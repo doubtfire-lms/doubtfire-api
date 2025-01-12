@@ -314,6 +314,7 @@ class User < ApplicationRecord
 
       :feedback_chips,
       :get_glos,
+      :update_glos,
 
       :get_scorm_token
     ]
@@ -327,6 +328,9 @@ class User < ApplicationRecord
       :get_all_units,
 
       :audit_units,
+
+      :feedback_chips,
+      :get_glos,
 
       :get_teaching_periods,
       :use_overseer,
@@ -349,7 +353,8 @@ class User < ApplicationRecord
       :get_staff_list,
       :get_teaching_periods,
       :use_overseer,
-      :get_scorm_token
+      :get_scorm_token,
+      :feedback_chips
     ]
 
     # What can tutors do with users?
@@ -357,7 +362,8 @@ class User < ApplicationRecord
       :get_unit_roles,
       :download_unit_csv,
       :get_teaching_periods,
-      :get_scorm_token
+      :get_scorm_token,
+      :feedback_chips
     ]
 
     # What can students do with users?

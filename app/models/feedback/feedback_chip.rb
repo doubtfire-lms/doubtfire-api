@@ -19,7 +19,6 @@ module Feedback
     validate :check_tree_completeness_per_learning_outcome, on: [:update]
     validate :check_no_orphaned_chips
 
-
     def track_usage_by(tutor)
       analytics = chip_usage_analytics.find_or_initialize_by(tutor: tutor)
       analytics.usage_count += 1

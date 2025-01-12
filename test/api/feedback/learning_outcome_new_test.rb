@@ -14,7 +14,7 @@ class LearningOutcomeNewTest < ActiveSupport::TestCase
     learning_outcome1 = FactoryBot.create(:learning_outcome, context_id: unit.id, context_type: 'Unit', abbreviation: 'test1', short_description: 'sd', full_outcome_description: 'fod')
     learning_outcome2 = FactoryBot.create(:learning_outcome, context_id: unit.id, context_type: 'Unit', abbreviation: 'test2', short_description: 'sd', full_outcome_description: 'fod')
     learning_outcome3 = FactoryBot.create(:learning_outcome, context_id: unit.id, context_type: 'Unit', abbreviation: 'test3', short_description: 'sd', full_outcome_description: 'fod')
-    add_auth_header_for user: User.first
+    add_auth_header_for user: unit.main_convenor_user
     get "api/units/#{unit.id}/outcomes"
     assert_equal 200, last_response.status
   ensure
@@ -95,6 +95,7 @@ class LearningOutcomeNewTest < ActiveSupport::TestCase
     }
     add_auth_header_for user: User.first
     post_json "api/global/outcomes", data_to_post
+    puts last_response.body
     assert_equal 201, last_response.status
   end
 
@@ -185,7 +186,6 @@ class LearningOutcomeNewTest < ActiveSupport::TestCase
     }
     add_auth_header_for user: User.first
     post_json "api/task_definitions/#{task_definition.id}/outcomes", data_to_post
-    puts last_response.body
     assert_equal 201, last_response.status
   ensure
     unit.destroy
@@ -209,7 +209,6 @@ class LearningOutcomeNewTest < ActiveSupport::TestCase
     }
     add_auth_header_for user: User.first
     post_json "api/task_definitions/#{task_definition.id}/outcomes", data_to_post
-    puts last_response.body
 
     target_learning_outcome3 = FactoryBot.create(:learning_outcome, context_id: unit.id, context_type: 'Unit', abbreviation: 'target3', short_description: 'target learning outcome 3', full_outcome_description: 'this outcome will be linked to source')
 
@@ -217,13 +216,6 @@ class LearningOutcomeNewTest < ActiveSupport::TestCase
       linked_outcome_ids: [target_learning_outcome.id, target_learning_outcome3.id]
     }
     put_json "api/task_definitions/#{task_definition.id}/outcomes/#{task_definition.learning_outcomes.first.id}", data_to_put
-    puts last_response.body
-    link_count = LearningOutcomeLink.where(source_id: task_definition.learning_outcomes.first.id).count
-    puts "Link count: #{link_count}"
-    all_links = LearningOutcomeLink.all
-    for link in all_links
-      puts link.inspect
-    end
     assert_equal 200, last_response.status
   end
 
@@ -239,7 +231,6 @@ class LearningOutcomeNewTest < ActiveSupport::TestCase
     }
     add_auth_header_for user: User.first
     put_json "api/task_definitions/#{task_definition.id}/outcomes/#{source_learning_outcome.id}", data_to_put
-    puts last_response.body
     assert_equal 200, last_response.status
   ensure
     unit.destroy
@@ -262,16 +253,6 @@ class LearningOutcomeNewTest < ActiveSupport::TestCase
     task_definition.destroy
   end
 
-  def test_print_all_task_links_data
-    task_links = LearningOutcomeTaskLink.all
-    task_links.each do |task_link|
-      puts "Task Definition ID: #{task_link.task_definition_id}, Learning Outcome ID: #{task_link.learning_outcome_id}"
-
-      learning_outcome = LearningOutcome.find(task_link.learning_outcome_id)
-      puts "Learning Outcome: #{learning_outcome.abbreviation}, Context Type: #{learning_outcome.context_type}, Context Id: #{learning_outcome.context_id}"
-    end
-  end
-
   def test_task_link_migration
     task_links = LearningOutcomeTaskLink.all
     task_links.each do |task_link|
@@ -287,15 +268,6 @@ class LearningOutcomeNewTest < ActiveSupport::TestCase
       }
       add_auth_header_for user: User.first
       post_json "api/task_definitions/#{task_definition.id}/outcomes", data_to_post
-      puts last_response.body
-    end
-  end
-
-  def test_get_all_learning_outcome_links
-    links = LearningOutcomeLink.all
-    puts "Total links: #{links.count}"
-    links.each do |link|
-      puts "Source ID: #{link.source_id}, Target ID: #{link.target_id}"
     end
   end
 
@@ -304,7 +276,6 @@ class LearningOutcomeNewTest < ActiveSupport::TestCase
     learning_outcome = FactoryBot.create(:learning_outcome, context_id: unit.id, context_type: 'Unit', abbreviation: 'test1', short_description: 'sd', full_outcome_description: 'fod')
     add_auth_header_for user: User.first
     get "api/learning_outcomes/#{learning_outcome.id}"
-    puts last_response.body
     assert_equal 200, last_response.status
   end
 end
