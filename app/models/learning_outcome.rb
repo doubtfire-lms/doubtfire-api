@@ -4,12 +4,14 @@ class LearningOutcome < ApplicationRecord
   def self.permissions
     convenor_role_permissions = [
       :update,
-      :get_los
+      :get_los,
+      :update_glos
     ]
 
     admin_role_permissions = [
       :update,
-      :get_los
+      :get_los,
+      :update_glos
     ]
 
     tutor_role_permissions = [
@@ -27,6 +29,7 @@ class LearningOutcome < ApplicationRecord
     }
   end
 
+
   def role_for(user)
     return :admin if user.has_admin_capability?
     return :convenor if user.has_convenor_capability?
@@ -35,6 +38,25 @@ class LearningOutcome < ApplicationRecord
     return nil
   end
 
+=begin
+  def role_for(user)
+    if convenors.where('unit_roles.user_id=:id', id: user.id).count == 1
+      Role.convenor
+    elsif tutors.where('unit_roles.user_id=:id', id: user.id).count == 1
+      Role.tutor
+    elsif active_projects.where('projects.user_id=:id', id: user.id).count == 1
+      Role.student
+    elsif user.has_auditor_capability? &&
+          start_date >= Time.zone.today - Doubtfire::Application.config.auditor_unit_access_years &&
+          end_date < DateTime.now
+      Role.auditor
+    elsif user.has_admin_capability?
+      Role.admin
+    else
+      nil
+    end
+  end
+=end
   belongs_to :context, polymorphic: true, optional: true
 
   has_many :outgoing_links, class_name: 'LearningOutcomeLink', foreign_key: 'source_id', dependent: :destroy

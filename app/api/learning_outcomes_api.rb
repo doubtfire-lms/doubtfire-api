@@ -45,7 +45,7 @@ class LearningOutcomesApi < Grape::API
     # find learning outcomes with a null context_type and context_id
     glos = LearningOutcome.where(context_type: nil, context_id: nil)
 
-    unless authorise? current_user, glos.first, :get_los
+    unless authorise? current_user, User, :get_glos
       error!({ error: 'You are not authorised to view global outcomes.' }, 403)
     end
 
