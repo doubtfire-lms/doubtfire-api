@@ -28,7 +28,8 @@ class Unit < ApplicationRecord
       :download_stats,
       :download_unit_csv,
       :download_grades,
-      :exceed_capacity
+      :exceed_capacity,
+      :get_los
     ]
 
     # What can convenors do with units?
@@ -49,7 +50,7 @@ class Unit < ApplicationRecord
       :rollover_unit,
       :exceed_capacity,
       :perform_overseer_assessment_test,
-      :get_glos
+      :get_los
     ]
 
     # What can admin do with units?
@@ -67,7 +68,8 @@ class Unit < ApplicationRecord
       :download_stats,
       :download_unit_csv,
       :download_grades,
-      :exceed_capacity
+      :exceed_capacity,
+      :get_los
     ]
 
     # What can auditors do with units?

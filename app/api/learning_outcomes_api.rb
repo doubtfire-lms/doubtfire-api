@@ -17,7 +17,7 @@ class LearningOutcomesApi < Grape::API
   get '/learning_outcomes/:id' do
     ilo = LearningOutcome.find(params[:id])
 
-    unless authorise? current_user, ilo, :update
+    unless authorise? current_user, ilo, :get_los
       error!({ error: 'You are not authorised to view this outcome.' }, 403)
     end
 
@@ -33,7 +33,7 @@ class LearningOutcomesApi < Grape::API
     context_type = params[:context_type_plural].singularize.camelize
     context_model = context_type.classify.constantize.find(params[:context_id])
 
-    unless authorise? current_user, context_model, :update
+    unless authorise? current_user, context_model, :get_los
       error!({ error: 'You are not authorised to view outcomes in this context.' }, 403)
     end
 
@@ -45,7 +45,7 @@ class LearningOutcomesApi < Grape::API
     # find learning outcomes with a null context_type and context_id
     glos = LearningOutcome.where(context_type: nil, context_id: nil)
 
-    unless authorise? current_user, glos.first, :get_glos
+    unless authorise? current_user, glos.first, :get_los
       error!({ error: 'You are not authorised to view global outcomes.' }, 403)
     end
 
@@ -58,7 +58,7 @@ class LearningOutcomesApi < Grape::API
     context_type = params[:context_type_plural].singularize.camelize
     context_model = context_type.classify.constantize.find(params[:context_id])
 
-    unless authorise? current_user, context_model, :update
+    unless authorise? current_user, context_model, :get_los
       error!({ error: 'You are not authorised to view feedback chips in this context.' }, 403)
     end
 
@@ -127,7 +127,7 @@ class LearningOutcomesApi < Grape::API
   post '/global/outcomes' do
     # find learning outcomes with a null context_type and context_id
 
-    unless authorise? current_user, glo, :update
+    unless authorise? current_user, User, :update_glos
       error!({ error: 'You are not authorised to create global outcomes.' }, 403)
     end
 
