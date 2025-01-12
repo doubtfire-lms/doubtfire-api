@@ -44,8 +44,11 @@ class LearningOutcomesApi < Grape::API
   get '/global/outcomes' do
     # find learning outcomes with a null context_type and context_id
     glos = LearningOutcome.where(context_type: nil, context_id: nil)
+    if glos.nil?
+      present []
+    end
 
-    unless authorise? current_user, User, :get_glos
+    unless authorise? current_user, User, :get_los
       error!({ error: 'You are not authorised to view global outcomes.' }, 403)
     end
 
@@ -240,7 +243,7 @@ class LearningOutcomesApi < Grape::API
     # find learning outcomes with a null context_type and context_id
     glo = LearningOutcome.find(params[:id])
 
-    unless authorise? current_user, glo, :update
+    unless authorise? current_user, glo, :update_glos
       error!({ error: 'You are not authorised to update global outcomes.' }, 403)
     end
 
@@ -325,7 +328,7 @@ class LearningOutcomesApi < Grape::API
     # find learning outcomes with a null context_type and context_id
     glo = LearningOutcome.find(params[:id])
 
-    unless authorise? current_user, glo, :update
+    unless authorise? current_user, glo, :update_glos
       error!({ error: 'You are not authorised to delete global outcomes.' }, 403)
     end
 
