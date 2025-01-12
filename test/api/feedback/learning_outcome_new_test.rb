@@ -29,7 +29,7 @@ class LearningOutcomeNewTest < ActiveSupport::TestCase
     learning_outcome1 = FactoryBot.create(:learning_outcome, context_id: nil, context_type: nil, abbreviation: 'test1', short_description: 'sd', full_outcome_description: 'fod')
     learning_outcome2 = FactoryBot.create(:learning_outcome, context_id: nil, context_type: nil, abbreviation: 'test2', short_description: 'sd', full_outcome_description: 'fod')
     learning_outcome3 = FactoryBot.create(:learning_outcome, context_id: nil, context_type: nil, abbreviation: 'test3', short_description: 'sd', full_outcome_description: 'fod')
-    add_auth_header_for user: unit.main_convenor_user
+    add_auth_header_for user: User.first
     get "api/global/outcomes"
     assert_equal 200, last_response.status
   ensure
@@ -95,7 +95,6 @@ class LearningOutcomeNewTest < ActiveSupport::TestCase
     }
     add_auth_header_for user: User.first
     post_json "api/global/outcomes", data_to_post
-    puts last_response.body
     assert_equal 201, last_response.status
   end
 
@@ -278,4 +277,5 @@ class LearningOutcomeNewTest < ActiveSupport::TestCase
     get "api/learning_outcomes/#{learning_outcome.id}"
     assert_equal 200, last_response.status
   end
+
 end
