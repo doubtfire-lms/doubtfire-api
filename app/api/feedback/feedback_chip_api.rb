@@ -22,6 +22,17 @@ module Feedback
       present feedback_chips, with: Feedback::Entities::FeedbackChipEntity
     end
 
+    desc "Get all feedback chips for a global context"
+    get '/feedback_chips/global' do
+      unless authorise? current_user, User, :feedback_chips
+        error!({ error: 'You are not authorised to view feedback chips globally.' }, 403)
+      end
+      learning_outcomes = LearningOutcome.where(context_id: nil, context_type: nil)
+      feedback_chips = learning_outcomes.includes(:feedback_chips).map(&:feedback_chips).flatten
+
+      present feedback_chips, with: Feedback::Entities::FeedbackChipEntity
+    end
+
     desc 'Add a feedback chip to a learning outcome'
     params do
       requires :chip_text, type: String, desc: 'The title of the feedback chip'

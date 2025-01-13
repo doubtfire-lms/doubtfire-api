@@ -146,4 +146,17 @@ class FeedbackChipApiTestCondolidated < ActiveSupport::TestCase
     puts last_response.body
     assert_equal 200, last_response.status
   end
+
+  def test_get_global_context_chips
+    learning_outcome = FactoryBot.create(:learning_outcome, context_id: nil, context_type: nil)
+    feedback_group_chip = FactoryBot.create(:feedback_group_chip, learning_outcome_id: learning_outcome.id)
+    feedback_template_chip = FactoryBot.create(:feedback_template_chip, learning_outcome_id: learning_outcome.id, parent_chip_id: feedback_group_chip.id)
+    learning_outcome2 = FactoryBot.create(:learning_outcome, context_id: nil, context_type: nil)
+    feedback_group_chip2 = FactoryBot.create(:feedback_group_chip, learning_outcome_id: learning_outcome2.id)
+    feedback_template_chip2 = FactoryBot.create(:feedback_template_chip, learning_outcome_id: learning_outcome2.id, parent_chip_id: feedback_group_chip2.id)
+    add_auth_header_for user: User.first
+    get 'api/feedback_chips/global'
+    puts last_response.body
+    assert_equal 200, last_response.status
+  end
 end
