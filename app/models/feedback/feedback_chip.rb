@@ -12,12 +12,12 @@ module Feedback
     has_many :chip_usage_analytics, class_name: 'ChipUsageAnalytics', dependent: :destroy
 
     validate :parent_chip_cannot_create_loop, if: :parent_chip_id_changed?
-    validate :parent_is_group_chip
+    # validate :parent_is_group_chip
 
     validate :check_learning_outcome_consistency
     # validate :check_single_root_chip_per_learning_outcome # there can be multiple root chips
     validate :check_tree_completeness_per_learning_outcome, on: [:update]
-    validate :check_no_orphaned_chips
+    # validate :check_no_orphaned_chips
 
     def track_usage_by(tutor)
       analytics = chip_usage_analytics.find_or_initialize_by(tutor: tutor)
@@ -160,12 +160,9 @@ module Feedback
         return
       end
 
-      if type == 'Feedback::FeedbackTemplateChip'
-        parent_chip_id = row['parent_chip_id']
-        if parent_chip_id.nil?
-          result[:errors] << { row: row, message: 'Missing parent_chip_id'}
-        end
+      parent_chip_id = row['parent_chip_id']
 
+      if type == 'Feedback::FeedbackTemplateChip'
         summary_text = row['summary_text']
         if summary_text.nil?
           result[:errors] << { row: row, message: 'Missing summary_text' }
