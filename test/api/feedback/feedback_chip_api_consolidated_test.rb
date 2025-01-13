@@ -155,7 +155,7 @@ class FeedbackChipApiTestCondolidated < ActiveSupport::TestCase
     feedback_group_chip2 = FactoryBot.create(:feedback_group_chip, learning_outcome_id: learning_outcome2.id)
     feedback_template_chip2 = FactoryBot.create(:feedback_template_chip, learning_outcome_id: learning_outcome2.id, parent_chip_id: feedback_group_chip2.id)
     add_auth_header_for user: User.first
-    get 'api/feedback_chips/global'
+    get 'api/global/feedback_chips'
     puts last_response.body
     assert_equal 200, last_response.status
   end

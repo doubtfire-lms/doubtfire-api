@@ -40,8 +40,6 @@ module Feedback
       }
     end
 
-    private
-
     def feedback_type
       if is_a?(Feedback::FeedbackGroupChip)
         'group'

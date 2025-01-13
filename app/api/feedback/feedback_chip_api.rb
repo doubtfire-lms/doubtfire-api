@@ -23,7 +23,7 @@ module Feedback
     end
 
     desc "Get all feedback chips for a global context"
-    get '/feedback_chips/global' do
+    get '/global/feedback_chips' do
       unless authorise? current_user, User, :feedback_chips
         error!({ error: 'You are not authorised to view feedback chips globally.' }, 403)
       end

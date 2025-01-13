@@ -96,7 +96,7 @@ class LearningOutcome < ApplicationRecord
   end
 
   def add_csv_row(row)
-    row << [context_type, context_id, abbreviation, short_description, full_outcome_description, linked_outcome_ids]
+    row << [context_type, context_id, abbreviation, short_description, full_outcome_description, linked_outcome_ids.join(',')]
   end
 
   def self.create_from_csv(context, row, result)
@@ -131,7 +131,7 @@ class LearningOutcome < ApplicationRecord
     outcome = LearningOutcome.find_or_create_by(context_id: context_id, context_type: context_type, abbreviation: abbreviation) do |outcome|
       outcome.short_description = short_description
       outcome.full_outcome_description = full_outcome_description
-      outcome.linked_outcome_ids = row['linked_outcome_ids'].split(',').map(&:to_i)
+      outcome.linked_outcome_ids = row['linked_outcome_ids'].to_s.split(',').map(&:strip).map(&:to_i)
     end
 
     outcome.save!
