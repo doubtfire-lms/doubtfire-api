@@ -308,6 +308,10 @@ class TaskDefinition < ApplicationRecord
     end
   end
 
+  def export_title
+    abbreviation
+  end
+
   def import_outcomes_from_csv(file)
     result = {
       success: [],
