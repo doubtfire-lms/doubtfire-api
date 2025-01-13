@@ -54,18 +54,25 @@ module Feedback
       optional :task_status, type: String, desc: 'The task status of the feedback template chip'
       optional :comment_text, type: String, desc: 'The comment text of the feedback template chip'
       optional :summary_text, type: String, desc: 'The summary text of the feedback template chip'
-      requires :type, type: String, desc: 'The type of the feedback chip (template or group)'
+      optional :type, type: String, desc: 'The type of the feedback chip (template or group)'
     end
     put '/feedback_chips/:id' do
       unless authorise? current_user, User, :feedback_chips
         error!({ error: 'You are not authorised to update feedback chips.' }, 403)
       end
 
-      chip_class = params[:type] == 'template' ? FeedbackTemplateChip : FeedbackGroupChip
-      chip = chip_class.find(params[:id])
+      chip = FeedbackChip.find(params[:id])
+
+      if params[:type] == 'template'
+        chip.update(type: 'Feedback::FeedbackTemplateChip')
+      elsif params[:type] == 'group'
+        chip.update(type: 'Feedback::FeedbackGroupChip')
+      else
+        error!({ error: 'Invalid feedback chip type' }, 400)
+      end
 
       chip.update(declared(params, include_missing: false).except(:type))
-      entity = params[:type] == 'template' ? Entities::FeedbackTemplateChipEntity : Entities::FeedbackGroupChipEntity
+      entity = chip.type == 'Feedback::FeedbackTemplateChip' ? Entities::FeedbackTemplateChipEntity : Entities::FeedbackGroupChipEntity
       present chip, with: entity
     end
 
