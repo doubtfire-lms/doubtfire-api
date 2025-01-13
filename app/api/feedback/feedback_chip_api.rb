@@ -103,7 +103,7 @@ module Feedback
       # find context model dynamically
       context_type = params[:context_type_plural].singularize.camelize
       context_model = context_type.classify.constantize.find(params[:context_id])
-      learning_outcome = LearningOutcome.find(id: params[:id])
+      learning_outcome = LearningOutcome.find(params[:id])
 
       unless authorise? current_user, context_model, :update
         error!({ error: 'You are not authorised to download feedback chips in this context.' }, 403)
@@ -128,7 +128,7 @@ module Feedback
       ensure_csv!(params[:file][:tempfile])
 
       # find context model dynamically
-      learning_outcome = LearningOutcome.find(id: params[:id])
+      learning_outcome = LearningOutcome.find(params[:id])
 
       unless authorise? current_user, learning_outcome, :upload_csv
         error!({ error: 'Not authorised to upload CSV of outcomes' }, 403)
