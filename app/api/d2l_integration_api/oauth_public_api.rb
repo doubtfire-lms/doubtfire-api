@@ -12,7 +12,9 @@ module D2lIntegrationApi
     end
     get '/d2l/callback' do
       D2lIntegration.process_callback(params[:code], params[:state])
-      status 200
+
+      host = Doubtfire::Application.config.institution[:host]
+      redirect "#{host}/success-close"
     rescue StandardError => e
       error!({ error: "Error processing oauth callback: #{e.message}" }, 500)
     end
