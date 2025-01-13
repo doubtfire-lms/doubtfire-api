@@ -321,9 +321,9 @@ class D2lIntegration
     unit.active_projects.each do |project|
       next if done.include?(project.id)
       result << if project.grade.present? && (project.grade > 0)
-                  "Error,#{project.user.username},#{project.grade},Not found in D2L list"
+                  "Error,#{project.user.username},#{project.grade},Not found in D2L"
                 else
-                  "Skipped,#{project.user.username},#{project.grade},Result missing or 0 and not found in D2L list"
+                  "Skipped,#{project.user.username},#{project.grade},Result missing or 0 and not found in D2L"
                 end
     end
 
