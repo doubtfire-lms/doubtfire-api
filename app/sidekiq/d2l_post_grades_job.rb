@@ -15,7 +15,7 @@ class D2lPostGradesJob
     result = D2lIntegration.post_grades(unit, user)
 
     CSV.open(D2lIntegration.result_file_path(unit), "wb") do |csv|
-      csv << %w[Status Id Message]
+      csv << %w[Status Id Grade Message]
       result.each do |r|
         csv << r.split(",")
       end
