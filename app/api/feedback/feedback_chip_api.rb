@@ -63,12 +63,14 @@ module Feedback
 
       chip = FeedbackChip.find(params[:id])
 
-      if params[:type] == 'template'
-        chip.update(type: 'Feedback::FeedbackTemplateChip')
-      elsif params[:type] == 'group'
-        chip.update(type: 'Feedback::FeedbackGroupChip')
-      else
-        error!({ error: 'Invalid feedback chip type' }, 400)
+      if params.key?(:type)
+        if params[:type] == 'template'
+          chip.update(type: 'Feedback::FeedbackTemplateChip')
+        elsif params[:type] == 'group'
+          chip.update(type: 'Feedback::FeedbackGroupChip')
+        else
+          error!({ error: 'Invalid feedback chip type' }, 400)
+        end
       end
 
       chip.update(declared(params, include_missing: false).except(:type))

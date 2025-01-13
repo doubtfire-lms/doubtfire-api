@@ -133,4 +133,17 @@ class FeedbackChipApiTestCondolidated < ActiveSupport::TestCase
     puts last_response.body
     assert_equal 200, last_response.status
   end
+
+  def test_update_without_type
+    learning_outcome = FactoryBot.create(:learning_outcome)
+    group_chip = FactoryBot.create(:feedback_group_chip, learning_outcome_id: learning_outcome.id)
+    data_to_post = {
+      chip_text: 'updated chip text',
+      description: 'updated description'
+    }
+    add_auth_header_for user: User.first
+    put_json "api/feedback_chips/#{group_chip.id}", data_to_post
+    puts last_response.body
+    assert_equal 200, last_response.status
+  end
 end
