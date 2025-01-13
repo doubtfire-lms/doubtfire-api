@@ -2,7 +2,16 @@ module Feedback
   module Entities
     class FeedbackChipEntity < Grape::Entity
       expose :id
-      expose :type
+      expose :type do |chip|
+        case chip.type
+        when 'FeedbackTemplateChip'
+          'template'
+        when 'FeedbackGroupChip'
+          'group'
+        else
+          'unknown'
+        end
+      end
       expose :chip_text
       expose :description
       expose :task_status

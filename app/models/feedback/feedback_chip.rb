@@ -44,11 +44,11 @@ module Feedback
 
     def feedback_type
       if is_a?(Feedback::FeedbackGroupChip)
-        'Group'
+        'group'
       elsif is_a?(Feedback::FeedbackTemplateChip)
-        'Template'
+        'template'
       else
-        'Something went wrong'
+        'something went wrong'
       end
     end
 
