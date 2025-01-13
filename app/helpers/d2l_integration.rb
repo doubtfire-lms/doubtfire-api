@@ -275,13 +275,13 @@ class D2lIntegration
 
     list.each do |d2l_student|
       if d2l_student['ClasslistRoleDisplayName'] != 'Student'
-        result << "Ignored,#{d2l_student['OrgDefinedId']},,\"#{d2l_student['DisplayName']} is not a student\""
+        result << "Ignored,#{d2l_student['OrgDefinedId']},,#{d2l_student['DisplayName'].remove(',')} is not a student"
         next
       end
 
       project = self.find_project_for_d2l_user(unit, d2l_student)
       if project.nil?
-        result << "Not Found in #{app_name},#{d2l_student['OrgDefinedId']},,\"No #{app_name} details for #{d2l_student['DisplayName']} found from D2L\""
+        result << "Not Found in #{app_name},#{d2l_student['OrgDefinedId']},,No #{app_name} details for #{d2l_student['DisplayName'].remove(',')} found from D2L"
         next
       end
 
@@ -289,7 +289,7 @@ class D2lIntegration
 
       # Get the grade for the project
       if project.grade.nil? || project.grade <= 0
-        result << "Skipped,#{d2l_student['OrgDefinedId']},,\"No grade for #{project.student.username} in #{app_name}\""
+        result << "Skipped,#{d2l_student['OrgDefinedId']},,No grade for #{project.student.username} in #{app_name}"
         next
       end
 
@@ -310,10 +310,10 @@ class D2lIntegration
           sleep(response.headers['X-Rate-Limit-Reset'].to_i)
         end
 
-        result << "Success,#{d2l_student['OrgDefinedId']},#{project.grade},\"Posted grade for #{project.student.username}\""
+        result << "Success,#{d2l_student['OrgDefinedId']},#{project.grade},Posted grade for #{project.student.username}"
       rescue OAuth2::Error => e
         Rails.logger.error("Error posting grade for #{unit.code} #{project.student.username}: #{e.response.status} #{e.response.body}")
-        result << "Failed,#{d2l_student['OrgDefinedId']},#{project.grade},\"Error posting grade for #{d2l_student['DisplayName']}\""
+        result << "Failed,#{d2l_student['OrgDefinedId']},#{project.grade},Error posting grade for #{d2l_student['DisplayName'].remove(',')}"
       end
     end
 
