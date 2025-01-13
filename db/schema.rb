@@ -62,7 +62,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_12_17_091744) do
     t.integer "grade_object_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["unit_id"], name: "index_d2l_assessment_mappings_on_unit_id"
+    t.index ["unit_id"], name: "index_d2l_assessment_mappings_on_unit_id", unique: true
   end
 
   create_table "discussion_comments", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
@@ -591,7 +591,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_12_17_091744) do
     t.index ["user_id"], name: "index_webcals_on_user_id", unique: true
   end
 
-  add_foreign_key "d2l_assessment_mappings", "units"
   add_foreign_key "user_oauth_states", "users"
   add_foreign_key "user_oauth_tokens", "users"
 end

@@ -190,7 +190,7 @@ module Doubtfire
       Rails.root.join('app') <<
       Rails.root.join('app/models/comments') <<
       Rails.root.join('app/models/turn_it_in') <<
-      Rails.root.join('app/models/similarity')  <<
+      Rails.root.join('app/models/similarity') <<
       Rails.root.join('app/models/d2l')
 
     # CORS config
