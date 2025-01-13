@@ -95,5 +95,49 @@ module Feedback
       chip.track_usage_by_tutor(tutor)
       nil
     end
+
+    desc 'Download the feedback chips for a specific outcome'
+    params do
+      requires :id, type: Integer, desc: 'The ID of the context'
+    end
+    get '/:context_type_plural/:context_id/outcomes/:id/feedback_chips/csv' do
+      # find context model dynamically
+      context_type = params[:context_type_plural].singularize.camelize
+      context_model = context_type.classify.constantize.find(params[:context_id])
+      learning_outcome = LearningOutcome.find(id: params[:id])
+
+      unless authorise? current_user, context_model, :update
+        error!({ error: 'You are not authorised to download feedback chips in this context.' }, 403)
+      end
+
+      title = learning_outcome.abbreviation
+
+      content_type 'application/octet-stream'
+      header['Content-Disposition'] = "attachment; filename=#{title}--Feedback_Chips.csv"
+      header['Access-Control-Expose-Headers'] = 'Content-Disposition'
+      env['api.format'] = :binary
+      learning_outcome.export_feedback_chips_to_csv
+    end
+
+    desc 'Upload the feedback chips for a specified outcome from a csv'
+    params do
+      requires :file, type: File, desc: 'CSV upload file.'
+      requires :id, type: Integer, desc: 'The id of the learning outcome'
+    end
+    post '/:context_type_plural/:context_id/outcomes/:id/feedback_chips/csv' do
+      # check mime is correct before uploading
+      ensure_csv!(params[:file][:tempfile])
+
+      # find context model dynamically
+      learning_outcome = LearningOutcome.find(id: params[:id])
+
+      unless authorise? current_user, learning_outcome, :upload_csv
+        error!({ error: 'Not authorised to upload CSV of outcomes' }, 403)
+      end
+
+      # Actually import...
+      learning_outcome.import_feedback_chips_from_csv(params[:file][:tempfile])
+    end
+
   end
 end

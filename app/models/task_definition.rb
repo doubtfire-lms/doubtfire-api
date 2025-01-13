@@ -5,12 +5,14 @@ class TaskDefinition < ApplicationRecord
   def self.permissions
     convenor_role_permissions = [
       :update,
-      :get_los
+      :get_los,
+      :upload_csv
     ]
 
     admin_role_permissions = [
       :update,
-      :get_los
+      :get_los,
+      :upload_csv
     ]
 
     tutor_role_permissions = [
@@ -295,6 +297,41 @@ class TaskDefinition < ApplicationRecord
         csv << task_definition.to_csv_row
       end
     end
+  end
+
+  def export_learning_outcome_to_csv
+    CSV.generate do |row|
+      row << LearningOutcome.csv_header
+      learning_outcomes.each do |outcome|
+        outcome.add_csv_row row
+      end
+    end
+  end
+
+  def import_outcomes_from_csv(file)
+    result = {
+      success: [],
+      errors: [],
+      ignored: []
+    }
+
+    data = read_file_to_str(file)
+
+    CSV.parse(data,
+              headers: true,
+              header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
+              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+      # Make sure we're not looking at the header or an empty line
+      next if row[0] =~ /abbreviation/
+
+      begin
+        LearningOutcome.create_from_csv(self, row, result)
+      rescue Exception => e
+        result[:errors] << { row: row, message: e.message.to_s }
+      end
+    end
+
+    result
   end
 
   def start_week

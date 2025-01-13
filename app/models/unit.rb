@@ -1069,7 +1069,7 @@ class Unit < ApplicationRecord
               header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
               converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
       # Make sure we're not looking at the header or an empty line
-      next if row[0] =~ /unit_code/
+      next if row[0] =~ /abbreviation/
 
       begin
         LearningOutcome.create_from_csv(self, row, result)
