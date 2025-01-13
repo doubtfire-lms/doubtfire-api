@@ -1055,6 +1055,10 @@ class Unit < ApplicationRecord
     end
   end
 
+  def export_title
+    code
+  end
+
   def import_outcomes_from_csv(file)
     result = {
       success: [],

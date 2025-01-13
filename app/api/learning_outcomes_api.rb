@@ -367,13 +367,8 @@ class LearningOutcomesApi < Grape::API
       error!({ error: 'You are not authorised to download outcomes for this context.' }, 403)
     end
 
-    if context_type == 'Unit'
-      title = context_model.code
-    elsif context_type == 'Task_Definition'
-      title = context_model.abbreviation
-    else
-      title = "GLOs"
-    end
+    title = context_model.respond_to?(:export_title) ? context_model.export_title : 'LearningOutcomes'
+
     content_type 'application/octet-stream'
     header['Content-Disposition'] = "attachment; filename=#{title}-LearningOutcomes.csv"
     header['Access-Control-Expose-Headers'] = 'Content-Disposition'

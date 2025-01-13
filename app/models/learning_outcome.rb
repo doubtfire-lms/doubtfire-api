@@ -102,10 +102,12 @@ class LearningOutcome < ApplicationRecord
     context_type = row['context_type']
     context_id = row['context_id'].to_i
 
+=begin
     if context_type != context.class.name || context_id != context.id
       result[:ignored] << { row: row, message: "Invalid context. #{context_type} #{context_id} does not match #{context.class.name} #{context.id}" }
       return
     end
+=end
 
     abbreviation = row['abbreviation']
     if abbreviation.nil?
