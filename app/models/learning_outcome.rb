@@ -144,7 +144,7 @@ class LearningOutcome < ApplicationRecord
 
   def export_feedback_chips_to_csv
     CSV.generate do |row|
-      row << FeedbackChip.csv_header
+      row << Feedback::FeedbackChip.csv_header
       feedback_chips.each do |chip|
         chip.add_csv_row row
       end
@@ -168,7 +168,7 @@ class LearningOutcome < ApplicationRecord
       next if row[0] =~ /type/
 
       begin
-        FeedbackChip.create_from_csv(self, row, result)
+        Feedback::FeedbackChip.create_from_csv(self, row, result)
       rescue Exception => e
         result[:errors] << { row: row, message: e.message.to_s }
       end
