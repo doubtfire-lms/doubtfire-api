@@ -4,9 +4,9 @@ module Feedback
       expose :id
       expose :type do |chip|
         case chip.type
-        when 'FeedbackTemplateChip'
+        when 'Feedback::FeedbackTemplateChip'
           'template'
-        when 'FeedbackGroupChip'
+        when 'Feedback::FeedbackGroupChip'
           'group'
         else
           'unknown'
