@@ -103,6 +103,7 @@ gem 'tca_client', '1.0.4'
 # Async jobs
 gem 'sidekiq'
 gem 'sidekiq-cron'
+gem 'sidekiq-unique-jobs'
 
 # Redis for sidekiq, caching, and action cable (eventually)
 gem 'redis'

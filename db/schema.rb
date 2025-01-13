@@ -59,7 +59,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_12_17_091744) do
   create_table "d2l_assessment_mappings", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.bigint "unit_id", null: false
     t.string "org_unit_id"
-    t.string "grade_object_id"
+    t.integer "grade_object_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["unit_id"], name: "index_d2l_assessment_mappings_on_unit_id"

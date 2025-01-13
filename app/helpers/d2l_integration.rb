@@ -45,7 +45,7 @@ class D2lIntegration
   end
 
   def self.load_config(config)
-    config.d2l_enabled = ENV['D2L_ENABLED'].present? && (ENV['D2L_ENABLED'].to_s.downcase == "true" || ENV['D2L_ENABLED'].to_i == 1)
+    config.d2l_enabled = ENV['D2L_ENABLED'].present? && (ENV['D2L_ENABLED'].to_s.downcase == 'true' || ENV['D2L_ENABLED'].to_i == 1)
 
     if config.d2l_enabled
       config.d2l_client_id = ENV.fetch('D2L_CLIENT_ID', nil)
@@ -85,7 +85,7 @@ class D2lIntegration
     state = SecureRandom.hex(16) until UserOauthState.create(state: state, user: user) || ++i > 5
 
     if UserOauthState.find_by(state: state, user: user).nil?
-      raise "Could not create unique state"
+      raise 'Could not create unique state'
     end
 
     # Generate login url
@@ -103,7 +103,7 @@ class D2lIntegration
       )
     rescue OAuth2::Error => e
       Rails.logger.error("Error getting oauth access token: #{e.message}")
-      raise(StandardError, "Error getting access token")
+      raise(StandardError, 'Error getting access token')
     end
 
     # Extract the token needed to be stored
@@ -112,10 +112,9 @@ class D2lIntegration
     # Find the state in the user_oauth_states table
     user_oauth_state = UserOauthState.find_by(state: state)
 
-    raise(StandardError, "Invalid state") if user_oauth_state.nil?
+    raise(StandardError, 'Invalid state') if user_oauth_state.nil?
 
     Rails.logger.info("User #{user_oauth_state.user.id} logged in with D2L")
-    Rails.logger.info("Token: #{access_token.to_hash}")
 
     # Create a user oauth token
     UserOauthToken.create(
@@ -129,16 +128,16 @@ class D2lIntegration
   end
 
   def self.test_has_details_for!(unit, user)
-    raise(StandardError, "D2L not enabled") unless self.enabled?
+    raise(StandardError, 'D2L not enabled') unless self.enabled?
 
     # Find the D2L assessment mapping
     d2l_mapping = unit.d2l_assessment_mapping
-    raise(StandardError, "Add the org unit id in unit administration before posting grades ") if d2l_mapping.nil?
+    raise(StandardError, 'Add the org unit id in unit administration before posting grades') if d2l_mapping.nil?
 
     # Get the user's oauth token
     token = user.user_oauth_tokens.find_by(provider: :d2l)
 
-    raise(StandardError, "No D2L token found for user") if token.nil?
+    raise(StandardError, `No D2L token found for user #{user.username} when accessing unit #{unit.code}`) if token.nil?
   end
 
   def self.grades_url(d2l_mapping)
@@ -175,21 +174,21 @@ class D2lIntegration
       response = access_token.post(
         url,
         body: {
-          "MaxPoints" => 100,
-          "CanExceedMaxPoints" => false,
-          "IsBonus" => false,
-          "ExcludeFromFinalGradeCalculation" => false,
-          "GradeSchemeId" => nil,
-          "Name" => "#{app_name} Result",
-          "ShortName" => "Result",
-          "GradeType" => "Numeric",
-          "CategoryId" => nil,
-          "Description" => {
-            "Content" => "Result from #{app_name}",
-            "Type" => "Text"
+          'MaxPoints' => 100,
+          'CanExceedMaxPoints' => false,
+          'IsBonus' => false,
+          'ExcludeFromFinalGradeCalculation' => false,
+          'GradeSchemeId' => nil,
+          'Name' => "#{app_name} Result",
+          'ShortName' => 'Result',
+          'GradeType' => 'Numeric',
+          'CategoryId' => nil,
+          'Description' => {
+            'Content' => "Result from #{app_name}",
+            'Type' => 'Text'
           },
-          "AssociatedTool" => nil,
-          "IsHidden" => false
+          'AssociatedTool' => nil,
+          'IsHidden' => true
         }.to_json,
         headers: { 'Content-Type' => 'application/json' }
       )
@@ -197,8 +196,20 @@ class D2lIntegration
       d2l_mapping.grade_object_id = response.parsed.id
       d2l_mapping.save
     rescue OAuth2::Error => e
-      Rails.logger.error("Error creating grade item: #{e.message}")
-      raise(StandardError, "Error creating grade item")
+      Rails.logger.error("Error creating grade item: #{e.response.status} #{e.response.body}")
+      raise(StandardError, 'Error creating grade item')
+    end
+  end
+
+  def self.get_grade_weight(d2l_mapping, access_token)
+    url = "#{D2lIntegration.d2l_api_host}/d2l/api/le/#{D2lIntegration.d2l_api_version}/#{d2l_mapping.org_unit_id}/grades/categories/"
+
+    begin
+      response = access_token.get(url)
+      response.parsed
+    rescue OAuth2::Error => e
+      Rails.logger.error("Error getting grade weight: #{e.message}")
+      raise(StandardError, 'Error getting grade weight')
     end
   end
 
@@ -223,6 +234,24 @@ class D2lIntegration
       unit.projects.joins(:user).find_by(users: { email: d2l_user['Email'] })
   end
 
+  def self.access_token_for_user(user)
+    oauth_token = user.user_oauth_tokens.where(provider: :d2l).last
+    if oauth_token.present?
+      oauth_token.access_token
+    else
+      oauth_token # Return nil
+    end
+  end
+
+  def self.access_token_for_user!(user)
+    token = D2lIntegration.access_token_for_user(user)
+    if token.nil?
+      raise(StandardError, 'No D2L token found for user')
+    end
+
+    token
+  end
+
   def self.post_grades(unit, user)
     test_has_details_for!(unit, user)
 
@@ -231,8 +260,7 @@ class D2lIntegration
     # Get the D2L assessment mapping
     d2l_mapping = unit.d2l_assessment_mapping
 
-    # Get the user's oauth token
-    token = user.user_oauth_tokens.find_by(provider: :d2l).access_token
+    token = D2lIntegration.access_token_for_user!(user)
 
     # Check if we need to create the grade item
     unless self.does_grade_item_exist?(d2l_mapping, token)
@@ -246,9 +274,14 @@ class D2lIntegration
     done = []
 
     list.each do |d2l_student|
+      if d2l_student['ClasslistRoleDisplayName'] != 'Student'
+        result << "Ignored,  #{d2l_student['OrgDefinedId']}, \"#{d2l_student['DisplayName']} is not a student\""
+        next
+      end
+
       project = self.find_project_for_d2l_user(unit, d2l_student)
       if project.nil?
-        result << "Not Found in #{app_name}, No #{app_name} details for #{d2l_student['UserName']} found in D2L list"
+        result << "Not Found in #{app_name}, #{d2l_student['OrgDefinedId']}, \"No #{app_name} details for #{d2l_student['DisplayName']} found from D2L\""
         next
       end
 
@@ -256,7 +289,7 @@ class D2lIntegration
 
       # Get the grade for the project
       if project.grade.nil? || project.grade <= 0
-        result << "Skipped, No grade for #{project.student.username} in #{app_name}"
+        result << "Skipped, #{d2l_student['OrgDefinedId']}, No grade for #{project.student.username} in #{app_name}"
         next
       end
 
@@ -269,7 +302,7 @@ class D2lIntegration
           body: {
             "GradeObjectType" => 1,
             "PointsNumerator" => project.grade
-          }
+          }.to_json
         )
 
         # Check if we need to sleep for rate limiting
@@ -277,10 +310,10 @@ class D2lIntegration
           sleep(response.headers['X-Rate-Limit-Reset'].to_i)
         end
 
-        result << "Success, Posted grade for #{project.student.username}"
+        result << "Success, #{d2l_student['OrgDefinedId']}, Posted grade for #{project.student.username}"
       rescue OAuth2::Error => e
-        Rails.logger.error("Error posting grade for #{project.student.username}: #{e.message}")
-        result << "Failed, Error posting grade for #{project.student.username}"
+        Rails.logger.error("Error posting grade for #{unit.code} #{project.student.username}: #{e.response.status} #{e.response.body}")
+        result << "Failed, #{d2l_student['OrgDefinedId']}, \"Error posting grade for #{d2l_student['DisplayName']}\""
       end
     end
 
@@ -296,5 +329,36 @@ class D2lIntegration
 
   def self.result_file_path(unit)
     "#{FileHelper.unit_dir(unit)}/d2l_post_grades_job_result.csv"
+  end
+
+  def self.d2l_grade_job_present?(unit)
+    queue = Sidekiq::Queue.new("default")
+    queue.each do |job|
+      return true if job.klass == 'D2lPostGradesJob' && job.args[0] == unit.id
+    end
+
+    Sidekiq::Workers.new.map do |_process_id, _thread_id, work|
+      payload = JSON.parse(work['payload'])
+
+      return true if payload['class'] == 'D2lPostGradesJob' && payload['args'][0] == unit.id
+    end
+
+    false
+  end
+
+  def self.grade_weighted?(d2l_mapping, user)
+    url = "#{D2lIntegration.d2l_api_host}/d2l/api/le/#{D2lIntegration.d2l_api_version}/#{d2l_mapping.org_unit_id}/grades/setup/"
+
+    access_token = D2lIntegration.access_token_for_user(user)
+
+    return false if access_token.nil?
+
+    begin
+      response = access_token.get(url)
+      'Weighted'.casecmp(response.parsed['GradingSystem'])
+    rescue OAuth2::Error => e
+      Rails.logger.error("Error getting class list: #{e.message}")
+      false
+    end
   end
 end

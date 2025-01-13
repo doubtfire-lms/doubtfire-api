@@ -28,7 +28,7 @@ module D2lIntegrationApi
     desc 'Create a D2L assessment mapping for a unit'
     params do
       requires :org_unit_id, type: String, desc: 'The org unit id for the D2L unit'
-      optional :grade_object_id, type: String, desc: 'The grade object id for the D2L unit'
+      optional :grade_object_id, type: Numeric, desc: 'The grade object id for the D2L unit'
     end
     post '/units/:unit_id/d2l' do
       unit = Unit.find(params[:unit_id])
@@ -64,7 +64,7 @@ module D2lIntegrationApi
     desc 'Update a D2L assessment mapping for a unit'
     params do
       optional :org_unit_id, type: String, desc: 'The org unit id for the D2L unit'
-      optional :grade_object_id, type: String, desc: 'The grade object id for the D2L unit'
+      optional :grade_object_id, type: Numeric, desc: 'The grade object id for the D2L unit'
     end
     put '/units/:unit_id/d2l/:id' do
       unit = Unit.find(params[:unit_id])
@@ -112,7 +112,7 @@ module D2lIntegrationApi
         error!({ error: 'Configure D2L details for unit before starting transfer' }, 403)
       end
 
-      token = current_user.user_oauth_tokens.find_by(provider: :d2l)
+      token = current_user.user_oauth_tokens.where(provider: :d2l).last
       if token.blank? || token.expires_at < 10.minutes.from_now
         error!({ error: 'Login to D2L before transferring results' }, 403)
       end
@@ -138,6 +138,47 @@ module D2lIntegrationApi
       content_type 'text/csv'
 
       stream_file(file_path)
+    end
+
+    desc 'Determing if grade results are available for a unit'
+    get '/units/:unit_id/d2l/grades/available' do
+      unit = Unit.find(params[:unit_id])
+
+      unless authorise?(current_user, unit, :update)
+        error!({ error: 'Not authorised to view grade transfer results' }, 403)
+      end
+
+      file_path = D2lIntegration.result_file_path(unit)
+      response = {
+        available: File.exist?(file_path),
+        running: D2lIntegration.d2l_grade_job_present?(unit)
+      }
+
+      present response, with: Grape::Presenters::Presenter
+    end
+
+    desc 'Determing if unit is weighted'
+    get '/units/:unit_id/d2l/grades/weighted' do
+      unit = Unit.find(params[:unit_id])
+
+      unless authorise?(current_user, unit, :update)
+        error!({ error: 'Not authorised to view unit details' }, 403)
+      end
+
+      d2l = unit.d2l_assessment_mapping
+
+      return false unless d2l.present? && d2l.org_unit_id.present?
+
+      present D2lIntegration.grade_weighted?(d2l, current_user), with: Grape::Presenters::Presenter
+    end
+
+    desc 'Get D2L api endpoint'
+    get '/d2l/endpoint' do
+      unless authorise? current_user, User, :convene_units
+        error!({ error: 'Not authorised to view D2L endpoint' }, 403)
+      end
+
+      present D2lIntegration.d2l_api_host, with: Grape::Presenters::Presenter
     end
   end
 end

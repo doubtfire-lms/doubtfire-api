@@ -4,6 +4,8 @@ class D2lPostGradesJob
   include Sidekiq::Job
   include LogHelper
 
+  sidekiq_options lock: :until_executed
+
   def perform(unit_id, user_id)
     unit = Unit.find(unit_id)
     user = User.find(user_id)
@@ -13,7 +15,7 @@ class D2lPostGradesJob
     result = D2lIntegration.post_grades(unit, user)
 
     CSV.open(D2lIntegration.result_file_path(unit), "wb") do |csv|
-      csv << %w[Status Message]
+      csv << %w[Status Id Message]
       result.each do |r|
         csv << r.split(",")
       end
