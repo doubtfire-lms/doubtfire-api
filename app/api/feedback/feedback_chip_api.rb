@@ -10,7 +10,6 @@ module Feedback
 
     desc "Get all feedback chips for a context"
     get '/:context_type_plural/:context_id/feedback_chips' do
-      # find context model dynamically
       context_type = params[:context_type_plural].singularize.camelize
       context_model = context_type.classify.constantize.find(params[:context_id])
 
@@ -26,7 +25,7 @@ module Feedback
     desc 'Add a feedback chip to a learning outcome'
     params do
       requires :chip_text, type: String, desc: 'The title of the feedback chip'
-      requires :parent_chip_id, type: Integer, desc: 'The parent chip ID of the feedback chip'
+      optional :parent_chip_id, type: Integer, desc: 'The parent chip ID of the feedback chip'
       requires :learning_outcome_id, type: Integer, desc: 'The learning outcome of the feedback chip'
       requires :description, type: String, desc: 'The description of the feedback chip'
       optional :task_status, type: String, desc: 'The task status of the feedback template chip'
@@ -39,9 +38,9 @@ module Feedback
         error!({ error: 'You are not authorised to create feedback chips.' }, 403)
       end
 
-      chip_class = params[:type] == 'Feedback::FeedbackTemplateChip' ? FeedbackTemplateChip : FeedbackGroupChip
-      chip = chip_class.create(declared(params, include_missing: false))
-      entity = params[:type] == 'Feedback::FeedbackTemplateChip' ? Entities::FeedbackTemplateChipEntity : Entities::FeedbackGroupChipEntity
+      chip_class = params[:type] == 'template' ? FeedbackTemplateChip : FeedbackGroupChip
+      chip = chip_class.create(declared(params, include_missing: false).except(:type))
+      entity = params[:type] == 'template' ? Entities::FeedbackTemplateChipEntity : Entities::FeedbackGroupChipEntity
       present chip, with: entity
     end
 
@@ -65,7 +64,7 @@ module Feedback
       chip_class = params[:type] == 'template' ? FeedbackTemplateChip : FeedbackGroupChip
       chip = chip_class.find(params[:id])
 
-      chip.update(declared(params, include_missing: false))
+      chip.update(declared(params, include_missing: false).except(:type))
       entity = params[:type] == 'template' ? Entities::FeedbackTemplateChipEntity : Entities::FeedbackGroupChipEntity
       present chip, with: entity
     end
