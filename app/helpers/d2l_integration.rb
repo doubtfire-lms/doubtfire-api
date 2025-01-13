@@ -355,7 +355,7 @@ class D2lIntegration
 
     begin
       response = access_token.get(url)
-      'Weighted'.casecmp(response.parsed['GradingSystem'])
+      'Weighted'.casecmp?(response.parsed['GradingSystem'])
     rescue OAuth2::Error => e
       Rails.logger.error("Error getting class list: #{e.message}")
       false
