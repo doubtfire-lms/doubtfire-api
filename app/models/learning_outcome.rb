@@ -5,13 +5,15 @@ class LearningOutcome < ApplicationRecord
     convenor_role_permissions = [
       :update,
       :get_los,
-      :update_glos
+      :update_glos,
+      :upload_csv
     ]
 
     admin_role_permissions = [
       :update,
       :get_los,
-      :update_glos
+      :update_glos,
+      :upload_csv
     ]
 
     tutor_role_permissions = [
@@ -99,38 +101,11 @@ class LearningOutcome < ApplicationRecord
   def self.create_from_csv(context, row, result)
     context_type = row['context_type']
     context_id = row['context_id'].to_i
-    # unit_code = row['unit_code']
 
     if context_type != context.class.name || context_id != context.id
       result[:ignored] << { row: row, message: "Invalid context. #{context_type} #{context_id} does not match #{context.class.name} #{context.id}" }
       return
     end
-    # if unit_code != unit.code
-    #  result[:ignored] << { row: row, message: "Invalid unit code. #{unit_code} does not match #{unit.code}" }
-    #  return
-    # end
-
-    # ilo_number = row['ilo_number'].to_i
-
-=begin
-  tag = row['tag']
-    if tag.nil?
-      result[:errors] << { row: row, message: 'Missing tag' }
-      return
-    end
-
-    name = row['name']
-    if name.nil?
-      result[:errors] << { row: row, message: 'Missing name' }
-      return
-    end
-
-    description = row['description']
-    if description.nil?
-      result[:errors] << { row: row, message: 'Missing description' }
-      return
-    end
-=end
 
     abbreviation = row['abbreviation']
     if abbreviation.nil?
@@ -163,4 +138,40 @@ class LearningOutcome < ApplicationRecord
                           { row: row, message: "Outcome #{abbreviation} updated" }
                         end
   end
+
+  def export_feedback_chips_to_csv
+    CSV.generate do |row|
+      row << FeedbackChip.csv_header
+      feedback_chips.each do |chip|
+        chip.add_csv_row row
+      end
+    end
+  end
+
+  def import_feedback_chips_from_csv(file)
+    result = {
+      success: [],
+      errors: [],
+      ignored: []
+    }
+
+    data = read_file_to_str(file)
+
+    CSV.parse(data,
+              headers: true,
+              header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
+              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+      # Make sure we're not looking at the header or an empty line
+      next if row[0] =~ /type/
+
+      begin
+        FeedbackChip.create_from_csv(self, row, result)
+      rescue Exception => e
+        result[:errors] << { row: row, message: e.message.to_s }
+      end
+    end
+
+    result
+  end
+
 end

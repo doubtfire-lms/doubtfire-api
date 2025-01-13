@@ -122,5 +122,82 @@ module Feedback
       visited.to_a
     end
 
+    def self.csv_header
+      %w(type, chip_text, description, task_status, parent_chip_id, learning_outcome_id, summary_text, comment_text)
+    end
+
+    def add_csv_row(row)
+      row << [type, chip_text, description, task_status, parent_chip_id, learning_outcome_id, summary_text, comment_text]
+    end
+
+    def self.create_from_csv(outcome, row, result)
+      outcome_id = row['learning_outcome_id'].to_i
+
+      if outcome_id != outcome.id
+        result[:ignored] << { row: row, message: "Invalid outcome. Learning Outcome Id: #{outcome_id} does not match Learning Outcome Id: #{outcome.id}"}
+      end
+
+      type = row['type']
+      if type.nil?
+        result[:errors] << { row: row, message: 'Missing type' }
+      end
+
+      chip_text = row['chip_text']
+      if chip_text.nil?
+        result[:errors] << { row: row, message: 'Missing abbreviation' }
+        return
+      end
+
+      description = row['description']
+      if description.nil?
+        result[:errors] << { row: row, message: 'Missing description' }
+        return
+      end
+
+      learning_outcome_id = row['learning_outcome_id']
+      if learning_outcome_id.nil?
+        result[:errors] << { row: row, message: 'Missing learning_outcome_id' }
+        return
+      end
+
+      if type == 'Feedback::FeedbackTemplateChip'
+        parent_chip_id = row['parent_chip_id']
+        if parent_chip_id.nil?
+          result[:errors] << { row: row, message: 'Missing parent_chip_id'}
+        end
+
+        summary_text = row['summary_text']
+        if summary_text.nil?
+          result[:errors] << { row: row, message: 'Missing summary_text' }
+          return
+        end
+
+        comment_text = row['comment_text']
+        if comment_text.nil?
+          result[:errors] << { row: row, message: 'Missing comment_text' }
+          return
+        end
+        task_status = row['task_status']
+        if task_status.nil?
+          result[:errors] << { row: row, message: 'Missing task_status' }
+          return
+        end
+      end
+
+      chip = FeedbackChip.find_or_create_by(type: type, chip_text: chip_text, description: description, learning_outcome_id: learning_outcome_id) do |chip|
+        chip.task_status = task_status
+        chip.parent_chip_id = parent_chip_id
+        chip.summary_text = summary_text
+        chip.comment_text = comment_text
+      end
+
+      chip.save!
+
+      result[:success] << if chip.new_record?
+                            { row: row, message: "Chip #{chip_text} created" }
+                          else
+                            { row: row, message: "Chip #{chip_text} updated" }
+                          end
+    end
   end
 end
