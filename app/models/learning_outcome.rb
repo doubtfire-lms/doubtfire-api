@@ -83,6 +83,7 @@ class LearningOutcome < ApplicationRecord
 
   has_many :feedback_group_chips, class_name: 'Feedback::FeedbackGroupChip', dependent: :destroy
   has_many :feedback_template_chips, class_name: 'Feedback::FeedbackTemplateChip', dependent: :destroy
+  has_many :feedback_chips, class_name: 'Feedback::FeedbackChip', dependent: :destroy
 
   has_many :learning_outcome_task_links, dependent: :destroy # links to learning outcomes
   has_many :related_task_definitions, -> { where('learning_outcome_task_links.task_id is NULL') }, through: :learning_outcome_task_links, source: :task_definition # only link staff relations
