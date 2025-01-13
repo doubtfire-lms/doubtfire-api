@@ -12,7 +12,7 @@ class FeedbackChipApiTestCondolidated < ActiveSupport::TestCase
   def test_create_feedback_group_chip
     learning_outcome = FactoryBot.create(:learning_outcome)
     data_to_post = {
-      type: 'Feedback::FeedbackGroupChip',
+      type: 'group',
       chip_text: 'Sample chip text',
       description: 'Sample description',
       parent_chip_id: nil,
@@ -27,7 +27,7 @@ class FeedbackChipApiTestCondolidated < ActiveSupport::TestCase
     learning_outcome = FactoryBot.create(:learning_outcome)
     group_chip = FactoryBot.create(:feedback_group_chip, learning_outcome_id: learning_outcome.id)
     data_to_post = {
-      type: 'Feedback::FeedbackTemplateChip',
+      type: 'template',
       chip_text: 'Sample chip text',
       description: 'Sample description',
       parent_chip_id: group_chip.id,
