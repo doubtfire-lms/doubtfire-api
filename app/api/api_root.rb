@@ -97,6 +97,7 @@ class ApiRoot < Grape::API
 
   mount Feedback::FeedbackTemplateChipApi
   mount Feedback::FeedbackGroupChipApi
+  mount Feedback::FeedbackChipApi
 
   #
   # Add auth details to all end points
@@ -139,6 +140,7 @@ class ApiRoot < Grape::API
 
   AuthenticationHelpers.add_auth_to Feedback::FeedbackTemplateChipApi
   AuthenticationHelpers.add_auth_to Feedback::FeedbackGroupChipApi
+  AuthenticationHelpers.add_auth_to Feedback::FeedbackChipApi
 
   add_swagger_documentation \
     base_path: nil,
