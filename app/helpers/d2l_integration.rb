@@ -281,7 +281,7 @@ class D2lIntegration
 
       project = self.find_project_for_d2l_user(unit, d2l_student)
       if project.nil?
-        result << "Not Found in #{app_name},#{d2l_student['OrgDefinedId']},,No #{app_name} details for #{d2l_student['DisplayName'].remove(',')} found from D2L"
+        result << "Error,#{d2l_student['OrgDefinedId']},,No #{app_name} result for #{d2l_student['DisplayName'].remove(',')}"
         next
       end
 
@@ -313,15 +313,18 @@ class D2lIntegration
         result << "Success,#{d2l_student['OrgDefinedId']},#{project.grade},Posted grade for #{project.student.username}"
       rescue OAuth2::Error => e
         Rails.logger.error("Error posting grade for #{unit.code} #{project.student.username}: #{e.response.status} #{e.response.body}")
-        result << "Failed,#{d2l_student['OrgDefinedId']},#{project.grade},Error posting grade for #{d2l_student['DisplayName'].remove(',')}"
+        result << "Error,#{d2l_student['OrgDefinedId']},#{project.grade},Faile to post grade for #{d2l_student['DisplayName'].remove(',')}"
       end
     end
 
     # Report students not found in the class list
     unit.active_projects.each do |project|
-      unless done.include?(project.id)
-        result << "Not Found,#{project.user.username},#{project.grade},Not found in D2L list"
-      end
+      next if done.include?(project.id)
+      result << if project.grade.present? && (project.grade > 0)
+                  "Error,#{project.user.username},#{project.grade},Not found in D2L list"
+                else
+                  "Skipped,#{project.user.username},#{project.grade},Result missing or 0 and not found in D2L list"
+                end
     end
 
     result
