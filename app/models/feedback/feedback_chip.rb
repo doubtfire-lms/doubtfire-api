@@ -134,7 +134,7 @@ module Feedback
     end
 
     def self.csv_header
-      %w(type, chip_text, description, task_status, parent_chip_id, learning_outcome_id, summary_text, comment_text)
+      %w(type chip_text description task_status parent_chip_id learning_outcome_id summary_text comment_text)
     end
 
     def add_csv_row(row)
