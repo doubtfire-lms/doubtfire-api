@@ -92,7 +92,7 @@ class LearningOutcome < ApplicationRecord
   validates :full_outcome_description, length: { maximum: 4095, allow_blank: true }
 
   def self.csv_header
-    %w(context_type, context_id, abbreviation, short_description, full_outcome_description, linked_outcome_ids)
+    %w(context_type context_id abbreviation short_description full_outcome_description linked_outcome_ids)
   end
 
   def add_csv_row(row)
