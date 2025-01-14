@@ -120,12 +120,26 @@ module Feedback
       visited.to_a
     end
 
+    TYPE_MAPPING = {
+      'template' => 'Feedback::FeedbackTemplateChip',
+      'group' => 'Feedback::FeedbackGroupChip'
+    }.freeze
+
+    def self.to_csv_type(db_type)
+      TYPE_MAPPING.key(db_type) || db_type
+    end
+
+    def self.from_csv_type(csv_type)
+      TYPE_MAPPING[csv_type] || csv_type
+    end
+
     def self.csv_header
       %w(type, chip_text, description, task_status, parent_chip_id, learning_outcome_id, summary_text, comment_text)
     end
 
     def add_csv_row(row)
-      row << [type, chip_text, description, task_status, parent_chip_id, learning_outcome_id, summary_text, comment_text]
+      csv_type = self.class.to_csv_type(type)
+      row << [csv_type, chip_text, description, task_status, parent_chip_id, learning_outcome_id, summary_text, comment_text]
     end
 
     def self.create_from_csv(outcome, row, result)
@@ -135,7 +149,7 @@ module Feedback
         result[:ignored] << { row: row, message: "Invalid outcome. Learning Outcome Id: #{outcome_id} does not match Learning Outcome Id: #{outcome.id}"}
       end
 
-      type = row['type']
+      type = to_db_type(row['type'])
       if type.nil?
         result[:errors] << { row: row, message: 'Missing type' }
       end
@@ -159,25 +173,9 @@ module Feedback
       end
 
       parent_chip_id = row['parent_chip_id']
-
-      if type == 'Feedback::FeedbackTemplateChip'
-        summary_text = row['summary_text']
-        if summary_text.nil?
-          result[:errors] << { row: row, message: 'Missing summary_text' }
-          return
-        end
-
-        comment_text = row['comment_text']
-        if comment_text.nil?
-          result[:errors] << { row: row, message: 'Missing comment_text' }
-          return
-        end
-        task_status = row['task_status']
-        if task_status.nil?
-          result[:errors] << { row: row, message: 'Missing task_status' }
-          return
-        end
-      end
+      summary_text = row['summary_text']
+      comment_text = row['comment_text']
+      task_status = row['task_status']
 
       chip = FeedbackChip.find_or_create_by(type: type, chip_text: chip_text, description: description, learning_outcome_id: learning_outcome_id) do |chip|
         chip.task_status = task_status
