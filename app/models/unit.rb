@@ -310,16 +310,26 @@ class Unit < ApplicationRecord
       new_unit.group_sets << group_set.dup
     end
 
+    task_definition_outcome_mapping = {}
+    unit_learning_outcome_mapping = {}
+    chip_mapping = {}
+
     # Duplicate task definitions
     task_definitions.each do |td|
       new_td = td.copy_to(new_unit)
-
-      task_definition_outcome_mapping = {}
 
       td.learning_outcomes.each do |learning_outcome| # for each old task definition, duplicate the learning outcomes associated with it aswell
         new_outcome = learning_outcome.dup
         new_td.learning_outcomes << new_outcome
         task_definition_outcome_mapping[learning_outcome.id] = new_outcome.id
+
+        learning_outcome.feedback_chips.each do |chip|
+          new_chip = chip.dup
+          new_outcome.feedback_chips << new_chip
+          new_chip.learning_outcome_id = new_outcome.id if chip.respond_to?(:learning_outcome_id)
+          new_chip.save!
+          chip_mapping[chip.id] = new_chip.id
+        end
       end
 
       LearningOutcomeLink.where(source_id: task_definition_outcome_mapping.keys).find_each do |link|
@@ -338,19 +348,34 @@ class Unit < ApplicationRecord
     end
 
     # Duplicate unit learning outcomes
-    unit_learning_outcome_mapping = {}
     learning_outcomes.each do |learning_outcome|
       new_outcome = learning_outcome.dup
       new_unit.learning_outcomes << new_outcome
       unit_learning_outcome_mapping[learning_outcome.id] = new_outcome.id
+
+      learning_outcome.feedback_chips.each do |chip|
+        new_chip = chip.dup
+        new_outcome.feedback_chips << new_chip
+        new_chip.learning_outcome_id = new_outcome.id if chip.respond_to?(:learning_outcome_id)
+        new_chip.save!
+        chip_mapping[chip.id] = new_chip.id
+      end
     end
 
-    LearningOutcomeLink.where(source_id: unit_learning_outcome_mapping.keys).each do |link|
-      new_source_id = unit_learning_outcome_mapping[link.source_id]
-      new_target_id = unit_learning_outcome_mapping[link.target_id]
+    LearningOutcomeLink.where(source_id: unit_learning_outcome_mapping.keys).find_each do |link|
+      new_source_id = unit_learning_outcome_mapping[link.source_id] || link.source_id
+      new_target_id = unit_learning_outcome_mapping[link.target_id] || link.target_id
 
       if new_source_id && new_target_id
         LearningOutcomeLink.create!(source_id: new_source_id, target_id: new_target_id)
+      end
+    end
+
+    chip_mapping.each do |old_id, new_id|
+      old_chip = Feedback::FeedbackChip.find(old_id)
+      if old_chip.parent_chip_id && chip_mapping[old_chip.parent_chip_id]
+        new_chip = Feedback::FeedbackChip.find(new_id)
+        new_chip.update(parent_chip_id: chip_mapping[old_chip.parent_chip_id])
       end
     end
 

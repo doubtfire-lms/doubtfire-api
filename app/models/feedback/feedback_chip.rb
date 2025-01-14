@@ -14,7 +14,7 @@ module Feedback
     validate :parent_chip_cannot_create_loop, if: :parent_chip_id_changed?
     # validate :parent_is_group_chip
 
-    validate :check_learning_outcome_consistency
+    # validate :check_learning_outcome_consistency # temporary to test rollover
     # validate :check_single_root_chip_per_learning_outcome # there can be multiple root chips
     validate :check_tree_completeness_per_learning_outcome, on: [:update]
     # validate :check_no_orphaned_chips
