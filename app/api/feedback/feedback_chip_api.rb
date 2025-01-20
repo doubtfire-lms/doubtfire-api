@@ -3,6 +3,8 @@ module Feedback
   class FeedbackChipApi < Grape::API
     helpers AuthenticationHelpers
     helpers AuthorisationHelpers
+    helpers MimeCheckHelpers
+    helpers CsvHelper
 
     before do
       authenticated?

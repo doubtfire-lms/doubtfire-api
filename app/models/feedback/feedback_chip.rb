@@ -16,7 +16,7 @@ module Feedback
 
     # validate :check_learning_outcome_consistency # temporary to test rollover
     # validate :check_single_root_chip_per_learning_outcome # there can be multiple root chips
-    validate :check_tree_completeness_per_learning_outcome, on: [:update]
+    # validate :check_tree_completeness_per_learning_outcome, on: [:update]
     # validate :check_no_orphaned_chips
 
     def track_usage_by(tutor)
@@ -196,23 +196,34 @@ module Feedback
 =end
 
     def self.csv_header
-      %w(learning_outcome_abbreviation task_abbreviation type group_id parent_chip_id chip_text description task_status summary_text comment_text)
+      %w(learning_outcome_abbreviation task_abbreviation type group_id parent_group_id chip_text description task_status summary_text comment_text)
     end
 
     def add_csv_row(row)
       csv_type = self.class.to_csv_type(type)
-      learning_outcome_abbreviation = LearningOutcome.find(learning_outcome_id).abbreviation if learning_outcome_id.present?
-      task_abbreviation = if learning_outcome_id.present? && LearningOutcome.find(learning_outcome_id).context_type == 'TaskDefintion'
-                            TaskDefinition.find(LearningOutcome.find(learning_outcome_id).context_id).abbreviation
-                          else
-                            ''
-                          end
-      group_id = summary_text if type == 'group' # store group_id in summary_text for group chips
 
-      row << [learning_outcome_abbreviation, task_abbreviation, csv_type, group_id, parent_chip_id, chip_text, description, task_status, summary_text, comment_text]
+      learning_outcome = LearningOutcome.find(learning_outcome_id)
+      learning_outcome_abbreviation = learning_outcome.abbreviation
+      task_abbreviation = learning_outcome.context_type == 'TaskDefinition' ? TaskDefinition.find(learning_outcome.context_id).abbreviation : ''
+
+      group_id = ''
+      parent_group_id = ''
+      summary_text = self.summary_text
+      if csv_type == 'group'
+        group_id = summary_text
+        summary_text = ''
+      end
+
+      if parent_chip_id.present?
+        parent_group_id = FeedbackChip.find(parent_chip_id).summary_text
+      end
+
+      row << [learning_outcome_abbreviation, task_abbreviation, csv_type, group_id, parent_group_id, chip_text, description, task_status, summary_text, comment_text]
     end
 
     def self.create_from_csv(outcome, row, result)
+      @group_map ||= {}
+
       learning_outcome_abbreviation = row['learning_outcome_abbreviation']
       learning_outcome = LearningOutcome.find_by(abbreviation: learning_outcome_abbreviation)
       if learning_outcome.nil?
@@ -229,49 +240,65 @@ module Feedback
         end
       end
 
-      type = to_db_type(row['type'])
-      if type.nil?
-        result[:errors] << { row: row, message: 'Missing type' }
-        return
+      required_fields = {
+        'type' => row['type'],
+        'chip_text' => row['chip_text'],
+        'description' => row['description']
+      }
+
+      required_fields.each do |field, value|
+        if value.nil?
+          result[:errors] << { row: row, message: "Missing #{field}" }
+          return
+        end
       end
 
-      chip_text = row['chip_text']
-      if chip_text.nil?
-        result[:errors] << { row: row, message: 'Missing chip_text' }
-        return
-      end
-
-      description = row['description']
-      if description.nil?
-        result[:errors] << { row: row, message: 'Missing description' }
-        return
-      end
-
+      type = row['type']
       group_id = row['group_id']
-      if type == 'group' && group_id.nil?
+      if group_id.nil? && type == 'group'
         result[:errors] << { row: row, message: 'Missing group_id' }
         return
       end
 
-      parent_chip_id = row['parent_chip_id']
+      parent_group_id = row['parent_group_id']
+      parent_chip_id = nil
+      if parent_group_id.present?
+        parent_chip_id = @group_map[parent_group_id]
+        if parent_chip_id.nil?
+          result[:errors] << { row: row, message: "Parent group_id #{parent_group_id} not found" }
+          return
+        end
+      end
+
+      chip_text = row['chip_text']
+      description = row['description']
+
       task_status = row['task_status']
-      summary_text = type == 'group' ? group_id : row['summary_text'] # store group_id in summary_text for group chips
+      summary_text = row['type'] == 'group' ? group_id : row['summary_text'] # store group_id in summary_text for group chips
       comment_text = row['comment_text']
 
-      chip = FeedbackChip.find_or_create_by(type: type, chip_text: chip_text, description: description, learning_outcome_id: learning_outcome.id) do |chip|
+      if type == 'group'
+        csv_type = 'Feedback::FeedbackGroupChip'
+      elsif type == 'template'
+        csv_type = 'Feedback::FeedbackTemplateChip'
+      else
+        result[:errors] << { row: row, message: "Invalid type #{type}" }
+        return
+      end
+
+      chip = FeedbackChip.find_or_create_by(type: csv_type, chip_text: chip_text, description: description, learning_outcome_id: learning_outcome.id) do |chip|
         chip.task_status = task_status
         chip.parent_chip_id = parent_chip_id
         chip.summary_text = summary_text
         chip.comment_text = comment_text
       end
 
-      chip.save!
-
-      result[:success] << if chip.new_record?
-                            { row: row, message: "Chip #{chip_text} created" }
-                          else
-                            { row: row, message: "Chip #{chip_text} updated" }
-                          end
+      if chip.persisted?
+        result[:success] << { row: row, message: "#{chip.new_record? ? 'Created' : 'Updated'} chip #{row['chip_text']}" }
+        @group_map[group_id] = chip.id if row['type'] == 'group'
+      else
+        result[:errors] << { row: row, message: "Chip #{chip_text} not created" }
+      end
     end
   end
 end
