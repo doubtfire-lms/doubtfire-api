@@ -416,9 +416,9 @@ class UnitModelTest < ActiveSupport::TestCase
         # Test basic details
         assert_equal project.student.username, entry['username'], entry.inspect
         if project.student.student_id.present?
-          assert_equal project.student.student_id, entry['student_id'], entry.inspect
+          assert_equal project.student.student_id, entry['student id'], entry.inspect
         else
-          assert_nil entry['student_id'], entry.inspect
+          assert_nil entry['student id'], entry.inspect
         end
         assert_equal project.student.email, entry['email'], entry.inspect
 

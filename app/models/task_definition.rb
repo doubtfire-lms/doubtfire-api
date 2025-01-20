@@ -126,19 +126,19 @@ class TaskDefinition < ApplicationRecord
 
   def move_files_on_abbreviation_change
     old_abbr = saved_change_to_abbreviation[0] # 0 is original abbreviation
-    if File.exist? task_sheet_with_abbreviation(old_abbr)
+    if File.exist? task_sheet_with_abbreviation(old_abbr, false)
       FileUtils.mv(task_sheet_with_abbreviation(old_abbr), task_sheet())
     end
 
-    if File.exist? task_resources_with_abbreviation(old_abbr)
+    if File.exist? task_resources_with_abbreviation(old_abbr, false)
       FileUtils.mv(task_resources_with_abbreviation(old_abbr), task_resources())
     end
 
-    if File.exist? task_assessment_resources_with_abbreviation(old_abbr)
+    if File.exist? task_assessment_resources_with_abbreviation(old_abbr, false)
       FileUtils.mv(task_assessment_resources_with_abbreviation(old_abbr), task_assessment_resources())
     end
 
-    if File.exist? task_scorm_data_with_abbreviation(old_abbr)
+    if File.exist? task_scorm_data_with_abbreviation(old_abbr, false)
       FileUtils.mv(task_scorm_data_with_abbreviation(old_abbr), task_scorm_data())
     end
   end
@@ -410,15 +410,15 @@ class TaskDefinition < ApplicationRecord
   end
 
   def has_task_resources?
-    File.exist? task_resources
+    File.exist? task_resources(false)
   end
 
   def has_task_assessment_resources?
-    File.exist? task_assessment_resources
+    File.exist? task_assessment_resources(false)
   end
 
   def has_task_sheet?
-    File.exist? task_sheet
+    File.exist? task_sheet(false)
   end
 
   def has_scorm_data?
@@ -514,20 +514,20 @@ class TaskDefinition < ApplicationRecord
   end
 
   # Get the path to the task sheet - using the current abbreviation
-  def task_sheet
-    task_sheet_with_abbreviation(abbreviation)
+  def task_sheet(create = true)
+    task_sheet_with_abbreviation(abbreviation, create)
   end
 
-  def task_resources
-    task_resources_with_abbreviation(abbreviation)
+  def task_resources(create = true)
+    task_resources_with_abbreviation(abbreviation, create)
   end
 
-  def task_assessment_resources
-    task_assessment_resources_with_abbreviation(abbreviation)
+  def task_assessment_resources(create = true)
+    task_assessment_resources_with_abbreviation(abbreviation, create)
   end
 
-  def task_scorm_data
-    task_scorm_data_with_abbreviation(abbreviation)
+  def task_scorm_data(create = true)
+    task_scorm_data_with_abbreviation(abbreviation, create)
   end
 
   def related_tasks_with_files(consolidate_groups = true)
@@ -578,8 +578,8 @@ class TaskDefinition < ApplicationRecord
   # Calculate the path to the task sheet using the provided abbreviation
   # This allows the path to be calculated on abbreviation change to allow files to
   # be moved
-  def task_sheet_with_abbreviation(abbr)
-    task_path = FileHelper.task_file_dir_for_unit unit, create = true
+  def task_sheet_with_abbreviation(abbr, create = true)
+    task_path = FileHelper.task_file_dir_for_unit unit, create
 
     result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}.pdf"
     result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}.pdf"
@@ -594,8 +594,8 @@ class TaskDefinition < ApplicationRecord
   # Calculate the path to the task sheet using the provided abbreviation
   # This allows the path to be calculated on abbreviation change to allow files to
   # be moved
-  def task_resources_with_abbreviation(abbr)
-    task_path = FileHelper.task_file_dir_for_unit unit, create = true
+  def task_resources_with_abbreviation(abbr, create = true)
+    task_path = FileHelper.task_file_dir_for_unit unit, create
 
     result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}.zip"
     result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}.zip"
@@ -607,8 +607,8 @@ class TaskDefinition < ApplicationRecord
     end
   end
 
-  def task_assessment_resources_with_abbreviation(abbr)
-    task_path = FileHelper.task_file_dir_for_unit unit, create = true
+  def task_assessment_resources_with_abbreviation(abbr, create = true)
+    task_path = FileHelper.task_file_dir_for_unit unit, create
 
     result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}-assessment.zip"
     result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}-assessment.zip"
@@ -623,8 +623,8 @@ class TaskDefinition < ApplicationRecord
   # Calculate the path to the SCORM containzer zip file using the provided abbreviation
   # This allows the path to be calculated on abbreviation change to allow files to
   # be moved
-  def task_scorm_data_with_abbreviation(abbr)
-    task_path = FileHelper.task_file_dir_for_unit unit, create = true
+  def task_scorm_data_with_abbreviation(abbr, create = true)
+    task_path = FileHelper.task_file_dir_for_unit unit, create
 
     result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}.scorm.zip"
     result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}.scorm.zip"

@@ -229,7 +229,7 @@ module FileHelper
     file_server = Doubtfire::Application.config.student_work_dir
     dst = "#{file_server}/portfolio/" # trust the server config and passed in type for paths
 
-    dst << sanitized_path("#{unit.code}-#{unit.id}")
+    dst << sanitized_path("#{unit.code}-#{unit.id}") << '/'
 
     # Create current dst directory should it not exist
     FileUtils.mkdir_p(dst) if create

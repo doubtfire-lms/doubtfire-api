@@ -2564,8 +2564,11 @@ class Unit < ApplicationRecord
   private
 
   def delete_associated_files
-    FileUtils.rm_rf FileHelper.unit_dir(self)
-    FileUtils.rm_rf FileHelper.unit_portfolio_dir(self)
+    unit_path = FileHelper.unit_dir(self, false)
+    unit_portfolio_path = FileHelper.unit_portfolio_dir(self, false)
+    FileUtils.rm_rf unit_path
+    FileUtils.rm_rf unit_portfolio_path
+
     FileUtils.cd FileHelper.student_work_dir
   end
 
