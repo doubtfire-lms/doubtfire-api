@@ -133,6 +133,7 @@ module Feedback
       TYPE_MAPPING[csv_type] || csv_type
     end
 
+=begin
     def self.csv_header
       %w(type chip_text description task_status parent_chip_id learning_outcome_id summary_text comment_text)
     end
@@ -178,6 +179,86 @@ module Feedback
       task_status = row['task_status']
 
       chip = FeedbackChip.find_or_create_by(type: type, chip_text: chip_text, description: description, learning_outcome_id: learning_outcome_id) do |chip|
+        chip.task_status = task_status
+        chip.parent_chip_id = parent_chip_id
+        chip.summary_text = summary_text
+        chip.comment_text = comment_text
+      end
+
+      chip.save!
+
+      result[:success] << if chip.new_record?
+                            { row: row, message: "Chip #{chip_text} created" }
+                          else
+                            { row: row, message: "Chip #{chip_text} updated" }
+                          end
+    end
+=end
+
+    def self.csv_header
+      %w(learning_outcome_abbreviation task_abbreviation type group_id parent_chip_id chip_text description task_status summary_text comment_text)
+    end
+
+    def add_csv_row(row)
+      csv_type = self.class.to_csv_type(type)
+      learning_outcome_abbreviation = LearningOutcome.find(learning_outcome_id).abbreviation if learning_outcome_id.present?
+      task_abbreviation = if learning_outcome_id.present? && LearningOutcome.find(learning_outcome_id).context_type == 'TaskDefintion'
+                            TaskDefinition.find(LearningOutcome.find(learning_outcome_id).context_id).abbreviation
+                          else
+                            ''
+                          end
+      group_id = summary_text if type == 'group' # store group_id in summary_text for group chips
+
+      row << [learning_outcome_abbreviation, task_abbreviation, csv_type, group_id, parent_chip_id, chip_text, description, task_status, summary_text, comment_text]
+    end
+
+    def self.create_from_csv(outcome, row, result)
+      learning_outcome_abbreviation = row['learning_outcome_abbreviation']
+      learning_outcome = LearningOutcome.find_by(abbreviation: learning_outcome_abbreviation)
+      if learning_outcome.nil?
+        result[:errors] << { row: row, message: "Learning Outcome #{learning_outcome_abbreviation} not found" }
+        return
+      end
+
+      task_abbreviation = row['task_abbreviation']
+      if task_abbreviation.present? && learning_outcome.context_type == 'TaskDefinition'
+        task_definition = TaskDefinition.find_by(abbreviation: task_abbreviation)
+        if task_definition.nil?
+          result[:errors] << { row: row, message: "Task #{task_abbreviation} not found" }
+          return
+        end
+      end
+
+      type = to_db_type(row['type'])
+      if type.nil?
+        result[:errors] << { row: row, message: 'Missing type' }
+        return
+      end
+
+      chip_text = row['chip_text']
+      if chip_text.nil?
+        result[:errors] << { row: row, message: 'Missing chip_text' }
+        return
+      end
+
+      description = row['description']
+      if description.nil?
+        result[:errors] << { row: row, message: 'Missing description' }
+        return
+      end
+
+      group_id = row['group_id']
+      if type == 'group' && group_id.nil?
+        result[:errors] << { row: row, message: 'Missing group_id' }
+        return
+      end
+
+      parent_chip_id = row['parent_chip_id']
+      task_status = row['task_status']
+      summary_text = type == 'group' ? group_id : row['summary_text'] # store group_id in summary_text for group chips
+      comment_text = row['comment_text']
+
+      chip = FeedbackChip.find_or_create_by(type: type, chip_text: chip_text, description: description, learning_outcome_id: learning_outcome.id) do |chip|
         chip.task_status = task_status
         chip.parent_chip_id = parent_chip_id
         chip.summary_text = summary_text
