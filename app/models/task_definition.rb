@@ -1,6 +1,10 @@
 require 'json'
 
 class TaskDefinition < ApplicationRecord
+  include ApplicationHelper
+  include FileHelper
+  include MimeCheckHelpers
+  include CsvHelper
 
   def self.permissions
     convenor_role_permissions = [

@@ -1,5 +1,8 @@
 class LearningOutcome < ApplicationRecord
   include ApplicationHelper
+  include FileHelper
+  include MimeCheckHelpers
+  include CsvHelper
 
   def self.permissions
     convenor_role_permissions = [
@@ -149,7 +152,7 @@ class LearningOutcome < ApplicationRecord
                   TaskDefinition.find(context_id).unit.code
                 end
     task_abbreviation = context_type == 'TaskDefinition' ? TaskDefinition.find(context_id).abbreviation : ''
-    linked_outcomes = linked_learning_outcomes.pluck(:abbreviation).join(',')
+    linked_outcomes = linked_outcomes.pluck(:abbreviation).join(',')
 
     row << [unit_code, task_abbreviation, abbreviation, short_description, full_outcome_description, linked_outcomes]
   end
@@ -242,7 +245,7 @@ class LearningOutcome < ApplicationRecord
               header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
               converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
       # Make sure we're not looking at the header or an empty line
-      next if row[0] =~ /type/
+      next if row[0] =~ /learning_outcome_abbreviation/
 
       begin
         Feedback::FeedbackChip.create_from_csv(self, row, result)
@@ -253,5 +256,4 @@ class LearningOutcome < ApplicationRecord
 
     result
   end
-
 end
