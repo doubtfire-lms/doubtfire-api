@@ -275,13 +275,13 @@ class D2lIntegration
 
     list.each do |d2l_student|
       if d2l_student['ClasslistRoleDisplayName'] != 'Student'
-        result << "Ignored,#{d2l_student['OrgDefinedId']},,#{d2l_student['DisplayName'].remove(',')} is not a student"
+        result << "Ignored,#{d2l_student['OrgDefinedId']},,#{d2l_student['DisplayName']&.remove(',')} is not a student"
         next
       end
 
       project = self.find_project_for_d2l_user(unit, d2l_student)
       if project.nil?
-        result << "Error,#{d2l_student['OrgDefinedId']},,No #{app_name} result for #{d2l_student['DisplayName'].remove(',')}"
+        result << "Error,#{d2l_student['OrgDefinedId']},,No #{app_name} result for #{d2l_student['DisplayName']&.remove(',')}"
         next
       end
 
@@ -313,7 +313,7 @@ class D2lIntegration
         result << "Success,#{d2l_student['OrgDefinedId']},#{project.grade},Posted grade for #{project.student.username}"
       rescue OAuth2::Error => e
         Rails.logger.error("Error posting grade for #{unit.code} #{project.student.username}: #{e.response.status} #{e.response.body}")
-        result << "Error,#{d2l_student['OrgDefinedId']},#{project.grade},Faile to post grade for #{d2l_student['DisplayName'].remove(',')}"
+        result << "Error,#{d2l_student['OrgDefinedId']},#{project.grade},Faile to post grade for #{d2l_student['DisplayName']&.remove(',')}"
       end
     end
 

@@ -83,7 +83,7 @@ class D2lTest < ActiveSupport::TestCase
 
     initial_count = D2lAssessmentMapping.count
 
-    delete "/api/units/#{unit.id}/d2l"
+    delete "/api/units/#{unit.id}/d2l/#{d2l.id}"
     assert_equal 204, last_response.status, last_response.inspect
 
     assert_equal initial_count - 1, D2lAssessmentMapping.count
@@ -100,7 +100,7 @@ class D2lTest < ActiveSupport::TestCase
 
     initial_count = D2lAssessmentMapping.count
 
-    put "/api/units/#{unit.id}/d2l", { org_unit_id: '54321' }
+    put "/api/units/#{unit.id}/d2l/#{d2l.id}", { org_unit_id: '54321' }
     assert_equal 200, last_response.status, last_response.inspect
 
     assert_equal initial_count, D2lAssessmentMapping.count
@@ -140,7 +140,8 @@ class D2lTest < ActiveSupport::TestCase
 
     # When the user logs in, they are redirected to the callback
     get '/api/d2l/callback', { code: '12345', state: state }
-    assert_equal 200, last_response.status, last_response.inspect
+    assert_equal 302, last_response.status, last_response.inspect
+    assert_equal "#{Doubtfire::Application.config.institution[:host]}/success-close", last_response.headers['Location']
 
     # The user should now have an oauth token
     user.reload
@@ -202,20 +203,20 @@ class D2lTest < ActiveSupport::TestCase
 
   def test_does_grade_item_exist
     unit = FactoryBot.create(:unit, with_students: false)
-    d2l = D2lAssessmentMapping.create(unit: unit, org_unit_id: '12345', grade_object_id: '54321')
+    d2l = D2lAssessmentMapping.create(unit: unit, org_unit_id: '12345', grade_object_id: 54321)
     UserOauthToken.create(user: unit.main_convenor_user, provider: :d2l, token: 'test', expires_at: 30.minutes.from_now)
 
     grade_request = stub_request(:get, "https://api.brightspace.com/d2l/api/le/1.47/12345/grades/54321")
                     .to_return(
                       { status: 404, headers: {} },
-                      { status: 200, body: { id: '54321' }.to_json, headers: { 'Content-Type' => 'application/json;charset=UTF-8' } }
+                      { status: 200, body: { id: 54321 }.to_json, headers: { 'Content-Type' => 'application/json;charset=UTF-8' } }
                     )
 
     assert_not D2lIntegration.does_grade_item_exist?(d2l, UserOauthToken.last.access_token)
     assert_requested(grade_request, times: 1)
 
     # restore grade object id
-    d2l.grade_object_id = '54321'
+    d2l.grade_object_id = 54321
     d2l.save
 
     assert D2lIntegration.does_grade_item_exist?(d2l, UserOauthToken.last.access_token)
@@ -231,7 +232,7 @@ class D2lTest < ActiveSupport::TestCase
                           .to_return(
                             status: 200,
                             body: {
-                              "Id" => "jskldfj081123"
+                              "Id" => 127
                             }.to_json,
                             headers: { 'Content-Type' => 'application/json;charset=UTF-8' }
                           )
@@ -239,7 +240,7 @@ class D2lTest < ActiveSupport::TestCase
     D2lIntegration.create_grade_item(d2l, UserOauthToken.last.access_token)
 
     assert_requested post_grade_request, times: 1
-    assert_equal 'jskldfj081123', d2l.grade_object_id
+    assert_equal 127, d2l.grade_object_id
     assert d2l.persisted?
   end
 
@@ -301,7 +302,7 @@ class D2lTest < ActiveSupport::TestCase
                           .to_return(
                             status: 200,
                             body: {
-                              "Id" => "jskldfj081123"
+                              "Id" => 98701
                             }.to_json,
                             headers: { 'Content-Type' => 'application/json;charset=UTF-8' }
                           )
@@ -311,12 +312,13 @@ class D2lTest < ActiveSupport::TestCase
                             status: 200,
                             body: [
                               {
-                                "Identifier" => "12345",
-                                "FirstName" => p1.student.first_name,
-                                "LastName" => p1.student.last_name,
-                                "UserName" => p1.student.username,
-                                "OrgDefinedId" => p1.student.student_id,
-                                "Email" => p1.student.email
+                                'Identifier' => '12345',
+                                'FirstName' => p1.student.first_name,
+                                'LastName' => p1.student.last_name,
+                                'UserName' => p1.student.username,
+                                'OrgDefinedId' => p1.student.student_id,
+                                'Email' => p1.student.email,
+                                'ClasslistRoleDisplayName' => 'Student'
                               },
                               {
                                 "Identifier" => "12346",
@@ -324,7 +326,8 @@ class D2lTest < ActiveSupport::TestCase
                                 "LastName" => p2.student.last_name,
                                 "UserName" => p2.student.username,
                                 "OrgDefinedId" => "#{p2.student.student_id} - somehow mismatch",
-                                "Email" => p2.student.email
+                                "Email" => p2.student.email,
+                                'ClasslistRoleDisplayName' => 'Student'
                               },
                               {
                                 "Identifier" => "12347",
@@ -332,7 +335,8 @@ class D2lTest < ActiveSupport::TestCase
                                 "LastName" => p3.student.last_name,
                                 "UserName" => "#{p3.student.username} - somehow mismatch",
                                 "OrgDefinedId" => "#{p3.student.student_id} - somehow mismatch",
-                                "Email" => p3.student.email
+                                "Email" => p3.student.email,
+                                'ClasslistRoleDisplayName' => 'Student'
                               },
                               {
                                 "Identifier" => "12348",
@@ -340,7 +344,8 @@ class D2lTest < ActiveSupport::TestCase
                                 "LastName" => s1.last_name,
                                 "UserName" => s1.username,
                                 "OrgDefinedId" => s1.student_id,
-                                "Email" => s1.email
+                                "Email" => s1.email,
+                                'ClasslistRoleDisplayName' => 'Student'
                               }
                             ].to_json,
                             headers: { 'Content-Type' => 'application/json;charset=UTF-8' }
@@ -351,9 +356,9 @@ class D2lTest < ActiveSupport::TestCase
     assert_equal p3, D2lIntegration.find_project_for_d2l_user(unit, { "OrgDefinedId" => 'BLAH', "UserName" => 'BLEE', "Email" => p3.student.email } )
     assert_nil D2lIntegration.find_project_for_d2l_user(unit, { "OrgDefinedId" => 'BLAH', "UserName" => 'BLEE', "Email" => 'BLAH' } )
 
-    p1_put_request =  stub_request(:put, "https://api.brightspace.com/d2l/api/le/1.47/12345/grades/jskldfj081123/values/12345")
+    p1_put_request =  stub_request(:put, "https://api.brightspace.com/d2l/api/le/1.47/12345/grades/98701/values/12345")
                       .with(
-                        body: { "GradeObjectType" => "1", "PointsNumerator" => "50" }
+                        body: {"{\"GradeObjectType\":1,\"PointsNumerator\":50}" => nil}
                       ).to_return(
                         status: 200,
                         headers: {
@@ -363,9 +368,9 @@ class D2lTest < ActiveSupport::TestCase
                         }
                       )
 
-    p2_put_request =  stub_request(:put, "https://api.brightspace.com/d2l/api/le/1.47/12345/grades/jskldfj081123/values/12346")
+    p2_put_request =  stub_request(:put, "https://api.brightspace.com/d2l/api/le/1.47/12345/grades/98701/values/12346")
                       .with(
-                        body: { "GradeObjectType" => "1", "PointsNumerator" => "60" }
+                        body: { "{\"GradeObjectType\":1,\"PointsNumerator\":60}" => nil },
                       ).to_return(status: 200, headers: {})
 
     d2l = D2lAssessmentMapping.create(unit: unit, org_unit_id: '12345')
@@ -383,11 +388,11 @@ class D2lTest < ActiveSupport::TestCase
 
     assert_equal 6, result.count, result
 
-    assert_includes result[1], "Success, Posted grade for #{p1.student.username}"
-    assert_includes result[2], "Success, Posted grade for #{p2.student.username}"
-    assert_includes result[3], "Skipped, No grade for #{p3.student.username}"
-    assert_includes result[4], "Not Found in OnTrack, No OnTrack details for #{s1.username}"
-    assert_includes result[5], "Not Found in D2L, #{p4.student.username}"
+    assert_includes result[1], "Success,#{p1.student.student_id},#{p1.grade},Posted grade for #{p1.student.username}"
+    assert_includes result[2], "Success,#{p2.student.student_id} - somehow mismatch,#{p2.grade},Posted grade for #{p2.student.username}"
+    assert_includes result[3], "Skipped,#{p3.student.student_id} - somehow mismatch,\"\",No grade for #{p3.student.username}"
+    assert_includes result[4], "Error,#{s1.student_id},\"\",No OnTrack result for"
+    assert_includes result[5], "Error,#{p4.student.username},#{p4.grade},Not found in D2L"
 
     add_auth_header_for(user: unit.main_convenor_user)
     get "/api/units/#{unit.id}/d2l/grades"
@@ -396,7 +401,7 @@ class D2lTest < ActiveSupport::TestCase
     assert_equal 'text/csv', last_response.headers['Content-Type']
     result = last_response.body.split("\n")
     assert_equal 6, result.count, result
-    assert_includes result[1], "Success, Posted grade for #{p1.student.username}"
+    assert_includes result[1], "Success,#{p1.student.student_id},#{p1.grade},Posted grade for #{p1.student.username}"
   end
 
   def test_request_grade_transfer
