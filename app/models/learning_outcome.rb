@@ -91,6 +91,7 @@ class LearningOutcome < ApplicationRecord
   validates :short_description, length: { maximum: 4095, allow_blank: true }
   validates :full_outcome_description, length: { maximum: 4095, allow_blank: true }
 
+=begin
   def self.csv_header
     %w(context_type context_id abbreviation short_description full_outcome_description linked_outcome_ids)
   end
@@ -125,6 +126,88 @@ class LearningOutcome < ApplicationRecord
       outcome.short_description = short_description
       outcome.full_outcome_description = full_outcome_description
       outcome.linked_outcome_ids = row['linked_outcome_ids'].to_s.split(',').map(&:strip).map(&:to_i)
+    end
+
+    outcome.save!
+
+    result[:success] << if outcome.new_record?
+                          { row: row, message: "Outcome #{abbreviation} created" }
+                        else
+                          { row: row, message: "Outcome #{abbreviation} updated" }
+                        end
+                      end
+=end
+
+  def self.csv_header
+    %w(unit_code task_abbreviation abbreviation short_description full_outcome_description linked_outcomes)
+  end
+
+  def add_csv_row(row)
+    unit_code = if context_type == 'Unit'
+                  Unit.find(context_id).code
+                elsif context_type == 'TaskDefinition'
+                  TaskDefinition.find(context_id).unit.code
+                end
+    task_abbreviation = context_type == 'TaskDefinition' ? TaskDefinition.find(context_id).abbreviation : ''
+    linked_outcomes = linked_learning_outcomes.pluck(:abbreviation).join(',')
+
+    row << [unit_code, task_abbreviation, abbreviation, short_description, full_outcome_description, linked_outcomes]
+  end
+
+  def self.create_from_csv(context, row, result)
+    unit_code = row['unit_code']
+    task_abbreviation = row['task_abbreviation']
+
+    unit = Unit.find_by(code: unit_code)
+    unless unit
+      result[:errors] << { row: row, message: "Unit #{unit_code} not found" }
+      return
+    end
+
+    if task_abbreviation.present?
+      task_definition = TaskDefinition.find_by(abbreviation: task_abbreviation)
+      unless task_definition
+        result[:errors] << { row: row, message: "Task #{task_abbreviation} not found" }
+        return
+      end
+      context_type = 'TaskDefinition'
+      context_id = task_definition.id
+    else
+      context_type = 'Unit'
+      context_id = unit.id
+    end
+
+    abbreviation = row['abbreviation']
+    if abbreviation.nil?
+      result[:errors] << { row: row, message: 'Missing abbreviation' }
+      return
+    end
+
+    short_description = row['short_description']
+    if short_description.nil?
+      result[:errors] << { row: row, message: 'Missing short_description' }
+      return
+    end
+
+    full_outcome_description = row['full_outcome_description']
+    if full_outcome_description.nil?
+      result[:errors] << { row: row, message: 'Missing full_outcome_description' }
+      return
+    end
+
+    linked_outcomes = row['linked_outcomes'].to_s.split(',').map(&:strip)
+    linked_outcome_ids = LearningOutcome.where(abbreviation: linked_outcomes).pluck(:id)
+    missing_links = linked_outcomes - LearningOutcome.where(abbreviation: linked_outcomes).pluck(:abbreviation)
+
+    if missing_links.any?
+      result[:errors] << { row: row, message: "Linked outcomes #{missing_links.join(', ')} not found" }
+      return
+    end
+
+    outcome = LearningOutcome.find_or_create_by(context_id: context_id, context_type: context_type, abbreviation: abbreviation) do |outcome|
+      outcome.short_description = short_description
+      outcome.full_outcome_description = full_outcome_description
+      outcome.linked_outcome_ids = linked_outcome_ids
     end
 
     outcome.save!
