@@ -951,6 +951,9 @@ class TaskDefinitionTest < ActiveSupport::TestCase
       }
     ]
 
+    task_definition.target_date = Time.zone.now + 1.day
+    task_definition.due_date = task_definition.target_date + 1.week
+
     # Saving task def
     task_definition.save!
 
