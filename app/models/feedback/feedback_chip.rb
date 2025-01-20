@@ -216,6 +216,9 @@ module Feedback
 
       if parent_chip_id.present?
         parent_group_id = FeedbackChip.find(parent_chip_id).summary_text
+        if parent_group_id.nil?
+          parent_group_id = FeedbackChip.find(parent_chip_id).chip_text
+        end
       end
 
       row << [learning_outcome_abbreviation, task_abbreviation, csv_type, group_id, parent_group_id, chip_text, description, task_status, summary_text, comment_text]

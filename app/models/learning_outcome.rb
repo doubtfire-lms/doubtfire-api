@@ -152,9 +152,9 @@ class LearningOutcome < ApplicationRecord
                   TaskDefinition.find(context_id).unit.code
                 end
     task_abbreviation = context_type == 'TaskDefinition' ? TaskDefinition.find(context_id).abbreviation : ''
-    linked_outcomes = linked_outcomes.pluck(:abbreviation).join(',')
+    linked_learning_outcomes = linked_outcomes.pluck(:abbreviation).join(',')
 
-    row << [unit_code, task_abbreviation, abbreviation, short_description, full_outcome_description, linked_outcomes]
+    row << [unit_code, task_abbreviation, abbreviation, short_description, full_outcome_description, linked_learning_outcomes]
   end
 
   def self.create_from_csv(context, row, result)
@@ -201,6 +201,7 @@ class LearningOutcome < ApplicationRecord
     linked_outcomes = row['linked_outcomes'].to_s.split(',').map(&:strip)
     linked_outcome_ids = LearningOutcome.where(abbreviation: linked_outcomes).pluck(:id)
     missing_links = linked_outcomes - LearningOutcome.where(abbreviation: linked_outcomes).pluck(:abbreviation)
+    puts missing_links
 
     if missing_links.any?
       result[:errors] << { row: row, message: "Linked outcomes #{missing_links.join(', ')} not found" }
@@ -210,7 +211,10 @@ class LearningOutcome < ApplicationRecord
     outcome = LearningOutcome.find_or_create_by(context_id: context_id, context_type: context_type, abbreviation: abbreviation) do |outcome|
       outcome.short_description = short_description
       outcome.full_outcome_description = full_outcome_description
-      outcome.linked_outcome_ids = linked_outcome_ids
+    end
+
+    linked_outcome_ids.each do |linked_outcome_id|
+      LearningOutcomeLink.find_or_create_by(source_id: outcome.id, target_id: linked_outcome_id)
     end
 
     outcome.save!
