@@ -51,11 +51,11 @@ class D2lIntegration
       config.d2l_client_id = ENV.fetch('D2L_CLIENT_ID', nil)
       config.d2l_client_secret = ENV.fetch('D2L_CLIENT_SECRET', nil)
       config.d2l_redirect_uri = ENV.fetch('D2L_REDIRECT_URI', nil)
-      config.d2l_oauth_site = ENV.fetch('D2L_OAUTH_SITE', nil)
-      config.d2l_oauth_authorize_url = ENV.fetch('D2L_OAUTH_SITE_AUTHORIZE_URL', nil)
-      config.d2l_oauth_token_url = ENV.fetch('D2L_OAUTH_SITE_TOKEN_URL', nil)
+      config.d2l_oauth_site = ENV.fetch('D2L_OAUTH_SITE', 'https://auth.brightspace.com')
+      config.d2l_oauth_authorize_url = ENV.fetch('D2L_OAUTH_SITE_AUTHORIZE_URL', '/oauth2/auth')
+      config.d2l_oauth_token_url = ENV.fetch('D2L_OAUTH_SITE_TOKEN_URL', '/core/connect/token')
       config.d2l_api_host = ENV.fetch('D2L_API_HOST', nil)
-      config.d2l_api_version = ENV.fetch('D2L_API_VERSION', nil)
+      config.d2l_api_version = ENV.fetch('D2L_API_VERSION', '1.7')
     end
   end
 
