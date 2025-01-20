@@ -111,8 +111,9 @@ class Unit < ApplicationRecord
   # Ensure before destroy is above relations - as this needs to clear main convenor before unit roles are deleted
   before_destroy do
     update(main_convenor_id: nil)
-    delete_associated_files
   end
+
+  after_destroy :delete_associated_files
 
   after_update :move_files_on_code_change, if: :saved_change_to_code?
   after_update :propogate_date_changes_to_tasks, if: :saved_change_to_start_date?
