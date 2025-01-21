@@ -117,11 +117,11 @@ module Feedback
       nil
     end
 
-    desc 'Download the feedback chips for a specific outcome'
+    desc 'Download the feedback chips for a specific outcome' # change to specific context rather than outcome
     params do
       requires :id, type: Integer, desc: 'The ID of the context'
     end
-    get '/:context_type_plural/:context_id/outcomes/:id/feedback_chips/csv' do
+    get '/:context_type_plural/:context_id/outcomes/:id/feedback_chips/csv' do # '/:context_type_plural/:context_id/feedback_chips/csv'
       # find context model dynamically
       context_type = params[:context_type_plural].singularize.camelize
       context_model = context_type.classify.constantize.find(params[:context_id])
@@ -140,12 +140,12 @@ module Feedback
       learning_outcome.export_feedback_chips_to_csv
     end
 
-    desc 'Upload the feedback chips for a specified outcome from a csv'
+    desc 'Upload the feedback chips for a specified outcome from a csv' # change to specific context rather than outcome
     params do
       requires :file, type: File, desc: 'CSV upload file.'
       requires :id, type: Integer, desc: 'The id of the learning outcome'
     end
-    post '/:context_type_plural/:context_id/outcomes/:id/feedback_chips/csv' do
+    post '/:context_type_plural/:context_id/outcomes/:id/feedback_chips/csv' do # '/:context_type_plural/:context_id/feedback_chips/csv'
       # check mime is correct before uploading
       ensure_csv!(params[:file][:tempfile])
 

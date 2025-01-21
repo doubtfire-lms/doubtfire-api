@@ -303,7 +303,7 @@ class TaskDefinition < ApplicationRecord
     end
   end
 
-  def export_learning_outcome_to_csv
+  def export_learning_outcome_to_csv(include_tlos = false)
     CSV.generate do |row|
       row << LearningOutcome.csv_header
       learning_outcomes.each do |outcome|

@@ -1071,10 +1071,19 @@ class Unit < ApplicationRecord
     end
   end
 
-  def export_learning_outcome_to_csv
+  def export_learning_outcome_to_csv(include_tlos: false)
     CSV.generate do |row|
       row << LearningOutcome.csv_header
-      learning_outcomes.each do |outcome|
+      unit_outcomes = learning_outcomes
+      task_outcomes = if include_tlos
+                        task_definitions.map(&:learning_outcomes).flatten
+                      else
+                        []
+                      end
+
+      all_outcomes = (unit_outcomes + task_outcomes).uniq
+
+      all_outcomes.each do |outcome|
         outcome.add_csv_row row
       end
     end
@@ -1098,7 +1107,7 @@ class Unit < ApplicationRecord
               header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
               converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
       # Make sure we're not looking at the header or an empty line
-      next if row[0] =~ /abbreviation/
+      next if row[0] =~ /unit_code/
 
       begin
         LearningOutcome.create_from_csv(self, row, result)
