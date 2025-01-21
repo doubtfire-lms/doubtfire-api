@@ -103,6 +103,7 @@ gem 'tca_client', '1.0.4'
 # Async jobs
 gem 'sidekiq'
 gem 'sidekiq-cron'
+gem 'sidekiq-unique-jobs'
 
 # Redis for sidekiq, caching, and action cable (eventually)
 gem 'redis'
@@ -112,3 +113,6 @@ gem 'shellwords'
 
 # PDF reader for validating PDF file submissions
 gem 'pdf-reader'
+
+# oauth gem for OAuth2 authentication - D2L
+gem 'oauth2'

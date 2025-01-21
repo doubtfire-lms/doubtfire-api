@@ -10,8 +10,13 @@ class AcceptSubmissionJob
       logger.error e
     end
 
-    task = Task.find(task_id)
-    user = User.find(user_id)
+    begin
+      task = Task.find(task_id)
+      user = User.find(user_id)
+    rescue StandardError => e
+      logger.error e
+      return
+    end
 
     begin
       logger.info "Accepting submission for task #{task.id} by user #{user.id}"
