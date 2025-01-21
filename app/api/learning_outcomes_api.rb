@@ -355,12 +355,14 @@ class LearningOutcomesApi < Grape::API
   end
 =end
 
-  desc 'Download the outcomes for a specified context (unit, course, task_definition, ect.) to a csv'
+  desc 'Download the outcomes for a specified context (unit, course, task_definition, ect.) to a csv' # add a way to get nested outcomes aswell
   params do
     requires :context_id, type: Integer, desc: 'The id of the context'
+    optional :includes_tlos, type: Boolean, desc: 'Include nested task learning outcomes in the export'
   end
   get '/:context_type_plural/:context_id/outcomes/csv' do
     # find context model dynamically
+    include_tlos = params[:includes_tlos] || false
     context_type = params[:context_type_plural].singularize.camelize
     context_model = context_type.classify.constantize.find(params[:context_id])
 
@@ -374,7 +376,8 @@ class LearningOutcomesApi < Grape::API
     header['Content-Disposition'] = "attachment; filename=#{title}-LearningOutcomes.csv"
     header['Access-Control-Expose-Headers'] = 'Content-Disposition'
     env['api.format'] = :binary
-    context_model.export_learning_outcome_to_csv
+
+    context_model.export_learning_outcome_to_csv(include_tlos: include_tlos)
   end
 
 =begin
@@ -398,7 +401,7 @@ desc 'Upload the outcomes for a unit from a csv'
   end
 =end
 
-  desc 'Upload the outcomes for a specified context (unit, course, task_definition, ect.) from a csv'
+  desc 'Upload the outcomes for a specified context (unit, course, task_definition, ect.) from a csv' # make it a generic upload for any context
   params do
     requires :file, type: File, desc: 'CSV upload file.'
     requires :context_id, type: Integer, desc: 'The id of the context'
