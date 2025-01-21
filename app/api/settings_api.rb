@@ -9,7 +9,8 @@ class SettingsApi < Grape::API
     response = {
       externalName: Doubtfire::Application.config.institution[:product_name],
       overseerEnabled: Doubtfire::Application.config.overseer_enabled,
-      tiiEnabled: TurnItIn.enabled?
+      tiiEnabled: TurnItIn.enabled?,
+      d2lEnabled: D2lIntegration.enabled?
     }
 
     present response, with: Grape::Presenters::Presenter

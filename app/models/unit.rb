@@ -111,8 +111,9 @@ class Unit < ApplicationRecord
   # Ensure before destroy is above relations - as this needs to clear main convenor before unit roles are deleted
   before_destroy do
     update(main_convenor_id: nil)
-    delete_associated_files
   end
+
+  after_destroy :delete_associated_files
 
   after_update :move_files_on_code_change, if: :saved_change_to_code?
   after_update :propogate_date_changes_to_tasks, if: :saved_change_to_start_date?
@@ -138,6 +139,8 @@ class Unit < ApplicationRecord
   has_many :tii_submissions, through: :tasks
   has_many :tii_group_attachments, through: :task_definitions
   has_many :campuses, through: :tutorials
+
+  has_one :d2l_assessment_mapping, dependent: :destroy
 
   # Unit has a teaching period
   belongs_to :teaching_period, optional: true
@@ -2562,8 +2565,11 @@ class Unit < ApplicationRecord
   private
 
   def delete_associated_files
-    FileUtils.rm_rf FileHelper.unit_dir(self)
-    FileUtils.rm_rf FileHelper.unit_portfolio_dir(self)
+    unit_path = FileHelper.unit_dir(self, false)
+    unit_portfolio_path = FileHelper.unit_portfolio_dir(self, false)
+    FileUtils.rm_rf unit_path
+    FileUtils.rm_rf unit_portfolio_path
+
     FileUtils.cd FileHelper.student_work_dir
   end
 
