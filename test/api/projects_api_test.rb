@@ -23,7 +23,8 @@ class ProjectsApiTest < ActiveSupport::TestCase
   end
 
   def test_get_projects_with_streams_match
-    unit = FactoryBot.create :unit, stream_count: 2, campus_count: 2, tutorials: 2, unenrolled_student_count: 0, part_enrolled_student_count: 0, inactive_student_count: 0
+    unit = FactoryBot.create :unit, stream_count: 2, campus_count: 2, tutorials: 2,
+                             unenrolled_student_count: 0, part_enrolled_student_count: 0, inactive_student_count: 0
     project = unit.projects.first
     assert_equal 2, project.tutorial_enrolments.count
 
@@ -76,7 +77,24 @@ class ProjectsApiTest < ActiveSupport::TestCase
     # Add username and auth_token to Header
     add_auth_header_for(user: user)
 
-    keys = %w(id unit unit_id user_id campus_id target_grade submitted_grade portfolio_files compile_portfolio portfolio_available uses_draft_learning_summary tasks tutorial_enrolments groups task_outcome_alignments)
+    keys = %w(
+      id
+      unit
+      unit_id
+      user_id
+      campus_id
+      target_grade
+      submitted_grade
+      portfolio_files
+      compile_portfolio
+      portfolio_available
+      uses_draft_learning_summary
+      tasks
+      tutorial_enrolments
+      groups
+      task_outcome_alignments
+      target_grade_histories
+    )
     key_test = keys - %w(unit user_id portfolio_available tasks tutorial_enrolments groups task_outcome_alignments)
 
     get "/api/projects/#{project.id}"
@@ -100,7 +118,6 @@ class ProjectsApiTest < ActiveSupport::TestCase
     assert_equal 1, last_response_body.count
 
     get '/api/projects?include_inactive=true'
-
     assert_equal 2, last_response_body.count
 
     last_response_body.each do |data|
@@ -191,5 +208,45 @@ class ProjectsApiTest < ActiveSupport::TestCase
     unit.destroy!
   ensure
     FileUtils.rm_f(project.portfolio_path)
+  end
+
+  
+  
+  def test_get_project_includes_target_grade_histories
+    user = FactoryBot.create(:user, :student, enrol_in: 1)
+    project = user.projects.first
+    project.update!(target_grade: 1)
+
+    add_auth_header_for(user: user)
+
+    data_to_put = { target_grade: 2 }
+    put_json "/api/projects/#{project.id}", data_to_put
+    assert_equal 200, last_response.status, last_response.body
+
+    data_to_put = { target_grade: 3 }
+    put_json "/api/projects/#{project.id}", data_to_put
+    assert_equal 200, last_response.status, last_response.body
+
+    get "/api/projects/#{project.id}"
+    assert_equal 200, last_response.status, last_response.body
+    project_json = last_response_body
+
+    assert project_json.key?('target_grade_histories'), project_json
+    histories = project_json['target_grade_histories']
+    assert_equal 2, histories.size, "Expected 2 history entries after 2 updates"
+
+    first_history = histories.first
+    assert_equal '1', first_history['previous_grade']
+    assert_equal '2', first_history['new_grade']
+    assert first_history.key?('changed_at'), "Expected changed_at key"
+    assert first_history.key?('changed_by'), "Expected changed_by key"
+
+    second_history = histories.second
+    assert_equal '2', second_history['previous_grade']
+    assert_equal '3', second_history['new_grade']
+
+    changed_by_info = second_history['changed_by']
+    assert_equal user.id, changed_by_info['id']
+    assert_equal user.username, changed_by_info['username']
   end
 end

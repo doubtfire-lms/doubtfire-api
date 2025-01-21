@@ -20,12 +20,12 @@ class ProjectsApi < Grape::API
     present projects, with: Entities::ProjectEntity, for_student: true, summary_only: true, user: current_user
   end
 
-  desc 'Get project'
+  desc 'Get project with target grade history'
   params do
     requires :id, type: Integer, desc: 'The id of the project to get'
   end
   get '/projects/:id' do
-    project = Project.eager_load(:unit, :user).find(params[:id])
+    project = Project.includes(:unit, :user, target_grade_histories: :changed_by).find(params[:id])
 
     if authorise? current_user, project, :get
       present project, with: Entities::ProjectEntity, user: current_user, for_student: true, in_project: true
@@ -81,8 +81,25 @@ class ProjectsApi < Grape::API
         error!({ error: "You do not have permissions to change this student" }, 403)
       end
 
-      project.target_grade = params[:target_grade]
-      project.save
+      previous_grade = project.target_grade
+      new_grade = params[:target_grade]
+
+      project.target_grade = new_grade
+
+      if project.save
+        # Record the grade change history
+        TargetGradeHistory.create(
+          project_id: project.id,
+          user_id: project.user_id,
+          previous_grade: previous_grade,
+          new_grade: new_grade,
+          changed_by_id: current_user.id,
+          changed_at: Time.current
+        )
+      else
+        error!({ error: "Failed to update target grade: #{project.errors.full_messages.join(', ')}" }, 422)
+      end
+
     elsif !params[:submitted_grade].nil?
       unless authorise? current_user, project, :change
         error!({ error: "You do not have permissions to change this student" }, 403)

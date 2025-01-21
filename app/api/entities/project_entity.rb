@@ -28,5 +28,7 @@ module Entities
 
     expose :grade, if: :for_staff
     expose :grade_rationale, if: :for_staff
+
+    expose :target_grade_histories, using: Entities::TargetGradeHistoryEntity, if: ->(project, options) { options[:in_project] }
   end
 end

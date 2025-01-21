@@ -31,6 +31,8 @@ class Project < ApplicationRecord
 
   has_many :learning_outcome_task_links, through: :tasks
 
+  has_many :target_grade_histories, dependent: :destroy
+
   # Callbacks - methods called are private
   before_destroy :can_destroy?
 
