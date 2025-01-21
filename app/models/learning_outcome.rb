@@ -142,7 +142,7 @@ class LearningOutcome < ApplicationRecord
 =end
 
   def self.csv_header
-    %w(unit_code task_abbreviation abbreviation short_description full_outcome_description linked_outcomes)
+    %w(unit_code task_abbreviation learning_outcome_abbreviation short_description full_outcome_description linked_outcomes)
   end
 
   def add_csv_row(row)
@@ -180,9 +180,9 @@ class LearningOutcome < ApplicationRecord
       context_id = unit.id
     end
 
-    abbreviation = row['abbreviation']
+    abbreviation = row['learning_outcome_abbreviation']
     if abbreviation.nil?
-      result[:errors] << { row: row, message: 'Missing abbreviation' }
+      result[:errors] << { row: row, message: 'Missing learning_outcome_abbreviation' }
       return
     end
 
@@ -201,23 +201,21 @@ class LearningOutcome < ApplicationRecord
     linked_outcomes = row['linked_outcomes'].to_s.split(',').map(&:strip)
     linked_outcome_ids = LearningOutcome.where(abbreviation: linked_outcomes).pluck(:id)
     missing_links = linked_outcomes - LearningOutcome.where(abbreviation: linked_outcomes).pluck(:abbreviation)
-    puts missing_links
 
     if missing_links.any?
       result[:errors] << { row: row, message: "Linked outcomes #{missing_links.join(', ')} not found" }
       return
     end
 
-    outcome = LearningOutcome.find_or_create_by(context_id: context_id, context_type: context_type, abbreviation: abbreviation) do |outcome|
-      outcome.short_description = short_description
-      outcome.full_outcome_description = full_outcome_description
-    end
+    outcome = LearningOutcome.find_or_create_by(context_id: context_id, context_type: context_type, abbreviation: abbreviation)
+    outcome.short_description = short_description # not updating short description
+    outcome.full_outcome_description = full_outcome_description
 
     linked_outcome_ids.each do |linked_outcome_id|
       LearningOutcomeLink.find_or_create_by(source_id: outcome.id, target_id: linked_outcome_id)
     end
 
-    outcome.save!
+    outcome.save
 
     result[:success] << if outcome.new_record?
                           { row: row, message: "Outcome #{abbreviation} created" }
