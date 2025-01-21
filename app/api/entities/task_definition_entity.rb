@@ -39,6 +39,12 @@ module Entities
     expose :has_task_sheet?, as: :has_task_sheet
     expose :has_task_resources?, as: :has_task_resources
     expose :has_task_assessment_resources?, as: :has_task_assessment_resources, if: ->(unit, options) { staff?(options[:my_role]) }
+    expose :has_scorm_data?, as: :has_scorm_data
+    expose :scorm_enabled
+    expose :scorm_allow_review
+    expose :scorm_bypass_test
+    expose :scorm_time_delay_enabled
+    expose :scorm_attempt_limit
     expose :is_graded
     expose :max_quality_pts
     expose :overseer_image_id, if: ->(unit, options) { staff?(options[:my_role]) }, expose_nil: false

@@ -3,7 +3,7 @@ class OverseerAssessment < ApplicationRecord
   belongs_to :task, optional: false
 
   has_one :project, through: :task
-  has_many :assessment_comments, dependent: :destroy
+  has_many :assessment_comments, as: :commentable, dependent: :destroy
 
   validates :status,                  presence: true
   validates :task_id,                 presence: true
@@ -93,7 +93,7 @@ class OverseerAssessment < ApplicationRecord
     comment.user = tutor
     comment.comment = text
     comment.recipient = project.student
-    comment.overseer_assessment = self
+    comment.commentable = self
     comment.save!
 
     comment

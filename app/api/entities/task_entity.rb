@@ -17,6 +17,7 @@ module Entities
     end
 
     expose :extensions
+    expose :scorm_extensions
 
     expose :times_assessed
     expose :grade, expose_nil: false
