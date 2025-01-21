@@ -196,13 +196,24 @@ module Feedback
 =end
 
     def self.csv_header
-      %w(learning_outcome_abbreviation task_abbreviation type group_id parent_group_id chip_text description task_status summary_text comment_text)
+      %w(unit_code task_abbreviation learning_outcome_abbreviation type group_id parent_group_id chip_text description task_status summary_text comment_text)
     end
 
     def add_csv_row(row)
       csv_type = self.class.to_csv_type(type)
 
       learning_outcome = LearningOutcome.find(learning_outcome_id)
+
+      context_type = learning_outcome.context_type
+      context_id = learning_outcome.context_id
+
+      unit_code = ''
+      if context_type == 'Unit'
+        unit_code = Unit.find(context_id).code
+      elsif context_type == 'TaskDefinition'
+        unit_code = TaskDefinition.find(context_id).unit.code
+      end
+
       learning_outcome_abbreviation = learning_outcome.abbreviation
       task_abbreviation = learning_outcome.context_type == 'TaskDefinition' ? TaskDefinition.find(learning_outcome.context_id).abbreviation : ''
 
@@ -221,11 +232,18 @@ module Feedback
         end
       end
 
-      row << [learning_outcome_abbreviation, task_abbreviation, csv_type, group_id, parent_group_id, chip_text, description, task_status, summary_text, comment_text]
+      row << [unit_code, task_abbreviation, learning_outcome_abbreviation, csv_type, group_id, parent_group_id, chip_text, description, task_status, summary_text, comment_text]
     end
 
     def self.create_from_csv(outcome, row, result)
       @group_map ||= {}
+
+      unit_code = row['unit_code']
+      unit = Unit.find_by(code: unit_code)
+      if unit.nil?
+        result[:errors] << { row: row, message: "Unit #{unit_code} not found" }
+        return
+      end
 
       learning_outcome_abbreviation = row['learning_outcome_abbreviation']
       learning_outcome = LearningOutcome.find_by(abbreviation: learning_outcome_abbreviation)
