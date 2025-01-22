@@ -239,17 +239,12 @@ module Feedback
       @group_map ||= {}
 
       unit_code = row['unit_code']
-      unit = Unit.find_by(code: unit_code)
-      if unit.nil?
-        result[:errors] << { row: row, message: "Unit #{unit_code} not found" }
-        return
-      end
-
-      learning_outcome_abbreviation = row['learning_outcome_abbreviation']
-      learning_outcome = LearningOutcome.find_by(abbreviation: learning_outcome_abbreviation)
-      if learning_outcome.nil?
-        result[:errors] << { row: row, message: "Learning Outcome #{learning_outcome_abbreviation} not found" }
-        return
+      if unit_code.present?
+        unit = Unit.find_by(code: unit_code)
+        if unit.nil?
+          result[:errors] << { row: row, message: "Unit #{unit_code} not found" }
+          return
+        end
       end
 
       task_abbreviation = row['task_abbreviation']
@@ -261,11 +256,20 @@ module Feedback
         end
       end
 
-      # check if the learning outcome is in the correct unit
-      learning_outcome_unit = learning_outcome.context_type == 'Unit' ? learning_outcome.context_id : TaskDefinition.find(learning_outcome.context_id).unit_id
-      if learning_outcome_unit != unit.id
-        result[:errors] << { row: row, message: "Learning Outcome #{learning_outcome_abbreviation} is not in Unit #{unit_code}" }
+      learning_outcome_abbreviation = row['learning_outcome_abbreviation']
+      learning_outcome = LearningOutcome.find_by(abbreviation: learning_outcome_abbreviation)
+      if learning_outcome.nil?
+        result[:errors] << { row: row, message: "Learning Outcome #{learning_outcome_abbreviation} not found" }
         return
+      end
+
+      # check if the learning outcome is in the correct unit
+      unless unit_code.nil? && task_abbreviation.nil? # wont run if its a global outcome
+        learning_outcome_unit = learning_outcome.context_type == 'Unit' ? learning_outcome.context_id : TaskDefinition.find(learning_outcome.context_id).unit_id
+        if learning_outcome_unit != unit.id
+          result[:errors] << { row: row, message: "Learning Outcome #{learning_outcome_abbreviation} is not in Unit #{unit_code}" }
+          return
+        end
       end
 
       # check that the learning outcome is in the correct task
@@ -311,6 +315,11 @@ module Feedback
       description = row['description']
 
       task_status = row['task_status']
+      if task_status.present? && !FeedbackChip.task_statuses.include?(task_status)
+        result[:errors] << { row: row, message: "Invalid task_status #{task_status}" }
+        return
+      end
+
       summary_text = row['type'] == 'group' ? group_id : row['summary_text'] # store group_id in summary_text for group chips
       comment_text = row['comment_text']
 

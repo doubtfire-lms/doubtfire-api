@@ -163,7 +163,6 @@ module Feedback
       context_model.export_feedback_chips_to_csv
     end
 
-
     desc 'Upload the feedback chips for a specified outcome from a csv' # change to specific context rather than outcome
     params do
       requires :file, type: File, desc: 'CSV upload file.'
@@ -203,6 +202,30 @@ module Feedback
 
       # Actually import...
       context_model.import_feedback_chips_from_csv(params[:file][:tempfile])
+    end
+
+    desc 'Download the feedback chips for a global context'
+    get '/global/feedback_chips/csv' do
+      unless authorise? current_user, User, :feedback_chips
+        error!({ error: 'You are not authorised to download feedback chips globally.' }, 403)
+      end
+
+      title = 'Global_Learning_Outcomes'
+
+      content_type 'application/octet-stream'
+      header['Content-Disposition'] = "attachment; filename=#{title}--Feedback_Chips.csv"
+      header['Access-Control-Expose-Headers'] = 'Content-Disposition'
+      env['api.format'] = :binary
+
+      glos = LearningOutcome.where(context_id: nil, context_type: nil)
+      CSV.generate do |row|
+        row << Feedback::FeedbackChip.csv_header
+        glos.each do |lo|
+          lo.feedback_chips.each do |chip|
+            chip.add_csv_row row
+          end
+        end
+      end
     end
   end
 end
