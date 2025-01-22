@@ -223,7 +223,7 @@ class LearningOutcome < ApplicationRecord
     end
 
     outcome = LearningOutcome.find_or_create_by(context_id: context_id, context_type: context_type, abbreviation: abbreviation)
-    outcome.short_description = short_description # not updating short description
+    outcome.short_description = short_description
     outcome.full_outcome_description = full_outcome_description
 
     linked_outcome_ids.each do |linked_outcome_id|

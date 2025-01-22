@@ -53,6 +53,21 @@ module Feedback
 
       chip_class = params[:type] == 'template' ? FeedbackTemplateChip : FeedbackGroupChip
       chip = chip_class.create(declared(params, include_missing: false).except(:type))
+
+      if params[:type] == 'group'
+        learning_outcome = LearningOutcome.find(params[:learning_outcome_id])
+        if learning_outcome.context_type == 'TaskDefinition'
+          task_definition = TaskDefinition.find(learning_outcome.context_id)
+          unit = task_definition.unit
+          group_id = "#{unit.id}-#{task_definition.id}-#{learning_outcome.abbreviation}-#{chip.chip_text}"
+        elsif learning_outcome.context_type == 'Unit'
+          unit = Unit.find(learning_outcome.context_id)
+          group_id = "#{unit.id}-#{learning_outcome.abbreviation}-#{chip.chip_text}"
+        else
+          error!({ error: 'Invalid context type' }, 400)
+        end
+        chip.update(summary_text: group_id)
+      end
       entity = params[:type] == 'template' ? Entities::FeedbackTemplateChipEntity : Entities::FeedbackGroupChipEntity
       present chip, with: entity
     end
@@ -87,6 +102,22 @@ module Feedback
       end
 
       chip.update(declared(params, include_missing: false).except(:type))
+
+      if chip.type == 'Feedback::FeedbackGroupChip'
+        learning_outcome = LearningOutcome.find(params[:learning_outcome_id])
+        if learning_outcome.context_type == 'TaskDefinition'
+          task_definition = TaskDefinition.find(learning_outcome.context_id)
+          unit = task_definition.unit
+          group_id = "#{unit.id}-#{task_definition.id}-#{learning_outcome.abbreviation}-#{chip.chip_text}"
+        elsif learning_outcome.context_type == 'Unit'
+          unit = Unit.find(learning_outcome.context_id)
+          group_id = "#{unit.id}-#{learning_outcome.abbreviation}-#{chip.chip_text}"
+        else
+          error!({ error: 'Invalid context type' }, 400)
+        end
+        chip.update(summary_text: group_id)
+      end
+
       entity = chip.type == 'Feedback::FeedbackTemplateChip' ? Entities::FeedbackTemplateChipEntity : Entities::FeedbackGroupChipEntity
       present chip, with: entity
     end
@@ -227,5 +258,22 @@ module Feedback
         end
       end
     end
+
+    desc 'Upload the feedback chips for a global context from a csv'
+    params do
+      requires :file, type: File, desc: 'CSV upload file.'
+    end
+    post '/global/feedback_chips/csv' do
+      # check mime is correct before uploading
+      ensure_csv!(params[:file][:tempfile])
+
+      unless authorise? current_user, User, :feedback_chips
+        error!({ error: 'Not authorised to upload CSV of outcomes' }, 403)
+      end
+
+      # Actually import...
+      LearningOutcome.import_feedback_chips_from_csv(params[:file][:tempfile])
+    end
   end
 end
+
