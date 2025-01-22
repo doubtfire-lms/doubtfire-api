@@ -66,7 +66,7 @@ module Feedback
         else
           error!({ error: 'Invalid context type' }, 400)
         end
-        chip.update(summary_text: group_id)
+        chip.update(comment_text: group_id)
       end
       entity = params[:type] == 'template' ? Entities::FeedbackTemplateChipEntity : Entities::FeedbackGroupChipEntity
       present chip, with: entity
@@ -115,7 +115,7 @@ module Feedback
         else
           error!({ error: 'Invalid context type' }, 400)
         end
-        chip.update(summary_text: group_id)
+        chip.update(comment_text: group_id)
       end
 
       entity = chip.type == 'Feedback::FeedbackTemplateChip' ? Entities::FeedbackTemplateChipEntity : Entities::FeedbackGroupChipEntity
