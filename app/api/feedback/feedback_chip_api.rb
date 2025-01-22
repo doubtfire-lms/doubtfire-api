@@ -173,10 +173,11 @@ module Feedback
 
     desc 'Download the feedback chips for a specific context'
     params do
-      requires :context_type_plural, type: String, desc: 'The type of the context'
       requires :context_id, type: Integer, desc: 'The ID of the context'
+      optional :includes_tlos, type: Boolean, desc: 'Include TLOs in the export'
     end
     get '/:context_type_plural/:context_id/feedback_chips/csv' do
+      include_tlos = params[:includes_tlos] || false
       context_type = params[:context_type_plural].singularize.camelize
       context_model = context_type.classify.constantize.find(params[:context_id])
 
@@ -191,7 +192,7 @@ module Feedback
       header['Access-Control-Expose-Headers'] = 'Content-Disposition'
       env['api.format'] = :binary
 
-      context_model.export_feedback_chips_to_csv
+      context_model.export_feedback_chips_to_csv(include_tlos: include_tlos)
     end
 
     desc 'Upload the feedback chips for a specified outcome from a csv' # change to specific context rather than outcome

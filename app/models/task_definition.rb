@@ -312,7 +312,7 @@ class TaskDefinition < ApplicationRecord
     end
   end
 
-  def export_feedback_chips_to_csv
+  def export_feedback_chips_to_csv(include_tlos = false)
     CSV.generate do |row|
       row << Feedback::FeedbackChip.csv_header
       learning_outcomes.each do |outcome|
