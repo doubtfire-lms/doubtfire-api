@@ -1089,10 +1089,18 @@ class Unit < ApplicationRecord
     end
   end
 
-  def export_feedback_chips_to_csv
+  def export_feedback_chips_to_csv(include_tlos: false)
     CSV.generate do |row|
       row << Feedback::FeedbackChip.csv_header
-      learning_outcomes.each do |outcome|
+      unit_outcomes = learning_outcomes
+      task_outcomes = if include_tlos
+                        task_definitions.map(&:learning_outcomes).flatten
+                      else
+                        []
+                      end
+
+      all_outcomes = (unit_outcomes + task_outcomes).uniq
+      all_outcomes.each do |outcome|
         outcome.feedback_chips.each do |chip|
           chip.add_csv_row row
         end
