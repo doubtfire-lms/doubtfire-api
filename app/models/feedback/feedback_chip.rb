@@ -235,7 +235,7 @@ module Feedback
       row << [unit_code, task_abbreviation, learning_outcome_abbreviation, csv_type, group_id, parent_group_id, chip_text, description, task_status, summary_text, comment_text]
     end
 
-    def self.create_from_csv(outcome, row, result)
+    def self.create_from_csv(row, result)
       @group_map ||= {}
 
       unit_code = row['unit_code']
@@ -257,6 +257,22 @@ module Feedback
         task_definition = TaskDefinition.find_by(abbreviation: task_abbreviation)
         if task_definition.nil?
           result[:errors] << { row: row, message: "Task #{task_abbreviation} not found" }
+          return
+        end
+      end
+
+      # check if the learning outcome is in the correct unit
+      learning_outcome_unit = learning_outcome.context_type == 'Unit' ? learning_outcome.context_id : TaskDefinition.find(learning_outcome.context_id).unit_id
+      if learning_outcome_unit != unit.id
+        result[:errors] << { row: row, message: "Learning Outcome #{learning_outcome_abbreviation} is not in Unit #{unit_code}" }
+        return
+      end
+
+      # check that the learning outcome is in the correct task
+      if task_abbreviation.present?
+        task_unit = TaskDefinition.find_by(abbreviation: task_abbreviation).unit_id
+        if task_unit != unit.id
+          result[:errors] << { row: row, message: "Task #{task_abbreviation} is not in Unit #{unit_code}" }
           return
         end
       end
@@ -307,12 +323,13 @@ module Feedback
         return
       end
 
-      chip = FeedbackChip.find_or_create_by(type: csv_type, chip_text: chip_text, description: description, learning_outcome_id: learning_outcome.id) do |chip|
-        chip.task_status = task_status
-        chip.parent_chip_id = parent_chip_id
-        chip.summary_text = summary_text
-        chip.comment_text = comment_text
-      end
+      chip = FeedbackChip.find_or_create_by(type: csv_type, chip_text: chip_text, description: description, learning_outcome_id: learning_outcome.id)
+      chip.task_status = task_status
+      chip.parent_chip_id = parent_chip_id
+      chip.summary_text = summary_text
+      chip.comment_text = comment_text
+
+      chip.save!
 
       if chip.persisted?
         result[:success] << { row: row, message: "#{chip.new_record? ? 'Created' : 'Updated'} chip #{row['chip_text']}" }

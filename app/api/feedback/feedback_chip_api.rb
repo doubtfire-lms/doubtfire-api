@@ -140,6 +140,30 @@ module Feedback
       learning_outcome.export_feedback_chips_to_csv
     end
 
+    desc 'Download the feedback chips for a specific context'
+    params do
+      requires :context_type_plural, type: String, desc: 'The type of the context'
+      requires :context_id, type: Integer, desc: 'The ID of the context'
+    end
+    get '/:context_type_plural/:context_id/feedback_chips/csv' do
+      context_type = params[:context_type_plural].singularize.camelize
+      context_model = context_type.classify.constantize.find(params[:context_id])
+
+      unless authorise? current_user, context_model, :get_los
+        error!({ error: 'You are not authorised to download feedback chips in this context.' }, 403)
+      end
+
+      title = context_model.name
+
+      content_type 'application/octet-stream'
+      header['Content-Disposition'] = "attachment; filename=#{title}--Feedback_Chips.csv"
+      header['Access-Control-Expose-Headers'] = 'Content-Disposition'
+      env['api.format'] = :binary
+
+      context_model.export_feedback_chips_to_csv
+    end
+
+
     desc 'Upload the feedback chips for a specified outcome from a csv' # change to specific context rather than outcome
     params do
       requires :file, type: File, desc: 'CSV upload file.'
@@ -160,5 +184,25 @@ module Feedback
       learning_outcome.import_feedback_chips_from_csv(params[:file][:tempfile])
     end
 
+    desc 'Upload the feedback chips for a specified context from a csv'
+    params do
+      requires :file, type: File, desc: 'CSV upload file.'
+      requires :context_type_plural, type: String, desc: 'The type of the context'
+      requires :context_id, type: Integer, desc: 'The ID of the context'
+    end
+    post '/:context_type_plural/:context_id/feedback_chips/csv' do
+      # check mime is correct before uploading
+      ensure_csv!(params[:file][:tempfile])
+
+      context_type = params[:context_type_plural].singularize.camelize
+      context_model = context_type.classify.constantize.find(params[:context_id])
+
+      unless authorise? current_user, context_model, :upload_csv
+        error!({ error: 'Not authorised to upload CSV of outcomes' }, 403)
+      end
+
+      # Actually import...
+      context_model.import_feedback_chips_from_csv(params[:file][:tempfile])
+    end
   end
 end

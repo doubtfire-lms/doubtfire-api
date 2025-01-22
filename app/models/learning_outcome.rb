@@ -157,7 +157,7 @@ class LearningOutcome < ApplicationRecord
     row << [unit_code, task_abbreviation, abbreviation, short_description, full_outcome_description, linked_learning_outcomes]
   end
 
-  def self.create_from_csv(context, row, result)
+  def self.create_from_csv(row, result)
     unit_code = row['unit_code']
     task_abbreviation = row['task_abbreviation']
 
@@ -178,6 +178,12 @@ class LearningOutcome < ApplicationRecord
     else
       context_type = 'Unit'
       context_id = unit.id
+    end
+
+    # check if the task definition is linked to the unit
+    unless unit.task_definitions.include?(task_definition)
+      result[:errors] << { row: row, message: "Task #{task_abbreviation} is not linked to unit #{unit_code}" }
+      return
     end
 
     abbreviation = row['learning_outcome_abbreviation']
@@ -250,7 +256,7 @@ class LearningOutcome < ApplicationRecord
       next if row[0] =~ /learning_outcome_abbreviation/
 
       begin
-        Feedback::FeedbackChip.create_from_csv(self, row, result)
+        Feedback::FeedbackChip.create_from_csv(row, result)
       rescue Exception => e
         result[:errors] << { row: row, message: e.message.to_s }
       end
