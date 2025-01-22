@@ -247,6 +247,13 @@ module Feedback
         end
       end
 
+      learning_outcome_abbreviation = row['learning_outcome_abbreviation']
+      learning_outcome = LearningOutcome.find_by(abbreviation: learning_outcome_abbreviation)
+      if learning_outcome.nil?
+        result[:errors] << { row: row, message: "Learning Outcome #{learning_outcome_abbreviation} not found" }
+        return
+      end
+
       task_abbreviation = row['task_abbreviation']
       if task_abbreviation.present? && learning_outcome.context_type == 'TaskDefinition'
         task_definition = TaskDefinition.find_by(abbreviation: task_abbreviation)
@@ -256,12 +263,7 @@ module Feedback
         end
       end
 
-      learning_outcome_abbreviation = row['learning_outcome_abbreviation']
-      learning_outcome = LearningOutcome.find_by(abbreviation: learning_outcome_abbreviation)
-      if learning_outcome.nil?
-        result[:errors] << { row: row, message: "Learning Outcome #{learning_outcome_abbreviation} not found" }
-        return
-      end
+
 
       # check if the learning outcome is in the correct unit
       unless unit_code.nil? && task_abbreviation.nil? # wont run if its a global outcome
@@ -323,9 +325,12 @@ module Feedback
       end
 
       task_status = row['task_status']
-      if task_status.present? && !FeedbackChip.task_statuses.include?(task_status)
-        result[:errors] << { row: row, message: "Invalid task_status #{task_status}" }
-        return
+      if task_status.present?
+        task_status_check = TaskStatus.find_by(name: task_status)
+        if task_status_check.nil?
+          result[:errors] << { row: row, message: "Task status #{task_status} not found" }
+          return
+        end
       end
 
       summary_text = row['type'] == 'group' ? group_id : row['summary_text'] # store group_id in summary_text for group chips
