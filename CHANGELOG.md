@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.39](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v8.0.38...v8.0.39) (2025-01-22)
+
+
+### Features
+
+* add ability to post grades to d2l ([8e3a387](https://github.com/doubtfire-lms/doubtfire-deploy/commit/8e3a387c2a9e45a36e15e3d45783c02c023194b8))
+* add redirect to success page on oauth success ([ba447ba](https://github.com/doubtfire-lms/doubtfire-deploy/commit/ba447ba145674411e81db37af8829c87692ef9ed))
+* add start of new d2l integration feature ([dee040f](https://github.com/doubtfire-lms/doubtfire-deploy/commit/dee040f44527e9126e375bca49df8234ef3b4f4e))
+* allow oauth login to d2l ([b300211](https://github.com/doubtfire-lms/doubtfire-deploy/commit/b300211ecb84429c89b85722ded38a9c9e36aec5))
+* d2l mappings have crud api ([ccee700](https://github.com/doubtfire-lms/doubtfire-deploy/commit/ccee7006422131f089372e464fe22331c1945537))
+* ensure only convenor or higher can use d2l details ([76cb354](https://github.com/doubtfire-lms/doubtfire-deploy/commit/76cb354b5f7075242c33bcbb68d59f90b640f18c))
+* ensure only one d2l mapping per unit ([178a040](https://github.com/doubtfire-lms/doubtfire-deploy/commit/178a0406ba03fc0710032c5bbf58df9f10513fc0))
+* give ability to trigger d2l result post and get results ([ca85b98](https://github.com/doubtfire-lms/doubtfire-deploy/commit/ca85b984d0c25c5233afa09c596462c6b22ee89e))
+* handle multiple d2l grade transfer submissions ([1be09a6](https://github.com/doubtfire-lms/doubtfire-deploy/commit/1be09a6f288c8ec5662fc8d2c268623d6e78967c))
+* improve error reporting to send task log details ([9815fd2](https://github.com/doubtfire-lms/doubtfire-deploy/commit/9815fd26802dc724290dbf76261488054f122d7a))
+* include grade in d2l copy report ([9b71f85](https://github.com/doubtfire-lms/doubtfire-deploy/commit/9b71f85293ab24271ff2cd3a34afd8c3698ae630))
+* remove old portfolios in maintenance ([ae54a1c](https://github.com/doubtfire-lms/doubtfire-deploy/commit/ae54a1c884c91d3cc0c0abd0e74808f7bb2138d7))
+* simplified logging of d2l result transfer ([8ada69c](https://github.com/doubtfire-lms/doubtfire-deploy/commit/8ada69c6f8c71b3fccd21b344f3da5f6e5ab8b77))
+* use api to get login url for d2l ([e2d0fa7](https://github.com/doubtfire-lms/doubtfire-deploy/commit/e2d0fa75fb47fed484eb72bc5bc75c2f881fc4d5))
+
+
+### Bug Fixes
+
+* allow none or no_auth for smtp authentication options ([c80ccf3](https://github.com/doubtfire-lms/doubtfire-deploy/commit/c80ccf36efbd5a099c4b5a6bcae63eaac5799378))
+* check for weighted grading in d2l integration ([97d8241](https://github.com/doubtfire-lms/doubtfire-deploy/commit/97d8241df9d29bff37ec98b9e20a4f43da0457e6))
+* correct issue creating unit folders on destroy ([8bec4b0](https://github.com/doubtfire-lms/doubtfire-deploy/commit/8bec4b0d3f324f334c7fb868d7524e37c0973bff))
+* correct output from d2l csv ([c1ea118](https://github.com/doubtfire-lms/doubtfire-deploy/commit/c1ea1180f2cac9852fa903b1f47e05a05c554f56))
+* ensure smtp can have no auth ([b2691bc](https://github.com/doubtfire-lms/doubtfire-deploy/commit/b2691bcff0c04ebdbf50c58682c9ae7856870a5e))
+* ensure units update plagiarism stats for moss integration ([d59c6b8](https://github.com/doubtfire-lms/doubtfire-deploy/commit/d59c6b87cc636568244117e524824c742d2ea39b))
+* handle missing task or user details in accept submission job ([5fd31c3](https://github.com/doubtfire-lms/doubtfire-deploy/commit/5fd31c3b3a3748003331d9f79d1d48c5107310a0))
+* include grade object id in api ([a17e21a](https://github.com/doubtfire-lms/doubtfire-deploy/commit/a17e21ac6fa0c206d55b6daff150d9d1e5836dfc))
+* redirect to new html5 site ([19daa53](https://github.com/doubtfire-lms/doubtfire-deploy/commit/19daa532777ac535833375c33f023812f9d58ab6))
+
 ### [8.0.38](https://github.com/macite/doubtfire-deploy/compare/v8.0.37...v8.0.38) (2024-11-06)
 
 
