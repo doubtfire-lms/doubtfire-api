@@ -196,6 +196,10 @@ class LearningOutcome < ApplicationRecord
       result[:errors] << { row: row, message: 'Missing learning_outcome_abbreviation' }
       return
     end
+    if abbreviation.length > 5
+      result[:errors] << { row: row, message: 'learning_outcome_abbreviation must be less than 5 characters' }
+      return
+    end
 
     short_description = row['short_description']
     if short_description.nil?

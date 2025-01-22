@@ -314,6 +314,14 @@ module Feedback
       chip_text = row['chip_text']
       description = row['description']
 
+      if chip_text.present? && chip_text.length > 20
+        result[:errors] << { row: row, message: "Chip text #{chip_text} is too long" }
+      end
+
+      if description.present? && description.length > 116
+        result[:errors] << { row: row, message: "Description #{description} is too long" }
+      end
+
       task_status = row['task_status']
       if task_status.present? && !FeedbackChip.task_statuses.include?(task_status)
         result[:errors] << { row: row, message: "Invalid task_status #{task_status}" }
