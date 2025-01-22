@@ -1089,6 +1089,17 @@ class Unit < ApplicationRecord
     end
   end
 
+  def export_feedback_chips_to_csv
+    CSV.generate do |row|
+      row << Feedback::FeedbackChip.csv_header
+      learning_outcomes.each do |outcome|
+        outcome.feedback_chips.each do |chip|
+          chip.add_csv_row row
+        end
+      end
+    end
+  end
+
   def export_title
     code
   end
@@ -1110,7 +1121,7 @@ class Unit < ApplicationRecord
       next if row[0] =~ /unit_code/
 
       begin
-        LearningOutcome.create_from_csv(self, row, result)
+        LearningOutcome.create_from_csv(row, result)
       rescue Exception => e
         result[:errors] << { row: row, message: e.message.to_s }
       end
