@@ -1,6 +1,10 @@
 Hi <%= @user.first_name %>,
 
-The grade transfer to D2L for <%= @unit.code %> has completed. Please see the attached file for details on the results transferred.
+The grade transfer to D2L for <%= @unit.code %> has <%= @result_message %>.
 
+<% if @has_file %>
+Please see the attached file for details on the results transferred.
+
+<% end %>
 cheers,
 The <%= @doubtfire_product_name %> Team
