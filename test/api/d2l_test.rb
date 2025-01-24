@@ -373,12 +373,17 @@ class D2lTest < ActiveSupport::TestCase
                         body: { "{\"GradeObjectType\":1,\"PointsNumerator\":60}" => nil },
                       ).to_return(status: 200, headers: {})
 
-    d2l = D2lAssessmentMapping.create(unit: unit, org_unit_id: '12345')
+    D2lAssessmentMapping.create(unit: unit, org_unit_id: '12345')
     UserOauthToken.create(user: unit.main_convenor_user, provider: :d2l, token: 'test', expires_at: 30.minutes.from_now)
 
     # result = D2lIntegration.post_grades(unit, unit.main_convenor_user)
     D2lPostGradesJob.perform_async(unit.id, unit.main_convenor_user.id)
     D2lPostGradesJob.drain
+
+    assert_equal 1, ActionMailer::Base.deliveries.count
+    mail = ActionMailer::Base.deliveries.first
+    assert_equal [unit.main_convenor_user.email], mail.to
+    assert_includes mail.body.parts[0].body.raw_source, "has completed"
 
     assert File.exist?(D2lIntegration.result_file_path(unit))
     result = File.read(D2lIntegration.result_file_path(unit)).split("\n")
@@ -402,6 +407,19 @@ class D2lTest < ActiveSupport::TestCase
     result = last_response.body.split("\n")
     assert_equal 6, result.count, result
     assert_includes result[1], "Success,#{p1.student.student_id},#{p1.grade},Posted grade for #{p1.student.username}"
+  end
+
+  def test_mail_on_fail
+    unit = FactoryBot.create(:unit, with_students: false)
+    D2lAssessmentMapping.create(unit: unit, org_unit_id: '54321')
+
+    D2lPostGradesJob.perform_async(unit.id, unit.main_convenor_user.id)
+    D2lPostGradesJob.drain
+
+    assert_equal 1, ActionMailer::Base.deliveries.count
+    mail = ActionMailer::Base.deliveries.first
+    assert_equal [unit.main_convenor_user.email], mail.to
+    assert_includes mail.body.raw_source, "has failed"
   end
 
   def test_request_grade_transfer
