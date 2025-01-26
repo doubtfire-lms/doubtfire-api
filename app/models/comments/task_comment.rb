@@ -20,6 +20,9 @@ class TaskComment < ApplicationRecord
   # Can optionally be a reply to a comment
   belongs_to :task_comment, optional: true
 
+  # Can be a comment for different types of entities e.g. Test Attempt, Overseer Assessment
+  belongs_to :commentable, polymorphic: true, optional: true
+
   validates :task, presence: true
   validates :user, presence: true
   validates :recipient, presence: true
@@ -38,8 +41,8 @@ class TaskComment < ApplicationRecord
     if reply_to_id.present?
       originalTaskComment = TaskComment.find(reply_to_id)
       replyProject = originalTaskComment.project
-      errors.add(:task_comment, "Not a reply to a valid task comment") unless originalTaskComment.present?
-      errors.add(:task_comment, "Original comment is not in this task") unless task.all_comments.find(reply_to_id).present?
+      errors.add(:task_comment, "Not a reply to a valid task comment") if originalTaskComment.blank?
+      errors.add(:task_comment, "Original comment is not in this task") if task.all_comments.find(reply_to_id).blank?
       errors.add(:task_comment, "Not authorised to reply to comment") unless authorise?(user, originalTaskComment.project, :get) || (task.group_task? && task.group.role_for(user) != nil)
     end
   end

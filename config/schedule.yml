@@ -7,3 +7,7 @@ register_webhooks:
 progress_turn_it_in_jobs:
   cron: "every 30 minutes"
   class: "TiiCheckProgressJob"
+
+clean_up_auth_tokens:
+  cron: "every 30 minutes"
+  class: "ClearAccessTokensJob"

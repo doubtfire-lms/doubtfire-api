@@ -1,4 +1,4 @@
-class PortfolioEvidenceMailer < ActionMailer::Base
+class PortfolioEvidenceMailer < ApplicationMailer
   def add_general
     @doubtfire_host = Doubtfire::Application.config.institution[:host]
     @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]

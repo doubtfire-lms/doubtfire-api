@@ -7,8 +7,8 @@ APP_PATH=`cd "$APP_PATH"; pwd`
 ROOT_PATH=`cd "$APP_PATH"/../..; pwd`
 
 cd "$ROOT_PATH"
-TERM=xterm-256color bundle exec rake submission:generate_pdfs
-bundle exec rake maintenance:cleanup
+DF_LOG_TO_STDOUT=true TERM=xterm-256color rails submission:generate_pdfs
+DF_LOG_TO_STDOUT=true rails maintenance:cleanup
 
 #Delete tmp files that may not be cleaned up by image magick and ghostscript
 find /tmp -maxdepth 1 -name magick* -type f -delete

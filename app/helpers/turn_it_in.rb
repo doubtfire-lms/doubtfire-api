@@ -3,22 +3,28 @@
 # Class to interact with the Turn It In similarity api
 #
 class TurnItIn
-  @instance = TurnItIn.new
-
   # rubocop:disable Style/ClassVars
   @@x_turnitin_integration_name = 'formatif-tii'
   @@x_turnitin_integration_version = '1.0'
-  @@global_error = nil
   @@delay_call_until = nil
 
   cattr_reader :x_turnitin_integration_name, :x_turnitin_integration_version
 
+  def self.enabled?
+    Doubtfire::Application.config.tii_enabled
+  end
+
+  def self.register_webhooks?
+    Doubtfire::Application.config.tii_register_webhook
+  end
+
   def self.load_config(config)
     config.tii_enabled = ENV['TII_ENABLED'].present? && (ENV['TII_ENABLED'].to_s.downcase == "true" || ENV['TII_ENABLED'].to_i == 1)
 
-    config.tii_add_submissions_to_index = ENV['TII_INDEX_SUBMISSIONS'].present? && (ENV['TII_INDEX_SUBMISSIONS'].to_s.downcase == "true" || ENV['TII_INDEX_SUBMISSIONS'].to_i == 1)
-
     if config.tii_enabled
+      config.tii_add_submissions_to_index = ENV['TII_INDEX_SUBMISSIONS'].present? && (ENV['TII_INDEX_SUBMISSIONS'].to_s.downcase == "true" || ENV['TII_INDEX_SUBMISSIONS'].to_i == 1)
+      config.tii_register_webhook = ENV['TII_REGISTER_WEBHOOK'].present? && (ENV['TII_REGISTER_WEBHOOK'].to_s.downcase == "true" || ENV['TII_REGISTER_WEBHOOK'].to_i == 1)
+
       # Turn-it-in TII configuration
       require 'tca_client'
 
@@ -38,7 +44,7 @@ class TurnItIn
 
   # Launch the tii background jobs
   def self.launch_tii(with_webhooks: true)
-    TiiRegisterWebHookJob.perform_async if with_webhooks
+    TiiRegisterWebHookJob.perform_async if with_webhooks && TurnItIn.register_webhooks?
     load_tii_features
     load_tii_eula
   rescue StandardError => e
@@ -55,41 +61,6 @@ class TurnItIn
   def self.load_tii_features
     feature_job = TiiActionFetchFeaturesEnabled.last || TiiActionFetchFeaturesEnabled.create
     feature_job.fetch_features_enabled
-  end
-
-  # A global error indicates that tii is not configured correctly or a change in the
-  # environment requires that the configuration is updated
-  def self.global_error
-    return nil unless Doubtfire::Application.config.tii_enabled
-
-    Rails.cache.fetch("tii.global_error") do
-      @@global_error
-    end
-  end
-
-  # Update the global error, when present this will block calls to tii until resolved
-  def self.global_error=(value)
-    return unless Doubtfire::Application.config.tii_enabled
-
-    @@global_error = value
-
-    if value.present?
-      Rails.cache.write("tii.global_error", value)
-    else
-      Rails.cache.delete("tii.global_error")
-    end
-  end
-
-  # Indicates if there is a global error that indicates that things should not call tii until resolved
-  def self.global_error?
-    return false unless Doubtfire::Application.config.tii_enabled
-
-    Rails.cache.exist?("tii.global_error") || @@global_error.present?
-  end
-
-  # Indicates that tii can be called, that it is configured and there are no global errors
-  def self.functional?
-    Doubtfire::Application.config.tii_enabled && !TurnItIn.global_error?
   end
 
   # Indicates that the service is rate limited
@@ -111,8 +82,12 @@ class TurnItIn
     case error.code
     when 429 # rate limit
       @@delay_call_until = DateTime.now + 1.minute
-    when 403 # forbidden, issue with authentication... do not attempt more tii requests
-      TurnItIn.global_error = [403, error.message]
+    when 403 # forbidden, issue with authentication... notify admin
+      begin
+        ErrorLogMailer.error_message('TII Credentials', "TII Error: #{error.message}", error).deliver
+      rescue StandardError => e
+        Rails.logger.error "Failed to send error email: #{e}"
+      end
     end
   end
 
@@ -120,7 +95,7 @@ class TurnItIn
 
   # Get the current eula - value is refreshed every 24 hours
   def self.eula_version
-    return nil unless Doubtfire::Application.config.tii_enabled
+    return nil unless TurnItIn.enabled?
 
     action = TiiActionFetchEula.last || TiiActionFetchEula.create
     action.fetch_eula_version unless action.eula?
@@ -132,7 +107,7 @@ class TurnItIn
 
   # Return the html for the eula
   def self.eula_html
-    return nil unless Doubtfire::Application.config.tii_enabled
+    return nil unless TurnItIn.enabled?
 
     Rails.cache.fetch("tii.eula_html.#{TurnItIn.eula_version}")
   end
@@ -160,7 +135,7 @@ class TurnItIn
   # @param unit [Unit] the unit to create or get the group context for
   # @return [TCAClient::GroupContext] the group context for the unit
   def self.create_or_get_group_context(unit)
-    unless unit.tii_group_context_id.present?
+    if unit.tii_group_context_id.blank?
       unit.tii_group_context_id = SecureRandom.uuid
       unit.save
     end
@@ -185,6 +160,15 @@ class TurnItIn
     )
   end
 
+  def self.tii_user_for_group(grp)
+    TCAClient::Users.new(
+      id: "group-#{grp.id}",
+      family_name: 'Submission',
+      given_name: 'Group',
+      email: user.email
+    )
+  end
+
   def self.tii_role_for(task, user)
     user_role = task.role_for(user)
     if [:tutor].include?(user_role) || (user_role.nil? && user.role_id == Role.admin_id)
@@ -192,6 +176,16 @@ class TurnItIn
     else
       'LEARNER'
     end
+  end
+
+  # Check and retry any failed tii submissions, where it was due to no accepted EULA
+  def self.check_and_retry_submissions_with_updated_eula
+    TiiActionUploadSubmission
+      .where(
+        complete: false,
+        custom_error_message: TiiActionUploadSubmission::NO_USER_ACCEPTED_EULA_ERROR
+      )
+      .find_each(&:attempt_retry_on_no_eula)
   end
 
   private

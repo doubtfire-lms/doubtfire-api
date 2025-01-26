@@ -13,11 +13,11 @@ module TestHelpers
     #
     # Gets an auth token for the provided user
     #
-    def auth_token(user = User.first)
-      token = user.valid_auth_tokens().first
+    def auth_token(user = User.first, token_type = :general)
+      token = user.valid_auth_tokens.where(token_type: token_type).first
       return token.authentication_token unless token.nil?
 
-      return user.generate_authentication_token!().authentication_token
+      return user.generate_authentication_token!(token_type: token_type).authentication_token
     end
 
     #

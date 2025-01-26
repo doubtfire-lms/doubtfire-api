@@ -19,7 +19,7 @@ def receive(_subscriber_instance, channel, _results_publisher, delivery_info, _p
   overseer_assessment_id = params['overseer_assessment_id']
   overseer_assessment = OverseerAssessment.find(overseer_assessment_id)
 
-  unless overseer_assessment.present?
+  if overseer_assessment.blank?
     logger.error "No overseer_assessment found for id: #{overseer_assessment_id}"
     channel.reject(delivery_info.delivery_tag)
     return

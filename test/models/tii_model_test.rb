@@ -7,7 +7,7 @@ class TiiModelTest < ActiveSupport::TestCase
   include TestHelpers::TestFileHelper
 
   def test_fetch_eula
-    skip "TurnItIn Integration Tests Skipped" unless Doubtfire::Application.config.tii_enabled
+    skip "TurnItIn Integration Tests Skipped" unless TurnItIn.enabled?
     clear_tii_eula
 
     refute Rails.cache.fetch('tii.eula_version').present?
@@ -85,7 +85,7 @@ class TiiModelTest < ActiveSupport::TestCase
   end
 
   def test_fetch_eula_error_handling
-    skip "TurnItIn Integration Tests Skipped" unless Doubtfire::Application.config.tii_enabled
+    skip "TurnItIn Integration Tests Skipped" unless TurnItIn.enabled?
     clear_tii_eula
 
     eula_version_stub = stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/eula/latest").
@@ -104,7 +104,7 @@ class TiiModelTest < ActiveSupport::TestCase
   end
 
   def test_tii_features_enabled
-    skip "TurnItIn Integration Tests Skipped" unless Doubtfire::Application.config.tii_enabled
+    skip "TurnItIn Integration Tests Skipped" unless TurnItIn.enabled?
     clear_tii_festures_enabled
 
     body = '{
@@ -167,7 +167,7 @@ class TiiModelTest < ActiveSupport::TestCase
   end
 
   def test_tii_process
-    skip "TurnItIn Integration Tests Skipped" unless Doubtfire::Application.config.tii_enabled
+    skip "TurnItIn Integration Tests Skipped" unless TurnItIn.enabled?
 
     setup_tii_features_enabled
 
@@ -311,7 +311,7 @@ class TiiModelTest < ActiveSupport::TestCase
         "tempfile" => File.new(test_file_path('submissions/1.2P.pdf'))
       },
 
-    ], user, nil, nil, 'ready_for_feedback', nil, accepted_tii_eula: true
+    ], nil, nil, 'ready_for_feedback', nil, accepted_tii_eula: true
 
     # Check that the submission is going to be progressed
     assert_equal 1, AcceptSubmissionJob.jobs.count

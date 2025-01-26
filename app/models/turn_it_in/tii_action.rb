@@ -50,7 +50,7 @@ class TiiAction < ApplicationRecord
     self.error_code = nil if self.retry && error?
     self.custom_error_message = nil
 
-    self.log = [] if self.log.nil? || self.log.empty? || self.complete # reset log if complete... and performing again
+    self.log = [] if self.log.blank? || self.complete # reset log if complete... and performing again
 
     self.log << { date: Time.zone.now, message: "Started #{type}" }
     self.last_run = Time.zone.now
@@ -60,6 +60,12 @@ class TiiAction < ApplicationRecord
 
     result = run
     self.log << { date: Time.zone.now, message: "#{type} Ended" }
+
+    # Ensure log does not get too long!
+    if self.log.size > 25
+      self.log = self.log.last(25)
+    end
+
     save
 
     result
@@ -67,7 +73,7 @@ class TiiAction < ApplicationRecord
     save_and_log_custom_error e&.to_s
 
     if Rails.env.development? || Rails.env.test?
-      puts e.inspect
+      Rails.logger.debug e.inspect
     end
 
     nil
@@ -122,8 +128,14 @@ class TiiAction < ApplicationRecord
     error_code.present?
   end
 
+  def perform_retry
+    save_and_reschedule
+    perform_async
+  end
+
   def save_and_reschedule(reset_retry: true)
     self.retries = 0 if reset_retry
+    self.error_code = nil # reset error code
     self.retry = true
     save
   end
@@ -227,8 +239,8 @@ class TiiAction < ApplicationRecord
   # @param description [String] the description of the action that is being performed
   # @param block [Proc] the block that will be called to perform the call
   def exec_tca_call(description, codes = [], &block)
-    unless TurnItIn.functional?
-      raise TCAClient::ApiError, code: 0, message: "Turn It In not functiona: #{description}"
+    unless TurnItIn.enabled?
+      raise TCAClient::ApiError, code: 0, message: "Turn It In not enabled: #{description}"
     end
     if TurnItIn.rate_limited?
       raise TCAClient::ApiError, code: 429, message: "Turn It In rate limited: #{description}"

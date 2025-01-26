@@ -48,27 +48,24 @@ module Submission
 
       alignments = params[:alignment_data]
       upload_reqs = task.upload_requirements
-      student = task.project.student
 
       # Copy files to be PDFed
-      task.accept_submission(current_user, scoop_files(params, upload_reqs), student, self, params[:contributions], trigger, alignments, accepted_tii_eula: params[:accepted_tii_eula])
+      task.accept_submission(current_user, scoop_files(params, upload_reqs), self, params[:contributions], trigger, alignments, accepted_tii_eula: params[:accepted_tii_eula])
 
-      overseer_assessment = OverseerAssessment.create_for(task)
-      if overseer_assessment.present?
-        logger.info "Launching Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id}"
+      if task.overseer_enabled?
+        overseer_assessment = OverseerAssessment.create_for(task)
+        if overseer_assessment.present?
+          logger.info "Launching Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id}"
 
-        response = overseer_assessment.send_to_overseer
+          response = overseer_assessment.send_to_overseer
 
-        if response[:error].present?
-          error!({ error: response[:error] }, 403)
+          if response[:error].present?
+            error!({ error: response[:error] }, 403)
+          end
+        else
+          logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was not performed"
         end
-
-        present :updated_task, task, with: Entities::TaskEntity, update_only: true
-        present :comment, response[:comment].serialize(current_user), with: Grape::Presenters::Presenter
-        return
       end
-
-      logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was not performed"
 
       present task, with: Entities::TaskEntity, update_only: true
     end
@@ -94,10 +91,10 @@ module Submission
       unit = task.project.unit
 
       if task.processing_pdf?
-        evidence_loc = Rails.root.join('public', 'resources', 'AwaitingProcessing.pdf')
+        evidence_loc = Rails.root.join('public/resources/AwaitingProcessing.pdf')
         filename = 'AwaitingProcessing.pdf'
       elsif evidence_loc.nil?
-        evidence_loc = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
+        evidence_loc = Rails.root.join('public/resources/FileNotFound.pdf')
         filename = 'FileNotFound.pdf'
       else
         filename = "#{task.task_definition.abbreviation}.pdf"
@@ -105,7 +102,6 @@ module Submission
 
       if params[:as_attachment]
         header['Content-Disposition'] = "attachment; filename=#{filename}"
-        header['Access-Control-Expose-Headers'] = 'Content-Disposition'
       end
 
       # Set download headers...

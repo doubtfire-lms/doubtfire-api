@@ -75,7 +75,7 @@ namespace :submission do
   end
 
   task create_missing_portfolios: :environment do
-    TeachingPeriod.where("start_date < :today && active_until > :today", today: Date.today).each do |teaching_period|
+    TeachingPeriod.where("start_date < :today && active_until > :today", today: Time.zone.today).find_each do |teaching_period|
       teaching_period.units.each do |unit|
         unit.projects.each do |project|
           # We have a learning summary but not a portfolio
@@ -107,13 +107,15 @@ namespace :submission do
         next if is_process_running?(pid)
 
         # That process is not running... so pick up portfolios here
-        Project.where(portfolio_generation_pid: pid).update_all(portfolio_generation_pid: Process.pid)
+        Project.where(portfolio_generation_pid: pid).find_each { |p| p.update(portfolio_generation_pid: Process.pid) }
       end
 
       # Secure portfolios
       Project.where(compile_portfolio: true, portfolio_generation_pid: nil)
              .limit(10)
-             .update_all(portfolio_generation_pid: Process.pid)
+             .find_each do |p|
+               p.update(portfolio_generation_pid: Process.pid)
+             end
 
       # Clean up any old failed runs - now after I have the files I need :)
       clean_up_failed_runs
@@ -127,7 +129,7 @@ namespace :submission do
         PortfolioEvidence.process_new_to_pdf(my_source)
 
         # Now compile the portfolios
-        Project.where(compile_portfolio: true, portfolio_generation_pid: Process.pid).each do |project|
+        Project.where(compile_portfolio: true, portfolio_generation_pid: Process.pid).find_each do |project|
           next unless project.portfolio_generation_pid == Process.pid
 
           begin
@@ -142,19 +144,25 @@ namespace :submission do
 
           logger.info "emailing portfolio notification to #{project.student.name}"
 
-          if success
-            PortfolioEvidenceMailer.portfolio_ready(project).deliver_now
-          else
-            PortfolioEvidenceMailer.portfolio_failed(project).deliver_now
+          begin
+            if success
+              PortfolioEvidenceMailer.portfolio_ready(project).deliver_now
+            else
+              PortfolioEvidenceMailer.portfolio_failed(project).deliver_now
+            end
+          rescue StandardError => e
+            logger.error "Failed to send portfolio email for project #{project.id}!\n#{e.message}"
           end
         end
       ensure
         # Ensure that we clear the pid from the projects so that they can be processed again
-        Project.where(portfolio_generation_pid: Process.pid).update_all(portfolio_generation_pid: nil)
+        Project.where(portfolio_generation_pid: Process.pid).find_each do |p|
+          p.update(portfolio_generation_pid: nil)
+        end
 
         # Remove the processing directory
         if Dir.entries(my_source).count == 2 # . and ..
-          FileUtils.rmdir my_source
+          FileUtils.rmdir(my_source)
         end
 
         logger.info "Ending generate pdf - #{Process.pid}"
@@ -173,8 +181,8 @@ namespace :submission do
   task check_task_pdfs: :environment do
     logger.info 'Starting check of PDF tasks'
 
-    Unit.where('active').each do |u|
-      u.tasks.where('portfolio_evidence is not NULL').each do |t|
+    Unit.where('active').find_each do |u|
+      u.tasks.where('portfolio_evidence is not NULL').find_each do |t|
         unless FileHelper.validate_pdf(t.portfolio_evidence_path)[:valid]
           puts t.portfolio_evidence_path
         end

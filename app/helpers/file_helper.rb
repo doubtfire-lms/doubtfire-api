@@ -11,10 +11,10 @@ module FileHelper
   extend MimeCheckHelpers
 
   def known_extension?(extn)
-    allow_extensions = %w(pdf ps csv xls xlsx pas cpp c cs csv h hpp java py js html coffee scss yaml yml xml json ts r rb rmd rnw rhtml rpres tex vb sql txt md jack hack asm hdl tst out cmp vm sh bat dat ipynb css png bmp tiff tif jpeg jpg gif zip gz tar wav ogg mp3 mp4 webm aac pcm aiff flac wma alac pml)
+    allow_extensions = %w(pdf ps csv xls xlsx pas cpp c cs csv h hpp java py js html coffee scss yaml yml xml json ts r rb rmd rnw rhtml rpres tex vb sql txt md jack hack asm hdl tst out cmp vm sh bat dat ipynb css png bmp tiff tif jpeg jpg gif zip gz tar wav ogg mp3 mp4 webm aac pcm aiff flac wma alac pml vue)
 
     # Allow empty or nil extensions for blobs otherwise check that it matches the allowed list
-    extn.nil? || extn.empty? || allow_extensions.include?(extn)
+    extn.blank? || allow_extensions.include?(extn)
   end
 
   #
@@ -211,19 +211,27 @@ module FileHelper
     dst
   end
 
-  def unit_dir(unit, create = true)
+  def dir_for_unit_code_and_id(unit_code, unit_id, create = true)
     file_server = Doubtfire::Application.config.student_work_dir
     dst = "#{file_server}/" # trust the server config and passed in type for paths
-    dst << sanitized_path("#{unit.code}-#{unit.id}") << '/'
+    dst << sanitized_path("#{unit_code}-#{unit_id}")
 
-    FileUtils.mkdir_p dst if create && (!Dir.exist? dst)
+    FileUtils.mkdir_p dst if create && !Dir.exist?(dst)
 
     dst
   end
 
-  def unit_portfolio_dir(unit, create = true)
+  def unit_dir(unit, create = true)
+    dir_for_unit_code_and_id(unit.code, unit.id, create)
+  end
+
+  def root_portfolio_dir
     file_server = Doubtfire::Application.config.student_work_dir
-    dst = "#{file_server}/portfolio/" # trust the server config and passed in type for paths
+    "#{file_server}/portfolio/" # trust the server config and passed in type for paths
+  end
+
+  def unit_portfolio_dir(unit, create = true)
+    dst = root_portfolio_dir
 
     dst << sanitized_path("#{unit.code}-#{unit.id}") << '/'
 
@@ -357,7 +365,13 @@ module FileHelper
   # - only_before = date for files to move (only if retain from is true)
   def move_files(from_path, to_path, retain_from = false, only_before = nil)
     # move into the new dir - and mv files to the in_process_dir
-    pwd = FileUtils.pwd
+    begin
+      pwd = FileUtils.pwd
+    rescue
+      # if no pwd, reset to the root
+      pwd = Rails.root
+    end
+
     begin
       FileUtils.mkdir_p(to_path)
       Dir.chdir(from_path)
@@ -366,7 +380,7 @@ module FileHelper
       begin
         # remove from_path as files are now "in process"
         # these can be retained when the old folder wants to be kept
-        FileUtils.rm_r(from_path) unless retain_from
+        FileUtils.rm_rf(from_path) unless retain_from
       rescue
         logger.warn "failed to rm #{from_path}"
       end
@@ -537,12 +551,50 @@ module FileHelper
     task.extract_file_from_done student_work_dir(:new), '*', ->(_task, to_path, name) { "#{to_path}#{name}" }
   end
 
+  REPLACEMENTS_PERL_COMMAND = [
+    ['[\\\\]u0000','[NUL]'],
+    ['[\\\\]u0001','[SOH]'],
+    ['[\\\\]u0002','[STX]'],
+    ['[\\\\]u0003','[ETX]'],
+    ['[\\\\]u0004','[EOT]'],
+    ['[\\\\]u0005','[ENQ]'],
+    ['[\\\\]u0006','[ACK]'],
+    ['[\\\\]u0007','[BEL]'],
+    ['[\\\\]u0008','[BS]'],
+    ['(?<![\\\\])[\\\\]b','[BS]'],
+    ['[\\\\]u0009','[HT]'],
+    ['[\\\\]u000A','[LF]'],
+    ['[\\\\]u000B','[VT]'],
+    ['[\\\\]u000C','[FF]'],
+    ['(?<![\\\\])[\\\\]f','[FF]'],
+    ['[\\\\]u000D','[CR]'],
+    ['(?<![\\\\])[\\\\]r','[CR]'],
+    ['[\\\\]u000E','[SO]'],
+    ['[\\\\]u000F','[SI]'],
+    ['[\\\\]u0010','[DLE]'],
+    ['[\\\\]u0011','[DC1]'],
+    ['[\\\\]u0012','[DC2]'],
+    ['[\\\\]u0013','[DC3]'],
+    ['[\\\\]u0014','[DC4]'],
+    ['[\\\\]u0015','[NAK]'],
+    ['[\\\\]u0016','[SYN]'],
+    ['[\\\\]u0017','[ETB]'],
+    ['[\\\\]u0018','[CSN]'],
+    ['[\\\\]u0019','[EM]'],
+    ['[\\\\]u001A','[SUB]'],
+    ['[\\\\]u001B','[ESC]'],
+    ['[\\\\]u001C','[FS]'],
+    ['[\\\\]u001D','[GS]'],
+    ['[\\\\]u001E','[RS]'],
+    ['[\\\\]u001F','[US]']
+  ].map { |r| "s/#{r[0]}/#{r[1]}/gi" }.join(';').freeze
+
   #
   # Ensure that the contents of a file appear to be valid UTF8, on retry convert to ASCII to ensure
   #
   def ensure_utf8_code(output_filename, force_ascii)
     # puts "Converting #{output_filename} to utf8"
-    tmp_filename = Dir::Tmpname.create(["new", ".code"]) { |name| raise Errno::EEXIST if File.exist?(name)  }
+    tmp_filename = Dir::Tmpname.create(["new", ".code"]) { |name| raise Errno::EEXIST if File.exist?(name) }
 
     # Convert to utf8 from read encoding
     if force_ascii
@@ -550,6 +602,9 @@ module FileHelper
     else
       `iconv -c -t UTF-8 "#{output_filename}" > "#{tmp_filename}"`
     end
+
+    # Remove utf8 control character sequences
+    `perl -i -pe '#{FileHelper::REPLACEMENTS_PERL_COMMAND}' "#{tmp_filename}"`
 
     # Move into place
     FileUtils.mv(tmp_filename, output_filename)
@@ -624,7 +679,9 @@ module FileHelper
   module_function :student_group_work_dir
   module_function :student_work_dir
   module_function :student_work_root
+  module_function :dir_for_unit_code_and_id
   module_function :unit_dir
+  module_function :root_portfolio_dir
   module_function :unit_portfolio_dir
   module_function :student_portfolio_dir
   module_function :student_portfolio_path

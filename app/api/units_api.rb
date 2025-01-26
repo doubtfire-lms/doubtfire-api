@@ -47,7 +47,6 @@ class UnitsApi < Grape::API
       { tutorial_streams: :activity_type },
       { tutorials: [:tutor, :tutorial_stream] },
       :tutorial_enrolments,
-      { staff: [:role, :user] },
       :group_sets,
       :groups,
       :group_memberships
@@ -190,10 +189,15 @@ class UnitsApi < Grape::API
                                                     :allow_student_change_tutorial,
                                                   )
 
-    # Identify main convenor - ensure they have the correct role
-    main_convenor_user = unit_parameters[:main_convenor_user_id].present? ? User.find(unit_parameters[:main_convenor_user_id]) : current_user
+    # Ensure the user is authorised to convene units
+    unless authorise? current_user, User, :convene_units
+      error!({ error: 'You are not authorised to manage units' }, 403)
+    end
 
-    unless main_convenor_user.present?
+    # Identify main convenor - ensure they have the correct role
+    main_convenor_user = params[:unit][:main_convenor_user_id].present? ? User.find(params[:unit][:main_convenor_user_id]) : current_user
+
+    if main_convenor_user.blank?
       error!({ error: 'Main convenor user not found' }, 403)
     end
 
@@ -209,7 +213,7 @@ class UnitsApi < Grape::API
     if teaching_period_id.blank?
       if unit_parameters[:start_date].nil?
         start_date = Date.parse('Monday')
-        delta = start_date > Date.today ? 0 : 7
+        delta = start_date > Time.zone.today ? 0 : 7
         unit_parameters[:start_date] = start_date + delta
       end
 
@@ -231,9 +235,10 @@ class UnitsApi < Grape::API
 
   desc 'Rollover unit'
   params do
-    optional :teaching_period_id
-    optional :start_date
-    optional :end_date
+    optional :teaching_period_id, type: Integer, desc: 'The teaching period to rollover to'
+    optional :start_date, type: Date, desc: 'The start date of the new unit'
+    optional :end_date, type: Date, desc: 'The end date of the new unit'
+    optional :new_unit_code, type: String, desc: 'The unit code for the new unit'
 
     exactly_one_of :teaching_period_id, :start_date
     all_or_none_of :start_date, :end_date
@@ -249,9 +254,9 @@ class UnitsApi < Grape::API
 
     if teaching_period_id.present?
       tp = TeachingPeriod.find(teaching_period_id)
-      result = unit.rollover(tp, nil, nil)
+      result = unit.rollover(tp, nil, nil, params[:new_unit_code])
     else
-      result = unit.rollover(nil, params[:start_date], params[:end_date])
+      result = unit.rollover(nil, params[:start_date], params[:end_date], params[:new_unit_code])
     end
 
     my_role = result.role_for(current_user)
@@ -308,7 +313,7 @@ class UnitsApi < Grape::API
       error!({ error: "Not authorised to upload CSV of students to #{unit.code}" }, 403)
     end
 
-    unless params[:file].present?
+    if params[:file].blank?
       error!({ error: "No file uploaded" }, 403)
     end
 
@@ -328,7 +333,7 @@ class UnitsApi < Grape::API
       error!({ error: "Not authorised to upload CSV of students to #{unit.code}" }, 403)
     end
 
-    unless params[:file].present?
+    if params[:file].blank?
       error!({ error: "No file uploaded" }, 403)
     end
 

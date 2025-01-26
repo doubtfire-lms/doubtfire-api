@@ -8,4 +8,4 @@ ROOT_PATH=`cd "$APP_PATH"/../..; pwd`
 
 cd "$ROOT_PATH"
 
-bundle exec rake submission:check_plagiarism
+DF_LOG_TO_STDOUT=true rails submission:check_plagiarism

@@ -1,5 +1,5 @@
 class ActivityType < ApplicationRecord
-  has_many :tutorial_streams
+  has_many :tutorial_streams, dependent: :restrict_with_exception
 
   # Callbacks - methods called are private
   before_destroy :can_destroy?
@@ -30,10 +30,6 @@ class ActivityType < ApplicationRecord
     Rails.cache.fetch("activity_types/#{key}", expires_in: 12.hours) do
       super
     end
-  end
-
-  def self.find_by_abbr_or_name(data)
-    ActivityType.find_by(abbreviation: data) || ActivityType.find_by(name: data)
   end
 
   private

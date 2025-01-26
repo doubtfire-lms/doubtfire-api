@@ -56,7 +56,7 @@ module Entities
     expose :tutorials, using: TutorialEntity, unless: :summary_only
     # expose :tutorial_enrolments, using: TutorialEnrolmentEntity, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
 
-    expose :task_definitions, using: TaskDefinitionEntity, unless: :summary_only
+    expose :ordered_task_definitions, as: :task_definitions, using: TaskDefinitionEntity, unless: :summary_only
     expose :task_outcome_alignments, using: TaskOutcomeAlignmentEntity, unless: :summary_only
     expose :group_sets, using: GroupSetEntity, unless: :summary_only
     expose :groups, using: GroupEntity, unless: :summary_only

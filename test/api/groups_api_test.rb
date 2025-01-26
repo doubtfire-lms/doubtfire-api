@@ -81,6 +81,9 @@ class GroupsApiTest < ActiveSupport::TestCase
         assert_equal TaskStatus.ready_for_feedback, task.task_status
     end
 
+    # ensure groupset has groups to destroy
+    group_set.reload
+
     td.destroy
     group_set.destroy
   end
@@ -432,5 +435,28 @@ class GroupsApiTest < ActiveSupport::TestCase
     assert p2.update(enrolled: true)
     refute group1.at_capacity? # they are not in the right tutorial
     assert_equal 1, group1.projects.count
+  end
+
+  def test_locked_groups
+    unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 0}], task_count: 0
+
+    gs = unit.group_sets.first
+    group1 = gs.groups.first
+
+    p1 = group1.tutorial.projects.first
+    p2 = group1.tutorial.projects.last
+
+    group1.add_member p1
+    group1.add_member p2
+
+    group1.update(locked: true)
+
+    add_auth_header_for(user: p1.user)
+    delete "/api/units/#{unit.id}/group_sets/#{gs.id}/groups/#{group1.id}/members/#{p1.id}"
+
+    assert_equal 403, last_response.status
+
+    post "/api/units/#{unit.id}/group_sets/#{gs.id}/groups/#{group1.id}/members/#{unit.active_projects.last.id}"
+    assert_equal 403, last_response.status
   end
 end

@@ -4,8 +4,220 @@ require 'test_helper'
 class TiiCheckProgressJobTest < ActiveSupport::TestCase
   include TestHelpers::TiiTestHelper
 
+  def test_check_eula_change
+    TiiAction.delete_all
+    setup_tii_features_enabled
+    setup_tii_eula
+
+    # Create a task definition with two attachments
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0, stream_count: 0)
+
+    task_def = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [
+      {
+        'key' => 'file0',
+        'name' => 'My document',
+        'type' => 'document',
+        'tii_check' => true,
+        'tii_pct' => 10
+      }
+    ])
+
+    # Setup users
+    convenor = unit.main_convenor_user
+    tutor = FactoryBot.create(:user, :tutor)
+    student = FactoryBot.create(:user, :student)
+
+    # Add users to unit
+    tutor_unit_role = unit.employ_staff(tutor, Role.tutor)
+    project = unit.enrol_student(student, Campus.first)
+
+    # Create tutorial and enrol
+    tutorial = FactoryBot.create(:tutorial, unit: unit, campus: Campus.first, unit_role: tutor_unit_role)
+
+    project.enrol_in tutorial
+
+    task = project.task_for_task_definition(task_def)
+
+    # Create a submission
+    sub1 = TiiSubmission.create(
+      task: task,
+      idx: 0,
+      filename: 'test.doc',
+      status: :created,
+      submitted_by_user: student
+    )
+    sub2 = TiiSubmission.create(
+      task: task,
+      idx: 0,
+      filename: 'test.doc',
+      status: :created,
+      submitted_by_user: student
+    )
+    sub3 = TiiSubmission.create(
+      task: task,
+      idx: 0,
+      filename: 'test.doc',
+      status: :created,
+      submitted_by_user: student
+    )
+
+    action = TiiActionUploadSubmission.find_or_create_by(entity: sub1)
+
+    # Test fail as not EULA accepted
+    action.perform
+
+    assert_not action.retry
+    assert_not action.complete
+    assert_equal TiiActionUploadSubmission::NO_USER_ACCEPTED_EULA_ERROR, action.custom_error_message
+
+    # Now have convenor accept EULA
+    convenor.tii_eula_date = DateTime.now
+    convenor.tii_eula_version = TurnItIn.eula_version
+    convenor.save
+
+    # Check the convenor has accepted
+    assert convenor.accepted_tii_eula?
+
+    # See if we can retry
+    action.attempt_retry_on_no_eula
+
+    assert action.retry
+    assert_not action.complete
+    assert_equal convenor, sub1.submitted_by
+
+    convenor.tii_eula_version = nil
+    convenor.tii_eula_date = nil
+    convenor.save
+    assert_not convenor.accepted_tii_eula?
+
+    # Reset... to try with tutor
+    action = TiiActionUploadSubmission.find_or_create_by(entity: sub2)
+    action.perform
+
+    # Tutor accepts eula
+    tutor.tii_eula_date = DateTime.now
+    tutor.tii_eula_version = TurnItIn.eula_version
+    tutor.save
+
+    # Check the tutor has accepted
+    assert tutor.accepted_tii_eula?
+
+    # See if we can retry
+    action.attempt_retry_on_no_eula
+
+    assert action.retry
+    assert_not action.complete
+    assert_equal tutor, sub2.submitted_by
+
+    tutor.tii_eula_version = nil
+    tutor.tii_eula_date = nil
+    tutor.save
+    assert_not tutor.accepted_tii_eula?
+
+    # Reset... to try with student
+    action = TiiActionUploadSubmission.find_or_create_by(entity: sub3)
+    action.perform
+
+    # Student accepts eula
+    student.tii_eula_date = DateTime.now
+    student.tii_eula_version = TurnItIn.eula_version
+    student.save
+
+    # Check the student has accepted
+    assert student.accepted_tii_eula?
+
+    # See if we can retry
+    action.attempt_retry_on_no_eula
+
+    assert action.retry
+    assert_not action.complete
+    assert_equal student, sub3.submitted_by
+  ensure
+    unit.destroy
+  end
+
+  def test_that_progress_checks_eula_change
+    TiiAction.delete_all
+
+    setup_tii_eula
+    setup_tii_features_enabled
+
+    # Create a task definition with two attachments
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0, stream_count: 0)
+
+    task_def = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [
+      {
+        'key' => 'file0',
+        'name' => 'My document',
+        'type' => 'document',
+        'tii_check' => true,
+        'tii_pct' => 10
+      }
+    ])
+
+    # Setup users
+    convenor = unit.main_convenor_user
+    tutor = FactoryBot.create(:user, :tutor)
+    student = FactoryBot.create(:user, :student)
+
+    # Add users to unit
+    tutor_unit_role = unit.employ_staff(tutor, Role.tutor)
+    project = unit.enrol_student(student, Campus.first)
+
+    # Create tutorial and enrol
+    tutorial = FactoryBot.create(:tutorial, unit: unit, campus: Campus.first, unit_role: tutor_unit_role)
+
+    project.enrol_in tutorial
+
+    task = project.task_for_task_definition(task_def)
+
+    # Create a submission
+    sub1 = TiiSubmission.create(
+      task: task,
+      idx: 0,
+      filename: 'test.doc',
+      status: :created,
+      submitted_by_user: student
+    )
+
+    action = TiiActionUploadSubmission.find_or_create_by(entity: sub1)
+
+    # Test fail as not EULA accepted
+    action.perform
+
+    assert_not action.retry
+    assert_not action.complete
+    assert_equal TiiActionUploadSubmission::NO_USER_ACCEPTED_EULA_ERROR, action.custom_error_message
+
+    # Get the job
+    job = TiiCheckProgressJob.new
+
+    # Performing the job does not chaange the action - no eula change
+    job.perform
+
+    action.reload
+    assert_not action.retry
+    assert_not action.complete
+
+    # Now have convenor accept EULA
+    convenor.tii_eula_date = DateTime.now
+    convenor.tii_eula_version = TurnItIn.eula_version
+    convenor.save
+
+    # Perform progress check job
+    job.perform
+
+    # Will trigger retry of action, but wont perform as it is not old
+    action.reload
+    assert action.retry
+    assert_not action.complete
+
+    unit.destroy
+  end
+
   def test_waits_to_process_action
     setup_tii_eula
+    setup_tii_features_enabled
 
     # Will test with user eula
     user = FactoryBot.create(:user)
@@ -76,7 +288,7 @@ class TiiCheckProgressJobTest < ActiveSupport::TestCase
     assert_requested accept_request, times: 2
 
     assert action.reload.retry
-    refute action.complete
+    assert_not action.complete
 
     action.update(last_run: DateTime.now - 31.minutes)
     job.perform # attempt 3 - but rate limited
@@ -92,7 +304,7 @@ class TiiCheckProgressJobTest < ActiveSupport::TestCase
 
     # Check it was all success
     assert action.reload.complete
-    refute action.retry
+    assert_not action.retry
 
     assert user.reload.accepted_tii_eula?
     assert user.tii_eula_version_confirmed

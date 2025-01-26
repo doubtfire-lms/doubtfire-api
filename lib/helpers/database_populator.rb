@@ -402,7 +402,7 @@ class DatabasePopulator
       if @user_cache.present?
         tutor = @user_cache[user_details[:user]]
       else
-        tutor = User.find_by_username(user_details[:user])
+        tutor = User.find_by(username: user_details[:user])
       end
 
       echo_line "----> Enrolling tutor #{tutor.name} with #{user_details[:num]} tutorials"
@@ -532,7 +532,7 @@ class DatabasePopulator
 
     pdf_path = task.final_pdf_path
     if pdf_path && !File.exist?(pdf_path)
-      FileUtils.ln_s(Rails.root.join('test_files', 'unit_files', 'sample-student-submission.pdf'), pdf_path)
+      FileUtils.ln_s(Rails.root.join('test_files/unit_files/sample-student-submission.pdf'), pdf_path)
     end
 
     task.portfolio_evidence_path = pdf_path
@@ -543,8 +543,8 @@ class DatabasePopulator
     portfolio_tmp_dir = project.portfolio_temp_path
     FileUtils.mkdir_p(portfolio_tmp_dir)
 
-    lsr_path = File.join(portfolio_tmp_dir, "000-document-LearningSummaryReport.pdf")
-    FileUtils.ln_s(Rails.root.join('test_files', 'unit_files', 'sample-learning-summary.pdf'), lsr_path) unless File.exist? lsr_path
+    lsr_path = File.join(portfolio_tmp_dir, '000-document-LearningSummaryReport.pdf')
+    FileUtils.ln_s(Rails.root.join('test_files/unit_files/sample-learning-summary.pdf'), lsr_path) unless File.exist? lsr_path
     project.compile_portfolio = true
     project.create_portfolio
   end
@@ -553,11 +553,15 @@ class DatabasePopulator
 
   # Output
   def echo *args
+    # rubocop:disable Rails/Output
     print(*args) if @echo
+    # rubocop:enable Rails/Output
   end
 
   def echo_line *args
+    # rubocop:disable Rails/Output
     puts(*args) if @echo
+    # rubocop:enable Rails/Output
   end
 
   #
@@ -579,11 +583,9 @@ class DatabasePopulator
       unless result[:errors].empty?
         raise("----> Task files import failed with the following errors: #{result[:errors]} \n")
       end
-
       unless result[:ignored].empty?
         echo "----> Task files import ignored the following files: #{result[:ignored]} \n"
       end
-
       return
     end
 

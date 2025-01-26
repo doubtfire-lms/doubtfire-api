@@ -237,15 +237,15 @@ No Tutor
       <% end %>
     \end{tabular}
   <% end %>
-
 <% if File.exist? task.portfolio_evidence_path
-    # add task evidence to the document list for annotation extraction
     max_pages = FileHelper.pages_in_pdf(task.portfolio_evidence_path)
 
     # Limit to 100 pages
     if max_pages > 100
       max_pages = 100
     else
+      # add task evidence to the document list for annotation extraction
+      # skip long files
       document_list.append(task.portfolio_evidence_path) unless @is_retry
     end
 

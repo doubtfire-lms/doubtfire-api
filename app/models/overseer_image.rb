@@ -4,8 +4,8 @@ class OverseerImage < ApplicationRecord
   # Callbacks - methods called are private
   before_destroy :can_destroy?
 
-  has_many :units
-  has_many :task_definitions
+  has_many :units, dependent: :nullify
+  has_many :task_definitions, dependent: :nullify
 
   # Always add a unique index with uniqueness constraint
   # This is to prevent new records from passing the validations when checked at the same time before being written

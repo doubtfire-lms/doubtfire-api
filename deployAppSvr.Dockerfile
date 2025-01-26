@@ -31,6 +31,7 @@ RUN apt-get update \
     docker-ce \
     docker-ce-cli \
     containerd.io \
+    librsvg2-bin \
   && apt-get clean
 
 # Setup the folder where we will deploy the code

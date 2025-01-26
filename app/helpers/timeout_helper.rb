@@ -25,12 +25,10 @@ module TimeoutHelper
   #
   def system_try_within(sec, timeout_message, command)
     # shell script to kill command after timeout
-    timeout_exec = Rails.root.join('lib', 'shell', 'timeout.sh')
-    result = false
-    try_within sec, timeout_message do
-      result = system "#{timeout_exec} -t #{sec} nice -n 10 #{command}"
-    end
-    result
+    system "timeout -k 2 #{sec} nice -n 10 #{command}"
+  rescue
+    logger.error "Timeout when #{timeout_message} after #{sec}s"
+    false
   end
 
   # Export functions as module functions

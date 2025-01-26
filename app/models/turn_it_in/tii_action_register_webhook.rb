@@ -6,10 +6,24 @@ class TiiActionRegisterWebhook < TiiAction
     "Register webhooks"
   end
 
-  private
+  def remove_webhooks
+    # Get all webhooks
+    webhooks = list_all_webhooks
+
+    # Delete each of the webhooks
+    webhooks.each do |webhook|
+      exec_tca_call 'delete webhook' do
+        TCAClient::WebhookApi.new.delete_webhook(
+          TurnItIn.x_turnitin_integration_name,
+          TurnItIn.x_turnitin_integration_version,
+          webhook.id
+        )
+      end
+    end
+  end
 
   def run
-    register_webhook if need_to_register_webhook?
+    register_webhook if TurnItIn.register_webhooks? && need_to_register_webhook?
     self.complete = true
   end
 
@@ -27,8 +41,11 @@ class TiiActionRegisterWebhook < TiiAction
   end
 
   def register_webhook
+    key = ENV.fetch('TCA_SIGNING_KEY', nil)
+    raise "TCA_SIGNING_KEY is not set" if key.nil?
+
     data = TCAClient::WebhookWithSecret.new(
-      signing_secret: ENV.fetch('TCA_SIGNING_KEY', nil),
+      signing_secret: Base64.encode64(key).tr("\n", ''),
       url: TurnItIn.webhook_url,
       event_types: %w[
         SIMILARITY_COMPLETE
@@ -38,8 +55,6 @@ class TiiActionRegisterWebhook < TiiAction
         GROUP_ATTACHMENT_COMPLETE
       ]
     ) # WebhookWithSecret |
-
-    raise "TCA_SIGNING_KEY is not set" if data.signing_secret.nil?
 
     exec_tca_call 'register webhook' do
       TCAClient::WebhookApi.new.webhooks_post(

@@ -1,6 +1,6 @@
-# Ensure log outputs to stdout in all but test environments
-unless Rails.env.test?
-  Rails.logger.broadcast_to(ActiveSupport::Logger.new($stdout))
+# Ensure log outputs to stdout in development
+if Rails.env.development? || Doubtfire::Application.config.log_to_stdout
+  Rails.logger.broadcast_to(ActiveSupport::Logger.new($stdout, level: Rails.logger.level))
 end
 
 class FormatifFormatter < Logger::Formatter
