@@ -63,6 +63,8 @@ module Feedback
         elsif learning_outcome.context_type == 'Unit'
           unit = Unit.find(learning_outcome.context_id)
           group_id = "#{unit.id}-#{learning_outcome.abbreviation}-#{chip.chip_text}"
+        elsif learning_outcome.context_type.nil? && learning_outcome.context_id.nil?
+          group_id = "global-#{learning_outcome.abbreviation}-#{chip.chip_text}"
         else
           error!({ error: 'Invalid context type' }, 400)
         end
