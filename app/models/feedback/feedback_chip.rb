@@ -335,7 +335,7 @@ module Feedback
 
       task_status = row['task_status']
       if task_status.present?
-        task_status_check = TaskStatus.find_by(name: task_status)
+        task_status_check = TaskStatus.status_for_name(task_status)
         if task_status_check.nil?
           result[:errors] << { row: row, message: "Task status #{task_status} not found" }
           return
