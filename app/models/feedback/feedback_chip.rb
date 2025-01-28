@@ -207,7 +207,7 @@ module Feedback
       context_type = learning_outcome.context_type
       context_id = learning_outcome.context_id
 
-      unit_code = ''
+      unit_code = nil
       if context_type == 'Unit'
         unit_code = Unit.find(context_id).code
       elsif context_type == 'TaskDefinition'
@@ -215,14 +215,14 @@ module Feedback
       end
 
       learning_outcome_abbreviation = learning_outcome.abbreviation
-      task_abbreviation = learning_outcome.context_type == 'TaskDefinition' ? TaskDefinition.find(learning_outcome.context_id).abbreviation : ''
+      task_abbreviation = learning_outcome.context_type == 'TaskDefinition' ? TaskDefinition.find(learning_outcome.context_id).abbreviation : nil
 
-      group_id = ''
-      parent_group_id = ''
+      group_id = nil
+      parent_group_id = nil
       summary_text = self.summary_text
       if csv_type == 'group'
         group_id = summary_text
-        summary_text = ''
+        summary_text = nil
       end
 
       if parent_chip_id.present?
