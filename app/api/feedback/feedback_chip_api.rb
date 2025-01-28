@@ -5,6 +5,7 @@ module Feedback
     helpers AuthorisationHelpers
     helpers MimeCheckHelpers
     helpers CsvHelper
+    helpers FileHelper
 
     before do
       authenticated?
@@ -68,7 +69,7 @@ module Feedback
         else
           error!({ error: 'Invalid context type' }, 400)
         end
-        chip.update(comment_text: group_id)
+        chip.update(summary_text: group_id)
       end
       entity = params[:type] == 'template' ? Entities::FeedbackTemplateChipEntity : Entities::FeedbackGroupChipEntity
       present chip, with: entity
@@ -275,8 +276,30 @@ module Feedback
       end
 
       # Actually import...
-      LearningOutcome.import_feedback_chips_from_csv(params[:file][:tempfile])
+      file = params[:file][:tempfile]
+
+      result = {
+        success: [],
+        errors: [],
+        ignored: []
+      }
+
+      data = read_file_to_str(file)
+      CSV.parse(data,
+                headers: true,
+                header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
+                converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+                # Make sure we're not looking at the header or an empty line
+        next if row[0] =~ /unit_code/
+
+        begin
+          Feedback::FeedbackChip.create_from_csv(row, result)
+        rescue Exception => e
+          result[:errors] << { row: row, message: e.message.to_s }
+        end
+      end
+
+      result
     end
   end
 end
-
