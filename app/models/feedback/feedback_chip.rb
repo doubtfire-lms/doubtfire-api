@@ -247,15 +247,8 @@ module Feedback
         end
       end
 
-      learning_outcome_abbreviation = row['learning_outcome_abbreviation']
-      learning_outcome = LearningOutcome.find_by(abbreviation: learning_outcome_abbreviation)
-      if learning_outcome.nil?
-        result[:errors] << { row: row, message: "Learning Outcome #{learning_outcome_abbreviation} not found" }
-        return
-      end
-
       task_abbreviation = row['task_abbreviation']
-      if task_abbreviation.present? && learning_outcome.context_type == 'TaskDefinition'
+      if task_abbreviation.present?
         task_definition = TaskDefinition.find_by(abbreviation: task_abbreviation)
         if task_definition.nil?
           result[:errors] << { row: row, message: "Task #{task_abbreviation} not found" }
@@ -263,7 +256,23 @@ module Feedback
         end
       end
 
+      learning_outcome_abbreviation = row['learning_outcome_abbreviation']
+      if learning_outcome_abbreviation.nil?
+        result[:errors] << { row: row, message: 'Missing learning_outcome_abbreviation' }
+        return
+      end
 
+      if unit_code.present? && task_abbreviation.present?
+        learning_outcome = LearningOutcome.find_by(abbreviation: learning_outcome_abbreviation, context_type: 'TaskDefinition', context_id: task_definition.id)
+      elsif unit_code.present?
+        learning_outcome = LearningOutcome.find_by(abbreviation: learning_outcome_abbreviation, context_type: 'Unit', context_id: unit.id)
+      else
+        learning_outcome = LearningOutcome.find_by(abbreviation: learning_outcome_abbreviation, context_type: nil, context_id: nil)
+      end
+      if learning_outcome.nil?
+        result[:errors] << { row: row, message: "Learning Outcome #{learning_outcome_abbreviation} not found" }
+        return
+      end
 
       # check if the learning outcome is in the correct unit
       unless unit_code.nil? && task_abbreviation.nil? # wont run if its a global outcome
