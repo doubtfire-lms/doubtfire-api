@@ -1,5 +1,5 @@
 class D2lResultMailer < ApplicationMailer
-  def result_message(unit, user, result_message = 'completed', success = true)
+  def result_message(unit, user, result_message: 'completed', success: true)
     email = user.email
     return nil if email.blank?
 

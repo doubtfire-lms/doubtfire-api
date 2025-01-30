@@ -728,8 +728,6 @@ class UnitModelTest < ActiveSupport::TestCase
     p = unit.projects.first
     task = p.task_for_task_definition(td)
     task_pdf = task.final_pdf_path
-    task.portfolio_evidence_path = task_pdf
-    task.save!
     FileUtils.touch(task_pdf)
 
     assert File.exist?(task_pdf)
@@ -750,8 +748,7 @@ class UnitModelTest < ActiveSupport::TestCase
     assert_not File.exist?(task_pdf), "Old task file still exists"
     assert File.exist?(task.final_pdf_path), "New task file does not exist"
 
-    assert_equal task.final_pdf_path, task.portfolio_evidence_path
-    assert File.exist?(task.portfolio_evidence_path), "Portfolio evidence file does not exist = #{task.portfolio_evidence_path}"
+    assert File.exist?(task.final_pdf_path), "Portfolio evidence file does not exist = #{task.final_pdf_path}"
     assert task.has_pdf
 
     unit.destroy!
@@ -817,6 +814,64 @@ class UnitModelTest < ActiveSupport::TestCase
 
     unit2.destroy
     unit3.destroy
+  end
+
+  def test_archive_unit
+    unit = FactoryBot.create :unit, student_count: 1, unenrolled_student_count: 0, inactive_student_count: 0, task_count: 1, tutorials: 1, outcome_count: 0, staff_count: 0, campus_count: 1
+
+    td = unit.task_definitions.first
+    assert_not File.exist?(td.task_sheet)
+    FileUtils.touch(td.task_sheet)
+    assert File.exist?(td.task_sheet)
+
+    old_path = td.task_sheet
+
+    # also check tasks
+    p = unit.projects.first
+    task = p.task_for_task_definition(td)
+    task_pdf = task.final_pdf_path
+    FileUtils.touch(task_pdf)
+
+    DatabasePopulator.generate_portfolio(p)
+    old_portfolio_path = p.portfolio_path
+
+    assert File.exist?(old_path)
+    assert File.exist?(task_pdf)
+    assert File.exist?(old_portfolio_path)
+
+    unit.move_files_to_archive
+    unit.archived = true
+    unit.save!
+
+    td.reload
+    task.reload
+
+    assert_not File.exist?(old_path), "Old file still exists"
+    assert File.exist?(td.task_sheet), "New file does not exist - #{td.task_sheet}"
+    assert_not File.exist?(task_pdf), "Old task file still exists"
+    assert File.exist?(task.final_pdf_path), "New task file does not exist"
+    assert_not File.exist?(old_portfolio_path), "Old portfolio file still exists - #{old_portfolio_path}"
+    assert File.exist?(p.portfolio_path), "New portfolio file does not exist"
+
+    assert File.exist?(task.final_pdf_path), "Portfolio evidence file does not exist - #{task.final_pdf_path}"
+
+    td.abbreviation = 'NEW'
+    td.save
+    task.reload
+
+    # File exists after rename
+    assert File.exist?(task.final_pdf_path), "Portfolio evidence file does not exist - #{task.final_pdf_path}"
+
+    p.student.update(username: 'NEW_USERNAME')
+    task.reload
+    assert File.exist?(task.final_pdf_path), "Portfolio evidence file does not exist after username change - #{task.final_pdf_path}"
+    assert File.exist?(p.portfolio_path), "New portfolio file does not exist"
+
+    unit.destroy!
+
+    assert_not File.exist?(td.task_sheet), "New file exists after delete - #{td.task_sheet}"
+    assert_not File.exist?(task.final_pdf_path), "New task file exists after delete - #{task.final_pdf_path}"
+    assert_not File.exist?(p.portfolio_path), "New portfolio exists after delete - #{p.portfolio_path}"
   end
 
 end

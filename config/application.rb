@@ -31,6 +31,11 @@ module Doubtfire
     # variable.
     config.student_work_dir = ENV['DF_STUDENT_WORK_DIR'] || Rails.root.join('student_work').to_s
 
+    # ==> Archive directory
+    # File server location for storing archived student work. Defaults to a subfolder of student work
+    # Set using DF_ARCHIVE_DIR environment variable.
+    config.archive_dir = ENV.fetch('DF_ARCHIVE_DIR', "#{config.student_work_dir}/archive")
+
     # Limit number of pdf generators to run at once
     config.pdfgen_max_processes = ENV['DF_MAX_PDF_GEN_PROCESSES'] || 2
 

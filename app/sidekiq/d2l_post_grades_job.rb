@@ -31,7 +31,7 @@ class D2lPostGradesJob
     logger.error e
 
     begin
-      mail = D2lResultMailer.result_message(unit, user, "failed. Please check the D2L settings for the unit, and your permissions within D2L to upload results. #{e.message}", false)
+      mail = D2lResultMailer.result_message(unit, user, result_message: "failed. Please check the D2L settings for the unit, and your permissions within D2L to upload results. #{e.message}", success: false)
       mail.deliver if mail.present?
 
       logger.info "Sent fail email to user #{user.id} for unit #{unit.id} grade transfer result"

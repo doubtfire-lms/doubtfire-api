@@ -141,6 +141,10 @@ class TaskDefinition < ApplicationRecord
     if File.exist? task_scorm_data_with_abbreviation(old_abbr, false)
       FileUtils.mv(task_scorm_data_with_abbreviation(old_abbr), task_scorm_data())
     end
+
+    tasks.find_each do |task|
+      task.move_files_on_abbreviation_change(old_abbr)
+    end
   end
 
   def docker_image_name_tag

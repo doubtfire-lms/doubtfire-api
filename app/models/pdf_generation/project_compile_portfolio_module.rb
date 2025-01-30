@@ -177,8 +177,8 @@ module PdfGeneration
     # Portfolio production code
     #
     def portfolio_temp_path
-      portfolio_dir = FileHelper.student_portfolio_dir(self.unit, self.student.username, false)
-      portfolio_tmp_dir = File.join(portfolio_dir, 'tmp')
+      portfolio_dir = FileHelper.student_portfolio_dir(self.unit, self.student.username, create: false)
+      File.join(portfolio_dir, 'tmp')
     end
 
     def portfolio_tmp_file_name(dict)
@@ -270,7 +270,7 @@ module PdfGeneration
     end
 
     def portfolio_path
-      FileHelper.student_portfolio_path(self.unit, self.student.username, true)
+      FileHelper.student_portfolio_path(self.unit, self.student.username, create: true)
     end
 
     def portfolio_exists?

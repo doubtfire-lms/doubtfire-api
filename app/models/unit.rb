@@ -1468,7 +1468,7 @@ class Unit < ApplicationRecord
             "#{row['first_name']} #{row['last_name']}",
             GradeHelper.grade_for(row['target_grade']),
             row['email'],
-            row['portfolio_production_date'].present? && !row['compile_portfolio'] && File.exist?(FileHelper.student_portfolio_path(self, row['username'], true)),
+            row['portfolio_production_date'].present? && !row['compile_portfolio'] && File.exist?(FileHelper.student_portfolio_path(self, row['username'], create: true)),
             row['grade'] > 0 ? row['grade'] : nil,
             row['grade_rationale']
           ] + [1].map do
@@ -1565,7 +1565,7 @@ class Unit < ApplicationRecord
                         task.student.username.to_s
                       end
 
-          FileUtils.cp task.portfolio_evidence_path, File.join(dir, path_part.to_s) + '.pdf'
+          FileUtils.cp task.final_pdf_path, File.join(dir, path_part.to_s) + '.pdf'
         end # each task
 
         # Copy files into zip
@@ -2196,7 +2196,7 @@ class Unit < ApplicationRecord
 
         csv_str << "\n#{student.username.tr(',', '_')},#{student.name.tr(',', '_')},#{task.project.tutorial_for(task.task_definition).abbreviation},#{task.task_definition.abbreviation.tr(',', '_')},\"#{task.last_comment_by(task.project.student).gsub(/"/, '""')}\",\"#{task.last_comment_by(user).gsub(/"/, '""')}\",#{mark_col},,,#{task.task_definition.max_quality_pts},"
 
-        src_path = task.portfolio_evidence_path
+        src_path = task.final_pdf_path
 
         next if src_path.blank?
         next unless File.exist? src_path
@@ -2219,7 +2219,7 @@ class Unit < ApplicationRecord
 
         csv_str << "\nGRP_#{grp.id}_#{subm.id},#{grp.name.tr(',', '_')},#{grp.tutorial.abbreviation},#{task.task_definition.abbreviation.tr(',', '_')},\"#{task.last_comment_not_by(user).gsub(/"/, '""')}\",\"#{task.last_comment_by(user).gsub(/"/, '""')}\",rff,,#{task.task_definition.max_quality_pts},"
 
-        src_path = task.portfolio_evidence_path
+        src_path = task.final_pdf_path
 
         next if src_path.blank?
         next unless File.exist? src_path
@@ -2486,15 +2486,14 @@ class Unit < ApplicationRecord
             next
           end
 
-          # Read into the task's portfolio_evidence path the new file
+          # Read into the task's final pdf path the new file
           tmp_file = File.join(tmp_dir, File.basename(file[:name]))
-          task.portfolio_evidence_path = task.final_pdf_path
 
           # get file out of zip... to tmp_file
           file.extract(tmp_file) { true }
 
           # copy tmp_file to dest
-          if FileHelper.copy_pdf(tmp_file, task.portfolio_evidence_path)
+          if FileHelper.copy_pdf(tmp_file, task.final_pdf_path)
             if task.group.nil?
               success << { row: "File #{file[:name]}", message: "Replace PDF of task #{task.task_definition.abbreviation} for #{task.student.name}" }
             else
@@ -2562,11 +2561,34 @@ class Unit < ApplicationRecord
     end
   end
 
+  def move_files_to_archive
+    FileUtils.mkdir_p FileHelper.archive_root
+    FileUtils.mkdir_p FileHelper.root_portfolio_dir(archived: true)
+
+    # Indicate unit is now archived
+    update(archived: true)
+
+    # Move work
+    archive_work_path = FileHelper.unit_work_root(self, archived: :force)
+    original_work_path = FileHelper.unit_work_root(self, archived: false)
+
+    if File.exist?(original_work_path) && ! File.exist?(archive_work_path)
+      FileUtils.mv(original_work_path, archive_work_path)
+    end
+
+    archive_portfolio_path = FileHelper.unit_portfolio_dir(self, create: false, archived: :force)
+    original_portfolio_path = FileHelper.unit_portfolio_dir(self, create: false, archived: false)
+
+    if File.exist?(original_portfolio_path) && ! File.exist?(archive_portfolio_path)
+      FileUtils.mv(original_portfolio_path, archive_portfolio_path)
+    end
+  end
+
   private
 
   def delete_associated_files
-    unit_path = FileHelper.unit_dir(self, false)
-    unit_portfolio_path = FileHelper.unit_portfolio_dir(self, false)
+    unit_path = FileHelper.unit_dir(self, create: false)
+    unit_portfolio_path = FileHelper.unit_portfolio_dir(self, create: false)
     FileUtils.rm_rf unit_path
     FileUtils.rm_rf unit_portfolio_path
 
@@ -2589,14 +2611,14 @@ class Unit < ApplicationRecord
   def move_files_on_code_change
     return unless saved_change_to_code?
 
-    old_dir = FileHelper.dir_for_unit_code_and_id(saved_change_to_code[0], id, false)
+    old_dir = FileHelper.dir_for_unit_code_and_id(saved_change_to_code[0], id, create: false, archived: archived)
     if File.exist? old_dir
-      new_dir = FileHelper.unit_dir(self, false)
+      new_dir = FileHelper.unit_dir(self, create: false)
       FileUtils.mv(old_dir, new_dir) unless File.exist?(new_dir)
     end
 
     # rubocop:disable Rails/SkipsModelValidations
-    tasks.update_all("portfolio_evidence = REPLACE(portfolio_evidence, '#{saved_change_to_code[0]}-#{id}', '#{code}-#{id}')")
+    tasks.where('portfolio_evidence IS NOT NULL').update_all("portfolio_evidence = REPLACE(portfolio_evidence, '#{saved_change_to_code[0]}-#{id}', '#{code}-#{id}')")
     # rubocop:enable Rails/SkipsModelValidations
   end
 end

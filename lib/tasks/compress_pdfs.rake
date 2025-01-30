@@ -10,10 +10,11 @@ namespace :submission do
     puts 'Starting compress pdf'
 
     Unit.where('active').find_each do |u|
-      u.tasks.where('portfolio_evidence is not NULL').find_each do |t|
-        if File.exist?(t.portfolio_evidence_path) && File.size?(t.portfolio_evidence_path) >= 2_200_000
-          puts "Compressing #{t.portfolio_evidence_path}"
-          FileHelper.compress_pdf(t.portfolio_evidence_path)
+      u.tasks.find_each(batch_size: 5000) do |t|
+        path = t.final_pdf_path
+        if File.exist?(path) && File.size?(path) >= 2_200_000
+          puts "Compressing #{path}"
+          FileHelper.compress_pdf(path)
         end
       end
     end
@@ -45,11 +46,11 @@ namespace :submission do
 
       begin
         Unit.where('active').find_each do |u|
-          u.tasks.where('portfolio_evidence is not NULL').find_each do |t|
+          u.tasks.find_each(batch_size: 5000) do |t|
             pdf_file = t.final_pdf_path
             next unless pdf_file && File.exist?(pdf_file) && File.size?(pdf_file) >= 2_200_000
 
-            puts "  Recreating #{t.portfolio_evidence_path} was #{File.size?(pdf_file)}"
+            puts "  Recreating #{pdf_file} was #{File.size?(pdf_file)}"
             t.move_done_to_new
             t.convert_submission_to_pdf
             puts "  ... now #{File.size?(pdf_file)}"
