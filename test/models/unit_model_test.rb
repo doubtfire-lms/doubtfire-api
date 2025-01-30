@@ -874,4 +874,22 @@ class UnitModelTest < ActiveSupport::TestCase
     assert_not File.exist?(p.portfolio_path), "New portfolio exists after delete - #{p.portfolio_path}"
   end
 
+  def test_archive_unit_job
+    unit = FactoryBot.create :unit, with_students: false, task_count: 0
+
+    unit.end_date = Time.zone.now - Doubtfire::Application.config.unit_archive_after_period - 1.day
+    unit.start_date = unit.end_date - 14.weeks
+    unit.save!
+
+    unit2 = FactoryBot.create :unit, with_students: false, task_count: 0
+
+    assert_not unit.archived
+    assert_not unit2.archived
+    ArchiveOldUnitsJob.new.perform
+    unit.reload
+
+    assert unit.archived
+    assert_not unit2.archived
+  end
+
 end
