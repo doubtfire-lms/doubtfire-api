@@ -873,6 +873,8 @@ class UnitModelTest < ActiveSupport::TestCase
     assert_not File.exist?(td.task_sheet), "New file exists after delete - #{td.task_sheet}"
     assert_not File.exist?(task.final_pdf_path), "New task file exists after delete - #{task.final_pdf_path}"
     assert_not File.exist?(p.portfolio_path), "New portfolio exists after delete - #{p.portfolio_path}"
+  ensure
+    Doubtfire::Application.config.archive_units = false
   end
 
   def test_archive_unit_job
