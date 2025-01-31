@@ -817,6 +817,7 @@ class UnitModelTest < ActiveSupport::TestCase
   end
 
   def test_archive_unit
+    Doubtfire::Application.config.archive_units = true
     unit = FactoryBot.create :unit, student_count: 1, unenrolled_student_count: 0, inactive_student_count: 0, task_count: 1, tutorials: 1, outcome_count: 0, staff_count: 0, campus_count: 1
 
     td = unit.task_definitions.first
@@ -885,8 +886,17 @@ class UnitModelTest < ActiveSupport::TestCase
 
     assert_not unit.archived
     assert_not unit2.archived
-    ArchiveOldUnitsJob.new.perform
+    job = ArchiveOldUnitsJob.new
+    job.perform
     unit.reload
+    unit2.reload
+
+    assert_not unit.archived
+    assert_not unit2.archived
+
+    Doubtfire::Application.config.archive_units = true
+
+    job.perform
 
     assert unit.archived
     assert_not unit2.archived

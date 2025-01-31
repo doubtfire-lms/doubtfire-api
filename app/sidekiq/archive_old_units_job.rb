@@ -5,6 +5,8 @@ class ArchiveOldUnitsJob
   include Sidekiq::Job
 
   def perform
+    return unless Doubtfire::Application.config.archive_units
+
     archive_period = Doubtfire::Application.config.unit_archive_after_period
 
     archive_period = 1.year if archive_period < 1.year
