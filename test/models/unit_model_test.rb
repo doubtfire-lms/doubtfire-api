@@ -897,6 +897,8 @@ class UnitModelTest < ActiveSupport::TestCase
     Doubtfire::Application.config.archive_units = true
 
     job.perform
+    unit.reload
+    unit2.reload
 
     assert unit.archived
     assert_not unit2.archived
