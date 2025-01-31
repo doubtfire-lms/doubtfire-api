@@ -237,8 +237,8 @@ No Tutor
       <% end %>
     \end{tabular}
   <% end %>
-<% if File.exist? task.portfolio_evidence_path
-    max_pages = FileHelper.pages_in_pdf(task.portfolio_evidence_path)
+<% if File.exist? task.final_pdf_path
+    max_pages = FileHelper.pages_in_pdf(task.final_pdf_path)
 
     # Limit to 100 pages
     if max_pages > 100
@@ -246,11 +246,11 @@ No Tutor
     else
       # add task evidence to the document list for annotation extraction
       # skip long files
-      document_list.append(task.portfolio_evidence_path) unless @is_retry
+      document_list.append(task.final_pdf_path) unless @is_retry
     end
 
     for page_idx in 1..max_pages do %>
-\includepdf[pages={<%= page_idx %>-<%= page_idx %>},fitpaper]{<%= task.portfolio_evidence_path %>}
+\includepdf[pages={<%= page_idx %>-<%= page_idx %>},fitpaper]{<%= task.final_pdf_path %>}
 <%  end # end for
   end # end if file exists
 end # portfolio tasks do

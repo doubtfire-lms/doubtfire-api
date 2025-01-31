@@ -125,9 +125,7 @@ module FileHelper
   end
 
   def task_file_dir_for_unit(unit, create = true)
-    file_server = Doubtfire::Application.config.student_work_dir
-    dst = "#{file_server}/" # trust the server config and passed in type for paths
-    dst << sanitized_path("#{unit.code}-#{unit.id}", 'TaskFiles') << '/'
+    dst = unit_work_root(unit) << 'TaskFiles/'
 
     FileUtils.mkdir_p dst if create && (!Dir.exist? dst)
 
@@ -176,6 +174,30 @@ module FileHelper
     Doubtfire::Application.config.student_work_dir
   end
 
+  def archive_root
+    Doubtfire::Application.config.archive_dir
+  end
+
+  # Get the path to the unit root - will take into consideration if archived
+  #
+  # @param [Unit] unit - the unit to get the root path for
+  # @param [Boolean] archived - whether to use the archived property (true/false)
+  #                             or force it to be the archived path (:force)
+  def unit_work_root(unit, archived: true)
+    dst = if (unit.archived && archived) || (archived == :force)
+            "#{archive_root}/"
+          else
+            "#{student_work_root}/"
+          end
+
+    dst << sanitized_path("#{unit.code}-#{unit.id}") << '/'
+  end
+
+  def project_work_root(project, archived: true, username: nil)
+    username = project.student.username.to_s if username.nil?
+    unit_work_root(project.unit, archived: archived) << sanitized_path(username) << '/'
+  end
+
   #
   # Generates a path for storing student work
   # type = [:new, :in_process, :done, :pdf, :plagarism]
@@ -187,18 +209,17 @@ module FileHelper
       file_server = Doubtfire::Application.config.student_work_dir
       dst = "#{file_server}/" # trust the server config and passed in type for paths
 
-      if !(type.nil? || task.nil?)
+      if !(type.nil? || task.nil?) # we have task and type
         if [:discussion, :pdf, :comment].include? type
-          dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}", task.project.student.username.to_s, type.to_s) << '/'
+          dst = project_work_root(task.project) << sanitized_path(type.to_s) << '/'
         elsif [:done, :plagarism].include? type
-          dst << sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}", task.project.student.username.to_s, type.to_s, task.id.to_s) << '/'
+          dst = project_work_root(task.project) << sanitized_path(type.to_s, task.id.to_s) << '/'
         else # new and in_process -- just have task id
           # Add task id to dst if we want task
           dst << "#{type}/#{task.id}/"
         end
-      elsif !type.nil?
+      elsif !type.nil? # have type but not task
         if [:in_process, :new].include? type
-          # Add task id to dst if we want task
           dst << "#{type}/"
         else
           raise 'Error in request to student work directory'
@@ -211,9 +232,13 @@ module FileHelper
     dst
   end
 
-  def dir_for_unit_code_and_id(unit_code, unit_id, create = true)
-    file_server = Doubtfire::Application.config.student_work_dir
-    dst = "#{file_server}/" # trust the server config and passed in type for paths
+  def dir_for_unit_code_and_id(unit_code, unit_id, create: true, archived: false)
+    dst = if archived
+            "#{archive_root}/"
+          else
+            "#{student_work_root}/"
+          end
+
     dst << sanitized_path("#{unit_code}-#{unit_id}")
 
     FileUtils.mkdir_p dst if create && !Dir.exist?(dst)
@@ -221,17 +246,26 @@ module FileHelper
     dst
   end
 
-  def unit_dir(unit, create = true)
-    dir_for_unit_code_and_id(unit.code, unit.id, create)
+  def unit_dir(unit, create: true, archived: true)
+    dir_for_unit_code_and_id(unit.code, unit.id, create: create, archived: archived == :force || (archived && unit.archived))
   end
 
-  def root_portfolio_dir
-    file_server = Doubtfire::Application.config.student_work_dir
+  def root_portfolio_dir(archived: false)
+    file_server = if archived
+                    archive_root
+                  else
+                    student_work_root
+                  end
+
     "#{file_server}/portfolio/" # trust the server config and passed in type for paths
   end
 
-  def unit_portfolio_dir(unit, create = true)
-    dst = root_portfolio_dir
+  def unit_portfolio_dir(unit, create: true, archived: true)
+    dst = if (unit.archived && archived) || (archived == :force)
+            "#{archive_root}/portfolio/"
+          else
+            "#{student_work_root}/portfolio/"
+          end
 
     dst << sanitized_path("#{unit.code}-#{unit.id}") << '/'
 
@@ -243,8 +277,8 @@ module FileHelper
   #
   # Generates a path for storing student portfolios
   #
-  def student_portfolio_dir(unit, username, create = true)
-    dst = unit_portfolio_dir(unit, create)
+  def student_portfolio_dir(unit, username, create: true, archived: true)
+    dst = unit_portfolio_dir(unit, create: create, archived: archived)
 
     dst << sanitized_path(username.to_s)
 
@@ -253,8 +287,8 @@ module FileHelper
     dst
   end
 
-  def student_portfolio_path(unit, username, create = true)
-    File.join(student_portfolio_dir(unit, username, create), FileHelper.sanitized_filename("#{username}-portfolio.pdf"))
+  def student_portfolio_path(unit, username, create: true, archived: true)
+    File.join(student_portfolio_dir(unit, username, create: create, archived: archived), FileHelper.sanitized_filename("#{username}-portfolio.pdf"))
   end
 
   def comment_attachment_path(task_comment, attachment_extension)
@@ -679,10 +713,13 @@ module FileHelper
   module_function :student_group_work_dir
   module_function :student_work_dir
   module_function :student_work_root
+  module_function :archive_root
   module_function :dir_for_unit_code_and_id
   module_function :unit_dir
   module_function :root_portfolio_dir
   module_function :unit_portfolio_dir
+  module_function :unit_work_root
+  module_function :project_work_root
   module_function :student_portfolio_dir
   module_function :student_portfolio_path
   module_function :comment_attachment_path

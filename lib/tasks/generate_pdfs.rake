@@ -182,9 +182,11 @@ namespace :submission do
     logger.info 'Starting check of PDF tasks'
 
     Unit.where('active').find_each do |u|
-      u.tasks.where('portfolio_evidence is not NULL').find_each do |t|
-        unless FileHelper.validate_pdf(t.portfolio_evidence_path)[:valid]
-          puts t.portfolio_evidence_path
+      u.tasks.find_each(batch_size: 5000) do |t|
+        path = t.final_pdf_path
+        next unless File.exist?(path)
+        unless FileHelper.validate_pdf(path)[:valid]
+          puts path
         end
       end
     end

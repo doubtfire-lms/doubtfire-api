@@ -488,8 +488,6 @@ class TasksApiTest < ActiveSupport::TestCase
 
     src_file = Rails.root.join('test_files/submissions/1.2P.pdf')
     FileUtils.cp src_file, task.final_pdf_path
-    task.portfolio_evidence_path = task.final_pdf_path
-    task.save
 
     get "/api/projects/#{project.id}/task_def_id/#{td.id}/submission"
 

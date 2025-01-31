@@ -31,14 +31,22 @@ module Doubtfire
     # variable.
     config.student_work_dir = ENV['DF_STUDENT_WORK_DIR'] || Rails.root.join('student_work').to_s
 
+    # ==> Archive directory
+    # File server location for storing archived student work. Defaults to a subfolder of student work
+    # Set using DF_ARCHIVE_DIR environment variable.
+    config.archive_dir = ENV.fetch('DF_ARCHIVE_DIR', "#{config.student_work_dir}/archive")
+
+    # Allows for the archiving of units to be automated
+    config.archive_units = ENV['DF_ARCHIVE_UNITS'].present? && (ENV['DF_ARCHIVE_UNITS'].to_s.downcase == "true" || ENV['DF_ARCHIVE_UNITS'].to_i == 1)
+
+    # Period for which to keep units
+    config.unit_archive_after_period = ENV.fetch('DF_UNIT_ARCHIVE_PERIOD', 2).to_f * 1.year
+
     # Limit number of pdf generators to run at once
     config.pdfgen_max_processes = ENV['DF_MAX_PDF_GEN_PROCESSES'] || 2
 
     # Date range for auditors to view
     config.auditor_unit_access_years = ENV.fetch('DF_AUDITOR_UNIT_ACCESS_YEARS', 2).to_f * 1.year
-
-    # Period for which to keep units
-    config.unit_archive_after_period = ENV.fetch('DF_UNIT_ARCHIVE_PERIOD', 2).to_f * 1.year
 
     config.student_import_weeks_before = ENV.fetch('DF_IMPORT_STUDENTS_WEEKS_BEFPRE', 1).to_f * 1.week
 

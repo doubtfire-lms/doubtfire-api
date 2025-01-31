@@ -6,11 +6,12 @@ class TiiCheckProgressJobTest < ActiveSupport::TestCase
   def test_jobs_are_scheduled
     Sidekiq::Cron::Job.load_from_hash YAML.load_file("#{Rails.root}/config/schedule.yml")
     Sidekiq::Cron::Job.all.each(&:enque!)
-    assert_equal 3, Sidekiq::Cron::Job.all.count
+    assert_equal 4, Sidekiq::Cron::Job.all.count
 
     assert_equal 1, TiiRegisterWebHookJob.jobs.count
     assert_equal 1, TiiCheckProgressJob.jobs.count
     assert_equal 1, ClearAccessTokensJob.jobs.count
+    assert_equal 1, ArchiveOldUnitsJob.jobs.count
   end
 
 end

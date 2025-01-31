@@ -89,5 +89,6 @@ class ActiveSupport::TestCase
 
     DatabaseCleaner.clean
     Faker::UniqueGenerator.clear
+    ActionMailer::Base.deliveries.clear
   end
 end
