@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.40](https://github.com/macite/doubtfire-deploy/compare/v8.0.39...v8.0.40) (2025-01-31)
+
+
+### Features
+
+* add scheduled archive of units ([9b2cf03](https://github.com/macite/doubtfire-deploy/commit/9b2cf03986277a1d0016b5fd2d020cdf19c84271))
+* auto archive of units is optional ([23bd227](https://github.com/macite/doubtfire-deploy/commit/23bd2271fc2d8420ccbee142389b539c13c299c7))
+* email users on D2L grade transfer fail ([00cb85e](https://github.com/macite/doubtfire-deploy/commit/00cb85ecb84709f9c4500364a0da6f27c8097436))
+* remove stored pdf path and allow move to archive ([33944dd](https://github.com/macite/doubtfire-deploy/commit/33944dd05e1e6d197872a5c67fbec15206f04692))
+
 ### [8.0.39](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v8.0.38...v8.0.39) (2025-01-22)
 
 
