@@ -876,6 +876,8 @@ class UnitModelTest < ActiveSupport::TestCase
   end
 
   def test_archive_unit_job
+    assert_not Doubtfire::Application.config.archive_units, 'Archive units should be off by default'
+
     unit = FactoryBot.create :unit, with_students: false, task_count: 0
 
     unit.end_date = Time.zone.now - Doubtfire::Application.config.unit_archive_after_period - 1.day
@@ -886,8 +888,10 @@ class UnitModelTest < ActiveSupport::TestCase
 
     assert_not unit.archived
     assert_not unit2.archived
+
     job = ArchiveOldUnitsJob.new
     job.perform
+
     unit.reload
     unit2.reload
 
