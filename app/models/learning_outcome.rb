@@ -47,35 +47,6 @@ class LearningOutcome < ApplicationRecord
     end
   end
 
-=begin
-  def role_for(user)
-    return :admin if user.has_admin_capability?
-    return :convenor if user.has_convenor_capability?
-    return :tutor if user.has_tutor_capability?
-
-    return nil
-  end
-=end
-
-=begin
-  def role_for(user)
-    if convenors.where('unit_roles.user_id=:id', id: user.id).count == 1
-      Role.convenor
-    elsif tutors.where('unit_roles.user_id=:id', id: user.id).count == 1
-      Role.tutor
-    elsif active_projects.where('projects.user_id=:id', id: user.id).count == 1
-      Role.student
-    elsif user.has_auditor_capability? &&
-          start_date >= Time.zone.today - Doubtfire::Application.config.auditor_unit_access_years &&
-          end_date < DateTime.now
-      Role.auditor
-    elsif user.has_admin_capability?
-      Role.admin
-    else
-      nil
-    end
-  end
-=end
   belongs_to :context, polymorphic: true, optional: true
 
   has_many :outgoing_links, class_name: 'LearningOutcomeLink', foreign_key: 'source_id', dependent: :destroy
@@ -93,53 +64,6 @@ class LearningOutcome < ApplicationRecord
 
   validates :short_description, length: { maximum: 4095, allow_blank: true }
   validates :full_outcome_description, length: { maximum: 4095, allow_blank: true }
-
-=begin
-  def self.csv_header
-    %w(context_type context_id abbreviation short_description full_outcome_description linked_outcome_ids)
-  end
-
-  def add_csv_row(row)
-    row << [context_type, context_id, abbreviation, short_description, full_outcome_description, linked_outcome_ids.join(',')]
-  end
-
-  def self.create_from_csv(context, row, result)
-    context_type = row['context_type']
-    context_id = row['context_id'].to_i
-
-    abbreviation = row['abbreviation']
-    if abbreviation.nil?
-      result[:errors] << { row: row, message: 'Missing abbreviation' }
-      return
-    end
-
-    short_description = row['short_description']
-    if short_description.nil?
-      result[:errors] << { row: row, message: 'Missing short_description' }
-      return
-    end
-
-    full_outcome_description = row['full_outcome_description']
-    if full_outcome_description.nil?
-      result[:errors] << { row: row, message: 'Missing full_outcome_description' }
-      return
-    end
-
-    outcome = LearningOutcome.find_or_create_by(context_id: context_id, context_type: context_type, abbreviation: abbreviation) do |outcome|
-      outcome.short_description = short_description
-      outcome.full_outcome_description = full_outcome_description
-      outcome.linked_outcome_ids = row['linked_outcome_ids'].to_s.split(',').map(&:strip).map(&:to_i)
-    end
-
-    outcome.save!
-
-    result[:success] << if outcome.new_record?
-                          { row: row, message: "Outcome #{abbreviation} created" }
-                        else
-                          { row: row, message: "Outcome #{abbreviation} updated" }
-                        end
-                      end
-=end
 
   def self.csv_header
     %w(unit_code task_abbreviation learning_outcome_abbreviation short_description full_outcome_description linked_outcomes)
