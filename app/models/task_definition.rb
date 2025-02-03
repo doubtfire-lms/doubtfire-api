@@ -46,25 +46,6 @@ class TaskDefinition < ApplicationRecord
     end
   end
 
-=begin
-  def role_for(user)
-    if convenors.where('unit_roles.user_id=:id', id: user.id).count == 1
-      Role.convenor
-    elsif tutors.where('unit_roles.user_id=:id', id: user.id).count == 1
-      Role.tutor
-    elsif active_projects.where('projects.user_id=:id', id: user.id).count == 1
-      Role.student
-    elsif user.has_auditor_capability? &&
-          start_date >= Time.zone.today - Doubtfire::Application.config.auditor_unit_access_years &&
-          end_date < DateTime.now
-      Role.auditor
-    elsif user.has_admin_capability?
-      Role.admin
-    else
-      nil
-    end
-  end
-=end
   before_destroy :delete_associated_files
 
   after_update :move_files_on_abbreviation_change, if: :saved_change_to_abbreviation?
@@ -706,19 +687,6 @@ class TaskDefinition < ApplicationRecord
 
     nil
   end
-
-=begin
-  def add_ilo(abbreviation, short_description, full_outcome_description) # will move implementation of this directly to the learning outcomes api rather than splintered everywhere
-
-    LearningOutcome.create!(
-      context_id: id,
-      context_type: 'TaskDefinition',
-      abbreviation: abbreviation,
-      short_description: short_description,
-      full_outcome_description: full_outcome_description,
-    )
-  end
-=end
 
   private
 

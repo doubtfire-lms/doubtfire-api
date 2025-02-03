@@ -138,8 +138,6 @@ class ApiRoot < Grape::API
   AuthenticationHelpers.add_auth_to ScormApi
   AuthenticationHelpers.add_auth_to TestAttemptsApi
 
-  AuthenticationHelpers.add_auth_to Feedback::FeedbackTemplateChipApi
-  AuthenticationHelpers.add_auth_to Feedback::FeedbackGroupChipApi
   AuthenticationHelpers.add_auth_to Feedback::FeedbackChipApi
 
   add_swagger_documentation \

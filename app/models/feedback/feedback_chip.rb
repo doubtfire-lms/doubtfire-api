@@ -89,14 +89,6 @@ module Feedback
       end
     end
 
-=begin
-    def check_single_root_chip_per_learning_outcome
-      if parent_chip_id.nil? && FeedbackGroupChip.where(learning_outcome_id: self.learning_outcome_id, parent_chip_id: nil).count > 1
-        errors.add(:base, 'Only one root chip allowed per learning outcome')
-      end
-    end
-=end
-
     def check_tree_completeness_per_learning_outcome
       if parent_chip_id.nil?
         reachable_chips = reachable_chips_from_root
@@ -132,68 +124,6 @@ module Feedback
     def self.from_csv_type(csv_type)
       TYPE_MAPPING[csv_type] || csv_type
     end
-
-=begin
-    def self.csv_header
-      %w(type chip_text description task_status parent_chip_id learning_outcome_id summary_text comment_text)
-    end
-
-    def add_csv_row(row)
-      csv_type = self.class.to_csv_type(type)
-      row << [csv_type, chip_text, description, task_status, parent_chip_id, learning_outcome_id, summary_text, comment_text]
-    end
-
-    def self.create_from_csv(outcome, row, result)
-      outcome_id = row['learning_outcome_id'].to_i
-
-      if outcome_id != outcome.id
-        result[:ignored] << { row: row, message: "Invalid outcome. Learning Outcome Id: #{outcome_id} does not match Learning Outcome Id: #{outcome.id}"}
-      end
-
-      type = to_db_type(row['type'])
-      if type.nil?
-        result[:errors] << { row: row, message: 'Missing type' }
-      end
-
-      chip_text = row['chip_text']
-      if chip_text.nil?
-        result[:errors] << { row: row, message: 'Missing abbreviation' }
-        return
-      end
-
-      description = row['description']
-      if description.nil?
-        result[:errors] << { row: row, message: 'Missing description' }
-        return
-      end
-
-      learning_outcome_id = row['learning_outcome_id']
-      if learning_outcome_id.nil?
-        result[:errors] << { row: row, message: 'Missing learning_outcome_id' }
-        return
-      end
-
-      parent_chip_id = row['parent_chip_id']
-      summary_text = row['summary_text']
-      comment_text = row['comment_text']
-      task_status = row['task_status']
-
-      chip = FeedbackChip.find_or_create_by(type: type, chip_text: chip_text, description: description, learning_outcome_id: learning_outcome_id) do |chip|
-        chip.task_status = task_status
-        chip.parent_chip_id = parent_chip_id
-        chip.summary_text = summary_text
-        chip.comment_text = comment_text
-      end
-
-      chip.save!
-
-      result[:success] << if chip.new_record?
-                            { row: row, message: "Chip #{chip_text} created" }
-                          else
-                            { row: row, message: "Chip #{chip_text} updated" }
-                          end
-    end
-=end
 
     def self.csv_header
       %w(unit_code task_abbreviation learning_outcome_abbreviation type group_id parent_group_id chip_text description task_status summary_text comment_text)

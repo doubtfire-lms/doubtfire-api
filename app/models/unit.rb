@@ -1191,7 +1191,7 @@ class Unit < ApplicationRecord
           next
         end
 
-        outcome_abbreviation= row['learning_outcome']
+        outcome_abbreviation = row['learning_outcome']
         outcome = learning_outcomes.where('abbreviation = :abbreviation', abbr: outcome_abbreviation).first
 
         if outcome.nil?
@@ -1724,37 +1724,6 @@ class Unit < ApplicationRecord
     end # zip
     result
   end
-
-  #
-  # Create an ILO # i think we just move this to learning outcomes directly rather than in each context
-  #
-=begin
-  def add_ilo(abbreviation, short_description, full_outcome_description)
-
-    LearningOutcome.create!(
-      context_id: id,
-      context_type: 'Unit',
-      abbreviation: abbreviation,
-      short_description: short_description,
-      full_outcome_description: full_outcome_description,
-    )
-  end
-=end
-
-  #
-  # Reorder ILO sequence numbers based on ILO update # ilonumber was removed from the learning outcomes so this is irrelevant now
-  #
-=begin   def move_ilo(ilo, new_num)
-    if ilo.ilo_number < new_num
-      logger.debug "Moving ILOs up #{ilo.ilo_number} to #{new_num}"
-      learning_outcomes.where("ilo_number > #{ilo.ilo_number} and ilo_number <= #{new_num}").find_each { |ilo| ilo.ilo_number -= 1; ilo.save }
-    elsif ilo.ilo_number > new_num
-      learning_outcomes.where("ilo_number < #{ilo.ilo_number} and ilo_number >= #{new_num}").find_each { |ilo| ilo.ilo_number += 1; ilo.save }
-    end
-    ilo.ilo_number = new_num
-    ilo.save
-  end
-=end
 
   #
   # Get all of the related tasks
