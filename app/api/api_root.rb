@@ -95,8 +95,6 @@ class ApiRoot < Grape::API
   mount WebcalApi
   mount WebcalPublicApi
 
-  mount Feedback::FeedbackTemplateChipApi
-  mount Feedback::FeedbackGroupChipApi
   mount Feedback::FeedbackChipApi
 
   #
