@@ -64,6 +64,7 @@ class LearningOutcome < ApplicationRecord
 
   validates :short_description, length: { maximum: 4095, allow_blank: true }
   validates :full_outcome_description, length: { maximum: 4095, allow_blank: true }
+  validates :abbreviation, uniqueness: { scope: %i[context_id context_type] }
 
   def self.csv_header
     %w(unit_code task_abbreviation learning_outcome_abbreviation short_description full_outcome_description linked_outcomes)
