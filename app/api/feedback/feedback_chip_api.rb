@@ -107,7 +107,7 @@ module Feedback
       chip.update(declared(params, include_missing: false).except(:type))
 
       if chip.type == 'Feedback::FeedbackGroupChip'
-        learning_outcome = LearningOutcome.find(params[:learning_outcome_id])
+        learning_outcome = LearningOutcome.find(chip.learning_outcome_id)
         if learning_outcome.context_type == 'TaskDefinition'
           task_definition = TaskDefinition.find(learning_outcome.context_id)
           unit = task_definition.unit
