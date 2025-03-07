@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.41](https://github.com/macite/doubtfire-deploy/compare/v8.0.40...v8.0.41) (2025-03-07)
+
+
+### Features
+
+* add ability to get individual overseer images ([9c32326](https://github.com/macite/doubtfire-deploy/commit/9c323269bcc1a41c2d1e37702a7bb90efea72773))
+
 ### [8.0.40](https://github.com/macite/doubtfire-deploy/compare/v8.0.39...v8.0.40) (2025-01-31)
 
 
