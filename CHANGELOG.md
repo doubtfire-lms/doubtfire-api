@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.42](https://github.com/macite/doubtfire-deploy/compare/v8.0.41...v8.0.42) (2025-03-10)
+
+
+### Bug Fixes
+
+* ensure submission history uses archive and moves ([e9161b3](https://github.com/macite/doubtfire-deploy/commit/e9161b380d0b32850df53baf2f7ab3f356fb64ba))
+* remove archive old unit from schedule ([f16fdee](https://github.com/macite/doubtfire-deploy/commit/f16fdeed9d0dcc9882a0615784800406fd021530))
+
 ### [8.0.41](https://github.com/macite/doubtfire-deploy/compare/v8.0.40...v8.0.41) (2025-03-07)
 
 
