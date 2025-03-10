@@ -881,6 +881,11 @@ class UnitModelTest < ActiveSupport::TestCase
     assert File.exist?(FileHelper.task_submission_identifier_path(:done, task))
     assert File.exist?(File.join(FileHelper.task_submission_identifier_path_with_timestamp(:done, task, '123_45'), 'output.txt'))
 
+    new_tp = FactoryBot.create :teaching_period
+    new_unit = unit.rollover(new_tp, nil, nil, nil)
+
+    assert_not new_unit.archived
+
     unit.destroy!
 
     assert_not File.exist?(td.task_sheet), "New file exists after delete - #{td.task_sheet}"
