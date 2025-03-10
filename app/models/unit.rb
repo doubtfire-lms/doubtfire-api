@@ -2576,11 +2576,21 @@ class Unit < ApplicationRecord
       FileUtils.mv(original_work_path, archive_work_path)
     end
 
+    # Move portfolios
     archive_portfolio_path = FileHelper.unit_portfolio_dir(self, create: false, archived: :force)
     original_portfolio_path = FileHelper.unit_portfolio_dir(self, create: false, archived: false)
 
     if File.exist?(original_portfolio_path) && ! File.exist?(archive_portfolio_path)
       FileUtils.mv(original_portfolio_path, archive_portfolio_path)
+    end
+
+    # Move submission history
+    archive_submission_history_path = FileHelper.unit_submission_history_dir(self, archived: :force)
+    original_submission_history_path = FileHelper.unit_submission_history_dir(self, archived: false)
+
+    if File.exist?(original_submission_history_path) && ! File.exist?(archive_submission_history_path)
+      FileUtils.mkdir_p(FileHelper.root_submission_history_dir(archived: true))
+      FileUtils.mv(original_submission_history_path, archive_submission_history_path)
     end
   end
 
@@ -2589,8 +2599,11 @@ class Unit < ApplicationRecord
   def delete_associated_files
     unit_path = FileHelper.unit_dir(self, create: false)
     unit_portfolio_path = FileHelper.unit_portfolio_dir(self, create: false)
+    submission_history_path = FileHelper.unit_submission_history_dir(self)
+
     FileUtils.rm_rf unit_path
     FileUtils.rm_rf unit_portfolio_path
+    FileUtils.rm_rf submission_history_path
 
     FileUtils.cd FileHelper.student_work_dir
   end

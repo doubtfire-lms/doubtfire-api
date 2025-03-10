@@ -428,6 +428,12 @@ class User < ApplicationRecord
       project.tasks.where('portfolio_evidence IS NOT NULL').update_all("portfolio_evidence = REPLACE(portfolio_evidence, '#{FileHelper.sanitized_path(old_username)}', '#{FileHelper.sanitized_path(username)}')")
       # rubocop:enable Rails/SkipsModelValidations
 
+      # Now move submission history files
+      old_path = FileHelper.project_submission_history_dir(project, username: old_username)
+      new_path = FileHelper.project_submission_history_dir(project, username: username)
+
+      FileUtils.mv(old_path, new_path) if File.exist?(old_path)
+
       # Now move the portfolio folder
       old_path = FileHelper.student_portfolio_dir(project.unit, old_username, create: false)
       new_path = FileHelper.student_portfolio_dir(project.unit, username, create: false)
