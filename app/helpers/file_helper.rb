@@ -658,13 +658,39 @@ module FileHelper
     sorted_timestamp_entries_in_dir(path)[0]
   end
 
+  def root_submission_history_dir(archived: false)
+    file_server = if archived
+                    archive_root
+                  else
+                    student_work_root
+                  end
+
+    "#{file_server}/submission_history/" # trust the server config and passed in type for paths
+  end
+
+  def unit_submission_history_dir(unit, archived: true)
+    dst = if (unit.archived && archived) || (archived == :force)
+            "#{archive_root}/"
+          else
+            "#{student_work_root}/"
+          end
+
+    dst << sanitized_path('submission_history', "#{unit.code}-#{unit.id}")
+  end
+
+  def project_submission_history_dir(project, username: nil, archived: true)
+    username = project.student.username.to_s if username.nil?
+    dst = unit_submission_history_dir(project.unit, archived: archived)
+
+    File.join(dst, sanitized_path(username))
+  end
+
   def task_submission_identifier_path(type, task)
-    file_server = Doubtfire::Application.config.student_work_dir
-    "#{file_server}/submission_history/#{sanitized_path("#{task.project.unit.code}-#{task.project.unit.id}", task.project.student.username.to_s, type.to_s, task.id.to_s)}"
+    "#{project_submission_history_dir(task.project)}/#{sanitized_path(type.to_s, task.id.to_s)}"
   end
 
   def task_submission_identifier_path_with_timestamp(type, task, timestamp)
-    "#{task_submission_identifier_path(type, task)}/#{timestamp.to_s}"
+    "#{task_submission_identifier_path(type, task)}/#{sanitized_path(timestamp.to_s)}"
   end
 
   # Apply line wrapping to a given file, returns true when line wrapping is necessary.
@@ -747,6 +773,9 @@ module FileHelper
   module_function :process_audio
   module_function :sorted_timestamp_entries_in_dir
   module_function :latest_submission_timestamp_entry_in_dir
+  module_function :root_submission_history_dir
+  module_function :unit_submission_history_dir
+  module_function :project_submission_history_dir
   module_function :task_submission_identifier_path
   module_function :task_submission_identifier_path_with_timestamp
   module_function :known_extension?
