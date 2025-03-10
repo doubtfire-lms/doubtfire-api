@@ -287,6 +287,9 @@ class Unit < ApplicationRecord
       new_unit.end_date = end_date
     end
 
+    # Clear archived
+    new_unit.archived = false
+
     if self.portfolio_auto_generation_date.present?
       # Update the portfolio auto generation date to be the same day of the week and week number as the old date
       new_unit.portfolio_auto_generation_date = new_unit.date_for_week_and_day(week_number(self.portfolio_auto_generation_date), Date::ABBR_DAYNAMES[self.portfolio_auto_generation_date.wday])
