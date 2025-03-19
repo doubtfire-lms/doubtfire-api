@@ -8,6 +8,9 @@ class SettingsApi < Grape::API
   get '/settings' do
     response = {
       externalName: Doubtfire::Application.config.institution[:product_name],
+      hasLogo: Doubtfire::Application.config.institution[:has_logo],
+      logoUrl: Doubtfire::Application.config.institution[:logo_url],
+      logoLinkUrl: Doubtfire::Application.config.institution[:logo_link_url],
       overseerEnabled: Doubtfire::Application.config.overseer_enabled,
       tiiEnabled: TurnItIn.enabled?,
       d2lEnabled: D2lIntegration.enabled?
