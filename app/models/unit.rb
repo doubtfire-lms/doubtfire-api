@@ -28,7 +28,8 @@ class Unit < ApplicationRecord
       :download_stats,
       :download_unit_csv,
       :download_grades,
-      :exceed_capacity
+      :exceed_capacity,
+      :get_los
     ]
 
     # What can convenors do with units?
@@ -48,7 +49,8 @@ class Unit < ApplicationRecord
       :download_grades,
       :rollover_unit,
       :exceed_capacity,
-      :perform_overseer_assessment_test
+      :perform_overseer_assessment_test,
+      :get_los
     ]
 
     # What can admin do with units?
@@ -66,7 +68,8 @@ class Unit < ApplicationRecord
       :download_stats,
       :download_unit_csv,
       :download_grades,
-      :exceed_capacity
+      :exceed_capacity,
+      :get_los
     ]
 
     # What can auditors do with units?
@@ -126,7 +129,7 @@ class Unit < ApplicationRecord
   has_many :tutorials, dependent: :destroy, inverse_of: :unit # tutorials need groups and tasks deleted before it...
   has_many :tutorial_streams, dependent: :destroy, inverse_of: :unit
   has_many :unit_roles, dependent: :destroy, inverse_of: :unit
-  has_many :learning_outcomes, dependent: :destroy, inverse_of: :unit
+  has_many :learning_outcomes, as: :context, dependent: :destroy # inverse_of: :unit
 
   has_many :comments, through: :projects
   has_many :tasks, through: :projects
@@ -310,9 +313,36 @@ class Unit < ApplicationRecord
       new_unit.group_sets << group_set.dup
     end
 
+    task_definition_outcome_mapping = {}
+    unit_learning_outcome_mapping = {}
+    chip_mapping = {}
+
     # Duplicate task definitions
     task_definitions.each do |td|
       new_td = td.copy_to(new_unit)
+
+      td.learning_outcomes.each do |learning_outcome| # for each old task definition, duplicate the learning outcomes associated with it aswell
+        new_outcome = learning_outcome.dup
+        new_td.learning_outcomes << new_outcome
+        task_definition_outcome_mapping[learning_outcome.id] = new_outcome.id
+
+        learning_outcome.feedback_chips.each do |chip|
+          new_chip = chip.dup
+          new_outcome.feedback_chips << new_chip
+          new_chip.learning_outcome_id = new_outcome.id if chip.respond_to?(:learning_outcome_id)
+          new_chip.save!
+          chip_mapping[chip.id] = new_chip.id
+        end
+      end
+
+      LearningOutcomeLink.where(source_id: task_definition_outcome_mapping.keys).find_each do |link|
+        new_source_id = task_definition_outcome_mapping[link.source_id]
+        new_target_id = task_definition_outcome_mapping[link.target_id]
+
+        if new_source_id && new_target_id
+          LearningOutcomeLink.create!(source_id: new_source_id, target_id: new_target_id)
+        end
+      end
 
       # Update default task definition if necessary
       if self.draft_task_definition == td
@@ -322,7 +352,34 @@ class Unit < ApplicationRecord
 
     # Duplicate unit learning outcomes
     learning_outcomes.each do |learning_outcome|
-      new_unit.learning_outcomes << learning_outcome.dup
+      new_outcome = learning_outcome.dup
+      new_unit.learning_outcomes << new_outcome
+      unit_learning_outcome_mapping[learning_outcome.id] = new_outcome.id
+
+      learning_outcome.feedback_chips.each do |chip|
+        new_chip = chip.dup
+        new_outcome.feedback_chips << new_chip
+        new_chip.learning_outcome_id = new_outcome.id if chip.respond_to?(:learning_outcome_id)
+        new_chip.save!
+        chip_mapping[chip.id] = new_chip.id
+      end
+    end
+
+    LearningOutcomeLink.where(source_id: unit_learning_outcome_mapping.keys).find_each do |link|
+      new_source_id = unit_learning_outcome_mapping[link.source_id] || link.source_id
+      new_target_id = unit_learning_outcome_mapping[link.target_id] || link.target_id
+
+      if new_source_id && new_target_id
+        LearningOutcomeLink.create!(source_id: new_source_id, target_id: new_target_id)
+      end
+    end
+
+    chip_mapping.each do |old_id, new_id|
+      old_chip = Feedback::FeedbackChip.find(old_id)
+      if old_chip.parent_chip_id && chip_mapping[old_chip.parent_chip_id]
+        new_chip = Feedback::FeedbackChip.find(new_id)
+        new_chip.update(parent_chip_id: chip_mapping[old_chip.parent_chip_id])
+      end
     end
 
     # Duplicate alignments
@@ -333,9 +390,9 @@ class Unit < ApplicationRecord
     new_unit
   end
 
-  def ordered_ilos
-    learning_outcomes.order(:ilo_number)
-  end
+  #def ordered_ilos
+  #  learning_outcomes.order(:ilo_number)
+  #end
 
   def task_outcome_alignments
     learning_outcome_task_links.where('task_id is NULL')
@@ -1017,13 +1074,45 @@ class Unit < ApplicationRecord
     end
   end
 
-  def export_learning_outcome_to_csv
+  def export_learning_outcome_to_csv(include_tlos: false)
     CSV.generate do |row|
       row << LearningOutcome.csv_header
-      learning_outcomes.each do |outcome|
+      unit_outcomes = learning_outcomes
+      task_outcomes = if include_tlos
+                        task_definitions.map(&:learning_outcomes).flatten
+                      else
+                        []
+                      end
+
+      all_outcomes = (unit_outcomes + task_outcomes).uniq
+
+      all_outcomes.each do |outcome|
         outcome.add_csv_row row
       end
     end
+  end
+
+  def export_feedback_chips_to_csv(include_tlos: false)
+    CSV.generate do |row|
+      row << Feedback::FeedbackChip.csv_header
+      unit_outcomes = learning_outcomes
+      task_outcomes = if include_tlos
+                        task_definitions.map(&:learning_outcomes).flatten
+                      else
+                        []
+                      end
+
+      all_outcomes = (unit_outcomes + task_outcomes).uniq
+      all_outcomes.each do |outcome|
+        outcome.feedback_chips.each do |chip|
+          chip.add_csv_row row
+        end
+      end
+    end
+  end
+
+  def export_title
+    code
   end
 
   def import_outcomes_from_csv(file)
@@ -1043,7 +1132,33 @@ class Unit < ApplicationRecord
       next if row[0] =~ /unit_code/
 
       begin
-        LearningOutcome.create_from_csv(self, row, result)
+        LearningOutcome.create_from_csv(row, result)
+      rescue Exception => e
+        result[:errors] << { row: row, message: e.message.to_s }
+      end
+    end
+
+    result
+  end
+
+  def import_feedback_chips_from_csv(file)
+    result = {
+      success: [],
+      errors: [],
+      ignored: []
+    }
+
+    data = read_file_to_str(file)
+
+    CSV.parse(data,
+              headers: true,
+              header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
+              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+      # Make sure we're not looking at the header or an empty line
+      next if row[0] =~ /unit_code/
+
+      begin
+        Feedback::FeedbackChip.create_from_csv(row, result)
       rescue Exception => e
         result[:errors] << { row: row, message: e.message.to_s }
       end
@@ -1079,11 +1194,11 @@ class Unit < ApplicationRecord
           next
         end
 
-        outcome_abbr = row['learning_outcome']
-        outcome = learning_outcomes.where('abbreviation = :abbr', abbr: outcome_abbr).first
+        outcome_abbreviation = row['learning_outcome']
+        outcome = learning_outcomes.where('abbreviation = :abbreviation', abbr: outcome_abbreviation).first
 
         if outcome.nil?
-          errors << { row: row, message: "Unable to locate learning outcome with abbreviation #{outcome_abbr}" }
+          errors << { row: row, message: "Unable to locate learning outcome with abbreviation #{outcome_abbreviation}" }
           next
         end
 
@@ -1611,35 +1726,6 @@ class Unit < ApplicationRecord
       end # mktmpdir
     end # zip
     result
-  end
-
-  #
-  # Create an ILO
-  #
-  def add_ilo(name, desc, abbr)
-    next_num = learning_outcomes.count + 1
-
-    LearningOutcome.create!(
-      unit_id: id,
-      name: name,
-      description: desc,
-      abbreviation: abbr,
-      ilo_number: next_num
-    )
-  end
-
-  #
-  # Reorder ILO sequence numbers based on ILO update
-  #
-  def move_ilo(ilo, new_num)
-    if ilo.ilo_number < new_num
-      logger.debug "Moving ILOs up #{ilo.ilo_number} to #{new_num}"
-      learning_outcomes.where("ilo_number > #{ilo.ilo_number} and ilo_number <= #{new_num}").find_each { |ilo| ilo.ilo_number -= 1; ilo.save }
-    elsif ilo.ilo_number > new_num
-      learning_outcomes.where("ilo_number < #{ilo.ilo_number} and ilo_number >= #{new_num}").find_each { |ilo| ilo.ilo_number += 1; ilo.save }
-    end
-    ilo.ilo_number = new_num
-    ilo.save
   end
 
   #

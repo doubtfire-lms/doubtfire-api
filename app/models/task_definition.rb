@@ -1,6 +1,51 @@
 require 'json'
 
 class TaskDefinition < ApplicationRecord
+  include ApplicationHelper
+  include FileHelper
+  include MimeCheckHelpers
+  include CsvHelper
+
+  def self.permissions
+    convenor_role_permissions = [
+      :update,
+      :get_los,
+      :upload_csv
+    ]
+
+    admin_role_permissions = [
+      :update,
+      :get_los,
+      :upload_csv
+    ]
+
+    tutor_role_permissions = [
+      :update,
+      :get_los
+    ]
+
+    nil_role_permissions = []
+
+    {
+      convenor: convenor_role_permissions,
+      admin: admin_role_permissions,
+      tutor: tutor_role_permissions,
+      nil: nil_role_permissions
+    }
+  end
+
+  def role_for(user)
+    if user.has_admin_capability?
+      Role.admin
+    elsif user.has_convenor_capability?
+      Role.convenor
+    elsif user.has_tutor_capability?
+      Role.tutor
+    else
+      nil
+    end
+  end
+
   before_destroy :delete_associated_files
 
   after_update :move_files_on_abbreviation_change, if: :saved_change_to_abbreviation?
@@ -17,7 +62,8 @@ class TaskDefinition < ApplicationRecord
   has_many :tasks, dependent:  :destroy # Destroying a task definition will also nuke any instances
   has_many :group_submissions, dependent: :destroy # Destroying a task definition will also nuke any group submissions
   has_many :learning_outcome_task_links, dependent: :destroy # links to learning outcomes
-  has_many :learning_outcomes, -> { where('learning_outcome_task_links.task_id is NULL') }, through: :learning_outcome_task_links # only link staff relations
+  # has_many :learning_outcomes, -> { where('learning_outcome_task_links.task_id is NULL') }, through: :learning_outcome_task_links # only link staff relations
+  has_many :learning_outcomes, as: :context, dependent: :destroy
 
   has_many :tii_group_attachments, dependent: :destroy # destroy uploaded files to tii - after the tasks
   has_many :tii_actions, as: :entity, dependent: :destroy
@@ -240,6 +286,82 @@ class TaskDefinition < ApplicationRecord
         csv << task_definition.to_csv_row
       end
     end
+  end
+
+  def export_learning_outcome_to_csv(include_tlos = false)
+    CSV.generate do |row|
+      row << LearningOutcome.csv_header
+      learning_outcomes.each do |outcome|
+        outcome.add_csv_row row
+      end
+    end
+  end
+
+  def export_feedback_chips_to_csv(include_tlos = false)
+    CSV.generate do |row|
+      row << Feedback::FeedbackChip.csv_header
+      learning_outcomes.each do |outcome|
+        outcome.feedback_chips.each do |chip|
+          chip.add_csv_row row
+        end
+      end
+    end
+  end
+
+  def export_title
+    abbreviation
+  end
+
+  def import_outcomes_from_csv(file)
+    result = {
+      success: [],
+      errors: [],
+      ignored: []
+    }
+
+    data = read_file_to_str(file)
+
+    CSV.parse(data,
+              headers: true,
+              header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
+              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+      # Make sure we're not looking at the header or an empty line
+      next if row[0] =~ /abbreviation/
+
+      begin
+        LearningOutcome.create_from_csv(row, result)
+      rescue Exception => e
+        result[:errors] << { row: row, message: e.message.to_s }
+      end
+    end
+
+    result
+  end
+
+  def import_feedback_chips_from_csv(file)
+    result = {
+      success: [],
+      errors: [],
+      ignored: []
+    }
+
+    data = read_file_to_str(file)
+
+    CSV.parse(data,
+              headers: true,
+              header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
+              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+      # Make sure we're not looking at the header or an empty line
+      next if row[0] =~ /unit_code/
+
+      begin
+        Feedback::FeedbackChip.create_from_csv(row, result)
+      rescue Exception => e
+        result[:errors] << { row: row, message: e.message.to_s }
+      end
+    end
+
+    result
   end
 
   def start_week

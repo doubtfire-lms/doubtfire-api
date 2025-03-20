@@ -32,7 +32,7 @@ class LearningOutcomeTaskLink < ApplicationRecord
 
     throw "Unable to duplicate project learning outcome task links in unit #{new_unit.code}" if task.present?
 
-    ilo = new_unit.learning_outcomes.find_by(abbreviation: self.learning_outcome.abbreviation)
+    ilo = new_unit.learning_outcomes.find_by(tag: self.learning_outcome.tag)
     throw "Unable to find Learning Outcome #{self.learning_outcome.abbreviation} in unit #{new_unit.code}" if ilo.nil?
 
     task_def = new_unit.task_definitions.find_by(abbreviation: self.task_definition.abbreviation)

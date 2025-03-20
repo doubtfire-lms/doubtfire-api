@@ -632,11 +632,13 @@ class DatabasePopulator
     unit_details[:ilos].times do |index|
       ilo_number = index + 1
       ilo = LearningOutcome.create!(
-        unit_id: unit.id,
-        ilo_number: ilo_number,
+        # unit_id: unit.id,
+        context_id: unit.id,
+        context_type: 'Unit',
         abbreviation: "ILO#{ilo_number}",
-        name: faker_random_sentence(1, 4).capitalize,
-        description: faker_random_sentence(10, 15)
+        # tag: "ILO#{ilo_number}",
+        short_description: faker_random_sentence(1, 4).capitalize,
+        full_outcome_description: faker_random_sentence(10, 15)
       )
       ilo_cache[ilo.id] = ilo
       echo "."
