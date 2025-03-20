@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_01_14_020409) do
+ActiveRecord::Schema[7.1].define(version: 2024_12_17_091744) do
   create_table "activity_types", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -46,14 +46,14 @@ ActiveRecord::Schema[7.1].define(version: 2025_01_14_020409) do
     t.index ["name"], name: "index_campuses_on_name", unique: true
   end
 
-  create_table "chip_usage_analytics", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+  create_table "chip_usages", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.bigint "feedback_chip_id", null: false
     t.bigint "tutor_id", null: false
     t.integer "usage_count", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["feedback_chip_id"], name: "index_chip_usage_analytics_on_feedback_chip_id"
-    t.index ["tutor_id"], name: "index_chip_usage_analytics_on_tutor_id"
+    t.index ["feedback_chip_id"], name: "index_chip_usages_on_feedback_chip_id"
+    t.index ["tutor_id"], name: "index_chip_usages_on_tutor_id"
   end
 
   create_table "comments_read_receipts", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
@@ -626,13 +626,12 @@ ActiveRecord::Schema[7.1].define(version: 2025_01_14_020409) do
     t.index ["user_id"], name: "index_webcals_on_user_id", unique: true
   end
 
-  add_foreign_key "user_oauth_states", "users"
-  add_foreign_key "user_oauth_tokens", "users"
-
-  add_foreign_key "chip_usage_analytics", "feedback_chips"
-  add_foreign_key "chip_usage_analytics", "users", column: "tutor_id"
+  add_foreign_key "chip_usages", "feedback_chips"
+  add_foreign_key "chip_usages", "users", column: "tutor_id"
   add_foreign_key "feedback_chips", "feedback_chips", column: "parent_chip_id"
   add_foreign_key "feedback_chips", "learning_outcomes"
   add_foreign_key "learning_outcome_links", "learning_outcomes", column: "source_id"
   add_foreign_key "learning_outcome_links", "learning_outcomes", column: "target_id"
+  add_foreign_key "user_oauth_states", "users"
+  add_foreign_key "user_oauth_tokens", "users"
 end
