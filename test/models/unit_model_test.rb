@@ -836,9 +836,15 @@ class UnitModelTest < ActiveSupport::TestCase
     DatabasePopulator.generate_portfolio(p)
     old_portfolio_path = p.portfolio_path
 
+    old_submission_history_path = FileHelper.task_submission_identifier_path_with_timestamp(:done, task, '123/45')
+    FileUtils.mkdir_p(old_submission_history_path)
+    FileUtils.touch(File.join(old_submission_history_path, 'output.txt'))
+
     assert File.exist?(old_path)
     assert File.exist?(task_pdf)
     assert File.exist?(old_portfolio_path)
+    assert File.exist?(old_submission_history_path)
+    assert File.exist?(File.join(old_submission_history_path, 'output.txt'))
 
     unit.move_files_to_archive
     unit.archived = true
@@ -853,6 +859,9 @@ class UnitModelTest < ActiveSupport::TestCase
     assert File.exist?(task.final_pdf_path), "New task file does not exist"
     assert_not File.exist?(old_portfolio_path), "Old portfolio file still exists - #{old_portfolio_path}"
     assert File.exist?(p.portfolio_path), "New portfolio file does not exist"
+    assert_not File.exist?(old_submission_history_path), "Old submission history still exists - #{old_submission_history_path}"
+    assert File.exist?(FileHelper.task_submission_identifier_path(:done, task))
+    assert File.exist?(File.join(FileHelper.task_submission_identifier_path_with_timestamp(:done, task, '123_45'), 'output.txt'))
 
     assert File.exist?(task.final_pdf_path), "Portfolio evidence file does not exist - #{task.final_pdf_path}"
 
@@ -862,17 +871,23 @@ class UnitModelTest < ActiveSupport::TestCase
 
     # File exists after rename
     assert File.exist?(task.final_pdf_path), "Portfolio evidence file does not exist - #{task.final_pdf_path}"
+    assert File.exist?(FileHelper.task_submission_identifier_path(:done, task))
+    assert File.exist?(File.join(FileHelper.task_submission_identifier_path_with_timestamp(:done, task, '123_45'), 'output.txt'))
 
     p.student.update(username: 'NEW_USERNAME')
     task.reload
     assert File.exist?(task.final_pdf_path), "Portfolio evidence file does not exist after username change - #{task.final_pdf_path}"
     assert File.exist?(p.portfolio_path), "New portfolio file does not exist"
+    assert File.exist?(FileHelper.task_submission_identifier_path(:done, task))
+    assert File.exist?(File.join(FileHelper.task_submission_identifier_path_with_timestamp(:done, task, '123_45'), 'output.txt'))
 
     unit.destroy!
 
     assert_not File.exist?(td.task_sheet), "New file exists after delete - #{td.task_sheet}"
     assert_not File.exist?(task.final_pdf_path), "New task file exists after delete - #{task.final_pdf_path}"
     assert_not File.exist?(p.portfolio_path), "New portfolio exists after delete - #{p.portfolio_path}"
+    assert_not File.exist?(FileHelper.task_submission_identifier_path(:done, task))
+    assert_not File.exist?(File.join(FileHelper.task_submission_identifier_path_with_timestamp(:done, task, '123_45'), 'output.txt'))
   ensure
     Doubtfire::Application.config.archive_units = false
   end

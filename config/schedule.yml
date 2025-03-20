@@ -12,6 +12,6 @@ clean_up_auth_tokens:
   cron: "every 30 minutes"
   class: "ClearAccessTokensJob"
 
-archive_old_units:
-  cron: "every 6 months"
-  class: "ArchiveOldUnitsJob"
+# archive_old_units:
+#   cron: "every 6 months"
+#   class: "ArchiveOldUnitsJob"
