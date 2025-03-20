@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_12_17_091744) do
+ActiveRecord::Schema[7.1].define(version: 2025_01_14_020409) do
   create_table "activity_types", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -46,6 +46,16 @@ ActiveRecord::Schema[7.1].define(version: 2024_12_17_091744) do
     t.index ["name"], name: "index_campuses_on_name", unique: true
   end
 
+  create_table "chip_usage_analytics", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "feedback_chip_id", null: false
+    t.bigint "tutor_id", null: false
+    t.integer "usage_count", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["feedback_chip_id"], name: "index_chip_usage_analytics_on_feedback_chip_id"
+    t.index ["tutor_id"], name: "index_chip_usage_analytics_on_tutor_id"
+  end
+
   create_table "comments_read_receipts", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
     t.bigint "task_comment_id", null: false
     t.bigint "user_id", null: false
@@ -71,6 +81,21 @@ ActiveRecord::Schema[7.1].define(version: 2024_12_17_091744) do
     t.integer "number_of_prompts"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "feedback_chips", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.string "type"
+    t.text "chip_text"
+    t.text "description"
+    t.text "comment_text"
+    t.text "summary_text"
+    t.bigint "learning_outcome_id", null: false
+    t.bigint "parent_chip_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "task_status"
+    t.index ["learning_outcome_id"], name: "index_feedback_chips_on_learning_outcome_id"
+    t.index ["parent_chip_id"], name: "index_feedback_chips_on_parent_chip_id"
   end
 
   create_table "group_memberships", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
@@ -122,6 +147,17 @@ ActiveRecord::Schema[7.1].define(version: 2024_12_17_091744) do
     t.index ["tutorial_id"], name: "index_groups_on_tutorial_id"
   end
 
+  create_table "learning_outcome_links", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "source_id", null: false
+    t.bigint "target_id", null: false
+    t.string "link_type"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["source_id", "target_id"], name: "index_learning_outcome_links_on_source_id_and_target_id", unique: true
+    t.index ["source_id"], name: "index_learning_outcome_links_on_source_id"
+    t.index ["target_id"], name: "index_learning_outcome_links_on_target_id"
+  end
+
   create_table "learning_outcome_task_links", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
     t.text "description"
     t.integer "rating"
@@ -136,13 +172,12 @@ ActiveRecord::Schema[7.1].define(version: 2024_12_17_091744) do
   end
 
   create_table "learning_outcomes", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
-    t.bigint "unit_id"
-    t.integer "ilo_number"
-    t.string "name"
-    t.string "description", limit: 4096
+    t.string "short_description"
+    t.string "full_outcome_description", limit: 4096
     t.string "abbreviation"
-    t.index ["abbreviation", "unit_id"], name: "index_learning_outcomes_on_abbreviation_and_unit_id", unique: true
-    t.index ["unit_id"], name: "index_learning_outcomes_on_unit_id"
+    t.bigint "context_id"
+    t.string "context_type"
+    t.index ["context_id", "context_type"], name: "index_learning_outcomes_on_context_id_and_context_type"
   end
 
   create_table "logins", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
@@ -593,4 +628,11 @@ ActiveRecord::Schema[7.1].define(version: 2024_12_17_091744) do
 
   add_foreign_key "user_oauth_states", "users"
   add_foreign_key "user_oauth_tokens", "users"
+
+  add_foreign_key "chip_usage_analytics", "feedback_chips"
+  add_foreign_key "chip_usage_analytics", "users", column: "tutor_id"
+  add_foreign_key "feedback_chips", "feedback_chips", column: "parent_chip_id"
+  add_foreign_key "feedback_chips", "learning_outcomes"
+  add_foreign_key "learning_outcome_links", "learning_outcomes", column: "source_id"
+  add_foreign_key "learning_outcome_links", "learning_outcomes", column: "target_id"
 end
