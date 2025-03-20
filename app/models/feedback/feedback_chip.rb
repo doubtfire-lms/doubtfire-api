@@ -9,7 +9,7 @@ module Feedback
     belongs_to :learning_outcome, class_name: 'LearningOutcome', optional: true
 
     has_many :child_chips, class_name: 'FeedbackChip', foreign_key: 'parent_chip_id', dependent: :nullify
-    has_many :chip_usage_analytics, class_name: 'ChipUsageAnalytics', dependent: :destroy
+    has_many :chip_usages, class_name: 'ChipUsage', dependent: :destroy
 
     validate :parent_chip_cannot_create_loop, if: :parent_chip_id_changed?
     # validate :parent_is_group_chip

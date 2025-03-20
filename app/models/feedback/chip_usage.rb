@@ -1,5 +1,5 @@
 module Feedback
-  class ChipUsageAnalytics < ApplicationRecord
+  class ChipUsage < ApplicationRecord
     belongs_to :feedback_chip, class_name: 'FeedbackChip'
     belongs_to :tutor, class_name: 'User'
 
