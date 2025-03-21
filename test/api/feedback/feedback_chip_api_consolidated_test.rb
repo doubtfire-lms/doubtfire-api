@@ -252,12 +252,49 @@ class FeedbackChipApiTestCondolidated < ActiveSupport::TestCase
       parent_chip_id: nil,
       learning_outcome_id: learning_outcome.id
     }
+
+    chip_count = learning_outcome.feedback_chips.count
+
     add_auth_header_for user: User.first
     post_json 'api/feedback_chips', data_to_post
     assert_equal 201, last_response.status
+
+    assert_equal chip_count + 1, learning_outcome.feedback_chips.count
+
+    response_keys = %w[id chip_text description parent_chip_id learning_outcome_id]
+    data = last_response_body
+    assert_json_matches_model Feedback::FeedbackGroupChip.last, data, response_keys
+    assert_equal Feedback::FeedbackGroupChip.last.id, data['id']
   end
 
   def test_create_feedback_template_chip
+    learning_outcome = FactoryBot.create(:learning_outcome)
+    group_chip = FactoryBot.create(:feedback_group_chip, learning_outcome_id: learning_outcome.id)
+    data_to_post = {
+      type: 'template',
+      chip_text: 'Sample chip text',
+      description: 'Sample description',
+      learning_outcome_id: learning_outcome.id,
+      task_status: TaskStatus.complete.name,
+      comment_text: 'Sample comment text',
+      summary_text: 'Sample summary text'
+    }
+    add_auth_header_for user: User.first
+
+    chip_count = learning_outcome.feedback_chips.count
+
+    post_json 'api/feedback_chips', data_to_post
+    assert_equal 201, last_response.status
+
+    assert_equal chip_count + 1, learning_outcome.feedback_chips.count
+
+    response_keys = %w[id chip_text description learning_outcome_id task_status comment_text summary_text]
+    data = last_response_body
+    assert_json_matches_model Feedback::FeedbackTemplateChip.last, data, response_keys
+    assert_equal Feedback::FeedbackTemplateChip.last.id, data['id']
+  end
+
+  def test_create_feedback_template_chip_with_parent
     learning_outcome = FactoryBot.create(:learning_outcome)
     group_chip = FactoryBot.create(:feedback_group_chip, learning_outcome_id: learning_outcome.id)
     data_to_post = {
@@ -271,8 +308,18 @@ class FeedbackChipApiTestCondolidated < ActiveSupport::TestCase
       summary_text: 'Sample summary text'
     }
     add_auth_header_for user: User.first
+
+    chip_count = learning_outcome.feedback_chips.count
+
     post_json 'api/feedback_chips', data_to_post
     assert_equal 201, last_response.status
+
+    assert_equal chip_count + 1, learning_outcome.feedback_chips.count
+
+    response_keys = %w[id chip_text description learning_outcome_id parent_chip_id task_status comment_text summary_text]
+    data = last_response_body
+    assert_json_matches_model Feedback::FeedbackTemplateChip.last, data, response_keys
+    assert_equal Feedback::FeedbackTemplateChip.last.id, data['id']
   end
 
   def test_get_all_feedback_chips_for_a_context
@@ -336,7 +383,7 @@ class FeedbackChipApiTestCondolidated < ActiveSupport::TestCase
     learning_outcome = FactoryBot.create(:learning_outcome)
     group_chip = FactoryBot.create(:feedback_group_chip, learning_outcome_id: learning_outcome.id)
     template_chip = FactoryBot.create(:feedback_template_chip, chip_text: 'chippy', description: 'blah blah', comment_text: 'your work is horrible', summary_text: 'just plain bad', task_status: TaskStatus.complete.name, learning_outcome_id: learning_outcome.id, parent_chip_id: group_chip.id)
-    puts template_chip.inspect
+    # puts template_chip.inspect
     data_to_post = {
       type: 'group',
       chip_text: 'Sample chip text',
@@ -344,14 +391,14 @@ class FeedbackChipApiTestCondolidated < ActiveSupport::TestCase
     }
     add_auth_header_for user: User.first
     put_json "api/feedback_chips/#{template_chip.id}", data_to_post
-    puts last_response.body
+    # puts last_response.body
     assert_equal 200, last_response.status
   end
 
   def test_change_chip_type_g_to_t
     learning_outcome = FactoryBot.create(:learning_outcome)
     group_chip = FactoryBot.create(:feedback_group_chip, learning_outcome_id: learning_outcome.id)
-    puts group_chip.inspect
+    # puts group_chip.inspect
     data_to_post = {
       type: 'template',
       chip_text: 'Sample chip text',
@@ -364,7 +411,7 @@ class FeedbackChipApiTestCondolidated < ActiveSupport::TestCase
     }
     add_auth_header_for user: User.first
     put_json "api/feedback_chips/#{group_chip.id}", data_to_post
-    puts last_response.body
+    # puts last_response.body
     assert_equal 200, last_response.status
   end
 
@@ -377,7 +424,7 @@ class FeedbackChipApiTestCondolidated < ActiveSupport::TestCase
     }
     add_auth_header_for user: User.first
     put_json "api/feedback_chips/#{group_chip.id}", data_to_post
-    puts last_response.body
+    # puts last_response.body
     assert_equal 200, last_response.status
   end
 
@@ -390,7 +437,7 @@ class FeedbackChipApiTestCondolidated < ActiveSupport::TestCase
     feedback_template_chip2 = FactoryBot.create(:feedback_template_chip, learning_outcome_id: learning_outcome2.id, parent_chip_id: feedback_group_chip2.id)
     add_auth_header_for user: User.first
     get 'api/global/feedback_chips'
-    puts last_response.body
+    # puts last_response.body
     assert_equal 200, last_response.status
   end
 end
