@@ -20,14 +20,16 @@ class LearningOutcome < ApplicationRecord
       :update,
       :get_los,
       :update_glos,
-      :upload_csv
+      :upload_csv,
+      :create_feedback_chips
     ]
 
     admin_role_permissions = [
       :update,
       :get_los,
       :update_glos,
-      :upload_csv
+      :upload_csv,
+      :create_feedback_chips
     ]
 
     tutor_role_permissions = [
@@ -36,28 +38,40 @@ class LearningOutcome < ApplicationRecord
       :update_glos
     ]
 
+    auditor_role_permissions = [
+      :get_los
+    ]
+
     nil_role_permissions = []
 
     {
       convenor: convenor_role_permissions,
       admin: admin_role_permissions,
       tutor: tutor_role_permissions,
+      auditor: auditor_role_permissions,
       nil: nil_role_permissions
     }
   end
 
   def role_for(user)
-    if user.has_admin_capability?
-      Role.admin
-    elsif user.has_convenor_capability?
-      Role.convenor
-    elsif user.has_tutor_capability?
-      Role.tutor
-    else # explicit
-      nil
+    if context.nil?
+      # Global outcomes - only admins can edit.
+      # - No convenor level as that gived edit
+      if user.has_admin_capability?
+        Role.admin
+      elsif user.has_tutor_capability?
+        Role.tutor
+      else # explicit
+        nil
+      end
+    else
+      context.role_for(user)
     end
   end
 
+  scope :global_outcomes, -> { where(context_id: nil, context_type: nil) }
+
+  # Where the outcome is defined - TaskDefinition, Unit, nil
   belongs_to :context, polymorphic: true, optional: true
 
   # Which higher level outcomes does this outcome support
@@ -210,5 +224,12 @@ class LearningOutcome < ApplicationRecord
     end
 
     result
+  end
+
+  def link_to(linked_outcome)
+    LearningOutcomeLink.create!(
+      source_id: id,
+      target_id: linked_outcome.id
+    )
   end
 end

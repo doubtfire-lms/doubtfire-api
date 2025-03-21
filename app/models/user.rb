@@ -316,7 +316,8 @@ class User < ApplicationRecord
       :admin_overseer,
       :use_overseer,
 
-      :feedback_chips,
+      :get_feedback_chips,
+      :create_feedback_chips, # create global feedback chips
       :get_los,
       :update_glos,
 
@@ -335,7 +336,8 @@ class User < ApplicationRecord
 
       :get_teaching_periods,
       :use_overseer,
-      :get_scorm_token
+      :get_scorm_token,
+      :get_feedback_chips
     ]
 
     # What can convenors do with users?
@@ -356,7 +358,7 @@ class User < ApplicationRecord
       :use_overseer,
       :get_scorm_token,
 
-      :feedback_chips,
+      :get_feedback_chips,
       :get_los,
       :update_glos
     ]
@@ -368,7 +370,7 @@ class User < ApplicationRecord
       :get_teaching_periods,
       :get_scorm_token,
 
-      :feedback_chips,
+      :get_feedback_chips,
       :get_los,
       :update_glos
     ]

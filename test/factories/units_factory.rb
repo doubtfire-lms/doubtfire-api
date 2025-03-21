@@ -15,25 +15,20 @@ FactoryBot.define do
     target_date               { start_date + rand(1..2).weeks }
     group_set                 { nil }
     tutorial_stream           { unit.tutorial_streams.sample }
-  end
 
-=begin
-factory :learning_outcome do
-    unit
-    name                      { Faker::Lorem.unique.words(number: 3).join(' ') }
-    sequence(:abbreviation)   { |n| "ULO-#{n}" }
-    sequence(:ilo_number)     { |n| n }
-    description               { Faker::Lorem.sentence }
-  end
+    transient do
+      outcome_count             { 2 }
+    end
 
-  factory :learning_outcome do
-    context_type { 'Unit' }
-    context_id { 1 }
-    abbreviation { Faker::Lorem.unique.words(number: 3).join(' ') }
-    short_description { Faker::Lorem.sentence }
-    full_outcome_description { Faker::Lorem.sentence }
+    after(:create) do |td, eval|
+      outcomes = create_list(:learning_outcome, eval.outcome_count, context_type: 'TaskDefinition', context_id: td.id)
+
+      outcomes.each do |o|
+        o.link_to td.unit.learning_outcomes.sample
+        o.link_to LearningOutcome.global_outcomes.sample
+      end
+    end
   end
-=end
 
   factory :unit_role do
     unit

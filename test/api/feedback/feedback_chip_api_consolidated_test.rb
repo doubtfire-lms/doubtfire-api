@@ -9,6 +9,240 @@ class FeedbackChipApiTestCondolidated < ActiveSupport::TestCase
     Rails.application
   end
 
+  def test_auth_for_create_edit_unit_feedback_chips
+    unit = FactoryBot.create(:unit, with_students: false)
+    admin = FactoryBot.create(:user, :admin)
+    tutor = FactoryBot.create(:user, :tutor)
+
+    learning_outcomes = [
+      unit.learning_outcomes.first,
+      unit.task_definitions.first.learning_outcomes.first
+    ]
+
+    unit.employ_staff(tutor, Role.tutor)
+
+    users_can = [
+      unit.main_convenor_user,
+      admin
+    ]
+    users_cant = [
+      FactoryBot.create(:user, :student),
+      FactoryBot.create(:user, :tutor),
+      tutor,
+      FactoryBot.create(:user, :convenor),
+      FactoryBot.create(:user, :auditor)
+    ]
+
+    data_to_post = {
+      type: 'group',
+      chip_text: 'Sample chip text',
+      description: 'Sample description',
+      parent_chip_id: nil,
+      learning_outcome_id: nil
+    }
+
+    data_to_put = {
+      chip_text: 'Updated text',
+    }
+
+    learning_outcomes.each do |lo|
+      FactoryBot.create(:feedback_group_chip, learning_outcome_id: lo.id)
+    end
+
+    users_can.each do |user|
+      add_auth_header_for user: user
+      learning_outcomes.each do |lo|
+        data_to_post[:learning_outcome_id] = lo.id
+        chip_count = lo.feedback_chips.count
+
+        post_json 'api/feedback_chips', data_to_post
+        assert_equal 201, last_response.status, "User #{user.role.name} should be able to create feedback chips for #{lo.context_type} #{lo.context_type}"
+        assert_equal chip_count + 1, lo.feedback_chips.count
+
+        last_chip = Feedback::FeedbackGroupChip.find(last_response_body['id'])
+
+        put_json "api/feedback_chips/#{last_chip.id}", data_to_put
+        assert_equal 200, last_response.status, "User #{user.role.name} should be able to update feedback chips for #{lo.context_type}"
+
+        # Clean up
+        Feedback::FeedbackGroupChip.last.destroy
+      end
+    end
+
+    users_cant.each do |user|
+      add_auth_header_for user: user
+
+      learning_outcomes.each do |lo|
+        data_to_post[:learning_outcome_id] = lo.id
+        chip_count = lo.feedback_chips.count
+
+        post_json 'api/feedback_chips', data_to_post
+        assert_equal 403, last_response.status, "User #{user.role.name} should not be able to create feedback chips"
+        assert_equal chip_count, lo.feedback_chips.count
+
+        last_chip = lo.feedback_chips.last
+
+        put_json "api/feedback_chips/#{last_chip.id}", data_to_put
+        assert_equal 403, last_response.status, "User #{user.role.name} should not be able to update feedback chips for #{lo.context_type}"
+      end
+    end
+  end
+
+  def test_auth_for_create_edit_global_feedback_chips
+    admin = FactoryBot.create(:user, :admin)
+
+    learning_outcome = LearningOutcome.global_outcomes.first
+
+    users_can = [
+      admin
+    ]
+    users_cant = [
+      FactoryBot.create(:user, :student),
+      FactoryBot.create(:user, :tutor),
+      FactoryBot.create(:user, :convenor),
+      FactoryBot.create(:user, :auditor)
+    ]
+
+    data_to_post = {
+      type: 'group',
+      chip_text: 'Sample chip text',
+      description: 'Sample description',
+      parent_chip_id: nil,
+      learning_outcome_id: learning_outcome.id
+    }
+
+    data_to_put = {
+      chip_text: 'Updated text',
+    }
+
+    FactoryBot.create(:feedback_group_chip, learning_outcome_id: learning_outcome.id)
+
+    chip_count = learning_outcome.feedback_chips.count
+
+    users_can.each do |user|
+      add_auth_header_for user: user
+
+      post_json 'api/feedback_chips', data_to_post
+      assert_equal 201, last_response.status, "User #{user.role.name} should be able to create feedback chips"
+      assert_equal chip_count + 1, learning_outcome.feedback_chips.count
+
+      last_chip = Feedback::FeedbackGroupChip.find(last_response_body['id'])
+
+      put_json "api/feedback_chips/#{last_chip.id}", data_to_put
+      assert_equal 200, last_response.status, "User #{user.role.name} should be able to update feedback chips. #{last_response_body}"
+
+      # Clean up
+      Feedback::FeedbackGroupChip.last.destroy
+    end
+
+    users_cant.each do |user|
+      add_auth_header_for user: user
+
+      post_json 'api/feedback_chips', data_to_post
+      assert_equal 403, last_response.status, "User #{user.role.name} should not be able to create feedback chips"
+      assert_equal chip_count, learning_outcome.feedback_chips.count
+
+      last_chip = LearningOutcome.global_outcomes.first.feedback_chips.last
+
+      put_json "api/feedback_chips/#{last_chip.id}", data_to_put
+      assert_equal 403, last_response.status, "User #{user.role.name} should not be able to update feedback chips"
+    end
+  end
+
+  def test_auth_for_get_unit_feedback_chips
+    start_inside = DateTime.now - Doubtfire::Application.config.auditor_unit_access_years + 1.week
+    end_inside = DateTime.now - 1.week
+
+    unit = FactoryBot.create(:unit, student_count: 1, start_date: start_inside, end_date: end_inside)
+    admin = FactoryBot.create(:user, :admin)
+    tutor = FactoryBot.create(:user, :tutor)
+    auditor = FactoryBot.create(:user, :auditor)
+    student = unit.students.first
+
+    learning_outcomes = [
+      {
+        url: "/api/units/#{unit.id}/feedback_chips",
+        outcome: unit.learning_outcomes.first
+      },
+      {
+        url: "/api/task_definitions/#{unit.task_definitions.first.id}/feedback_chips",
+        outcome: unit.task_definitions.first.learning_outcomes.first
+      }
+    ]
+
+    unit.employ_staff(tutor, Role.tutor)
+
+    users_can = [
+      unit.main_convenor_user,
+      admin,
+      tutor,
+      auditor
+    ]
+    users_cant = [
+      FactoryBot.create(:user, :student),
+      FactoryBot.create(:user, :tutor),
+      FactoryBot.create(:user, :convenor),
+      student.user
+    ]
+
+    assert_equal Role.auditor, unit.role_for(auditor)
+
+    users_can.each do |user|
+      add_auth_header_for user: user
+      learning_outcomes.each do |lo_data|
+        lo = lo_data[:outcome]
+        url = lo_data[:url]
+
+        chip_count = lo.feedback_chips.count
+
+        get url
+        assert_equal 200, last_response.status, "User #{user.role.name} should be able to get feedback chips for #{lo.context_type}"
+        assert_equal chip_count, last_response_body.count, last_response_body
+      end
+    end
+
+    users_cant.each do |user|
+      add_auth_header_for user: user
+
+      learning_outcomes.each do |lo_data|
+        lo = lo_data[:outcome]
+        url = lo_data[:url]
+
+        chip_count = lo.feedback_chips.count
+
+        get url
+        assert_equal 403, last_response.status, "User #{user.role.name} should not be able to get feedback chips"
+      end
+    end
+  end
+
+  def test_auth_for_get_global_feedback_chips
+    users_can = [
+      FactoryBot.create(:user, :tutor),
+      FactoryBot.create(:user, :convenor),
+      FactoryBot.create(:user, :auditor),
+      FactoryBot.create(:user, :admin)
+    ]
+    users_cant = [
+      FactoryBot.create(:user, :student)
+    ]
+
+    users_can.each do |user|
+      add_auth_header_for user: user
+      chip_count = LearningOutcome.global_outcomes.includes(:feedback_chips).map(&:feedback_chips).flatten.count
+
+      get "/api/global/feedback_chips"
+      assert_equal 200, last_response.status, "User #{user.role.name} should be able to get feedback chips"
+      assert_equal chip_count, last_response_body.count, last_response_body
+    end
+
+    users_cant.each do |user|
+      add_auth_header_for user: user
+      get "/api/global/feedback_chips"
+      assert_equal 403, last_response.status, "User #{user.role.name} should not be able to get feedback chips"
+    end
+  end
+
   def test_create_feedback_group_chip
     learning_outcome = FactoryBot.create(:learning_outcome)
     data_to_post = {

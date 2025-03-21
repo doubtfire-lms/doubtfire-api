@@ -16,7 +16,7 @@ module Feedback
       context_type = params[:context_type_plural].singularize.camelize
       context_model = context_type.classify.constantize.find(params[:context_id])
 
-      unless authorise? current_user, context_model, :get_los
+      unless authorise? current_user, context_model, :get_feedback_chips
         error!({ error: 'You are not authorised to view feedback chips in this context.' }, 403)
       end
 
@@ -27,10 +27,10 @@ module Feedback
 
     desc "Get all feedback chips for a global context"
     get '/global/feedback_chips' do
-      unless authorise? current_user, User, :feedback_chips
+      unless authorise? current_user, User, :get_feedback_chips
         error!({ error: 'You are not authorised to view feedback chips globally.' }, 403)
       end
-      learning_outcomes = LearningOutcome.where(context_id: nil, context_type: nil)
+      learning_outcomes = LearningOutcome.global_outcomes
       feedback_chips = learning_outcomes.includes(:feedback_chips).map(&:feedback_chips).flatten
 
       present feedback_chips, with: Feedback::Entities::FeedbackChipEntity
@@ -48,7 +48,9 @@ module Feedback
       requires :type, type: String, desc: 'The type of the feedback chip (template or group)'
     end
     post '/feedback_chips' do
-      unless authorise? current_user, User, :feedback_chips
+      learning_outcome = LearningOutcome.find(params[:learning_outcome_id])
+
+      unless authorise? current_user, learning_outcome, :create_feedback_chips
         error!({ error: 'You are not authorised to create feedback chips.' }, 403)
       end
 
@@ -56,7 +58,7 @@ module Feedback
       chip = chip_class.create(declared(params, include_missing: false).except(:type))
 
       if params[:type] == 'group'
-        learning_outcome = LearningOutcome.find(params[:learning_outcome_id])
+
         if learning_outcome.context_type == 'TaskDefinition'
           task_definition = TaskDefinition.find(learning_outcome.context_id)
           unit = task_definition.unit
@@ -80,45 +82,38 @@ module Feedback
       requires :id, type: Integer, desc: 'The ID of the feedback chip'
       optional :chip_text, type: String, desc: 'The title of the feedback chip'
       optional :parent_chip_id, type: Integer, desc: 'The parent chip ID of the feedback chip'
-      optional :learning_outcome_id, type: Integer, desc: 'The learning outcome of the feedback chip'
+      # optional :learning_outcome_id, type: Integer, desc: 'The learning outcome of the feedback chip'
       optional :description, type: String, desc: 'The description of the feedback chip'
       optional :task_status, type: String, desc: 'The task status of the feedback template chip'
       optional :comment_text, type: String, desc: 'The comment text of the feedback template chip'
       optional :summary_text, type: String, desc: 'The summary text of the feedback template chip'
-      optional :type, type: String, desc: 'The type of the feedback chip (template or group)'
+      # optional :type, type: String, desc: 'The type of the feedback chip (template or group)'
     end
     put '/feedback_chips/:id' do
-      unless authorise? current_user, User, :feedback_chips
-        error!({ error: 'You are not authorised to update feedback chips.' }, 403)
-      end
-
       chip = FeedbackChip.find(params[:id])
 
-      if params.key?(:type)
-        if params[:type] == 'template'
-          chip.update(type: 'Feedback::FeedbackTemplateChip')
-        elsif params[:type] == 'group'
-          chip.update(type: 'Feedback::FeedbackGroupChip')
-        else
-          error!({ error: 'Invalid feedback chip type' }, 400)
-        end
+      unless authorise? current_user, chip, :update_chip
+        error!({ error: 'You are not authorised to update feedback chips.' }, 403)
       end
 
       chip.update(declared(params, include_missing: false).except(:type))
 
-      if chip.type == 'Feedback::FeedbackGroupChip'
-        learning_outcome = LearningOutcome.find(chip.learning_outcome_id)
+      # Ensure we have the right group ID for group chips
+      if chip.type == 'Feedback::FeedbackGroupChip' && params.key?(:chip_text)
+        learning_outcome = chip.learning_outcome
         if learning_outcome.context_type == 'TaskDefinition'
-          task_definition = TaskDefinition.find(learning_outcome.context_id)
+          task_definition = learning_outcome.context
           unit = task_definition.unit
-          group_id = "#{unit.id}-#{task_definition.id}-#{learning_outcome.abbreviation}-#{chip.chip_text}"
+          group_chip_id = "#{unit.id}-#{task_definition.id}-#{learning_outcome.abbreviation}-#{chip.chip_text}"
         elsif learning_outcome.context_type == 'Unit'
           unit = Unit.find(learning_outcome.context_id)
-          group_id = "#{unit.id}-#{learning_outcome.abbreviation}-#{chip.chip_text}"
+          group_chip_id = "#{unit.id}-#{learning_outcome.abbreviation}-#{chip.chip_text}"
+        elsif learning_outcome.context_type.nil? && learning_outcome.context_id.nil?
+          group_chip_id = "global-#{learning_outcome.abbreviation}-#{chip.chip_text}"
         else
           error!({ error: 'Invalid context type' }, 400)
         end
-        chip.update(comment_text: group_id)
+        chip.update(comment_text: group_chip_id)
       end
 
       entity = chip.type == 'Feedback::FeedbackTemplateChip' ? Entities::FeedbackTemplateChipEntity : Entities::FeedbackGroupChipEntity
@@ -147,6 +142,9 @@ module Feedback
     post '/feedback_template_chip/:id/track_usage' do
       chip = FeedbackTemplateChip.find(params[:id])
       tutor = Tutor.find(params[:tutor_id])
+
+
+
       chip.track_usage_by_tutor(tutor)
       nil
     end
@@ -161,7 +159,7 @@ module Feedback
       context_model = context_type.classify.constantize.find(params[:context_id])
       learning_outcome = LearningOutcome.find(params[:id])
 
-      unless authorise? current_user, context_model, :update
+      unless authorise? current_user, context_model, :get_feedback_chips
         error!({ error: 'You are not authorised to download feedback chips in this context.' }, 403)
       end
 

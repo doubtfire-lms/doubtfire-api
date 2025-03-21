@@ -29,7 +29,8 @@ class Unit < ApplicationRecord
       :download_unit_csv,
       :download_grades,
       :exceed_capacity,
-      :get_los
+      :get_los,
+      :get_feedback_chips
     ]
 
     # What can convenors do with units?
@@ -50,7 +51,9 @@ class Unit < ApplicationRecord
       :rollover_unit,
       :exceed_capacity,
       :perform_overseer_assessment_test,
-      :get_los
+      :get_los,
+      :create_feedback_chips,
+      :get_feedback_chips
     ]
 
     # What can admin do with units?
@@ -69,7 +72,9 @@ class Unit < ApplicationRecord
       :download_unit_csv,
       :download_grades,
       :exceed_capacity,
-      :get_los
+      :get_los,
+      :create_feedback_chips,
+      :get_feedback_chips
     ]
 
     # What can auditors do with units?
@@ -77,6 +82,7 @@ class Unit < ApplicationRecord
       :get_unit,
       :get_students,
       :download_stats,
+      :get_feedback_chips
     ]
 
     # What can other users do with units?
