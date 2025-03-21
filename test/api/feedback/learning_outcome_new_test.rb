@@ -262,7 +262,7 @@ class LearningOutcomeNewTest < ActiveSupport::TestCase
       data_to_post = {
         context_type: 'TaskDefinition',
         context_id: task_definition.id,
-        abbreviation: "TLO1 (legacy)",
+        abbreviation: "TLO1",
         short_description: "Demonstrate these learning outcomes (legacy)",
         full_outcome_description: "Demonstrate engagement with the following unit learning outcomes (legacy)",
         linked_outcome_ids: linked_outcome_ids
@@ -270,7 +270,7 @@ class LearningOutcomeNewTest < ActiveSupport::TestCase
 
       add_auth_header_for user: User.first
       post_json "api/task_definitions/#{task_definition.id}/outcomes", data_to_post
-      puts last_response.body
+      # puts last_response.body
     end
   end
 

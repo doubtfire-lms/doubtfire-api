@@ -12,7 +12,7 @@ class MigrateTaskLinksToLegacyLearningOutcomes < ActiveRecord::Migration[7.1]
       legacy_learning_outcome = LearningOutcome.create!(
         context_id: task_definition.id,
         context_type: 'TaskDefinition',
-        abbreviation: 'TLO1 (Legacy)',
+        abbreviation: 'TLO1',
         short_description: 'Demonstrate these learning outcomes (legacy)',
         full_outcome_description: 'Demonstrate engagement with the following unit learning outcomes (legacy)'
       )
@@ -29,7 +29,7 @@ class MigrateTaskLinksToLegacyLearningOutcomes < ActiveRecord::Migration[7.1]
   def down
     legacy_outcomes = LearningOutcome.where(
       context_type: 'TaskDefinition',
-      abbreviation: 'TLO1 (Legacy)',
+      abbreviation: 'TLO1',
       short_description: 'Demonstrate these learning outcomes (legacy)',
       full_outcome_description: 'Demonstrate engagement with the following unit learning outcomes (legacy)'
     )
