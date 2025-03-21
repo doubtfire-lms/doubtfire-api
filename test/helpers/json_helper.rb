@@ -36,26 +36,31 @@ module TestHelpers
     # - key data is either a hash that maps response to model keys, or a list of keys to match
     def assert_json_matches_model(model, response_json, keys_data)
       if keys_data.instance_of? Hash
-        response_keys = keys_data.keys.map {|k| k.to_s }
+        response_keys = keys_data.keys.map(&:to_s)
         keys = keys_data
       else
         response_keys = keys_data
-        keys = keys_data.map { |i| [i, i] }.to_h
+        keys = keys_data.to_h { |i| [i, i] }
       end
-      response_keys.each { |k| assert response_json.key?(k), "Response missing key #{k} - #{response_json}" }
-      response_keys.each { |k|
+      response_keys.each do |k|
+        assert response_json.key?(k) || response_json.key?(k.to_sym), "Response missing key #{k} - #{response_json}"
         mk = keys[k] || keys[k.to_sym]
-        value = model.is_a?(Hash) ? (model[mk].nil? ? model[mk.to_sym] : model[mk]) : model.send(mk)
-        if ! value.nil?
-          assert_equal value, response_json[k], "Values for model key #{mk} does not match value of response key #{k} - #{response_json}"
+        value = if model.is_a?(Hash)
+                  model[mk].nil? ? model[mk.to_sym] : model[mk]
+                else
+                  model.send(mk)
+                end
+        model_value = response_json.key?(k) ? response_json[k] : response_json[k.to_sym]
+        if value.present?
+          assert_equal value, model_value, "Values for model key #{mk} does not match value of response key #{k} - #{response_json}"
         else
-          assert_nil response_json[k], "Values for key #{k} is not nil - #{response_json}"
+          assert_nil model_value, "Values for key #{k} is not nil - #{response_json}"
         end
-      }
+      end
     end
 
     def assert_json_limit_keys_to(keys, response_json)
-      response_json.keys.each do |k|
+      response_json.each_key do |k|
         assert keys.include?(k), "Unexpected key in response: #{k} -- #{response_json.inspect}"
       end
     end

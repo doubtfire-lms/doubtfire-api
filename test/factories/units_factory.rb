@@ -17,7 +17,7 @@ FactoryBot.define do
     tutorial_stream           { unit.tutorial_streams.sample }
 
     transient do
-      outcome_count             { 2 }
+      outcome_count { 2 }
     end
 
     after(:create) do |td, eval|
