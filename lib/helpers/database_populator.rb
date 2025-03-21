@@ -61,6 +61,7 @@ class DatabasePopulator
     generate_fixed_data()
 
     generate_teaching_periods()
+    generate_global_learning_outcomes()
     generate_campuses
     generate_activity_types
   end
@@ -98,6 +99,25 @@ class DatabasePopulator
     tp = TeachingPeriod.create! data
 
     tp.add_break Date.parse('2018-12-24'), 2
+  end
+
+  def generate_global_learning_outcomes
+    data = [
+      {
+        abbreviation: 'GLO1',
+        short_description: 'Demonstrate discipline specific knowledge and skills',
+        full_outcome_description: 'Demonstrate discipline specific knowledge and skills',
+      },
+      {
+        abbreviation: 'GLO2',
+        short_description: 'Demonstrate communication skills',
+        full_outcome_description: 'Demonstrate communication skills written, oral, visual, etc',
+      },
+    ]
+
+    data.each do |d|
+      LearningOutcome.create! d
+    end
   end
 
   def generate_campuses

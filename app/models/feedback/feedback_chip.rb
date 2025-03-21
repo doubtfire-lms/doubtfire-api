@@ -35,6 +35,29 @@ module Feedback
     # validate :check_tree_completeness_per_learning_outcome, on: [:update]
     # validate :check_no_orphaned_chips
 
+    def self.permissions
+      convenor_role_permissions = [
+        :update_chip
+      ]
+
+      admin_role_permissions = [
+        :update_chip
+      ]
+
+      nil_role_permissions = []
+
+      {
+        convenor: convenor_role_permissions,
+        admin: admin_role_permissions,
+        tutor: nil_role_permissions,
+        student: nil_role_permissions,
+        auditor: nil_role_permissions,
+        nil: nil_role_permissions
+      }
+    end
+
+    delegate :role_for, to: :learning_outcome
+
     def track_usage_by(tutor)
       analytics = chip_usage_analytics.find_or_initialize_by(tutor: tutor)
       analytics.usage_count += 1

@@ -8,20 +8,19 @@ class TaskDefinition < ApplicationRecord
 
   def self.permissions
     convenor_role_permissions = [
-      :update,
-      :get_los,
-      :upload_csv
+      :get_feedback_chips
     ]
 
     admin_role_permissions = [
-      :update,
-      :get_los,
-      :upload_csv
+      :get_feedback_chips
     ]
 
     tutor_role_permissions = [
-      :update,
-      :get_los
+      :get_feedback_chips
+    ]
+
+    auditor_role_permissions = [
+      :get_feedback_chips
     ]
 
     nil_role_permissions = []
@@ -30,21 +29,12 @@ class TaskDefinition < ApplicationRecord
       convenor: convenor_role_permissions,
       admin: admin_role_permissions,
       tutor: tutor_role_permissions,
+      auditor: auditor_role_permissions,
       nil: nil_role_permissions
     }
   end
 
-  def role_for(user)
-    if user.has_admin_capability?
-      Role.admin
-    elsif user.has_convenor_capability?
-      Role.convenor
-    elsif user.has_tutor_capability?
-      Role.tutor
-    else
-      nil
-    end
-  end
+  delegate :role_for, to: :unit
 
   before_destroy :delete_associated_files
 

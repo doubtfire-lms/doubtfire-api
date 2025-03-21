@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class FeedbackChipApiTest < ActiveSupport::TestCase
+class FeedbackChipModelTest < ActiveSupport::TestCase
 
   def test_valid_feedback_template_chip_parent
     unit = Unit.first
