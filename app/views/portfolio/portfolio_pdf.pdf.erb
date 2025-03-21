@@ -144,30 +144,41 @@ No Tutor
 \section{Learning Outcomes}
 \label{sec:Learning Outcomes}
 
-<% @outcomes.each do | outcome | %>
-\subsection{<%= lesc outcome.name %>}
+<% @outcomes.order(:abbreviation).each do | outcome | %>
+\subsection{<%= lesc outcome.abbreviation %> <%= lesc outcome.short_description %>}
 \label{losub:<%= lesc outcome.id %>}
 
-<%= lesc outcome.description %>
+<%= lesc outcome.full_outcome_description %>
+
 \medskip
 
-\begin{tabular}{p{6cm}|l|m{3cm}|l}
-  \textbf{Task} & \textbf{Rating} & \textbf{Status} & \textbf{Times Assessed}\\ \hline
-  <% query_result = @project.tasks.joins(:learning_outcome_task_links).joins(:task_definition).where("learning_outcome_task_links.learning_outcome_id = #{outcome.id}").select("learning_outcome_task_links.rating AS r", "task_definitions.name AS task_name","task_definitions.id AS td_id")
-    query_result.each do | data | %>
-    <% task = task_for_def_id(data.td_id) %>
-    <%= lesc data.task_name %> &
-    $<%= '\blacklozenge' * data.r %><%= '\lozenge' * (5 - data.r) %>$ &
-    \cellcolor{<%= latex_color_for_status(task) %>}{<%= lesc task.task_status.name %>} &
-    <%= lesc task.times_assessed %> \\
-  <% end %>
+<%
+  linked_outcomes = outcome.demonstrated_through_outcomes
+  if linked_outcomes.count > 0
+%>
+\begin{tabular}{p{9cm}|l|l}
+  \textbf{Task} & \textbf{Status} & \textbf{Times Assessed}\\ \hline
+<%
+    # For each of the task definitions - linked to this learning outcome
+    num_tasks = linked_outcomes.group_by(&:context_id).count # for page breaks
+    linked_outcomes.group_by(&:context_id).each do | task_definition_id, td_outcomes |
+      next unless td_outcomes.first.context_type == 'TaskDefinition'
+
+      # Output the task definition at the top
+      task_definition = TaskDefinition.find(task_definition_id)
+      task = task_for_def_id(task_definition_id)
+%>
+  <%= lesc task_definition.name %> & \cellcolor{<%= latex_color_for_status(task) %>}{<%= lesc (if task.nil? then 'Not Started' else task.task_status.name end) %>} & <%= lesc (if task.nil? then '' else task.times_assessed end) %> \\
+<%
+    end # outcome group
+%>
 \end{tabular}
-
-<% if query_result.length > 15 %>
 \clearpage
-<% end %>
-
-<% end %>
+<%
+  end # each task definition
+end # if there are linked outcomes
+%>
+\medskip
 
 % -----------------------------------------------------------------------------
 % Additional Files
