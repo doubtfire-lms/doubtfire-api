@@ -30,10 +30,8 @@ module Feedback
       unless authorise? current_user, User, :get_feedback_chips
         error!({ error: 'You are not authorised to view feedback chips globally.' }, 403)
       end
-      learning_outcomes = LearningOutcome.global_outcomes
-      feedback_chips = learning_outcomes.includes(:feedback_chips).map(&:feedback_chips).flatten
 
-      present feedback_chips, with: Feedback::Entities::FeedbackChipEntity
+      present Feedback::FeedbackChip.global_chips, with: Feedback::Entities::FeedbackChipEntity
     end
 
     desc 'Add a feedback chip to a learning outcome'
@@ -125,11 +123,12 @@ module Feedback
       requires :id, type: Integer, desc: 'The ID of the feedback chip'
     end
     delete '/feedback_chips/:id' do
-      unless authorise? current_user, User, :feedback_chips
+      chip = FeedbackChip.find(params[:id])
+
+      unless authorise? current_user, chip, :delete_feedback_chips
         error!({ error: 'You are not authorised to delete feedback chips.' }, 403)
       end
 
-      chip = FeedbackChip.find(params[:id])
       chip.destroy
       nil
     end

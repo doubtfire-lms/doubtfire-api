@@ -37,11 +37,13 @@ module Feedback
 
     def self.permissions
       convenor_role_permissions = [
-        :update_chip
+        :update_chip,
+        :delete_feedback_chips
       ]
 
       admin_role_permissions = [
-        :update_chip
+        :update_chip,
+        :delete_feedback_chips
       ]
 
       nil_role_permissions = []
@@ -62,6 +64,10 @@ module Feedback
       analytics = chip_usage_analytics.find_or_initialize_by(tutor: tutor)
       analytics.usage_count += 1
       analytics.save
+    end
+
+    def self.global_chips
+      Feedback::FeedbackChip.joins(:learning_outcome).where(learning_outcome: {context_type: nil, context_id: nil})
     end
 
     def children
