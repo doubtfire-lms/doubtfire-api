@@ -1,3 +1,14 @@
+# == Schema Information
+#
+# Table name: learning_outcomes
+#
+#  id                       :bigint           not null, primary key
+#  short_description        :string(255)
+#  full_outcome_description :string(4096)
+#  abbreviation             :string(255)
+#  context_id               :bigint
+#  context_type             :string(255)
+#
 class LearningOutcome < ApplicationRecord
   include ApplicationHelper
   include FileHelper
@@ -42,18 +53,20 @@ class LearningOutcome < ApplicationRecord
       Role.convenor
     elsif user.has_tutor_capability?
       Role.tutor
-    else
+    else # explicit
       nil
     end
   end
 
   belongs_to :context, polymorphic: true, optional: true
 
-  has_many :outgoing_links, class_name: 'LearningOutcomeLink', foreign_key: 'source_id', dependent: :destroy
+  # Which higher level outcomes does this outcome support
+  has_many :outgoing_links, class_name: 'LearningOutcomeLink', foreign_key: 'source_id', dependent: :destroy, inverse_of: :source
   has_many :linked_outcomes, through: :outgoing_links, source: :target
 
-  has_many :incoming_links, class_name: 'LearningOutcomeLink', foreign_key: 'target_id', dependent: :destroy
-  has_many :linked_by_outcomes, through: :incoming_links, source: :source
+  # Which lower level outcomes are used to demonstrate this outcome?
+  has_many :demonstrated_through_outcome_links, class_name: 'LearningOutcomeLink', foreign_key: 'target_id', dependent: :destroy, inverse_of: :target
+  has_many :demonstrated_through_outcomes, through: :demonstrated_through_outcome_links, source: :source
 
   has_many :feedback_group_chips, class_name: 'Feedback::FeedbackGroupChip', dependent: :destroy
   has_many :feedback_template_chips, class_name: 'Feedback::FeedbackTemplateChip', dependent: :destroy
@@ -62,9 +75,9 @@ class LearningOutcome < ApplicationRecord
   has_many :learning_outcome_task_links, dependent: :destroy # links to learning outcomes
   has_many :related_task_definitions, -> { where('learning_outcome_task_links.task_id is NULL') }, through: :learning_outcome_task_links, source: :task_definition # only link staff relations
 
-  validates :short_description, length: { maximum: 4095, allow_blank: true }
+  validates :short_description, length: { maximum: 100, allow_blank: true }
   validates :full_outcome_description, length: { maximum: 4095, allow_blank: true }
-  validates :abbreviation, uniqueness: { scope: %i[context_id context_type] }
+  validates :abbreviation, uniqueness: { scope: %i[context_id context_type] }, length: { maximum: 5, allow_blank: false }
 
   def self.csv_header
     %w(unit_code task_abbreviation learning_outcome_abbreviation short_description full_outcome_description linked_outcomes)
@@ -165,10 +178,10 @@ class LearningOutcome < ApplicationRecord
   end
 
   def export_feedback_chips_to_csv
-    CSV.generate do |row|
-      row << Feedback::FeedbackChip.csv_header
+    CSV.generate do |csv|
+      csv << Feedback::FeedbackChip.csv_header
       feedback_chips.each do |chip|
-        chip.add_csv_row row
+        chip.add_csv_row csv
       end
     end
   end
@@ -191,7 +204,7 @@ class LearningOutcome < ApplicationRecord
 
       begin
         Feedback::FeedbackChip.create_from_csv(row, result)
-      rescue Exception => e
+      rescue StandardError => e
         result[:errors] << { row: row, message: e.message.to_s }
       end
     end

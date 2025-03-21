@@ -1,3 +1,19 @@
+# == Schema Information
+#
+# Table name: feedback_chips
+#
+#  id                  :bigint           not null, primary key
+#  type                :string(255)
+#  chip_text           :text(65535)
+#  description         :text(65535)
+#  comment_text        :text(65535)
+#  summary_text        :text(65535)
+#  learning_outcome_id :bigint           not null
+#  parent_chip_id      :bigint
+#  created_at          :datetime         not null
+#  updated_at          :datetime         not null
+#  task_status         :string(255)
+#
 module Feedback
   class FeedbackChip < ApplicationRecord
     self.inheritance_column = :type
@@ -8,7 +24,7 @@ module Feedback
     belongs_to :parent_chip, class_name: 'FeedbackChip', optional: true
     belongs_to :learning_outcome, class_name: 'LearningOutcome', optional: true
 
-    has_many :child_chips, class_name: 'FeedbackChip', foreign_key: 'parent_chip_id', dependent: :nullify
+    has_many :child_chips, class_name: 'FeedbackChip', foreign_key: 'parent_chip_id', dependent: :nullify, inverse_of: :parent_chip
     has_many :chip_usages, class_name: 'ChipUsage', dependent: :destroy
 
     validate :parent_chip_cannot_create_loop, if: :parent_chip_id_changed?
