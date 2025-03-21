@@ -27,6 +27,7 @@
 \usepackage{amssymb}
 \usepackage{colortbl}
 \usepackage{lastpage}
+\usepackage{multirow}
 \usepackage[colorlinks]{hyperref}
 \hypersetup{colorlinks,
   linkcolor=black,
@@ -56,6 +57,7 @@ end
 
 \graphicspath{ {<%= @image_path %>/} }
 
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
 
 \fancypagestyle{title}{%
     \renewcommand{\headrulewidth}{0pt}
