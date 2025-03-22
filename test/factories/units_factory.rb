@@ -42,6 +42,7 @@ FactoryBot.define do
       student_count               { 8 }
       unenrolled_student_count    { 1 }
       part_enrolled_student_count { 2 }
+      inactive_student_count      { 1 }
       task_count                  { 2 }
       tutorials                   { 1 }  #per campus
       tutorial_config             { [] } #[ {stream: 0, campus: 0} ]
@@ -54,7 +55,6 @@ FactoryBot.define do
       set_one_of_each_task        { false }  # In addition to the standard tasks, also add one of each different think of task - group, quality, graded, etc.
       perform_submissions         { false }
       staff_count                 { 1 }
-      inactive_student_count      { 1 }
       task_alignment_links        { 0 }
     end
 

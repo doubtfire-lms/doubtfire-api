@@ -468,6 +468,8 @@ class FeedbackChipApiTestCondolidated < ActiveSupport::TestCase
   def test_delete_feedback_group_chip
     learning_outcome = FactoryBot.create(:learning_outcome)
     group_chip = FactoryBot.create(:feedback_group_chip, learning_outcome_id: learning_outcome.id)
+    template_chip = FactoryBot.create(:feedback_template_chip, chip_text: 'chippy', description: 'blah blah', comment_text: 'your work is great', summary_text: 'well done', task_status: TaskStatus.complete.name, learning_outcome_id: learning_outcome.id, parent_chip_id: group_chip.id)
+
     add_auth_header_for user: User.first
 
     chip_count = learning_outcome.feedback_chips.count

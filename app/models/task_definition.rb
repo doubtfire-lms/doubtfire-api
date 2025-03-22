@@ -8,11 +8,15 @@ class TaskDefinition < ApplicationRecord
 
   def self.permissions
     convenor_role_permissions = [
-      :get_feedback_chips
+      :create_feedback_chips,
+      :get_feedback_chips,
+      :update
     ]
 
     admin_role_permissions = [
-      :get_feedback_chips
+      :create_feedback_chips,
+      :get_feedback_chips,
+      :update
     ]
 
     tutor_role_permissions = [
@@ -320,32 +324,6 @@ class TaskDefinition < ApplicationRecord
 
       begin
         LearningOutcome.create_from_csv(row, result)
-      rescue Exception => e
-        result[:errors] << { row: row, message: e.message.to_s }
-      end
-    end
-
-    result
-  end
-
-  def import_feedback_chips_from_csv(file)
-    result = {
-      success: [],
-      errors: [],
-      ignored: []
-    }
-
-    data = read_file_to_str(file)
-
-    CSV.parse(data,
-              headers: true,
-              header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
-              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
-      # Make sure we're not looking at the header or an empty line
-      next if row[0] =~ /unit_code/
-
-      begin
-        Feedback::FeedbackChip.create_from_csv(row, result)
       rescue Exception => e
         result[:errors] << { row: row, message: e.message.to_s }
       end

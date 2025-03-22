@@ -10,21 +10,8 @@ class CsvTest < ActiveSupport::TestCase
     Rails.application
   end
 
-  # --------------------------------------------------------------------------- #
-  # --- Endpoint testing for:
-  # ------- /api/csv
-  # ------- GET POST
-
-  # --------------------------------------------------------------------------- #
-
-  #####--------------GET tests - Download CSV of all task definitions for the given unit------------######
-
-  #1: Testing for CSV download of all the task definitions for a given unit
-  #GET /api/csv/task_definitions
   def test_download_csv_all_task_definitions_unit
-
     unit_id_to_test = '1'
-
 
     # auth_token and username added to header
     add_auth_header_for(user: User.first)
@@ -39,10 +26,7 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal "attachment; filename=COS10001-Tasks.csv",last_response.headers["content-disposition"]
   end
 
-  #2: Testing for unit ID error with empty user ID
-  #GET /api/csv/task_definitions
   def test_download_csv_all_task_definitions_unit_with_empty_unit_id
-
     unit_id_to_test = ''
 
     # auth_token and username added to header
@@ -1140,5 +1124,201 @@ class CsvTest < ActiveSupport::TestCase
 
     # Check for response
     assert_equal 400, last_response.status
+  end
+
+  def test_upload_unit_feedback_chips
+    glo = FactoryBot.create(:learning_outcome, abbreviation: 'GGG1', context_type: nil, context_id: nil)
+    # Create two identical units with different codes
+    unit = FactoryBot.create(:unit, code: 'UNIT1', student_count: 1, inactive_student_count: 0, unenrolled_student_count: 0, part_enrolled_student_count: 0, task_count: 0, outcome_count: 0)
+    other_unit = FactoryBot.create(:unit, code: 'UNIT2', student_count: 0, inactive_student_count: 0, unenrolled_student_count: 0, part_enrolled_student_count: 0, task_count: 0, outcome_count: 0)
+
+    ulos = [
+      FactoryBot.create(:learning_outcome, context_type: 'Unit', context_id: unit.id, abbreviation: 'ULO1'),
+      FactoryBot.create(:learning_outcome, context_type: 'Unit', context_id: unit.id, abbreviation: 'ULO2'),
+    ]
+    other_ulos = [
+      FactoryBot.create(:learning_outcome, context_type: 'Unit', context_id: other_unit.id, abbreviation: 'ULO1'),
+    ]
+    td = FactoryBot.create(:task_definition, unit: unit, abbreviation: 'P1', outcome_count: 0)
+    tlos = [
+      FactoryBot.create(:learning_outcome, context_type: 'TaskDefinition', context_id: td.id, abbreviation: 'TLO1'),
+      FactoryBot.create(:learning_outcome, context_type: 'TaskDefinition', context_id: td.id, abbreviation: 'TLO2'),
+    ]
+    other_td = FactoryBot.create(:task_definition, unit: other_unit, abbreviation: 'P1', outcome_count: 0)
+    other_tlos = [
+      FactoryBot.create(:learning_outcome, context_type: 'TaskDefinition', context_id: other_td.id, abbreviation: 'TLO1'),
+      FactoryBot.create(:learning_outcome, context_type: 'TaskDefinition', context_id: other_td.id, abbreviation: 'TLO2'),
+    ]
+
+    admin = FactoryBot.create(:user, :admin)
+    tutor = FactoryBot.create(:user, :tutor)
+
+    unit.employ_staff(tutor, Role.tutor)
+
+    num_rows_in_csv = 8
+
+    to_test = [
+      {
+        # Direct to ULO
+        url: "/api/units/#{unit.id}/outcomes/#{ulos[0].id}/feedback_chips/csv",
+        context: 'Direct - ULO1',
+        changed_models: [ulos[0]],
+        expected_count: 2,
+        unchanged_models: [ulos[1], tlos, other_ulos, other_tlos, glo].flatten
+      },
+      {
+        # To Unit
+        url: "/api/units/#{unit.id}/feedback_chips/csv",
+        context: 'Unit - all',
+        changed_models: [ulos[0], tlos[0]],
+        expected_count: 2,
+        unchanged_models: [ulos[1], tlos[1], other_ulos, other_tlos, glo].flatten
+      },
+      {
+        # To Task
+        url: "/api/task_definitions/#{td.id}/feedback_chips/csv",
+        context: 'TaskDef - TLO1',
+        changed_models: [tlos[0]],
+        expected_count: 2,
+        unchanged_models: [ulos, tlos[1], other_ulos, other_tlos, glo].flatten
+      }
+    ]
+
+    users_can = [
+      unit.main_convenor_user,
+      admin
+    ]
+    users_cant = [
+      FactoryBot.create(:user, :student),
+      FactoryBot.create(:user, :tutor),
+      tutor,
+      FactoryBot.create(:user, :convenor),
+      FactoryBot.create(:user, :auditor)
+    ]
+
+    global_chip_count = Feedback::FeedbackChip.global_chips.count
+    total_chip_count = Feedback::FeedbackChip.count
+
+    users_can.each do |user|
+      add_auth_header_for(user: user)
+
+      to_test.each do |test|
+        changed_models = test[:changed_models]
+        context = test[:context]
+        expected_count = test[:expected_count]
+        total_expected = expected_count * changed_models.count
+        unchanged_models = test[:unchanged_models]
+        url = test[:url]
+
+        [changed_models, unchanged_models].flatten.each do |model|
+          assert_equal 0, model.feedback_chips.count
+        end
+
+        post url, file: upload_file_csv('test_files/feedback/unit_feedback_chip.csv')
+        assert_equal 201, last_response.status, "#{user.role.name} - #{url} - #{last_response.status}"
+
+        assert_equal total_expected, last_response_body['success'].count, "#{context}: #{last_response_body}"
+        assert_equal 0, last_response_body['ignored'].count, "#{context}: #{last_response_body}"
+        assert_equal num_rows_in_csv - total_expected, last_response_body['errors'].count, "#{context}: #{last_response_body['errors']}"
+
+        changed_models.each do |model|
+          assert_equal expected_count, model.feedback_chips.count, "Incorrect number of chips for #{context} - #{model.abbreviation} - #{last_response_body}"
+        end
+        unchanged_models.each do |unchanged_model|
+          assert_equal 0, unchanged_model.feedback_chips.count, "Changes to #{context} affected #{unchanged_model.abbreviation}"
+        end
+
+        assert_equal global_chip_count, Feedback::FeedbackChip.global_chips.count, "Changes to #{context} affected global chips"
+
+        changed_models.each do |model|
+          model.reload
+          model.feedback_chips.destroy_all
+        end
+
+        # Make sure we have deleted all new chips
+        assert_equal total_chip_count, Feedback::FeedbackChip.count, "Chips not destroyed in - #{context}"
+      end
+    end
+  end
+
+  def test_upload_global_feedback_chips
+    # Create things that could be updated
+    glo = FactoryBot.create(:learning_outcome, abbreviation: 'GGG1', context_type: nil, context_id: nil)
+    unit = FactoryBot.create(:unit, code: 'UNIT1', student_count: 1, inactive_student_count: 0, unenrolled_student_count: 0, part_enrolled_student_count: 0, task_count: 0, outcome_count: 0)
+    ulo = FactoryBot.create(:learning_outcome, context_type: 'Unit', context_id: unit.id, abbreviation: 'ULO1')
+    td = FactoryBot.create(:task_definition, unit: unit, abbreviation: 'P1', outcome_count: 0)
+    tlo = FactoryBot.create(:learning_outcome, context_type: 'TaskDefinition', context_id: td.id, abbreviation: 'TLO1')
+
+    admin = FactoryBot.create(:user, :admin)
+    tutor = FactoryBot.create(:user, :tutor)
+
+    unit.employ_staff(tutor, Role.tutor)
+
+    num_rows_in_csv = 8
+
+    to_test = [
+      {
+        # Direct to ULO
+        url: "/api/global/feedback_chips/csv",
+        context: 'Direct - GLOs',
+        changed_models: [glo],
+        expected_count: 2,
+        unchanged_models: [ulo, tlo].flatten
+      }
+    ]
+
+    users_can = [
+      admin
+    ]
+    users_cant = [
+      unit.main_convenor_user,
+      FactoryBot.create(:user, :student),
+      FactoryBot.create(:user, :tutor),
+      tutor,
+      FactoryBot.create(:user, :convenor),
+      FactoryBot.create(:user, :auditor)
+    ]
+
+    global_chip_count = Feedback::FeedbackChip.global_chips.count
+    total_chip_count = Feedback::FeedbackChip.count
+
+    users_can.each do |user|
+      add_auth_header_for(user: user)
+
+      to_test.each do |test|
+        changed_models = test[:changed_models]
+        context = test[:context]
+        expected_count = test[:expected_count]
+        total_expected = expected_count * changed_models.count
+        unchanged_models = test[:unchanged_models]
+        url = test[:url]
+
+        [changed_models, unchanged_models].flatten.each do |model|
+          assert_equal 0, model.feedback_chips.count
+        end
+
+        post url, file: upload_file_csv('test_files/feedback/unit_feedback_chip.csv')
+        assert_equal 201, last_response.status, "#{user.role.name} - #{url} - #{last_response.status}"
+
+        assert_equal total_expected, last_response_body['success'].count, "#{context}: #{last_response_body}"
+        assert_equal 0, last_response_body['ignored'].count, "#{context}: #{last_response_body}"
+        assert_equal num_rows_in_csv - total_expected, last_response_body['errors'].count, "#{context}: #{last_response_body['errors']}"
+
+        changed_models.each do |model|
+          assert_equal expected_count, model.feedback_chips.count, "Incorrect number of chips for #{context} - #{model.abbreviation} - #{last_response_body}"
+        end
+        unchanged_models.each do |unchanged_model|
+          assert_equal 0, unchanged_model.feedback_chips.count, "Changes to #{context} affected #{unchanged_model.abbreviation}"
+        end
+
+        changed_models.each do |model|
+          model.reload
+          model.feedback_chips.destroy_all
+        end
+
+        # Make sure we have deleted all new chips
+        assert_equal total_chip_count, Feedback::FeedbackChip.count, "Chips not destroyed in - #{context}"
+      end
+    end
   end
 end

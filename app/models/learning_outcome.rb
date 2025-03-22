@@ -200,32 +200,6 @@ class LearningOutcome < ApplicationRecord
     end
   end
 
-  def import_feedback_chips_from_csv(file)
-    result = {
-      success: [],
-      errors: [],
-      ignored: []
-    }
-
-    data = read_file_to_str(file)
-
-    CSV.parse(data,
-              headers: true,
-              header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
-              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
-      # Make sure we're not looking at the header or an empty line
-      next if row[0] =~ /unit_code/
-
-      begin
-        Feedback::FeedbackChip.create_from_csv(row, result)
-      rescue StandardError => e
-        result[:errors] << { row: row, message: e.message.to_s }
-      end
-    end
-
-    result
-  end
-
   def link_to(linked_outcome)
     LearningOutcomeLink.create!(
       source_id: id,
