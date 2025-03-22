@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class LearningOutcomeNewTest < ActiveSupport::TestCase
+class LearningOutcomeTest < ActiveSupport::TestCase
   include Rack::Test::Methods
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
@@ -9,19 +9,84 @@ class LearningOutcomeNewTest < ActiveSupport::TestCase
     Rails.application
   end
 
-  def test_get_all_outcomes
-    unit = FactoryBot.create(:unit, name: 'i like units', code: 'abcde', description: 'test unit')
-    learning_outcome1 = FactoryBot.create(:learning_outcome, context_id: unit.id, context_type: 'Unit', abbreviation: 'test1', short_description: 'sd', full_outcome_description: 'fod')
-    learning_outcome2 = FactoryBot.create(:learning_outcome, context_id: unit.id, context_type: 'Unit', abbreviation: 'test2', short_description: 'sd', full_outcome_description: 'fod')
-    learning_outcome3 = FactoryBot.create(:learning_outcome, context_id: unit.id, context_type: 'Unit', abbreviation: 'test3', short_description: 'sd', full_outcome_description: 'fod')
-    add_auth_header_for user: unit.main_convenor_user
-    get "api/units/#{unit.id}/outcomes"
-    assert_equal 200, last_response.status
-  ensure
-    unit.destroy
-    learning_outcome1.destroy
-    learning_outcome2.destroy
-    learning_outcome3.destroy
+  def test_auth_for_create_edit_unit_learning_outcome
+    unit = FactoryBot.create(:unit, with_students: false, outcome_count: 0, task_count: 0)
+    td = FactoryBot.create(:task_definition, unit: unit, outcome_count: 0)
+    admin = FactoryBot.create(:user, :admin)
+    tutor = FactoryBot.create(:user, :tutor)
+
+    unit.employ_staff(tutor, Role.tutor)
+
+    unit_contexts = [
+      {
+        model: unit,
+        context_type: 'units'
+      },
+      {
+        model: td,
+        context_type: 'task_definitions'
+      }
+    ]
+
+    users_can = [
+      unit.main_convenor_user,
+      admin
+    ]
+    users_cant = [
+      FactoryBot.create(:user, :student),
+      FactoryBot.create(:user, :tutor),
+      tutor,
+      FactoryBot.create(:user, :convenor),
+      FactoryBot.create(:user, :auditor)
+    ]
+
+    data_to_post = {
+      abbreviation: 'ULO9',
+      short_description: 'learning outcome short description',
+      full_outcome_description: 'Long description of learning outcome',
+    }
+
+    data_to_put = {
+      abbreviation: 'NLO9',
+      short_description: 'new learning outcome short description',
+      full_outcome_description: 'New long description of learning outcome',
+    }
+
+    users_can.each do |user|
+      add_auth_header_for user: user
+      unit_contexts.each do |context|
+        post_json "api/#{context[:context_type]}/#{context[:model].id}/outcomes", data_to_post
+
+        assert_equal 201, last_response.status, "#{user.role.name} #{context[:context_type]}: #{last_response_body}"
+        assert_equal 1, context[:model].learning_outcomes.count
+
+        new_outcome = LearningOutcome.find(last_response_body['id'])
+
+        put_json "api/#{context[:context_type]}/#{context[:model].id}/outcomes/#{new_outcome.id}", data_to_put
+        assert_equal 200, last_response.status, "User #{user.role.name} should be able to update learning outcomes in #{context[:context_type]}"
+
+        # Clean up
+        LearningOutcome.last.destroy
+      end
+    end
+
+    unit_contexts[0][:lo] = FactoryBot.create(:learning_outcome, context_id: unit.id, context_type: 'Unit', abbreviation: 'ULO9', short_description: 'learning outcome short description', full_outcome_description: 'Long description of learning outcome')
+    unit_contexts[1][:lo] = FactoryBot.create(:learning_outcome, context_id: td.id, context_type: 'TaskDefinition', abbreviation: 'ULO9', short_description: 'learning outcome short description', full_outcome_description: 'Long description of learning outcome')
+
+    total_outcome_count = LearningOutcome.count
+
+    users_cant.each do |user|
+      add_auth_header_for user: user
+      unit_contexts.each do |context|
+        post_json "api/#{context[:context_type]}/#{context[:model].id}/outcomes", data_to_post
+        assert_equal 403, last_response.status, "User #{user.role.name} should not be able to create learning outcomes. #{last_response.inspect}"
+        assert_equal 1, context[:model].learning_outcomes.count
+        assert_equal total_outcome_count, LearningOutcome.count
+
+        put_json "api/#{context[:context_type]}/#{context[:model].id}/outcomes/#{context[:lo].id}", data_to_put
+        assert_equal 403, last_response.status, "User #{user.role.name} should not be able to update learning outcomes in #{context[:context_type]}"
+      end
+    end
   end
 
   def test_get_global_outcomes
