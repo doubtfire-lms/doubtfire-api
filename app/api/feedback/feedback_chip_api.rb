@@ -11,6 +11,10 @@ module Feedback
       authenticated?
     end
 
+    route :context_type_plural, values: %w[units task_definitions] do
+      params[:context_type].pluralize
+    end
+
     desc "Get all feedback chips for a context"
     get '/:context_type_plural/:context_id/feedback_chips' do
       context_type = params[:context_type_plural].singularize.camelize
@@ -218,7 +222,6 @@ module Feedback
     desc 'Upload the feedback chips for a specified context from a csv'
     params do
       requires :file, type: File, desc: 'CSV upload file.'
-      requires :context_type_plural, type: String, desc: 'The type of the context'
       requires :context_id, type: Integer, desc: 'The ID of the context'
     end
     post '/:context_type_plural/:context_id/feedback_chips/csv' do
