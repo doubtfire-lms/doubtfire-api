@@ -152,7 +152,7 @@ module Feedback
     params do
       requires :id, type: Integer, desc: 'The ID of the context'
     end
-    get '/:context_type_plural/:context_id/outcomes/:id/feedback_chips/csv' do # '/:context_type_plural/:context_id/feedback_chips/csv'
+    get '/:context_type_plural/:context_id/outcomes/:id/feedback_chips/csv' do
       # find context model dynamically
       context_type = params[:context_type_plural].singularize.camelize
       context_model = context_type.classify.constantize.find(params[:context_id])
@@ -200,7 +200,7 @@ module Feedback
       requires :file, type: File, desc: 'CSV upload file.'
       requires :id, type: Integer, desc: 'The id of the learning outcome'
     end
-    post '/:context_type_plural/:context_id/outcomes/:id/feedback_chips/csv' do # '/:context_type_plural/:context_id/feedback_chips/csv'
+    post '/:context_type_plural/:context_id/outcomes/:id/feedback_chips/csv' do
       # check mime is correct before uploading
       ensure_csv!(params[:file][:tempfile])
 
@@ -212,7 +212,7 @@ module Feedback
       end
 
       # Actually import...
-      learning_outcome.import_feedback_chips_from_csv(params[:file][:tempfile])
+      Feedback::FeedbackChip.import_feedback_chips_from_csv(params[:file][:tempfile], 'LearningOutcome', learning_outcome)
     end
 
     desc 'Upload the feedback chips for a specified context from a csv'
@@ -228,17 +228,17 @@ module Feedback
       context_type = params[:context_type_plural].singularize.camelize
       context_model = context_type.classify.constantize.find(params[:context_id])
 
-      unless authorise? current_user, context_model, :upload_csv
+      unless authorise? current_user, context_model, :create_feedback_chips
         error!({ error: 'Not authorised to upload CSV of outcomes' }, 403)
       end
 
       # Actually import...
-      context_model.import_feedback_chips_from_csv(params[:file][:tempfile])
+      Feedback::FeedbackChip.import_feedback_chips_from_csv(params[:file][:tempfile], context_type, context_model)
     end
 
     desc 'Download the feedback chips for a global context'
     get '/global/feedback_chips/csv' do
-      unless authorise? current_user, User, :feedback_chips
+      unless authorise? current_user, User, :create_feedback_chips
         error!({ error: 'You are not authorised to download feedback chips globally.' }, 403)
       end
 
@@ -268,35 +268,11 @@ module Feedback
       # check mime is correct before uploading
       ensure_csv!(params[:file][:tempfile])
 
-      unless authorise? current_user, User, :feedback_chips
-        error!({ error: 'Not authorised to upload CSV of outcomes' }, 403)
+      unless authorise? current_user, User, :create_feedback_chips
+        error!({ error: 'Not authorised to upload CSV of feedback' }, 403)
       end
 
-      # Actually import...
-      file = params[:file][:tempfile]
-
-      result = {
-        success: [],
-        errors: [],
-        ignored: []
-      }
-
-      data = read_file_to_str(file)
-      CSV.parse(data,
-                headers: true,
-                header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
-                converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
-        # Make sure we're not looking at the header or an empty line
-        next if row[0] =~ /unit_code/
-
-        begin
-          Feedback::FeedbackChip.create_from_csv(row, result)
-        rescue Exception => e
-          result[:errors] << { row: row, message: e.message.to_s }
-        end
-      end
-
-      result
+      Feedback::FeedbackChip.import_feedback_chips_from_csv(params[:file][:tempfile], nil, nil)
     end
   end
 end

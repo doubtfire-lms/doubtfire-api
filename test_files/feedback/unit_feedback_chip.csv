@@ -1,0 +1,9 @@
+unit_code,task_abbreviation,learning_outcome_abbreviation,type,group_id,parent_group_id,chip_text,description,task_status,summary_text,comment_text
+UNIT1,P1,TLO1,group,UNIT1-P1-TLO1-grp,,Group 1 in TLO1,Group 1 in P1,,,
+UNIT1,P1,TLO1,template,,UNIT1-P1-TLO1-grp,Template 1 TLO,Template 1 in Group 1 in P1,fix,Summary text for T1 G1 P1,Comment text for t1 G1 P1
+UNIT1,,ULO1,group,UNIT1-ULO1-grp,,Group 1 in ULO1,Group 1 in ULO1,,,
+UNIT1,,ULO1,template,,UNIT1-ULO1-grp,Template 1 ULO,Template 1 in Group 1 in ULO1,complete,Summary text for T1 G1 ULO1,Comment text for T1 G1 ULO1
+,,GGG1,group,GLO1-G1,,GRP 1 in GLO1,GRP 1 in GLO1,,,
+,,GGG1,template,,GLO1-G1,Template 1 for GLO1,Template 1 in Group 1 in GLO1,redo,Summary text for T1 GLO1,Comment text for T1 G1 ULO1
+UNIT2,,READ,group,COS10009-ULO1-grp,,Group 1 in ULO1,Group 1 in ULO1,,,
+UNIT2,,READ,template,,COS10009-ULO1-grp,Template 1 ULO,Template 1 in Group 1 in ULO1,complete,Summary text for T1 G1 ULO1,Comment text for T1 G1 ULO1

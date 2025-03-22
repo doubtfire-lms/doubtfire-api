@@ -8,11 +8,19 @@ class FeedbackChipModelTest < ActiveSupport::TestCase
     parent_chip = FactoryBot.create(:feedback_group_chip, learning_outcome_id: learning_outcome.id)
     feedback_template_chip = FactoryBot.build(:feedback_template_chip, parent_chip_id: parent_chip.id, learning_outcome_id: learning_outcome.id)
     assert feedback_template_chip.valid?
+    assert parent_chip.valid?
   end
 
   def test_invalid_feedback_template_chip_parent
-    feedback_template_chip = FactoryBot.build(:feedback_template_chip, parent_chip_id: nil)
+    other_learning_outcome = FactoryBot.create(:learning_outcome, context_id: nil, context_type: nil)
+    unit = Unit.first
+    learning_outcome = FactoryBot.create(:learning_outcome, context_id: unit.id, context_type: 'Unit')
+    parent_chip = FactoryBot.create(:feedback_group_chip, learning_outcome_id: other_learning_outcome.id)
+    feedback_template_chip = FactoryBot.build(:feedback_template_chip, parent_chip_id: parent_chip.id, learning_outcome_id: learning_outcome.id)
+
+    assert parent_chip.valid?
     assert_not feedback_template_chip.valid?
+    assert_includes feedback_template_chip.errors.full_messages, 'Parent chip must be in the same learning outcome'
   end
 
   def test_valid_parent_is_group_chip
@@ -20,55 +28,56 @@ class FeedbackChipModelTest < ActiveSupport::TestCase
     learning_outcome = FactoryBot.create(:learning_outcome, context_id: unit.id, context_type: 'Unit')
     group_chip = FactoryBot.create(:feedback_group_chip, parent_chip_id: nil, learning_outcome_id: learning_outcome.id)
     template_chip = FactoryBot.create(:feedback_template_chip, parent_chip_id: group_chip.id, learning_outcome_id: learning_outcome.id)
-    template_chip_2 = FactoryBot.build(:feedback_template_chip, parent_chip_id: template_chip.id, learning_outcome_id: learning_outcome.id) # tests for parent is group chip // parent is not group chip
-    assert_not template_chip_2.valid?
-    assert_includes template_chip_2.errors.full_messages, 'Parent chip must be a group chip'
+    template_chip2 = FactoryBot.build(:feedback_template_chip, parent_chip_id: template_chip.id, learning_outcome_id: learning_outcome.id) # tests for parent is group chip // parent is not group chip
+    assert_not template_chip2.valid?
+    assert_includes template_chip2.errors.full_messages, 'Parent chip must be a group chip'
   end
 
   def test_no_circular_parent_child_relationship
     unit = Unit.first
     learning_outcome = FactoryBot.create(:learning_outcome, context_id: unit.id, context_type: 'Unit')
-    group_chip = FactoryBot.create(:feedback_group_chip, parent_chip_id: nil, learning_outcome_id: learning_outcome.id)
-    group_chip_nested_1 = FactoryBot.create(:feedback_group_chip, parent_chip_id: group_chip.id, learning_outcome_id: learning_outcome.id)
-    group_chip_nested_2 = FactoryBot.create(:feedback_group_chip, parent_chip_id: group_chip_nested_1.id, learning_outcome_id: learning_outcome.id)
-    group_chip_nested_3 = FactoryBot.create(:feedback_group_chip, parent_chip_id: group_chip_nested_2.id, learning_outcome_id: learning_outcome.id)
-    group_chip_nested_4 = FactoryBot.create(:feedback_group_chip, parent_chip_id: group_chip_nested_3.id, learning_outcome_id: learning_outcome.id)
-    group_chip.parent_chip_id = group_chip_nested_4.id
-    assert_not group_chip.valid?
-    assert_includes group_chip.errors.full_messages, 'Parent chip cannot create a loop'
+    group_chips = []
+    group_chips << FactoryBot.create(:feedback_group_chip, parent_chip_id: nil, learning_outcome_id: learning_outcome.id)
+    group_chips << FactoryBot.create(:feedback_group_chip, parent_chip_id: group_chips[0].id, learning_outcome_id: learning_outcome.id)
+    group_chips << FactoryBot.create(:feedback_group_chip, parent_chip_id: group_chips[1].id, learning_outcome_id: learning_outcome.id)
+    group_chips << FactoryBot.create(:feedback_group_chip, parent_chip_id: group_chips[2].id, learning_outcome_id: learning_outcome.id)
+    group_chips << FactoryBot.create(:feedback_group_chip, parent_chip_id: group_chips[3].id, learning_outcome_id: learning_outcome.id)
+
+    group_chips.each { |gc| assert gc.valid?, gc.inspect }
+
+    group_chips[0].parent_chip_id = group_chips[4].id
+    assert_not group_chips[0].valid?
+    assert_includes group_chips[0].errors.full_messages, 'Parent chip cannot create a loop'
   end
 
-  def test_valid_group_chip_as_root
+  def test_can_delete_parent_chip
     unit = Unit.first
     learning_outcome = FactoryBot.create(:learning_outcome, context_id: unit.id, context_type: 'Unit')
-    root_chip = FactoryBot.create(:feedback_group_chip, parent_chip: nil, learning_outcome_id: learning_outcome.id)
-    assert root_chip.valid?
-  end
+    group_chips = []
+    group_chips << FactoryBot.create(:feedback_group_chip, parent_chip_id: nil, learning_outcome_id: learning_outcome.id)
+    group_chips << FactoryBot.create(:feedback_group_chip, parent_chip_id: group_chips[0].id, learning_outcome_id: learning_outcome.id)
 
-=begin
-  def test_single_root_chip_per_learning_outcome
-    unit = Unit.first
-    learning_outcome = FactoryBot.create(:learning_outcome, context_id: unit.id, context_type: 'Unit')
-    root_chip_1 = FactoryBot.create(:feedback_group_chip, learning_outcome_id: learning_outcome.id, parent_chip_id: nil)
-    root_chip_2 = FactoryBot.create(:feedback_group_chip, learning_outcome_id: learning_outcome.id, parent_chip_id: nil)
+    template_chips = [
+      FactoryBot.create(:feedback_template_chip, parent_chip_id: group_chips[0].id, learning_outcome_id: learning_outcome.id),
+      FactoryBot.create(:feedback_template_chip, parent_chip_id: group_chips[0].id, learning_outcome_id: learning_outcome.id),
+      FactoryBot.create(:feedback_template_chip, parent_chip_id: group_chips[1].id, learning_outcome_id: learning_outcome.id),
+      FactoryBot.create(:feedback_template_chip, parent_chip_id: group_chips[1].id, learning_outcome_id: learning_outcome.id)
+    ]
 
-    assert_not root_chip_2.valid?
-    assert_includes root_chip_2.errors.full_messages, 'Only one root chip allowed per learning outcome'
-  end
-=end
+    group_chips[0].destroy
 
-  def test_tree_completeness_for_learning_outcome
-    unit = Unit.first
-    learning_outcome = FactoryBot.create(:learning_outcome, context_id: unit.id, context_type: 'Unit')
-    root_chip = FactoryBot.create(:feedback_group_chip, learning_outcome_id: learning_outcome.id, parent_chip_id: nil)
-    group_chip_1 = FactoryBot.create(:feedback_group_chip, learning_outcome_id: learning_outcome.id, parent_chip_id: root_chip.id)
-    group_chip_2 = FactoryBot.create(:feedback_group_chip, learning_outcome_id: learning_outcome.id, parent_chip_id: root_chip.id)
-    template_chip = FactoryBot.create(:feedback_template_chip, learning_outcome_id: learning_outcome.id, parent_chip_id: group_chip_1.id)
+    assert group_chips[0].destroyed?
+    assert_not group_chips[1].destroyed?
+    assert_nil group_chips[1].reload.parent_chip_id
 
-    orphaned_chip = FactoryBot.create(:feedback_template_chip, learning_outcome_id: learning_outcome.id, parent_chip_id: group_chip_2.id)
-    orphaned_chip.parent_chip_id = nil
+    [template_chips[0], template_chips[1]].each do |tc|
+      assert_not tc.destroyed?
+      assert_nil tc.reload.parent_chip_id
+    end
 
-    assert_not orphaned_chip.valid?
-    assert_includes orphaned_chip.errors.full_messages, 'Tree is not complete for the learning outcome; some chips are orphaned and unreachable'
+    [template_chips[2], template_chips[3]].each do |tc|
+      assert_not tc.destroyed?
+      assert_equal group_chips[1].id, tc.reload.parent_chip_id
+    end
   end
 end
