@@ -207,7 +207,7 @@ class LearningOutcome < ApplicationRecord
       links_to_delete = if data.present?
                           existing_link_ids - data
                         else
-                          existing_link
+                          existing_link_ids
                         end
     end
 
@@ -218,7 +218,7 @@ class LearningOutcome < ApplicationRecord
     data&.each do |linked_outcome_id|
       LearningOutcomeLink.find_or_create_by!(source_id: id, target_id: linked_outcome_id)
     rescue ActiveRecord::RecordInvalid => e
-      Rails.logger.warn "Failed to link learning outcome #{learning_outcome.id} to learning outcome #{linked_outcome_id}: #{e.message}"
+      Rails.logger.warn "Failed to link learning outcome #{id} to learning outcome #{linked_outcome_id}: #{e.message}"
     end
   end
 
