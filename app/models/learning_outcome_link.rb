@@ -13,5 +13,21 @@ class LearningOutcomeLink < ApplicationRecord
   belongs_to :source, class_name: 'LearningOutcome'
   belongs_to :target, class_name: 'LearningOutcome'
 
+  validates :source, presence: true
+  validates :target, presence: true
   validates :source_id, uniqueness: { scope: :target_id, message: 'Link already exists' }
+
+  validate :validate_link_type
+
+  def validate_link_type
+    return if source.nil? || target.nil?
+
+    if source.context_type.nil?
+      errors.add(:link_type, 'Cannot link global learning outcomes')
+    elsif source.context_type == 'Unit' && target.context_type == 'TaskDefinition'
+      errors.add(:link_type, 'Unit learning outcomes may not link to task learning outcomes')
+    elsif source.context_type == target.context_type
+      errors.add(:link_type, 'Learning outcomes must only link to higher level outcomes')
+    end
+  end
 end
