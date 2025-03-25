@@ -336,8 +336,15 @@ class Unit < ApplicationRecord
           new_chip = chip.dup
           new_outcome.feedback_chips << new_chip
           new_chip.learning_outcome_id = new_outcome.id if chip.respond_to?(:learning_outcome_id)
+          new_chip.parent_chip_id = nil
           new_chip.save!
           chip_mapping[chip.id] = new_chip.id
+        end
+
+        learning_outcome.feedback_chips.where.not(parent_chip_id: nil).each do |chip|
+          child_chip = new_outcome.feedback_chips.find(chip_mapping[chip.id])
+          parent_chip = new_outcome.feedback_chips.find(chip_mapping[chip.parent_chip_id])
+          child_chip.update(parent_chip_id: parent_chip.id)
         end
       end
 
@@ -359,6 +366,8 @@ class Unit < ApplicationRecord
     # Duplicate unit learning outcomes
     learning_outcomes.each do |learning_outcome|
       new_outcome = learning_outcome.dup
+      new_outcome.context = new_unit
+      new_outcome.save!
       new_unit.learning_outcomes << new_outcome
       unit_learning_outcome_mapping[learning_outcome.id] = new_outcome.id
 
@@ -366,8 +375,15 @@ class Unit < ApplicationRecord
         new_chip = chip.dup
         new_outcome.feedback_chips << new_chip
         new_chip.learning_outcome_id = new_outcome.id if chip.respond_to?(:learning_outcome_id)
+        new_chip.parent_chip_id = nil
         new_chip.save!
         chip_mapping[chip.id] = new_chip.id
+      end
+
+      learning_outcome.feedback_chips.where.not(parent_chip_id: nil).each do |chip|
+        child_chip = new_outcome.feedback_chips.find(chip_mapping[chip.id])
+        parent_chip = new_outcome.feedback_chips.find(chip_mapping[chip.parent_chip_id])
+        child_chip.update(parent_chip_id: parent_chip.id)
       end
     end
 
