@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class LearningOutcomeTest < ActiveSupport::TestCase
+class LearningOutcomeApiTest < ActiveSupport::TestCase
   include Rack::Test::Methods
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
