@@ -201,8 +201,22 @@ class LearningOutcome < ApplicationRecord
   end
 
   def update_linked_outcomes(data)
+    existing_link_ids = outgoing_links.pluck(:target_id)
+
+    if existing_link_ids.present?
+      links_to_delete = if data.present?
+                          existing_link_ids - data
+                        else
+                          existing_link
+                        end
+    end
+
+    if links_to_delete.present?
+      outgoing_links.where(target_id: links_to_delete).destroy_all
+    end
+
     data&.each do |linked_outcome_id|
-      LearningOutcomeLink.find_or_create!(source_id: id, target_id: linked_outcome_id)
+      LearningOutcomeLink.find_or_create_by!(source_id: id, target_id: linked_outcome_id)
     rescue ActiveRecord::RecordInvalid => e
       Rails.logger.warn "Failed to link learning outcome #{learning_outcome.id} to learning outcome #{linked_outcome_id}: #{e.message}"
     end

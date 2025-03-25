@@ -60,7 +60,9 @@ class LearningOutcomesApi < Grape::API
     end
 
     outcome_params = declared(params, include_missing: false).except(:linked_outcome_ids)
-    glo = context_model.learning_outcomes.create!(outcome_params)
+    outcome_params[:context_type] = nil
+    outcome_params[:context_id] = nil
+    glo = LearningOutcome.create!(outcome_params)
     glo.update_linked_outcomes(params[:linked_outcome_ids])
 
     present glo, with: Entities::LearningOutcomeEntity
@@ -87,33 +89,12 @@ class LearningOutcomesApi < Grape::API
     learning_outcome = context_model.learning_outcomes.find(params[:id])
     error!({ error: 'Unable to locate outcome requested.' }, 405) if learning_outcome.nil?
 
-    learning_outcome_parameters = ActionController::Parameters.new(params)
-                                                 .permit(
-                                                   :abbreviation,
-                                                   :short_description,
-                                                   :full_outcome_description
-                                                 )
-    # context_model.move_ilo(ilo, params[:ilo_number]) if params[:ilo_number]
+    learning_outcome_parameters = declared(params, include_missing: false).except(:linked_outcome_ids, :context_id, :context_type_plural, :context_type)
+
     learning_outcome.update!(learning_outcome_parameters)
 
     if params[:linked_outcome_ids]
-      # delete all existing links
-      # LearningOutcomeLink.where(source_id: learning_outcome.id).destroy_all # change for different method, move to learning outcome link
-
-      existing_links = LearningOutcomeLink.where(source_id: learning_outcome.id).pluck(:target_id)
-
-      links_to_delete = existing_links - params[:linked_outcome_ids]
-      links_to_create = params[:linked_outcome_ids] - existing_links
-
-      LearningOutcomeLink.where(source_id: learning_outcome.id, target_id: links_to_delete).destroy_all
-
-      links_to_create.each do |linked_outcome_id|
-        begin
-          LearningOutcomeLink.create!(source_id: learning_outcome.id, target_id: linked_outcome_id)
-        rescue ActiveRecord::RecordInvalid => e
-          Rails.logger.warn "Failed to link learning outcome #{learning_outcome.id} to learning outcome #{linked_outcome_id}: #{e.message}"
-        end
-      end
+      learning_outcome.update_linked_outcomes(params[:linked_outcome_ids])
     end
 
     present learning_outcome, with: Entities::LearningOutcomeEntity
@@ -134,57 +115,14 @@ class LearningOutcomesApi < Grape::API
       error!({ error: 'You are not authorised to update global outcomes.' }, 403)
     end
 
-    ilo_parameters = ActionController::Parameters.new(params)
-                                                 .permit(
-                                                   :abbreviation,
-                                                   :short_description,
-                                                   :full_outcome_description
-                                                 )
+    ilo_parameters = declared(params, include_missing: false).except(:linked_outcome_ids)
     glo.update!(ilo_parameters)
 
     if params[:linked_outcome_ids]
-      # delete all existing links
-      # LearningOutcomeLink.where(source_id: learning_outcome.id).destroy_all # change for different method, move to learning outcome link
-
-      existing_links = LearningOutcomeLink.where(source_id: glo.id).pluck(:target_id)
-
-      links_to_delete = existing_links - params[:linked_outcome_ids]
-      links_to_create = params[:linked_outcome_ids] - existing_links
-
-      LearningOutcomeLink.where(source_id: glo.id, target_id: links_to_delete).destroy_all
-
-      links_to_create.each do |linked_outcome_id|
-        begin
-          LearningOutcomeLink.create!(source_id: glo.id, target_id: linked_outcome_id)
-        rescue ActiveRecord::RecordInvalid => e
-          Rails.logger.warn "Failed to link learning outcome #{glo.id} to learning outcome #{linked_outcome_id}: #{e.message}"
-        end
-      end
+      learning_outcome.update_linked_outcomes(params[:linked_outcome_ids])
     end
     present glo, with: Entities::LearningOutcomeEntity
   end
-
-=begin
-  desc 'Delete an outcome from a unit'
-  params do
-    requires :unit_id, type: Integer, desc: 'The id for the unit'
-    requires :id, type: Integer, desc: 'The id for the outcome you wish to delete'
-  end
-  delete '/units/:unit_id/outcomes/:id' do
-    unit = Unit.find(params[:unit_id])
-    error!({ error: 'Unable to locate requested unit.' }, 405) if unit.nil?
-
-    unless authorise? current_user, unit, :update
-      error!({ error: 'You are not authorised to delete outcomes in this unit.' }, 403)
-    end
-
-    ilo = unit.learning_outcomes.find(params[:id])
-    error!({ error: 'Unable to locate outcome requested.' }, 405) if ilo.nil?
-
-    ilo.destroy
-    nil
-  end
-=end
 
   desc 'Delete an outcome from a specified context (unit, course, task_definition, ect.)'
   params do
@@ -223,24 +161,6 @@ class LearningOutcomesApi < Grape::API
     nil
   end
 
-=begin
-  desc 'Download the outcomes for a unit to a csv'
-  get '/units/:unit_id/outcomes/csv' do
-    unit = Unit.find(params[:unit_id])
-    error!({ error: 'Unable to locate requested unit.' }, 405) if unit.nil?
-
-    unless authorise? current_user, unit, :update
-      error!({ error: 'You are not authorised to download outcomes for this unit.' }, 403)
-    end
-
-    content_type 'application/octet-stream'
-    header['Content-Disposition'] = "attachment; filename=#{unit.code}-LearningOutcomes.csv"
-    header['Access-Control-Expose-Headers'] = 'Content-Disposition'
-    env['api.format'] = :binary
-    unit.export_learning_outcome_to_csv
-  end
-=end
-
   desc 'Download the outcomes for a specified context (unit, course, task_definition, ect.) to a csv' # add a way to get nested outcomes aswell
   params do
     requires :context_id, type: Integer, desc: 'The id of the context'
@@ -265,27 +185,6 @@ class LearningOutcomesApi < Grape::API
 
     context_model.export_learning_outcome_to_csv(include_tlos: include_tlos)
   end
-
-=begin
-desc 'Upload the outcomes for a unit from a csv'
-  params do
-    requires :file, type: File, desc: 'CSV upload file.'
-    requires :unit_id, type: Integer, desc: 'The unit to upload tasks to'
-  end
-  post '/units/:unit_id/outcomes/csv' do
-    # check mime is correct before uploading
-    ensure_csv!(params[:file][:tempfile])
-
-    unit = Unit.find(params[:unit_id])
-
-    unless authorise? current_user, unit, :upload_csv
-      error!({ error: 'Not authorised to upload CSV of outcomes' }, 403)
-    end
-
-    # Actually import...
-    unit.import_outcomes_from_csv(params[:file][:tempfile])
-  end
-=end
 
   desc 'Upload the outcomes for a specified context (unit, course, task_definition, ect.) from a csv' # make it a generic upload for any context
   params do
