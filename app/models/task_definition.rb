@@ -324,7 +324,7 @@ class TaskDefinition < ApplicationRecord
 
       begin
         LearningOutcome.create_from_csv(row, result)
-      rescue Exception => e
+      rescue StandardError => e
         result[:errors] << { row: row, message: e.message.to_s }
       end
     end

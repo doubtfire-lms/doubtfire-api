@@ -44,7 +44,7 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     # Data that we want to post
     data_to_post = {
       unit_id: new_unit.id,
-      group_set: new_group_set,
+      group_set: new_group_set
     }
 
     add_auth_header_for user: new_unit.main_convenor_user
@@ -54,8 +54,9 @@ class GroupSetsApiTest < ActiveSupport::TestCase
 
     # check if the POST get through
     assert_equal 201, last_response.status
-    #check response
-    response_keys = %w(name allow_students_to_create_groups allow_students_to_manage_groups keep_groups_in_same_class)
+
+    # check response
+    response_keys = %w[name allow_students_to_create_groups allow_students_to_manage_groups keep_groups_in_same_class]
     response_group_set = GroupSet.find(last_response_body['id'])
     assert_json_matches_model(response_group_set, last_response_body, response_keys)
     assert_equal new_unit.id, response_group_set.unit.id
