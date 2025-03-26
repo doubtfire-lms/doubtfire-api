@@ -168,6 +168,7 @@ GEM
     faraday-net_http (3.1.0)
       net-http
     ffi (1.17.0-aarch64-linux-gnu)
+    ffi (1.17.0-x86_64-linux-gnu)
     fugit (1.11.0)
       et-orbi (~> 1, >= 1.2.11)
       raabro (~> 1.4)
@@ -264,6 +265,8 @@ GEM
     netrc (0.11.0)
     nio4r (2.7.3)
     nokogiri (1.16.5-aarch64-linux)
+      racc (~> 1.4)
+    nokogiri (1.16.5-x86_64-linux)
       racc (~> 1.4)
     observer (0.1.2)
     orm_adapter (0.5.0)
@@ -490,6 +493,7 @@ GEM
 
 PLATFORMS
   aarch64-linux
+  x86_64-linux
 
 DEPENDENCIES
   better_errors
