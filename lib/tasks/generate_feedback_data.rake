@@ -1,5 +1,4 @@
 namespace :db do
-
   desc "Generate feedback chips"
   task generate_feedback_chips: :environment do
     require 'faker'
@@ -14,7 +13,7 @@ namespace :db do
       FactoryBot.create_list(:learning_outcome, 3, context_type: 'TaskDefinition', context_id: task_definition.id)
     end
 
-    LearningOutcome.all.each do |lo|
+    LearningOutcome.all.find_each do |lo|
       # create 4 top level group chips
       group_chips = FactoryBot.create_list(:feedback_group_chip, 2, learning_outcome_id: lo.id)
       nested_group_chips = FactoryBot.create_list(:feedback_group_chip, 2, learning_outcome_id: lo.id)
@@ -42,12 +41,12 @@ namespace :db do
     puts "Printing all testing data...\n\n"
 
     puts "Feedback Group Chips:"
-    Feedback::FeedbackGroupChip.all.each do |chip|
+    Feedback::FeedbackGroupChip.all.find_each do |chip|
       puts "Feedback Group Chip: #{chip.id} (#{chip.chip_text}), Parent Chip Id: #{chip.parent_chip_id}, Learning Outcome: #{chip.learning_outcome_id}"
     end
 
     puts "Feedback Template Chips:"
-    Feedback::FeedbackTemplateChip.all.each do |chip|
+    Feedback::FeedbackTemplateChip.all.find_each do |chip|
       puts "Feedback Template Chip: #{chip.id} (#{chip.chip_text}), Parent Chip Id: #{chip.parent_chip_id}, Learning Outcome: #{chip.learning_outcome_id}"
     end
 

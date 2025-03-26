@@ -61,8 +61,7 @@ class LearningOutcome < ApplicationRecord
         Role.admin
       elsif user.has_tutor_capability?
         Role.tutor
-      else # explicit
-        nil
+        # else will be nil
       end
     else
       context.role_for(user)

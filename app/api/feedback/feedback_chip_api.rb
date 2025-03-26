@@ -146,8 +146,6 @@ module Feedback
       chip = FeedbackTemplateChip.find(params[:id])
       tutor = Tutor.find(params[:tutor_id])
 
-
-
       chip.track_usage_by_tutor(tutor)
       nil
     end

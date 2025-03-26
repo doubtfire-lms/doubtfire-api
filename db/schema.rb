@@ -177,6 +177,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_12_17_091744) do
     t.string "abbreviation"
     t.bigint "context_id"
     t.string "context_type"
+    t.index ["abbreviation", "context_type", "context_id"], name: "index_learning_outcomes_on_abbreviation_and_context", unique: true
     t.index ["context_id", "context_type"], name: "index_learning_outcomes_on_context_id_and_context_type"
   end
 

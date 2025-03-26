@@ -7,18 +7,18 @@ class WebcalTest < ActiveSupport::TestCase
     @campus = FactoryBot.create(:campus)
 
     # Create ongoing units
-    @current_unit_1 = FactoryBot.create(:unit, task_count: 10)
-    @current_unit_1.enrol_student(@student, @campus)
-    @current_project_1 = Project.find_by(user: @student, unit: @current_unit_1)
-    @current_project_1.update(target_grade: 3)
+    @current_unit1 = FactoryBot.create(:unit, task_count: 10, with_students: false, outcome_count: 0)
+    @current_unit1.enrol_student(@student, @campus)
+    @current_project1 = Project.find_by(user: @student, unit: @current_unit1)
+    @current_project1.update(target_grade: 3)
 
-    @current_unit_2 = FactoryBot.create(:unit, task_count: 10)
-    @current_unit_2.enrol_student(@student, @campus)
-    @current_project_2 = Project.find_by(user: @student, unit: @current_unit_2)
-    @current_project_2.update(target_grade: 3)
+    @current_unit2 = FactoryBot.create(:unit, task_count: 10, with_students: false, outcome_count: 0)
+    @current_unit2.enrol_student(@student, @campus)
+    @current_project2 = Project.find_by(user: @student, unit: @current_unit2)
+    @current_project2.update(target_grade: 3)
 
     # Create old unit
-    @old_unit = FactoryBot.create(:unit, task_count: 2)
+    @old_unit = FactoryBot.create(:unit, task_count: 2, with_students: false, outcome_count: 0)
     @old_unit.enrol_student(@student, @campus)
     @old_unit.active = false
     @old_unit.start_date -= 1.year
@@ -35,14 +35,14 @@ class WebcalTest < ActiveSupport::TestCase
     @webcal.destroy
     @old_project.destroy
     @old_unit.destroy
-    @current_unit_1.destroy
-    @current_unit_2.destroy
+    @current_unit1.destroy
+    @current_unit2.destroy
     @student.destroy
     @campus.destroy
   end
 
   test 'Includes only task definitions of current units' do
-    expected_ids = @current_unit_1.task_definitions.map(&:id) + @current_unit_2.task_definitions.map(&:id)
+    expected_ids = @current_unit1.task_definitions.map(&:id) + @current_unit2.task_definitions.map(&:id)
     actual_ids = @webcal.task_definitions.map(&:id)
     assert_equal expected_ids.sort, actual_ids.sort
   end
@@ -50,11 +50,11 @@ class WebcalTest < ActiveSupport::TestCase
   test 'Includes only task definitions that are targeted' do
     # Update target grade to a distinction.
     g = 2
-    @current_project_1.update(target_grade: g)
-    @current_project_2.update(target_grade: g)
+    @current_project1.update(target_grade: g)
+    @current_project2.update(target_grade: g)
 
     # Ensure only tasks that are <= distinction are included.
-    expected_ids = @current_unit_1.task_definitions.where("target_grade <= #{g}").map(&:id) + @current_unit_2.task_definitions.where("target_grade <= #{g}").map(&:id)
+    expected_ids = @current_unit1.task_definitions.where("target_grade <= #{g}").map(&:id) + @current_unit2.task_definitions.where("target_grade <= #{g}").map(&:id)
     actual_ids = @webcal.task_definitions.map(&:id)
 
     assert_equal expected_ids.sort, actual_ids.sort
@@ -62,20 +62,20 @@ class WebcalTest < ActiveSupport::TestCase
 
   test 'Includes only task definitions of units that aren\'t excluded' do
     # Exclude unit 2
-    @webcal.webcal_unit_exclusions.create(unit: @current_unit_2)
+    @webcal.webcal_unit_exclusions.create(unit: @current_unit2)
 
     # Ensure tasks of unit 2 are excluded
-    expected_ids = @current_unit_1.task_definitions.map(&:id)
+    expected_ids = @current_unit1.task_definitions.map(&:id)
     actual_ids = @webcal.task_definitions.map(&:id)
 
     assert_equal expected_ids.sort, actual_ids.sort
 
-    @webcal.webcal_unit_exclusions.find_by(unit: @current_unit_2).destroy
+    @webcal.webcal_unit_exclusions.find_by(unit: @current_unit2).destroy
   end
 
   test 'Includes events with target dates of all task definitions' do
     cal = @webcal.to_ical
-    expected_task_defs = @current_unit_1.task_definitions + @current_unit_2.task_definitions
+    expected_task_defs = @current_unit1.task_definitions + @current_unit2.task_definitions
 
     assert_equal cal.events.length, expected_task_defs.length
 
@@ -91,7 +91,7 @@ class WebcalTest < ActiveSupport::TestCase
     @webcal.update(include_start_dates: true)
 
     cal = @webcal.to_ical
-    expected_task_defs = @current_unit_1.task_definitions + @current_unit_2.task_definitions
+    expected_task_defs = @current_unit1.task_definitions + @current_unit2.task_definitions
 
     assert_equal cal.events.length, expected_task_defs.length * 2
 
@@ -112,8 +112,8 @@ class WebcalTest < ActiveSupport::TestCase
 
   test 'Includes events with extended date if available' do
     # Apply for an extension on one task
-    td = @current_unit_1.task_definitions.first
-    task = @current_project_1.task_for_task_definition(td)
+    td = @current_unit1.task_definitions.first
+    task = @current_project1.task_for_task_definition(td)
     comment = task.apply_for_extension(@student, 'extension', 1)
     comment.assess_extension(task.tutor, true)
 
@@ -122,8 +122,8 @@ class WebcalTest < ActiveSupport::TestCase
     td_event = cal.events.detect { |e| e.summary == @webcal.event_name_for_task_definition(td, 'end') }
 
     # Ensure date is the extended date, instead of the target date
-    assert_equal td_event.dtstart.to_date, td.target_date.to_date + 1.week
-    assert_equal td_event.dtend.to_date, td.target_date.to_date + 1.week
+    assert_equal td.target_date.to_date + 1.week, td_event.dtstart.to_date
+    assert_equal td.target_date.to_date + 1.week, td_event.dtend.to_date
 
     # Revert extension
     comment.destroy
@@ -132,7 +132,7 @@ class WebcalTest < ActiveSupport::TestCase
 
   test 'Includes webcal reminders correctly' do
     cal = @webcal.to_ical
-    all_task_defs = @current_unit_1.task_definitions + @current_unit_2.task_definitions
+    all_task_defs = @current_unit1.task_definitions + @current_unit2.task_definitions
 
     # Calls `fn` per task definition in `all_task_defs` with 2 args---the `TaskDefinition`, and the corresponding
     # `Icalendar::Event`.

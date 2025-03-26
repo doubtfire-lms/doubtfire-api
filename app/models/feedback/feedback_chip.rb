@@ -62,22 +62,11 @@ module Feedback
     end
 
     def self.global_chips
-      Feedback::FeedbackChip.joins(:learning_outcome).where(learning_outcome: {context_type: nil, context_id: nil})
+      Feedback::FeedbackChip.joins(:learning_outcome).where(learning_outcome: { context_type: nil, context_id: nil })
     end
 
     def children
       FeedbackChip.where(parent_chip_id: self.id, learning_outcome_id: self.learning_outcome_id)
-    end
-
-    def serialize
-      {
-        id: self.id,
-        type: feedback_type,
-        chip_text: self.chip_text,
-        description: self.description,
-        parent_chip_id: self.parent_chip_id,
-        learning_outcome_id: self.learning_outcome_id
-      }
     end
 
     def feedback_type
@@ -111,7 +100,7 @@ module Feedback
       current_chip_id = parent_chip_id
       while current_chip_id
         return true if current_chip_id == self.id
-        current_chip_id = FeedbackChip.where(id: current_chip_id).pluck(:parent_chip_id).first
+        current_chip_id = FeedbackChip.where(id: current_chip_id).pick(:parent_chip_id)
       end
     end
 
@@ -288,7 +277,6 @@ module Feedback
       required_fields.each do |field, value|
         if value.nil?
           result[:errors] << { row: row, message: "Missing #{field}" }
-          return
         end
       end
 

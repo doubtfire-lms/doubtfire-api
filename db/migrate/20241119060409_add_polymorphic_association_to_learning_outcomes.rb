@@ -16,6 +16,7 @@ class AddPolymorphicAssociationToLearningOutcomes < ActiveRecord::Migration[7.1]
 
     # add the polymorphic association index
     add_index :learning_outcomes, [:context_id, :context_type], name: "index_learning_outcomes_on_context_id_and_context_type"
+    add_index :learning_outcomes, [:abbreviation, :context_type, :context_id], unique: true, name: "index_learning_outcomes_on_abbreviation_and_context"
 
     # remove the unit id column and indexes
     remove_index :learning_outcomes, name: "index_learning_outcomes_on_unit_id"

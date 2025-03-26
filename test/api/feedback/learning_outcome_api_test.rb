@@ -357,8 +357,8 @@ class LearningOutcomeApiTest < ActiveSupport::TestCase
     # Create links between learning outcomes
     # lo1 to global lo
     LearningOutcomeLink.create!(source_id: original_lo1.id, target_id: global_learning_outcome.id)
-    # lo2 to td lo
-    LearningOutcomeLink.create!(source_id: original_lo2.id, target_id: td_lo.id)
+    # td to ulo
+    LearningOutcomeLink.create!(source_id: td_lo.id, target_id: original_lo2.id)
 
     original_unit.reload
     original_task_definition.reload

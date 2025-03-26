@@ -341,7 +341,7 @@ class Unit < ApplicationRecord
           chip_mapping[chip.id] = new_chip.id
         end
 
-        learning_outcome.feedback_chips.where.not(parent_chip_id: nil).each do |chip|
+        learning_outcome.feedback_chips.where.not(parent_chip_id: nil).find_each do |chip|
           child_chip = new_outcome.feedback_chips.find(chip_mapping[chip.id])
           parent_chip = new_outcome.feedback_chips.find(chip_mapping[chip.parent_chip_id])
           child_chip.update(parent_chip_id: parent_chip.id)
@@ -380,7 +380,7 @@ class Unit < ApplicationRecord
         chip_mapping[chip.id] = new_chip.id
       end
 
-      learning_outcome.feedback_chips.where.not(parent_chip_id: nil).each do |chip|
+      learning_outcome.feedback_chips.where.not(parent_chip_id: nil).find_each do |chip|
         child_chip = new_outcome.feedback_chips.find(chip_mapping[chip.id])
         parent_chip = new_outcome.feedback_chips.find(chip_mapping[chip.parent_chip_id])
         child_chip.update(parent_chip_id: parent_chip.id)
