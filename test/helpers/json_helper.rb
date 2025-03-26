@@ -51,10 +51,10 @@ module TestHelpers
                   model.send(mk)
                 end
         model_value = response_json.key?(k) ? response_json[k] : response_json[k.to_sym]
-        if value.present?
-          assert_equal value, model_value, "Values for model key #{mk} does not match value of response key #{k} - #{response_json}"
-        else
+        if value.nil?
           assert_nil model_value, "Values for key #{k} is not nil - #{response_json}"
+        else
+          assert_equal value, model_value, "Values for model key #{mk} does not match value of response key #{k} - #{response_json}"
         end
       end
     end
