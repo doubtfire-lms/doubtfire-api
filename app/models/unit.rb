@@ -319,9 +319,17 @@ class Unit < ApplicationRecord
       new_unit.group_sets << group_set.dup
     end
 
-    task_definition_outcome_mapping = {}
-    unit_learning_outcome_mapping = {}
-    chip_mapping = {}
+    # Old outcome to new outcome mapping
+    outcome_mapping = {}
+
+    # Duplicate unit learning outcomes - before task definitions as they are linked to them
+    learning_outcomes.each do |learning_outcome|
+      new_outcome = learning_outcome.dup
+      new_outcome.context = new_unit
+      new_outcome.save!
+      new_unit.learning_outcomes << new_outcome
+      outcome_mapping[learning_outcome] = new_outcome
+    end
 
     # Duplicate task definitions
     task_definitions.each do |td|
@@ -330,31 +338,7 @@ class Unit < ApplicationRecord
       td.learning_outcomes.each do |learning_outcome| # for each old task definition, duplicate the learning outcomes associated with it aswell
         new_outcome = learning_outcome.dup
         new_td.learning_outcomes << new_outcome
-        task_definition_outcome_mapping[learning_outcome.id] = new_outcome.id
-
-        learning_outcome.feedback_chips.each do |chip|
-          new_chip = chip.dup
-          new_outcome.feedback_chips << new_chip
-          new_chip.learning_outcome_id = new_outcome.id if chip.respond_to?(:learning_outcome_id)
-          new_chip.parent_chip_id = nil
-          new_chip.save!
-          chip_mapping[chip.id] = new_chip.id
-        end
-
-        learning_outcome.feedback_chips.where.not(parent_chip_id: nil).find_each do |chip|
-          child_chip = new_outcome.feedback_chips.find(chip_mapping[chip.id])
-          parent_chip = new_outcome.feedback_chips.find(chip_mapping[chip.parent_chip_id])
-          child_chip.update(parent_chip_id: parent_chip.id)
-        end
-      end
-
-      LearningOutcomeLink.where(source_id: task_definition_outcome_mapping.keys).find_each do |link|
-        new_source_id = task_definition_outcome_mapping[link.source_id]
-        new_target_id = task_definition_outcome_mapping[link.target_id]
-
-        if new_source_id && new_target_id
-          LearningOutcomeLink.create!(source_id: new_source_id, target_id: new_target_id)
-        end
+        outcome_mapping[learning_outcome] = new_outcome
       end
 
       # Update default task definition if necessary
@@ -363,50 +347,35 @@ class Unit < ApplicationRecord
       end
     end
 
-    # Duplicate unit learning outcomes
-    learning_outcomes.each do |learning_outcome|
-      new_outcome = learning_outcome.dup
-      new_outcome.context = new_unit
-      new_outcome.save!
-      new_unit.learning_outcomes << new_outcome
-      unit_learning_outcome_mapping[learning_outcome.id] = new_outcome.id
+    # Link outcomes
+    outcome_mapping.each do |old_outcome, new_outcome|
+      old_outcome.linked_outcomes.each do |old_linked_outcome|
+        new_target = outcome_mapping[old_linked_outcome] || old_linked_outcome
 
-      learning_outcome.feedback_chips.each do |chip|
+        if new_outcome.present? && new_target.present?
+          LearningOutcomeLink.create!(source_id: new_outcome.id, target_id: new_target.id)
+        end
+      end
+    end
+
+    # Now duplicate all feedback chips
+    chip_mapping = {}
+
+    outcome_mapping.each do |source_outcome, new_outcome|
+      source_outcome.feedback_chips.each do |chip|
         new_chip = chip.dup
         new_outcome.feedback_chips << new_chip
-        new_chip.learning_outcome_id = new_outcome.id if chip.respond_to?(:learning_outcome_id)
+        new_chip.learning_outcome_id = new_outcome.id
         new_chip.parent_chip_id = nil
         new_chip.save!
-        chip_mapping[chip.id] = new_chip.id
+        chip_mapping[chip] = new_chip
       end
 
-      learning_outcome.feedback_chips.where.not(parent_chip_id: nil).find_each do |chip|
-        child_chip = new_outcome.feedback_chips.find(chip_mapping[chip.id])
-        parent_chip = new_outcome.feedback_chips.find(chip_mapping[chip.parent_chip_id])
+      source_outcome.feedback_chips.where.not(parent_chip_id: nil).find_each do |old_chip|
+        child_chip = chip_mapping[old_chip]
+        parent_chip = chip_mapping[old_chip.parent_chip]
         child_chip.update(parent_chip_id: parent_chip.id)
       end
-    end
-
-    LearningOutcomeLink.where(source_id: unit_learning_outcome_mapping.keys).find_each do |link|
-      new_source_id = unit_learning_outcome_mapping[link.source_id] || link.source_id
-      new_target_id = unit_learning_outcome_mapping[link.target_id] || link.target_id
-
-      if new_source_id && new_target_id
-        LearningOutcomeLink.create!(source_id: new_source_id, target_id: new_target_id)
-      end
-    end
-
-    chip_mapping.each do |old_id, new_id|
-      old_chip = Feedback::FeedbackChip.find(old_id)
-      if old_chip.parent_chip_id && chip_mapping[old_chip.parent_chip_id]
-        new_chip = Feedback::FeedbackChip.find(new_id)
-        new_chip.update(parent_chip_id: chip_mapping[old_chip.parent_chip_id])
-      end
-    end
-
-    # Duplicate alignments
-    task_outcome_alignments.each do |align|
-      align.duplicate_to(new_unit)
     end
 
     new_unit
@@ -1154,7 +1123,7 @@ class Unit < ApplicationRecord
       next if row[0] =~ /unit_code/
 
       begin
-        LearningOutcome.create_from_csv(row, result)
+        LearningOutcome.create_from_csv(self, nil, row, result)
       rescue Exception => e
         result[:errors] << { row: row, message: e.message.to_s }
       end

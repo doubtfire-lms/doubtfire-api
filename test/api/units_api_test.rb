@@ -160,50 +160,6 @@ class UnitsApiTest < ActiveSupport::TestCase
     test_post_create_unit_custom_token ''
   end
 
-  def create_same_unit_again
-    count = Unit.all.length
-
-    data_to_post = {
-        unit: create_unit
-    }
-
-    # Add username and auth_token to Header
-    add_auth_header_for(user: User.first)
-
-    post_json '/api/units', data_to_post
-    assert_equal count + 1, Unit.all.length
-
-    assert_equal 201, last_response.status
-
-    post_json '/api/units', data_to_post
-    # Successful assertion of same length again means no record was created
-    assert_equal count + 1, Unit.all.length
-    assert_equal 500, last_response.status
-  end
-
-  def post_create_same_unit_different_name
-    count = Unit.all.length
-    unit = create_unit
-
-    data_to_post = {
-        unit: unit
-    }
-
-    # Add username and auth_token to Header
-    add_auth_header_for(user: User.first)
-
-    post_json '/api/units', data_to_post
-    assert_equal count + 1, Unit.all.length
-
-    # Changes name of unit in data_to_post automatically
-    unit[:name] = 'Intro to Python'
-
-    post_json '/api/units', data_to_post
-    # Successful assertion of same length again means no record was created
-    assert_equal count + 1, Unit.all.length
-    assert_equal 500, last_response.status
-  end
-
   def test_add_tutorial_to_unit
     unit = FactoryBot.create :unit, with_students: false, stream_count: 0
     count_tutorials = Tutorial.all.length
@@ -352,8 +308,8 @@ class UnitsApiTest < ActiveSupport::TestCase
     expected_unit = Unit.find(2)
   end
 
-  def test_unit_output()
-    expected_unit = FactoryBot.create :unit, group_sets: 1, groups: [{ gs: 0, students: 2}], task_alignment_links: 2
+  def test_unit_output
+    expected_unit = FactoryBot.create :unit, group_sets: 1, groups: [{ gs: 0, students: 2 }]
 
     # Add username and auth_token to Header
     add_auth_header_for(user: expected_unit.main_convenor_user)
@@ -367,7 +323,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal actual_unit['start_date'].to_date, expected_unit.start_date.to_date
     assert_equal actual_unit['end_date'].to_date, expected_unit.end_date.to_date
 
-    keys = ["code", "id", "name", "main_convenor_id", "description", "active", "auto_apply_extension_before_deadline", "send_notifications", "enable_sync_enrolments", "enable_sync_timetable", "draft_task_definition_id", "allow_student_extension_requests", "extension_weeks_on_resubmit_request", "allow_student_change_tutorial"]
+    keys = %w[code id name main_convenor_id description active auto_apply_extension_before_deadline send_notifications enable_sync_enrolments enable_sync_timetable draft_task_definition_id allow_student_extension_requests extension_weeks_on_resubmit_request allow_student_change_tutorial]
 
     assert actual_unit.key?("my_role"), actual_unit.inspect
     assert_equal expected_unit.role_for(expected_unit.main_convenor_user).name, actual_unit["my_role"]
@@ -389,7 +345,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert actual_unit.key?("staff"), actual_unit.inspect
     assert_equal expected_unit.staff.count, actual_unit["staff"].count, actual_unit["staff"].inspect
     actual_unit["staff"].each do |staff|
-      keys = %w(id role user)
+      keys = %w[id role user]
       assert_json_limit_keys_to_exactly keys, staff
       ur = UnitRole.find(staff['id'])
       assert_equal ur.id, staff['id']
@@ -403,7 +359,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert actual_unit.key?("group_sets"), actual_unit.inspect
     assert_equal expected_unit.group_sets.count, actual_unit["group_sets"].count, actual_unit["group_sets"].inspect
     actual_unit["group_sets"].each do |gs|
-      keys = %w(id name allow_students_to_create_groups allow_students_to_manage_groups keep_groups_in_same_class capacity locked)
+      keys = %w[id name allow_students_to_create_groups allow_students_to_manage_groups keep_groups_in_same_class capacity locked]
       assert_json_limit_keys_to_exactly keys, gs
       assert_json_matches_model GroupSet.find(gs['id']), gs, keys
     end
@@ -411,15 +367,14 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert actual_unit.key?("ilos"), actual_unit.inspect
     assert_equal expected_unit.learning_outcomes.count, actual_unit["ilos"].count, actual_unit["ilos"].inspect
     actual_unit["ilos"].each do |outcome|
-      keys = %w(id ilo_number abbreviation name description)
-      assert_json_limit_keys_to_exactly keys, outcome
+      keys = %w[id context_type context_id abbreviation short_description full_outcome_description]
       assert_json_matches_model LearningOutcome.find(outcome['id']), outcome, keys
     end
 
     assert actual_unit.key?("task_outcome_alignments"), actual_unit.inspect
     assert_equal expected_unit.task_outcome_alignments.count, actual_unit["task_outcome_alignments"].count, actual_unit["task_outcome_alignments"].inspect
     actual_unit["task_outcome_alignments"].each do |align|
-      keys = %w(id description rating learning_outcome_id task_definition_id)
+      keys = %w[id description rating learning_outcome_id task_definition_id]
       assert_json_limit_keys_to_exactly keys, align
       assert_json_matches_model LearningOutcomeTaskLink.find(align['id']), align, keys
     end

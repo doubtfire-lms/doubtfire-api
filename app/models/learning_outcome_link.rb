@@ -18,6 +18,7 @@ class LearningOutcomeLink < ApplicationRecord
   validates :source_id, uniqueness: { scope: :target_id, message: 'Link already exists' }
 
   validate :validate_link_type
+  validate :validate_context
 
   def validate_link_type
     return if source.nil? || target.nil?
@@ -28,6 +29,14 @@ class LearningOutcomeLink < ApplicationRecord
       errors.add(:link_type, 'Unit learning outcomes may not link to task learning outcomes')
     elsif source.context_type == target.context_type
       errors.add(:link_type, 'Learning outcomes must only link to higher level outcomes')
+    end
+  end
+
+  def validate_context
+    return if source.nil? || target.nil?
+
+    if source.context_type == 'TaskDefinition' && target.context_type == 'Unit' && source.context.unit != target.context
+      errors.add(:link_type, 'Task learning outcomes must be linked to the same unit')
     end
   end
 end

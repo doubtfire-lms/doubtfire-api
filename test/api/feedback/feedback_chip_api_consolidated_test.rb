@@ -91,7 +91,7 @@ class FeedbackChipApiTestCondolidated < ActiveSupport::TestCase
   def test_auth_for_create_edit_global_feedback_chips
     admin = FactoryBot.create(:user, :admin)
 
-    learning_outcome = LearningOutcome.global_outcomes.first
+    learning_outcome = FactoryBot.create(:learning_outcome, context_id: nil, context_type: nil)
 
     users_can = [
       admin
