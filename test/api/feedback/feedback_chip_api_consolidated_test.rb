@@ -142,7 +142,7 @@ class FeedbackChipApiTestCondolidated < ActiveSupport::TestCase
       assert_equal 403, last_response.status, "User #{user.role.name} should not be able to create feedback chips"
       assert_equal chip_count, learning_outcome.feedback_chips.count
 
-      last_chip = LearningOutcome.global_outcomes.first.feedback_chips.last
+      last_chip = learning_outcome.feedback_chips.last
 
       put_json "api/feedback_chips/#{last_chip.id}", data_to_put
       assert_equal 403, last_response.status, "User #{user.role.name} should not be able to update feedback chips"
