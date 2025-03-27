@@ -110,26 +110,47 @@ class LearningOutcome < ApplicationRecord
     row << [unit_code, task_abbreviation, abbreviation, short_description, full_outcome_description, linked_learning_outcomes]
   end
 
-  def self.create_from_csv(row, result)
+  def self.create_from_csv(unit, task_definition, row, result)
     unit_code = row['unit_code']
     task_abbreviation = row['task_abbreviation']
 
-    if unit_code.present?
-      unit = Unit.find_by(code: unit_code)
-      unless unit
-        result[:errors] << { row: row, message: "Unit #{unit_code} not found" }
+    # In a unit context, but no unit code
+    if unit.present?
+      if unit_code.nil?
+        result[:errors] << { row: row, message: 'Missing unit_code' }
+        return
+      elsif unit_code != unit.code
+        result[:errors] << { row: row, message: "Unit #{unit_code} does not match unit #{unit.code}" }
         return
       end
     end
 
-    if task_abbreviation.present?
-      task_definition = TaskDefinition.find_by(abbreviation: task_abbreviation)
-      unless task_definition
-        result[:errors] << { row: row, message: "Task #{task_abbreviation} not found" }
+    # In a task context, but no task abbreviation
+    if task_definition.present?
+      if task_abbreviation.nil?
+        result[:errors] << { row: row, message: 'Missing task_abbreviation' }
+        return
+      elsif task_abbreviation != task_definition.abbreviation
+        result[:errors] << { row: row, message: "Task #{task_abbreviation} does not match task #{task_definition.abbreviation}" }
         return
       end
-      unless unit.task_definitions.include?(task_definition)
-        result[:errors] << { row: row, message: "Task #{task_abbreviation} is not linked to unit #{unit_code}" }
+    end
+
+    if unit_code.present? && unit.nil?
+      result[:errors] << { row: row, message: 'Unit outcomes must be uploaded to a unit' }
+      return
+    end
+
+    if task_abbreviation.present? && unit.nil?
+      result[:errors] << { row: row, message: 'Task outcomes must be uploaded to a unit' }
+      return
+    end
+
+    # Get the context for the outcome
+    if task_abbreviation.present?
+      task_definition = unit.task_definitions.find_by(abbreviation: task_abbreviation)
+      unless task_definition
+        result[:errors] << { row: row, message: "Task #{task_abbreviation} not found" }
         return
       end
       context_type = 'TaskDefinition'
@@ -165,12 +186,26 @@ class LearningOutcome < ApplicationRecord
     end
 
     linked_outcomes = row['linked_outcomes'].to_s.split(',').map(&:strip)
-    linked_outcome_ids = LearningOutcome.where(abbreviation: linked_outcomes).pluck(:id)
-    missing_links = linked_outcomes - LearningOutcome.where(abbreviation: linked_outcomes).pluck(:abbreviation)
 
-    if missing_links.any?
-      result[:errors] << { row: row, message: "Linked outcomes #{missing_links.join(', ')} not found" }
-      return
+    linked_outcome_ids = []
+
+    linked_outcomes.each do |linked_outcome|
+      # Search in the unit if present
+      found_outcome = if unit.present?
+                        unit.learning_outcomes.find_by(abbreviation: linked_outcome) || LearningOutcome.global_outcomes.find_by(abbreviation: linked_outcome)
+                      else
+                        # Search in the global outcomes
+                        LearningOutcome.global_outcomes.find_by(abbreviation: linked_outcome)
+                      end
+
+      if found_outcome.present?
+        linked_outcome_ids << found_outcome.id
+      else
+        result[:errors] << { row: row, message: "Linked outcome #{linked_outcome} not found" }
+        return
+      end
+
+      found_outcome.id
     end
 
     outcome = LearningOutcome.find_or_create_by(context_id: context_id, context_type: context_type, abbreviation: abbreviation)

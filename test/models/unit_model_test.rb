@@ -167,28 +167,6 @@ class UnitModelTest < ActiveSupport::TestCase
     unit2.destroy
   end
 
-  def test_rollover_of_task_ilo_links
-    @unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Tasks.csv"))
-    @unit.import_outcomes_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Outcomes.csv"))
-    @unit.import_task_alignment_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Alignment.csv")), nil
-
-    unit2 = @unit.rollover TeachingPeriod.find(2), nil, nil, nil
-
-    assert @unit.task_outcome_alignments.count > 0
-    assert_equal @unit.task_outcome_alignments.count, unit2.task_outcome_alignments.count
-
-    @unit.task_outcome_alignments.each do |link|
-      ilo = unit2.learning_outcomes.find_by(abbreviation: link.learning_outcome.abbreviation)
-      task_def = unit2.task_definitions.find_by(abbreviation: link.task_definition.abbreviation)
-      other = unit2.task_outcome_alignments.where(task_definition_id: task_def.id, learning_outcome_id: ilo.id).first
-
-      assert other
-      assert_equal link.rating, other.rating, "rating does not match for #{link.task_definition.abbreviation} - #{link.learning_outcome.abbreviation}"
-    end
-
-    unit2.destroy!
-  end
-
   def test_rollover_of_tasks_have_same_start_week_and_day
     @unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Tasks.csv"))
 
@@ -198,7 +176,7 @@ class UnitModelTest < ActiveSupport::TestCase
     assert_equal 2, unit2.teaching_period_id
 
     @unit.task_definitions.each do |td|
-      td2 = unit2.task_definitions.find_by_abbreviation(td.abbreviation)
+      td2 = unit2.task_definitions.find_by(abbreviation: td.abbreviation)
 
       assert_equal td.start_day, td2.start_day, "#{td.abbreviation} not on same day"
       assert_equal td.start_week, td2.start_week, "#{td.abbreviation} not in same week"

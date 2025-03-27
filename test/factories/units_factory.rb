@@ -55,7 +55,6 @@ FactoryBot.define do
       set_one_of_each_task        { false }  # In addition to the standard tasks, also add one of each different think of task - group, quality, graded, etc.
       perform_submissions         { false }
       staff_count                 { 1 }
-      task_alignment_links        { 0 }
     end
 
     name            { Faker::Lorem.unique.words(number: 2).join(' ') }
@@ -101,12 +100,6 @@ FactoryBot.define do
       if eval.set_one_of_each_task
         task_definitions[1].update(max_quality_pts: 5)
         task_definitions[2].update(is_graded: true)
-      end
-
-      while unit.task_outcome_alignments.count < eval.task_alignment_links do
-        td = task_definitions.sample
-        o = outcomes.sample
-        # SLearningOutcomeTaskLink.create task_definition: td, learning_outcome: o, rating: (1..5).to_a.sample, description: "Justification"
       end
 
       # Create tutorials at campus in each stream

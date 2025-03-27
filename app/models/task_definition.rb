@@ -282,7 +282,9 @@ class TaskDefinition < ApplicationRecord
     end
   end
 
-  def export_learning_outcome_to_csv(include_tlos = false)
+  # Export the learning outcomes for this task definition to a CSV file
+  # @param _include_tlos [Boolean] ignored as at the task definition level already
+  def export_learning_outcome_to_csv(*)
     CSV.generate do |row|
       row << LearningOutcome.csv_header
       learning_outcomes.each do |outcome|
@@ -291,7 +293,7 @@ class TaskDefinition < ApplicationRecord
     end
   end
 
-  def export_feedback_chips_to_csv(include_tlos = false)
+  def export_feedback_chips_to_csv(*)
     CSV.generate do |row|
       row << Feedback::FeedbackChip.csv_header
       learning_outcomes.each do |outcome|
@@ -323,7 +325,7 @@ class TaskDefinition < ApplicationRecord
       next if row[0] =~ /abbreviation/
 
       begin
-        LearningOutcome.create_from_csv(row, result)
+        LearningOutcome.create_from_csv(unit, self, row, result)
       rescue StandardError => e
         result[:errors] << { row: row, message: e.message.to_s }
       end

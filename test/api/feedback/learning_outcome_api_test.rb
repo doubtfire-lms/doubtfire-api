@@ -242,8 +242,8 @@ class LearningOutcomeApiTest < ActiveSupport::TestCase
   end
 
   def test_create_learning_outcome_links
-    task_definition = FactoryBot.create(:task_definition, outcome_count: 0)
     unit = FactoryBot.create(:unit, name: 'i like units', code: 'abcde', description: 'test unit')
+    task_definition = FactoryBot.create(:task_definition, outcome_count: 0, unit: unit)
     target_learning_outcome = FactoryBot.create(:learning_outcome, context_id: unit.id, context_type: 'Unit', abbreviation: 'TGT1', short_description: 'target learning outcome', full_outcome_description: 'this outcome will be linked to source')
     target_learning_outcome2 = FactoryBot.create(:learning_outcome, context_id: unit.id, context_type: 'Unit', abbreviation: 'TGT2', short_description: 'target learning outcome 2', full_outcome_description: 'this outcome will be linked to source')
     data_to_post = {
@@ -268,8 +268,8 @@ class LearningOutcomeApiTest < ActiveSupport::TestCase
   end
 
   def test_overwrite_linked_learning_outcomes
-    task_definition = FactoryBot.create(:task_definition, outcome_count: 0)
     unit = FactoryBot.create(:unit, name: 'i like units', code: 'abcde', description: 'test unit')
+    task_definition = FactoryBot.create(:task_definition, outcome_count: 0, unit: unit)
     target_learning_outcome = FactoryBot.create(:learning_outcome, context_id: unit.id, context_type: 'Unit', abbreviation: 'TGT1', short_description: 'target learning outcome', full_outcome_description: 'this outcome will be linked to source')
     target_learning_outcome2 = FactoryBot.create(:learning_outcome, context_id: unit.id, context_type: 'Unit', abbreviation: 'TGT2', short_description: 'target learning outcome 2', full_outcome_description: 'this outcome will be linked to source')
     data_to_post = {
@@ -329,7 +329,7 @@ class LearningOutcomeApiTest < ActiveSupport::TestCase
     # Create a unit with learning outcomes
     global_learning_outcome = FactoryBot.create(:learning_outcome, context_id: nil, context_type: nil, abbreviation: 'nglo')
     original_unit = FactoryBot.create(:unit, name: 'rollver unit', code: 'abcde', description: 'test unit to be rolled over') # When creating unit, it generates 2 random outcomes in addition to below
-    original_task_definition = FactoryBot.create(:task_definition, unit_id: original_unit.id, outcome_count: 0)
+    original_task_definition = FactoryBot.create(:task_definition, unit: original_unit, outcome_count: 0)
     original_lo1 = FactoryBot.create(:learning_outcome, context_id: original_unit.id, context_type: 'Unit', abbreviation: 'olo1', short_description: 'sd', full_outcome_description: 'fod')
     original_lo2 = FactoryBot.create(:learning_outcome, context_id: original_unit.id, context_type: 'Unit', abbreviation: 'olo2', short_description: 'sd', full_outcome_description: 'fod')
     original_lo3 = FactoryBot.create(:learning_outcome, context_id: original_unit.id, context_type: 'Unit', abbreviation: 'olo3', short_description: 'sd', full_outcome_description: 'fod')
@@ -365,6 +365,7 @@ class LearningOutcomeApiTest < ActiveSupport::TestCase
 
     new_unit = original_unit.rollover(TeachingPeriod.find(2), nil, nil, nil)
     new_td = new_unit.task_definitions.find_by(name: original_task_definition.name)
+    new_td_lo = new_td.learning_outcomes.find_by(abbreviation: td_lo.abbreviation)
 
     assert_equal 5, new_unit.learning_outcomes.count, 'New unit should have 5 learning outcomes'
     auto1, auto2, new_lo1, new_lo2, new_lo3 = new_unit.learning_outcomes.order(:id)
@@ -406,7 +407,7 @@ class LearningOutcomeApiTest < ActiveSupport::TestCase
     new_link = LearningOutcomeLink.find_by(source_id: new_lo1.id, target_id: global_learning_outcome.id)
     assert_not_nil new_link, 'New learning outcome 1 should be linked to the global learning outcome'
 
-    new_link = LearningOutcomeLink.find_by(source_id: new_lo2.id, target_id: td_lo.id)
+    new_link = LearningOutcomeLink.find_by(source_id: new_td_lo.id, target_id: new_lo2.id)
     assert_not_nil new_link, 'New learning outcome 2 should be linked to the task definition learning outcome'
   end
 
