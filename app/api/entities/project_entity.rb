@@ -24,7 +24,6 @@ module Entities
 
     expose :tutorial_enrolments, using: TutorialEnrolmentEntity, unless: :summary_only
     expose :groups, using: GroupEntity, unless: :summary_only
-    expose :task_outcome_alignments, using: TaskOutcomeAlignmentEntity, unless: :summary_only
 
     expose :grade, if: :for_staff
     expose :grade_rationale, if: :for_staff

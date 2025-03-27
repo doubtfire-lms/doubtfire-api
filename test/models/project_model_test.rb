@@ -136,13 +136,15 @@ class ProjectModelTest < ActiveSupport::TestCase
     project.update compile_portfolio: true
     assert project.compile_portfolio
 
-    project.move_to_portfolio( {
-      filename: "LearningSummaryReport.pdf",
-      'tempfile' => File.new(test_file_path("submissions/1.2P.pdf"))
-    }, "LearningSummaryReport", "document")
+    project.move_to_portfolio(
+      {
+        filename: 'LearningSummaryReport.pdf',
+        'tempfile' => File.new(test_file_path("submissions/1.2P.pdf"))
+      }, "LearningSummaryReport", "document"
+    )
 
     project.create_portfolio
-    refute project.reload.compile_portfolio
+    assert_not project.reload.compile_portfolio
     assert project.portfolio_exists?
     assert File.exist?(project.portfolio_path)
 

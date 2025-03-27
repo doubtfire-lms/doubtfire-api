@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_12_17_091744) do
+ActiveRecord::Schema[7.1].define(version: 2025_03_27_094635) do
   create_table "activity_types", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -156,19 +156,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_12_17_091744) do
     t.index ["source_id", "target_id"], name: "index_learning_outcome_links_on_source_id_and_target_id", unique: true
     t.index ["source_id"], name: "index_learning_outcome_links_on_source_id"
     t.index ["target_id"], name: "index_learning_outcome_links_on_target_id"
-  end
-
-  create_table "learning_outcome_task_links", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
-    t.text "description"
-    t.integer "rating"
-    t.bigint "task_definition_id"
-    t.bigint "task_id"
-    t.bigint "learning_outcome_id"
-    t.datetime "created_at"
-    t.datetime "updated_at"
-    t.index ["learning_outcome_id"], name: "learning_outcome_task_links_lo_index"
-    t.index ["task_definition_id"], name: "index_learning_outcome_task_links_on_task_definition_id"
-    t.index ["task_id"], name: "index_learning_outcome_task_links_on_task_id"
   end
 
   create_table "learning_outcomes", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|

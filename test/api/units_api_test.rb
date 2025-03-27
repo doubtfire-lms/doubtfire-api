@@ -371,14 +371,6 @@ class UnitsApiTest < ActiveSupport::TestCase
       assert_json_matches_model LearningOutcome.find(outcome['id']), outcome, keys
     end
 
-    assert actual_unit.key?("task_outcome_alignments"), actual_unit.inspect
-    assert_equal expected_unit.task_outcome_alignments.count, actual_unit["task_outcome_alignments"].count, actual_unit["task_outcome_alignments"].inspect
-    actual_unit["task_outcome_alignments"].each do |align|
-      keys = %w[id description rating learning_outcome_id task_definition_id]
-      assert_json_limit_keys_to_exactly keys, align
-      assert_json_matches_model LearningOutcomeTaskLink.find(align['id']), align, keys
-    end
-
     assert actual_unit.key?("groups"), actual_unit.inspect
     assert_equal expected_unit.groups.count, actual_unit["groups"].count, actual_unit["groups"].inspect
     actual_unit["groups"].each do |group|
