@@ -126,8 +126,6 @@ class Task < ApplicationRecord
   has_many :comments, class_name: 'TaskComment', dependent: :destroy, inverse_of: :task
   has_many :task_similarities, class_name: 'TaskSimilarity', dependent: :destroy, inverse_of: :task
   has_many :reverse_task_similarities, class_name: 'MossTaskSimilarity', dependent: :destroy, inverse_of: :other_task, foreign_key: 'other_task_id'
-  has_many :learning_outcome_task_links, dependent: :destroy # links to learning outcomes
-  has_many :learning_outcomes, through: :learning_outcome_task_links
   has_many :task_engagements, dependent: :destroy
   has_many :task_submissions, dependent: :destroy
   has_many :overseer_assessments, dependent: :destroy
@@ -1303,24 +1301,6 @@ class Task < ApplicationRecord
   end
 
   #
-  # Create alignments on submission
-  #
-  def create_alignments_from_submission(alignments)
-    # Remove existing alignments no longer applicable
-    LearningOutcomeTaskLink.where(task_id: id).delete_all()
-    alignments.each do |alignment|
-      link = LearningOutcomeTaskLink.find_or_create_by(
-        task_definition_id: task_definition.id,
-        learning_outcome_id: alignment[:ilo_id],
-        task_id: id
-      )
-      link.rating = alignment[:rating]
-      link.description = alignment[:rationale]
-      link.save!
-    end
-  end
-
-  #
   # Moves submission into place
   # - from -- tmp upload files
   # - to "in_process" folder
@@ -1377,15 +1357,6 @@ class Task < ApplicationRecord
 
     # Ready to accept... so create the submission and update the task status
     create_submission_and_trigger_state_change(current_user, true, contributions, trigger, self)
-
-    # Update the alignments - across groups if needed
-    unless alignments.nil?
-      if group_task?
-        ensured_group_submission.propogate_alignments_from_submission(alignments)
-      else
-        create_alignments_from_submission(alignments)
-      end
-    end
 
     #
     # Create student submission folder (<tmpdir>/doubtfire/new/<id>)

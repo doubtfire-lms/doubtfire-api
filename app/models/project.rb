@@ -28,7 +28,6 @@ class Project < ApplicationRecord
   has_many :groups, -> { where('group_memberships.active = :value', value: true) }, through: :group_memberships
   has_many :task_engagements, through: :tasks
   has_many :comments, through: :tasks
-  has_many :learning_outcome_task_links, through: :tasks
 
   # Callbacks - methods called are private
   before_destroy :can_destroy?
@@ -170,10 +169,6 @@ class Project < ApplicationRecord
 
   def log_details
     "#{id} - #{student.name} (#{student.username}) #{unit.code}"
-  end
-
-  def task_outcome_alignments
-    learning_outcome_task_links
   end
 
   #
@@ -637,10 +632,6 @@ class Project < ApplicationRecord
 
   def group_membership_for_groupset(gs)
     group_memberships.joins(:group).where('groups.group_set_id = :id', id: gs).first
-  end
-
-  def export_task_alignment_to_csv
-    LearningOutcomeTaskLink.export_task_alignment_to_csv(unit, self)
   end
 
   def send_weekly_status_email(summary_stats, middle_of_unit)
