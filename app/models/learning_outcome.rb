@@ -202,7 +202,7 @@ class LearningOutcome < ApplicationRecord
         linked_outcome_ids << found_outcome.id
       else
         result[:errors] << { row: row, message: "Linked outcome #{linked_outcome} not found" }
-        return
+        return nil
       end
 
       found_outcome.id
