@@ -32,7 +32,7 @@ class TiiSubmission < ApplicationRecord
     submitted_by_user
   end
 
-  enum status: {
+  enum :status, {
     created: 0,
     has_id: 1,
     uploaded: 2,

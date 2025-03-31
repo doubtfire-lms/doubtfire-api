@@ -12,7 +12,7 @@ class OverseerImage < ApplicationRecord
   validates :name,  presence: true, uniqueness: true
   validates :tag,   presence: true, uniqueness: true, format: { with: %r{\A([\w.\-_]+((?::\d+|)(?=/[a-z0-9._-]+/[a-z0-9._-]+))|)(?:/|)([a-z0-9.\-_]+(?:/[a-z0-9.\-_]+|))(:([\w.\-_]{1,127})|)\z} }
 
-  enum pulled_image_status: { failed: 0, success: 1 }
+  enum :pulled_image_status, { failed: 0, success: 1 }
 
   # Pulls overseer image
   def pull_from_docker
