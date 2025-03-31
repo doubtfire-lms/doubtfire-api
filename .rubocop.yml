@@ -9,7 +9,7 @@ AllCops:
   TargetRubyVersion: 3.1
   NewCops: disable
 
-require:
+plugins:
   - rubocop-rails
   # - rubocop-performance
   # - rubocop-minitest

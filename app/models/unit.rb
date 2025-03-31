@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'csv'
 require 'bcrypt'
 require 'json'
@@ -576,7 +578,7 @@ class Unit < ApplicationRecord
 
     csv = CSV.new(File.read(file), headers: true,
                                    header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
-                                   converters: [->(i) { i.nil? ? '' : i }, ->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }])
+                                   converters: [->(i) { i.nil? ? '' : i }, ->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }])
     # Read the header row to determine what kind of file it is
     if csv.header_row?
       csv.shift
@@ -635,7 +637,7 @@ class Unit < ApplicationRecord
     # Loop over csv rows converting to hash values
     CSV.foreach(file, headers: true,
                       header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
-                      converters: [->(i) { i.nil? ? '' : i }, ->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]) do |row|
+                      converters: [->(i) { i.nil? ? '' : i }, ->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]) do |row|
       # Check data has headers
       missing = import_settings[:missing_headers_lambda].call(row)
       if missing.count > 0
@@ -680,7 +682,6 @@ class Unit < ApplicationRecord
   #   replace_existing_campus - boolean to indicate if campus in csv override ones in doubtfire
   def sync_enrolment_with(enrolment_data, import_settings, result)
     # Get lists for reporting results
-    success = result[:success]
     errors = result[:errors]
     ignored = result[:ignored]
 
@@ -840,7 +841,7 @@ class Unit < ApplicationRecord
           end
 
           # Clear success message...
-          success_message = ''
+          success_message = String.new('')
 
           # Now find the project for the user
           user_project = projects.where(user_id: project_participant.id).first
@@ -849,7 +850,7 @@ class Unit < ApplicationRecord
           if user_project.nil?
             # Enrol user...
             user_project = enrol_student(project_participant, campus)
-            success_message = 'Enrolled student'
+            success_message << 'Enrolled student.'
             new_project = true
           else
             new_project = false # We are updating existing project
@@ -920,7 +921,7 @@ class Unit < ApplicationRecord
     CSV.parse(data,
               headers: true,
               header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
-              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+              converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]).each do |row|
       # Make sure we're not looking at the header or an empty line
       next if row[0] =~ /(username)|(((unit)|(subject))_code)/
 
@@ -1041,7 +1042,7 @@ class Unit < ApplicationRecord
     CSV.parse(data,
               headers: true,
               header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
-              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+              converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]).each do |row|
       # Make sure we're not looking at the header or an empty line
       next if row[0] =~ /unit_code/
 
@@ -1070,7 +1071,7 @@ class Unit < ApplicationRecord
     CSV.parse(data,
               headers: true,
               header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
-              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+              converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]).each do |row|
       # Make sure we're not looking at the header or an empty line
       next if row[0] =~ /unit_code/
 
@@ -1148,7 +1149,7 @@ class Unit < ApplicationRecord
     CSV.parse(data,
               headers: true,
               header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
-              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+              converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]).each do |row|
       next if row[0] =~ /^(group_name)|(name)/ # Skip header
 
       begin
@@ -1223,7 +1224,7 @@ class Unit < ApplicationRecord
     CSV.parse(data,
               headers: true,
               header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
-              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+              converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]).each do |row|
       next if row[0] =~ /^(group_name)|(name)/ # Skip header
 
       begin
@@ -1359,7 +1360,7 @@ class Unit < ApplicationRecord
     CSV.parse(data,
               headers: true,
               header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip.tr(' ', '_').to_sym unless hdr.nil? }],
-              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+              converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]).each do |row|
       next if row[0] =~ /^(Task Name)|(name)/ # Skip header
 
       begin
@@ -1692,9 +1693,6 @@ class Unit < ApplicationRecord
 
     result
   end
-
-
-
 
   def tasks_as_hash(data)
     task_ids = data.map(&:task_id).uniq
@@ -2256,8 +2254,8 @@ class Unit < ApplicationRecord
 
     # read data from CSV
     CSV.parse(csv_str, headers: true, return_headers: true,
-                       header_converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '').downcase unless body.nil? }],
-                       converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |task_entry|
+                       header_converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '').downcase }],
+                       converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]).each do |task_entry|
       group = nil
 
       # check the header row
@@ -2443,12 +2441,12 @@ class Unit < ApplicationRecord
         # read keys from CSV - to check that files exist in csv
         entry_data = CSV.parse(csv_str, headers: true,
                                         header_converters: [->(i) { i.nil? ? '' : i }, :downcase],
-                                        converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }])
+                                        converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }])
 
         # Copy over the updated/marked files to the file system
         zip.each do |file|
           # Skip processing marking file
-          next if File.basename(file[:name]) == 'marks.csv' || File.basename(file[:name]) == 'readme.txt'
+          next if ['marks.csv', 'readme.txt'].include?(File.basename(file[:name]))
 
           # Test filename pattern
           if (/.*-\d+.pdf/i =~ File.basename(file[:name])) != 0

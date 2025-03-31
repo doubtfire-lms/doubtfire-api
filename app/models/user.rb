@@ -494,7 +494,7 @@ class User < ApplicationRecord
     CSV.parse(data,
               headers: true,
               header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip.tr(' ', '_') unless hdr.nil? }],
-              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+              converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]).each do |row|
       next if row[0] =~ /(email)|(username)/
 
       begin

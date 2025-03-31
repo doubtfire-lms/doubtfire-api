@@ -402,48 +402,50 @@ class UnitModelTest < ActiveSupport::TestCase
   def check_task_completion_csv unit, col_count = nil
     csv_str = unit.task_completion_csv
 
-    CSV.parse(csv_str, headers: true, return_headers: false,
-      header_converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '').downcase unless body.nil? }],
-      converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |entry|
+    CSV.parse(csv_str,
+              headers: true,
+              return_headers: false,
+              header_converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '').downcase }],
+              converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]).each do |entry|
 
-        assert_equal(col_count, entry.length, entry.inspect) unless col_count.nil?
+      assert_equal(col_count, entry.length, entry.inspect) unless col_count.nil?
 
-        user = User.find_by(username: entry['username'])
-        assert user.present?, entry.inspect
+      user = User.find_by(username: entry['username'])
+      assert user.present?, entry.inspect
 
-        project = unit.active_projects.find_by(user_id: user.id)
+      project = unit.active_projects.find_by(user_id: user.id)
 
-        # Test basic details
-        assert_equal project.student.username, entry['username'], entry.inspect
-        if project.student.student_id.present?
-          assert_equal project.student.student_id, entry['student id'], entry.inspect
+      # Test basic details
+      assert_equal project.student.username, entry['username'], entry.inspect
+      if project.student.student_id.present?
+        assert_equal project.student.student_id, entry['student id'], entry.inspect
+      else
+        assert_nil entry['student id'], entry.inspect
+      end
+      assert_equal project.student.email, entry['email'], entry.inspect
+
+      # Test task status
+      unit.task_definitions.each do |td|
+        task = project.task_for_task_definition(td)
+        assert_equal task.task_status.name, entry[td.abbreviation.downcase], "#{td.abbreviation} --> #{entry.inspect}"
+
+        assert_equal(task.quality_pts.to_s, entry["#{td.abbreviation.downcase} stars"], "#{td.abbreviation} stars --> #{entry.inspect}") if td.has_stars? && task.quality_pts != -1
+        if task.grade.present?
+          assert_equal(GradeHelper.short_grade_for(task.grade), entry["#{td.abbreviation.downcase} grade"], "#{td.abbreviation} --> #{entry.inspect}") if td.is_graded?
         else
-          assert_nil entry['student id'], entry.inspect
+          assert_nil(entry["#{td.abbreviation.downcase} grade"], "#{td.abbreviation} --> #{entry.inspect}") if td.is_graded?
         end
-        assert_equal project.student.email, entry['email'], entry.inspect
+        assert_equal(task.contribution_pts, (entry["#{td.abbreviation.downcase} contribution"].nil? ? 3 : Integer(entry["#{td.abbreviation.downcase} contribution"])), "#{td.abbreviation} contrib --> #{entry.inspect}") if td.is_group_task?
+      end
 
-        # Test task status
-        unit.task_definitions.each do |td|
-          task = project.task_for_task_definition(td)
-          assert_equal task.task_status.name, entry[td.abbreviation.downcase], "#{td.abbreviation} --> #{entry.inspect}"
-
-          assert_equal("#{task.quality_pts}", entry["#{td.abbreviation.downcase} stars"], "#{td.abbreviation} stars --> #{entry.inspect}") if td.has_stars? && task.quality_pts != -1
-          if task.grade.present?
-            assert_equal(GradeHelper.short_grade_for(task.grade), entry["#{td.abbreviation.downcase} grade"], "#{td.abbreviation} --> #{entry.inspect}") if td.is_graded?
-          else
-            assert_nil(entry["#{td.abbreviation.downcase} grade"], "#{td.abbreviation} --> #{entry.inspect}") if td.is_graded?
-          end
-          assert_equal(task.contribution_pts, (entry["#{td.abbreviation.downcase} contribution"].nil? ? 3 : Integer(entry["#{td.abbreviation.downcase} contribution"])), "#{td.abbreviation} contrib --> #{entry.inspect}") if td.is_group_task?
+      # Test tutorial streams
+      unit.tutorial_streams.each do |ts|
+        if project.tutorial_for_stream(ts).present?
+          assert_equal project.tutorial_for_stream(ts).abbreviation, entry[ts.abbreviation.downcase], {entry: entry.inspect, stream: ts.abbreviation, proj_tut: project.tutorial_for_stream(ts)}
+        else
+          assert_nil entry[ts.abbreviation.downcase], {entry: entry.inspect, stream: ts.abbreviation, proj_tut: project.tutorial_for_stream(ts)}
         end
-
-        # Test tutorial streams
-        unit.tutorial_streams.each do |ts|
-          if project.tutorial_for_stream(ts).present?
-            assert_equal project.tutorial_for_stream(ts).abbreviation, entry[ts.abbreviation.downcase], {entry: entry.inspect, stream: ts.abbreviation, proj_tut: project.tutorial_for_stream(ts)}
-          else
-            assert_nil entry[ts.abbreviation.downcase], {entry: entry.inspect, stream: ts.abbreviation, proj_tut: project.tutorial_for_stream(ts)}
-          end
-        end
+      end
     end
   end
 
@@ -489,40 +491,40 @@ class UnitModelTest < ActiveSupport::TestCase
     csv_str = unit.export_users_to_csv
 
     rows = 0
-    CSV.parse(csv_str, headers: true, return_headers: false,
-      header_converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '').downcase unless body.nil? }],
-      converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |entry|
-        assert_json_limit_keys_to_exactly %w(unit_code campus username student_id preferred_name first_name last_name email tutorial), entry.to_hash
-        assert_equal 9, entry.count, entry
-        user = User.find_by(username: entry['username'])
-        assert user.present?, "Unable to find user from #{entry}"
+    CSV.parse(csv_str,
+              headers: true, return_headers: false,
+              header_converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '').downcase }],
+              converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]).each do |entry|
+      assert_json_limit_keys_to_exactly %w[unit_code campus username student_id preferred_name first_name last_name email tutorial], entry.to_hash
+      assert_equal 9, entry.count, entry
+      user = User.find_by(username: entry['username'])
+      assert user.present?, "Unable to find user from #{entry}"
 
-        project = unit.projects.find_by(user_id: user.id)
-        assert project.present?, entry
+      project = unit.projects.find_by(user_id: user.id)
+      assert project.present?, entry
 
-        assert_json_matches_model(user, entry, %w( username student_id first_name last_name email))
+      assert_json_matches_model(user, entry, %w[username student_id first_name last_name email])
 
-        campus = Campus.find_by('abbreviation = :name OR name = :name', name: entry['campus'])
-        assert campus.present?, entry
-        assert_equal project.campus, campus, entry
+      campus = Campus.find_by('abbreviation = :name OR name = :name', name: entry['campus'])
+      assert campus.present?, entry
+      assert_equal project.campus, campus, entry
 
-        if user.nickname.present?
-          assert_equal user.nickname, entry['preferred_name'], entry
-        else
-          assert_nil entry['preferred_name'], entry
-        end
+      if user.nickname.present?
+        assert_equal user.nickname, entry['preferred_name'], entry
+      else
+        assert_nil entry['preferred_name'], entry
+      end
 
-        tutorial = unit.tutorials.find_by(abbreviation: entry['tutorial'])
-        if entry['tutorial'].present?
-          assert tutorial.present?, entry.inspect
-          assert_equal project.tutorial_enrolments.first.tutorial, tutorial, entry
-        else
-          assert_nil tutorial
-          assert_nil project.tutorial_enrolments.first
-        end
+      tutorial = unit.tutorials.find_by(abbreviation: entry['tutorial'])
+      if entry['tutorial'].present?
+        assert tutorial.present?, entry.inspect
+        assert_equal project.tutorial_enrolments.first.tutorial, tutorial, entry
+      else
+        assert_nil tutorial
+        assert_nil project.tutorial_enrolments.first
+      end
 
-
-        rows += 1
+      rows += 1
     end
 
     assert_equal unit.active_projects.count, rows, "Expected number or rows in csv - #{csv_str}"

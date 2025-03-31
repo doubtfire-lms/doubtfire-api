@@ -1,9 +1,11 @@
 namespace :submission do
   desc 'Check active units for task plagiarism'
 
+  # rubocop:disable Rails/Delegate
   def logger
     Rails.logger
   end
+  # rubocop:enable Rails/Delegate
 
   #
   # Returns the file that indicates if this rake process is already executing...

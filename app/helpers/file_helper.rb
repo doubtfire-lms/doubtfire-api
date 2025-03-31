@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'English'
 require 'zip'
 require 'tmpdir'
@@ -42,20 +44,20 @@ module FileHelper
       logger.error "Unknown type '#{kind}' provided for '#{name}'"
     end
 
-    extension_check = FileHelper.known_extension?(File.extname(file["tempfile"]).downcase[1..])
+    extension_check = FileHelper.known_extension?(File.extname(file['tempfile']).downcase[1..])
     unless extension_check
-      msg = "invalid file extension."
-      logger.debug "File extension check failed"
+      msg = 'invalid file extension.'
+      logger.debug 'File extension check failed'
       return {
         accepted: false,
         msg: msg
       }
     end
 
-    mime_check = mime_in_list?(file["tempfile"].path, mime_allow_list)
+    mime_check = mime_in_list?(file['tempfile'].path, mime_allow_list)
     unless mime_check
-      msg = "invalid file MIME type, file is likely corrupted."
-      logger.debug "File MIME check failed"
+      msg = 'invalid file MIME type, file is likely corrupted.'
+      logger.debug 'File MIME check failed'
       return {
         accepted: false,
         msg: msg
@@ -63,12 +65,12 @@ module FileHelper
     end
 
     # Extra checks for PDF documents
-    if kind == "document"
-      pdf_validation_result = validate_pdf(file["tempfile"].path)
+    if kind == 'document'
+      pdf_validation_result = validate_pdf(file['tempfile'].path)
 
       if pdf_validation_result[:encrypted]
-        msg = "PDF file is encrypted, encrypted files are not supported."
-        logger.debug "PDF file is encrypted"
+        msg = 'PDF file is encrypted, encrypted files are not supported.'
+        logger.debug 'PDF file is encrypted'
         return {
           accepted: false,
           msg: msg
@@ -76,8 +78,8 @@ module FileHelper
       end
 
       unless pdf_validation_result[:valid]
-        msg = "PDF file is corrupted."
-        logger.debug "PDF file is corrupted"
+        msg = 'PDF file is corrupted.'
+        logger.debug 'PDF file is corrupted'
         return {
           accepted: false,
           msg: msg
@@ -85,12 +87,12 @@ module FileHelper
       end
     end
 
-    logger.debug "Uploaded file is accepted"
+    logger.debug 'Uploaded file is accepted'
 
     # All checks are done
     {
       accepted: true,
-      msg: "success"
+      msg: 'success'
     }
   end
 
@@ -309,7 +311,7 @@ module FileHelper
             #{delete_frames ? '-delete 1--1' : ''} -strip -density 72 -quality 85% -resize 2048x2048\\> -resize 48x48\\< \
             \"#{dest}\" >>/dev/null 2>>/dev/null"
 
-    did_compress = system_try_within 40, 'compressing image using convert', exec
+    system_try_within 40, 'compressing image using convert', exec
   end
 
   def compress_pdf(path, max_size: 2_500_000, timeout_seconds: 30)
@@ -375,8 +377,8 @@ module FileHelper
   def pages_in_pdf(path)
     exec = "qpdf --show-npages #{path}"
 
-    out_text, error_text, exit_status = Open3.capture3(exec)
-    result = out_text.to_i # will default to 0 if not a number
+    out_text, _error_text, _exit_status = Open3.capture3(exec)
+    out_text.to_i # will default to 0 if not a number
   rescue => e
     logger.error "Failed to run QPDF on #{path}. Rescued with error:\n\t#{e.message}"
     0

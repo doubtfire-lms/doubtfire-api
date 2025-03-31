@@ -144,7 +144,7 @@ class D2lIntegration
     "#{D2lIntegration.d2l_api_host}/d2l/api/le/#{D2lIntegration.d2l_api_version}/#{d2l_mapping.org_unit_id}/grades/#{d2l_mapping.grade_object_id}"
   end
 
-  def self.does_grade_item_exist?(d2l_mapping, access_token)
+  def self.grade_item_exist?(d2l_mapping, access_token)
     return false if d2l_mapping.grade_object_id.nil?
 
     url = self.grades_url(d2l_mapping)
@@ -164,7 +164,7 @@ class D2lIntegration
   end
 
   def self.create_grade_item(d2l_mapping, access_token)
-    return if self.does_grade_item_exist?(d2l_mapping, access_token)
+    return if self.grade_item_exist?(d2l_mapping, access_token)
 
     app_name = Doubtfire::Application.config.institution[:product_name]
 
@@ -263,7 +263,7 @@ class D2lIntegration
     token = D2lIntegration.access_token_for_user!(user)
 
     # Check if we need to create the grade item
-    unless self.does_grade_item_exist?(d2l_mapping, token)
+    unless self.grade_item_exist?(d2l_mapping, token)
       create_grade_item(d2l_mapping, token)
     end
 

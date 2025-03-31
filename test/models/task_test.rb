@@ -813,9 +813,10 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     project = FactoryBot.create(:project)
     unit = project.unit
     user = project.student
-    convenor = unit.main_convenor_user
+    # convenor = unit.main_convenor_user
     task_definition = unit.task_definitions.first
 
+    task_definition.due_date = Time.zone.now + 1.week
     task_definition.upload_requirements = [
       {
         "key" => 'file0',
@@ -857,7 +858,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     begin
       task.accept_submission user, [], self, nil, 'ready_for_feedback', nil
       assert false, 'Should have raised an error with no files submitted'
-    rescue StandardError => e
+    rescue StandardError
       assert_equal :not_started, task.status
     end
 
