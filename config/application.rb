@@ -74,6 +74,11 @@ module Doubtfire
     config.institution[:email_domain] = ENV['DF_INSTITUTION_EMAIL_DOMAIN'] if ENV['DF_INSTITUTION_EMAIL_DOMAIN']
     config.institution[:host] = ENV['DF_INSTITUTION_HOST'] if ENV['DF_INSTITUTION_HOST']
     config.institution[:product_name] = ENV['DF_INSTITUTION_PRODUCT_NAME'] if ENV['DF_INSTITUTION_PRODUCT_NAME']
+
+    config.institution[:has_logo] = (ENV['DF_INSTITUTION_HAS_LOGO'].to_s.downcase == "true" || ENV['DF_INSTITUTION_HAS_LOGO'].to_i == 1) if ENV['DF_INSTITUTION_HAS_LOGO']
+    config.institution[:logo_url] = ENV['DF_INSTITUTION_LOGO_URL'] if ENV['DF_INSTITUTION_LOGO_URL']
+    config.institution[:logo_link_url] = ENV['DF_INSTITUTION_LOGO_LINK_URL'] if ENV['DF_INSTITUTION_LOGO_LINK_URL']
+
     config.institution[:privacy] = ENV['DF_INSTITUTION_PRIVACY'] if ENV['DF_INSTITUTION_PRIVACY']
     config.institution[:plagiarism] = ENV['DF_INSTITUTION_PLAGIARISM'] if ENV['DF_INSTITUTION_PLAGIARISM']
     # Institution host becomes localhost in development
@@ -113,11 +118,11 @@ module Doubtfire
          config.saml[:entity_id].nil? ||
          config.saml[:idp_sso_target_url].nil?
         raise "Invalid values specified to saml, check the following environment variables: \n  " \
-              "key                          => variable set?\n  " \
-              "DF_SAML_CONSUMER_SERVICE_URL            => #{!ENV['DF_SAML_CONSUMER_SERVICE_URL'].nil?}\n  " \
+              "key                           => variable set?\n  " \
+              "DF_SAML_CONSUMER_SERVICE_URL  => #{!ENV['DF_SAML_CONSUMER_SERVICE_URL'].nil?}\n  " \
               "DF_SAML_SP_ENTITY_ID          => #{!ENV['DF_SAML_SP_ENTITY_ID'].nil?}\n  " \
-              "DF_SAML_IDP_SIGNOUT_URL         => #{!ENV['DF_SAML_IDP_SIGNOUT_URL'].nil?}\n  " \
-              "DF_SAML_IDP_TARGET_URL          => #{!ENV['DF_SAML_IDP_TARGET_URL'].nil?}\n"
+              "DF_SAML_IDP_SIGNOUT_URL       => #{!ENV['DF_SAML_IDP_SIGNOUT_URL'].nil?}\n  " \
+              "DF_SAML_IDP_TARGET_URL        => #{!ENV['DF_SAML_IDP_TARGET_URL'].nil?}\n"
       end
 
       # If there's no XML url, we need the cert
