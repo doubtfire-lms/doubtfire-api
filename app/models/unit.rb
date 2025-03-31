@@ -148,6 +148,8 @@ class Unit < ApplicationRecord
 
   belongs_to :overseer_image, optional: true
 
+  belongs_to :unit_definitions, optional: true
+
   validates :name, :description, :start_date, :end_date, presence: true
 
   validates :description, length: { maximum: 4095, allow_blank: true }
@@ -162,6 +164,8 @@ class Unit < ApplicationRecord
   validate :ensure_teaching_period_dates_match, if: :has_teaching_period?
 
   validate :ensure_main_convenor_is_appropriate, if: :main_convenor_id_changed?
+
+  validate :unit_definition_id
 
   # Portfolio autogen date validations, must be after start date and before or equal to end date
   validate :autogen_date_within_unit_active_period, if: -> { start_date_changed? || end_date_changed? || teaching_period_id_changed? || portfolio_auto_generation_date_changed? }

@@ -63,5 +63,6 @@ module Entities
     # expose :group_memberships, using: GroupMembershipEntity, unless: :summary_only do |unit, options|
     #   unit.group_memberships.where(active: true)
     # end
+    expose :unit_definition_id
   end
 end

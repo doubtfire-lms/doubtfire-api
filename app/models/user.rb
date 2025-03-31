@@ -298,6 +298,8 @@ class User < ApplicationRecord
       :handle_campuses,
       :handle_activity_types,
 
+      :handle_courseflow,
+
       :get_teaching_periods,
 
       :admin_overseer,

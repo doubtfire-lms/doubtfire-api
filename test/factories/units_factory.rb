@@ -62,6 +62,7 @@ FactoryBot.define do
     active          { true }
     auto_apply_extension_before_deadline { true }
     send_notifications { true }
+    unit_definition_id { nil }
 
     after(:create) do | unit, eval |
       group_sets = eval.group_sets
