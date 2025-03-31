@@ -11,7 +11,7 @@ class OverseerAssessment < ApplicationRecord
 
   validates :submission_timestamp, uniqueness: { scope: :task_id }
 
-  enum status: { pre_queued: 0, queued: 1, queue_failed: 2, done: 3 }
+  enum :status, { pre_queued: 0, queued: 1, queue_failed: 2, done: 3 }
 
   after_destroy :delete_associated_files
 

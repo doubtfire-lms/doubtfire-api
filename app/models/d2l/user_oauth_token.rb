@@ -9,7 +9,7 @@ class UserOauthToken < ApplicationRecord
   validates :token, presence: true
 
   # Ensure a known provider - what the token gives access to
-  enum provider: {
+  enum :provider, {
     d2l: 0
   }
 
