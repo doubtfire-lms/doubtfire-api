@@ -1,9 +1,11 @@
 namespace :submission do
   desc 'Compress the PDF files for the submissions'
 
+  # rubocop:disable Rails/Delegate
   def logger
     Rails.logger
   end
+  # rubocop:enable Rails/Delegate
 
   task compress_pdfs: :environment do
     logger.info 'Starting compress pdf'

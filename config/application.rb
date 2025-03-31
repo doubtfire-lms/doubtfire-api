@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require File.expand_path('../boot', __FILE__)
 require 'rails/all'
 require 'csv'
@@ -213,6 +215,9 @@ module Doubtfire
         resource '*', headers: :any, methods: %i(get post put delete options)
       end
     end
+
+    config.active_support.to_time_preserves_timezone = :zone
+
     # Generators for test framework
     if Rails.env.test?
       config.generators do |g|

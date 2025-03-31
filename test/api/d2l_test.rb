@@ -212,14 +212,14 @@ class D2lTest < ActiveSupport::TestCase
                       { status: 200, body: { id: 54321 }.to_json, headers: { 'Content-Type' => 'application/json;charset=UTF-8' } }
                     )
 
-    assert_not D2lIntegration.does_grade_item_exist?(d2l, UserOauthToken.last.access_token)
+    assert_not D2lIntegration.grade_item_exist?(d2l, UserOauthToken.last.access_token)
     assert_requested(grade_request, times: 1)
 
     # restore grade object id
     d2l.grade_object_id = 54321
     d2l.save
 
-    assert D2lIntegration.does_grade_item_exist?(d2l, UserOauthToken.last.access_token)
+    assert D2lIntegration.grade_item_exist?(d2l, UserOauthToken.last.access_token)
     assert_requested(grade_request, times: 2)
   end
 

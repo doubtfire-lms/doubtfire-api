@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'date'
 
 class Task < ApplicationRecord
@@ -371,7 +373,7 @@ class Task < ApplicationRecord
   end
 
   def discuss_or_demonstrate?
-    status == :discuss || status == :demonstrate
+    [:discuss, :demonstrate].include?(status)
   end
 
   def discuss?
@@ -695,7 +697,7 @@ class Task < ApplicationRecord
   end
 
   def add_text_comment(user, text, reply_to_id = nil)
-    text.strip!
+    text = text.strip
     return nil if user.nil? || text.nil? || text.empty?
 
     lc = comments.last
