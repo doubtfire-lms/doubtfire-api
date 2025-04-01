@@ -92,46 +92,42 @@ class AuthenticationApi < Grape::API
       # We validate the SAML Response and check if the user already exists in the system
       return error!({ error: 'Invalid SAML response.' }, 401) unless response.is_valid?
 
-      attributes = response.attributes
+      # Get the user identification data from the SAML response
+      # This includes the login_id, email and username
+      user_id_data = Doubtfire::Application.config.institution_settings.map_saml_response_to_user_id(response)
 
-      login_id = response.name_id || response.nameid
-      email = login_id
-
-      logger.info "Authenticate #{email} from #{request.ip}"
+      logger.info "Authenticate #{user_id_data[:email]} from #{request.ip}"
 
       # Lookup using login_id if it exists
       # Lookup using email otherwise and set login_id
       # Otherwise create new
-      user = User.find_by(login_id: login_id) ||
-             User.find_by(username: email[/(.*)@/, 1]) ||
-             User.find_by(email: email) ||
-             User.find_or_create_by(login_id: login_id) do |new_user|
-               role_response = attributes.fetch(/role/) || attributes.fetch(/userRole/)
-               role = role_response.include?('Staff') ? Role.tutor.id : Role.student.id
-               first_name = (attributes.fetch(/givenname/) || attributes.fetch(/cn/)).capitalize
-               last_name = attributes.fetch(/surname/).capitalize
-               username = email.split('@').first
-               # Some institutions may provide givenname and surname, others
-               # may only provide common name which we will use as first name
-               new_user.first_name = first_name
-               new_user.last_name  = last_name
-               new_user.email      = email
-               new_user.username   = username
-               new_user.nickname   = first_name
-               new_user.role_id    = role
+      user = User.find_by(login_id: user_id_data[:login_id]) ||
+             User.find_by(username: user_id_data[:username]) ||
+             User.find_by(email: user_id_data[:email]) ||
+             User.create do |new_user|
+               # Update new user with details from the SAML response
+               Doubtfire::Application.config.institution_settings.update_user_from_saml_response(
+                 new_user,
+                 user_id_data,
+                 response
+               )
              end
 
       # Set login id + username if not yet specified
-      user.login_id = login_id if user.login_id.nil?
-      user.username = username if user.username.nil?
+      if user.login_id.nil? || user.username.nil?
+        user.update(
+          login_id: user_id_data[:login_id],
+          username: user_id_data[:username]
+        )
+      end
 
       # Try and save the user once authenticated if new
       if user.new_record?
         user.encrypted_password = BCrypt::Password.create(SecureRandom.hex(32))
         unless user.valid?
-          error!(error: 'There was an error creating your account in Doubtfire. ' \
+          error!(error: 'There was an error creating your account. ' \
                         'Please get in contact with your unit convenor or the ' \
-                        'Doubtfire administrators.')
+                        'system administrators.')
         end
         user.save
       end

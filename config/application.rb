@@ -93,8 +93,10 @@ module Doubtfire
     # ==> SAML2.0 authentication
     if config.auth_method == :saml
       config.saml = HashWithIndifferentAccess.new
-      # URL of the XML SAML Metadata (if available).
+      # URL and file path of the XML SAML Metadata (if available).
       config.saml[:SAML_metadata_url] = ENV.fetch('DF_SAML_METADATA_URL', nil)
+      config.saml[:SAML_metadata_file_path] = ENV.fetch('DF_SAML_METADATA_FILE_PATH', nil)
+
       # URL to return the SAML response to (e.g., 'https://doubtfire.edu/api/auth/jwt'
       config.saml[:assertion_consumer_service_url] = ENV.fetch('DF_SAML_CONSUMER_SERVICE_URL', nil)
       # URL of the registered application (e.g., https://doubtfire.unifoo.edu.au)
@@ -102,7 +104,7 @@ module Doubtfire
       # The IDP SAML login URL, (e.g., "https://login.microsoftonline.com/xxxx/saml2")
       config.saml[:idp_sso_target_url] = ENV.fetch('DF_SAML_IDP_TARGET_URL', nil)
       # The IDP SAML logout URL, (e.g., "https://login.microsoftonline.com/xxxx/saml2")
-      config.saml[:idp_sso_signout_url] = ENV.fetch('DF_SAML_IDP_SIGNOUT_URL', nil)
+      config.saml[:idp_sso_signout_url] = ENV.fetch('DF_SAML_IDP_SIGNOUT_URL', config.saml[:idp_sso_target_url])
 
       # The SAML response certificate and name format (if no XML URL metadata is provided)
       if config.saml[:SAML_metadata_url].nil?
@@ -129,8 +131,9 @@ module Doubtfire
 
       # If there's no XML url, we need the cert
       if config.saml[:SAML_metadata_url].nil? &&
+         config.saml[:SAML_metadata_file_path].nil? &&
          config.saml[:idp_sso_cert].nil?
-        raise "Missing IDP certificate for SAML config: \n"
+        raise "Missing IDP certificate for SAML config: #{config.saml.inspect}"
       end
     end
 
