@@ -10,4 +10,19 @@ class FileHelperTest < ActiveSupport::TestCase
       assert File.exist? dest_file
     end
   end
+
+  def test_archive_paths
+    unit = FactoryBot.create(:unit, with_students: false)
+
+    archive_work_path = FileHelper.unit_work_root(unit, archived: :force)
+    original_work_path = FileHelper.unit_work_root(unit, archived: false)
+
+    archive_portfolio_path = FileHelper.unit_portfolio_dir(unit, create: false, archived: :force)
+    original_portfolio_path = FileHelper.unit_portfolio_dir(unit, create: false, archived: false)
+
+    assert_match %r{^#{FileHelper.archive_root}/}, archive_work_path
+    assert_match %r{^#{FileHelper.archive_root}/portfolio/}, archive_portfolio_path
+    assert_match %r{^#{FileHelper.student_work_root}/}, original_work_path
+    assert_match %r{^#{FileHelper.student_work_root}/portfolio/}, original_portfolio_path
+  end
 end

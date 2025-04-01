@@ -9,7 +9,7 @@ class TiiGroupAttachment < ApplicationRecord
 
   before_destroy :delete_attachment
 
-  enum status: {
+  enum :status, {
     created: 0,
     has_id: 1,
     uploaded: 2,

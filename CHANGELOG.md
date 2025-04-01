@@ -2,6 +2,173 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.42](https://github.com/macite/doubtfire-deploy/compare/v8.0.41...v8.0.42) (2025-03-10)
+
+
+### Bug Fixes
+
+* ensure submission history uses archive and moves ([e9161b3](https://github.com/macite/doubtfire-deploy/commit/e9161b380d0b32850df53baf2f7ab3f356fb64ba))
+* remove archive old unit from schedule ([f16fdee](https://github.com/macite/doubtfire-deploy/commit/f16fdeed9d0dcc9882a0615784800406fd021530))
+
+### [8.0.41](https://github.com/macite/doubtfire-deploy/compare/v8.0.40...v8.0.41) (2025-03-07)
+
+
+### Features
+
+* add ability to get individual overseer images ([9c32326](https://github.com/macite/doubtfire-deploy/commit/9c323269bcc1a41c2d1e37702a7bb90efea72773))
+
+### [8.0.40](https://github.com/macite/doubtfire-deploy/compare/v8.0.39...v8.0.40) (2025-01-31)
+
+
+### Features
+
+* add scheduled archive of units ([9b2cf03](https://github.com/macite/doubtfire-deploy/commit/9b2cf03986277a1d0016b5fd2d020cdf19c84271))
+* auto archive of units is optional ([23bd227](https://github.com/macite/doubtfire-deploy/commit/23bd2271fc2d8420ccbee142389b539c13c299c7))
+* email users on D2L grade transfer fail ([00cb85e](https://github.com/macite/doubtfire-deploy/commit/00cb85ecb84709f9c4500364a0da6f27c8097436))
+* remove stored pdf path and allow move to archive ([33944dd](https://github.com/macite/doubtfire-deploy/commit/33944dd05e1e6d197872a5c67fbec15206f04692))
+
+### [8.0.39](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v8.0.38...v8.0.39) (2025-01-22)
+
+
+### Features
+
+* add ability to post grades to d2l ([8e3a387](https://github.com/doubtfire-lms/doubtfire-deploy/commit/8e3a387c2a9e45a36e15e3d45783c02c023194b8))
+* add redirect to success page on oauth success ([ba447ba](https://github.com/doubtfire-lms/doubtfire-deploy/commit/ba447ba145674411e81db37af8829c87692ef9ed))
+* add start of new d2l integration feature ([dee040f](https://github.com/doubtfire-lms/doubtfire-deploy/commit/dee040f44527e9126e375bca49df8234ef3b4f4e))
+* allow oauth login to d2l ([b300211](https://github.com/doubtfire-lms/doubtfire-deploy/commit/b300211ecb84429c89b85722ded38a9c9e36aec5))
+* d2l mappings have crud api ([ccee700](https://github.com/doubtfire-lms/doubtfire-deploy/commit/ccee7006422131f089372e464fe22331c1945537))
+* ensure only convenor or higher can use d2l details ([76cb354](https://github.com/doubtfire-lms/doubtfire-deploy/commit/76cb354b5f7075242c33bcbb68d59f90b640f18c))
+* ensure only one d2l mapping per unit ([178a040](https://github.com/doubtfire-lms/doubtfire-deploy/commit/178a0406ba03fc0710032c5bbf58df9f10513fc0))
+* give ability to trigger d2l result post and get results ([ca85b98](https://github.com/doubtfire-lms/doubtfire-deploy/commit/ca85b984d0c25c5233afa09c596462c6b22ee89e))
+* handle multiple d2l grade transfer submissions ([1be09a6](https://github.com/doubtfire-lms/doubtfire-deploy/commit/1be09a6f288c8ec5662fc8d2c268623d6e78967c))
+* improve error reporting to send task log details ([9815fd2](https://github.com/doubtfire-lms/doubtfire-deploy/commit/9815fd26802dc724290dbf76261488054f122d7a))
+* include grade in d2l copy report ([9b71f85](https://github.com/doubtfire-lms/doubtfire-deploy/commit/9b71f85293ab24271ff2cd3a34afd8c3698ae630))
+* remove old portfolios in maintenance ([ae54a1c](https://github.com/doubtfire-lms/doubtfire-deploy/commit/ae54a1c884c91d3cc0c0abd0e74808f7bb2138d7))
+* simplified logging of d2l result transfer ([8ada69c](https://github.com/doubtfire-lms/doubtfire-deploy/commit/8ada69c6f8c71b3fccd21b344f3da5f6e5ab8b77))
+* use api to get login url for d2l ([e2d0fa7](https://github.com/doubtfire-lms/doubtfire-deploy/commit/e2d0fa75fb47fed484eb72bc5bc75c2f881fc4d5))
+
+
+### Bug Fixes
+
+* allow none or no_auth for smtp authentication options ([c80ccf3](https://github.com/doubtfire-lms/doubtfire-deploy/commit/c80ccf36efbd5a099c4b5a6bcae63eaac5799378))
+* check for weighted grading in d2l integration ([97d8241](https://github.com/doubtfire-lms/doubtfire-deploy/commit/97d8241df9d29bff37ec98b9e20a4f43da0457e6))
+* correct issue creating unit folders on destroy ([8bec4b0](https://github.com/doubtfire-lms/doubtfire-deploy/commit/8bec4b0d3f324f334c7fb868d7524e37c0973bff))
+* correct output from d2l csv ([c1ea118](https://github.com/doubtfire-lms/doubtfire-deploy/commit/c1ea1180f2cac9852fa903b1f47e05a05c554f56))
+* ensure smtp can have no auth ([b2691bc](https://github.com/doubtfire-lms/doubtfire-deploy/commit/b2691bcff0c04ebdbf50c58682c9ae7856870a5e))
+* ensure units update plagiarism stats for moss integration ([d59c6b8](https://github.com/doubtfire-lms/doubtfire-deploy/commit/d59c6b87cc636568244117e524824c742d2ea39b))
+* handle missing task or user details in accept submission job ([5fd31c3](https://github.com/doubtfire-lms/doubtfire-deploy/commit/5fd31c3b3a3748003331d9f79d1d48c5107310a0))
+* include grade object id in api ([a17e21a](https://github.com/doubtfire-lms/doubtfire-deploy/commit/a17e21ac6fa0c206d55b6daff150d9d1e5836dfc))
+* redirect to new html5 site ([19daa53](https://github.com/doubtfire-lms/doubtfire-deploy/commit/19daa532777ac535833375c33f023812f9d58ab6))
+
+### [8.0.38](https://github.com/macite/doubtfire-deploy/compare/v8.0.37...v8.0.38) (2024-11-06)
+
+
+### Bug Fixes
+
+* ensure task definitions can be created without scorm details ([b45f0fa](https://github.com/macite/doubtfire-deploy/commit/b45f0fa15d790396f0ba3dbfebb1c059bffe622d))
+
+### [8.0.37](https://github.com/macite/doubtfire-deploy/compare/v8.0.36...v8.0.37) (2024-10-25)
+
+
+### Bug Fixes
+
+* enhance substitutions for ipynb ([c19e149](https://github.com/macite/doubtfire-deploy/commit/c19e14992fe81cef1a17ab1dceda4e81888a8979))
+* ensure broken aux file does not kill future pdf generation ([715ccaf](https://github.com/macite/doubtfire-deploy/commit/715ccaf101655e63e9d081ef9b364cfccae62d13))
+* improve ipynb processing ([3d24fb2](https://github.com/macite/doubtfire-deploy/commit/3d24fb25d613515ee86c625c840dcf9db2636ca9))
+* revert notebook replacements from file helper ([e41cad3](https://github.com/macite/doubtfire-deploy/commit/e41cad3d9b27733cb3c79dd61449f9922f6f07ab))
+
+### [8.0.25](https://github.com/macite/doubtfire-deploy/compare/v8.0.24...v8.0.25) (2024-08-09)
+
+
+### Bug Fixes
+
+* ensure schema has index for auth token type ([7d3e4d3](https://github.com/macite/doubtfire-deploy/commit/7d3e4d369e66815b422faf46f8924397600266f1))
+* ensure test attempt review exception is handled ([bb3590c](https://github.com/macite/doubtfire-deploy/commit/bb3590c14c5c66191833fa98ee6c6eeebc2a3d78))
+* remove default from cmi_datamodel in test attempt ([ccb20dc](https://github.com/macite/doubtfire-deploy/commit/ccb20dc5c1efea2e5d0331026bc17d39dda3db11))
+
+### [8.0.24](https://github.com/macite/doubtfire-deploy/compare/v8.0.23...v8.0.24) (2024-08-09)
+
+
+### Features
+
+* add attribute to allow file upload before scorm is passed ([fce7e75](https://github.com/macite/doubtfire-deploy/commit/fce7e7519bb9171726a030b409aee23de65f44fd))
+* add Numbas config options to task def backend ([d53610a](https://github.com/macite/doubtfire-deploy/commit/d53610a3f4b0c8077aea34cbfa2924e301914e1f))
+* add numbas task comment on test completion ([3f5aa2b](https://github.com/macite/doubtfire-deploy/commit/3f5aa2be6bd69441730375b689751fe881d7617a))
+* add test attempt auth ([7d31f7c](https://github.com/macite/doubtfire-deploy/commit/7d31f7caaae6dc1efa24f78842873e9f55796279))
+* change Numbas time delay config to enable incremental delays ([54c27ce](https://github.com/macite/doubtfire-deploy/commit/54c27cef2b8ff57fd8ac972728ec3d249e2862b8))
+* create unique token for scorm asset retrieval ([fc8134a](https://github.com/macite/doubtfire-deploy/commit/fc8134ab6b734b7daf064a67ad15f3cefba1d7d6))
+* enable reviewing, passing, and deleting test attempts ([8c9a68b](https://github.com/macite/doubtfire-deploy/commit/8c9a68ba6b3914da24ba33ee62f6a5a00e101c76))
+* enable students to request extra scorm attempt ([c5055b8](https://github.com/macite/doubtfire-deploy/commit/c5055b858c30ba693c535590e1ccff0e8e0b42da))
+* restrict test attempts by limit and comments to when test is completed ([26d75f5](https://github.com/macite/doubtfire-deploy/commit/26d75f51b7fcf11dac0834ddc5a46f40c07407de))
+
+
+### Bug Fixes
+
+* add allow review property to task def related files ([3539d95](https://github.com/macite/doubtfire-deploy/commit/3539d957022f0c6310a2939dd6eccad946cb6610))
+* add missing numbas config fields to fix unit tests ([89a6615](https://github.com/macite/doubtfire-deploy/commit/89a66157b4fde887a19912ca40261243b4961e2f))
+* add scorm bypass to excel file ([4139690](https://github.com/macite/doubtfire-deploy/commit/413969069969316f6ea9c515e4ec9da6b332be0a))
+* calculate attempt number and limit instead of using stored int ([28f3279](https://github.com/macite/doubtfire-deploy/commit/28f327964edb0c9326b487a674d19b7da7da8c89))
+* change scorm comment text ([69053ee](https://github.com/macite/doubtfire-deploy/commit/69053ee147503e7916e929aac5c834903c0087ba))
+* check for attempts before accessing properties ([4255347](https://github.com/macite/doubtfire-deploy/commit/42553479eb2a018a9273931e033084e26b3d18d5))
+* check if no old scorm tokens exist ([6108b52](https://github.com/macite/doubtfire-deploy/commit/6108b52bc04d7866548c8738b39d37c30d24f602))
+* consolidate numbas api endpoints ([27253bd](https://github.com/macite/doubtfire-deploy/commit/27253bd1b1d5640d00098f692160dd4b50675640))
+* enforce attempt limit ([d71ea14](https://github.com/macite/doubtfire-deploy/commit/d71ea14d319a59ba1e96bbd5bf34c85a21f0c0f6))
+* expose enable Numbas test config to all users ([20d5265](https://github.com/macite/doubtfire-deploy/commit/20d526533a2ecab592d7d22f3330d37cee7e0f45))
+* expose scorm configs to student ([910eecd](https://github.com/macite/doubtfire-deploy/commit/910eecdc218f52e572d39059e64a0b28acb44dce))
+* grant same number of extra attempts as scorm limit ([3d44ef2](https://github.com/macite/doubtfire-deploy/commit/3d44ef2ea57829131cc3c70d1655ccd996154ee2))
+* post scorm comment after test attempt termination ([0812e20](https://github.com/macite/doubtfire-deploy/commit/0812e206a9dadcfe7d575feec04e49b15b412556))
+* preload unit in test attempt and ensure limit flexibility in validation ([8059213](https://github.com/macite/doubtfire-deploy/commit/80592130bfb33bbb74322c5950e62e2663223af1))
+* prevent new attempt if last is incomplete or passed ([1240b3f](https://github.com/macite/doubtfire-deploy/commit/1240b3fa853d3a3f3fd1ad061f9cc6f6635c2c37))
+* prevent scorm extensions if no attempt limit ([1ae0347](https://github.com/macite/doubtfire-deploy/commit/1ae03478bb2c55b5e281a876bae37f730206ac3e))
+* refactor numbas config reset logic ([ff5ff62](https://github.com/macite/doubtfire-deploy/commit/ff5ff62061c05e509f15af3048fe047b0d69dc68))
+* rename entity file and add update fields in task spreadsheet ([b498924](https://github.com/macite/doubtfire-deploy/commit/b4989242e37ccd046651bfc8db32934ee94e190a))
+* reorder columns for csv export ([5db5f35](https://github.com/macite/doubtfire-deploy/commit/5db5f35dc6cc1874c50f5891ca7bbd752ea32b55))
+* reset Numbas configs if no zip file has been uploaded ([3f19ffa](https://github.com/macite/doubtfire-deploy/commit/3f19ffa6f4f465ed0691582b5012cf997ec62852))
+* temporarily disable auth and fix test attempt lookup ([b4d3f9d](https://github.com/macite/doubtfire-deploy/commit/b4d3f9dc1661b733eaf704c551ceb5836789db22))
+* update auth token to work with scorm and general ([e7a6eed](https://github.com/macite/doubtfire-deploy/commit/e7a6eed53d8e7049b6144e2b07b8018725be01fb))
+* use correct endpoint url and include exam result for numbas test attempts ([ee992f4](https://github.com/macite/doubtfire-deploy/commit/ee992f4218b8ca07c9259d6569c9c946af7701ef))
+* use correct Numbas data path in Numbas api ([5d80830](https://github.com/macite/doubtfire-deploy/commit/5d80830d3564bb7137db3c4adb3b1d906342e851))
+* use custom endpoint for Numbas ([0cc4915](https://github.com/macite/doubtfire-deploy/commit/0cc4915c85d7d55b48ca6832f6779e49362a7870))
+* use project and task def to fix issue where task is undefined on launching scorm test ([2a04a06](https://github.com/macite/doubtfire-deploy/commit/2a04a068282f69b11a6243a590bb25edcdd5c2c1))
+* use test attempt entity in file instead ([a7c4006](https://github.com/macite/doubtfire-deploy/commit/a7c400669bf199f30b627b54c4ed49157ff88222))
+* use unique perms for scorm test retrieval ([08a0090](https://github.com/macite/doubtfire-deploy/commit/08a00906019ce0c2706c34cf053a511b6e5ddca2))
+* validate attempt id ([c5240d8](https://github.com/macite/doubtfire-deploy/commit/c5240d8da378b84deb3ac64e1584808b07d5e671))
+
+### [8.0.36](https://github.com/macite/doubtfire-deploy/compare/v8.0.35...v8.0.36) (2024-09-24)
+
+
+### Bug Fixes
+
+* markdown in ipynb ([4fd4ed3](https://github.com/macite/doubtfire-deploy/commit/4fd4ed3c633e7aa4ee801e5d274c82aa840f31ac))
+
+### [8.0.35](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v8.0.34...v8.0.35) (2024-09-23)
+
+
+### Bug Fixes
+
+* ensure default lsr task def can be updated ([491691f](https://github.com/doubtfire-lms/doubtfire-deploy/commit/491691f2b7b5d51c838d22299099f3725d2ee47e))
+
+### [8.0.34](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v8.0.33...v8.0.34) (2024-09-21)
+
+
+### Features
+
+* send latex log on convert failure ([166690f](https://github.com/doubtfire-lms/doubtfire-deploy/commit/166690fffe8160146f734d6a7df42dda4174866b))
+
+
+### Bug Fixes
+
+* correct error reporting with AAF failure ([58b6391](https://github.com/doubtfire-lms/doubtfire-deploy/commit/58b6391c5658b80ef4e803cd955bdde90c79d87c))
+* ensure unicode control characters work in pdf gen ([cd32b06](https://github.com/doubtfire-lms/doubtfire-deploy/commit/cd32b0672a4491bdc9b1d0ebef192abc4726ccf0))
+* migration to fix invalid task upload filenames ([ac80fec](https://github.com/doubtfire-lms/doubtfire-deploy/commit/ac80fec11a6748671821b8d82beae016464eec0b))
+
+### [8.0.33](https://github.com/macite/doubtfire-deploy/compare/v8.0.32...v8.0.33) (2024-09-13)
+
+
+### Bug Fixes
+
+* correct access to moss and devise secrets ([8fae9c6](https://github.com/macite/doubtfire-deploy/commit/8fae9c6f02a08e27daa141d448a4dae0ef62b241))
+
 ### [8.0.32](https://github.com/macite/doubtfire-deploy/compare/v8.0.31...v8.0.32) (2024-09-05)
 
 
@@ -53,64 +220,6 @@ All notable changes to this project will be documented in this file. See [standa
 
 * logging of fail to send message in accept submission ([38abe9e](https://github.com/macite/doubtfire-deploy/commit/38abe9eeb7dedf8f7d26b7b1c659be94d9c42d4a))
 * use system timeout command with timeout helper ([b77147c](https://github.com/macite/doubtfire-deploy/commit/b77147c791396e202bbf2e01eb60385a1ae6cd7b))
-
-### [8.0.25](https://github.com/macite/doubtfire-deploy/compare/v8.0.24...v8.0.25) (2024-08-09)
-
-
-### Bug Fixes
-
-* ensure schema has index for auth token type ([7d3e4d3](https://github.com/macite/doubtfire-deploy/commit/7d3e4d369e66815b422faf46f8924397600266f1))
-* ensure test attempt review exception is handled ([bb3590c](https://github.com/macite/doubtfire-deploy/commit/bb3590c14c5c66191833fa98ee6c6eeebc2a3d78))
-* logging of fail to send message in accept submission ([38abe9e](https://github.com/macite/doubtfire-deploy/commit/38abe9eeb7dedf8f7d26b7b1c659be94d9c42d4a))
-* remove default from cmi_datamodel in test attempt ([ccb20dc](https://github.com/macite/doubtfire-deploy/commit/ccb20dc5c1efea2e5d0331026bc17d39dda3db11))
-
-### [8.0.24](https://github.com/doubtfire-lms/doubtfire-deploy/compare/v8.0.23...v8.0.24) (2024-08-09)
-
-
-### Features
-
-* add attribute to allow file upload before scorm is passed ([fce7e75](https://github.com/doubtfire-lms/doubtfire-deploy/commit/fce7e7519bb9171726a030b409aee23de65f44fd))
-* add Numbas config options to task def backend ([d53610a](https://github.com/doubtfire-lms/doubtfire-deploy/commit/d53610a3f4b0c8077aea34cbfa2924e301914e1f))
-* add numbas task comment on test completion ([3f5aa2b](https://github.com/doubtfire-lms/doubtfire-deploy/commit/3f5aa2be6bd69441730375b689751fe881d7617a))
-* add test attempt auth ([7d31f7c](https://github.com/doubtfire-lms/doubtfire-deploy/commit/7d31f7caaae6dc1efa24f78842873e9f55796279))
-* change Numbas time delay config to enable incremental delays ([54c27ce](https://github.com/doubtfire-lms/doubtfire-deploy/commit/54c27cef2b8ff57fd8ac972728ec3d249e2862b8))
-* create unique token for scorm asset retrieval ([fc8134a](https://github.com/doubtfire-lms/doubtfire-deploy/commit/fc8134ab6b734b7daf064a67ad15f3cefba1d7d6))
-* enable reviewing, passing, and deleting test attempts ([8c9a68b](https://github.com/doubtfire-lms/doubtfire-deploy/commit/8c9a68ba6b3914da24ba33ee62f6a5a00e101c76))
-* enable students to request extra scorm attempt ([c5055b8](https://github.com/doubtfire-lms/doubtfire-deploy/commit/c5055b858c30ba693c535590e1ccff0e8e0b42da))
-* restrict test attempts by limit and comments to when test is completed ([26d75f5](https://github.com/doubtfire-lms/doubtfire-deploy/commit/26d75f51b7fcf11dac0834ddc5a46f40c07407de))
-
-
-### Bug Fixes
-
-* add allow review property to task def related files ([3539d95](https://github.com/doubtfire-lms/doubtfire-deploy/commit/3539d957022f0c6310a2939dd6eccad946cb6610))
-* add missing numbas config fields to fix unit tests ([89a6615](https://github.com/doubtfire-lms/doubtfire-deploy/commit/89a66157b4fde887a19912ca40261243b4961e2f))
-* add scorm bypass to excel file ([4139690](https://github.com/doubtfire-lms/doubtfire-deploy/commit/413969069969316f6ea9c515e4ec9da6b332be0a))
-* calculate attempt number and limit instead of using stored int ([28f3279](https://github.com/doubtfire-lms/doubtfire-deploy/commit/28f327964edb0c9326b487a674d19b7da7da8c89))
-* change scorm comment text ([69053ee](https://github.com/doubtfire-lms/doubtfire-deploy/commit/69053ee147503e7916e929aac5c834903c0087ba))
-* check for attempts before accessing properties ([4255347](https://github.com/doubtfire-lms/doubtfire-deploy/commit/42553479eb2a018a9273931e033084e26b3d18d5))
-* check if no old scorm tokens exist ([6108b52](https://github.com/doubtfire-lms/doubtfire-deploy/commit/6108b52bc04d7866548c8738b39d37c30d24f602))
-* consolidate numbas api endpoints ([27253bd](https://github.com/doubtfire-lms/doubtfire-deploy/commit/27253bd1b1d5640d00098f692160dd4b50675640))
-* enforce attempt limit ([d71ea14](https://github.com/doubtfire-lms/doubtfire-deploy/commit/d71ea14d319a59ba1e96bbd5bf34c85a21f0c0f6))
-* expose enable Numbas test config to all users ([20d5265](https://github.com/doubtfire-lms/doubtfire-deploy/commit/20d526533a2ecab592d7d22f3330d37cee7e0f45))
-* expose scorm configs to student ([910eecd](https://github.com/doubtfire-lms/doubtfire-deploy/commit/910eecdc218f52e572d39059e64a0b28acb44dce))
-* grant same number of extra attempts as scorm limit ([3d44ef2](https://github.com/doubtfire-lms/doubtfire-deploy/commit/3d44ef2ea57829131cc3c70d1655ccd996154ee2))
-* post scorm comment after test attempt termination ([0812e20](https://github.com/doubtfire-lms/doubtfire-deploy/commit/0812e206a9dadcfe7d575feec04e49b15b412556))
-* preload unit in test attempt and ensure limit flexibility in validation ([8059213](https://github.com/doubtfire-lms/doubtfire-deploy/commit/80592130bfb33bbb74322c5950e62e2663223af1))
-* prevent new attempt if last is incomplete or passed ([1240b3f](https://github.com/doubtfire-lms/doubtfire-deploy/commit/1240b3fa853d3a3f3fd1ad061f9cc6f6635c2c37))
-* prevent scorm extensions if no attempt limit ([1ae0347](https://github.com/doubtfire-lms/doubtfire-deploy/commit/1ae03478bb2c55b5e281a876bae37f730206ac3e))
-* refactor numbas config reset logic ([ff5ff62](https://github.com/doubtfire-lms/doubtfire-deploy/commit/ff5ff62061c05e509f15af3048fe047b0d69dc68))
-* rename entity file and add update fields in task spreadsheet ([b498924](https://github.com/doubtfire-lms/doubtfire-deploy/commit/b4989242e37ccd046651bfc8db32934ee94e190a))
-* reorder columns for csv export ([5db5f35](https://github.com/doubtfire-lms/doubtfire-deploy/commit/5db5f35dc6cc1874c50f5891ca7bbd752ea32b55))
-* reset Numbas configs if no zip file has been uploaded ([3f19ffa](https://github.com/doubtfire-lms/doubtfire-deploy/commit/3f19ffa6f4f465ed0691582b5012cf997ec62852))
-* temporarily disable auth and fix test attempt lookup ([b4d3f9d](https://github.com/doubtfire-lms/doubtfire-deploy/commit/b4d3f9dc1661b733eaf704c551ceb5836789db22))
-* update auth token to work with scorm and general ([e7a6eed](https://github.com/doubtfire-lms/doubtfire-deploy/commit/e7a6eed53d8e7049b6144e2b07b8018725be01fb))
-* use correct endpoint url and include exam result for numbas test attempts ([ee992f4](https://github.com/doubtfire-lms/doubtfire-deploy/commit/ee992f4218b8ca07c9259d6569c9c946af7701ef))
-* use correct Numbas data path in Numbas api ([5d80830](https://github.com/doubtfire-lms/doubtfire-deploy/commit/5d80830d3564bb7137db3c4adb3b1d906342e851))
-* use custom endpoint for Numbas ([0cc4915](https://github.com/doubtfire-lms/doubtfire-deploy/commit/0cc4915c85d7d55b48ca6832f6779e49362a7870))
-* use project and task def to fix issue where task is undefined on launching scorm test ([2a04a06](https://github.com/doubtfire-lms/doubtfire-deploy/commit/2a04a068282f69b11a6243a590bb25edcdd5c2c1))
-* use test attempt entity in file instead ([a7c4006](https://github.com/doubtfire-lms/doubtfire-deploy/commit/a7c400669bf199f30b627b54c4ed49157ff88222))
-* use unique perms for scorm test retrieval ([08a0090](https://github.com/doubtfire-lms/doubtfire-deploy/commit/08a00906019ce0c2706c34cf053a511b6e5ddca2))
-* validate attempt id ([c5240d8](https://github.com/doubtfire-lms/doubtfire-deploy/commit/c5240d8da378b84deb3ac64e1584808b07d5e671))
 
 ### [8.0.23](https://github.com/macite/doubtfire-deploy/compare/v8.0.22...v8.0.23) (2024-08-05)
 

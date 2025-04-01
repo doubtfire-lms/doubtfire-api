@@ -4,16 +4,16 @@ source 'https://rubygems.org'
 
 # Ruby versions for various enviornments
 ruby_versions = {
-  development: '~>3.1.0',
-  test: '~>3.1.0',
-  staging: '~>3.1.0',
-  production: '~>3.1.0'
+  development: '~>3.4.0',
+  test: '~>3.4.0',
+  staging: '~>3.4.0',
+  production: '~>3.4.0'
 }
 # Get the ruby version for the current enviornment
 ruby ruby_versions[(ENV['RAILS_ENV'] || 'development').to_sym]
 
 # The venerable, almighty Rails
-gem 'rails', '~>7.0'
+gem 'rails', '~>8.0'
 
 group :development, :test do
   gem 'better_errors'
@@ -51,6 +51,7 @@ gem 'mysql2'
 gem 'puma'
 
 gem 'bootsnap', require: false
+gem 'csv'
 
 # Extend irb for better output
 gem 'hirb'
@@ -59,7 +60,7 @@ gem 'hirb'
 gem 'devise'
 gem 'devise_ldap_authenticatable'
 gem 'json-jwt'
-gem 'ruby-saml', '~> 1.13.0'
+gem 'ruby-saml'
 
 # Student submission
 gem 'coderay'
@@ -68,10 +69,10 @@ gem 'ruby-filemagic'
 gem 'rubyzip'
 
 # Plagarism detection
-gem 'moss_ruby', '>= 1.1.4'
+gem 'moss_ruby'
 
 # Latex
-gem 'rails-latex', '>2.3'
+gem 'rails-latex'
 
 # API
 gem 'grape'
@@ -87,7 +88,7 @@ gem 'rack-cors', require: 'rack/cors'
 gem 'require_all', '>=1.3.3'
 
 # Excel support
-gem 'roo', '~> 2.7.0'
+gem 'roo'
 gem 'roo-xls'
 
 # webcal generation
@@ -98,11 +99,12 @@ gem 'rest-client'
 gem 'net-smtp', require: false
 
 # Turn it in
-gem 'tca_client', '1.0.4'
+gem 'tca_client'
 
 # Async jobs
 gem 'sidekiq'
 gem 'sidekiq-cron'
+gem 'sidekiq-unique-jobs'
 
 # Redis for sidekiq, caching, and action cable (eventually)
 gem 'redis'
@@ -112,3 +114,6 @@ gem 'shellwords'
 
 # PDF reader for validating PDF file submissions
 gem 'pdf-reader'
+
+# oauth gem for OAuth2 authentication - D2L
+gem 'oauth2'

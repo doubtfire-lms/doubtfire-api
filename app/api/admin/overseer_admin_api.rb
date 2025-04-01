@@ -59,6 +59,11 @@ module Admin
                                                           .permit(:name,
                                                                   :tag)
 
+      # Clear image status and text when updating
+      overseer_image_params[:pulled_image_status] = nil
+      overseer_image_params[:pulled_image_text] = nil
+      overseer_image_params[:last_pulled_date] = nil
+
       overseer_image.update!(overseer_image_params)
       present overseer_image, with: Entities::OverseerImageEntity
     end
@@ -84,6 +89,19 @@ module Admin
 
       if Doubtfire::Application.config.overseer_enabled
         present OverseerImage.all, with: Entities::OverseerImageEntity
+      else
+        present [], with: Grape::Presenters::Presenter
+      end
+    end
+
+    desc 'Get all overseer images'
+    get '/admin/overseer_images/:id' do
+      unless authorise? current_user, User, :use_overseer
+        error!({ error: 'Not authorised to get overseer images' }, 403)
+      end
+
+      if Doubtfire::Application.config.overseer_enabled
+        present OverseerImage.find(params[:id]), with: Entities::OverseerImageEntity
       else
         present [], with: Grape::Presenters::Presenter
       end

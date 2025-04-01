@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'csv'
 require 'bcrypt'
 require 'json'
@@ -111,8 +113,9 @@ class Unit < ApplicationRecord
   # Ensure before destroy is above relations - as this needs to clear main convenor before unit roles are deleted
   before_destroy do
     update(main_convenor_id: nil)
-    delete_associated_files
   end
+
+  after_destroy :delete_associated_files
 
   after_update :move_files_on_code_change, if: :saved_change_to_code?
   after_update :propogate_date_changes_to_tasks, if: :saved_change_to_start_date?
@@ -138,6 +141,8 @@ class Unit < ApplicationRecord
   has_many :tii_submissions, through: :tasks
   has_many :tii_group_attachments, through: :task_definitions
   has_many :campuses, through: :tutorials
+
+  has_one :d2l_assessment_mapping, dependent: :destroy
 
   # Unit has a teaching period
   belongs_to :teaching_period, optional: true
@@ -283,6 +288,9 @@ class Unit < ApplicationRecord
       new_unit.start_date = start_date
       new_unit.end_date = end_date
     end
+
+    # Clear archived
+    new_unit.archived = false
 
     if self.portfolio_auto_generation_date.present?
       # Update the portfolio auto generation date to be the same day of the week and week number as the old date
@@ -570,7 +578,7 @@ class Unit < ApplicationRecord
 
     csv = CSV.new(File.read(file), headers: true,
                                    header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
-                                   converters: [->(i) { i.nil? ? '' : i }, ->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }])
+                                   converters: [->(i) { i.nil? ? '' : i }, ->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }])
     # Read the header row to determine what kind of file it is
     if csv.header_row?
       csv.shift
@@ -629,7 +637,7 @@ class Unit < ApplicationRecord
     # Loop over csv rows converting to hash values
     CSV.foreach(file, headers: true,
                       header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
-                      converters: [->(i) { i.nil? ? '' : i }, ->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]) do |row|
+                      converters: [->(i) { i.nil? ? '' : i }, ->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]) do |row|
       # Check data has headers
       missing = import_settings[:missing_headers_lambda].call(row)
       if missing.count > 0
@@ -674,7 +682,6 @@ class Unit < ApplicationRecord
   #   replace_existing_campus - boolean to indicate if campus in csv override ones in doubtfire
   def sync_enrolment_with(enrolment_data, import_settings, result)
     # Get lists for reporting results
-    success = result[:success]
     errors = result[:errors]
     ignored = result[:ignored]
 
@@ -834,7 +841,7 @@ class Unit < ApplicationRecord
           end
 
           # Clear success message...
-          success_message = ''
+          success_message = String.new('')
 
           # Now find the project for the user
           user_project = projects.where(user_id: project_participant.id).first
@@ -843,7 +850,7 @@ class Unit < ApplicationRecord
           if user_project.nil?
             # Enrol user...
             user_project = enrol_student(project_participant, campus)
-            success_message = 'Enrolled student'
+            success_message << 'Enrolled student.'
             new_project = true
           else
             new_project = false # We are updating existing project
@@ -914,7 +921,7 @@ class Unit < ApplicationRecord
     CSV.parse(data,
               headers: true,
               header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
-              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+              converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]).each do |row|
       # Make sure we're not looking at the header or an empty line
       next if row[0] =~ /(username)|(((unit)|(subject))_code)/
 
@@ -1035,7 +1042,7 @@ class Unit < ApplicationRecord
     CSV.parse(data,
               headers: true,
               header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
-              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+              converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]).each do |row|
       # Make sure we're not looking at the header or an empty line
       next if row[0] =~ /unit_code/
 
@@ -1064,7 +1071,7 @@ class Unit < ApplicationRecord
     CSV.parse(data,
               headers: true,
               header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
-              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+              converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]).each do |row|
       # Make sure we're not looking at the header or an empty line
       next if row[0] =~ /unit_code/
 
@@ -1142,7 +1149,7 @@ class Unit < ApplicationRecord
     CSV.parse(data,
               headers: true,
               header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
-              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+              converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]).each do |row|
       next if row[0] =~ /^(group_name)|(name)/ # Skip header
 
       begin
@@ -1217,7 +1224,7 @@ class Unit < ApplicationRecord
     CSV.parse(data,
               headers: true,
               header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
-              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+              converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]).each do |row|
       next if row[0] =~ /^(group_name)|(name)/ # Skip header
 
       begin
@@ -1353,7 +1360,7 @@ class Unit < ApplicationRecord
     CSV.parse(data,
               headers: true,
               header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip.tr(' ', '_').to_sym unless hdr.nil? }],
-              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+              converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]).each do |row|
       next if row[0] =~ /^(Task Name)|(name)/ # Skip header
 
       begin
@@ -1465,7 +1472,7 @@ class Unit < ApplicationRecord
             "#{row['first_name']} #{row['last_name']}",
             GradeHelper.grade_for(row['target_grade']),
             row['email'],
-            row['portfolio_production_date'].present? && !row['compile_portfolio'] && File.exist?(FileHelper.student_portfolio_path(self, row['username'], true)),
+            row['portfolio_production_date'].present? && !row['compile_portfolio'] && File.exist?(FileHelper.student_portfolio_path(self, row['username'], create: true)),
             row['grade'] > 0 ? row['grade'] : nil,
             row['grade_rationale']
           ] + [1].map do
@@ -1562,7 +1569,7 @@ class Unit < ApplicationRecord
                         task.student.username.to_s
                       end
 
-          FileUtils.cp task.portfolio_evidence_path, File.join(dir, path_part.to_s) + '.pdf'
+          FileUtils.cp task.final_pdf_path, File.join(dir, path_part.to_s) + '.pdf'
         end # each task
 
         # Copy files into zip
@@ -1686,9 +1693,6 @@ class Unit < ApplicationRecord
 
     result
   end
-
-
-
 
   def tasks_as_hash(data)
     task_ids = data.map(&:task_id).uniq
@@ -2193,7 +2197,7 @@ class Unit < ApplicationRecord
 
         csv_str << "\n#{student.username.tr(',', '_')},#{student.name.tr(',', '_')},#{task.project.tutorial_for(task.task_definition).abbreviation},#{task.task_definition.abbreviation.tr(',', '_')},\"#{task.last_comment_by(task.project.student).gsub(/"/, '""')}\",\"#{task.last_comment_by(user).gsub(/"/, '""')}\",#{mark_col},,,#{task.task_definition.max_quality_pts},"
 
-        src_path = task.portfolio_evidence_path
+        src_path = task.final_pdf_path
 
         next if src_path.blank?
         next unless File.exist? src_path
@@ -2216,7 +2220,7 @@ class Unit < ApplicationRecord
 
         csv_str << "\nGRP_#{grp.id}_#{subm.id},#{grp.name.tr(',', '_')},#{grp.tutorial.abbreviation},#{task.task_definition.abbreviation.tr(',', '_')},\"#{task.last_comment_not_by(user).gsub(/"/, '""')}\",\"#{task.last_comment_by(user).gsub(/"/, '""')}\",rff,,#{task.task_definition.max_quality_pts},"
 
-        src_path = task.portfolio_evidence_path
+        src_path = task.final_pdf_path
 
         next if src_path.blank?
         next unless File.exist? src_path
@@ -2250,8 +2254,8 @@ class Unit < ApplicationRecord
 
     # read data from CSV
     CSV.parse(csv_str, headers: true, return_headers: true,
-                       header_converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '').downcase unless body.nil? }],
-                       converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |task_entry|
+                       header_converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')&.downcase }],
+                       converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]).each do |task_entry|
       group = nil
 
       # check the header row
@@ -2437,12 +2441,12 @@ class Unit < ApplicationRecord
         # read keys from CSV - to check that files exist in csv
         entry_data = CSV.parse(csv_str, headers: true,
                                         header_converters: [->(i) { i.nil? ? '' : i }, :downcase],
-                                        converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }])
+                                        converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }])
 
         # Copy over the updated/marked files to the file system
         zip.each do |file|
           # Skip processing marking file
-          next if File.basename(file[:name]) == 'marks.csv' || File.basename(file[:name]) == 'readme.txt'
+          next if ['marks.csv', 'readme.txt'].include?(File.basename(file[:name]))
 
           # Test filename pattern
           if (/.*-\d+.pdf/i =~ File.basename(file[:name])) != 0
@@ -2483,15 +2487,14 @@ class Unit < ApplicationRecord
             next
           end
 
-          # Read into the task's portfolio_evidence path the new file
+          # Read into the task's final pdf path the new file
           tmp_file = File.join(tmp_dir, File.basename(file[:name]))
-          task.portfolio_evidence_path = task.final_pdf_path
 
           # get file out of zip... to tmp_file
           file.extract(tmp_file) { true }
 
           # copy tmp_file to dest
-          if FileHelper.copy_pdf(tmp_file, task.portfolio_evidence_path)
+          if FileHelper.copy_pdf(tmp_file, task.final_pdf_path)
             if task.group.nil?
               success << { row: "File #{file[:name]}", message: "Replace PDF of task #{task.task_definition.abbreviation} for #{task.student.name}" }
             else
@@ -2559,11 +2562,50 @@ class Unit < ApplicationRecord
     end
   end
 
+  def move_files_to_archive
+    FileUtils.mkdir_p FileHelper.archive_root
+    FileUtils.mkdir_p FileHelper.root_portfolio_dir(archived: true)
+
+    # Indicate unit is now archived
+    update(archived: true)
+
+    # Move work
+    archive_work_path = FileHelper.unit_work_root(self, archived: :force)
+    original_work_path = FileHelper.unit_work_root(self, archived: false)
+
+    if File.exist?(original_work_path) && ! File.exist?(archive_work_path)
+      FileUtils.mv(original_work_path, archive_work_path)
+    end
+
+    # Move portfolios
+    archive_portfolio_path = FileHelper.unit_portfolio_dir(self, create: false, archived: :force)
+    original_portfolio_path = FileHelper.unit_portfolio_dir(self, create: false, archived: false)
+
+    if File.exist?(original_portfolio_path) && ! File.exist?(archive_portfolio_path)
+      FileUtils.mv(original_portfolio_path, archive_portfolio_path)
+    end
+
+    # Move submission history
+    archive_submission_history_path = FileHelper.unit_submission_history_dir(self, archived: :force)
+    original_submission_history_path = FileHelper.unit_submission_history_dir(self, archived: false)
+
+    if File.exist?(original_submission_history_path) && ! File.exist?(archive_submission_history_path)
+      FileUtils.mkdir_p(FileHelper.root_submission_history_dir(archived: true))
+      FileUtils.mv(original_submission_history_path, archive_submission_history_path)
+    end
+  end
+
   private
 
   def delete_associated_files
-    FileUtils.rm_rf FileHelper.unit_dir(self)
-    FileUtils.rm_rf FileHelper.unit_portfolio_dir(self)
+    unit_path = FileHelper.unit_dir(self, create: false)
+    unit_portfolio_path = FileHelper.unit_portfolio_dir(self, create: false)
+    submission_history_path = FileHelper.unit_submission_history_dir(self)
+
+    FileUtils.rm_rf unit_path
+    FileUtils.rm_rf unit_portfolio_path
+    FileUtils.rm_rf submission_history_path
+
     FileUtils.cd FileHelper.student_work_dir
   end
 
@@ -2583,14 +2625,14 @@ class Unit < ApplicationRecord
   def move_files_on_code_change
     return unless saved_change_to_code?
 
-    old_dir = FileHelper.dir_for_unit_code_and_id(saved_change_to_code[0], id, false)
+    old_dir = FileHelper.dir_for_unit_code_and_id(saved_change_to_code[0], id, create: false, archived: archived)
     if File.exist? old_dir
-      new_dir = FileHelper.unit_dir(self, false)
+      new_dir = FileHelper.unit_dir(self, create: false)
       FileUtils.mv(old_dir, new_dir) unless File.exist?(new_dir)
     end
 
     # rubocop:disable Rails/SkipsModelValidations
-    tasks.update_all("portfolio_evidence = REPLACE(portfolio_evidence, '#{saved_change_to_code[0]}-#{id}', '#{code}-#{id}')")
+    tasks.where('portfolio_evidence IS NOT NULL').update_all("portfolio_evidence = REPLACE(portfolio_evidence, '#{saved_change_to_code[0]}-#{id}', '#{code}-#{id}')")
     # rubocop:enable Rails/SkipsModelValidations
   end
 end

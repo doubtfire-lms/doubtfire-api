@@ -60,9 +60,6 @@ class ActiveSupport::TestCase
   # -- they do not yet inherit this setting
   fixtures :all
 
-  # Silence deprecation warnings
-  ActiveSupport::Deprecation.silenced = true
-
   # Support rollback of db changes after all tests
   DatabaseCleaner.strategy = :transaction
 
@@ -89,5 +86,6 @@ class ActiveSupport::TestCase
 
     DatabaseCleaner.clean
     Faker::UniqueGenerator.clear
+    ActionMailer::Base.deliveries.clear
   end
 end

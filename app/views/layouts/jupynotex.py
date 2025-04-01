@@ -25,7 +25,7 @@ VERBATIM_END = [r"\end{minted}"]
 
 # markdown start/end
 MARKDOWN_BEGIN = [r"\begin{markdown}"]
-MARKDOWN_END = [r"\end{markdown}"]
+MARKDOWN_END = [r"\end{markdown}"+"\n"]
 
 # highlighers for different languages (block beginning and ending)
 HIGHLIGHTERS = {

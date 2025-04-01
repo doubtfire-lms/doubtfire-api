@@ -19,6 +19,8 @@ class User < ApplicationRecord
 
   include UserTiiModule
 
+  after_update :move_files_on_username_change, if: :saved_change_to_username?
+
   ###
   # Authentication
   ###
@@ -143,6 +145,8 @@ class User < ApplicationRecord
   has_many    :unit_roles, dependent: :destroy, inverse_of: :user
   has_many    :projects, dependent: :restrict_with_exception, inverse_of: :user
   has_many    :auth_tokens, dependent: :destroy, inverse_of: :user
+  has_many    :user_oauth_tokens, dependent: :destroy, inverse_of: :user
+  has_many    :user_oauth_states, dependent: :destroy, inverse_of: :user
   has_one     :webcal, dependent: :destroy, inverse_of: :user
 
   # Model validations/constraints
@@ -410,6 +414,40 @@ class User < ApplicationRecord
     "#{fn} #{sn}"
   end
 
+  def move_files_on_username_change
+    old_username = saved_change_to_username[0]
+
+    # Move all files to the new username
+    projects.find_each do |project|
+      # Move the task files
+      old_path = FileHelper.project_work_root(project, username: old_username)
+      new_path = FileHelper.project_work_root(project, username: username)
+
+      FileUtils.mv(old_path, new_path) if File.exist?(old_path)
+      # rubocop:disable Rails/SkipsModelValidations
+      project.tasks.where('portfolio_evidence IS NOT NULL').update_all("portfolio_evidence = REPLACE(portfolio_evidence, '#{FileHelper.sanitized_path(old_username)}', '#{FileHelper.sanitized_path(username)}')")
+      # rubocop:enable Rails/SkipsModelValidations
+
+      # Now move submission history files
+      old_path = FileHelper.project_submission_history_dir(project, username: old_username)
+      new_path = FileHelper.project_submission_history_dir(project, username: username)
+
+      FileUtils.mv(old_path, new_path) if File.exist?(old_path)
+
+      # Now move the portfolio folder
+      old_path = FileHelper.student_portfolio_dir(project.unit, old_username, create: false)
+      new_path = FileHelper.student_portfolio_dir(project.unit, username, create: false)
+
+      FileUtils.mv(old_path, new_path) if File.exist?(old_path)
+
+      # Lastly move the portfolio file
+      old_path = "#{new_path}/#{old_username}-portfolio.pdf"
+      new_path = "#{new_path}/#{username}-portfolio.pdf"
+
+      FileUtils.mv(old_path, new_path) if File.exist?(old_path)
+    end
+  end
+
   def self.export_to_csv
     exportables = csv_columns.map { |col| col == 'role' ? 'role_id' : col }
     CSV.generate do |row|
@@ -456,7 +494,7 @@ class User < ApplicationRecord
     CSV.parse(data,
               headers: true,
               header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip.tr(' ', '_') unless hdr.nil? }],
-              converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |row|
+              converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]).each do |row|
       next if row[0] =~ /(email)|(username)/
 
       begin

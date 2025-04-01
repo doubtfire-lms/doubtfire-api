@@ -45,6 +45,9 @@ Doubtfire::Application.configure do
       authentication: ENV.fetch('DF_SMTP_AUTHENTICATION', 'plain'),
       enable_starttls_auto: true
     }
+
+    # reset authentication to nil if it is set to 'no_auth' or 'none'
+    config.action_mailer.smtp_settings[:authentication] = nil if %w[no_auth none].include?(config.action_mailer.smtp_settings[:authentication])
   end
 
   config.active_record.encryption.key_derivation_salt = ENV.fetch('DF_ENCRYPTION_KEY_DERIVATION_SALT', nil)

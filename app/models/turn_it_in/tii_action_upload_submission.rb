@@ -241,7 +241,7 @@ class TiiActionUploadSubmission < TiiAction
   # Upload all of the document files to the turn it in submission for a task.
   def upload_file_to_tii
     # Ensure we have a submission id and have not uploaded already
-    return unless submission_id.present? && (status_sym == :has_id || status_sym == :created)
+    return unless submission_id.present? && [:has_id, :created].include?(status_sym)
     return if error_message.present?
 
     error_codes = [

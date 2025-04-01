@@ -31,9 +31,7 @@ class TiiActionFetchEula < TiiAction
     "#{FileHelper.student_work_root}/tii_eula.yml"
   end
 
-  def eula_yaml_path
-    self.class.eula_yaml_path
-  end
+  delegate :eula_yaml_path, to: :class
 
   def load_eula_yaml
     require 'yaml' # Built in, no gem required

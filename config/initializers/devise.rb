@@ -252,7 +252,7 @@ Devise.setup do |config|
   # ==> AAF via JWT OmniAuth
   # Devise method for JWT
   # if Doubtfire::Application.config.auth_method == :jwt
-  #   aaf_secret = Doubtfire::Application.secrets.secret_key_aaf
+  #   aaf_secret = Doubtfire::Application.credentials.secret_key_aaf
   #   aaf_config = Doubtfire::Application.config.aaf
   #   config.omniauth :jwt,
   #                   aaf_secret,
@@ -268,7 +268,7 @@ Devise.setup do |config|
 
   # ==> Devise secret key
   # Secret key to be used by devise in prod.
-  config.secret_key = Doubtfire::Application.secrets.secret_key_devise if Rails.env.production?
+  config.secret_key = Doubtfire::Application.credentials.secret_key_devise if Rails.env.production?
 
   config.ldap_use_admin_to_bind = ENV.fetch('DF_LDAP_USE_ADMIN_TO_BIND', 'false').to_s.downcase != 'false'
 

@@ -400,7 +400,7 @@ class TestAttemptsTest < ActiveSupport::TestCase
     assert attempt.terminated == true
     assert JSON.parse(attempt.cmi_datamodel)["cmi.completion_status"] == "completed"
 
-    tc = ScormComment.find_by(test_attempt_id: attempt.id)
+    tc = ScormComment.find_by(commentable_id: attempt.id)
 
     assert_not_nil tc
 
@@ -421,7 +421,7 @@ class TestAttemptsTest < ActiveSupport::TestCase
     assert attempt.success_status == true
     assert JSON.parse(attempt.cmi_datamodel)["cmi.success_status"] == "passed"
 
-    tc = ScormComment.find_by(test_attempt_id: attempt.id)
+    tc = ScormComment.find_by(commentable_id: attempt.id)
 
     assert tc.comment == attempt.success_status_description
 

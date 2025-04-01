@@ -9,6 +9,10 @@ class ScormApiTest < ActiveSupport::TestCase
     Rails.application
   end
 
+  def scorm_path(task_def, user, file, token_type = :scorm)
+    "/api/scorm/#{task_def.id}/#{user.username.gsub('.', '%2e')}/#{auth_token(user, token_type)}/#{file}"
+  end
+
   def test_serve_scorm_content
     unit = FactoryBot.create(:unit)
     user = unit.projects.first.student
@@ -40,42 +44,42 @@ class ScormApiTest < ActiveSupport::TestCase
     td.save!
 
     # When the task def does not have SCORM data
-    get "/api/scorm/#{td.id}/#{user.username}/#{auth_token(user, :scorm)}/index.html"
+    get scorm_path(td, user, 'index.html')
     assert_equal 404, last_response.status
 
     td.add_scorm_data(test_file_path('numbas.zip'), copy: true)
     td.save!
 
     # When the file is missing
-    get "/api/scorm/#{td.id}/#{user.username}/#{auth_token(user, :scorm)}/index1.html"
+    get scorm_path(td, user, 'index1.html')
     assert_equal 404, last_response.status
 
     # When the file is present - html
-    get "/api/scorm/#{td.id}/#{user.username}/#{auth_token(user, :scorm)}/index.html"
+    get scorm_path(td, user, 'index.html')
     assert_equal 200, last_response.status
     assert_equal 'text/html', last_response.content_type
 
     # Cannot access with the wrong token type
-    get "/api/scorm/#{td.id}/#{user.username}/#{auth_token(user, :general)}/index.html"
+    get scorm_path(td, user, 'index.html', :general)
     assert_equal 419, last_response.status
 
-    get "/api/scorm/#{td.id}/#{user.username}/#{auth_token(user, :login)}/index.html"
+    get scorm_path(td, user, 'index.html', :login)
     assert_equal 419, last_response.status
 
     # When the file is present - css
-    get "/api/scorm/#{td.id}/#{user.username}/#{auth_token(user, :scorm)}/styles.css"
+    get scorm_path(td, user, 'styles.css')
     assert_equal 200, last_response.status
     assert_equal 'text/css', last_response.content_type
 
     # When the file is present - js
-    get "/api/scorm/#{td.id}/#{user.username}/#{auth_token(user, :scorm)}/scripts.js"
+    get scorm_path(td, user, 'scripts.js')
     assert_equal 200, last_response.status
     assert_equal 'text/javascript', last_response.content_type
 
     tutor = FactoryBot.create(:user, :tutor, username: :test_tutor)
 
     # When the user is unauthorised
-    get "/api/scorm/#{td.id}/#{tutor.username}/#{auth_token(tutor, :scorm)}/index.html"
+    get scorm_path(td, tutor, 'index.html')
     assert_equal 403, last_response.status
 
     tutor.destroy!

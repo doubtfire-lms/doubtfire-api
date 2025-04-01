@@ -6,7 +6,7 @@ class AuthToken < ApplicationRecord
   validates :authentication_token, presence: true
   validate :ensure_token_unique_for_user, on: :create
 
-  enum token_type: {
+  enum :token_type, {
     general: 0,
     login: 1,
     scorm: 2

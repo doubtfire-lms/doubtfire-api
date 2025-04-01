@@ -4,7 +4,7 @@
 # all actions to be retried if they fail, and manages this process.
 class TiiAction < ApplicationRecord
 
-  enum error_code: {
+  enum :error_code, {
     task_def_create_group: 0,
     no_user_with_accepted_eula: 1,
     excessive_retries: 2,
