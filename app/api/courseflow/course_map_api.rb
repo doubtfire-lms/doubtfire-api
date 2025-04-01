@@ -16,6 +16,9 @@ module Courseflow
     end
     get '/coursemap/userId/:userId' do
       course_map = CourseMap.find_by(userId: params[:userId])
+      if course_map.nil?
+        course_map = CourseMap.find_by(userId: nil)
+      end
       if course_map
         present course_map, with: Entities::CourseMapEntity
       else
