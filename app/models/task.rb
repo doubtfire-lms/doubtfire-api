@@ -1366,7 +1366,7 @@ class Task < ApplicationRecord
   def send_feedback_notification
     return unless task_status.in?([TaskStatus.redo, TaskStatus.fail, TaskStatus.fix_and_resubmit, TaskStatus.feedback_exceeded, TaskStatus.discuss, TaskStatus.demonstrate, TaskStatus.complete])
     return unless project.student.receive_feedback_notifications
-    return unless unit.send_notifications
+    return unless unit&.send_notifications
 
     begin
       logger.info "Checking feedback email for project #{project.id}"
