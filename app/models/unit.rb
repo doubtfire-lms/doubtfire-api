@@ -2254,7 +2254,7 @@ class Unit < ApplicationRecord
 
     # read data from CSV
     CSV.parse(csv_str, headers: true, return_headers: true,
-                       header_converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '').downcase }],
+                       header_converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')&.downcase }],
                        converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]).each do |task_entry|
       group = nil
 

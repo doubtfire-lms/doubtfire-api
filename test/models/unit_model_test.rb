@@ -405,7 +405,7 @@ class UnitModelTest < ActiveSupport::TestCase
     CSV.parse(csv_str,
               headers: true,
               return_headers: false,
-              header_converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '').downcase }],
+              header_converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')&.downcase }],
               converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]).each do |entry|
 
       assert_equal(col_count, entry.length, entry.inspect) unless col_count.nil?
@@ -493,7 +493,7 @@ class UnitModelTest < ActiveSupport::TestCase
     rows = 0
     CSV.parse(csv_str,
               headers: true, return_headers: false,
-              header_converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '').downcase }],
+              header_converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')&.downcase }],
               converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]).each do |entry|
       assert_json_limit_keys_to_exactly %w[unit_code campus username student_id preferred_name first_name last_name email tutorial], entry.to_hash
       assert_equal 9, entry.count, entry
