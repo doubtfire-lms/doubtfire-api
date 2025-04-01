@@ -35,6 +35,8 @@ module PdfGeneration
 
     # This class scaffolds the creation of the portfolio - mapping the required data into the erb template
     class ProjectAppController < ApplicationController
+      include LatexHelper
+
       attr_accessor :student,
                     :project,
                     :base_path,
@@ -66,7 +68,8 @@ module PdfGeneration
       end
 
       def make_pdf
-        render_to_string(template: '/portfolio/portfolio_pdf', layout: true)
+        logger.debug 'Running make_pdf: (portfolio)'
+        generate_pdf(template: '/portfolio/portfolio_pdf')
       end
     end
 

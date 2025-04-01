@@ -9,6 +9,7 @@ services:
       - ./:/doubtfire
       - ../data/tmp:/doubtfire/tmp
       - ../data/student-work:/student-work
+      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - dev-db
     environment:
@@ -61,6 +62,10 @@ services:
       # RABBITMQ_USERNAME: secure_credentials
       # RABBITMQ_PASSWORD: secure_credentials
 
+      # Latex details
+      LATEX_CONTAINER_NAME: doubtfire-texlive
+      LATEX_BUILD_PATH: /texlive/shell/latex_build.sh
+
   dev-db:
     container_name: doubtfire-dev-db
     image: mariadb
@@ -71,3 +76,17 @@ services:
       MYSQL_PASSWORD: pwd
     volumes:
       - ../data/database:/var/lib/mysql
+
+  texlive:
+    container_name: doubtfire-texlive
+    build:
+      context: .
+      dockerfile: texlive.Dockerfile
+    volumes:
+      - ../data/student-work:/student-work
+      - ./public/assets/images:/doubtfire/public/assets/images
+      - ./test_files:/doubtfire/test_files
+      - ./tmp/rails-latex:/workdir/texlive-latex
+    depends_on:
+      - df-api
+    command: sleep infinity

@@ -1,4 +1,17 @@
-<% @latex_config={ :recipe => [ {:command => "lualatex",:runs => 2} ], :supporting => Rails.root.join('app', 'views', 'layouts', 'jupynotex.py') } %>
+<%
+@latex_config = {
+  :supporting => [
+    Rails.root.join('app', 'views', 'layouts', 'jupynotex.py'),
+    Rails.root.join('lib', 'shell', 'latex_run.sh')
+  ],
+  :recipe => [
+    { :command => './latex_run.sh', :runs => 1 }
+  ],
+  :preservework => false,
+  :workdir => -> { "#{Process.pid}-#{Thread.current.object_id}-#{Time.now.to_i}" }
+}
+%>
+
 \DocumentMetadata{uncompress}
 \documentclass[11pt,a4paper]{article}
 \usepackage[T1]{fontenc}
