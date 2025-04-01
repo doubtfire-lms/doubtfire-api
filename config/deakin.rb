@@ -4,9 +4,7 @@ require 'rest-client'
 # This is an institution settings - used for custom imports of users into units.
 #
 class DeakinInstitutionSettings
-  def logger
-    Rails.logger
-  end
+  delegate :logger, to: :Rails
 
   def initialize()
     @base_url = ENV.fetch('DF_INSTITUTION_SETTINGS_SYNC_BASE_URL', nil)

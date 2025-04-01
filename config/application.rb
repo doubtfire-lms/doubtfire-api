@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require File.expand_path('../boot', __FILE__)
 require 'rails/all'
 require 'csv'
@@ -31,14 +33,22 @@ module Doubtfire
     # variable.
     config.student_work_dir = ENV['DF_STUDENT_WORK_DIR'] || Rails.root.join('student_work').to_s
 
+    # ==> Archive directory
+    # File server location for storing archived student work. Defaults to a subfolder of student work
+    # Set using DF_ARCHIVE_DIR environment variable.
+    config.archive_dir = ENV.fetch('DF_ARCHIVE_DIR', "#{config.student_work_dir}/archive")
+
+    # Allows for the archiving of units to be automated
+    config.archive_units = ENV['DF_ARCHIVE_UNITS'].present? && (ENV['DF_ARCHIVE_UNITS'].to_s.downcase == "true" || ENV['DF_ARCHIVE_UNITS'].to_i == 1)
+
+    # Period for which to keep units
+    config.unit_archive_after_period = ENV.fetch('DF_UNIT_ARCHIVE_PERIOD', 2).to_f * 1.year
+
     # Limit number of pdf generators to run at once
     config.pdfgen_max_processes = ENV['DF_MAX_PDF_GEN_PROCESSES'] || 2
 
     # Date range for auditors to view
     config.auditor_unit_access_years = ENV.fetch('DF_AUDITOR_UNIT_ACCESS_YEARS', 2).to_f * 1.year
-
-    # Period for which to keep units
-    config.unit_archive_after_period = ENV.fetch('DF_UNIT_ARCHIVE_PERIOD', 2).to_f * 1.year
 
     config.student_import_weeks_before = ENV.fetch('DF_IMPORT_STUDENTS_WEEKS_BEFPRE', 1).to_f * 1.week
 
@@ -66,6 +76,11 @@ module Doubtfire
     config.institution[:email_domain] = ENV['DF_INSTITUTION_EMAIL_DOMAIN'] if ENV['DF_INSTITUTION_EMAIL_DOMAIN']
     config.institution[:host] = ENV['DF_INSTITUTION_HOST'] if ENV['DF_INSTITUTION_HOST']
     config.institution[:product_name] = ENV['DF_INSTITUTION_PRODUCT_NAME'] if ENV['DF_INSTITUTION_PRODUCT_NAME']
+
+    config.institution[:has_logo] = (ENV['DF_INSTITUTION_HAS_LOGO'].to_s.downcase == "true" || ENV['DF_INSTITUTION_HAS_LOGO'].to_i == 1) if ENV['DF_INSTITUTION_HAS_LOGO']
+    config.institution[:logo_url] = ENV['DF_INSTITUTION_LOGO_URL'] if ENV['DF_INSTITUTION_LOGO_URL']
+    config.institution[:logo_link_url] = ENV['DF_INSTITUTION_LOGO_LINK_URL'] if ENV['DF_INSTITUTION_LOGO_LINK_URL']
+
     config.institution[:privacy] = ENV['DF_INSTITUTION_PRIVACY'] if ENV['DF_INSTITUTION_PRIVACY']
     config.institution[:plagiarism] = ENV['DF_INSTITUTION_PLAGIARISM'] if ENV['DF_INSTITUTION_PLAGIARISM']
     # Institution host becomes localhost in development
@@ -105,11 +120,11 @@ module Doubtfire
          config.saml[:entity_id].nil? ||
          config.saml[:idp_sso_target_url].nil?
         raise "Invalid values specified to saml, check the following environment variables: \n  " \
-              "key                          => variable set?\n  " \
-              "DF_SAML_CONSUMER_SERVICE_URL            => #{!ENV['DF_SAML_CONSUMER_SERVICE_URL'].nil?}\n  " \
+              "key                           => variable set?\n  " \
+              "DF_SAML_CONSUMER_SERVICE_URL  => #{!ENV['DF_SAML_CONSUMER_SERVICE_URL'].nil?}\n  " \
               "DF_SAML_SP_ENTITY_ID          => #{!ENV['DF_SAML_SP_ENTITY_ID'].nil?}\n  " \
-              "DF_SAML_IDP_SIGNOUT_URL         => #{!ENV['DF_SAML_IDP_SIGNOUT_URL'].nil?}\n  " \
-              "DF_SAML_IDP_TARGET_URL          => #{!ENV['DF_SAML_IDP_TARGET_URL'].nil?}\n"
+              "DF_SAML_IDP_SIGNOUT_URL       => #{!ENV['DF_SAML_IDP_SIGNOUT_URL'].nil?}\n  " \
+              "DF_SAML_IDP_TARGET_URL        => #{!ENV['DF_SAML_IDP_TARGET_URL'].nil?}\n"
       end
 
       # If there's no XML url, we need the cert
@@ -151,7 +166,7 @@ module Doubtfire
               "DF_AAF_CALLBACK_URL          => #{!ENV['DF_AAF_CALLBACK_URL'].nil?}\n  " \
               "DF_AAF_IDENTITY_PROVIDER_URL => #{!ENV['DF_AAF_IDENTITY_PROVIDER_URL'].nil?}\n  " \
               "DF_AAF_UNIQUE_URL            => #{!ENV['DF_AAF_UNIQUE_URL'].nil?}\n  " \
-              "DF_SECRET_KEY_AAF            => #{!secrets.secret_key_aaf.nil?}\n"
+              "DF_SECRET_KEY_AAF            => #{!credentials.secret_key_aaf.nil?}\n"
       end
     end
     # Check secrets set for DF_SECRET_KEY_BASE, DF_SECRET_KEY_ATTR, DF_SECRET_KEY_DEVISE
@@ -183,13 +198,15 @@ module Doubtfire
       Rails.root.join('app') <<
       Rails.root.join('app/models/comments') <<
       Rails.root.join('app/models/turn_it_in') <<
-      Rails.root.join('app/models/similarity')
+      Rails.root.join('app/models/similarity') <<
+      Rails.root.join('app/models/d2l')
 
     config.eager_load_paths <<
       Rails.root.join('app') <<
       Rails.root.join('app/models/comments') <<
       Rails.root.join('app/models/turn_it_in') <<
-      Rails.root.join('app/models/similarity')
+      Rails.root.join('app/models/similarity') <<
+      Rails.root.join('app/models/d2l')
 
     # CORS config
     config.middleware.insert_before Warden::Manager, Rack::Cors do
@@ -198,6 +215,9 @@ module Doubtfire
         resource '*', headers: :any, methods: %i(get post put delete options)
       end
     end
+
+    config.active_support.to_time_preserves_timezone = :zone
+
     # Generators for test framework
     if Rails.env.test?
       config.generators do |g|

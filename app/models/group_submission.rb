@@ -18,10 +18,9 @@ class GroupSubmission < ApplicationRecord
       FileHelper.delete_group_submission(group_submission)
 
       # also remove evidence from group members
-      tasks.each do |t|
-        t.portfolio_evidence_path = nil
-        t.save
-      end
+      # rubocop:disable Rails/SkipsModelValidations
+      tasks.where('portfolio_evidence IS NOT NULL').update_all(portfolio_evidence: nil)
+      # rubocop:enable Rails/SkipsModelValidations
     rescue => e
       logger.error "Failed to delete group submission #{group_submission.id}. Error: #{e.message}"
     end

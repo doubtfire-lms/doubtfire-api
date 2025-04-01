@@ -76,8 +76,8 @@ module Submission
       optional :as_attachment, type: Boolean, desc: 'Whether or not to download file as attachment. Default is false.'
     end
     get '/projects/:id/task_def_id/:task_definition_id/submission' do
-      project = Project.find(params[:id])
-      task_definition = project.unit.task_definitions.find(params[:task_definition_id])
+      project = Project.eager_load(:unit).find(params[:id])
+      task_definition = project.unit.task_definitions.select(:id, :name, :abbreviation).find(params[:task_definition_id])
 
       # check the user can put this task
       unless authorise? current_user, project, :get_submission
@@ -86,14 +86,12 @@ module Submission
 
       task = project.task_for_task_definition(task_definition)
 
-      evidence_loc = task.portfolio_evidence_path
-      student = task.project.student
-      unit = task.project.unit
+      evidence_loc = task.final_pdf_path
 
       if task.processing_pdf?
         evidence_loc = Rails.root.join('public/resources/AwaitingProcessing.pdf')
         filename = 'AwaitingProcessing.pdf'
-      elsif evidence_loc.nil?
+      elsif evidence_loc.nil? || !File.exist?(evidence_loc)
         evidence_loc = Rails.root.join('public/resources/FileNotFound.pdf')
         filename = 'FileNotFound.pdf'
       else

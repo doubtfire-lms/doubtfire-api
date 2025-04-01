@@ -28,16 +28,16 @@ class TaskDefinitionsApi < Grape::API
       requires :restrict_status_updates,  type: Boolean,  desc: 'Restrict updating of the status to staff'
       optional :upload_requirements,      type: String,   desc: 'Task file upload requirements'
       requires :plagiarism_warn_pct,      type: Integer,  desc: 'The percent at which to record and warn about plagiarism'
-      requires :scorm_enabled,            type: Boolean,  desc: 'Whether SCORM assessment is enabled for this task'
-      requires :scorm_allow_review,       type: Boolean,  desc: 'Whether a student is allowed to review their completed test attempts'
-      requires :scorm_bypass_test,        type: Boolean,  desc: 'Whether a student is allowed to upload files before passing SCORM test'
-      requires :scorm_time_delay_enabled, type: Boolean,  desc: 'Whether there is an incremental time delay between SCORM test attempts'
-      requires :scorm_attempt_limit,      type: Integer,  desc: 'The number of times a SCORM test can be attempted'
       requires :is_graded,                type: Boolean,  desc: 'Whether or not this task definition is a graded task'
       requires :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
       optional :assessment_enabled,       type: Boolean,  desc: 'Enable or disable assessment'
       optional :overseer_image_id,        type: Integer,  desc: 'The id of the Docker image for overseer'
       optional :moss_language,            type: String,   desc: 'The language to use for code similarity checks'
+      optional :scorm_enabled,            type: Boolean,  desc: 'Whether SCORM assessment is enabled for this task'
+      optional :scorm_allow_review,       type: Boolean,  desc: 'Whether a student is allowed to review their completed test attempts'
+      optional :scorm_bypass_test,        type: Boolean,  desc: 'Whether a student is allowed to upload files before passing SCORM test'
+      optional :scorm_time_delay_enabled, type: Boolean,  desc: 'Whether there is an incremental time delay between SCORM test attempts'
+      optional :scorm_attempt_limit,      type: Integer,  desc: 'The number of times a SCORM test can be attempted'
     end
   end
   post '/units/:unit_id/task_definitions/' do
@@ -162,18 +162,23 @@ class TaskDefinitionsApi < Grape::API
                                                 :upload_requirements
                                               )
 
-    task_params[:upload_requirements] = params[:task_def][:upload_requirements].present? ? JSON.parse(params[:task_def][:upload_requirements]) : []
+    if params[:task_def][:upload_requirements].present?
+      upload_reqs = JSON.parse(params[:task_def][:upload_requirements])
+      task_params[:upload_requirements] = upload_reqs
 
-    # Ensure changes to a TD defined as a 'draft task definition' are validated
-    if unit.draft_task_definition_id == params[:id]
-      if task_params[:upload_requirements]
-        requirements = task_params[:upload_requirements]
-        if requirements.length != 1 || requirements[0]['type'] != 'document'
-          error!({ error: 'Task is marked as the draft learning summary task definition. A draft learning summary task can only contain a single document upload.' }, 403)
-        end
+      # Ensure we permit all of the passed in upload requirements
+      if task_params[:upload_requirements].is_a? Array
+        # Force permit - the model validates the details
+        task_params[:upload_requirements].each(&:permit!)
+      end
+
+      # Ensure changes to a TD defined as a 'draft task definition' are validated
+      if unit.draft_task_definition_id == params[:id] && (upload_reqs.length != 1 || upload_reqs[0]['type'] != 'document')
+        error!({ error: 'Task is marked as the draft learning summary. A draft learning summary task can only contain a single document upload.' }, 403)
       end
     end
 
+    # Bulk update task definition with permitted parameters
     task_def.update!(task_params)
 
     # Set the tutorial stream

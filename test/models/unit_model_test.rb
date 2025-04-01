@@ -402,48 +402,50 @@ class UnitModelTest < ActiveSupport::TestCase
   def check_task_completion_csv unit, col_count = nil
     csv_str = unit.task_completion_csv
 
-    CSV.parse(csv_str, headers: true, return_headers: false,
-      header_converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '').downcase unless body.nil? }],
-      converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |entry|
+    CSV.parse(csv_str,
+              headers: true,
+              return_headers: false,
+              header_converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')&.downcase }],
+              converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]).each do |entry|
 
-        assert_equal(col_count, entry.length, entry.inspect) unless col_count.nil?
+      assert_equal(col_count, entry.length, entry.inspect) unless col_count.nil?
 
-        user = User.find_by(username: entry['username'])
-        assert user.present?, entry.inspect
+      user = User.find_by(username: entry['username'])
+      assert user.present?, entry.inspect
 
-        project = unit.active_projects.find_by(user_id: user.id)
+      project = unit.active_projects.find_by(user_id: user.id)
 
-        # Test basic details
-        assert_equal project.student.username, entry['username'], entry.inspect
-        if project.student.student_id.present?
-          assert_equal project.student.student_id, entry['student_id'], entry.inspect
+      # Test basic details
+      assert_equal project.student.username, entry['username'], entry.inspect
+      if project.student.student_id.present?
+        assert_equal project.student.student_id, entry['student id'], entry.inspect
+      else
+        assert_nil entry['student id'], entry.inspect
+      end
+      assert_equal project.student.email, entry['email'], entry.inspect
+
+      # Test task status
+      unit.task_definitions.each do |td|
+        task = project.task_for_task_definition(td)
+        assert_equal task.task_status.name, entry[td.abbreviation.downcase], "#{td.abbreviation} --> #{entry.inspect}"
+
+        assert_equal(task.quality_pts.to_s, entry["#{td.abbreviation.downcase} stars"], "#{td.abbreviation} stars --> #{entry.inspect}") if td.has_stars? && task.quality_pts != -1
+        if task.grade.present?
+          assert_equal(GradeHelper.short_grade_for(task.grade), entry["#{td.abbreviation.downcase} grade"], "#{td.abbreviation} --> #{entry.inspect}") if td.is_graded?
         else
-          assert_nil entry['student_id'], entry.inspect
+          assert_nil(entry["#{td.abbreviation.downcase} grade"], "#{td.abbreviation} --> #{entry.inspect}") if td.is_graded?
         end
-        assert_equal project.student.email, entry['email'], entry.inspect
+        assert_equal(task.contribution_pts, (entry["#{td.abbreviation.downcase} contribution"].nil? ? 3 : Integer(entry["#{td.abbreviation.downcase} contribution"])), "#{td.abbreviation} contrib --> #{entry.inspect}") if td.is_group_task?
+      end
 
-        # Test task status
-        unit.task_definitions.each do |td|
-          task = project.task_for_task_definition(td)
-          assert_equal task.task_status.name, entry[td.abbreviation.downcase], "#{td.abbreviation} --> #{entry.inspect}"
-
-          assert_equal("#{task.quality_pts}", entry["#{td.abbreviation.downcase} stars"], "#{td.abbreviation} stars --> #{entry.inspect}") if td.has_stars? && task.quality_pts != -1
-          if task.grade.present?
-            assert_equal(GradeHelper.short_grade_for(task.grade), entry["#{td.abbreviation.downcase} grade"], "#{td.abbreviation} --> #{entry.inspect}") if td.is_graded?
-          else
-            assert_nil(entry["#{td.abbreviation.downcase} grade"], "#{td.abbreviation} --> #{entry.inspect}") if td.is_graded?
-          end
-          assert_equal(task.contribution_pts, (entry["#{td.abbreviation.downcase} contribution"].nil? ? 3 : Integer(entry["#{td.abbreviation.downcase} contribution"])), "#{td.abbreviation} contrib --> #{entry.inspect}") if td.is_group_task?
+      # Test tutorial streams
+      unit.tutorial_streams.each do |ts|
+        if project.tutorial_for_stream(ts).present?
+          assert_equal project.tutorial_for_stream(ts).abbreviation, entry[ts.abbreviation.downcase], {entry: entry.inspect, stream: ts.abbreviation, proj_tut: project.tutorial_for_stream(ts)}
+        else
+          assert_nil entry[ts.abbreviation.downcase], {entry: entry.inspect, stream: ts.abbreviation, proj_tut: project.tutorial_for_stream(ts)}
         end
-
-        # Test tutorial streams
-        unit.tutorial_streams.each do |ts|
-          if project.tutorial_for_stream(ts).present?
-            assert_equal project.tutorial_for_stream(ts).abbreviation, entry[ts.abbreviation.downcase], {entry: entry.inspect, stream: ts.abbreviation, proj_tut: project.tutorial_for_stream(ts)}
-          else
-            assert_nil entry[ts.abbreviation.downcase], {entry: entry.inspect, stream: ts.abbreviation, proj_tut: project.tutorial_for_stream(ts)}
-          end
-        end
+      end
     end
   end
 
@@ -489,40 +491,40 @@ class UnitModelTest < ActiveSupport::TestCase
     csv_str = unit.export_users_to_csv
 
     rows = 0
-    CSV.parse(csv_str, headers: true, return_headers: false,
-      header_converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '').downcase unless body.nil? }],
-      converters: [->(body) { body.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless body.nil? }]).each do |entry|
-        assert_json_limit_keys_to_exactly %w(unit_code campus username student_id preferred_name first_name last_name email tutorial), entry.to_hash
-        assert_equal 9, entry.count, entry
-        user = User.find_by(username: entry['username'])
-        assert user.present?, "Unable to find user from #{entry}"
+    CSV.parse(csv_str,
+              headers: true, return_headers: false,
+              header_converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')&.downcase }],
+              converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]).each do |entry|
+      assert_json_limit_keys_to_exactly %w[unit_code campus username student_id preferred_name first_name last_name email tutorial], entry.to_hash
+      assert_equal 9, entry.count, entry
+      user = User.find_by(username: entry['username'])
+      assert user.present?, "Unable to find user from #{entry}"
 
-        project = unit.projects.find_by(user_id: user.id)
-        assert project.present?, entry
+      project = unit.projects.find_by(user_id: user.id)
+      assert project.present?, entry
 
-        assert_json_matches_model(user, entry, %w( username student_id first_name last_name email))
+      assert_json_matches_model(user, entry, %w[username student_id first_name last_name email])
 
-        campus = Campus.find_by('abbreviation = :name OR name = :name', name: entry['campus'])
-        assert campus.present?, entry
-        assert_equal project.campus, campus, entry
+      campus = Campus.find_by('abbreviation = :name OR name = :name', name: entry['campus'])
+      assert campus.present?, entry
+      assert_equal project.campus, campus, entry
 
-        if user.nickname.present?
-          assert_equal user.nickname, entry['preferred_name'], entry
-        else
-          assert_nil entry['preferred_name'], entry
-        end
+      if user.nickname.present?
+        assert_equal user.nickname, entry['preferred_name'], entry
+      else
+        assert_nil entry['preferred_name'], entry
+      end
 
-        tutorial = unit.tutorials.find_by(abbreviation: entry['tutorial'])
-        if entry['tutorial'].present?
-          assert tutorial.present?, entry.inspect
-          assert_equal project.tutorial_enrolments.first.tutorial, tutorial, entry
-        else
-          assert_nil tutorial
-          assert_nil project.tutorial_enrolments.first
-        end
+      tutorial = unit.tutorials.find_by(abbreviation: entry['tutorial'])
+      if entry['tutorial'].present?
+        assert tutorial.present?, entry.inspect
+        assert_equal project.tutorial_enrolments.first.tutorial, tutorial, entry
+      else
+        assert_nil tutorial
+        assert_nil project.tutorial_enrolments.first
+      end
 
-
-        rows += 1
+      rows += 1
     end
 
     assert_equal unit.active_projects.count, rows, "Expected number or rows in csv - #{csv_str}"
@@ -728,8 +730,6 @@ class UnitModelTest < ActiveSupport::TestCase
     p = unit.projects.first
     task = p.task_for_task_definition(td)
     task_pdf = task.final_pdf_path
-    task.portfolio_evidence_path = task_pdf
-    task.save!
     FileUtils.touch(task_pdf)
 
     assert File.exist?(task_pdf)
@@ -750,8 +750,7 @@ class UnitModelTest < ActiveSupport::TestCase
     assert_not File.exist?(task_pdf), "Old task file still exists"
     assert File.exist?(task.final_pdf_path), "New task file does not exist"
 
-    assert_equal task.final_pdf_path, task.portfolio_evidence_path
-    assert File.exist?(task.portfolio_evidence_path), "Portfolio evidence file does not exist = #{task.portfolio_evidence_path}"
+    assert File.exist?(task.final_pdf_path), "Portfolio evidence file does not exist = #{task.final_pdf_path}"
     assert task.has_pdf
 
     unit.destroy!
@@ -817,6 +816,120 @@ class UnitModelTest < ActiveSupport::TestCase
 
     unit2.destroy
     unit3.destroy
+  end
+
+  def test_archive_unit
+    Doubtfire::Application.config.archive_units = true
+    unit = FactoryBot.create :unit, student_count: 1, unenrolled_student_count: 0, inactive_student_count: 0, task_count: 1, tutorials: 1, outcome_count: 0, staff_count: 0, campus_count: 1
+
+    td = unit.task_definitions.first
+    assert_not File.exist?(td.task_sheet)
+    FileUtils.touch(td.task_sheet)
+    assert File.exist?(td.task_sheet)
+
+    old_path = td.task_sheet
+
+    # also check tasks
+    p = unit.projects.first
+    task = p.task_for_task_definition(td)
+    task_pdf = task.final_pdf_path
+    FileUtils.touch(task_pdf)
+
+    DatabasePopulator.generate_portfolio(p)
+    old_portfolio_path = p.portfolio_path
+
+    old_submission_history_path = FileHelper.task_submission_identifier_path_with_timestamp(:done, task, '123/45')
+    FileUtils.mkdir_p(old_submission_history_path)
+    FileUtils.touch(File.join(old_submission_history_path, 'output.txt'))
+
+    assert File.exist?(old_path)
+    assert File.exist?(task_pdf)
+    assert File.exist?(old_portfolio_path)
+    assert File.exist?(old_submission_history_path)
+    assert File.exist?(File.join(old_submission_history_path, 'output.txt'))
+
+    unit.move_files_to_archive
+    unit.archived = true
+    unit.save!
+
+    td.reload
+    task.reload
+
+    assert_not File.exist?(old_path), "Old file still exists"
+    assert File.exist?(td.task_sheet), "New file does not exist - #{td.task_sheet}"
+    assert_not File.exist?(task_pdf), "Old task file still exists"
+    assert File.exist?(task.final_pdf_path), "New task file does not exist"
+    assert_not File.exist?(old_portfolio_path), "Old portfolio file still exists - #{old_portfolio_path}"
+    assert File.exist?(p.portfolio_path), "New portfolio file does not exist"
+    assert_not File.exist?(old_submission_history_path), "Old submission history still exists - #{old_submission_history_path}"
+    assert File.exist?(FileHelper.task_submission_identifier_path(:done, task))
+    assert File.exist?(File.join(FileHelper.task_submission_identifier_path_with_timestamp(:done, task, '123_45'), 'output.txt'))
+
+    assert File.exist?(task.final_pdf_path), "Portfolio evidence file does not exist - #{task.final_pdf_path}"
+
+    td.abbreviation = 'NEW'
+    td.save
+    task.reload
+
+    # File exists after rename
+    assert File.exist?(task.final_pdf_path), "Portfolio evidence file does not exist - #{task.final_pdf_path}"
+    assert File.exist?(FileHelper.task_submission_identifier_path(:done, task))
+    assert File.exist?(File.join(FileHelper.task_submission_identifier_path_with_timestamp(:done, task, '123_45'), 'output.txt'))
+
+    p.student.update(username: 'NEW_USERNAME')
+    task.reload
+    assert File.exist?(task.final_pdf_path), "Portfolio evidence file does not exist after username change - #{task.final_pdf_path}"
+    assert File.exist?(p.portfolio_path), "New portfolio file does not exist"
+    assert File.exist?(FileHelper.task_submission_identifier_path(:done, task))
+    assert File.exist?(File.join(FileHelper.task_submission_identifier_path_with_timestamp(:done, task, '123_45'), 'output.txt'))
+
+    new_tp = FactoryBot.create :teaching_period
+    new_unit = unit.rollover(new_tp, nil, nil, nil)
+
+    assert_not new_unit.archived
+
+    unit.destroy!
+
+    assert_not File.exist?(td.task_sheet), "New file exists after delete - #{td.task_sheet}"
+    assert_not File.exist?(task.final_pdf_path), "New task file exists after delete - #{task.final_pdf_path}"
+    assert_not File.exist?(p.portfolio_path), "New portfolio exists after delete - #{p.portfolio_path}"
+    assert_not File.exist?(FileHelper.task_submission_identifier_path(:done, task))
+    assert_not File.exist?(File.join(FileHelper.task_submission_identifier_path_with_timestamp(:done, task, '123_45'), 'output.txt'))
+  ensure
+    Doubtfire::Application.config.archive_units = false
+  end
+
+  def test_archive_unit_job
+    assert_not Doubtfire::Application.config.archive_units, 'Archive units should be off by default'
+
+    unit = FactoryBot.create :unit, with_students: false, task_count: 0
+
+    unit.end_date = Time.zone.now - Doubtfire::Application.config.unit_archive_after_period - 1.day
+    unit.start_date = unit.end_date - 14.weeks
+    unit.save!
+
+    unit2 = FactoryBot.create :unit, with_students: false, task_count: 0
+
+    assert_not unit.archived
+    assert_not unit2.archived
+
+    job = ArchiveOldUnitsJob.new
+    job.perform
+
+    unit.reload
+    unit2.reload
+
+    assert_not unit.archived
+    assert_not unit2.archived
+
+    Doubtfire::Application.config.archive_units = true
+
+    job.perform
+    unit.reload
+    unit2.reload
+
+    assert unit.archived
+    assert_not unit2.archived
   end
 
 end

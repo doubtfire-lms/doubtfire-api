@@ -8,10 +8,15 @@ FactoryBot.define do
     email       { Faker::Internet.unique.email }
     password    { "password" }
     role        { Role.student }
+    student_id  { Faker::Number.number(digits: 7) }
 
     before(:create) do |user, eval|
       while User.where(username: user.username).count > 0
         user.username = "#{user.username}-#{rand(1000)}"
+      end
+
+      while User.where(student_id: user.student_id).count > 0
+        user.student_id = user.student_id.to_i + 1
       end
     end
 

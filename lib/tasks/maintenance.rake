@@ -63,5 +63,8 @@ namespace :maintenance do
       unit.archive_submissions($stdout)
       unit.update(archived: true)
     end
+
+    puts "Removing old portfolio PDFs"
+    `find #{FileHelper.root_portfolio_dir} -name "*pdf.old" -exec rm {} \;`
   end
 end

@@ -17,7 +17,7 @@ class Campus < ApplicationRecord
   after_destroy :invalidate_cache
   after_save :invalidate_cache
 
-  enum mode: { timetable: 0, automatic: 1, manual: 2 }
+  enum :mode, { timetable: 0, automatic: 1, manual: 2 }
 
   def self.find(id)
     Rails.cache.fetch("campuses/#{id}", expires_in: 12.hours) do

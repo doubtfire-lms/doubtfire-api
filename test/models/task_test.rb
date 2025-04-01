@@ -762,13 +762,66 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     end
   end
 
+  def test_pax_crash_does_not_stop_pdf_creation
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
+    td = TaskDefinition.new({
+        unit_id: unit.id,
+        tutorial_stream: unit.tutorial_streams.first,
+        name: 'PDF Test Task',
+        description: 'Test task',
+        weighting: 4,
+        target_grade: 0,
+        start_date: unit.start_date + 1.week,
+        target_date: unit.start_date + 2.weeks,
+        abbreviation: 'PDFTestTask',
+        restrict_status_updates: false,
+        upload_requirements: [ { "key" => 'file0', "name" => 'A pdf file', "type" => 'document' } ],
+        plagiarism_warn_pct: 0.8,
+        is_graded: false,
+        max_quality_pts: 0
+      })
+    td.save!
+
+    data_to_post = {
+      trigger: 'ready_for_feedback'
+    }
+
+    # submit an encrypted (but valid) PDF file and ensure it's rejected immediately
+    data_to_post = with_file('test_files/submissions/valid.pdf', 'application/json', data_to_post)
+
+    project = unit.active_projects.first
+
+    add_auth_header_for user: unit.main_convenor_user
+
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
+
+    assert_equal 201, last_response.status, last_response_body
+
+    task = project.task_for_task_definition(td)
+
+    rails_latex_path = Rails.root.join("tmp/rails-latex/#{Process.pid}-#{Thread.current.hash}")
+    FileUtils.mkdir_p(rails_latex_path)
+    FileUtils.cp(Rails.root.join('test_files/latex/input-broken.aux'), "#{rails_latex_path}/input.aux")
+
+    assert task.convert_submission_to_pdf(log_to_stdout: false)
+    path = task.zip_file_path_for_done_task
+    assert path
+    assert File.exist? path
+    assert File.exist? task.final_pdf_path
+
+    td.destroy
+    assert_not File.exist? path
+    unit.destroy!
+  end
+
   def test_accept_files_checks_they_all_exist
     project = FactoryBot.create(:project)
     unit = project.unit
     user = project.student
-    convenor = unit.main_convenor_user
+    # convenor = unit.main_convenor_user
     task_definition = unit.task_definitions.first
 
+    task_definition.due_date = Time.zone.now + 1.week
     task_definition.upload_requirements = [
       {
         "key" => 'file0',
@@ -810,7 +863,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     begin
       task.accept_submission user, [], self, nil, 'ready_for_feedback', nil
       assert false, 'Should have raised an error with no files submitted'
-    rescue StandardError => e
+    rescue StandardError
       assert_equal :not_started, task.status
     end
 
@@ -903,6 +956,9 @@ class TaskDefinitionTest < ActiveSupport::TestCase
         "type" => 'document'
       }
     ]
+
+    task_definition.target_date = Time.zone.now + 1.day
+    task_definition.due_date = task_definition.target_date + 1.week
 
     # Saving task def
     task_definition.save!
@@ -1030,6 +1086,109 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     FileHelper.student_work_dir(:new, task, true)
     assert_not task.move_files_to_in_process
   ensure
+    unit.destroy
+  end
+
+  def test_portfolio_evidence_path
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
+    td = TaskDefinition.new({
+        unit_id: unit.id,
+        tutorial_stream: unit.tutorial_streams.first,
+        name: 'Test task',
+        description: 'Code task',
+        weighting: 4,
+        target_grade: 0,
+        start_date: unit.start_date + 1.week,
+        target_date: unit.start_date + 2.weeks,
+        abbreviation: 'ABBR',
+        restrict_status_updates: false,
+        upload_requirements: [ { "key" => 'file0', "name" => 'Some Code', "type" => 'code' } ],
+        plagiarism_warn_pct: 0.8,
+        is_graded: false,
+        max_quality_pts: 0
+      })
+    td.save!
+
+    data_to_post = {
+      trigger: 'ready_for_feedback'
+    }
+
+    data_to_post = with_file('test_files/submissions/program.cs', 'application/json', data_to_post)
+
+    project = unit.active_projects.first
+
+    add_auth_header_for user: unit.main_convenor_user
+
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
+
+    assert_equal 201, last_response.status, last_response_body
+
+    task = project.task_for_task_definition(td)
+    assert task.convert_submission_to_pdf(log_to_stdout: false)
+    path = task.zip_file_path_for_done_task
+    assert path
+    assert File.exist? path
+    assert File.exist? task.final_pdf_path
+
+    assert_nil task.portfolio_evidence
+
+    new_path = task.final_pdf_path.gsub(/\.pdf$/, '-evidence.pdf')
+
+    FileUtils.mv task.final_pdf_path(ignore_portfolio_evidence: true), new_path
+
+    task.portfolio_evidence = new_path.gsub(/#{FileHelper.student_work_root}/, '')
+    task.save
+
+    assert_equal new_path, task.final_pdf_path
+    assert_not_equal new_path, task.final_pdf_path(ignore_portfolio_evidence: true)
+
+    assert_not File.exist?(task.final_pdf_path(ignore_portfolio_evidence: true))
+    assert File.exist?(task.final_pdf_path)
+
+    user = project.student
+    user.update(username: 'student')
+    task.reload
+    assert File.exist?(task.final_pdf_path), "File does not exist #{task.final_pdf_path}"
+
+    td.update(abbreviation: 'ABBR2')
+    task.reload
+    assert_not_equal new_path, task.final_pdf_path
+    assert File.exist?(task.final_pdf_path)
+    assert File.exist?(task.final_pdf_path(ignore_portfolio_evidence: true))
+
+    # Rename again...
+    new_path = task.final_pdf_path.gsub(/\.pdf$/, '-evidence.pdf')
+    FileUtils.mv task.final_pdf_path, new_path
+    task.portfolio_evidence = new_path.gsub(/#{FileHelper.student_work_root}/, '')
+    task.save
+
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
+
+    # Check it has moved to the new path and removed the portfolio_evidence attribute
+    task.reload
+    assert_nil task.portfolio_evidence
+    assert_not File.exist?(new_path), "File exists #{new_path} after upload"
+    task.convert_submission_to_pdf(log_to_stdout: false)
+    assert File.exist?(task.final_pdf_path), task.final_pdf_path
+
+    # Check after archive
+
+    # Rename again...
+    new_path = task.final_pdf_path.gsub(/\.pdf$/, '-evidence.pdf')
+    FileUtils.mv task.final_pdf_path, new_path
+    task.portfolio_evidence = new_path.gsub(/#{FileHelper.student_work_root}/, '')
+    task.save
+
+    # Move to archive
+    unit.move_files_to_archive
+
+    # Check it has moved to the new path and removed the portfolio_evidence attribute
+    task.reload
+    assert task.portfolio_evidence.present?
+    assert_not File.exist?(new_path)
+    assert File.exist?(task.final_pdf_path), "File does not exist #{task.final_pdf_path} after archive"
+
+    td.destroy
     unit.destroy
   end
 end

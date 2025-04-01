@@ -341,8 +341,6 @@ class Project < ApplicationRecord
     #
     overdue_tasks = task_states.select { |ts| to_target.call(ts) < Time.zone.today }
 
-    grades = ["Pass", "Credit", "Distinction", "High Distinction"]
-
     for i in GradeHelper::RANGE
       graded_tasks = overdue_tasks.select { |ts| ts[:task_definition].target_grade == i  }
 

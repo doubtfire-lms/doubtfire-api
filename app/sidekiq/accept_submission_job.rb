@@ -10,8 +10,13 @@ class AcceptSubmissionJob
       logger.error e
     end
 
-    task = Task.find(task_id)
-    user = User.find(user_id)
+    begin
+      task = Task.find(task_id)
+      user = User.find(user_id)
+    rescue StandardError => e
+      logger.error e
+      return
+    end
 
     begin
       logger.info "Accepting submission for task #{task.id} by user #{user.id}"
@@ -29,7 +34,7 @@ class AcceptSubmissionJob
 
       begin
         # Notify system admin
-        mail = ErrorLogMailer.error_message('Accept Submission', "Failed to convert submission to PDF for task #{task.id} by user #{user.id}", e)
+        mail = ErrorLogMailer.error_message('Accept Submission', "Failed to convert submission to PDF for task #{task.log_details}", e)
         mail.deliver if mail.present?
 
         logger.error e
