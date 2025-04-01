@@ -1075,6 +1075,8 @@ class Task < ApplicationRecord
   end
 
   class TaskAppController < ApplicationController
+    include LatexHelper
+
     attr_accessor :task
     attr_accessor :files
     attr_accessor :base_path
@@ -1099,8 +1101,8 @@ class Task < ApplicationRecord
           FileHelper.qpdf(f[:path])
         end
       end
-      logger.debug "Preprocessing complete, rendering file."
-      render_to_string(template: '/task/task_pdf', layout: true)
+      logger.debug 'Preprocessing complete, rendering file.'
+      generate_pdf(template: '/task/task_pdf')
     end
   end
 

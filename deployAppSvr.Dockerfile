@@ -32,15 +32,10 @@ RUN apt-get update \
     docker-ce \
     docker-ce-cli \
     containerd.io \
-    librsvg2-bin \
   && apt-get clean
 
 # Setup the folder where we will deploy the code
 WORKDIR /doubtfire
-
-# Install LaTex
-COPY ./.ci-setup /doubtfire/.ci-setup
-RUN /doubtfire/.ci-setup/texlive-install.sh
 
 # Install bundler
 RUN gem install bundler -v '2.6.6'
@@ -49,9 +44,6 @@ RUN bundle config set --global without development test staging
 # Install the Gems
 COPY ./Gemfile ./Gemfile.lock /doubtfire/
 RUN bundle install
-
-# Setup path
-ENV PATH /tmp/texlive/bin/x86_64-linux:/tmp/texlive/bin/aarch64-linux:$PATH
 
 # Copy doubtfire-api source
 COPY . /doubtfire/
