@@ -27,7 +27,6 @@ RUN apt-get update \
     cron \
     msmtp-mta bsd-mailx \
     redis \
-    librsvg2-bin \
     docker-ce \
     docker-ce-cli \
     containerd.io \
@@ -42,7 +41,7 @@ COPY ./.ci-setup /doubtfire/.ci-setup
 RUN /doubtfire/.ci-setup/texlive-install.sh
 
 # Install bundler
-RUN gem install bundler -v '2.4.5'
+RUN gem install bundler -v '2.6.6'
 RUN bundle config set --global without development test staging
 
 # Install the Gems

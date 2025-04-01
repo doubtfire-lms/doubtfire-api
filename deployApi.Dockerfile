@@ -1,7 +1,7 @@
 #
 # deployApi.Dockerfile - the container used to host the API only
 #
-FROM ruby:3.1-bullseye
+FROM ruby:3.4-bookworm
 
 # Setup dependencies
 ARG DEBIAN_FRONTEND=noninteractive
@@ -36,7 +36,7 @@ WORKDIR /doubtfire
 COPY . /doubtfire/
 
 # Install bundler
-RUN gem install bundler -v '2.4.5'
+RUN gem install bundler -v '2.6.6'
 RUN bundle config set --global without development test staging
 
 # Install the Gems
