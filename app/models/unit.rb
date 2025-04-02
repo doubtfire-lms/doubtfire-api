@@ -30,7 +30,9 @@ class Unit < ApplicationRecord
       :download_stats,
       :download_unit_csv,
       :download_grades,
-      :exceed_capacity
+      :exceed_capacity,
+      :get_los,
+      :get_feedback_chips
     ]
 
     # What can convenors do with units?
@@ -50,7 +52,10 @@ class Unit < ApplicationRecord
       :download_grades,
       :rollover_unit,
       :exceed_capacity,
-      :perform_overseer_assessment_test
+      :perform_overseer_assessment_test,
+      :get_los,
+      :create_feedback_chips,
+      :get_feedback_chips
     ]
 
     # What can admin do with units?
@@ -68,7 +73,10 @@ class Unit < ApplicationRecord
       :download_stats,
       :download_unit_csv,
       :download_grades,
-      :exceed_capacity
+      :exceed_capacity,
+      :get_los,
+      :create_feedback_chips,
+      :get_feedback_chips
     ]
 
     # What can auditors do with units?
@@ -76,6 +84,7 @@ class Unit < ApplicationRecord
       :get_unit,
       :get_students,
       :download_stats,
+      :get_feedback_chips
     ]
 
     # What can other users do with units?
@@ -128,7 +137,7 @@ class Unit < ApplicationRecord
   has_many :tutorials, dependent: :destroy, inverse_of: :unit # tutorials need groups and tasks deleted before it...
   has_many :tutorial_streams, dependent: :destroy, inverse_of: :unit
   has_many :unit_roles, dependent: :destroy, inverse_of: :unit
-  has_many :learning_outcomes, dependent: :destroy, inverse_of: :unit
+  has_many :learning_outcomes, as: :context, dependent: :destroy # inverse_of: :unit
 
   has_many :comments, through: :projects
   has_many :tasks, through: :projects
@@ -136,7 +145,6 @@ class Unit < ApplicationRecord
   has_many :tutorial_enrolments, through: :tutorials
   has_many :group_memberships, through: :groups
   has_many :teaching_staff, through: :unit_roles, class_name: 'User', source: 'user'
-  has_many :learning_outcome_task_links, through: :task_definitions
   has_many :task_engagements, through: :projects
   has_many :tii_submissions, through: :tasks
   has_many :tii_group_attachments, through: :task_definitions
@@ -315,9 +323,27 @@ class Unit < ApplicationRecord
       new_unit.group_sets << group_set.dup
     end
 
+    # Old outcome to new outcome mapping
+    outcome_mapping = {}
+
+    # Duplicate unit learning outcomes - before task definitions as they are linked to them
+    learning_outcomes.each do |learning_outcome|
+      new_outcome = learning_outcome.dup
+      new_outcome.context = new_unit
+      new_outcome.save!
+      new_unit.learning_outcomes << new_outcome
+      outcome_mapping[learning_outcome] = new_outcome
+    end
+
     # Duplicate task definitions
     task_definitions.each do |td|
       new_td = td.copy_to(new_unit)
+
+      td.learning_outcomes.each do |learning_outcome| # for each old task definition, duplicate the learning outcomes associated with it aswell
+        new_outcome = learning_outcome.dup
+        new_td.learning_outcomes << new_outcome
+        outcome_mapping[learning_outcome] = new_outcome
+      end
 
       # Update default task definition if necessary
       if self.draft_task_definition == td
@@ -325,25 +351,38 @@ class Unit < ApplicationRecord
       end
     end
 
-    # Duplicate unit learning outcomes
-    learning_outcomes.each do |learning_outcome|
-      new_unit.learning_outcomes << learning_outcome.dup
+    # Link outcomes
+    outcome_mapping.each do |old_outcome, new_outcome|
+      old_outcome.linked_outcomes.each do |old_linked_outcome|
+        new_target = outcome_mapping[old_linked_outcome] || old_linked_outcome
+
+        if new_outcome.present? && new_target.present?
+          LearningOutcomeLink.create!(source_id: new_outcome.id, target_id: new_target.id)
+        end
+      end
     end
 
-    # Duplicate alignments
-    task_outcome_alignments.each do |align|
-      align.duplicate_to(new_unit)
+    # Now duplicate all feedback chips
+    chip_mapping = {}
+
+    outcome_mapping.each do |source_outcome, new_outcome|
+      source_outcome.feedback_chips.each do |chip|
+        new_chip = chip.dup
+        new_outcome.feedback_chips << new_chip
+        new_chip.learning_outcome_id = new_outcome.id
+        new_chip.parent_chip_id = nil
+        new_chip.save!
+        chip_mapping[chip] = new_chip
+      end
+
+      source_outcome.feedback_chips.where.not(parent_chip_id: nil).find_each do |old_chip|
+        child_chip = chip_mapping[old_chip]
+        parent_chip = chip_mapping[old_chip.parent_chip]
+        child_chip.update(parent_chip_id: parent_chip.id)
+      end
     end
 
     new_unit
-  end
-
-  def ordered_ilos
-    learning_outcomes.order(:ilo_number)
-  end
-
-  def task_outcome_alignments
-    learning_outcome_task_links.where('task_id is NULL')
   end
 
   def student_tasks
@@ -1021,13 +1060,45 @@ class Unit < ApplicationRecord
     end
   end
 
-  def export_learning_outcome_to_csv
+  def export_learning_outcome_to_csv(include_tlos: false)
     CSV.generate do |row|
       row << LearningOutcome.csv_header
-      learning_outcomes.each do |outcome|
+      unit_outcomes = learning_outcomes
+      task_outcomes = if include_tlos
+                        task_definitions.map(&:learning_outcomes).flatten
+                      else
+                        []
+                      end
+
+      all_outcomes = (unit_outcomes + task_outcomes).uniq
+
+      all_outcomes.each do |outcome|
         outcome.add_csv_row row
       end
     end
+  end
+
+  def export_feedback_chips_to_csv(include_tlos: false)
+    CSV.generate do |row|
+      row << Feedback::FeedbackChip.csv_header
+      unit_outcomes = learning_outcomes
+      task_outcomes = if include_tlos
+                        task_definitions.map(&:learning_outcomes).flatten
+                      else
+                        []
+                      end
+
+      all_outcomes = (unit_outcomes + task_outcomes).uniq
+      all_outcomes.each do |outcome|
+        outcome.feedback_chips.each do |chip|
+          chip.add_csv_row row
+        end
+      end
+    end
+  end
+
+  def export_title
+    code
   end
 
   def import_outcomes_from_csv(file)
@@ -1047,93 +1118,13 @@ class Unit < ApplicationRecord
       next if row[0] =~ /unit_code/
 
       begin
-        LearningOutcome.create_from_csv(self, row, result)
+        LearningOutcome.create_from_csv(self, nil, row, result)
       rescue Exception => e
         result[:errors] << { row: row, message: e.message.to_s }
       end
     end
 
     result
-  end
-
-  def export_task_alignment_to_csv
-    LearningOutcomeTaskLink.export_task_alignment_to_csv(self, self)
-  end
-
-  # Use the values in the CSV to setup task alignments
-  def import_task_alignment_from_csv(file, for_project)
-    success = []
-    errors = []
-    ignored = []
-
-    data = read_file_to_str(file)
-
-    CSV.parse(data,
-              headers: true,
-              header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
-              converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]).each do |row|
-      # Make sure we're not looking at the header or an empty line
-      next if row[0] =~ /unit_code/
-
-      begin
-        unit_code = row['unit_code']
-
-        if unit_code != code
-          ignored << { row: row, message: "Invalid unit code. #{unit_code} does not match #{code}" }
-          next
-        end
-
-        outcome_abbr = row['learning_outcome']
-        outcome = learning_outcomes.where('abbreviation = :abbr', abbr: outcome_abbr).first
-
-        if outcome.nil?
-          errors << { row: row, message: "Unable to locate learning outcome with abbreviation #{outcome_abbr}" }
-          next
-        end
-
-        task_def_abbr = row['task_abbr']
-        task_def = task_definitions.where('abbreviation = :abbr', abbr: task_def_abbr).first
-
-        if task_def.nil?
-          errors << { row: row, message: "Unable to locate task with abbreviation #{task_def_abbr}" }
-          next
-        end
-
-        rating = row['rating'].to_i
-        description = row['description']
-
-        if for_project.nil?
-          link = LearningOutcomeTaskLink.find_or_create_by(task_definition_id: task_def.id, learning_outcome_id: outcome.id, task_id: nil)
-        else
-          task = for_project.tasks.where('task_definition_id = :tdid', tdid: task_def.id).first
-
-          if task.nil?
-            errors << { row: row, message: "Unable to locate task related to #{task_def_abbr}" }
-            next
-          end
-          link = LearningOutcomeTaskLink.find_or_create_by(task_definition_id: task_def.id, learning_outcome_id: outcome.id, task_id: task.id)
-        end
-
-        link.rating = rating
-        link.description = description
-
-        link.save!
-
-        if link.new_record?
-          success << { row: row, message: "Link between task #{task_def.abbreviation} and outcome #{outcome.abbreviation} created for unit" }
-        else
-          success << { row: row, message: "Link between task #{task_def.abbreviation} and outcome #{outcome.abbreviation} updated for unit" }
-        end
-      rescue Exception => e
-        errors << { row: row, message: e.message.to_s }
-      end
-    end
-
-    {
-      success: success,
-      ignored: ignored,
-      errors: errors
-    }
   end
 
   # Import the actual groups from a csv - no students...
@@ -1618,35 +1609,6 @@ class Unit < ApplicationRecord
   end
 
   #
-  # Create an ILO
-  #
-  def add_ilo(name, desc, abbr)
-    next_num = learning_outcomes.count + 1
-
-    LearningOutcome.create!(
-      unit_id: id,
-      name: name,
-      description: desc,
-      abbreviation: abbr,
-      ilo_number: next_num
-    )
-  end
-
-  #
-  # Reorder ILO sequence numbers based on ILO update
-  #
-  def move_ilo(ilo, new_num)
-    if ilo.ilo_number < new_num
-      logger.debug "Moving ILOs up #{ilo.ilo_number} to #{new_num}"
-      learning_outcomes.where("ilo_number > #{ilo.ilo_number} and ilo_number <= #{new_num}").find_each { |ilo| ilo.ilo_number -= 1; ilo.save }
-    elsif ilo.ilo_number > new_num
-      learning_outcomes.where("ilo_number < #{ilo.ilo_number} and ilo_number >= #{new_num}").find_each { |ilo| ilo.ilo_number += 1; ilo.save }
-    end
-    ilo.ilo_number = new_num
-    ilo.save
-  end
-
-  #
   # Get all of the related tasks
   #
   def tasks_for_definition(task_def)
@@ -1949,172 +1911,6 @@ class Unit < ApplicationRecord
     end
 
     result
-  end
-
-  #
-  # Returns a result that maps tutorial_id -> { student outcome map }
-  # Where the student outcome map contains each LO and its rating for that student (no student id)
-  #
-  def student_ilo_progress_stats
-    data = student_tasks
-           .joins(task_definition: :learning_outcome_task_links)
-           .joins(:task_status)
-           .joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id')
-           .joins('LEFT OUTER JOIN tutorials ON tutorials.id = tutorial_enrolments.tutorial_id AND (tutorials.tutorial_stream_id = task_definitions.tutorial_stream_id OR tutorials.tutorial_stream_id IS NULL)')
-           .select('tutorials.tutorial_stream_id as tutorial_stream_id, tutorial_enrolments.tutorial_id as tutorial_id, projects.id as project_id, task_statuses.id as status_id, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating, COUNT(tasks.id) as num')
-           .where('projects.enrolled = TRUE AND learning_outcome_task_links.task_id is NULL')
-           .group('tutorial_enrolments.tutorial_id, tutorials.tutorial_stream_id, projects.id, task_statuses.id, task_definitions.target_grade, learning_outcome_task_links.learning_outcome_id, learning_outcome_task_links.rating')
-           .order('tutorial_enrolments.tutorial_id, projects.id')
-           .map do |r|
-      {
-        project_id: r.project_id,
-        tutorial_id: r.tutorial_id,
-        tutorial_stream_id: r.tutorial_stream_id,
-        learning_outcome_id: r.learning_outcome_id,
-        rating: r.rating,
-        grade: r.target_grade,
-        status: TaskStatus.id_to_key(r.status_id),
-        num: r.num
-      }
-    end
-
-    grade_weight = { 0 => 1, 1 => 2, 2 => 4, 3 => 8 }
-    status_weight = {
-      not_started: 0.0,
-      fail: 0.0,
-      working_on_it: 0.0,
-      need_help: 0.0,
-      redo: 0.1,
-      feedback_exceeded: 0.1,
-      fix_and_resubmit: 0.3,
-      time_exceeded: 0.5,
-      ready_for_feedback: 0.7,
-      discuss: 0.8,
-      demonstrate: 0.8,
-      complete: 1.0
-    }
-
-    result = {}
-
-    # order by tutorial and project...
-    current = nil
-    data.each do |e|
-      # chech for change in tutorial
-      if current.nil? || e[:tutorial_id] != current[:tutorial_id]
-        # if there was a currentious element
-        if current
-          # add the project to the tutorial
-          current[:tutorial] << current[:project]
-
-          # add the tutorial to the results
-          result[current[:tutorial_id]] = current[:tutorial]
-        end
-
-        current = { project_id: e[:project_id], tutorial_id: e[:tutorial_id], tutorial: [], project: { id: e[:project_id] } }
-      elsif e[:project_id] != current[:project_id] # check change of project
-        # add the project to the tutorial
-        current[:tutorial] << current[:project]
-
-        # reset the
-        current[:project_id] = e[:project_id]
-        current[:project] = { id: e[:project_id] }
-      end
-
-      old_val = 0
-      if current[:project].key? e[:learning_outcome_id]
-        old_val = current[:project][e[:learning_outcome_id]]
-      end
-
-      current[:project][e[:learning_outcome_id]] = old_val +
-                                                   (e[:rating] * status_weight[e[:status]] * grade_weight[e[:grade]] * e[:num])
-    end
-
-    # Add last project/tutorial to results
-    if current
-      # add the project to the tutorial
-      current[:tutorial] << current[:project]
-
-      # add the tutorial to the results
-      result[current[:tutorial_id]] = current[:tutorial]
-    end
-
-    result.each do |tutorial_id_key, array_of_ilo_scores|
-      result[tutorial_id_key] = array_of_ilo_scores.map do |map_scores|
-        map_scores.each { |ilo_id, score| map_scores[ilo_id] = score.round(1) }
-        map_scores
-      end
-    end
-
-    result
-  end
-
-  # Functions processes the ilo data to generate stats
-  # Can be passed all details, or details for one tutorial.
-  def _ilo_progress_summary(data)
-    result = {}
-
-    learning_outcomes.each do |ilo|
-      if data.nil?
-        lower_value = upper_value = median_value = min_value = max_value = 0
-      else
-        values = data.map { |e| e.key?(ilo.id) ? e[ilo.id] : 0 }
-        values = values.sort
-
-        median_value = if values.length.even?
-                         ((values[values.length / 2] + values[(values.length / 2) - 1]) / 2.0).round(1)
-                       else
-                         values[values.length / 2]
-                       end
-
-        lower_value = values[values.length * 3 / 10]
-        upper_value = values[values.length * 8 / 10]
-        min_value = values.first
-        max_value = values.last
-      end
-
-      result[ilo.id] = {
-        median: median_value,
-        lower: lower_value,
-        upper: upper_value,
-        min: min_value,
-        max: max_value
-      }
-    end
-
-    result
-  end
-
-  #
-  # Returns the details of the ILO progress for students in the class.
-  #
-  def ilo_progress_class_details
-    result = {}
-    data = student_ilo_progress_stats
-
-    return {} if data.nil?
-
-    tutorials.each do |tute|
-      result[tute.id] = _ilo_progress_summary(data[tute.id])
-      # if data[tute.id]
-      #   result[tute.id][:students] = data[tute.id]
-      # else
-      #   result[tute.id][:students] = []
-      # end
-    end
-
-    result['all'] = _ilo_progress_summary(data.values.reduce(:+))
-
-    result
-  end
-
-  def ilo_progress_class_stats
-    temp = student_ilo_progress_stats.values
-
-    return {} if temp.nil?
-
-    data = temp.reduce(:+)
-
-    _ilo_progress_summary(data)
   end
 
   def student_grades_csv

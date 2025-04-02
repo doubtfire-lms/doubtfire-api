@@ -61,6 +61,7 @@ class DatabasePopulator
     generate_fixed_data()
 
     generate_teaching_periods()
+    generate_global_learning_outcomes()
     generate_campuses
     generate_activity_types
   end
@@ -98,6 +99,25 @@ class DatabasePopulator
     tp = TeachingPeriod.create! data
 
     tp.add_break Date.parse('2018-12-24'), 2
+  end
+
+  def generate_global_learning_outcomes
+    data = [
+      {
+        abbreviation: 'GLO1',
+        short_description: 'Demonstrate discipline specific knowledge and skills',
+        full_outcome_description: 'Demonstrate discipline specific knowledge and skills',
+      },
+      {
+        abbreviation: 'GLO2',
+        short_description: 'Demonstrate communication skills',
+        full_outcome_description: 'Demonstrate communication skills written, oral, visual, etc',
+      },
+    ]
+
+    data.each do |d|
+      LearningOutcome.create! d
+    end
   end
 
   def generate_campuses
@@ -500,25 +520,12 @@ class DatabasePopulator
   end
 
   def self.assess_task(proj, task, tutor, status, complete_date)
-    alignments = []
-    task.unit.learning_outcomes.each do |lo|
-      next if rand(0..10) < 7
-
-      data = {
-        ilo_id: lo.id,
-        rating: rand(1..5),
-        rationale: "Simulated rationale text..."
-      }
-      alignments << data
-    end
-
     if task.group_task? && task.group.nil?
       return
     end
 
     contributions = nil
 
-    task.create_alignments_from_submission(alignments) unless alignments.nil?
     task.create_submission_and_trigger_state_change(proj.student) # , propagate = true, contributions = contributions, trigger = trigger)
     task.assess status, tutor, complete_date
 
@@ -624,7 +631,6 @@ class DatabasePopulator
 
     if File.exist? Rails.root.join('test_files', "#{unit.code}-Outcomes.csv")
       unit.import_outcomes_from_csv File.open(Rails.root.join('test_files', "#{unit.code}-Outcomes.csv"))
-      unit.import_task_alignment_from_csv File.open(Rails.root.join('test_files', "#{unit.code}-Alignment.csv")), nil
       return
     end
 
@@ -632,34 +638,17 @@ class DatabasePopulator
     unit_details[:ilos].times do |index|
       ilo_number = index + 1
       ilo = LearningOutcome.create!(
-        unit_id: unit.id,
-        ilo_number: ilo_number,
+        # unit_id: unit.id,
+        context_id: unit.id,
+        context_type: 'Unit',
         abbreviation: "ILO#{ilo_number}",
-        name: faker_random_sentence(1, 4).capitalize,
-        description: faker_random_sentence(10, 15)
+        # tag: "ILO#{ilo_number}",
+        short_description: faker_random_sentence(1, 4).capitalize,
+        full_outcome_description: faker_random_sentence(10, 15)
       )
       ilo_cache[ilo.id] = ilo
       echo "."
     end
     echo_line "!"
-
-    # Align each of the ILOs to a task
-    if unit_details[:ilos] > 0
-      echo "----> Aligning tasks to ILOs"
-      20.times do
-        ilo_id = unit.learning_outcomes.pluck('id').sample
-        task_def_id = unit.task_definition_ids.sample
-        link = LearningOutcomeTaskLink.find_or_create_by(
-          task_definition_id: task_def_id,
-          learning_outcome_id: ilo_id,
-          task_id: nil
-        )
-        link.rating = Faker::Number.between(from: 1, to: 4)
-        link.description = faker_random_sentence(5, 10)
-        link.save!
-        echo '.'
-      end
-      echo_line '!'
-    end
   end
 end

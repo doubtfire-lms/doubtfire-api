@@ -148,6 +148,7 @@ class User < ApplicationRecord
   has_many    :user_oauth_tokens, dependent: :destroy, inverse_of: :user
   has_many    :user_oauth_states, dependent: :destroy, inverse_of: :user
   has_one     :webcal, dependent: :destroy, inverse_of: :user
+  has_many    :chip_usage, dependent: :destroy, inverse_of: :tutor, class_name: 'Feedback::ChipUsage'
 
   # Model validations/constraints
   validates :first_name,  presence: true
@@ -315,6 +316,11 @@ class User < ApplicationRecord
       :admin_overseer,
       :use_overseer,
 
+      :get_feedback_chips,
+      :create_feedback_chips, # create global feedback chips
+      :get_los,
+      :update_glos,
+
       :get_scorm_token
     ]
 
@@ -330,7 +336,8 @@ class User < ApplicationRecord
 
       :get_teaching_periods,
       :use_overseer,
-      :get_scorm_token
+      :get_scorm_token,
+      :get_feedback_chips
     ]
 
     # What can convenors do with users?
@@ -349,7 +356,11 @@ class User < ApplicationRecord
       :get_staff_list,
       :get_teaching_periods,
       :use_overseer,
-      :get_scorm_token
+      :get_scorm_token,
+
+      :get_feedback_chips,
+      :get_los,
+      :update_glos
     ]
 
     # What can tutors do with users?
@@ -357,7 +368,11 @@ class User < ApplicationRecord
       :get_unit_roles,
       :download_unit_csv,
       :get_teaching_periods,
-      :get_scorm_token
+      :get_scorm_token,
+
+      :get_feedback_chips,
+      :get_los,
+      :update_glos
     ]
 
     # What can students do with users?

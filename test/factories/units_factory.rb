@@ -15,14 +15,19 @@ FactoryBot.define do
     target_date               { start_date + rand(1..2).weeks }
     group_set                 { nil }
     tutorial_stream           { unit.tutorial_streams.sample }
-  end
 
-  factory :learning_outcome do
-    unit
-    name                      { Faker::Lorem.unique.words(number: 3).join(' ') }
-    sequence(:abbreviation)   { |n| "ULO-#{n}" }
-    sequence(:ilo_number)     { |n| n }
-    description               { Faker::Lorem.sentence }
+    transient do
+      outcome_count { 2 }
+    end
+
+    after(:create) do |td, eval|
+      outcomes = create_list(:learning_outcome, eval.outcome_count, context_type: 'TaskDefinition', context_id: td.id)
+
+      outcomes.each do |o|
+        o.link_to td.unit.learning_outcomes.sample
+        o.link_to LearningOutcome.global_outcomes.sample
+      end
+    end
   end
 
   factory :unit_role do
@@ -37,6 +42,7 @@ FactoryBot.define do
       student_count               { 8 }
       unenrolled_student_count    { 1 }
       part_enrolled_student_count { 2 }
+      inactive_student_count      { 1 }
       task_count                  { 2 }
       tutorials                   { 1 }  #per campus
       tutorial_config             { [] } #[ {stream: 0, campus: 0} ]
@@ -49,8 +55,6 @@ FactoryBot.define do
       set_one_of_each_task        { false }  # In addition to the standard tasks, also add one of each different think of task - group, quality, graded, etc.
       perform_submissions         { false }
       staff_count                 { 1 }
-      inactive_student_count      { 1 }
-      task_alignment_links        { 0 }
     end
 
     name            { Faker::Lorem.unique.words(number: 2).join(' ') }
@@ -89,19 +93,13 @@ FactoryBot.define do
       campuses = Campus.all.sample(eval.campus_count)
 
       create_list(:group_set, group_sets, unit: unit)
-      outcomes = create_list(:learning_outcome, eval.outcome_count, unit: unit)
+      outcomes = create_list(:learning_outcome, eval.outcome_count, context_type: 'Unit', context_id: unit.id)
       tutorial_streams = create_list(:tutorial_stream, eval.stream_count, unit: unit)
       task_definitions = create_list(:task_definition, task_count, unit: unit)
 
       if eval.set_one_of_each_task
         task_definitions[1].update(max_quality_pts: 5)
         task_definitions[2].update(is_graded: true)
-      end
-
-      while unit.task_outcome_alignments.count < eval.task_alignment_links do
-        td = task_definitions.sample
-        o = outcomes.sample
-        LearningOutcomeTaskLink.create task_definition: td, learning_outcome: o, rating: (1..5).to_a.sample, description: "Justification"
       end
 
       # Create tutorials at campus in each stream

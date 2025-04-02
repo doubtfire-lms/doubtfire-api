@@ -62,17 +62,19 @@ No Tutor % Supervisor's Name
 \end{tabular}\\[1cm]
 <%  end %>
 
-<% if @task.learning_outcome_task_links.count > 0 %>
-\begin{tabular}{p{8cm}|l}
-\textbf{Outcome} & \textbf{Weight}\\
+<% if @task.task_definition.learning_outcomes.count > 0 %>
+\begin{tabular}{lp{7cm}|P{5cm}}
+\multicolumn{2}{l|}{\textbf{Task Outcomes}} & \textbf{Supports}\\
 \hline
-<% @task.learning_outcome_task_links.each do | link | %>
-    <%= lesc link.learning_outcome.name %> &
-    $<%= '\blacklozenge' * link.rating %><%= '\lozenge' * (5 - link.rating) %>$ \\
-<%    end %>
+<% @task.task_definition.learning_outcomes.each do | outcome | %>
+    <%= lesc outcome.abbreviation %> &
+    <%= lesc outcome.full_outcome_description %> &
+<%  outcome.linked_outcomes.each do |linked_outcome| %>
+    <%= lesc linked_outcome.abbreviation%> <%= lesc linked_outcome.short_description%> \newline
+<%  end %>
+    \\
+<% end %>
 \end{tabular}\\[0.5cm]
-
-<%= lesc @task.learning_outcome_task_links.last.description.present? && @task.learning_outcome_task_links.last.description.strip.length > 0 ? @task.learning_outcome_task_links.last.description : "(none)" %> \\[2cm]
 
 <% end %>
 %----------------------------------------------------------------------------------------

@@ -9,21 +9,24 @@ class UnitsTest < ActiveSupport::TestCase
     Rails.application
   end
 
-  def assert_users_model_response(actual_user, expected_user)
-    keys = %w(id student_id email first_name last_name username nickname receive_task_notifications
-           receive_portfolio_notifications receive_feedback_notifications opt_in_to_research has_run_first_time_setup)
+  def assert_users_model_response(response_data, user_model, keys = nil)
+    if keys.nil?
+      keys = %w[id student_id email first_name last_name username nickname receive_task_notifications
+                receive_portfolio_notifications receive_feedback_notifications opt_in_to_research has_run_first_time_setup]
+    end
 
-    assert_json_matches_model(expected_user, actual_user, keys)
+    assert_json_matches_model(user_model, response_data, keys)
   end
 
   def create_user
     {
-        first_name: 'Akash',
-        last_name: 'Agarwal',
-        email: 'blah@blah.com',
-        username: 'akash',
-        nickname: 'akash',
-        system_role: 'Admin'
+      first_name: 'Akash',
+      last_name: 'Agarwal',
+      email: 'blah@blah.com',
+      username: 'akash',
+      nickname: 'akash',
+      system_role: 'Admin',
+      student_id: 'zz123456zz'
     }
   end
 
@@ -47,7 +50,7 @@ class UnitsTest < ActiveSupport::TestCase
     assert_equal expected_data.count, last_response_body.count
 
     # What are the keys we expect in the data that match the model - so we can check these
-    response_keys = %w(first_name last_name email student_id nickname receive_task_notifications receive_portfolio_notifications receive_feedback_notifications opt_in_to_research has_run_first_time_setup)
+    response_keys = %w[first_name last_name email student_id nickname receive_task_notifications receive_portfolio_notifications receive_feedback_notifications opt_in_to_research has_run_first_time_setup]
 
     # Loop through all of the responses
     last_response_body.each do | data |
@@ -65,18 +68,18 @@ class UnitsTest < ActiveSupport::TestCase
     # Add username and auth_token to Header
     add_auth_header_for(user: User.first)
 
-    # perform the GET 
+    # perform the GET
     get "/api/users/#{expected_user.id}"
     returned_user = last_response_body
 
     # Check if the call succeeds
     assert_equal 200, last_response.status
-    
+
     # Check the returned details match as expected
     response_keys = %w(first_name last_name email student_id nickname receive_task_notifications receive_portfolio_notifications receive_feedback_notifications opt_in_to_research has_run_first_time_setup)
     assert_json_matches_model(expected_user, returned_user, response_keys)
   end
-  
+
   def test_get_convenors
 
     # Add username and auth_token to Header
@@ -121,7 +124,7 @@ class UnitsTest < ActiveSupport::TestCase
     pre_count = User.all.length
 
     data_to_post = {
-        user: create_user
+      user: create_user
     }
 
     # Add username and auth_token to Header
@@ -138,7 +141,7 @@ class UnitsTest < ActiveSupport::TestCase
     pre_count = User.all.length
 
     data_to_post = {
-        user: create_user
+      user: create_user
     }
 
     # Add username and auth_token to Header
@@ -231,19 +234,19 @@ class UnitsTest < ActiveSupport::TestCase
     user2 = create_user
 
     user.collect do |key, value|
-      next if key == :nickname # Nickname can be empty
+      next if [:nickname, :student_id].include? key # can be empty
       user2[key] = ''
       data_to_post = {
-          user: user2
+        user: user2
       }
 
       # Add username and auth_token to Header
       add_auth_header_for(user: User.first)
 
       post_json '/api/users', data_to_post
+      assert_equal (key == :system_role ? 403 : 400), last_response.status, last_response_body
       # Successful assertion of same length again means no record was created
-      assert_equal pre_count, User.all.length
-      assert_equal (if key == :system_role then 403 else 400 end), last_response.status
+      assert_equal pre_count, User.all.length, last_response_body
       user2[key] = value
     end
   end
@@ -306,15 +309,15 @@ class UnitsTest < ActiveSupport::TestCase
     user[:email] = 'different@email.com'
 
     data_to_put = {
-        user: user
+      user: user
     }
 
     # Add username and auth_token to Header
     add_auth_header_for(user: User.first)
 
     put_json '/api/users/2', data_to_put
-    assert_users_model_response User.find_by(email: 'different@email.com').as_json, user.as_json
     assert_equal 200, last_response.status
+    assert_users_model_response last_response_body, user.reload
   end
 
   def test_put_update_user_existing_email

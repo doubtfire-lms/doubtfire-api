@@ -7,7 +7,7 @@ class WebcalTest < ActiveSupport::TestCase
     @campus = FactoryBot.create(:campus)
 
     # Create ongoing units
-    @current_unit1 = FactoryBot.create(:unit, task_count: 10)
+    @current_unit1 = FactoryBot.create(:unit, task_count: 10, with_students: false, outcome_count: 0)
     ftd = @current_unit1.task_definitions.first
 
     ftd.target_date = ftd.start_date + 1.week
@@ -18,13 +18,13 @@ class WebcalTest < ActiveSupport::TestCase
     @current_project1 = Project.find_by(user: @student, unit: @current_unit1)
     @current_project1.update(target_grade: 3)
 
-    @current_unit2 = FactoryBot.create(:unit, task_count: 10)
+    @current_unit2 = FactoryBot.create(:unit, task_count: 10, with_students: false, outcome_count: 0)
     @current_unit2.enrol_student(@student, @campus)
     @current_project2 = Project.find_by(user: @student, unit: @current_unit2)
     @current_project2.update(target_grade: 3)
 
     # Create old unit
-    @old_unit = FactoryBot.create(:unit, task_count: 2)
+    @old_unit = FactoryBot.create(:unit, task_count: 2, with_students: false, outcome_count: 0)
     @old_unit.enrol_student(@student, @campus)
     @old_unit.active = false
     @old_unit.start_date -= 1.year
