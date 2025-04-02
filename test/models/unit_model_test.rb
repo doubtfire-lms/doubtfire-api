@@ -167,28 +167,6 @@ class UnitModelTest < ActiveSupport::TestCase
     unit2.destroy
   end
 
-  def test_rollover_of_task_ilo_links
-    @unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Tasks.csv"))
-    @unit.import_outcomes_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Outcomes.csv"))
-    @unit.import_task_alignment_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Alignment.csv")), nil
-
-    unit2 = @unit.rollover TeachingPeriod.find(2), nil, nil, nil
-
-    assert @unit.task_outcome_alignments.count > 0
-    assert_equal @unit.task_outcome_alignments.count, unit2.task_outcome_alignments.count
-
-    @unit.task_outcome_alignments.each do |link|
-      ilo = unit2.learning_outcomes.find_by(abbreviation: link.learning_outcome.abbreviation)
-      task_def = unit2.task_definitions.find_by(abbreviation: link.task_definition.abbreviation)
-      other = unit2.task_outcome_alignments.where(task_definition_id: task_def.id, learning_outcome_id: ilo.id).first
-
-      assert other
-      assert_equal link.rating, other.rating, "rating does not match for #{link.task_definition.abbreviation} - #{link.learning_outcome.abbreviation}"
-    end
-
-    unit2.destroy!
-  end
-
   def test_rollover_of_tasks_have_same_start_week_and_day
     @unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Tasks.csv"))
 
@@ -198,7 +176,7 @@ class UnitModelTest < ActiveSupport::TestCase
     assert_equal 2, unit2.teaching_period_id
 
     @unit.task_definitions.each do |td|
-      td2 = unit2.task_definitions.find_by_abbreviation(td.abbreviation)
+      td2 = unit2.task_definitions.find_by(abbreviation: td.abbreviation)
 
       assert_equal td.start_day, td2.start_day, "#{td.abbreviation} not on same day"
       assert_equal td.start_week, td2.start_week, "#{td.abbreviation} not in same week"
@@ -250,59 +228,9 @@ class UnitModelTest < ActiveSupport::TestCase
     unit2 = @unit.rollover TeachingPeriod.find(2), nil, nil, nil
 
     @unit.task_definitions.each do |td|
-      td2 = unit2.task_definitions.find_by_abbreviation(td.abbreviation)
+      td2 = unit2.task_definitions.find_by(abbreviation: td.abbreviation)
       assert_equal td.due_day, td2.due_day, "#{td.abbreviation} not on same day"
       assert_equal td.due_week, td2.due_week, "#{td.abbreviation} not due same week"
-    end
-  end
-
-  test 'ensure valid response from unit ilo data' do
-    @unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Tasks.csv"))
-    @unit.import_outcomes_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Outcomes.csv"))
-    @unit.import_task_alignment_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Alignment.csv")), nil
-
-    DatabasePopulator.new.generate_tutorials_and_enrol_students_for_unit @unit, {
-      tutors: [
-        { user: :acain, num: 1 },
-        { user: :aconvenor, num: 2 },
-      ],
-      students: [ ]
-    }
-
-    assert_equal 3, @unit.tutorials.count
-
-    @unit.students.each do |student|
-      @unit.task_definitions.each do |td|
-        task = student.task_for_task_definition(td)
-        tutor = student.tutor_for(td)
-
-        case rand(1..100)
-        when 1..20
-          DatabasePopulator.assess_task(student, task, tutor, TaskStatus.complete, td.due_date + 1.week)
-        when 21..40
-          DatabasePopulator.assess_task(student, task, tutor, TaskStatus.ready_for_feedback, td.due_date + 1.week)
-        when 41..50
-          DatabasePopulator.assess_task(student, task, tutor, TaskStatus.time_exceeded, td.due_date + 1.week)
-        when 51..60
-          DatabasePopulator.assess_task(student, task, tutor, TaskStatus.not_started, td.due_date + 1.week)
-        when 61..70
-          DatabasePopulator.assess_task(student, task, tutor, TaskStatus.working_on_it, td.due_date + 1.week)
-        when 71..80
-          DatabasePopulator.assess_task(student, task, tutor, TaskStatus.discuss, td.due_date + 1.week)
-        else
-          DatabasePopulator.assess_task(student, task, tutor, TaskStatus.fix_and_resubmit, td.due_date + 1.week)
-        end
-
-        break if rand(1..100) > 80
-      end
-    end
-
-    details = @unit.ilo_progress_class_details
-
-    assert details.key?('all'), 'contains all key'
-
-    @unit.tutorials.each do |tute|
-      assert details.key?(tute.id), 'contains tutorial keys'
     end
   end
 

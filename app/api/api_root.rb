@@ -63,7 +63,6 @@ class ApiRoot < Grape::API
   mount ScormExtensionCommentsApi
   mount GroupSetsApi
   mount LearningOutcomesApi
-  mount LearningAlignmentApi
   mount ProjectsApi
   mount SettingsApi
   mount StudentsApi
@@ -99,6 +98,8 @@ class ApiRoot < Grape::API
   mount WebcalApi
   mount WebcalPublicApi
 
+  mount Feedback::FeedbackChipApi
+
   #
   # Add auth details to all end points
   #
@@ -111,7 +112,6 @@ class ApiRoot < Grape::API
   AuthenticationHelpers.add_auth_to ScormExtensionCommentsApi
   AuthenticationHelpers.add_auth_to GroupSetsApi
   AuthenticationHelpers.add_auth_to LearningOutcomesApi
-  AuthenticationHelpers.add_auth_to LearningAlignmentApi
   AuthenticationHelpers.add_auth_to ProjectsApi
   AuthenticationHelpers.add_auth_to StudentsApi
   AuthenticationHelpers.add_auth_to Submission::PortfolioApi
@@ -139,6 +139,7 @@ class ApiRoot < Grape::API
   AuthenticationHelpers.add_auth_to TestAttemptsApi
 
   AuthenticationHelpers.add_auth_to D2lIntegrationApi::D2lApi
+  AuthenticationHelpers.add_auth_to Feedback::FeedbackChipApi
 
   add_swagger_documentation \
     base_path: nil,

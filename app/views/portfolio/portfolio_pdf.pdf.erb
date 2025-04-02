@@ -140,43 +140,61 @@ No Tutor
 % Learning Outcomes
 % -----------------------------------------------------------------------------
 
+<%
+  if @outcomes.count > 0
+%>
 \clearpage
 \section{Learning Outcomes}
 \label{sec:Learning Outcomes}
+<%
+    @outcomes.order(:abbreviation).each do | outcome |
+%>
 
-<% @outcomes.each do | outcome | %>
-\subsection{<%= lesc outcome.name %>}
+\subsection{<%= lesc outcome.abbreviation %> <%= lesc outcome.short_description %>}
 \label{losub:<%= lesc outcome.id %>}
 
-<%= lesc outcome.description %>
+<%= lesc outcome.full_outcome_description %>
 \medskip
 
-\begin{tabular}{p{6cm}|l|m{3cm}|l}
-  \textbf{Task} & \textbf{Rating} & \textbf{Status} & \textbf{Times Assessed}\\ \hline
-  <% query_result = @project.tasks.joins(:learning_outcome_task_links).joins(:task_definition).where("learning_outcome_task_links.learning_outcome_id = #{outcome.id}").select("learning_outcome_task_links.rating AS r", "task_definitions.name AS task_name","task_definitions.id AS td_id")
-    query_result.each do | data | %>
-    <% task = task_for_def_id(data.td_id) %>
-    <%= lesc data.task_name %> &
-    $<%= '\blacklozenge' * data.r %><%= '\lozenge' * (5 - data.r) %>$ &
-    \cellcolor{<%= latex_color_for_status(task) %>}{<%= lesc task.task_status.name %>} &
-    <%= lesc task.times_assessed %> \\
-  <% end %>
+<%
+  linked_outcomes = outcome.demonstrated_through_outcomes
+  if linked_outcomes.count > 0
+%>
+\begin{tabular}{p{9cm}|l|l}
+  \textbf{Task} & \textbf{Status} & \textbf{Times Assessed}\\ \hline
+<%
+    # For each of the task definitions - linked to this learning outcome
+    linked_outcomes.group_by(&:context_id).each do | task_definition_id, td_outcomes |
+      next unless td_outcomes.first.context_type == 'TaskDefinition'
+
+      # Output the task definition at the top
+      task_definition = TaskDefinition.find(task_definition_id)
+      task = task_for_def_id(task_definition_id)
+%>
+  <%= lesc task_definition.name %> &
+  \cellcolor{<%= latex_color_for_status(task) %>}{<%= lesc (if task.nil? then 'Not Started' else task.task_status.name end) %>} &
+  <%= lesc (if task.nil? then '' else task.times_assessed end) %> \\
+<%
+    end # outcome group
+%>
 \end{tabular}
-
-<% if query_result.length > 15 %>
 \clearpage
-<% end %>
+<%
+  end # each task definition
+end # if there are linked outcomes
+%>
+\medskip
+<%
+  end # if there are outcomes
 
-<% end %>
-
+  if @files.count > 1
+%>
 % -----------------------------------------------------------------------------
 % Additional Files
 % -----------------------------------------------------------------------------
 
 \clearpage
-
-<% if @files.count > 1 %>
-  \section{Additional Files}
+\section{Additional Files}
 
   \begin{enumerate}
     <% @files.each do |f| %>
@@ -206,7 +224,9 @@ No Tutor
 % Portfolio Task Pages
 % -----------------------------------------------------------------------------
 
-<% @portfolio_tasks.each do |task| %>
+<%
+@portfolio_tasks.each do |task|
+%>
   \clearpage
 
   \section{<%= lesc task.task_definition.name %>}
@@ -214,30 +234,40 @@ No Tutor
 
   <%= lesc task.task_definition.description %>
   \bigskip
-
-  <% task.learning_outcome_task_links.each do | link | %>
+<%
+  if task.task_definition.learning_outcomes.count > 0
+%>
     \begin{tabular}{p{8cm}|l}
-      \textbf{Outcome} & \textbf{Weight}\\
+      \textbf{Outcome} & \textbf{Description}\\
       \hline
-      <%= lesc link.learning_outcome.name %> &
-      $<%= '\blacklozenge' * link.rating %><%= '\lozenge' * (5 - link.rating) %>$ \\
+<%
+    task.task_definition.learning_outcomes.each do | outcome |
+%>
+      <%= lesc outcome.abbreviation %> &
+      <%= lesc outcome.full_outcome_description %> \\
+<%
+    end # if outcomes loop
+%>
       \end{tabular}
-      \medskip
-
-      <%= lesc link.description %>
       \bigskip
-
-  <% end %>
-
-  <% if task.comments.count > 0 %>
+<%
+  end # if outcomes exist
+  if task.comments.count > 0
+%>
     \begin{tabular}{p{3cm}|p{3cm}|p{9cm}}
       \textbf{Date} & \textbf{Author} & \textbf{Comment} \\ \hline
-      <% task.comments.each do |comment| %>
+<%
+    task.comments.each do |comment|
+%>
         <%= lesc comment.created_at.localtime.strftime("%Y/%m/%d %H:%M") %> & <%= lesc comment.user.name %> & <%= lesc comment.comment %> \\
-      <% end %>
+<%
+    end # comments loop
+%>
     \end{tabular}
-  <% end %>
-<% if File.exist? task.final_pdf_path
+<%
+  end # if comments exist
+
+  if File.exist? task.final_pdf_path
     max_pages = FileHelper.pages_in_pdf(task.final_pdf_path)
 
     # Limit to 100 pages
@@ -251,7 +281,7 @@ No Tutor
 
     for page_idx in 1..max_pages do %>
 \includepdf[pages={<%= page_idx %>-<%= page_idx %>},fitpaper]{<%= task.final_pdf_path %>}
-<%  end # end for
+<%  end # end for pages
   end # end if file exists
 end # portfolio tasks do
 

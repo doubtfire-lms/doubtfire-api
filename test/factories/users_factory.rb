@@ -49,6 +49,5 @@ FactoryBot.define do
     trait :auditor do
       role      { Role.auditor }
     end
-
   end
 end

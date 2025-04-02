@@ -19,7 +19,7 @@ class TutorialsTest < ActiveSupport::TestCase
   #####----------POST tests - Create tutorial----------#####
 
   def assert_tutorial_model_response(response, expected)
-    assert_json_matches_model expected, response, %w(id meeting_day meeting_time meeting_location abbreviation campus_id capacity)
+    assert_json_matches_model expected, response, %w[id meeting_day meeting_time meeting_location abbreviation campus_id capacity]
   end
 
   # Testing for successful POST creations

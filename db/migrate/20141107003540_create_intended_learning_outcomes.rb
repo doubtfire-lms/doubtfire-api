@@ -7,5 +7,5 @@ class CreateIntendedLearningOutcomes < ActiveRecord::Migration[4.2]
       t.string :description
     end
     add_index :intended_learning_outcomes, :unit_id
-    end
+  end
 end
