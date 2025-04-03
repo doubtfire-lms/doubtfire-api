@@ -89,132 +89,39 @@ class TemplateCourseMapTest < ActiveSupport::TestCase
     end
   end
 
-  def create_course_map_units
-    # Year 1 - Trimester 1
-    Courseflow::CourseMapUnit.create(
-      courseMapId: @template_course_map.id,
-      unitId: @created_units[:sit111].id,
-      yearSlot: 2024,
-      teachingPeriodSlot: 1,
-      unitSlot: 1
-    )
-
-    Courseflow::CourseMapUnit.create(
-      courseMapId: @template_course_map.id,
-      unitId: @created_units[:sit192].id,
-      yearSlot: 2024,
-      teachingPeriodSlot: 1,
-      unitSlot: 2
-    )
-
-    Courseflow::CourseMapUnit.create(
-      courseMapId: @template_course_map.id,
-      unitId: @created_units[:sit112].id,
-      yearSlot: 2024,
-      teachingPeriodSlot: 1,
-      unitSlot: 3
-    )
-
-    Courseflow::CourseMapUnit.create(
-      courseMapId: @template_course_map.id,
-      unitId: @created_units[:sit102].id,
-      yearSlot: 2024,
-      teachingPeriodSlot: 1,
-      unitSlot: 4
-    )
-
-    # Year 1 - Trimester 2
-    Courseflow::CourseMapUnit.create(
-      courseMapId: @template_course_map.id,
-      unitId: @created_units[:sit232].id,
-      yearSlot: 2024,
-      teachingPeriodSlot: 2,
-      unitSlot: 1
-    )
-
-    Courseflow::CourseMapUnit.create(
-      courseMapId: @template_course_map.id,
-      unitId: @created_units[:sit103].id,
-      yearSlot: 2024,
-      teachingPeriodSlot: 2,
-      unitSlot: 2
-    )
-
-    Courseflow::CourseMapUnit.create(
-      courseMapId: @template_course_map.id,
-      unitId: @created_units[:sit292].id,
-      yearSlot: 2024,
-      teachingPeriodSlot: 2,
-      unitSlot: 3
-    )
-
-    Courseflow::CourseMapUnit.create(
-      courseMapId: @template_course_map.id,
-      unitId: @created_units[:sit202].id,
-      yearSlot: 2024,
-      teachingPeriodSlot: 2,
-      unitSlot: 4
-    )
-
-    # Year 2 - Trimester 1
-    Courseflow::CourseMapUnit.create(
-      courseMapId: @template_course_map.id,
-      unitId: @created_units[:sit221].id,
-      yearSlot: 2025,
-      teachingPeriodSlot: 1,
-      unitSlot: 1
-    )
-
-    Courseflow::CourseMapUnit.create(
-      courseMapId: @template_course_map.id,
-      unitId: @created_units[:sit215].id,
-      yearSlot: 2025,
-      teachingPeriodSlot: 1,
-      unitSlot: 2
-    )
-
-    # Year 2 - Trimester 2
-    Courseflow::CourseMapUnit.create(
-      courseMapId: @template_course_map.id,
-      unitId: @created_units[:sit223].id,
-      yearSlot: 2025,
-      teachingPeriodSlot: 2,
-      unitSlot: 1
-    )
-
-    Courseflow::CourseMapUnit.create(
-      courseMapId: @template_course_map.id,
-      unitId: @created_units[:sit320].id,
-      yearSlot: 2025,
-      teachingPeriodSlot: 2,
-      unitSlot: 2
-    )
-
-    Courseflow::CourseMapUnit.create(
-      courseMapId: @template_course_map.id,
-      unitId: @created_units[:sit315].id,
-      yearSlot: 2025,
-      teachingPeriodSlot: 2,
-      unitSlot: 3
-    )
-
-    # Year 3 - Trimester 1
-    Courseflow::CourseMapUnit.create(
-      courseMapId: @template_course_map.id,
-      unitId: @created_units[:sit344].id,
-      yearSlot: 2026,
-      teachingPeriodSlot: 1,
-      unitSlot: 1
-    )
-
-    # Year 3 - Trimester 2
-    Courseflow::CourseMapUnit.create(
-      courseMapId: @template_course_map.id,
-      unitId: @created_units[:sit378].id,
-      yearSlot: 2026,
-      teachingPeriodSlot: 2,
-      unitSlot: 1
-    )
+    def create_course_map_units
+    units_data = [
+      { unit: :sit111, year: 2024, teaching_period: 1, slot: 1 },
+      { unit: :sit192, year: 2024, teaching_period: 1, slot: 2 },
+      { unit: :sit112, year: 2024, teaching_period: 1, slot: 3 },
+      { unit: :sit102, year: 2024, teaching_period: 1, slot: 4 },
+      
+      { unit: :sit232, year: 2024, teaching_period: 2, slot: 1 },
+      { unit: :sit103, year: 2024, teaching_period: 2, slot: 2 },
+      { unit: :sit292, year: 2024, teaching_period: 2, slot: 3 },
+      { unit: :sit202, year: 2024, teaching_period: 2, slot: 4 },
+      
+      { unit: :sit221, year: 2025, teaching_period: 1, slot: 1 },
+      { unit: :sit215, year: 2025, teaching_period: 1, slot: 2 },
+      
+      { unit: :sit223, year: 2025, teaching_period: 2, slot: 1 },
+      { unit: :sit320, year: 2025, teaching_period: 2, slot: 2 },
+      { unit: :sit315, year: 2025, teaching_period: 2, slot: 3 },
+      
+      { unit: :sit344, year: 2026, teaching_period: 1, slot: 1 },
+      
+      { unit: :sit378, year: 2026, teaching_period: 2, slot: 1 }
+    ]
+  
+    units_data.each do |unit_data|
+      Courseflow::CourseMapUnit.create(
+        courseMapId: @template_course_map.id,
+        unitId: @created_units[unit_data[:unit]].id,
+        yearSlot: unit_data[:year],
+        teachingPeriodSlot: unit_data[:teaching_period],
+        unitSlot: unit_data[:slot]
+      )
+    end
   end
 
   #
