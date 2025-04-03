@@ -1,11 +1,13 @@
 class MigrateTaskLinksToLegacyLearningOutcomes < ActiveRecord::Migration[7.1]
   def up
-    grouped_links = LearningOutcomeTaskLink.all.group_by(&:task_definition_id)
+    sql = "SELECT `learning_outcome_task_links`.* FROM `learning_outcome_task_links` GROUP BY `learning_outcome_task_links`.`task_definition_id`"
+    result = ActiveRecord::Base.connection.exec_query(sql)
+    grouped_links = result.group_by{|r| r['task_definition_id']}
 
     grouped_links.each do |task_definition_id, links|
       task_definition = TaskDefinition.find(task_definition_id)
 
-      linked_outcome_ids = links.map(&:learning_outcome_id).uniq
+      linked_outcome_ids = links.map{|r| r['learning_outcome_id']}.uniq
 
       next if linked_outcome_ids.empty?
 
