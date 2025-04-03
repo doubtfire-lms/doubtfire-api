@@ -1,6 +1,7 @@
 name:           Doubtfire University
 email_domain:   doubtfire.com
 host:           localhost:3000
+cookie_domain:  localhost
 product_name:   Doubtfire
 has_logo:       false
 logo_url:       /assets/images/institution-logo.png
