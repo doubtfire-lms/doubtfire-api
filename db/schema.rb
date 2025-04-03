@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_03_27_094635) do
+ActiveRecord::Schema[8.0].define(version: 2025_04_02_034353) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -25,6 +25,8 @@ ActiveRecord::Schema[7.1].define(version: 2025_03_27_094635) do
     t.bigint "user_id"
     t.string "authentication_token", null: false
     t.integer "token_type", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["token_type"], name: "index_auth_tokens_on_token_type"
     t.index ["user_id"], name: "index_auth_tokens_on_user_id"
   end
@@ -33,6 +35,8 @@ ActiveRecord::Schema[7.1].define(version: 2025_03_27_094635) do
     t.datetime "start_date", null: false
     t.integer "number_of_weeks", null: false
     t.bigint "teaching_period_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["teaching_period_id"], name: "index_breaks_on_teaching_period_id"
   end
 
@@ -41,6 +45,8 @@ ActiveRecord::Schema[7.1].define(version: 2025_03_27_094635) do
     t.integer "mode", null: false
     t.string "abbreviation", null: false
     t.boolean "active", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["abbreviation"], name: "index_campuses_on_abbreviation", unique: true
     t.index ["active"], name: "index_campuses_on_active"
     t.index ["name"], name: "index_campuses_on_name", unique: true
@@ -164,6 +170,8 @@ ActiveRecord::Schema[7.1].define(version: 2025_03_27_094635) do
     t.string "abbreviation"
     t.bigint "context_id"
     t.string "context_type"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["abbreviation", "context_type", "context_id"], name: "index_learning_outcomes_on_abbreviation_and_context", unique: true
     t.index ["context_id", "context_type"], name: "index_learning_outcomes_on_context_id_and_context_type"
   end
@@ -389,6 +397,8 @@ ActiveRecord::Schema[7.1].define(version: 2025_03_27_094635) do
     t.datetime "end_date", null: false
     t.integer "year", null: false
     t.datetime "active_until", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["period", "year"], name: "index_teaching_periods_on_period_and_year", unique: true
   end
 
@@ -400,6 +410,8 @@ ActiveRecord::Schema[7.1].define(version: 2025_03_27_094635) do
     t.boolean "success_status", default: false
     t.float "score_scaled", default: 0.0
     t.text "cmi_datamodel"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["task_id"], name: "index_test_attempts_on_task_id"
   end
 
@@ -599,6 +611,8 @@ ActiveRecord::Schema[7.1].define(version: 2025_03_27_094635) do
   create_table "webcal_unit_exclusions", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.bigint "webcal_id", null: false
     t.bigint "unit_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["unit_id", "webcal_id"], name: "index_webcal_unit_exclusions_on_unit_id_and_webcal_id", unique: true
     t.index ["unit_id"], name: "index_webcal_unit_exclusions_on_unit_id"
     t.index ["webcal_id"], name: "fk_rails_d5fab02cb7"
@@ -610,6 +624,8 @@ ActiveRecord::Schema[7.1].define(version: 2025_03_27_094635) do
     t.bigint "user_id"
     t.integer "reminder_time"
     t.string "reminder_unit"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["guid"], name: "index_webcals_on_guid", unique: true
     t.index ["user_id"], name: "index_webcals_on_user_id", unique: true
   end
