@@ -14,8 +14,14 @@ module AuthenticationHelpers
   # Reads details from the params fetched from the caller context.
   #
   def authenticated?(token_type = :general)
-    auth_param = headers['auth-token'] || headers['Auth-Token'] || params['authToken'] || headers['Auth_Token'] || headers['auth_token'] || params['auth_token'] || params['Auth_Token']
-    user_param = headers['username'] || headers['Username'] || params['username']
+    if token_type == :refresh_token
+      # Access credentials from cookie
+      auth_param = cookies['refresh_token']
+      user_param = cookies['username']
+    else
+      auth_param = headers['auth-token'] || headers['Auth-Token'] || params['authToken'] || headers['Auth_Token'] || headers['auth_token'] || params['auth_token'] || params['Auth_Token']
+      user_param = headers['username'] || headers['Username'] || params['username']
+    end
 
     # Check for valid auth token  and username in request header
     user = current_user
@@ -136,5 +142,42 @@ module AuthenticationHelpers
   #
   def db_auth?
     Doubtfire::Application.config.auth_method == :database
+  end
+
+  def add_refresh_cookie_to_response(remember)
+    if remember
+      token = current_user.auth_tokens.where(token_type: :refresh_token).last
+
+      if token.nil? || token.auth_token_expiry <= Time.zone.now - 8.hours
+        token&.destroy
+        token = current_user.generate_authentication_token!(token_type: :refresh_token)
+      end
+
+      domain = Doubtfire::Application.config.institution[:cookie_domain]
+
+      cookies[:username] = {
+        value: current_user.username,
+        expires: token.auth_token_expiry,
+        domain: domain,
+        path: '/api/auth',
+        secure: Rails.env.production?,
+        same_site: true,
+        httponly: true
+      }
+
+      cookies[:refresh_token] = {
+        value: token.authentication_token,
+        expires: token.auth_token_expiry,
+        domain: domain,
+        path: '/api/auth',
+        secure: Rails.env.production?,
+        same_site: true,
+        httponly: true
+      }
+    else
+      # Remove the cookies
+      cookies.delete(:username, domain: domain, path: '/api/auth', secure: Rails.env.production?, httponly: true, same_site: true)
+      cookies.delete(:refresh_token, domain: domain, path: '/api/auth', secure: Rails.env.production?, httponly: true, same_site: true)
+    end
   end
 end

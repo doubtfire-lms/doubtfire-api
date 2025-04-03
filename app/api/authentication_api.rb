@@ -14,7 +14,7 @@ class AuthenticationApi < Grape::API
   helpers AuthorisationHelpers
 
   #
-  # Sign in - only mounted if AAF auth is NOT used
+  # Sign in - only mounted if AAF and SAML auth is NOT used
   #
   if !AuthenticationHelpers.aaf_auth? && !AuthenticationHelpers.saml_auth?
     desc 'Sign in'
@@ -28,10 +28,6 @@ class AuthenticationApi < Grape::API
       password = params[:password]
       remember = params[:remember]
       logger.info "Authenticate #{username} from #{request.ip}"
-
-      # Truncate the 's' from sXXX for Swinburne auth
-      truncate_s_match = (username =~ /^[Ss]\d{6,10}([Xx]|\d)$/)
-      username[0] = '' if !truncate_s_match.nil? && truncate_s_match.zero?
 
       # No provided credentials
       if username.nil? || password.nil?
@@ -72,7 +68,8 @@ class AuthenticationApi < Grape::API
 
       # Return user details
       present :user, user, with: Entities::UserEntity
-      present :auth_token, user.generate_authentication_token!(remember: remember).authentication_token
+      present :auth_token, user.generate_authentication_token!.authentication_token
+      add_refresh_cookie_to_response(remember)
     end
   end
 
@@ -232,6 +229,7 @@ class AuthenticationApi < Grape::API
     params do
       requires :username, type: String, desc: 'The user\'s username'
       requires :auth_token, type: String, desc: 'The user\'s temporary auth token'
+      optional :remember, type: Boolean, desc: 'User has requested to remember login', default: false
     end
     post '/auth' do
       error!({ error: 'Invalid authentication details.' }, 404) if params[:auth_token].blank? || params[:username].blank?
@@ -252,6 +250,7 @@ class AuthenticationApi < Grape::API
         # Respond user details with new auth token
         present :user, user, with: Entities::UserEntity
         present :auth_token, token.authentication_token
+        add_refresh_cookie_to_response(params[:remember])
       end
     end
   end
@@ -356,14 +355,27 @@ class AuthenticationApi < Grape::API
        }
   delete '/auth' do
     user = User.find_by(username: headers['username'] || headers['Username'])
-    token = user.token_for_text?(headers['auth-token'] || headers['Auth-Token'], :general) unless user.nil?
+    token = user&.token_for_text?(headers['auth-token'] || headers['Auth-Token'], :general)
 
     if token.present?
       logger.info "Sign out #{user.username} from #{request.ip}"
       token.destroy!
     end
 
+    if cookies['refresh_token'].present?
+      auth_param = cookies['refresh_token']
+      user_param = cookies['username']
+
+      user = User.find_by(username: user_param)
+      token = user&.token_for_text?(auth_param, :refresh_token)
+      if token.present?
+        logger.info "Sign out #{user.username} from #{request.ip}"
+        token.destroy!
+      end
+    end
+
     present nil
+    add_refresh_cookie_to_response(false)
   end
 
   desc 'Get SCORM authentication token'
@@ -380,6 +392,17 @@ class AuthenticationApi < Grape::API
       end
 
       present :scorm_auth_token, token.authentication_token
+    end
+  end
+
+  desc 'Get access token from the refresh token cookie'
+  post '/auth/access-token' do
+    if authenticated?(:refresh_token)
+      # Return user details
+      present :user, current_user, with: Entities::UserEntity
+      present :auth_token, current_user.generate_authentication_token!(token_type: :general).authentication_token
+    else
+      error!({ error: 'Invalid refresh token.' }, 404)
     end
   end
 end

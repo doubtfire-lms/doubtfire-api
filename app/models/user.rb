@@ -115,13 +115,6 @@ class User < ApplicationRecord
   end
 
   #
-  # Returns whether the authentication token has expired
-  #
-  def authentication_token_expired?
-    auth_token_expiry.nil? || auth_token_expiry <= Time.zone.now
-  end
-
-  #
   # Returns authentication of the user
   #
   def token_for_text?(a_token, token_type)

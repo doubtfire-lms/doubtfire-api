@@ -75,6 +75,7 @@ module Doubtfire
     config.institution[:name] = ENV['DF_INSTITUTION_NAME'] if ENV['DF_INSTITUTION_NAME']
     config.institution[:email_domain] = ENV['DF_INSTITUTION_EMAIL_DOMAIN'] if ENV['DF_INSTITUTION_EMAIL_DOMAIN']
     config.institution[:host] = ENV['DF_INSTITUTION_HOST'] if ENV['DF_INSTITUTION_HOST']
+    config.institution[:cookie_domain] = ENV.fetch('DF_COOKIE_DOMAIN', URI.parse(Doubtfire::Application.config.institution[:host]).host)
     config.institution[:product_name] = ENV['DF_INSTITUTION_PRODUCT_NAME'] if ENV['DF_INSTITUTION_PRODUCT_NAME']
 
     config.institution[:has_logo] = (ENV['DF_INSTITUTION_HAS_LOGO'].to_s.downcase == "true" || ENV['DF_INSTITUTION_HAS_LOGO'].to_i == 1) if ENV['DF_INSTITUTION_HAS_LOGO']
