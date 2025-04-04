@@ -10,10 +10,6 @@ class LearningOutcomesApi < Grape::API
     authenticated?
   end
 
-  route :context_type_plural, values: %w[units task_definitions] do
-    params[:context_type].pluralize
-  end
-
   desc 'Get all global outcomes'
   get '/global/outcomes' do
     # can be read by any logged in user
@@ -26,6 +22,7 @@ class LearningOutcomesApi < Grape::API
     requires :short_description, type: String, desc: 'The ILO''s short_description'
     optional :full_outcome_description, type: String, desc: 'The ILO''s full_outcome_description'
     optional :linked_outcome_ids, type: Array[Integer], desc: 'The ids of the linked outcome ids'
+    requires :context_type_plural, type: String, desc: 'The context - a unit or task_definition', values: %w[units task_definitions]
   end
   post '/:context_type_plural/:context_id/outcomes' do
     # find context model dynamically
@@ -36,7 +33,7 @@ class LearningOutcomesApi < Grape::API
       error!({ error: 'You are not authorised to create outcomes in this context.' }, 403)
     end
 
-    outcome_params = declared(params, include_missing: false).except(:linked_outcome_ids)
+    outcome_params = declared(params, include_missing: false).except(:linked_outcome_ids, :context_type_plural)
     outcome_params[:context_type] = context_type
 
     learning_outcome = context_model.learning_outcomes.create!(outcome_params)
@@ -76,6 +73,7 @@ class LearningOutcomesApi < Grape::API
     optional :full_outcome_description, type: String, desc: 'The ILO''s full_outcome_description'
     optional :linked_outcome_ids, type: Array[Integer], desc: 'The ids of the linked outcome ids'
     # optional :ilo_number, type: Integer, desc: 'The ILO''s new sequence number'
+    requires :context_type_plural, type: String, desc: 'The context - a unit or task_definition', values: %w[units task_definitions]
   end
   put '/:context_type_plural/:context_id/outcomes/:id' do
     # find context model dynamically
@@ -128,6 +126,7 @@ class LearningOutcomesApi < Grape::API
   params do
     requires :context_id, type: Integer, desc: 'The id of the context'
     requires :id, type: Integer, desc: 'The id for the outcome you wish to delete'
+    requires :context_type_plural, type: String, desc: 'The context - a unit or task_definition', values: %w[units task_definitions]
   end
   delete '/:context_type_plural/:context_id/outcomes/:id' do
     # find context model dynamically
@@ -165,6 +164,7 @@ class LearningOutcomesApi < Grape::API
   params do
     requires :context_id, type: Integer, desc: 'The id of the context'
     optional :includes_tlos, type: Boolean, desc: 'Include nested task learning outcomes in the export'
+    requires :context_type_plural, type: String, desc: 'The context - a unit or task_definition', values: %w[units task_definitions]
   end
   get '/:context_type_plural/:context_id/outcomes/csv' do
     # find context model dynamically
@@ -190,6 +190,7 @@ class LearningOutcomesApi < Grape::API
   params do
     requires :file, type: File, desc: 'CSV upload file.'
     requires :context_id, type: Integer, desc: 'The id of the context'
+    requires :context_type_plural, type: String, desc: 'The context - a unit or task_definition', values: %w[units task_definitions]
   end
   post '/:context_type_plural/:context_id/outcomes/csv' do
     # check mime is correct before uploading

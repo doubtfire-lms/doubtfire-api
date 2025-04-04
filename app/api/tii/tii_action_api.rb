@@ -12,7 +12,7 @@ module Tii
 
     desc 'Get the outstanding turn it in actions'
     params do
-      optional :unit_id, type: Integer, desc: 'The id of the unit to filter by', default: nil
+      optional :unit_id, type: Integer, desc: 'The id of the unit to filter by'
       optional :limit, type: Integer, desc: 'The maximum number of actions to return', default: 50
       optional :offset, type: Integer, desc: 'The offset to start from', default: 0
       optional :show_complete, type: Boolean, desc: 'Include complete actions?', default: false
@@ -38,10 +38,10 @@ module Tii
     desc 'Trigger an action on the given group attachment'
     params do
       requires :action, type: String, desc: 'The action to perform: retry'
-      optional :unit_id, type: Integer, desc: 'The id of the unit to filter by', default: nil
+      # optional :unit_id, type: Integer, desc: 'The id of the unit to filter by'
     end
     put '/tii_actions/:id' do
-      unit = Unit.find(params[:unit_id]) if params[:unit_id].present?
+      # unit = Unit.find(params[:unit_id]) if params[:unit_id].present?
 
       unless authorise?(current_user, User, :admin_units)
         error!({ error: 'Not authorised to retry tasks' }, 403)

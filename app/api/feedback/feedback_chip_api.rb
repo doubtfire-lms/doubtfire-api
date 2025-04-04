@@ -11,11 +11,11 @@ module Feedback
       authenticated?
     end
 
-    route :context_type_plural, values: %w[units task_definitions] do
-      params[:context_type].pluralize
-    end
-
     desc "Get all feedback chips for a context"
+    params do
+      requires :context_type_plural, type: String, desc: 'The context - a unit or task_definition', values: %w[units task_definitions]
+      requires :context_id, type: Integer, desc: 'The ID of the context'
+    end
     get '/:context_type_plural/:context_id/feedback_chips' do
       context_type = params[:context_type_plural].singularize.camelize
       context_model = context_type.classify.constantize.find(params[:context_id])
@@ -153,6 +153,7 @@ module Feedback
     desc 'Download the feedback chips for a specific outcome' # change to specific context rather than outcome
     params do
       requires :id, type: Integer, desc: 'The ID of the context'
+      requires :context_type_plural, type: String, desc: 'The context - a unit or task_definition', values: %w[units task_definitions]
     end
     get '/:context_type_plural/:context_id/outcomes/:id/feedback_chips/csv' do
       # find context model dynamically
@@ -177,6 +178,7 @@ module Feedback
     params do
       requires :context_id, type: Integer, desc: 'The ID of the context'
       optional :includes_tlos, type: Boolean, desc: 'Include TLOs in the export'
+      requires :context_type_plural, type: String, desc: 'The context - a unit or task_definition', values: %w[units task_definitions]
     end
     get '/:context_type_plural/:context_id/feedback_chips/csv' do
       include_tlos = params[:includes_tlos] || false
@@ -201,13 +203,18 @@ module Feedback
     params do
       requires :file, type: File, desc: 'CSV upload file.'
       requires :id, type: Integer, desc: 'The id of the learning outcome'
+      requires :context_type_plural, type: String, desc: 'The context - a unit or task_definition', values: %w[units task_definitions]
+      requires :context_id, type: Integer, desc: 'The ID of the context'
     end
     post '/:context_type_plural/:context_id/outcomes/:id/feedback_chips/csv' do
       # check mime is correct before uploading
       ensure_csv!(params[:file][:tempfile])
 
+      context_type = params[:context_type_plural].singularize.camelize
+      context_model = context_type.classify.constantize.find(params[:context_id])
+
       # find context model dynamically
-      learning_outcome = LearningOutcome.find(params[:id])
+      learning_outcome = context_model.learning_outcomes.find(params[:id])
 
       unless authorise? current_user, learning_outcome, :upload_csv
         error!({ error: 'Not authorised to upload CSV of outcomes' }, 403)
@@ -220,6 +227,7 @@ module Feedback
     desc 'Upload the feedback chips for a specified context from a csv'
     params do
       requires :file, type: File, desc: 'CSV upload file.'
+      requires :context_type_plural, type: String, desc: 'The context - a unit or task_definition', values: %w[units task_definitions]
       requires :context_id, type: Integer, desc: 'The ID of the context'
     end
     post '/:context_type_plural/:context_id/feedback_chips/csv' do
