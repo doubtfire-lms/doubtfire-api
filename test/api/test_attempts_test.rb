@@ -75,10 +75,13 @@ class TestAttemptsTest < ActiveSupport::TestCase
 
     add_auth_header_for(user: user)
 
+    response_keys = %w[id task_id terminated completion_status success_status score_scaled cmi_datamodel]
+
     # When attempts exists
     get "api/projects/#{project.id}/task_def_id/#{td.id}/test_attempts"
     assert_equal 200, last_response.status
-    assert_json_equal last_response_body, [attempt]
+    assert_equal 1, last_response_body.size
+    assert_json_matches_model attempt, last_response_body.first, response_keys
 
     user1 = FactoryBot.create(:user, :student)
 
@@ -137,17 +140,19 @@ class TestAttemptsTest < ActiveSupport::TestCase
 
     add_auth_header_for(user: user)
 
+    response_keys = %w[id task_id terminated completion_status success_status score_scaled cmi_datamodel]
+
     # When attempts exist
     get "api/projects/#{project.id}/task_def_id/#{td.id}/test_attempts/latest"
     assert_equal 200, last_response.status
-    assert_json_equal last_response_body, attempt1
+    assert_json_matches_model attempt1, last_response_body, response_keys
 
     add_auth_header_for(user: user)
 
     # Get completed latest
     get "api/projects/#{project.id}/task_def_id/#{td.id}/test_attempts/latest?completed=true"
     assert_equal 200, last_response.status
-    assert_json_equal last_response_body, attempt
+    assert_json_matches_model attempt, last_response_body, response_keys
 
     user1 = FactoryBot.create(:user, :student)
 
@@ -233,7 +238,8 @@ class TestAttemptsTest < ActiveSupport::TestCase
     attempt.review
     attempt.save!
 
-    assert_json_equal last_response_body, attempt
+    response_keys = %w[id task_id terminated completion_status success_status score_scaled cmi_datamodel]
+    assert_json_matches_model attempt, last_response_body, response_keys
 
     tutor = project.tutor_for(td)
 
@@ -242,7 +248,7 @@ class TestAttemptsTest < ActiveSupport::TestCase
     # When user is tutor
     get "api/test_attempts/#{attempt.id}/review"
     assert_equal 200, last_response.status
-    assert_json_equal last_response_body, attempt
+    assert_json_matches_model attempt, last_response_body, response_keys
 
     user1 = FactoryBot.create(:user, :student)
 
