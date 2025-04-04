@@ -7,22 +7,17 @@ require 'onelogin/ruby-saml'
 # This is used by the grape api.
 #
 module AuthenticationHelpers
-  module_function
+  # private functions
 
+  # Check that the user and token are valid
+  # @param user_param [String] The username
+  # @param auth_param [String] The authentication token
+  # @param token_type [Symbol] The type of token to accept
   #
-  # Checks if the requested user is authenticated.
-  # Reads details from the params fetched from the caller context.
-  #
-  def authenticated?(token_type = :general)
-    if token_type == :refresh_token
-      # Access credentials from cookie
-      auth_param = cookies['refresh_token']
-      user_param = cookies['username']
-    else
-      auth_param = headers['auth-token'] || headers['Auth-Token'] || params['authToken'] || headers['Auth_Token'] || headers['auth_token'] || params['auth_token'] || params['Auth_Token']
-      user_param = headers['username'] || headers['Username'] || params['username']
-    end
-
+  # @returns [Symbol]
+  #   :valid if the user and token are valid
+  #   :token_expired if the token is expired
+  def user_auth_token_type(user_param, auth_param, token_type)
     # Check for valid auth token  and username in request header
     user = current_user
 
@@ -32,20 +27,86 @@ module AuthenticationHelpers
       token = user.token_for_text?(auth_param, token_type)
     end
 
-    # Check user by token
+    # Check user and token
     if user.present? && token.present?
+      # has the tolken not expired?
       if token.auth_token_expiry > Time.zone.now
         logger.info("Authenticated #{user.username} from #{request.ip}")
-        return true
+        :valid
+      else
+        # Token is timed out - destroy it and return error
+        token.destroy!
+        logger.info("Timing out token for #{user.username} from #{request.ip}")
+        :token_expired
       end
-
-      # Token is timed out - destroy it and throw error
-      logger.info("Timing out token for #{user.username} from #{request.ip}")
-      token.destroy!
-      error!({ error: 'Authentication token expired.' }, 419)
     elsif token.present?
       logger.info("Error logging in for #{user_param} / #{auth_param} from #{request.ip}")
+      :error
+    else
+      :missing_details
+    end
+  end
 
+  #
+  # Public functions
+  #
+  module_function
+
+  def authenticated_via_refresh_token?
+    auth_param = cookies['refresh_token']
+    user_param = cookies['username']
+
+    case user_auth_token_type(user_param, auth_param, :refresh_token)
+    when :valid
+      # Valid token and user
+      true
+    when :token_expired, :error, :missing_details
+      # Token expired - remove cookies
+      add_refresh_cookie_to_response(false)
+      false
+    end
+  end
+
+  # Get the user and token from the request
+  # @param source [Symbol] The source of the request
+  #   :header - from the request header
+  #   :cookie - from the request cookie
+  # @return [String, String] The username and token
+  def get_user_and_token_from(source)
+    if source == :header
+      user_param = headers['username'] || headers['Username'] || params['username']
+      auth_param = headers['auth-token'] || headers['Auth-Token'] || params['authToken'] || headers['Auth_Token'] || headers['auth_token'] || params['auth_token'] || params['Auth_Token']
+    elsif source == :cookie
+      user_param = cookies['username']
+      auth_param = cookies['refresh_token']
+    else
+      # Default to nil
+      user_param = nil
+      auth_param = nil
+    end
+
+    [user_param, auth_param]
+  end
+
+  #
+  # Checks if the requested user is authenticated.
+  # Reads details from the params fetched from the caller context.
+  #
+  def authenticated?(token_type = :general)
+    if token_type == :refresh_token
+      # Access credentials from cookie
+      user_param, auth_param = get_user_and_token_from(:cookie)
+    else
+      user_param, auth_param = get_user_and_token_from(:header)
+    end
+
+    case user_auth_token_type(user_param, auth_param, token_type)
+    when :valid
+      true
+    when :token_expired
+      # Token is timed out - destroy it and throw error
+      error!({ error: 'Authentication token expired.' }, 419)
+    when :error
       # Add random delay then fail
       sleep(rand(200..399) / 1000.0)
       error!({ error: 'Could not authenticate with token. Username or Token invalid.' }, 419)
@@ -58,7 +119,7 @@ module AuthenticationHelpers
   # Get the current user either from warden or from the header
   #
   def current_user
-    username = headers['username'] || headers['Username'] || params['username']
+    username = headers['username'] || headers['Username'] || params['username'] || cookies['username']
     User.eager_load(:role, :auth_tokens).find_by(username: username)
   end
 
@@ -148,9 +209,9 @@ module AuthenticationHelpers
     if remember
       token = current_user.auth_tokens.where(token_type: :refresh_token).last
 
-      if token.nil? || token.auth_token_expiry <= Time.zone.now - 8.hours
-        token&.destroy
-        token = current_user.generate_authentication_token!(token_type: :refresh_token)
+      # Generate a new token when the old one is absent or getting close to expiring
+      if token.nil? || token.auth_token_expiry <= Time.zone.now - 12.hours
+        token = current_user.generate_authentication_token!(token_type: :refresh_token, expiry: Time.zone.now + 1.week)
       end
 
       domain = Doubtfire::Application.config.institution[:cookie_domain]
