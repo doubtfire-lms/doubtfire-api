@@ -353,6 +353,9 @@ class AuthenticationApi < Grape::API
            }
          }
        }
+  params do
+    requires :remember, type: Boolean, desc: 'Retain the refresh token?', default: false
+  end
   delete '/auth' do
     user = User.find_by(username: headers['username'] || headers['Username'])
     token = user&.token_for_text?(headers['auth-token'] || headers['Auth-Token'], :general)
@@ -362,20 +365,21 @@ class AuthenticationApi < Grape::API
       token.destroy!
     end
 
-    if cookies['refresh_token'].present?
+    if cookies['refresh_token'].present? && !params[:remember]
       auth_param = cookies['refresh_token']
       user_param = cookies['username']
 
       user = User.find_by(username: user_param)
       token = user&.token_for_text?(auth_param, :refresh_token)
       if token.present?
-        logger.info "Sign out #{user.username} from #{request.ip}"
+        logger.info "Destroy refresh token for #{user.username} from #{request.ip}"
         token.destroy!
       end
     end
 
+    # Remove the refresh token cookie - if remember is false
+    add_refresh_cookie_to_response(false) unless params[:remember]
     present nil
-    add_refresh_cookie_to_response(false)
   end
 
   desc 'Get SCORM authentication token'
@@ -396,13 +400,29 @@ class AuthenticationApi < Grape::API
   end
 
   desc 'Get access token from the refresh token cookie'
+  params do
+    optional :delete_auth_token, type: Boolean, desc: 'Delete the auth token if also provided', default: true
+  end
   post '/auth/access-token' do
-    if authenticated?(:refresh_token)
+    if authenticated_via_refresh_token?
+      # Check if we have a auth token as well
+      if params[:delete_auth_token]
+        user_param, auth_param = get_user_and_token_from(:cookie)
+        case user_auth_token_type(user_param, auth_param, :general)
+        when :valid
+          # Valid token and user
+          token = current_user.token_for_text?(auth_param, :general)
+          if token.present?
+            token.destroy!
+            logger.info "Destroying auth token for #{current_user.username} from #{request.ip}"
+          end
+        end
+      end
       # Return user details
       present :user, current_user, with: Entities::UserEntity
-      present :auth_token, current_user.generate_authentication_token!(token_type: :general).authentication_token
+      present :auth_token, current_user.generate_authentication_token!(token_type: :general, force_new: false).authentication_token
     else
-      error!({ error: 'Invalid refresh token.' }, 404)
+      present nil
     end
   end
 end
