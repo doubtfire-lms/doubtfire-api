@@ -21,7 +21,8 @@ class AuthTest < ActiveSupport::TestCase
   def test_auth_post
     data_to_post = {
       username: 'aadmin',
-      password: 'password'
+      password: 'password',
+      remember: true
     }
     # Get response back for logging in with username 'aadmin' password 'password'
     post_json '/api/auth.json', data_to_post
@@ -50,6 +51,30 @@ class AuthTest < ActiveSupport::TestCase
 
     # User has the token - count of matching tokens for that user is 1
     assert_equal 1, expected_auth.auth_tokens.select{|t| t.authentication_token == actual_auth['auth_token']}.count
+
+    # Check we got a refresh token
+    assert last_response.cookies['refresh_token'], 'Expect refresh token to be set'
+    assert last_response.cookies['username'], 'Expect username to be set'
+
+    refresh_token = User.first.auth_tokens.where(token_type: :refresh_token).last
+    assert refresh_token.present?
+    assert_match(/refresh_token=#{refresh_token.authentication_token};/, last_response.cookies['refresh_token'].to_s, 'Expect refresh token to be set')
+    assert_match(/username=#{User.first.username};/, last_response.cookies['username'].to_s, 'Expect username to be set')
+  end
+
+  def test_auth_no_remember
+    data_to_post = {
+      username: 'aadmin',
+      password: 'password',
+      remember: false
+    }
+    # Get response back for logging in with username 'aadmin' password 'password'
+    post_json '/api/auth.json', data_to_post
+
+    assert_equal 201, last_response.status
+
+    assert_match(/refresh_token=;/, last_response.cookies['refresh_token'].to_s, 'Expect refresh token to be deleted')
+    assert_match(/username=;/, last_response.cookies['username'].to_s, 'Expect username to be deleted')
   end
 
   # Test auth when username is invalid
@@ -152,90 +177,6 @@ class AuthTest < ActiveSupport::TestCase
   # End POST tests
   # --------------------------------------------------------------------------- #
 
-  # --------------------------------------------------------------------------- #
-  # PUT tests
-
-  # Test put for authentication token
-  def test_auth_put
-    add_auth_header_for(user: User.first)
-    put_json "/api/auth", nil
-
-    actual_auth = last_response_body['auth_token']
-    expected_auth = auth_token
-    # Check to see if the response auth token matches the auth token that was sent through in put
-    assert_equal expected_auth, actual_auth
-  end
-
-  def test_auth_using_query_string
-    put_json "/api/auth?Username=#{User.first.username}&Auth-Token=#{auth_token(User.first)}", nil
-    assert_equal 200, last_response.status, last_response_body
-  end
-
-  # Test invalid authentication token
-  def test_fail_auth_put
-    # Override data to set custom username or token in header
-    # Add authentication token to header
-    add_auth_header_for(user: User.first, auth_token: '1234')
-    put_json "/api/auth", nil
-    actual_auth = last_response_body
-    expected_auth = auth_token
-
-    # 404 response code means invalid token
-    assert_equal 404, last_response.status
-
-    # Check to see if the response is invalid
-    assert actual_auth.key? 'error'
-  end
-
-  # Test invalid username for valid authentication token
-  def test_fail_username_put
-    # Add authentication token to header
-    add_auth_header_for(user: User.first, username: 'acain123')
-    put_json "/api/auth", nil
-    actual_auth = last_response_body
-    expected_auth = auth_token
-
-    # 404 response code means invalid token
-    assert_equal 404, last_response.status
-
-    # Check to see if the response is invalid
-    assert actual_auth.key? 'error'
-  end
-
-  # Test valid username for empty authentication token
-  def test_fail_empty_authKey_put
-    # Add authentication token to header
-    add_auth_header_for(user: User.first)
-
-    # Overwrite header for empty auth_token
-    header 'auth_token',''
-
-    put_json "/api/auth/", nil
-    actual_auth = last_response_body
-    expected_auth = auth_token
-
-    # 404 response code means invalid token
-    assert_equal 404, last_response.status
-
-    # Check to see if the response is invalid
-    assert actual_auth.key? 'error'
-  end
-
-  # Test empty request
-  def test_fail_empty_body_put
-    put_json "/api/auth", nil
-    actual_auth = last_response_body
-    expected_auth = auth_token
-
-    # 400 response code means empty body
-    assert_equal 404, last_response.status
-
-    # Check to see if the response is invalid
-    assert actual_auth.key? 'error'
-  end
-  # # End PUT tests
-  # # --------------------------------------------------------------------------- #
-
   # # --------------------------------------------------------------------------- #
   # # DELETE tests
 
@@ -244,9 +185,50 @@ class AuthTest < ActiveSupport::TestCase
     # Add authentication token to header
     add_auth_header_for(user: User.first)
 
-    delete "/api/auth", nil
+    delete "/api/auth", { remember: false }
     # 204 response code means success!
     assert_equal 204, last_response.status
+
+    assert_match(/username=;/, last_response.cookies['username'].to_s)
+    assert_match(/refresh_token=;/, last_response.cookies['refresh_token'].to_s)
+  end
+
+  def test_refresh_token
+    user = FactoryBot.create(:user)
+    token = user.generate_authentication_token!(token_type: :refresh_token)
+
+    count = user.auth_tokens.count
+
+    set_cookie "username=#{user.username}"
+    set_cookie "refresh_token=#{token.authentication_token}"
+
+    post '/api/auth/access-token', { remember: true }
+
+    assert_equal 201, last_response.status
+    assert_equal count + 1, user.auth_tokens.count
+
+    new_token = user.auth_tokens.last
+
+    assert_equal :general, new_token.token_type.to_sym
+    assert_equal last_response_body['auth_token'], new_token.authentication_token
+
+    # Test using to refresh the auth token
+    add_auth_header_for(user: user, auth_token: new_token.authentication_token)
+
+    # Test it returns existing and does not delete old asked not to
+    post '/api/auth/access-token', { remember: true, delete_auth_token: false }
+    assert_equal count + 1, user.auth_tokens.count
+    assert AuthToken.exists?(new_token.id)
+
+    # Test it adds one and deletes the old token
+    post '/api/auth/access-token', { remember: true, delete_auth_token: true }
+    assert_equal count + 1, user.auth_tokens.count
+    assert_not AuthToken.exists?(new_token.id)
+
+    new_new_token = user.auth_tokens.last
+
+    assert_not_equal last_response_body['auth_token'], new_token.authentication_token
+    assert_equal last_response_body['auth_token'], new_new_token.authentication_token
   end
 
   def test_token_signout_works_with_multiple
@@ -260,10 +242,10 @@ class AuthTest < ActiveSupport::TestCase
     add_auth_header_for(username: user.username, auth_token: t1.authentication_token)
 
     # Sign out one
-    delete "/api/auth.json"
+    delete '/api/auth.json', { remember: false }
 
     t2.reload
-    refute t2.destroyed?
+    assert_not t2.destroyed?
 
     assert_raises(ActiveRecord::RecordNotFound) { t1.reload }
   end
