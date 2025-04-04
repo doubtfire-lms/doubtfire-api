@@ -289,52 +289,6 @@ class AuthenticationApi < Grape::API
   end
 
   #
-  # Update the expiry of an existing authentication token
-  #
-  desc 'Allow tokens to be updated',
-       {
-         headers:
-         {
-           "username" =>
-           {
-             description: "User username",
-             required: true
-           },
-           "auth_token" =>
-           {
-             description: "The user's temporary auth token",
-             required: true
-           }
-         }
-       }
-  params do
-    optional :remember, type: Boolean, desc: 'User has requested to remember login', default: false
-  end
-  put '/auth' do
-    token_param = headers['auth-token'] || headers['Auth-Token'] || params['Auth-Token']
-    user_param = headers['username'] || headers['Username'] || params['Username'] || params['username']
-
-    error!({ error: 'Invalid token/username.' }, 404) if token_param.nil? || user_param.nil?
-
-    logger.info "Update token #{token_param} from #{request.ip} for #{user_param}"
-
-    # Find user
-    user = User.find_by(username: user_param)
-    token = user.token_for_text?(token_param, :general) unless user.nil?
-    remember = params[:remember] || false
-
-    # Token does not match user
-    if token.nil? || user.nil? || user.username != user_param
-      error!({ error: 'Invalid token.' }, 404)
-    else
-      token.extend_token remember if token.auth_token_expiry > Time.zone.now
-
-      # Return extended auth token
-      present :auth_token, token.authentication_token
-    end
-  end
-
-  #
   # Sign out
   #
   desc 'Sign out',
@@ -407,7 +361,7 @@ class AuthenticationApi < Grape::API
     if authenticated_via_refresh_token?
       # Check if we have a auth token as well
       if params[:delete_auth_token]
-        user_param, auth_param = get_user_and_token_from(:cookie)
+        user_param, auth_param = get_user_and_token_from(:header)
         case user_auth_token_type(user_param, auth_param, :general)
         when :valid
           # Valid token and user
