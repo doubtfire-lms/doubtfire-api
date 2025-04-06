@@ -28,7 +28,8 @@ class Unit < ApplicationRecord
       :download_stats,
       :download_unit_csv,
       :download_grades,
-      :exceed_capacity
+      :exceed_capacity,
+      :grant_extensions
     ]
 
     # What can convenors do with units?
