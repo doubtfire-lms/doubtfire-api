@@ -2,6 +2,90 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-1](https://github.com/macite/doubtfire-deploy/compare/v8.0.42...v10.0.0-1) (2025-04-09)
+
+
+### Features
+
+* add ability to set an institution logo to add to header ([267cf19](https://github.com/macite/doubtfire-deploy/commit/267cf19c15632a5b24d9f2915bbf1b59ff297fe4))
+* add refresh token auth handling ([e0129b9](https://github.com/macite/doubtfire-deploy/commit/e0129b9e393d9a6df1efd2e75a276f4cd38c36de))
+* added feedback chips, migrated learning outcome table changes, working on testing files for both ([182e06c](https://github.com/macite/doubtfire-deploy/commit/182e06ccd18a0abec3a30b8882458cce0c12ebd3))
+* added feedback chips, migrated learning outcome table changes, working on testing files for both ([1639205](https://github.com/macite/doubtfire-deploy/commit/16392058d7acab5a994c6b310fd55efdf08f1c33))
+* enable saml config per institution ([b1e17bf](https://github.com/macite/doubtfire-deploy/commit/b1e17bf1563c66de19f3f8bd6fa8072f2cd8fe5a))
+* made changes to feedback chips schema, removing redundant components, updated models and tests to reflect this ([84c3358](https://github.com/macite/doubtfire-deploy/commit/84c3358a755aabb7a1f02c98c725d3db7b2e02cd))
+* made changes to feedback chips schema, removing redundant components, updated models and tests to reflect this ([9eebc54](https://github.com/macite/doubtfire-deploy/commit/9eebc541b0c4a03017b7f0a5a2c2cd2e0ddb9969))
+* move to secure cookies and refresh tokens ([31975b7](https://github.com/macite/doubtfire-deploy/commit/31975b7b4475a854ba0adacf6bdb6e8ab45392ec))
+* show outcomes in portfolio and task pdfs ([7694726](https://github.com/macite/doubtfire-deploy/commit/76947269e83e577a124b6f0252d758951497f0a1))
+* started work on feedback chip api and modifications to learning outcome ([5b99b69](https://github.com/macite/doubtfire-deploy/commit/5b99b69e9297d55ab5a3cab0576d10ae47099ba5))
+* started work on feedback chip api and modifications to learning outcome ([1fc1569](https://github.com/macite/doubtfire-deploy/commit/1fc1569586fabe8be82b19e4543f7f3d36fb2498))
+
+
+### Bug Fixes
+
+* add include_tlo flag to feedback_chip csv download ([5bfafc3](https://github.com/macite/doubtfire-deploy/commit/5bfafc3cb87f39632df55daa2bd744e7c9b6325d))
+* add learning outcome abbreviation uniqueness ([655493f](https://github.com/macite/doubtfire-deploy/commit/655493f8e7f605a214c9d89856a4d811bca7c20c))
+* add task_status check for csv upload ([0147aff](https://github.com/macite/doubtfire-deploy/commit/0147aff9c22116ed03af4b7447d967b00e3fac98))
+* allow docker exec to work in gh actions ([807f567](https://github.com/macite/doubtfire-deploy/commit/807f567b636b2830458ed3368fef0861c27d956e))
+* correct routes for swagger support ([b0026ab](https://github.com/macite/doubtfire-deploy/commit/b0026ab5b571f7b82b647e4677b26217604bc1e3))
+* enhance auth for feedback chips including adding tests ([f038bdd](https://github.com/macite/doubtfire-deploy/commit/f038bdd4d4132d0464a40fa0fb02489ddd223260))
+* ensure log is still copied if pdf gen fails ([0370df4](https://github.com/macite/doubtfire-deploy/commit/0370df41ce119b8fba2a09ab108840f55b6007d6))
+* ensure new rollover units are not marked archived ([4dee4d7](https://github.com/macite/doubtfire-deploy/commit/4dee4d7c05a10056d47914d36b00ac7092bac3f0))
+* ensure task link migration works without model ([836e247](https://github.com/macite/doubtfire-deploy/commit/836e247137d5ccd6f92a5062a6084125838b4c2c))
+* fix global group chip creation ([eecb2ce](https://github.com/macite/doubtfire-deploy/commit/eecb2ce71c5479481f94ab4877eed83607b1ba1c))
+* global outcome chip upload ([57e1e6c](https://github.com/macite/doubtfire-deploy/commit/57e1e6ccb5f02b8d1449bbceef11c65ad98342af))
+* group chip not updating ([f02b22a](https://github.com/macite/doubtfire-deploy/commit/f02b22a01786635c47dd97b5082e49bb634f1949))
+* move group_id storage from summary_text to comment_text ([fa424d3](https://github.com/macite/doubtfire-deploy/commit/fa424d35193c65a5f6e64770cb961a909a86ee2c))
+* remove auth put and fix token cycling ([59aa38a](https://github.com/macite/doubtfire-deploy/commit/59aa38a5f2649163281ac136f795f9d74629c153))
+* remove missed api mount ([0b237a7](https://github.com/macite/doubtfire-deploy/commit/0b237a77a1517176317fa57157d9a057bc47c3e0))
+* reorder migrations to ensure they run together ([2d04b1d](https://github.com/macite/doubtfire-deploy/commit/2d04b1d8c5801323d49b0f198bb62d7c897b4fdc))
+* revert ruby version for development deploy branch ([c05f3cb](https://github.com/macite/doubtfire-deploy/commit/c05f3cbaad9cbf3e6c42cf4fff052616e221e192))
+* set correct exit status ([a63cee8](https://github.com/macite/doubtfire-deploy/commit/a63cee85efb0c1c4980743d18660af7da805d491))
+* set dockerfile context ([0f993a9](https://github.com/macite/doubtfire-deploy/commit/0f993a993dcb8636804fabcff23331d5a097b1ec))
+* task_status csv validation ([ddb166b](https://github.com/macite/doubtfire-deploy/commit/ddb166b43e6c9667732e727c25a0128c139a2f7a))
+* update create_from_csv to validate same abbreviation tlos ([242f38a](https://github.com/macite/doubtfire-deploy/commit/242f38a81dc6c8c94d0b77753563076acdc1ff1a))
+
+## [8.1.0](https://github.com/macite/doubtfire-deploy/compare/v8.0.42...v8.1.0) (2025-04-09)
+
+
+### Features
+
+* add ability to set an institution logo to add to header ([267cf19](https://github.com/macite/doubtfire-deploy/commit/267cf19c15632a5b24d9f2915bbf1b59ff297fe4))
+* add refresh token auth handling ([e0129b9](https://github.com/macite/doubtfire-deploy/commit/e0129b9e393d9a6df1efd2e75a276f4cd38c36de))
+* added feedback chips, migrated learning outcome table changes, working on testing files for both ([182e06c](https://github.com/macite/doubtfire-deploy/commit/182e06ccd18a0abec3a30b8882458cce0c12ebd3))
+* added feedback chips, migrated learning outcome table changes, working on testing files for both ([1639205](https://github.com/macite/doubtfire-deploy/commit/16392058d7acab5a994c6b310fd55efdf08f1c33))
+* enable saml config per institution ([b1e17bf](https://github.com/macite/doubtfire-deploy/commit/b1e17bf1563c66de19f3f8bd6fa8072f2cd8fe5a))
+* made changes to feedback chips schema, removing redundant components, updated models and tests to reflect this ([84c3358](https://github.com/macite/doubtfire-deploy/commit/84c3358a755aabb7a1f02c98c725d3db7b2e02cd))
+* made changes to feedback chips schema, removing redundant components, updated models and tests to reflect this ([9eebc54](https://github.com/macite/doubtfire-deploy/commit/9eebc541b0c4a03017b7f0a5a2c2cd2e0ddb9969))
+* move to secure cookies and refresh tokens ([31975b7](https://github.com/macite/doubtfire-deploy/commit/31975b7b4475a854ba0adacf6bdb6e8ab45392ec))
+* show outcomes in portfolio and task pdfs ([7694726](https://github.com/macite/doubtfire-deploy/commit/76947269e83e577a124b6f0252d758951497f0a1))
+* started work on feedback chip api and modifications to learning outcome ([5b99b69](https://github.com/macite/doubtfire-deploy/commit/5b99b69e9297d55ab5a3cab0576d10ae47099ba5))
+* started work on feedback chip api and modifications to learning outcome ([1fc1569](https://github.com/macite/doubtfire-deploy/commit/1fc1569586fabe8be82b19e4543f7f3d36fb2498))
+
+
+### Bug Fixes
+
+* add include_tlo flag to feedback_chip csv download ([5bfafc3](https://github.com/macite/doubtfire-deploy/commit/5bfafc3cb87f39632df55daa2bd744e7c9b6325d))
+* add learning outcome abbreviation uniqueness ([655493f](https://github.com/macite/doubtfire-deploy/commit/655493f8e7f605a214c9d89856a4d811bca7c20c))
+* add task_status check for csv upload ([0147aff](https://github.com/macite/doubtfire-deploy/commit/0147aff9c22116ed03af4b7447d967b00e3fac98))
+* allow docker exec to work in gh actions ([807f567](https://github.com/macite/doubtfire-deploy/commit/807f567b636b2830458ed3368fef0861c27d956e))
+* correct routes for swagger support ([b0026ab](https://github.com/macite/doubtfire-deploy/commit/b0026ab5b571f7b82b647e4677b26217604bc1e3))
+* enhance auth for feedback chips including adding tests ([f038bdd](https://github.com/macite/doubtfire-deploy/commit/f038bdd4d4132d0464a40fa0fb02489ddd223260))
+* ensure log is still copied if pdf gen fails ([0370df4](https://github.com/macite/doubtfire-deploy/commit/0370df41ce119b8fba2a09ab108840f55b6007d6))
+* ensure new rollover units are not marked archived ([4dee4d7](https://github.com/macite/doubtfire-deploy/commit/4dee4d7c05a10056d47914d36b00ac7092bac3f0))
+* ensure task link migration works without model ([836e247](https://github.com/macite/doubtfire-deploy/commit/836e247137d5ccd6f92a5062a6084125838b4c2c))
+* fix global group chip creation ([eecb2ce](https://github.com/macite/doubtfire-deploy/commit/eecb2ce71c5479481f94ab4877eed83607b1ba1c))
+* global outcome chip upload ([57e1e6c](https://github.com/macite/doubtfire-deploy/commit/57e1e6ccb5f02b8d1449bbceef11c65ad98342af))
+* group chip not updating ([f02b22a](https://github.com/macite/doubtfire-deploy/commit/f02b22a01786635c47dd97b5082e49bb634f1949))
+* move group_id storage from summary_text to comment_text ([fa424d3](https://github.com/macite/doubtfire-deploy/commit/fa424d35193c65a5f6e64770cb961a909a86ee2c))
+* remove auth put and fix token cycling ([59aa38a](https://github.com/macite/doubtfire-deploy/commit/59aa38a5f2649163281ac136f795f9d74629c153))
+* remove missed api mount ([0b237a7](https://github.com/macite/doubtfire-deploy/commit/0b237a77a1517176317fa57157d9a057bc47c3e0))
+* reorder migrations to ensure they run together ([2d04b1d](https://github.com/macite/doubtfire-deploy/commit/2d04b1d8c5801323d49b0f198bb62d7c897b4fdc))
+* revert ruby version for development deploy branch ([c05f3cb](https://github.com/macite/doubtfire-deploy/commit/c05f3cbaad9cbf3e6c42cf4fff052616e221e192))
+* set correct exit status ([a63cee8](https://github.com/macite/doubtfire-deploy/commit/a63cee85efb0c1c4980743d18660af7da805d491))
+* set dockerfile context ([0f993a9](https://github.com/macite/doubtfire-deploy/commit/0f993a993dcb8636804fabcff23331d5a097b1ec))
+* task_status csv validation ([ddb166b](https://github.com/macite/doubtfire-deploy/commit/ddb166b43e6c9667732e727c25a0128c139a2f7a))
+* update create_from_csv to validate same abbreviation tlos ([242f38a](https://github.com/macite/doubtfire-deploy/commit/242f38a81dc6c8c94d0b77753563076acdc1ff1a))
+
 ### [8.0.42](https://github.com/macite/doubtfire-deploy/compare/v8.0.41...v8.0.42) (2025-03-10)
 
 
