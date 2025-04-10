@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-3](https://github.com/macite/doubtfire-deploy/compare/v10.0.0-2...v10.0.0-3) (2025-04-10)
+
+
+### Bug Fixes
+
+* ensure stdin is attached to to latex exec ([d0a4002](https://github.com/macite/doubtfire-deploy/commit/d0a40020f8ac739ed7df36e41c5d61ea16d5daa6))
+
 ## [10.0.0-2](https://github.com/macite/doubtfire-deploy/compare/v10.0.0-1...v10.0.0-2) (2025-04-10)
 
 ## [10.0.0-1](https://github.com/macite/doubtfire-deploy/compare/v8.0.42...v10.0.0-1) (2025-04-09)
