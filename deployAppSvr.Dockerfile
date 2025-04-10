@@ -1,7 +1,7 @@
 #
 # deployAppSrc.Dockerfile - the container used for back end processing
 #
-FROM ruby:3.1-bullseye
+FROM ruby:3.4-bookworm
 
 # Setup dependencies
 ARG DEBIAN_FRONTEND=noninteractive
@@ -49,9 +49,8 @@ RUN bundle install
 COPY . /doubtfire/
 
 # Crontab file copied to cron.d directory.
-COPY ./.ci-setup/pdfGen/entry_point.sh /doubtfire/
-COPY ./.ci-setup/pdfGen/crontab /etc/cron.d/container_cronjob
+COPY ./.ci-setup/crontab /etc/cron.d/container_cronjob
 
 RUN touch /var/log/cron.log
 
-CMD /doubtfire/entry_point.sh
+CMD /doubtfire/lib/shell/pdfgen_entry_point.sh
