@@ -1,7 +1,10 @@
 #!/bin/bash
 
 # Start the run once job.
-echo "Docker container has been started"
+echo "Pdfgen docker container has been started"
+
+# Setup new aliases
+newaliases
 
 # Save the docker user environment
 declare -p | grep -Ev 'BASHOPTS|BASH_VERSINFO|EUID|PPID|SHELLOPTS|UID' > /container.env
@@ -17,6 +20,15 @@ crontab -r
 crontab /etc/cron.d/container_cronjob
 
 echo "RESET CRONTAB" >> /var/log/cron.log
+
+# Setup msmptrc
+if [ -f "/shared-files/msmtprc" ]; then
+  echo "Copying msmtprc file from shared-files"
+  cp -f /shared-files/msmtprc /etc;
+else
+  echo "msmtprc file not found in shared-files, using default configuration"
+fi
+
 
 # Ensure mail settings are accessible only by root
 chown root:root /etc/msmtprc

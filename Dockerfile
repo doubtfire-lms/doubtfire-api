@@ -36,9 +36,6 @@ WORKDIR /doubtfire
 
 COPY ./.ci-setup/ /doubtfire/.ci-setup/
 
-# RUN ./.ci-setup/texlive-install.sh
-# ENV PATH=/tmp/texlive/bin/x86_64-linux:/tmp/texlive/bin/aarch64-linux:$PATH
-
 RUN gem install bundler -v '2.6.6'
 
 COPY Gemfile /doubtfire/Gemfile
