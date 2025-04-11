@@ -19,8 +19,8 @@ class ExtensionService
 
     # ===== Student Request Logic (current endpoint) =====
     unless is_staff_grant
-      # Check task-level authorization for student requests
-      unless AuthorisationHelpers.authorise?(user, task, :request_extension)
+      # Check task-level authorization for student requests with specific permission hash
+      unless AuthorisationHelpers.authorise?(user, task, :request_extension, ->(role, perm_hash, other) { task.specific_permission_hash(role, perm_hash, other) })
         return { success: false, error: 'Not authorised to request an extension for this task', status: 403 }
       end
     end
