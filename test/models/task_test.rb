@@ -83,7 +83,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status, last_response_body
 
     task = project.task_for_task_definition(td)
-    assert task.convert_submission_to_pdf(log_to_stdout: false)
+    assert task.convert_submission_to_pdf(log_to_stdout: true)
     path = task.zip_file_path_for_done_task
     assert path
     assert File.exist? path
@@ -170,7 +170,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status
 
     task = project.task_for_task_definition(td)
-    assert task.convert_submission_to_pdf(log_to_stdout: false)
+    assert task.convert_submission_to_pdf(log_to_stdout: true)
     path = task.zip_file_path_for_done_task
     assert path
     assert File.exist? path
@@ -361,7 +361,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status, last_response_body
 
     task = project.task_for_task_definition(td)
-    assert task.convert_submission_to_pdf(log_to_stdout: false)
+    assert task.convert_submission_to_pdf(log_to_stdout: true)
     path = task.zip_file_path_for_done_task
     assert path
     assert File.exist? path
@@ -391,7 +391,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status, last_response_body
 
     # test submission generation
-    assert task.convert_submission_to_pdf(log_to_stdout: false)
+    assert task.convert_submission_to_pdf(log_to_stdout: true)
     path = task.zip_file_path_for_done_task
     assert path
     assert File.exist? path
@@ -408,7 +408,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status, last_response_body
 
     # test submission generation
-    assert task.convert_submission_to_pdf(log_to_stdout: false)
+    assert task.convert_submission_to_pdf(log_to_stdout: true)
     path = task.zip_file_path_for_done_task
     assert path
     assert File.exist? path
@@ -460,7 +460,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     # test submission generation
     task = project.task_for_task_definition(td)
-    assert task.convert_submission_to_pdf(log_to_stdout: false)
+    assert task.convert_submission_to_pdf(log_to_stdout: true)
     path = task.zip_file_path_for_done_task
     assert path
     assert File.exist? path
@@ -483,7 +483,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     # test submission generation
     task = project.task_for_task_definition(td)
-    assert task.convert_submission_to_pdf(log_to_stdout: false)
+    assert task.convert_submission_to_pdf(log_to_stdout: true)
     path = task.zip_file_path_for_done_task
     assert path
     assert File.exist? path
@@ -534,7 +534,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     # test submission generation
     task = project.task_for_task_definition(td)
-    assert task.convert_submission_to_pdf(log_to_stdout: false)
+    assert task.convert_submission_to_pdf(log_to_stdout: true)
     path = task.zip_file_path_for_done_task
     assert path
     assert File.exist? path
@@ -557,7 +557,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     # test submission generation
     task = project.task_for_task_definition(td)
-    assert task.convert_submission_to_pdf(log_to_stdout: false)
+    assert task.convert_submission_to_pdf(log_to_stdout: true)
     path = task.zip_file_path_for_done_task
     assert path
     assert File.exist? path
@@ -608,7 +608,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     # test submission generation
     task = project.task_for_task_definition(td)
-    assert task.convert_submission_to_pdf(log_to_stdout: false)
+    assert task.convert_submission_to_pdf(log_to_stdout: true)
     path = task.zip_file_path_for_done_task
     assert path
     assert File.exist? path
@@ -631,7 +631,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     # test submission generation
     task = project.task_for_task_definition(td)
-    assert task.convert_submission_to_pdf(log_to_stdout: false)
+    assert task.convert_submission_to_pdf(log_to_stdout: true)
     path = task.zip_file_path_for_done_task
     assert path
     assert File.exist? path
@@ -704,7 +704,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status, last_response_body
 
     task = project.task_for_task_definition(td)
-    assert task.convert_submission_to_pdf(log_to_stdout: false)
+    assert task.convert_submission_to_pdf(log_to_stdout: true)
     path = task.zip_file_path_for_done_task
     assert path
     assert File.exist? path
@@ -803,7 +803,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     FileUtils.mkdir_p(rails_latex_path)
     FileUtils.cp(Rails.root.join('test_files/latex/input-broken.aux'), "#{rails_latex_path}/input.aux")
 
-    assert task.convert_submission_to_pdf(log_to_stdout: false)
+    assert task.convert_submission_to_pdf(log_to_stdout: true)
     path = task.zip_file_path_for_done_task
     assert path
     assert File.exist? path
@@ -1124,7 +1124,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status, last_response_body
 
     task = project.task_for_task_definition(td)
-    assert task.convert_submission_to_pdf(log_to_stdout: false)
+    assert task.convert_submission_to_pdf(log_to_stdout: true)
     path = task.zip_file_path_for_done_task
     assert path
     assert File.exist? path
