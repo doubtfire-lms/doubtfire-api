@@ -87,10 +87,10 @@ jobs:
         with:
           image: doubtfire-api-development:local
           options: >
-            -it
+            -t
             -v ${{ github.workspace }}:/doubtfire
             -v /var/run/docker.sock:/var/run/docker.sock
-          run: docker exec -it ${{ env.LATEX_CONTAINER_NAME }} lualatex -v
+          run: docker exec -t ${{ env.LATEX_CONTAINER_NAME }} lualatex -v
       - name: Populate database
         uses: addnab/docker-run-action@v3
         with:
@@ -124,10 +124,10 @@ jobs:
         with:
           image: doubtfire-api-development:local
           options: >
-            -it
             -v ${{ github.workspace }}:/doubtfire
             -v ${{ github.workspace }}/student-work:/student-work
             -v /var/run/docker.sock:/var/run/docker.sock
+            -v ${{ github.workspace }}/lib/shell/latex_run_notty.sh:/doubtfire/lib/shell/latex_run.sh
             -e RAILS_ENV
             -e DF_STUDENT_WORK_DIR
             -e DF_INSTITUTION_HOST
