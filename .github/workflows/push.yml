@@ -123,6 +123,7 @@ jobs:
         with:
           image: doubtfire-api-development:local
           options: >
+            -t
             -v ${{ github.workspace }}:/doubtfire
             -v ${{ github.workspace }}/student-work:/student-work
             -v /var/run/docker.sock:/var/run/docker.sock
