@@ -87,6 +87,7 @@ jobs:
         with:
           image: doubtfire-api-development:local
           options: >
+            -it
             -v ${{ github.workspace }}:/doubtfire
             -v /var/run/docker.sock:/var/run/docker.sock
           run: docker exec -it ${{ env.LATEX_CONTAINER_NAME }} lualatex -v
@@ -123,7 +124,7 @@ jobs:
         with:
           image: doubtfire-api-development:local
           options: >
-            -t
+            -it
             -v ${{ github.workspace }}:/doubtfire
             -v ${{ github.workspace }}/student-work:/student-work
             -v /var/run/docker.sock:/var/run/docker.sock
