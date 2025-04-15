@@ -14,23 +14,25 @@ class AuthenticationApi < Grape::API
   helpers AuthorisationHelpers
 
   #
-  # Sign in - only mounted if AAF and SAML auth is NOT used
+  # Sign in - only mounted if AAF and SAML auth is NOT used (database auth)
   #
   if !AuthenticationHelpers.aaf_auth? && !AuthenticationHelpers.saml_auth?
     desc 'Sign in'
     params do
       requires :username, type: String, desc: 'User username'
-      requires :password, type: String, desc: 'User\'s password'
+      optional :password, type: String, desc: 'User\'s password'
+      optional :auth_token, type: String, desc: 'User\'s auth token'
       optional :remember, type: Boolean, desc: 'User has requested to remember login', default: false
     end
     post '/auth' do
       username = params[:username]
       password = params[:password]
+      auth_token = params[:auth_token]
       remember = params[:remember]
       logger.info "Authenticate #{username} from #{request.ip}"
 
       # No provided credentials
-      if username.nil? || password.nil?
+      if username.nil? || (password.nil? && auth_token.nil?)
         error!({ error: 'The request must contain the user username and password.' }, 400)
       end
 
@@ -46,9 +48,12 @@ class AuthenticationApi < Grape::API
         new_user.login_id   = username
       end
 
-      # Try to authenticate
-      unless user.authenticate?(password)
+      # Try to authenticate with password
+      if password.present? && !user.authenticate?(password)
         error!({ error: 'Invalid email or password.' }, 401)
+        return
+      elsif auth_token.present? && !authenticated?(:login)
+        error!({ error: 'Invalid user or auth token.' }, 401)
         return
       end
 
@@ -66,9 +71,15 @@ class AuthenticationApi < Grape::API
 
       logger.info "Login #{username} from #{request.ip}"
 
+      user = User.find_by(username: params[:username])
+      token = user&.token_for_text?(params[:auth_token], :login)
+
+      token&.destroy!
+      token = user.generate_authentication_token!
+
       # Return user details
       present :user, user, with: Entities::UserEntity
-      present :auth_token, user.generate_authentication_token!.authentication_token
+      present :auth_token, token.authentication_token
       add_refresh_cookie_to_response(remember)
     end
   end
