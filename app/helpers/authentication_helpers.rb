@@ -29,6 +29,20 @@ module AuthenticationHelpers
     # Check user by token
     if user.present? && token.present?
       if token.auth_token_expiry > Time.zone.now
+
+        current_ip = request.ip
+        current_ua = request.user_agent
+
+        # Bind session to IP/User-Agent initially
+        if token.session_ip.nil? && token.session_user_agent.nil?
+          token.update(session_ip: current_ip, session_user_agent: current_ua)
+          logger.info("New session bound for #{user.username} from #{current_ip}")
+        elsif token.session_ip != current_ip || token.session_user_agent != current_ua
+          logger.warn("Session hijacking attempt detected for #{user.username} from #{current_ip}")
+          token.destroy!
+          error!({ error: 'Session hijacking detected. Token invalidated.' }, 403)
+        end
+
         logger.info("Authenticated #{user.username} from #{request.ip}")
         return true
       end
