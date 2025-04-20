@@ -146,3 +146,11 @@ module AuthenticationHelpers
     Doubtfire::Application.config.auth_method == :database
   end
 end
+
+# change_table :task_definitions do |t|
+#  t.boolean :scorm_enabled, default: false unless column_exists?(:task_definitions, :scorm_enabled)
+#  t.boolean :scorm_allow_review, default: false unless column_exists?(:task_definitions, :scorm_allow_review)
+#  t.boolean :scorm_bypass_test, default: false unless column_exists?(:task_definitions, :scorm_bypass_test)
+#  t.boolean :scorm_time_delay_enabled, default: false unless column_exists?(:task_definitions, :scorm_time_delay_enabled)
+#  t.integer :scorm_attempt_limit, default: 0 unless column_exists?(:task_definitions, :scorm_attempt_limit)
+#end

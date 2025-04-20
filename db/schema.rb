@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_12_17_091744) do
+ActiveRecord::Schema[7.1].define(version: 2025_04_19_030255) do
   create_table "activity_types", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -25,6 +25,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_12_17_091744) do
     t.bigint "user_id"
     t.string "authentication_token", null: false
     t.integer "token_type", default: 0, null: false
+    t.string "session_ip"
+    t.string "session_user_agent"
     t.index ["token_type"], name: "index_auth_tokens_on_token_type"
     t.index ["user_id"], name: "index_auth_tokens_on_user_id"
   end
@@ -268,6 +270,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_12_17_091744) do
     t.string "tii_group_id"
     t.string "moss_language"
     t.boolean "scorm_enabled", default: false
+    t.string "new_column_name"
     t.boolean "scorm_allow_review", default: false
     t.boolean "scorm_bypass_test", default: false
     t.boolean "scorm_time_delay_enabled", default: false
