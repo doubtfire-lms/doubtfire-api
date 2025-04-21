@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_05_28_223908) do
+ActiveRecord::Schema[7.1].define(version: 2025_04_21_035348) do
   create_table "activity_types", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -137,6 +137,16 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_28_223908) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["user_id"], name: "index_logins_on_user_id"
+  end
+
+  create_table "organizations", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "description", limit: 1200
+    t.string "email"
+    t.boolean "is_enabled", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_organizations_on_name", unique: true
   end
 
   create_table "overseer_assessments", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
@@ -480,6 +490,16 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_28_223908) do
     t.index ["teaching_period_id"], name: "index_units_on_teaching_period_id"
   end
 
+  create_table "user_organizations", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "organization_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["organization_id"], name: "index_user_organizations_on_organization_id"
+    t.index ["user_id", "organization_id"], name: "index_user_organizations_on_user_id_and_organization_id", unique: true
+    t.index ["user_id"], name: "index_user_organizations_on_user_id"
+  end
+
   create_table "users", charset: "utf8", collation: "utf8_unicode_ci", force: :cascade do |t|
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
@@ -509,6 +529,9 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_28_223908) do
     t.string "tii_eula_version"
     t.datetime "tii_eula_date"
     t.boolean "tii_eula_version_confirmed", default: false, null: false
+    t.decimal "total_tutor_time", precision: 10, scale: 2, default: "0.0", null: false
+    t.bigint "current_organization_id"
+    t.index ["current_organization_id"], name: "index_users_on_current_organization_id"
     t.index ["login_id"], name: "index_users_on_login_id", unique: true
     t.index ["role_id"], name: "index_users_on_role_id"
   end
@@ -531,4 +554,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_28_223908) do
     t.index ["user_id"], name: "index_webcals_on_user_id", unique: true
   end
 
+  add_foreign_key "user_organizations", "organizations"
+  add_foreign_key "user_organizations", "users"
+  add_foreign_key "users", "organizations", column: "current_organization_id"
 end

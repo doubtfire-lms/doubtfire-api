@@ -71,3 +71,4 @@ services:
       MYSQL_PASSWORD: pwd
     volumes:
       - ../data/database:/var/lib/mysql
+
