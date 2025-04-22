@@ -529,7 +529,6 @@ ActiveRecord::Schema[7.1].define(version: 2025_04_21_035348) do
     t.string "tii_eula_version"
     t.datetime "tii_eula_date"
     t.boolean "tii_eula_version_confirmed", default: false, null: false
-    t.decimal "total_tutor_time", precision: 10, scale: 2, default: "0.0", null: false
     t.bigint "current_organization_id"
     t.index ["current_organization_id"], name: "index_users_on_current_organization_id"
     t.index ["login_id"], name: "index_users_on_login_id", unique: true
