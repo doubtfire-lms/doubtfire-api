@@ -1,0 +1,38 @@
+<% if @is_tutor %>
+You have granted extensions for the following students:
+
+Extensions granted:
+<% @extensions.each do |extension| %>
+- <%= extension.project.student.name %>: <%= extension.task.task_definition.name %>
+  New due date: <%= extension.task.due_date.strftime("%B %d, %Y") %>
+<% end %>
+
+Summary:
+- Total selected for extension: <%= @total_selected %>
+- Successfully granted: <%= @extensions.count %>
+<% if @failed_extensions.present? %>
+- Failed to grant: <%= @failed_extensions.count %>
+
+Failed extensions:
+<% @failed_extensions.each do |failed| %>
+- Student ID <%= failed[:student_id] %>: <%= failed[:error] %>
+<% end %>
+<% end %>
+<% else %>
+Dear <%= @student.name %>,
+
+An extension has been granted for your task: <%= @task.task_definition.name %>
+
+Details:
+- New due date: <%= @task.due_date.strftime("%B %d, %Y") %>
+- Granted by: <%= @granted_by.name %>
+<% if @extension.comment.present? %>
+- Comment: <%= @extension.comment %>
+<% end %>
+<% end %>
+
+Cheers,
+The <%= @doubtfire_product_name %> Team
+
+---
+To unsubscribe from these notifications, visit: <%= @unsubscribe_url %>

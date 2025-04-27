@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta content='text/html; charset=UTF-8' http-equiv='Content-Type' />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .header {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+      }
+      .content {
+        padding: 20px;
+      }
+      .footer {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+        font-size: 0.9em;
+        color: #666;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+      }
+      th, td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+      }
+      th {
+        background-color: #f8f9fa;
+      }
+      .success {
+        color: #28a745;
+      }
+      .error {
+        color: #dc3545;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h2>Extension Granted</h2>
+    </div>
+
+    <div class="content">
+      <% if @is_tutor %>
+        <p>You have granted extensions for the following students:</p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Task</th>
+              <th>New Due Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @extensions.each do |extension| %>
+              <tr>
+                <td><%= extension.project.student.name %></td>
+                <td><%= extension.task.task_definition.name %></td>
+                <td><%= extension.task.due_date.strftime("%d %b %Y") %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+
+        <% if @failed_extensions.any? %>
+          <h3>Failed Extensions</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Student ID</th>
+                <th>Error</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @failed_extensions.each do |failed| %>
+                <tr>
+                  <td><%= failed[:student_id] %></td>
+                  <td class="error"><%= failed[:error] %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% end %>
+
+        <p>Total students selected: <%= @total_selected %></p>
+        <p>Successfully granted: <%= @extensions.count %></p>
+        <% if @failed_extensions.any? %>
+          <p>Failed: <%= @failed_extensions.count %></p>
+        <% end %>
+      <% else %>
+        <p>Dear <%= @student.name %>,</p>
+
+        <p>An extension has been granted for your task: <strong><%= @task.task_definition.name %></strong></p>
+
+        <p>Details:</p>
+        <ul>
+          <li>New due date: <%= @task.due_date.strftime("%d %b %Y") %></li>
+          <li>Granted by: <%= @granted_by.name %></li>
+          <% if @extension.comment.present? %>
+            <li>Comment: <%= @extension.comment %></li>
+          <% end %>
+        </ul>
+      <% end %>
+    </div>
+
+    <div class="footer">
+      <p>This is an automated message from Doubtfire.</p>
+    </div>
+  </body>
+</html>

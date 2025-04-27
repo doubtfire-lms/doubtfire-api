@@ -1,7 +1,20 @@
 class NotificationsMailer < ApplicationMailer
+
+  # Load configuration values at class level
+  def self.doubtfire_host
+    Doubtfire::Application.config.institution[:host] || 'doubtfire.deakin.edu.au'
+  end
+
+  def self.doubtfire_product_name
+    Doubtfire::Application.config.institution[:product_name] || 'Doubtfire'
+  end
+
+  # Set default from address using class methods
+  default from: -> { "#{self.class.doubtfire_product_name} <#{@granted_by&.email}>" }
+
   def add_general
-    @doubtfire_host = Doubtfire::Application.config.institution[:host]
-    @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
+    @doubtfire_host = self.class.doubtfire_host
+    @doubtfire_product_name = self.class.doubtfire_product_name
     @unsubscribe_url = "#{@doubtfire_host}/edit_profile"
   end
 
@@ -105,6 +118,68 @@ class NotificationsMailer < ApplicationMailer
       "this"
     else
       "these"
+    end
+  end
+
+  # Sends a summary email to the staff member who granted the extensions
+  def extension_granted_summary(extensions, granted_by, total_selected, failed_extensions = [])
+    @granted_by = granted_by
+    @extensions = extensions
+    @total_selected = total_selected
+    @failed_extensions = failed_extensions
+    @unit = extensions.any? ? extensions.first.task.unit : nil
+    @is_tutor = true
+
+    add_general
+
+    email_with_name = %("#{@granted_by.name}" <#{@granted_by.email}>)
+    mail(
+      to: email_with_name,
+      subject: @unit ? "#{@unit.name}: Staff Grant Extensions" : "Staff Grant Extensions",
+      template_name: 'extension_granted'
+    )
+  end
+
+  # Sends a notification to a student about their granted extension
+  def extension_granted_notification(extension, granted_by)
+    @granted_by = granted_by
+    @extension = extension
+    @task = extension.task
+    @student = extension.project.student
+    @is_tutor = false
+
+    add_general
+
+    email_with_name = %("#{@student.name}" <#{@student.email}>)
+    tutor_email = %("#{@granted_by.name}" <#{@granted_by.email}>)
+
+    mail(
+      to: email_with_name,
+      from: tutor_email,
+      subject: "#{@task.unit.name}: Extension granted for #{@task.task_definition.name}",
+      template_name: 'extension_granted'
+    )
+  end
+
+  # Main method to handle extension notifications from staff
+  def extension_granted(extensions, granted_by, total_selected, failed_extensions = [], is_staff_grant = false)
+    # Only send notifications for staff-granted bulk extensions
+    return unless is_staff_grant && (extensions.any? || failed_extensions.any?)
+
+    begin
+      # Send summary to staff member who granted the extensions
+      extension_granted_summary(extensions, granted_by, total_selected, failed_extensions).deliver_now
+
+      # Send individual notifications only to students who have enabled email notifications
+      extensions.each do |extension|
+        student = extension.project.student
+        if student.receive_task_notifications
+          extension_granted_notification(extension, granted_by).deliver_now
+        end
+      end
+    rescue => e
+      Rails.logger.error "Failed to send extension notifications: #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
     end
   end
 
