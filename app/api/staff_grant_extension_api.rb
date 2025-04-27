@@ -115,9 +115,34 @@ class StaffGrantExtensionApi < Grape::API
         error!({ error: 'Some extensions failed to be granted', results: results }, 400)
       end
 
+      # Send notifications only if successful and after processing all students
+      if results[:successful].any?
+        successful_extensions = results[:successful].map do |result|
+          # Re-fetch project within the transaction to ensure consistency
+          project = Project.find(result[:project_id])
+          task = project.task_for_task_definition(task_definition)
+          # Ensure we get the latest extension comment created within this transaction
+          task.all_comments.where(content_type: :extension).order(created_at: :desc).first
+        end
+
+        # Filter out any nil results in case a comment wasn't found (shouldn't happen ideally)
+        successful_extensions.compact!
+
+        if successful_extensions.any?
+          NotificationsMailer.extension_granted(
+            successful_extensions,
+            current_user,
+            params[:student_ids].count,
+            results[:failed],
+            true # is_staff_grant = true
+          ).deliver_later
+        end
+      end
+
       status 201
       present results, with: Grape::Presenters::Presenter
     end
+
   rescue ActiveRecord::RecordNotFound
     error!({ error: 'Unit or task definition not found' }, 404)
   rescue StandardError
