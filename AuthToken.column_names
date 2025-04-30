@@ -1,1 +1,27 @@
-[B[A
+# AuthToken Column Documentation
+# This file documents the new columns added to auth_tokens table for security enhancements
+
+# Original columns:
+# id: primary key
+# auth_token_expiry: datetime when token expires
+# user_id: user who owns this token
+# authentication_token: the actual token string
+# token_type: type of token (general, api, etc.)
+# session_ip: original IP address that created this token
+# session_user_agent: original User-Agent that created this token
+
+# New columns for session binding:
+# last_seen_ip: most recent IP address that used this token
+# last_seen_ua: most recent User-Agent that used this token
+# ip_history: JSON array of all IPs that have used this token
+# suspicious_activity_detected_at: timestamp when first suspicious change was detected
+
+# New columns for session fixation/hijacking prevention:
+# invalidation_requested_at: timestamp when logout was requested
+# last_activity_at: timestamp of most recent activity with this token
+
+# Security implementation notes:
+# - When validating tokens, check invalidation_requested_at to prevent session fixation
+# - Use ip_history to track and limit the number of different IPs that can use a token
+# - suspicious_activity_detected_at starts a grace period for user to reauthenticate
+# - The combined approach provides flexible session binding while preventing session stealing across users

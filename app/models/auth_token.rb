@@ -33,6 +33,11 @@ class AuthToken < ApplicationRecord
     AuthToken.where("auth_token_expiry < :now", now: Time.zone.now).destroy_all
   end
 
+  # Destroy all tokens marked for invalidation
+  def self.destroy_invalidated_tokens
+    AuthToken.where("invalidation_requested_at IS NOT NULL").destroy_all
+  end
+
   #
   # Extends an existing auth_token if needed
   #
@@ -57,6 +62,39 @@ class AuthToken < ApplicationRecord
     if save
       self.save
     end
+  end
+
+  # Record session binding information for a new token
+  def initialize_session_binding(ip, user_agent)
+    update(
+      session_ip: ip,
+      session_user_agent: user_agent,
+      last_seen_ip: ip,
+      last_seen_ua: user_agent,
+      ip_history: [ip].to_json,
+      last_activity_at: Time.zone.now
+    )
+  end
+
+  # Return the IP history as an array
+  def ip_history_array
+    return [] if ip_history.nil?
+    ip_history.present? ? JSON.parse(ip_history) : []
+  rescue JSON::ParserError
+    Rails.logger.error("Error parsing IP history for token #{id}")
+    []
+  end
+
+  # Add a new IP to the history if it's not already there
+  def add_ip_to_history(ip)
+    history = ip_history_array
+    history << ip unless history.include?(ip)
+    update(ip_history: history.to_json)
+  end
+
+  # Mark this token for invalidation (will be enforced on next request)
+  def invalidate
+    update(invalidation_requested_at: Time.zone.now)
   end
 
   def ensure_token_unique_for_user

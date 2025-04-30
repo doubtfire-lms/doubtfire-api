@@ -1,7 +1,7 @@
 class AddScormFeat < ActiveRecord::Migration[7.1]
   def up
     # Add scorm_extensions column if it doesn't exist
-    unless column_exists?(:tasks, :scorm_extensions)
+    if column_exists?(:tasks, :scorm_extensions)
       add_column :tasks, :scorm_extensions, :integer, null: false, default: 0
     else
       Rails.logger.info "Column 'scorm_extensions' already exists in 'tasks' table. Skipping..."
