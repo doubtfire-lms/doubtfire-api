@@ -1,6 +1,6 @@
 class AddSessionBindingToAuthTokens < ActiveRecord::Migration[7.1]
   def change
-    aadd_column :auth_tokens, :last_seen_ip, :string unless column_exists?(:auth_tokens, :last_seen_ip)
+    add_column :auth_tokens, :last_seen_ip, :string unless column_exists?(:auth_tokens, :last_seen_ip)
     add_column :auth_tokens, :last_seen_ua, :string unless column_exists?(:auth_tokens, :last_seen_ua)
 
     # Use TEXT for JSON data in MySQL
