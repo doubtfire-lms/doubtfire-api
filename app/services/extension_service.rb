@@ -17,7 +17,7 @@ class ExtensionService
     # Check if extension would exceed deadline
     return { success: false, error: 'Extensions cannot be granted beyond task deadline', status: 403 } if duration <= 0
 
-    # ===== Student Request Logic (current endpoint) =====
+    # ===== Student-Initiated Extension Logic (current endpoint) =====
     unless is_staff_grant
       # Check task-level authorization for student requests with specific permission hash
       unless AuthorisationHelpers.authorise?(user, task, :request_extension, ->(role, perm_hash, other) { task.specific_permission_hash(role, perm_hash, other) })
