@@ -114,6 +114,7 @@ class ApiRoot < Grape::API
   AuthenticationHelpers.add_auth_to LearningAlignmentApi
   AuthenticationHelpers.add_auth_to ProjectsApi
   AuthenticationHelpers.add_auth_to StudentsApi
+  AuthenticationHelpers.add_auth_to SettingsApi
   AuthenticationHelpers.add_auth_to Submission::PortfolioApi
   AuthenticationHelpers.add_auth_to Submission::PortfolioEvidenceApi
   AuthenticationHelpers.add_auth_to Submission::BatchTaskApi
