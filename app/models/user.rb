@@ -150,6 +150,7 @@ class User < ApplicationRecord
   has_many    :chip_usage, dependent: :destroy, inverse_of: :tutor, class_name: 'Feedback::ChipUsage'
 
   has_many    :marking_sessions, dependent: :destroy
+  has_many    :notifications, dependent: :destroy
 
   # Model validations/constraints
   validates :first_name,  presence: true
