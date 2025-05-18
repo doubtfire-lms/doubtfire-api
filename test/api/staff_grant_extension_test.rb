@@ -53,6 +53,13 @@ class StaffGrantExtensionTest < ActiveSupport::TestCase
     assert response["successful"][0]["extension_response"].present?, 'Should have extension response'
     assert response["successful"][0]["task_status"].present?, 'Should have task status'
 
+    notifications = Notification.where(user_id: project.student.id)
+    assert_equal 1, notifications.count, 'Should create one notification for the student'
+    notification = notifications.first
+    assert_match /You were granted an extension for task/, notification.message
+    assert_match /#{td.name}/, notification.message
+    assert_match /#{unit.name}/, notification.message
+
     td.destroy!
     unit.destroy!
   end
