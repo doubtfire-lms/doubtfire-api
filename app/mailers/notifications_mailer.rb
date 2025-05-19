@@ -9,9 +9,6 @@ class NotificationsMailer < ApplicationMailer
     Doubtfire::Application.config.institution[:product_name] || 'Doubtfire'
   end
 
-  # Set default from address using class methods
-  default from: -> { "#{self.class.doubtfire_product_name} <#{@granted_by&.email}>" }
-
   def add_general
     @doubtfire_host = self.class.doubtfire_host
     @doubtfire_product_name = self.class.doubtfire_product_name
@@ -133,8 +130,12 @@ class NotificationsMailer < ApplicationMailer
     add_general
 
     email_with_name = %("#{@granted_by.name}" <#{@granted_by.email}>)
+    # Set explicit from address using product name and a default sender
+    from_address = %("#{self.class.doubtfire_product_name}" <no-reply@#{self.class.doubtfire_host}>)
+
     mail(
       to: email_with_name,
+      from: from_address,
       subject: @unit ? "#{@unit.name}: Staff Grant Extensions" : "Staff Grant Extensions",
       template_name: 'extension_granted'
     )
