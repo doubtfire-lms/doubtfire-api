@@ -80,6 +80,10 @@ class NotificationsMailerTest < ActionMailer::TestCase
     assert_equal [@staff.email], mail.to
     assert_equal "#{@unit.name}: Staff Grant Extensions", mail.subject
     assert_match /You have granted extensions for the following students/, mail.html_part.body.to_s
+
+    # Verify from address contains no-reply
+    assert_includes mail.from.first, "no-reply@"
+    assert_includes mail.from.first, NotificationsMailer.doubtfire_host
   end
 
   test 'creates correct extension notification email' do
@@ -96,6 +100,9 @@ class NotificationsMailerTest < ActionMailer::TestCase
     assert_equal [@students.first.email], mail.to
     assert_equal "#{@unit.name}: Extension granted for #{@task_definition.name}", mail.subject
     assert_match /Dear #{@students.first.name}/, mail.html_part.body.to_s
+
+    # Verify from address contains staff email
+    assert_includes mail.from.first, @staff.email
   end
 
   test 'creates correct extension summary with failed extensions' do
@@ -127,6 +134,10 @@ class NotificationsMailerTest < ActionMailer::TestCase
     assert_match /Failed Extensions/, mail.html_part.body.to_s
     assert_match /999/, mail.html_part.body.to_s
     assert_match /1000/, mail.html_part.body.to_s
+
+    # Verify from address contains no-reply
+    assert_includes mail.from.first, "no-reply@"
+    assert_includes mail.from.first, NotificationsMailer.doubtfire_host
   end
 
   test 'creates correct extension notification with special characters' do
@@ -162,7 +173,54 @@ class NotificationsMailerTest < ActionMailer::TestCase
     assert_equal "#{@unit.name}: Extension granted for #{special_task.name}", mail.subject
     assert_match /Dear #{@students.first.name}/, mail.html_part.body.to_s
 
+    # Verify from address contains staff email
+    assert_includes mail.from.first, @staff.email
+
     # Clean up
     special_task.destroy!
+  end
+
+  test 'creates correct weekly staff summary email' do
+    # Create data for summary stats
+    summary_stats = {
+      unit: @unit,
+      week_start: Time.zone.now - 1.week,
+      week_end: Time.zone.now,
+      staff: {}
+    }
+
+    unit_role = @unit.unit_roles.find_by(user: @staff)
+    summary_stats[:staff][unit_role] = { data: "test data" }
+
+    # Get the mail object
+    mail = NotificationsMailer.weekly_staff_summary(unit_role, summary_stats)
+
+    # Verify email properties
+    assert_equal [@staff.email], mail.to
+    assert_equal "#{@unit.name}: Weekly Summary", mail.subject
+
+    # Verify from address contains convenor email
+    assert_includes mail.from.first, @unit.main_convenor_user.email
+  end
+
+  test 'creates correct weekly student summary email' do
+    # Create data for summary stats
+    summary_stats = {
+      unit: @unit,
+      week_start: Time.zone.now - 1.week,
+      week_end: Time.zone.now
+    }
+
+    project = @projects.first
+
+    # Get the mail object
+    mail = NotificationsMailer.weekly_student_summary(project, summary_stats, false)
+
+    # Verify email properties
+    assert_equal [@students.first.email], mail.to
+    assert_equal "#{@unit.name}: Weekly Summary", mail.subject
+
+    # Verify from address contains tutor email
+    assert_includes mail.from.first, project.main_convenor_user.email
   end
 end

@@ -129,13 +129,19 @@ class StaffGrantExtensionApi < Grape::API
         successful_extensions.compact!
 
         if successful_extensions.any?
-          NotificationsMailer.extension_granted(
-            successful_extensions,
-            current_user,
-            params[:student_ids].count,
-            results[:failed],
-            true # is_staff_grant = true
-          ).deliver_later
+          begin
+            NotificationsMailer.extension_granted(
+              successful_extensions,
+              current_user,
+              params[:student_ids].count,
+              results[:failed],
+              true # is_staff_grant = true
+            ).deliver_later
+          rescue => e
+            # Log error but don't fail the API call, as extensions were successfully granted
+            Rails.logger.error "Failed to queue extension notification emails: #{e.message}"
+            Rails.logger.error e.backtrace.join("\n")
+          end
         end
       end
 
