@@ -80,7 +80,7 @@ class AuthenticationApi < Grape::API
       # Return user details
       present :user, user, with: Entities::UserEntity
       present :auth_token, token.authentication_token
-      add_refresh_cookie_to_response(remember)
+      set_refresh_cookie_in_response(remember)
     end
   end
 
@@ -278,7 +278,7 @@ class AuthenticationApi < Grape::API
         # Respond user details with new auth token
         present :user, user, with: Entities::UserEntity
         present :auth_token, token.authentication_token
-        add_refresh_cookie_to_response(params[:remember])
+        set_refresh_cookie_in_response(params[:remember])
       end
     end
   end
@@ -360,7 +360,7 @@ class AuthenticationApi < Grape::API
     end
 
     # Remove the refresh token cookie - if remember is false
-    add_refresh_cookie_to_response(false) if params[:remember]
+    set_refresh_cookie_in_response(false) unless params[:remember]
     present nil
   end
 

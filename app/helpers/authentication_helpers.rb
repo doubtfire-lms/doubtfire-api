@@ -62,7 +62,7 @@ module AuthenticationHelpers
       true
     when :token_expired, :error, :missing_details
       # Token expired - remove cookies
-      add_refresh_cookie_to_response(false)
+      set_refresh_cookie_in_response(false)
       false
     end
   end
@@ -205,7 +205,10 @@ module AuthenticationHelpers
     Doubtfire::Application.config.auth_method == :database
   end
 
-  def add_refresh_cookie_to_response(remember)
+  # rubocop:disable Naming/AccessorMethodName
+  def set_refresh_cookie_in_response(remember)
+    # rubocop:enable Naming/AccessorMethodName
+
     if remember
       token = current_user.auth_tokens.where(token_type: :refresh_token).last
 
