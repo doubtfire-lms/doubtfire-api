@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-6](https://github.com/macite/doubtfire-deploy/compare/v10.0.0-5...v10.0.0-6) (2025-05-30)
+
+
+### Bug Fixes
+
+* adjust cookie function name to clarify purpose ([729efb6](https://github.com/macite/doubtfire-deploy/commit/729efb622b1257a14e28999a61e3a6343c4b2937))
+
 ## [10.0.0-5](https://github.com/macite/doubtfire-deploy/compare/v10.0.0-4...v10.0.0-5) (2025-05-30)
 
 
