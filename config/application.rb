@@ -111,7 +111,7 @@ module Doubtfire
       # The IDP SAML login URL, (e.g., "https://login.microsoftonline.com/xxxx/saml2")
       config.saml[:idp_sso_target_url] = ENV.fetch('DF_SAML_IDP_TARGET_URL', nil)
       # The IDP SAML logout URL, (e.g., "https://login.microsoftonline.com/xxxx/saml2")
-      config.saml[:idp_sso_signout_url] = ENV.fetch('DF_SAML_IDP_SIGNOUT_URL', config.saml[:idp_sso_target_url])
+      config.saml[:idp_sso_signout_url] = ENV.fetch('DF_SAML_IDP_SIGNOUT_URL', nil)
 
       # The SAML response certificate and name format (if no XML URL metadata is provided)
       if config.saml[:SAML_metadata_url].nil?
