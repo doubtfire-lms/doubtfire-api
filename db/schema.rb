@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_04_02_034353) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_07_232750) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -228,6 +228,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_02_034353) do
     t.boolean "uses_draft_learning_summary", default: false, null: false
     t.boolean "portfolio_auto_generated", default: false, null: false
     t.integer "portfolio_generation_pid"
+    t.integer "spec_con_days", default: 0, null: false
     t.index ["campus_id"], name: "index_projects_on_campus_id"
     t.index ["enrolled"], name: "index_projects_on_enrolled"
     t.index ["unit_id"], name: "index_projects_on_unit_id"
@@ -547,6 +548,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_02_034353) do
     t.datetime "portfolio_auto_generation_date"
     t.string "tii_group_context_id"
     t.boolean "archived", default: false
+    t.boolean "allow_flexible_dates", default: false, null: false
+    t.datetime "portfolio_due_date"
     t.index ["draft_task_definition_id"], name: "index_units_on_draft_task_definition_id"
     t.index ["main_convenor_id"], name: "index_units_on_main_convenor_id"
     t.index ["overseer_image_id"], name: "index_units_on_overseer_image_id"

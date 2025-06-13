@@ -10,6 +10,8 @@ module Entities
     expose :enrolled, unless: :for_student
     expose :target_grade
 
+    expose :spec_con_days
+
     expose :submitted_grade, unless: :summary_only
     expose :portfolio_files, unless: :summary_only
     expose :compile_portfolio, unless: :summary_only

@@ -157,7 +157,7 @@ class Task < ApplicationRecord
   end
 
   def has_requested_extension?
-    extensions > 0 && will_save_change_to_extensions? && extensions > extensions_in_database
+    extensions != 0 && will_save_change_to_extensions? && extensions != extensions_in_database
   end
 
   def must_have_quality_pts
@@ -169,7 +169,7 @@ class Task < ApplicationRecord
   # Ensure that extensions do not exceed the defined due date
   def extensions_must_end_with_due_date
     # First check the raw extension date - but allow it to be up to a week later in case due date and target date are on different days
-    if raw_extension_date.to_date - 7.days >= task_definition.due_date.to_date
+    if raw_extension_date - 7.days >= max_date_with_spec_con_days
       errors.add(:extensions, "have exceeded deadline for task. Work must be submitted within current timeframe. Work submitted after current due date will be assessed in the portfolio")
     end
   end
@@ -259,13 +259,18 @@ class Task < ApplicationRecord
 
   # Get the raw extension date - with extensions representing weeks
   def raw_extension_date
-    target_date + extensions.weeks
+    target_date.to_date + extensions.weeks
+  end
+
+  def max_date_with_spec_con_days
+    task_definition.due_date.to_date + project.spec_con_days.days
   end
 
   # Get the adjusted extension date, which ensures it is never past the due date
   def extension_date
     result = raw_extension_date
-    return task_definition.due_date if result > task_definition.due_date
+    max_date = max_date_with_spec_con_days
+    return max_date if result > max_date
 
     return result
   end
@@ -273,7 +278,7 @@ class Task < ApplicationRecord
   # The student can apply for an extension if the current extension date is
   # before the task's due date
   def can_apply_for_extension?
-    raw_extension_date.to_date < task_definition.due_date.to_date
+    raw_extension_date < max_date_with_spec_con_days
   end
 
   def tutor
@@ -308,8 +313,8 @@ class Task < ApplicationRecord
   end
 
   def weeks_can_extend
-    deadline = task_definition.due_date.to_date
-    current_due = raw_extension_date.to_date
+    deadline = max_date_with_spec_con_days
+    current_due = raw_extension_date
 
     diff = deadline - current_due
     (diff.to_f / 7).ceil
@@ -317,6 +322,9 @@ class Task < ApplicationRecord
 
   # Add an extension to the task
   def grant_extension(by_user, weeks)
+    # Only used when extensions are allowed - not if the student manages the dates
+    return if unit.allow_flexible_dates
+
     weeks_to_extend = [weeks, weeks_can_extend].min
     return false unless weeks_to_extend > 0
 
@@ -643,7 +651,9 @@ class Task < ApplicationRecord
   def submitted_before_due?
     return true if due_date.blank?
 
-    to_same_day_anywhere_on_earth(due_date) >= self.submission_date
+    # When using flexible dates, we need to check against the deadline
+    check_date = unit.allow_flexible_dates ? max_date_with_spec_con_days : due_date
+    to_same_day_anywhere_on_earth(check_date) >= self.submission_date
   end
 
   #

@@ -44,6 +44,7 @@ class Unit < ApplicationRecord
       :download_unit_csv,
       :update,
       :employ_staff,
+      :grant_spec_con,
       :add_tutorial,
       :add_task_def,
       :provide_feedback,
@@ -76,7 +77,8 @@ class Unit < ApplicationRecord
       :exceed_capacity,
       :get_los,
       :create_feedback_chips,
-      :get_feedback_chips
+      :get_feedback_chips,
+      :grant_spec_con
     ]
 
     # What can auditors do with units?
@@ -450,12 +452,14 @@ class Unit < ApplicationRecord
           'projects.compile_portfolio',
           'projects.grade',
           'projects.grade_rationale',
+          'projects.spec_con_days',
         )
         .select(
           'projects.id AS project_id',
           'projects.enrolled AS enrolled',
           'projects.task_stats AS task_stats',
           'projects.campus_id AS campus_id',
+          'projects.spec_con_days AS spec_con_days',
           'users.first_name AS first_name',
           'users.last_name AS last_name',
           'users.nickname AS nickname',

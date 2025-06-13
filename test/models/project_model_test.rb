@@ -194,5 +194,31 @@ class ProjectModelTest < ActiveSupport::TestCase
     unit.destroy!
   end
 
+  def test_can_update_spec_con_days
+    project = FactoryBot.create(:project)
+    assert_equal 0, project.spec_con_days
 
+    project.update(spec_con_days: 5)
+    assert_equal 5, project.reload.spec_con_days
+
+    project.spec_con_days = nil
+    assert_not project.valid?
+    assert_equal 5, project.reload.spec_con_days
+  end
+
+  def test_spec_con_adjusts_task_deadlines
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0)
+    task_definition = FactoryBot.create(:task_definition, unit: unit, target_date: 1.week.from_now, due_date: 2.weeks.from_now)
+    project = FactoryBot.create(:project, unit: unit)
+    task = project.task_for_task_definition(task_definition)
+
+    # Adjust deadlines based on spec con days
+    project.update(spec_con_days: 2)
+
+    # add extensions - to take up the spec con days
+    task.extensions = 2
+
+    # Check that the deadline has been extended by the spec con days
+    assert_equal task_definition.reload.due_date.to_date + 2.days, task.due_date
+  end
 end

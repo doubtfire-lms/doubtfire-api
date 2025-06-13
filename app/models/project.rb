@@ -33,6 +33,7 @@ class Project < ApplicationRecord
   before_destroy :can_destroy?
 
   validates :grade_rationale, length: { maximum: 4095, allow_blank: true }
+  validates :spec_con_days, presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, if: :spec_con_days_changed?
 
   validate :tutorial_enrolment_same_campus, if: :will_save_change_to_enrolled?
 
@@ -64,7 +65,7 @@ class Project < ApplicationRecord
     # What can admins do with projects?
     admin_role_permissions = [
       :get,
-      :get_submission
+      :get_submission,
     ]
     # What can auditors do with projects?
     auditor_role_permissions = [

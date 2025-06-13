@@ -51,8 +51,8 @@ class ProjectsApiTest < ActiveSupport::TestCase
     # Add username and auth_token to Header
     add_auth_header_for(user: user)
 
-    keys = %w(id unit campus_id user_id target_grade portfolio_available)
-    key_test = %w(campus_id target_grade)
+    keys = %w(id unit campus_id user_id target_grade portfolio_available spec_con_days)
+    key_test = %w(campus_id target_grade spec_con_days)
 
     get '/api/projects'
     assert_equal 2, last_response_body.count, last_response_body

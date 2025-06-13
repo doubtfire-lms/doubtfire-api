@@ -4,7 +4,7 @@ require 'pdf-reader'
 #
 # Contains tests for Task model objects - not accessed via API
 #
-class TaskDefinitionTest < ActiveSupport::TestCase
+class TaskTest < ActiveSupport::TestCase
   include Rack::Test::Methods
   include TestHelpers::TestFileHelper
   include TestHelpers::AuthHelper
@@ -1190,5 +1190,127 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     td.destroy
     unit.destroy
+  end
+
+  def test_extension_on_trigger_transition
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 0, start_date: Time.zone.now - 3.days, end_date: Time.zone.now + 10.weeks)
+    unit.allow_student_extension_requests = true
+    unit.extension_weeks_on_resubmit_request = 1
+    unit.save!
+
+    td = TaskDefinition.new({
+                              unit_id: unit.id,
+                              tutorial_stream: unit.tutorial_streams.first,
+                              name: 'Test task',
+                              description: 'Test task',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: unit.start_date,
+                              target_date: unit.start_date + 1.week,
+                              abbreviation: 'ABBR',
+                              restrict_status_updates: false,
+                              upload_requirements: [ ],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0
+                            })
+    td.save!
+
+    project = unit.active_projects.first
+    task = project.task_for_task_definition(td)
+
+    task.trigger_transition(trigger: 'fix', by_user: unit.main_convenor_user)
+    assert_equal :fix_and_resubmit, task.status, "Task status should be 'fix' after trigger transition"
+    assert_equal 1, task.reload.extensions
+
+    # Check that trigger to 'ready_for_feedback' accepts when before due date
+    task.trigger_transition(trigger: 'ready_for_feedback', by_user: unit.main_convenor_user)
+    assert_equal :ready_for_feedback, task.status, 'Task status should be "ready_for_feedback" after trigger transition'
+
+    task.destroy!
+
+    unit.allow_flexible_dates = true
+    unit.save!
+    task = project.task_for_task_definition(td)
+
+    # Extensions are not added when flexible dates are enabled
+    task.trigger_transition(trigger: 'fix', by_user: unit.main_convenor_user)
+    assert_equal :fix_and_resubmit, task.status, 'Task status should be "fix" after trigger transition'
+    assert_equal 0, task.reload.extensions
+
+    # Check that trigger to 'ready_for_feedback' accepts when before deadline in flexible dates mode
+    task.extensions = -2
+    task.save!
+
+    task.trigger_transition(trigger: 'ready_for_feedback', by_user: unit.main_convenor_user)
+    assert_equal :ready_for_feedback, task.status, 'Task status should be "ready_for_feedback" after trigger transition'
+
+    unit.destroy!
+  end
+
+  def test_trigger_time_exceeded
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 0, start_date: Time.zone.now - 3.weeks, end_date: Time.zone.now + 10.weeks)
+    unit.allow_student_extension_requests = true
+    unit.extension_weeks_on_resubmit_request = 1
+    unit.save!
+
+    td = TaskDefinition.new({
+                              unit_id: unit.id,
+                              tutorial_stream: unit.tutorial_streams.first,
+                              name: 'Test task',
+                              description: 'Test task',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: Time.zone.now - 3.week,
+                              target_date: Time.zone.now - 2.week,
+                              due_date: Time.zone.now + 1.week,
+                              abbreviation: 'ABBR',
+                              restrict_status_updates: false,
+                              upload_requirements: [ ],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0
+                            })
+    td.save!
+
+    project = unit.active_projects.first
+    task = project.task_for_task_definition(td)
+
+    # Test time exceeded when submitted after the due date
+    task.trigger_transition(trigger: 'ready_for_feedback', by_user: unit.main_convenor_user)
+    assert_equal :time_exceeded, task.status, 'Task status should be "time_exceeded" after trigger transition'
+
+    # Extensions from target to due... mean we can submit
+    task.extensions = 2
+    task.save!
+    task.trigger_transition(trigger: 'ready_for_feedback', by_user: unit.main_convenor_user)
+    assert_equal :ready_for_feedback, task.status, 'Task status should be "time_exceeded" after trigger transition'
+
+    # Clear task and test with flexible dates
+    task.destroy!
+    unit.allow_flexible_dates = true
+    unit.save!
+
+    task = project.task_for_task_definition(td)
+
+    # Test not time exceeded when submitted after target date... as deadline always in play
+    task.trigger_transition(trigger: 'ready_for_feedback', by_user: unit.main_convenor_user)
+    assert_equal :ready_for_feedback, task.status, 'Task status should be "ready_for_feedback" - despite after target date'
+
+    # Adjust the due date...
+    td.due_date = Time.zone.now - 2.days
+    td.save!
+    task.reload
+
+    task.trigger_transition(trigger: 'ready_for_feedback', by_user: unit.main_convenor_user)
+    assert_equal :time_exceeded, task.status, 'Task status should be "time_exceeded" - after deadline'
+
+    # Check that spec_con_days is respected - should extend the due date by 3 days
+    project.spec_con_days = 3
+    project.save!
+    task.reload
+
+    task.trigger_transition(trigger: 'ready_for_feedback', by_user: unit.main_convenor_user)
+    assert_equal :ready_for_feedback, task.status, 'Task status should be "ready_for_feedback" - due to spec con days'
   end
 end
