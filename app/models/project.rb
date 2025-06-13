@@ -65,7 +65,7 @@ class Project < ApplicationRecord
     # What can admins do with projects?
     admin_role_permissions = [
       :get,
-      :get_submission,
+      :get_submission
     ]
     # What can auditors do with projects?
     auditor_role_permissions = [
