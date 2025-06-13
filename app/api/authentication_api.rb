@@ -80,7 +80,7 @@ class AuthenticationApi < Grape::API
       # Return user details
       present :user, user, with: Entities::UserEntity
       present :auth_token, token.authentication_token
-      add_refresh_cookie_to_response(remember)
+      set_refresh_cookie_in_response(remember)
     end
   end
 
@@ -152,6 +152,23 @@ class AuthenticationApi < Grape::API
         host = "#{protocol}://#{host}"
       end
       redirect "#{host}/sign_in?authToken=#{onetime_token.authentication_token}&username=#{user.username}"
+    end
+
+    # Saml 2 logout callback
+    desc 'SAML2.0 logout callback'
+    params do
+      requires :SAMLResponse, type: String, desc: 'SAML logout response data.'
+    end
+    post '/auth/saml_logout' do
+      response = OneLogin::RubySaml::Logoutresponse.new(params[:SAMLResponse], allowed_clock_drift: 1.second,
+                                                                               settings: AuthenticationHelpers.saml_settings)
+
+      # Check if the SAML response is valid - if not log an error
+      unless response.is_valid?
+        logger.error "Invalid SAML logout response: #{response.errors.join(', ')}"
+      end
+
+      redirect "#{host}/sign_in"
     end
   end
 
@@ -261,7 +278,7 @@ class AuthenticationApi < Grape::API
         # Respond user details with new auth token
         present :user, user, with: Entities::UserEntity
         present :auth_token, token.authentication_token
-        add_refresh_cookie_to_response(params[:remember])
+        set_refresh_cookie_in_response(params[:remember])
       end
     end
   end
@@ -343,7 +360,7 @@ class AuthenticationApi < Grape::API
     end
 
     # Remove the refresh token cookie - if remember is false
-    add_refresh_cookie_to_response(false) unless params[:remember]
+    set_refresh_cookie_in_response(false) unless params[:remember]
     present nil
   end
 
