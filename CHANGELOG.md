@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-6](https://github.com/macite/doubtfire-deploy/compare/v10.0.0-5...v10.0.0-6) (2025-05-30)
+
+
+### Bug Fixes
+
+* adjust cookie function name to clarify purpose ([729efb6](https://github.com/macite/doubtfire-deploy/commit/729efb622b1257a14e28999a61e3a6343c4b2937))
+
+## [10.0.0-5](https://github.com/macite/doubtfire-deploy/compare/v10.0.0-4...v10.0.0-5) (2025-05-30)
+
+
+### Features
+
+* add saml signout url ([1f079b9](https://github.com/macite/doubtfire-deploy/commit/1f079b990b5bcc099f945ed15abfad0dc05f9701))
+* allow database auth to simulate token signin ([4e4873c](https://github.com/macite/doubtfire-deploy/commit/4e4873c2a5eeffa0fa3f9546c38f4d4870dba7b8))
+
 ## [10.0.0-4](https://github.com/macite/doubtfire-deploy/compare/v10.0.0-3...v10.0.0-4) (2025-04-11)
 
 ## [10.0.0-3](https://github.com/macite/doubtfire-deploy/compare/v10.0.0-2...v10.0.0-3) (2025-04-10)
