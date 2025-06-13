@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-7](https://github.com/macite/doubtfire-deploy/compare/v10.0.0-6...v10.0.0-7) (2025-06-13)
+
+
+### Features
+
+* add spec con days and flexible unit dates ([fdd0ce1](https://github.com/macite/doubtfire-deploy/commit/fdd0ce13e9c92edc0c4d3a4b722409eedcdd4d06))
+
+
+### Bug Fixes
+
+* ensure SAML signout does not default to signin url ([d0d3bcd](https://github.com/macite/doubtfire-deploy/commit/d0d3bcdfd7634080894825707ae5820499c68ef2))
+
 ## [10.0.0-6](https://github.com/macite/doubtfire-deploy/compare/v10.0.0-5...v10.0.0-6) (2025-05-30)
 
 
