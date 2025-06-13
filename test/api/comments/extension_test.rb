@@ -307,4 +307,57 @@ class ExtensionTest < ActiveSupport::TestCase
     unit.destroy!
   end
 
+  def test_flexible_dates
+    unit = FactoryBot.create(:unit, student_count: 1, unenrolled_student_count: 0, part_enrolled_student_count: 0, inactive_student_count: 0, tutorials: 1, staff_count: 1, task_count:0)
+    project = unit.projects.first
+    user = project.student
+
+    td = TaskDefinition.new({
+        unit_id: unit.id,
+        tutorial_stream: unit.tutorial_streams.first,
+        name: 'Flexible Dates Test',
+        description: 'Flexible Dates Test',
+        weighting: 4,
+        target_grade: 0,
+        start_date: Time.zone.now - 2.weeks,
+        target_date: Time.zone.now + 1.day,
+        due_date: Time.zone.now + 1.day + 3.weeks,
+        abbreviation: 'FLEXTEST',
+        restrict_status_updates: false,
+        upload_requirements: [ ],
+        plagiarism_warn_pct: 0.8,
+        is_graded: false,
+        max_quality_pts: 0
+      })
+    td.save!
+
+    data_to_post = {
+      extensions: -1
+    }
+
+    # Add auth_token and username to header
+    add_auth_header_for(user: user)
+
+    # Check cannot update plan as not set to allow flexible dates
+    put_json "/api/projects/#{project.id}/task_def_id/#{td.id}/plan", data_to_post
+    assert_equal 403, last_response.status, "Error: Should not allow plan update when flexible dates not set: #{last_response_body}"
+
+    # Set flexible dates
+    unit.allow_flexible_dates = true
+    unit.save!
+
+    # Check plan put
+    put_json "/api/projects/#{project.id}/task_def_id/#{td.id}/plan", data_to_post
+    assert_equal 200, last_response.status, "Error: Should allow plan update when flexible dates set"
+
+    task = project.task_for_task_definition(td)
+    assert_equal(-1, task.extensions, "Error: Task should have -1 extensions set")
+
+    # Check cannot make extension request
+    post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", {weeks_requested: 1, comment: "Test Extension Request"}
+    assert_equal 403, last_response.status, last_response_body
+
+    td.destroy!
+    unit.destroy!
+  end
 end

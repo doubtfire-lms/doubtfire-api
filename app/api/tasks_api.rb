@@ -109,6 +109,44 @@ class TasksApi < Grape::API
     present true, Grape::Presenters::Presenter
   end
 
+  desc 'Update the planned date for a task - when date flexibility is allowed'
+  params do
+    requires :id, type: Integer, desc: 'The project id to locate'
+    requires :task_definition_id, type: Integer, desc: 'The id of the task definition of the task to update in this project'
+    requires :extensions, type: Integer, desc: 'The number of weeks to adjust the original planned date by'
+  end
+  put '/projects/:id/task_def_id/:task_definition_id/plan' do
+    project = Project.find(params[:id])
+    task_definition = project.unit.task_definitions.find(params[:task_definition_id])
+
+    # check the user can put this task
+    if authorise? current_user, project, :make_submission
+      # Check unit allows planned date changes
+      unless project.unit.allow_flexible_dates
+        error!({ error: 'This unit does not allow you to adjust due dates.' }, 403)
+      end
+
+      task = project.task_for_task_definition(task_definition)
+
+      # update the planned date
+      task.extensions = params[:extensions]
+      task.save
+
+      TaskComment.create(
+        task: task,
+        user: current_user,
+        comment: "Planned date adjusted to #{task.due_date.strftime('%d %b')}.",
+        content_type: :plan,
+        recipient: project.student,
+        extension_weeks: params[:extensions]
+      )
+
+      present task, with: Entities::TaskEntity, include_other_projects: true, update_only: true
+    else
+      error!({ error: "You are not permitted to adjust the plan." }, 403)
+    end
+  end
+
   desc 'Update a task using its related project and task definition'
   params do
     # requires :id, type: Integer, desc: 'The project id to locate'

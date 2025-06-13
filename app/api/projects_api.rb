@@ -34,6 +34,23 @@ class ProjectsApi < Grape::API
     end
   end
 
+  desc 'Adjust special consideration days'
+  params do
+    requires :id, type: Integer, desc: 'The id of the project to adjust'
+    requires :spec_con_days, type: Integer, desc: 'The number of special consideration days to add or remove'
+  end
+  put '/projects/:id/spec_con' do
+    project = Project.find(params[:id])
+    # Can access project and grant spec con
+    unless authorise?(current_user, project, :get) && authorise?(current_user, project.unit, :grant_spec_con)
+      error!({ error: 'You are not authorised to perform this action' }, 403)
+    end
+
+    project.update!(spec_con_days: params['spec_con_days'])
+
+    present project, with: Entities::ProjectEntity, for_staff: true, summary_only: true, user: current_user, only: [:spec_con_days]
+  end
+
   desc 'Update a project'
   params do
     optional :trigger,            type: String,  desc: 'The update trigger'

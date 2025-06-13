@@ -47,6 +47,7 @@ module Entities
     expose :allow_student_extension_requests, unless: :summary_only
     expose :extension_weeks_on_resubmit_request, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
     expose :allow_student_change_tutorial, unless: :summary_only
+    expose :allow_flexible_dates, unless: :summary_only
 
     expose :learning_outcomes, using: LearningOutcomeEntity, as: :ilos, unless: :summary_only
     expose :tutorial_streams, using: TutorialStreamEntity, unless: :summary_only

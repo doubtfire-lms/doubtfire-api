@@ -19,6 +19,10 @@ class ExtensionCommentsApi < Grape::API
       error!({ error: 'Not authorised to request an extension for this task' }, 403)
     end
 
+    if project.unit.allow_flexible_dates
+      error!({ error: 'Extensions are disabled for this unit.' }, 403)
+    end
+
     error!({ error: 'Extension weeks can not be 0.' }, 403) if params[:weeks_requested] == 0
 
     max_duration = task.weeks_can_extend
