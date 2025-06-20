@@ -52,7 +52,7 @@ module Entities
     expose :tutorial_streams, using: TutorialStreamEntity, unless: :summary_only
 
     # Expose staff before tutorials, so that their details are available
-    expose :staff, using: UnitRoleEntity, unless: :summary_only
+    expose :staff, using: UnitRoleEntity, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) } # filtering out the staff_data object for non_staff_roles
     expose :tutorials, using: TutorialEntity, unless: :summary_only
     # expose :tutorial_enrolments, using: TutorialEnrolmentEntity, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
 
