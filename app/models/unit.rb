@@ -763,7 +763,17 @@ class Unit < ApplicationRecord
         if changes.key? username
           if row_data[:enrolled] # they should be enrolled - record that... overriding anything else
             # record previous row as ignored
-            ignored << { row: changes[username][:row], message: "Skipping duplicate role - ensuring enrolled" }
+            ignored_entry = { row: changes[username][:row], message: 'Skipping duplicate role - ensuring enrolled.' }
+
+            # Allocate+ csv data may have duplicate student rows for each tutorial enrolment
+            # We need to combine the tutorials from both rows so that the student is enrolled into each tutorial
+            if import_settings[:merge_tutorials_for_duplicate_students] && changes[username][:tutorials]&.any?
+                row_data[:tutorials] ||= []
+                row_data[:tutorials].concat(changes[username][:tutorials])
+                ignored_entry[:message] += ' Merged tutorial enrolments.'
+            end
+
+            ignored << ignored_entry
             changes[username] = row_data
           else
             # record this row as skipped
