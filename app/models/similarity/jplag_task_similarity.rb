@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class MossTaskSimilarity < TaskSimilarity
+class JplagTaskSimilarity < TaskSimilarity
   belongs_to :other_task, class_name: 'Task'
 
   def file_path
@@ -28,7 +28,7 @@ class MossTaskSimilarity < TaskSimilarity
   end
 
   def other_similarity
-    MossTaskSimilarity.where(task_id: other_task.id, other_task_id: task.id).first unless other_task.nil?
+    JplagTaskSimilarity.where(task_id: other_task.id, other_task_id: task.id).first unless other_task.nil?
   end
 
   def other_student

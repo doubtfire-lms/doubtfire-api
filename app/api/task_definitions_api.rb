@@ -32,7 +32,7 @@ class TaskDefinitionsApi < Grape::API
       requires :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
       optional :assessment_enabled,       type: Boolean,  desc: 'Enable or disable assessment'
       optional :overseer_image_id,        type: Integer,  desc: 'The id of the Docker image for overseer'
-      optional :moss_language,            type: String,   desc: 'The language to use for code similarity checks'
+      optional :jplag_language,            type: String,   desc: 'The language to use for code similarity checks'
       optional :scorm_enabled,            type: Boolean,  desc: 'Whether SCORM assessment is enabled for this task'
       optional :scorm_allow_review,       type: Boolean,  desc: 'Whether a student is allowed to review their completed test attempts'
       optional :scorm_bypass_test,        type: Boolean,  desc: 'Whether a student is allowed to upload files before passing SCORM test'
@@ -69,7 +69,7 @@ class TaskDefinitionsApi < Grape::API
                                                 :max_quality_pts,
                                                 :assessment_enabled,
                                                 :overseer_image_id,
-                                                :moss_language,
+                                                :jplag_language,
                                                 :upload_requirements,
                                                 :unit_id
                                               )
@@ -125,7 +125,7 @@ class TaskDefinitionsApi < Grape::API
       optional :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
       optional :assessment_enabled,       type: Boolean,  desc: 'Enable or disable assessment'
       optional :overseer_image_id,        type: Integer,  desc: 'The id of the Docker image name for overseer'
-      optional :moss_language,            type: String,   desc: 'The language to use for code similarity checks'
+      optional :jplag_language,           type: String,   desc: 'The language to use for code similarity checks'
     end
   end
   put '/units/:unit_id/task_definitions/:id' do
@@ -158,7 +158,7 @@ class TaskDefinitionsApi < Grape::API
                                                 :max_quality_pts,
                                                 :assessment_enabled,
                                                 :overseer_image_id,
-                                                :moss_language,
+                                                :jplag_language,
                                                 :upload_requirements
                                               )
 
@@ -710,5 +710,46 @@ class TaskDefinitionsApi < Grape::API
     # Actually remove...
     task_def.remove_scorm_data
     true
+  end
+
+  desc 'Download the JPLAG report for a given task'
+  params do
+    requires :unit_id, type: Integer, desc: 'The unit to download JPLAG report for'
+    requires :task_def_id, type: Integer, desc: 'The task definition to get the JPLAG report of'
+  end
+  get '/units/:unit_id/task_definitions/:task_def_id/jplag_report' do
+    unit = Unit.find(params[:unit_id])
+    task_def = unit.task_definitions.find(params[:task_def_id])
+    unless authorise? current_user, unit, :download_jplag_report
+      error!({ error: 'Not authorised to download JPLAG reports of unit' }, 403)
+    end
+    logger.debug "This is the has_jplag_report? #{task_def.has_jplag_report?}"
+    if task_def.has_jplag_report?
+      path = FileHelper.task_jplag_report_path(unit, task_def)
+      header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}-jplag-report.zip"
+    else
+      path = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
+      content_type 'application/pdf'
+      header['Content-Disposition'] = 'attachment; filename=FileNotFound.pdf'
+    end
+    header['Access-Control-Expose-Headers'] = 'Content-Disposition'
+    content_type 'application/octet-stream'
+    stream_file path
+  end
+
+  desc 'Get hasJplagReport boolean for a given task'
+  params do
+    requires :unit_id, type: Integer, desc: 'The unit to get JPLAG report for'
+    requires :task_def_id, type: Integer, desc: 'The task definition to get the JPLAG report of'
+  end
+  get '/units/:unit_id/task_definitions/:task_def_id/has_jplag_report' do
+    unit = Unit.find(params[:unit_id])
+    task_def = unit.task_definitions.find(params[:task_def_id])
+
+    unless authorise? current_user, unit, :download_jplag_report
+      error!({ error: 'Not authorised to download JPLAG reports of unit' }, 403)
+    end
+
+    task_def.has_jplag_report?
   end
 end
