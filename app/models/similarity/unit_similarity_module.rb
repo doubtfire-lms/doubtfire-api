@@ -192,12 +192,12 @@ module UnitSimilarityModule
 
           g1_tasks.each do |gt1|
             g2_tasks.each do |gt2|
-              create_plagiarism_link(gt1, gt2, match, warn_pct)
+              create_moss_plagiarism_link(gt1, gt2, match, warn_pct)
             end
           end
 
         else # just link the individuals...
-          create_plagiarism_link(t1, t2, match, warn_pct)
+          create_moss_plagiarism_link(t1, t2, match, warn_pct)
         end
       end
     end
@@ -313,11 +313,11 @@ module UnitSimilarityModule
             g1_tasks.each do |gt1|
               g2_tasks.each do |gt2|
                 next if gt1.student == gt2.student
-                create_plagiarism_link(gt1, gt2, warn_pct, comparison[:max_similarity])
+                create_jplag_plagiarism_link(gt1, gt2, warn_pct, comparison[:max_similarity])
               end
             end
           else # just link the individuals...
-            create_plagiarism_link(first_submission, second_submission, warn_pct, comparison[:max_similarity])
+            create_jplag_plagiarism_link(first_submission, second_submission, warn_pct, comparison[:max_similarity])
           end
         end
       else
