@@ -76,7 +76,7 @@ namespace :submission do
 
           # TODO: bring back moss once jplag is workiing
           # unit.check_moss_similarity
-          # unit.update_plagiarism_stats
+          # unit.update_moss_plagiarism_stats
         end
         puts ' ------------------------------------------------------------ '
         puts ' done.'
