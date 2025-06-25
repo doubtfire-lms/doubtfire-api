@@ -50,7 +50,7 @@ module Entities
     expose :max_quality_pts
     expose :overseer_image_id, if: ->(unit, options) { staff?(options[:my_role]) }, expose_nil: false
     expose :assessment_enabled, if: ->(unit, options) { staff?(options[:my_role]) }
-    expose :jplag_language, if: ->(unit, options) { staff?(options[:my_role]) }, expose_nil: false
+    expose :similarity_language, if: ->(unit, options) { staff?(options[:my_role]) }, expose_nil: false
 
     expose :learning_outcomes, using: LearningOutcomeEntity, as: :ilos
   end

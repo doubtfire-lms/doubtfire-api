@@ -32,7 +32,7 @@ class TaskDefinitionsApi < Grape::API
       requires :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
       optional :assessment_enabled,       type: Boolean,  desc: 'Enable or disable assessment'
       optional :overseer_image_id,        type: Integer,  desc: 'The id of the Docker image for overseer'
-      optional :jplag_language,            type: String,   desc: 'The language to use for code similarity checks'
+      optional :similarity_language,            type: String,   desc: 'The language to use for code similarity checks'
       optional :scorm_enabled,            type: Boolean,  desc: 'Whether SCORM assessment is enabled for this task'
       optional :scorm_allow_review,       type: Boolean,  desc: 'Whether a student is allowed to review their completed test attempts'
       optional :scorm_bypass_test,        type: Boolean,  desc: 'Whether a student is allowed to upload files before passing SCORM test'
@@ -69,7 +69,7 @@ class TaskDefinitionsApi < Grape::API
                                                 :max_quality_pts,
                                                 :assessment_enabled,
                                                 :overseer_image_id,
-                                                :jplag_language,
+                                                :similarity_language,
                                                 :upload_requirements,
                                                 :unit_id
                                               )
@@ -125,7 +125,7 @@ class TaskDefinitionsApi < Grape::API
       optional :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
       optional :assessment_enabled,       type: Boolean,  desc: 'Enable or disable assessment'
       optional :overseer_image_id,        type: Integer,  desc: 'The id of the Docker image name for overseer'
-      optional :jplag_language,           type: String,   desc: 'The language to use for code similarity checks'
+      optional :similarity_language, type: String, desc: 'The language to use for code similarity checks'
     end
   end
   put '/units/:unit_id/task_definitions/:id' do
@@ -158,7 +158,7 @@ class TaskDefinitionsApi < Grape::API
                                                 :max_quality_pts,
                                                 :assessment_enabled,
                                                 :overseer_image_id,
-                                                :jplag_language,
+                                                :similarity_language,
                                                 :upload_requirements
                                               )
 
@@ -728,7 +728,7 @@ class TaskDefinitionsApi < Grape::API
       path = FileHelper.task_jplag_report_path(unit, task_def)
       header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}-jplag-report.zip"
     else
-      path = Rails.root.join('public', 'resources', 'FileNotFound.pdf')
+      path = Rails.root.join("public/resources/FileNotFound.pdf")
       content_type 'application/pdf'
       header['Content-Disposition'] = 'attachment; filename=FileNotFound.pdf'
     end

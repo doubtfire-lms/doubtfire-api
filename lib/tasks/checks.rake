@@ -71,8 +71,12 @@ namespace :submission do
           puts ' ------------------------------------------------------------ '
           puts "  Starting Plagiarism Check for #{unit.name}"
           puts ' ------------------------------------------------------------ '
-          unit.check_similarity
-          unit.update_plagiarism_stats
+
+          unit.check_jplag_similarity
+
+          # TODO: bring back moss once jplag is workiing
+          # unit.check_moss_similarity
+          # unit.update_plagiarism_stats
         end
         puts ' ------------------------------------------------------------ '
         puts ' done.'

@@ -32,7 +32,7 @@ class Unit < ApplicationRecord
       :download_grades,
       :exceed_capacity,
       :get_los,
-      :get_feedback_chips
+      :get_feedback_chips,
       :download_jplag_report,
     ]
 
@@ -80,7 +80,7 @@ class Unit < ApplicationRecord
       :get_los,
       :create_feedback_chips,
       :get_feedback_chips,
-      :grant_spec_con
+      :grant_spec_con,
       :download_jplag_report,
     ]
 

@@ -18,11 +18,24 @@ module Similarity
           {
             idx: 0,
             format: if has_resource
-                      similarity.type == 'JplagTaskSimilarity' ? 'html' : 'pdf'
+                      similarity.type.in?(%w[MossTaskSimilarity JplagTaskSimilarity]) ? 'html' : 'pdf'
                     end,
             description: "#{similarity.other_student.name} (#{similarity.other_student.username}) - #{similarity.pct}% similarity"
           }
         ]
+
+        # TODO: jplag integration
+        # For moss similarity, show staff other student details
+        if similarity.type == 'MossTaskSimilarity' && staff?(options[:my_role])
+          other_path = similarity.other_similarity&.file_path
+          has_other_resource = other_path.present? && File.exist?(other_path)
+
+          result << {
+            idx: 1,
+            format: has_other_resource ? 'html' : nil,
+            description: "Match: #{similarity.other_student&.name} (#{similarity.other_student&.username}) - #{similarity.other_similarity&.pct}"
+          }
+        end
 
         result
       end
