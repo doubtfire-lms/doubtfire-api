@@ -1,6 +1,9 @@
 module Similarity
   module Entities
     class TaskSimilarityEntity < Grape::Entity
+      def staff?(my_role)
+        Role.teaching_staff_ids.include?(my_role.id) unless my_role.nil?
+      end
 
       expose :id
       expose :type
@@ -10,7 +13,7 @@ module Similarity
         similarity.ready_for_viewer?
       end
 
-      expose :parts do |similarity|
+      expose :parts do |similarity, options|
         path = similarity.file_path
         has_resource = path.present? && File.exist?(path)
 
