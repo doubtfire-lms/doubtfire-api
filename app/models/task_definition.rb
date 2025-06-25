@@ -741,8 +741,8 @@ class TaskDefinition < ApplicationRecord
   def task_jplag_report_with_abbreviation(abbr)
     task_path = FileHelper.task_jplag_report_dir unit
 
-    result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}-result.zip"
-    result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}-result.zip"
+    result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}-result.jplag"
+    result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}-result.jplag"
 
     if File.exist? result_with_sanitised_path
       result_with_sanitised_path

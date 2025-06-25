@@ -127,7 +127,7 @@ module UnitSimilarityModule
         tasks_with_files = tasks.select(&:has_pdf)
 
         run_jplag_on_done_files(td, tasks_dir, tasks_with_files, unit_code)
-        report_path = "#{Doubtfire::Application.config.jplag_report_dir}/#{unit_code}/#{td.abbreviation}-result.zip"
+        report_path = "#{Doubtfire::Application.config.jplag_report_dir}/#{unit_code}/#{td.abbreviation}-result.jplag"
         warn_pct = td.plagiarism_warn_pct || 50
         puts "Warn PCT: #{warn_pct}"
         process_jplag_plagiarism_report(report_path, warn_pct, td.group_set)
@@ -235,7 +235,7 @@ module UnitSimilarityModule
     `docker exec jplag sh -c 'if [ ! -d "#{results_dir}" ]; then mkdir -p "#{results_dir}"; fi'`
 
     # Remove existing result file if it exists
-    result_file = "#{results_dir}/#{task_definition.abbreviation}-result.zip"
+    result_file = "#{results_dir}/#{task_definition.abbreviation}-result.jplag"
     `docker exec jplag sh -c 'if [ -f "#{result_file}" ]; then rm "#{result_file}"; fi'`
 
     # get each code file for each task
@@ -246,17 +246,22 @@ module UnitSimilarityModule
       pattern = task_definition.glob_for_upload_requirement(idx)
 
       tasks_with_files.each do |t|
+        # "name" is {taskId}/{filename}, so it will create a subdir with the task id, but we use this later when processing the report
         t.extract_file_from_done(tasks_dir, pattern, ->(_task, to_path, name) { File.join(to_path.to_s, t.student.username.to_s, name.to_s) })
       end
 
       logger.info "Starting JPLAG container to run on #{tasks_dir}"
       root_dir = Rails.root.to_s
       tasks_dir_split = tasks_dir.to_s.split(root_dir)[1]
-      # TODO: jplag; revert moss_ to jplag_
       file_lang = task_definition.similarity_language.to_s
 
+      # Convert pct to decimal
+      similarity_threshold = similarity_pct.to_f / 100
+
       # Run JPLAG on the extracted files
-      system("docker exec jplag java -jar /jplag/jplag-jar-with-dependencies.jar #{tasks_dir_split} -l #{file_lang} --similarity-threshold=#{similarity_pct} -M RUN -r #{results_dir}/#{task_definition.abbreviation}-result")
+      docker_command = "docker exec jplag java -jar /jplag/jplag-jar-with-dependencies.jar #{tasks_dir_split} -l #{file_lang} --similarity-threshold=#{similarity_threshold} -M RUN -r #{results_dir}/#{task_definition.abbreviation}-result"
+      logger.debug "Executing command: #{docker_command}"
+      system(docker_command)
     end
 
     # Delete the extracted code files from tmp
