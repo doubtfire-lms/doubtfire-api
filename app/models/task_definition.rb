@@ -739,7 +739,7 @@ class TaskDefinition < ApplicationRecord
   end
 
   def task_jplag_report_with_abbreviation(abbr)
-    task_path = FileHelper.task_file_dir_for_unit unit, create
+    task_path = FileHelper.task_jplag_report_dir unit
 
     result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}-result.zip"
     result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}-result.zip"
