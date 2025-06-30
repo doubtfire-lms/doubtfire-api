@@ -231,11 +231,11 @@ module UnitSimilarityModule
 
     # Check if the directory exists and create it if it doesn't
     results_dir = "/jplag/results/#{unit_code}"
-    `docker exec jplag sh -c 'if [ ! -d "#{results_dir}" ]; then mkdir -p "#{results_dir}"; fi'`
+    system("docker exec jplag sh -c 'if [ ! -d \"#{results_dir}\" ]; then mkdir -p \"#{results_dir}\"; fi'") || raise('Failed to create JPlag results directory')
 
     # Remove existing result file if it exists
     result_file = "#{results_dir}/#{task_definition.abbreviation}-result.jplag"
-    `docker exec jplag sh -c 'if [ -f "#{result_file}" ]; then rm "#{result_file}"; fi'`
+    system("docker exec jplag sh -c 'if [ -f \"#{result_file}\" ]; then rm \"#{result_file}\"; fi'") || raise('Failed to remove previous JPlag report')
 
     # get each code file for each task
     task_definition.upload_requirements.each_with_index do |upreq, idx|
