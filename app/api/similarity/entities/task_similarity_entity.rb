@@ -13,6 +13,9 @@ module Similarity
         similarity.ready_for_viewer?
       end
 
+      expose :other_task
+      expose :other_student
+
       expose :parts do |similarity, options|
         path = similarity.file_path
         has_resource = path.present? && File.exist?(path)
