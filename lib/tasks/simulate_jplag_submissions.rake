@@ -1,9 +1,9 @@
 require "active_support/core_ext/hash/indifferent_access"
 
-# lib/tasks/setup_jplag_submissions.rake
+# lib/tasks/simulate_jplag_submissions.rake
 namespace :db do
   desc 'Simulate submissions to test with JPlag'
-  task setup_jplag_submissions: [:environment] do
+  task simulate_jplag_submissions: [:environment] do
     Rails.logger.level = Logger::INFO
     puts "Setting up submissions to test with JPlag..."
 
