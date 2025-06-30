@@ -62,6 +62,7 @@ class Task < ApplicationRecord
       :get,
       :get_submission,
       :view_plagiarism,
+      :delete_plagiarism,
       :get_discussion
     ]
     # What can auditors do with tasks?
