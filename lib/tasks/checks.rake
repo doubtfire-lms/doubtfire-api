@@ -74,7 +74,7 @@ namespace :submission do
 
           unit.check_jplag_similarity
 
-          # TODO: bring back moss once jplag is workiing
+          # MOSS is deprecated, replaced by JPlag
           # unit.check_moss_similarity
           # unit.update_moss_plagiarism_stats
         end
