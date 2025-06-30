@@ -126,25 +126,24 @@ module UnitSimilarityModule
         tasks = tasks_for_definition(td)
         tasks_with_files = tasks.select(&:has_pdf)
 
-        run_jplag_on_done_files(td, tasks_dir, tasks_with_files, unit_code)
-        report_path = "#{Doubtfire::Application.config.jplag_report_dir}/#{unit_code}/#{td.abbreviation}-result.jplag"
-        warn_pct = td.plagiarism_warn_pct || 50
-        puts "Warn PCT: #{warn_pct}"
-        process_jplag_plagiarism_report(report_path, warn_pct, td.group_set)
-
         # Skip if not due yet
-        # TODO: Re-enable this after testing
-        # next if td.due_date > Time.zone.now
+        next if Rails.env.production? && td.due_date > Time.zone.now
 
         # Skip if no files changed
         next unless tasks_with_files.count > 1 &&
                     (
+                      # NOTE: `last_plagarism_scan` is currently tracked for each Unit, not each Task Definition
                       tasks.where('tasks.file_uploaded_at > ?', last_plagarism_scan).select(&:has_pdf).count > 0 ||
                       td.updated_at > last_plagarism_scan ||
                       force
                     )
 
         # There are new tasks, check these with JPLAG
+        run_jplag_on_done_files(td, tasks_dir, tasks_with_files, unit_code)
+        report_path = "#{Doubtfire::Application.config.jplag_report_dir}/#{unit_code}/#{td.abbreviation}-result.jplag"
+        warn_pct = td.plagiarism_warn_pct || 50
+        puts "Warn PCT: #{warn_pct}"
+        process_jplag_plagiarism_report(report_path, warn_pct, td.group_set)
       end
       self.last_plagarism_scan = Time.zone.now
       save!
