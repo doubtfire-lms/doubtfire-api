@@ -109,16 +109,11 @@ module UnitSimilarityModule
     # making temp directory for unit - jplag
     root_work_dir = Rails.root.join("tmp", "jplag", "#{code}-#{id}")
     unit_code = "#{code}-#{id}"
-    FileUtils.mkdir_p(root_work_dir)
 
     begin
       logger.info "Checking plagiarsm for unit #{code} - #{name} (id=#{id})"
 
       task_definitions.each do |td|
-        # making temp directory for each task - jplag
-        tasks_dir = root_work_dir.join(td.id.to_s)
-        FileUtils.mkdir_p(tasks_dir)
-
         next if td.similarity_language.nil? || td.upload_requirements.nil? || td.upload_requirements.select { |upreq| upreq['type'] == 'code' && upreq['tii_check'] }.empty?
 
         # Is there anything to check?
@@ -137,6 +132,13 @@ module UnitSimilarityModule
                       td.updated_at > last_plagarism_scan ||
                       force
                     )
+
+        # Ensure work directory for the unit is created
+        FileUtils.mkdir_p(root_work_dir)
+
+        # Init work directory for each task definition
+        tasks_dir = root_work_dir.join(td.id.to_s)
+        FileUtils.mkdir_p(tasks_dir)
 
         # There are new tasks, check these with JPLAG
         run_jplag_on_done_files(td, tasks_dir, tasks_with_files, unit_code)
