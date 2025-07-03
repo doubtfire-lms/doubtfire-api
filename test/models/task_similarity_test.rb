@@ -5,6 +5,79 @@ class TaskSimilarityTest < ActiveSupport::TestCase
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
   include TestHelpers::TiiTestHelper
+  include TestHelpers::TestFileHelper
+
+  def test_jplag_similarity_pct
+    puts "running test_jplag_similarity_pct"
+
+    unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
+    td = FactoryBot.create(:task_definition, unit: unit, abbreviation: 'java-1', outcome_count: 0, similarity_language: "java", plagiarism_warn_pct: 10)
+
+    td.upload_requirements = [
+      {
+        "key" => 'file0',
+        "name" => 'java',
+        "type" => 'code',
+        "tii_check" => true
+      }
+    ]
+
+    td.similarity_language = "java"
+    td.plagiarism_warn_pct = 25
+    td.save!
+
+    # Initialise students
+    student1 = FactoryBot.create(:user, :student)
+    student1_project = FactoryBot.create(:project, user_id: student1.id, unit: unit)
+
+    student2 = FactoryBot.create(:user, :student)
+    student2_project = FactoryBot.create(:project, user_id: student2.id, unit: unit)
+
+    # Submit java file student1
+    add_auth_header_for(user: student1)
+
+    data_to_post = {
+      trigger: 'ready_for_feedback'
+    }
+    data_to_post = with_file('test_files/submissions/jplag/Angry Coyote/sociologia.java', 'text/x-java-source', data_to_post)
+
+    post "/api/projects/#{student1_project.id}/task_def_id/#{td.id}/submission", data_to_post
+    assert_equal 201, last_response.status
+
+    student1_task = student1_project.task_for_task_definition(td)
+    student1_task.convert_submission_to_pdf(log_to_stdout: false)
+    assert File.exist? student1_task.final_pdf_path
+    assert student1_task.has_pdf
+
+    # Submit duplicate file for student_2
+    add_auth_header_for(user: student2)
+
+    post "/api/projects/#{student2_project.id}/task_def_id/#{td.id}/submission", data_to_post
+    assert_equal 201, last_response.status
+
+    student2_task = student2_project.task_for_task_definition(td)
+    student2_task.convert_submission_to_pdf(log_to_stdout: false)
+    assert File.exist? student2_task.final_pdf_path
+    assert student2_task.has_pdf
+
+    # Run jplag
+    unit.check_jplag_similarity(force: true)
+
+    # Validate similarities
+    similarity1 = JplagTaskSimilarity.find_by(task_id: student1_task.id)
+    similarity2 = JplagTaskSimilarity.find_by(task_id: student2_task.id)
+
+    assert similarity1.valid?, similarity1.errors.full_messages
+    assert similarity2.valid?, similarity2.errors.full_messages
+
+    assert_equal similarity1.other_task_id, similarity2.task_id
+    assert_equal similarity2.other_task_id, similarity1.task_id
+
+    assert_equal 100, similarity1.pct
+    assert_equal 100, similarity2.pct
+
+    assert td.has_jplag_report?, "Expected task definition to have a JPlag report"
+  end
 
   # Test that when you create a plagiarism match link, that a moss test needs the other task
   def test_other_details
