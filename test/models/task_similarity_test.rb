@@ -8,8 +8,6 @@ class TaskSimilarityTest < ActiveSupport::TestCase
   include TestHelpers::TestFileHelper
 
   def test_jplag_similarity_pct
-    puts "running test_jplag_similarity_pct"
-
     unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
     td = FactoryBot.create(:task_definition, unit: unit, abbreviation: 'java-1', outcome_count: 0, similarity_language: "java", plagiarism_warn_pct: 10)
 
