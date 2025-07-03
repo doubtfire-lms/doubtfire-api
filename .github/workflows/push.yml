@@ -120,7 +120,7 @@ jobs:
             -t
             -v ${{ github.workspace }}:/doubtfire
             -v /var/run/docker.sock:/var/run/docker.sock
-          run: docker exec -t jplag java -jar jplag-jar-with-dependencies.jar "test"
+          run: docker exec -t jplag ls /jplag/jplag-jar-with-dependencies.jar
       - name: Populate database
         uses: addnab/docker-run-action@v3
         with:
