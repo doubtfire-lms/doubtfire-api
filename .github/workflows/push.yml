@@ -93,17 +93,6 @@ jobs:
             -v ${{ github.workspace }}/tmp/rails-latex:/workdir/texlive-latex
             --detach
           run: sleep infinity
-      - name: Start JPlag service
-        uses: addnab/docker-run-action@v3
-        with:
-          image: doubtfire-jplag-development:local
-          options: >
-            --name jplag
-            -v ${{ github.workspace }}/student-work:/student-work
-            -v ${{ github.workspace }}/jplag:/jplag
-            -v ${{ github.workspace }}/jplag/results:${{ env.DF_JPLAG_REPORT_DIR }}
-            --detach
-          run: sleep infinity
       - name: Test TexLive container
         uses: addnab/docker-run-action@v3
         with:
@@ -113,6 +102,25 @@ jobs:
             -v ${{ github.workspace }}:/doubtfire
             -v /var/run/docker.sock:/var/run/docker.sock
           run: docker exec -t ${{ env.LATEX_CONTAINER_NAME }} lualatex -v
+      - name: Start JPlag service
+        uses: addnab/docker-run-action@v3
+        with:
+          image: doubtfire-jplag-development:local
+          options: >
+            --name jplag
+            -v ${{ github.workspace }}/student-work:/student-work
+            -v ${{ github.workspace }}/jplag/results:${{ env.DF_JPLAG_REPORT_DIR }}
+            --detach
+          run: sleep infinity
+      - name: Test JPlag service
+        uses: addnab/docker-run-action@v3
+        with:
+          image: doubtfire-api-development:local
+          options: >
+            -t
+            -v ${{ github.workspace }}:/doubtfire
+            -v /var/run/docker.sock:/var/run/docker.sock
+          run: docker exec -t jplag java -jar jplag-jar-with-dependencies.jar "test"
       - name: Populate database
         uses: addnab/docker-run-action@v3
         with:
