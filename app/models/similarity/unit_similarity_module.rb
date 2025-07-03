@@ -122,7 +122,7 @@ module UnitSimilarityModule
         tasks_with_files = tasks.select(&:has_pdf)
 
         # Skip if not due yet
-        next if Rails.env.production? && td.due_date > Time.zone.now
+        next if Rails.env.production? && td.due_date > Time.zone.now && !force
 
         # Skip if no files changed
         next unless tasks_with_files.count > 1 &&
