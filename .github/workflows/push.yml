@@ -101,7 +101,7 @@ jobs:
             --name jplag
             -v ${{ github.workspace }}/student-work:/student-work
             -v ${{ github.workspace }}/jplag:/jplag
-            -v ${{ github.workspace }}/jplag/results:/jplag/results
+            -v ${{ github.workspace }}/jplag/results:${{ env.DF_JPLAG_REPORT_DIR }}
             --detach
           run: sleep infinity
       - name: Test TexLive container
@@ -151,7 +151,7 @@ jobs:
             -v ${{ github.workspace }}/student-work:/student-work
             -v /var/run/docker.sock:/var/run/docker.sock
             -v ${{ github.workspace }}/lib/shell/latex_run_notty.sh:/doubtfire/lib/shell/latex_run.sh
-            -v ${{ github.workspace }}/jplag/results:/jplag/results
+            -v ${{ github.workspace }}/jplag/results:${{ env.DF_JPLAG_REPORT_DIR }}
             -e RAILS_ENV
             -e DF_STUDENT_WORK_DIR
             -e DF_INSTITUTION_HOST
