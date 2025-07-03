@@ -233,11 +233,11 @@ module UnitSimilarityModule
 
     # Check if the directory exists and create it if it doesn't
     results_dir = "/jplag/results/#{unit_code}"
-    system("docker exec jplag sh -c 'if [ ! -d \"#{results_dir}\" ]; then mkdir -p \"#{results_dir}\"; fi'") || raise('Failed to create JPlag results directory')
+    system("docker exec -i jplag sh -c 'if [ ! -d \"#{results_dir}\" ]; then mkdir -p \"#{results_dir}\"; fi'") || raise('Failed to create JPlag results directory')
 
     # Remove existing result file if it exists
     result_file = "#{results_dir}/#{task_definition.abbreviation}-result.jplag"
-    system("docker exec jplag sh -c 'if [ -f \"#{result_file}\" ]; then rm \"#{result_file}\"; fi'") || raise('Failed to remove previous JPlag report')
+    system("docker exec -i jplag sh -c 'if [ -f \"#{result_file}\" ]; then rm \"#{result_file}\"; fi'") || raise('Failed to remove previous JPlag report')
 
     # get each code file for each task
     task_definition.upload_requirements.each_with_index do |upreq, idx|
@@ -260,7 +260,7 @@ module UnitSimilarityModule
       similarity_threshold = similarity_pct.to_f / 100
 
       # Run JPLAG on the extracted files
-      docker_command = "docker exec jplag java -jar /jplag/jplag-jar-with-dependencies.jar #{tasks_dir_split} -l #{file_lang} --similarity-threshold=#{similarity_threshold} -M RUN -r #{results_dir}/#{task_definition.abbreviation}-result"
+      docker_command = "docker exec -i jplag java -jar /jplag/jplag-jar-with-dependencies.jar #{tasks_dir_split} -l #{file_lang} --similarity-threshold=#{similarity_threshold} -M RUN -r #{results_dir}/#{task_definition.abbreviation}-result"
       logger.debug "Executing command: #{docker_command}"
       system(docker_command)
     end
