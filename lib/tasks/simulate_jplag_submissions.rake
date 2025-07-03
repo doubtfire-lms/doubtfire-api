@@ -63,7 +63,7 @@ namespace :db do
       end
     end.new
 
-    15.times do
+    5.times do
       student = find_or_create_student("student_#{student_count}")
       project = unit.enrol_student(student, random_campus)
       student_count += 1
@@ -89,10 +89,10 @@ namespace :db do
       ]
 
       task.accept_submission(student, files, ui, nil, 'ready_for_feedback', nil)
+      task.convert_submission_to_pdf(log_to_stdout: false)
     end
 
-    puts "Task submissions are complete. Please wait for PDF compilation before running JPlag..."
-
+    unit.check_jplag_similarity(force: true)
     # $: rake submission:check_plagiarism
   end
 end
