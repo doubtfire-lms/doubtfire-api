@@ -45,11 +45,12 @@ module Entities
     expose :scorm_bypass_test
     expose :scorm_time_delay_enabled
     expose :scorm_attempt_limit
+    expose :has_jplag_report?, as: :has_jplag_report, if: ->(unit, options) { staff?(options[:my_role]) }
     expose :is_graded
     expose :max_quality_pts
     expose :overseer_image_id, if: ->(unit, options) { staff?(options[:my_role]) }, expose_nil: false
     expose :assessment_enabled, if: ->(unit, options) { staff?(options[:my_role]) }
-    expose :moss_language, if: ->(unit, options) { staff?(options[:my_role]) }, expose_nil: false
+    expose :similarity_language, if: ->(unit, options) { staff?(options[:my_role]) }, expose_nil: false
 
     expose :learning_outcomes, using: LearningOutcomeEntity, as: :ilos
   end

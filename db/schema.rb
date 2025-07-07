@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_07_232750) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_24_235045) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -298,7 +298,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_07_232750) do
     t.boolean "assessment_enabled", default: false
     t.bigint "overseer_image_id"
     t.string "tii_group_id"
-    t.string "moss_language"
+    t.string "similarity_language"
     t.boolean "scorm_enabled", default: false
     t.boolean "scorm_allow_review", default: false
     t.boolean "scorm_bypass_test", default: false

@@ -32,7 +32,8 @@ class Unit < ApplicationRecord
       :download_grades,
       :exceed_capacity,
       :get_los,
-      :get_feedback_chips
+      :get_feedback_chips,
+      :download_jplag_report,
     ]
 
     # What can convenors do with units?
@@ -51,6 +52,7 @@ class Unit < ApplicationRecord
       :change_project_enrolment,
       :download_stats,
       :download_grades,
+      :download_jplag_report,
       :rollover_unit,
       :exceed_capacity,
       :perform_overseer_assessment_test,
@@ -78,7 +80,8 @@ class Unit < ApplicationRecord
       :get_los,
       :create_feedback_chips,
       :get_feedback_chips,
-      :grant_spec_con
+      :grant_spec_con,
+      :download_jplag_report,
     ]
 
     # What can auditors do with units?
@@ -189,6 +192,7 @@ class Unit < ApplicationRecord
   scope :set_inactive,          -> { where('active = ?', false) }
 
   include UnitTiiModule
+
   include UnitSimilarityModule
 
   def detailed_name
