@@ -754,7 +754,6 @@ class Task < ApplicationRecord
     discussed = TaskDiscussedComment.create
     discussed.task = self
     discussed.user = current_user
-    discussed.content_type = :discussed_in_class
     discussed.comment = "Discussed in class"
     discussed.recipient = current_user == project.student ? project.tutor_for(task_definition) : project.student
     discussed.save!
