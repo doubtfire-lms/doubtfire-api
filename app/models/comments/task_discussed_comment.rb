@@ -1,6 +1,4 @@
 class TaskDiscussedComment < TaskComment
-  belongs_to :assessor, class_name: 'User', optional: true
-
   before_create do
     self.content_type = :discussed_in_class
   end
