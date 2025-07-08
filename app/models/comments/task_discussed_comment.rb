@@ -1,0 +1,18 @@
+class TaskDiscussedComment < TaskComment
+  belongs_to :assessor, class_name: 'User', optional: true
+
+  before_create do
+    self.content_type = :status
+  end
+
+  after_create do
+    mark_as_read(self.recipient)
+  end
+
+  def serialize(user)
+    json = super(user)
+    json[:recipient_read_time] = nil
+    json[:date] = self.created_at
+    json
+  end
+end

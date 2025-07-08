@@ -155,6 +155,7 @@ class TasksApi < Grape::API
     optional :include_in_portfolio, type: Boolean, desc: 'Indicate if this task should be in the portfolio'
     optional :grade, type: Integer, desc: 'Grade value if task is a graded task (required if task definition is a graded task)'
     optional :quality_pts, type: Integer, desc: 'Quality points value if task has quality assessment'
+    optional :discussed, type: Boolean, desc: 'Mark task as discussed'
   end
   put '/projects/:id/task_def_id/:task_definition_id' do
     project = Project.find(params[:id])
@@ -165,6 +166,10 @@ class TasksApi < Grape::API
     # check the user can put this task
     if authorise? current_user, project, :make_submission
       task = project.task_for_task_definition(task_definition)
+
+      if !params[:discussed].nil? && authorise?(current_user, project, :assess)
+        task.add_discussed_comment(current_user)
+      end
 
       # if trigger supplied...
       unless params[:trigger].nil?
