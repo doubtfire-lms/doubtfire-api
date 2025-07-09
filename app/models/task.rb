@@ -62,6 +62,7 @@ class Task < ApplicationRecord
       :get,
       :get_submission,
       :view_plagiarism,
+      :delete_plagiarism,
       :get_discussion
     ]
     # What can auditors do with tasks?
@@ -127,7 +128,8 @@ class Task < ApplicationRecord
 
   has_many :comments, class_name: 'TaskComment', dependent: :destroy, inverse_of: :task
   has_many :task_similarities, class_name: 'TaskSimilarity', dependent: :destroy, inverse_of: :task
-  has_many :reverse_task_similarities, class_name: 'MossTaskSimilarity', dependent: :destroy, inverse_of: :other_task, foreign_key: 'other_task_id'
+  has_many :reverse_jplag_similarities, class_name: 'JplagTaskSimilarity', dependent: :destroy, inverse_of: :other_task, foreign_key: 'other_task_id'
+  has_many :reverse_moss_similarities, class_name: 'MossTaskSimilarity', dependent: :destroy, inverse_of: :other_task, foreign_key: 'other_task_id'
   has_many :task_engagements, dependent: :destroy
   has_many :task_submissions, dependent: :destroy
   has_many :overseer_assessments, dependent: :destroy
@@ -1308,7 +1310,8 @@ class Task < ApplicationRecord
 
       # Destroy the links to ensure we test new files
       task_similarities.each(&:destroy)
-      reverse_task_similarities(&:destroy)
+      reverse_jplag_similarities(&:destroy)
+      reverse_moss_similarities(&:destroy)
 
       save
     end

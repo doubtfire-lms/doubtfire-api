@@ -32,7 +32,8 @@ class Unit < ApplicationRecord
       :download_grades,
       :exceed_capacity,
       :get_los,
-      :get_feedback_chips
+      :get_feedback_chips,
+      :download_jplag_report,
     ]
 
     # What can convenors do with units?
@@ -51,6 +52,7 @@ class Unit < ApplicationRecord
       :change_project_enrolment,
       :download_stats,
       :download_grades,
+      :download_jplag_report,
       :rollover_unit,
       :exceed_capacity,
       :perform_overseer_assessment_test,
@@ -78,7 +80,8 @@ class Unit < ApplicationRecord
       :get_los,
       :create_feedback_chips,
       :get_feedback_chips,
-      :grant_spec_con
+      :grant_spec_con,
+      :download_jplag_report,
     ]
 
     # What can auditors do with units?
@@ -189,6 +192,7 @@ class Unit < ApplicationRecord
   scope :set_inactive,          -> { where('active = ?', false) }
 
   include UnitTiiModule
+
   include UnitSimilarityModule
 
   def detailed_name
@@ -631,9 +635,17 @@ class Unit < ApplicationRecord
     end
 
     # Check if these headers should be processed by institution file or from DF format
+    # Asking "Who will convert the users to the right format?"
+    # If these are "institution formatted"? then use import settings from institution settings
+    # Which contain:
+    #  - function to check if row is missing header values
+    #  - function to convert row to hash in the required format
+    #  - booleans for replacing tutorial/campus if different
     if Doubtfire::Application.config.institution_settings.are_headers_institution_users? csv.headers
+      logger.debug 'Importing users using institution\'s import settings'
       import_settings = Doubtfire::Application.config.institution_settings.user_import_settings_for(csv.headers)
     else
+      logger.debug 'Importing users using default import settings'
       if tutorial_streams.count > 0
         stream_names = tutorial_stream_abbr.map { |abbr| abbr.downcase }
       else
@@ -757,7 +769,17 @@ class Unit < ApplicationRecord
         if changes.key? username
           if row_data[:enrolled] # they should be enrolled - record that... overriding anything else
             # record previous row as ignored
-            ignored << { row: changes[username][:row], message: "Skipping duplicate role - ensuring enrolled" }
+            ignored_entry = { row: changes[username][:row], message: 'Skipping duplicate role - ensuring enrolled.' }
+
+            # Allocate+ csv data may have duplicate student rows for each tutorial enrolment
+            # We need to combine the tutorials from both rows so that the student is enrolled into each tutorial
+            if import_settings[:merge_tutorials_for_duplicate_students] && changes[username][:tutorials]&.any?
+                row_data[:tutorials] ||= []
+                row_data[:tutorials].concat(changes[username][:tutorials])
+                ignored_entry[:message] += ' Merged tutorial enrolments.'
+            end
+
+            ignored << ignored_entry
             changes[username] = row_data
           else
             # record this row as skipped

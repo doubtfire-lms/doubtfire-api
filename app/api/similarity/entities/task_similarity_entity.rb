@@ -13,6 +13,9 @@ module Similarity
         similarity.ready_for_viewer?
       end
 
+      expose :other_task
+      expose :other_student
+
       expose :parts do |similarity, options|
         path = similarity.file_path
         has_resource = path.present? && File.exist?(path)
@@ -21,12 +24,13 @@ module Similarity
           {
             idx: 0,
             format: if has_resource
-                      similarity.type == 'MossTaskSimilarity' ? 'html' : 'pdf'
+                      similarity.type.in?(%w[MossTaskSimilarity JplagTaskSimilarity]) ? 'html' : 'pdf'
                     end,
-            description: "#{similarity.student.name} (#{similarity.student.username}) - #{similarity.pct}%"
+            description: "#{similarity.other_student.name} (#{similarity.other_student.username}) - #{similarity.pct}% similarity"
           }
         ]
 
+        # TODO: jplag integration
         # For moss similarity, show staff other student details
         if similarity.type == 'MossTaskSimilarity' && staff?(options[:my_role])
           other_path = similarity.other_similarity&.file_path
