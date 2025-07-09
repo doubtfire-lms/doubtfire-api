@@ -67,14 +67,6 @@ class Project < ApplicationRecord
       :create_staff_note
     ]
 
-    # What can convenors do with projects?
-    convenor_role_permissions = [
-      :get,
-      :get_staff_note,
-      :create_staff_note,
-      :delete_staff_note
-    ]
-
     # What can admins do with projects?
     admin_role_permissions = [
       :get,
@@ -96,7 +88,6 @@ class Project < ApplicationRecord
       student: student_role_permissions,
       tutor: tutor_role_permissions,
       admin: admin_role_permissions,
-      convenor: convenor_role_permissions,
       auditor: auditor_role_permissions,
       nil: nil_role_permissions
     }
