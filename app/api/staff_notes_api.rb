@@ -53,4 +53,21 @@ class StaffNotesApi < Grape::API
     present result, with: Entities::StaffNoteEntity, user: current_user
   end
 
+  desc "Delete a staff note for a project"
+  delete '/projects/:project_id/staff_notes/:id' do
+    project = Project.find(params[:project_id])
+    staff_note = StaffNote.find(params[:id])
+
+    unless authorise?(current_user, project, :delete_staff_note) || staff_note.user.id == current_user.id
+      error!({ error: 'You do not have permission to delete this note.' }, 403)
+    end
+
+    error!({ error: 'Note does not belong to this project' }, 404) if staff_note.project_id != project.id
+
+    staff_note.destroy
+    error!({ error: staff_note.errors.full_messages.last }, 403) unless staff_note.destroyed?
+
+    present staff_note.destroyed?, with: Grape::Presenters::Presenter
+  end
+
 end
