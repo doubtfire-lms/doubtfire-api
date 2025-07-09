@@ -2,4 +2,4 @@
 # This script is copied into tmp/rails-latex/$WORK_DIR/ and executed by rails-latex
 
 WORK_DIR=$(basename "$PWD")
-docker exec -it $LATEX_CONTAINER_NAME ${LATEX_BUILD_PATH:-/texlive/shell/latex_build.sh} $WORK_DIR
+docker exec -e TERM=xterm $LATEX_CONTAINER_NAME ${LATEX_BUILD_PATH:-/texlive/shell/latex_build.sh} $WORK_DIR
