@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_24_235045) do
+ActiveRecord::Schema[8.0].define(version: 2025_07_09_010605) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -240,6 +240,20 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_24_235045) do
     t.text "description"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "staff_notes", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.text "note"
+    t.bigint "project_id", null: false
+    t.bigint "user_id", null: false
+    t.bigint "staff_notes_id"
+    t.bigint "reply_to_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id"], name: "index_staff_notes_on_project_id"
+    t.index ["reply_to_id"], name: "index_staff_notes_on_reply_to_id"
+    t.index ["staff_notes_id"], name: "index_staff_notes_on_staff_notes_id"
+    t.index ["user_id"], name: "index_staff_notes_on_user_id"
   end
 
   create_table "task_comments", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
