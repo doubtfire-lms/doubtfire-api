@@ -29,6 +29,8 @@ class Project < ApplicationRecord
   has_many :task_engagements, through: :tasks
   has_many :comments, through: :tasks
 
+  has_many :staff_notes, dependent: :destroy
+
   # Callbacks - methods called are private
   before_destroy :can_destroy?
 
@@ -60,18 +62,32 @@ class Project < ApplicationRecord
       :get_submission,
       :change,
       :assess,
-      :change_campus
+      :change_campus,
+      :get_staff_note,
+      :create_staff_note
     ]
+
+    # What can convenors do with projects?
+    convenor_role_permissions = [
+      :get,
+      :get_staff_note,
+      :create_staff_note,
+      :delete_staff_note
+    ]
+
     # What can admins do with projects?
     admin_role_permissions = [
       :get,
       :get_submission
     ]
+
     # What can auditors do with projects?
     auditor_role_permissions = [
       :get,
-      :get_submission
+      :get_submission,
+      :get_staff_note
     ]
+
     # What can nil users do with projects?
     nil_role_permissions = []
 
@@ -80,6 +96,7 @@ class Project < ApplicationRecord
       student: student_role_permissions,
       tutor: tutor_role_permissions,
       admin: admin_role_permissions,
+      convenor: convenor_role_permissions,
       auditor: auditor_role_permissions,
       nil: nil_role_permissions
     }
@@ -659,6 +676,16 @@ class Project < ApplicationRecord
     tasks.each(&:archive_submission)
 
     FileUtils.rm_f(portfolio_path) if portfolio_available
+  end
+
+  def add_staff_note(user, text, reply_to_id = nil)
+    note = StaffNote.create
+    note.note = text
+    note.user = user
+    note.project = self
+    note.reply_to_id = reply_to_id
+    note.save!
+    note
   end
 
   private
