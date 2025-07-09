@@ -60,7 +60,6 @@ class StaffNotesApiTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status
 
     json = JSON.parse(last_response.body)
-    puts json
     assert_equal data_to_post[:note], json['note']
     assert_equal tutor.id, json['author']['id']
     assert_equal student_project.id, json['project']['id']
