@@ -127,7 +127,6 @@ jobs:
             -v ${{ github.workspace }}:/doubtfire
             -v ${{ github.workspace }}/student-work:/student-work
             -v /var/run/docker.sock:/var/run/docker.sock
-            -v ${{ github.workspace }}/lib/shell/latex_run_notty.sh:/doubtfire/lib/shell/latex_run.sh
             -e RAILS_ENV
             -e DF_STUDENT_WORK_DIR
             -e DF_INSTITUTION_HOST
