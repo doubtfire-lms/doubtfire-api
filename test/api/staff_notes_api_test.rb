@@ -37,8 +37,7 @@ class StaffNotesApiTest < ActiveSupport::TestCase
     assert_equal 1, json.size
     assert_equal staff_note.id, json.first['id']
     assert_equal staff_note.note, json.first['note']
-    assert_equal tutor.id, json.first['author']['id']
-    assert_equal student_project.id, json.first['project']['id']
+    assert_equal tutor.id, json.first['user_id']
   end
 
   def test_tutor_can_create_staff_notes
@@ -61,8 +60,7 @@ class StaffNotesApiTest < ActiveSupport::TestCase
 
     json = JSON.parse(last_response.body)
     assert_equal data_to_post[:note], json['note']
-    assert_equal tutor.id, json['author']['id']
-    assert_equal student_project.id, json['project']['id']
+    assert_equal tutor.id, json['user_id']
   end
 
   def test_student_cant_get_staff_notes
@@ -100,6 +98,54 @@ class StaffNotesApiTest < ActiveSupport::TestCase
 
     get "/api/projects/#{Project.first.id}/staff_notes"
     assert_equal 403, last_response.status
+  end
+
+  def test_tutor_can_delete_own_staff_notes
+    unit = FactoryBot.create(:unit, code: 'COS10001')
+
+    student = FactoryBot.create(:user, :student)
+    student_project = unit.enrol_student(student, nil)
+
+    tutor = FactoryBot.create(:user, :tutor)
+    unit.employ_staff(tutor, Role.tutor)
+
+    note = StaffNote.create!({
+                               note: "Test note for deletion",
+                               project: student_project,
+                               user: tutor
+                             })
+
+    add_auth_header_for(user: tutor)
+
+    delete "/api/projects/#{student_project.id}/staff_notes/#{note.id}"
+    assert_equal 200, last_response.status
+
+    assert_nil StaffNote.find_by(id: note.id), 'Staff note was not deleted'
+  end
+
+  def test_tutor_cant_delete_other_staff_notes
+    unit = FactoryBot.create(:unit, code: 'COS10001')
+
+    student = FactoryBot.create(:user, :student)
+    student_project = unit.enrol_student(student, nil)
+
+    tutor1 = FactoryBot.create(:user, :tutor)
+    tutor2 = FactoryBot.create(:user, :tutor)
+    unit.employ_staff(tutor1, Role.tutor)
+    unit.employ_staff(tutor2, Role.tutor)
+
+    note = StaffNote.create!({
+                               note: "Test note for deletion",
+                               project: student_project,
+                               user: tutor1
+                             })
+
+    add_auth_header_for(user: tutor2)
+
+    delete "/api/projects/#{student_project.id}/staff_notes/#{note.id}"
+    assert_equal 403, last_response.status
+
+    assert StaffNote.find_by(id: note.id), 'Staff note was deleted'
   end
 
 end
