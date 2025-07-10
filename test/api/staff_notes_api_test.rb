@@ -63,6 +63,47 @@ class StaffNotesApiTest < ActiveSupport::TestCase
     assert_equal tutor.id, json['user_id']
   end
 
+  def test_tutor_can_edit_staff_notes
+    unit = FactoryBot.create(:unit, code: 'COS10001')
+
+    student = FactoryBot.create(:user, :student)
+    student_project = unit.enrol_student(student, nil)
+
+    tutor = FactoryBot.create(:user, :tutor)
+    unit.employ_staff(tutor, Role.tutor)
+
+    staff_note = StaffNote.create!({
+                                     note: "Test note!",
+                                     project: student_project,
+                                     user: tutor
+                                   })
+
+    add_auth_header_for(user: tutor)
+
+    data_to_post = {
+      note: "Updated note"
+    }
+
+    put_json "/api/projects/#{student_project.id}/staff_notes/#{staff_note.id}", data_to_post
+    assert_equal 200, last_response.status
+
+    response_keys = %w[id note user_id reply_to_id]
+    response_staff_note = StaffNote.find(last_response_body['id'])
+    assert_json_matches_model(response_staff_note, last_response_body, response_keys)
+
+    assert_equal staff_note.id, response_staff_note.id
+    assert_equal data_to_post[:note], response_staff_note.note
+    assert_equal tutor.id, response_staff_note.user_id
+
+    # Ensure tutors can't edit staff notes they didn't create
+    tutor2 = FactoryBot.create(:user, :tutor)
+    unit.employ_staff(tutor2, Role.tutor)
+    add_auth_header_for(user: tutor2)
+
+    put_json "/api/projects/#{student_project.id}/staff_notes/#{staff_note.id}", data_to_post
+    assert_equal 403, last_response.status
+  end
+
   def test_student_cant_get_staff_notes
     unit = FactoryBot.create(:unit, code: 'COS10001')
 
