@@ -159,7 +159,6 @@ jobs:
             -v ${{ github.workspace }}:/doubtfire
             -v ${{ github.workspace }}/student-work:/student-work
             -v /var/run/docker.sock:/var/run/docker.sock
-            -v ${{ github.workspace }}/lib/shell/latex_run_notty.sh:/doubtfire/lib/shell/latex_run.sh
             -v ${{ github.workspace }}/jplag/results:${{ env.DF_JPLAG_REPORT_DIR }}
             -v ${{ github.workspace }}/tmp/jplag:/tmp/jplag
             -e RAILS_ENV

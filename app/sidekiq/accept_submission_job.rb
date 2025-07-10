@@ -23,6 +23,8 @@ class AcceptSubmissionJob
       # Convert submission to PDF
       task.convert_submission_to_pdf(log_to_stdout: true)
     rescue StandardError => e
+      logger.error e
+
       # Send email to student if task pdf failed
       if task.project.student.receive_task_notifications
         begin
@@ -36,8 +38,6 @@ class AcceptSubmissionJob
         # Notify system admin
         mail = ErrorLogMailer.error_message('Accept Submission', "Failed to convert submission to PDF for task #{task.log_details}", e)
         mail.deliver if mail.present?
-
-        logger.error e
       rescue StandardError => e
         logger.error "Failed to send error log to admin"
       end
