@@ -656,14 +656,16 @@ class Unit < ApplicationRecord
       end
 
       # Settings include:
-      #   missing_headers_lambda - lambda to check if row is missing key data
-      #   fetch_row_data_lambda - lambda to convert row from csv to required import data
+      #   missing_headers_lambda - lambda to check if row is missing key data, so that students missing
+      #                            any of these header names does not get imported and the missing header
+      #                            is reported.
+      #   fetch_row_data_lambda - lambda to convert row from csv to required import data. Called for each
+      #                           row that has the required headers.
       #   replace_existing_tutorial - boolean to indicate if tutorials in csv override ones in doubtfire
       #   replace_existing_campus - boolean to indicate if campus in csv override ones in doubtfire
       import_settings = {
         missing_headers_lambda: ->(row) {
-          missing_headers(row, %w(unit_code username student_id first_name last_name email campus))
-          missing_headers(row, stream_names)
+          missing_headers(row, %w(unit_code username student_id first_name last_name email campus) + stream_names)
         },
         fetch_row_data_lambda: ->(row, unit) {
           tutorials = []
