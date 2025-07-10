@@ -39,14 +39,12 @@ class StaffNotesApi < Grape::API
 
     text_note = params[:note]
 
-    # TODO: reply to functionality
-    # reply_to_id = params[:reply_to_id]
-    reply_to_id = nil
-    # if reply_to_id.present?
-    #   originalTaskComment = TaskComment.find(reply_to_id)
-    #   error!(error: 'You do not have permission to read the replied comment') unless authorise?(current_user, originalTaskComment.project, :get) || (task.group_task? && task.group.role_for(current_user) != nil)
-    #   error!(error: 'Original comment is not in this task.') if task.all_comments.find(reply_to_id).blank?
-    # end
+    reply_to_id = params[:reply_to_id]
+    if reply_to_id.present?
+      original_staff_note = StaffNote.find(reply_to_id)
+      error!(error: 'You do not have permission to read the replied staff note') unless authorise?(current_user, original_staff_note.project, :get)
+      error!(error: 'Original staff note is not in this project.') if project.staff_notes.find(reply_to_id).blank?
+    end
 
     result = project.add_staff_note(current_user, text_note, reply_to_id)
 

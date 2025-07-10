@@ -58,9 +58,28 @@ class StaffNotesApiTest < ActiveSupport::TestCase
     post_json "/api/projects/#{student_project.id}/staff_notes", data_to_post
     assert_equal 201, last_response.status
 
-    json = JSON.parse(last_response.body)
-    assert_equal data_to_post[:note], json['note']
-    assert_equal tutor.id, json['user_id']
+    # json = JSON.parse(last_response.body)
+    # assert_equal data_to_post[:note], json['note']
+    # assert_equal tutor.id, json['user_id']
+    response_keys = %w[id note user_id reply_to_id]
+    response_staff_note = StaffNote.find(last_response_body['id'])
+    assert_json_matches_model(response_staff_note, last_response_body, response_keys)
+
+    assert_equal data_to_post[:note], response_staff_note.note
+    assert_equal tutor.id, response_staff_note.user_id
+
+    # Reply to the comment we just created
+    data_to_post = {
+      note: "Second note",
+      reply_to_id: response_staff_note.id
+    }
+    post_json "/api/projects/#{student_project.id}/staff_notes", data_to_post
+    assert_equal 201, last_response.status
+
+    second_staff_note = StaffNote.find(last_response_body['id'])
+    assert_equal data_to_post[:note], second_staff_note.note
+    assert_equal tutor.id, response_staff_note.user_id
+    assert_equal response_staff_note.id, second_staff_note.reply_to_id
   end
 
   def test_tutor_can_edit_staff_notes
