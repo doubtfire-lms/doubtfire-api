@@ -48,7 +48,11 @@ class StaffNotesApi < Grape::API
 
     result = project.add_staff_note(current_user, text_note, reply_to_id)
 
-    present result, with: Entities::StaffNoteEntity, user: current_user
+    if result.nil?
+      error!({ error: 'Duplicate note.' }, 403)
+    else
+      present result, with: Entities::StaffNoteEntity, user: current_user
+    end
   end
 
   desc "Delete a staff note for a project"
