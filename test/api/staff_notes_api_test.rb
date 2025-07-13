@@ -208,4 +208,37 @@ class StaffNotesApiTest < ActiveSupport::TestCase
     assert StaffNote.find_by(id: note.id), 'Staff note was deleted'
   end
 
+  def test_project_staff_note_count
+    unit = FactoryBot.create(:unit, code: 'COS10001')
+
+    student = FactoryBot.create(:user, :student)
+    student_project = unit.enrol_student(student, nil)
+
+    tutor1 = FactoryBot.create(:user, :tutor)
+    unit.employ_staff(tutor1, Role.tutor)
+
+    # Create 2 staff notes
+    StaffNote.create!({
+                        note: "Test note 1",
+                        project: student_project,
+                        user: tutor1
+                      })
+
+    StaffNote.create!({
+                        note: "Test note 2",
+                        project: student_project,
+                        user: tutor1
+                      })
+
+    add_auth_header_for(user: tutor1)
+
+    get "/api/students?withdrawn=false&unit_id=#{unit.id}"
+    assert_equal 200, last_response.status
+
+    matching = JSON.parse(last_response.body).find { |project| project["student"]["id"] == student.id }
+
+    # Ensure project returns a staff note count of 2
+    assert_equal 2, matching["staff_note_count"]
+  end
+
 end
