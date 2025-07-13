@@ -483,7 +483,7 @@ class Unit < ApplicationRecord
           *tutorial_streams.map { |s| "MAX(CASE WHEN tutorials.tutorial_stream_id = #{s.id} OR tutorials.tutorial_stream_id IS NULL THEN tutorials.id ELSE NULL END) AS tutorial_#{s.id}" },
           # Get tutorial for case when no stream
           "MAX(CASE WHEN tutorial_streams.id IS NULL THEN tutorials.id ELSE NULL END) AS tutorial",
-          'COUNT(DISTINCT staff_notes.id) as staff_notes_count'
+          'COUNT(DISTINCT staff_notes.id) as staff_note_count'
         )
         .order('users.first_name')
 
@@ -517,7 +517,7 @@ class Unit < ApplicationRecord
         similarity_flag: t.task_similarities_max_pct > 0,
         has_portfolio: !t.portfolio_production_date.nil?,
         stats: map_stats.call(t),
-        staff_notes: t.staff_notes_count,
+        staff_note_count: t.staff_note_count,
         tutorial_enrolments: tutorial_streams.map do |s|
           {
             stream_abbr: s.abbreviation,
