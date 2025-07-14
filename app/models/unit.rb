@@ -440,6 +440,7 @@ class Unit < ApplicationRecord
         .joins('LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id')
         .joins('LEFT OUTER JOIN tutorials ON tutorials.id = tutorial_enrolments.tutorial_id')
         .joins('LEFT OUTER JOIN tutorial_streams ON tutorials.tutorial_stream_id = tutorial_streams.id')
+        .joins('LEFT OUTER JOIN staff_notes ON staff_notes.project_id = projects.id')
         .group(
           'projects.id',
           'projects.target_grade',
@@ -481,7 +482,8 @@ class Unit < ApplicationRecord
           # Get tutorial for each stream in unit
           *tutorial_streams.map { |s| "MAX(CASE WHEN tutorials.tutorial_stream_id = #{s.id} OR tutorials.tutorial_stream_id IS NULL THEN tutorials.id ELSE NULL END) AS tutorial_#{s.id}" },
           # Get tutorial for case when no stream
-          "MAX(CASE WHEN tutorial_streams.id IS NULL THEN tutorials.id ELSE NULL END) AS tutorial"
+          "MAX(CASE WHEN tutorial_streams.id IS NULL THEN tutorials.id ELSE NULL END) AS tutorial",
+          'COUNT(DISTINCT staff_notes.id) as staff_note_count'
         )
         .order('users.first_name')
 
@@ -515,6 +517,7 @@ class Unit < ApplicationRecord
         similarity_flag: t.task_similarities_max_pct > 0,
         has_portfolio: !t.portfolio_production_date.nil?,
         stats: map_stats.call(t),
+        staff_note_count: t.staff_note_count,
         tutorial_enrolments: tutorial_streams.map do |s|
           {
             stream_abbr: s.abbreviation,
