@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-8](https://github.com/macite/doubtfire-deploy/compare/v10.0.0-7...v10.0.0-8) (2025-07-14)
+
+
+### Features
+
+* delete note api endpoint ([c692efa](https://github.com/macite/doubtfire-deploy/commit/c692efa4c2f074862007c44d80541448d4788ef0))
+* endpoint to update staff notes ([21c2b1b](https://github.com/macite/doubtfire-deploy/commit/21c2b1bb2337251d3185a4393ccaf4f9c13617e2))
+* fetch number of staff notes a project has ([32500e9](https://github.com/macite/doubtfire-deploy/commit/32500e97dceaa7493e89e03cfef46e9c377c5b1f))
+* init staff notes ([5f65978](https://github.com/macite/doubtfire-deploy/commit/5f65978aea6381fc3ae555cdd0d5969554bad229))
+* jplag unit test ([f0bf5a8](https://github.com/macite/doubtfire-deploy/commit/f0bf5a88aa5a748e475aaf56b1ce83ce94a3c485))
+* reply to staff notes ([06be778](https://github.com/macite/doubtfire-deploy/commit/06be778d79d24cc7ec2f9fce555e74572d09b112))
+* task discussed comment type ([d0857c3](https://github.com/macite/doubtfire-deploy/commit/d0857c3bb098f2c561bad00f98cdea8830217d44))
+* test staff note count ([531a7cf](https://github.com/macite/doubtfire-deploy/commit/531a7cf468bc072ba3350e0e354638b320b1fa58))
+
+
+### Bug Fixes
+
+* add student_id header ([9316def](https://github.com/macite/doubtfire-deploy/commit/9316deff248edc77b7a5d5d456ad9a763f4cfff4))
+* avoid unnecessary jplag work dir creation ([f4013a6](https://github.com/macite/doubtfire-deploy/commit/f4013a609c45ad535a6ad34fdde1835815ccebd5))
+* dont create duplicate note ([c0f750a](https://github.com/macite/doubtfire-deploy/commit/c0f750ac714aed50cc95cc52b811393e6ead8731))
+* ensure errors are logged early in accept submission ([ab5baa4](https://github.com/macite/doubtfire-deploy/commit/ab5baa4eebefcb1f0a3fde1ecff7e3d6bdef39a7))
+* ensure errors on missing streams in user inport is reported correctly ([46a919e](https://github.com/macite/doubtfire-deploy/commit/46a919e3b33366a831d8378b822f4b9dc9b2bd40))
+* fix report download ([a45eb6b](https://github.com/macite/doubtfire-deploy/commit/a45eb6baf721b8d2fb95763423425741fc17f91c))
+* make report downloading use new path ([c83919c](https://github.com/macite/doubtfire-deploy/commit/c83919c49074187cabffebba4a8e7e48dbf96319))
+* make report file generation make more sense and remove tmp files ([6fa26f0](https://github.com/macite/doubtfire-deploy/commit/6fa26f07ab5528b9610d185da90ed07f048e063b))
+* merge tutorials for duplicate student rows ([2dbe45c](https://github.com/macite/doubtfire-deploy/commit/2dbe45c25f8106eab680cfa0aaa5bc29e4261e5f))
+* remove need for iteractive terminal for latex run ([908e97d](https://github.com/macite/doubtfire-deploy/commit/908e97dde7c541cdbae03df4335535e8bdc0467f))
+* rename plagiarism link methods ([4efa907](https://github.com/macite/doubtfire-deploy/commit/4efa907fd0fe199e6a3d0ed821638ef2949c6d62))
+* simulate jplag task submissions ([3a45161](https://github.com/macite/doubtfire-deploy/commit/3a45161661800aff5aea791ed22606f264449e3d))
+* skip jplag for unchanged submissions ([1a3336f](https://github.com/macite/doubtfire-deploy/commit/1a3336f76b6122ac1632f0164a6e9949bb549ab2))
+* use interactive flag ([b20432c](https://github.com/macite/doubtfire-deploy/commit/b20432c209806cb8cf669ad5053727b54b702240))
+* use updated .jplag extension and get correct report path ([3247a9f](https://github.com/macite/doubtfire-deploy/commit/3247a9ffb59567f9fde97762a51359e9bcc46c72))
+
 ## [10.0.0-7](https://github.com/macite/doubtfire-deploy/compare/v10.0.0-6...v10.0.0-7) (2025-06-13)
 
 
