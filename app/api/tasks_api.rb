@@ -4,6 +4,7 @@ class TasksApi < Grape::API
   helpers AuthenticationHelpers
   helpers AuthorisationHelpers
   helpers FileStreamHelper
+  helpers ActionLogHelper
 
   before do
     authenticated?
@@ -168,6 +169,7 @@ class TasksApi < Grape::API
       task = project.task_for_task_definition(task_definition)
 
       if !params[:discussed].nil? && authorise?(current_user, project, :assess)
+        log_action("discussed", task: task.id)
         task.add_discussed_comment(current_user)
       end
 
@@ -187,6 +189,7 @@ class TasksApi < Grape::API
         if result.nil? && task.task_definition.restrict_status_updates
           error!({ error: 'This task can only be updated by your tutor.' }, 403)
         end
+        log_action("assessed_task", task: task.id, status: params[:trigger])
       end
 
       # if grade was supplied
@@ -233,6 +236,7 @@ class TasksApi < Grape::API
         submission_date: task.submission_date,
         processing_pdf: task.processing_pdf?
       }
+      log_action("get_submission_details", task: task.id)
     else
       result = {
         has_pdf: false,
