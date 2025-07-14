@@ -750,6 +750,16 @@ class Task < ApplicationRecord
     comment
   end
 
+  def add_discussed_comment(current_user)
+    discussed = TaskDiscussedComment.create
+    discussed.task = self
+    discussed.user = current_user
+    discussed.comment = "Discussed in class"
+    discussed.recipient = current_user == project.student ? project.tutor_for(task_definition) : project.student
+    discussed.save!
+    discussed
+  end
+
   def add_discussion_comment(user, prompts)
     # don't allow if group task.
     discussion = DiscussionComment.create
