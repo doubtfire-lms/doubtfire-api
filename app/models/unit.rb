@@ -775,11 +775,25 @@ class Unit < ApplicationRecord
             ignored_entry = { row: changes[username][:row], message: 'Skipping duplicate role - ensuring enrolled.' }
 
             # Allocate+ csv data may have duplicate student rows for each tutorial enrolment
-            # We need to combine the tutorials from both rows so that the student is enrolled into each tutorial
-            if import_settings[:merge_tutorials_for_duplicate_students] && changes[username][:tutorials]&.any?
+            if import_settings[:merge_duplicate_students]
+                # Init the tutorials array if nil
                 row_data[:tutorials] ||= []
+                changes[username][:tutorials] ||= []
+
+                # Combine the tutorials from both rows so that the student is enrolled into each tutorial
                 row_data[:tutorials].concat(changes[username][:tutorials])
-                ignored_entry[:message] += ' Merged tutorial enrolments.'
+
+                # Prefer values from previous row, but fallback to current row data if nil
+                row_data[:unit_code] = changes[username][:unit_code] || row_data[:unit_code]
+                row_data[:username] = changes[username][:username] || row_data[:username]
+                row_data[:student] = changes[username][:student] || row_data[:student]
+                row_data[:first] = changes[username][:first] || row_data[:first]
+                row_data[:last] = changes[username][:last] || row_data[:last]
+                row_data[:nickname] = changes[username][:nickname] || row_data[:nickname]
+                row_data[:email] = changes[username][:email] || row_data[:email]
+                row_data[:enrolled] = changes[username][:enrolled] || row_data[:enrolled]
+                row_data[:campus] = changes[username][:campus] || row_data[:campus]
+                ignored_entry[:message] += ' Merged duplicate student data.'
             end
 
             ignored << ignored_entry
