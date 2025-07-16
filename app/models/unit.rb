@@ -753,7 +753,7 @@ class Unit < ApplicationRecord
     enrolment_data.each do |row_data|
       begin
         if row_data[:username].nil?
-          ignored << { row: row, message: "Skipping row with missing username" }
+          ignored << { row: row_data[:row], message: "Skipping row with missing username" }
           next
         end
 
