@@ -688,7 +688,8 @@ class Unit < ApplicationRecord
           }
         },
         replace_existing_tutorial: true,
-        replace_existing_campus: true
+        replace_existing_campus: true,
+        merge_duplicate_students: false, # If true, will merge duplicate students into one entry, combining their tutorials
       }
     end
 
