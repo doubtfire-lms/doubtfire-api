@@ -323,8 +323,22 @@ class UnitsApi < Grape::API
 
     ensure_csv!(params[:file][:tempfile])
 
-    # Actually import...
-    unit.import_users_from_csv(params[:file][:tempfile])
+    import_csv_dir = Rails.root.join("tmp/csv")
+
+    file_name = File.join(import_csv_dir, "import-student-csv-#{unit.id}-#{Process.pid}-#{Thread.current.object_id}")
+    FileUtils.mkdir_p(import_csv_dir)
+
+    csv = CSV.read(params[:file][:tempfile], headers: true)
+    CSV.open(file_name, "w", write_headers: true, headers: csv.headers) do |out|
+      csv.each { |row| out << row }
+    end
+
+    # Queue student import onto sidekiq
+    job_id = ImportStudentsJob.perform_async(current_user.id, unit.id, file_name)
+    status = Sidekiq::Status.status(job_id)
+
+    # TODO: return sidekiq job entity
+    { job_id: job_id, status: status }
   end
 
   desc 'Upload CSV with the students to un-enrol from the unit'

@@ -615,7 +615,7 @@ class Unit < ApplicationRecord
   # Format: Unit Code, Student ID,First Name, Surname, email, tutorial, campus
   # Expected columns: unit_code, username, first_name, last_name, email, tutorial, campus
   #
-  def import_users_from_csv(file)
+  def import_users_from_csv(file, progress_callback: nil)
     success = []
     errors = []
     ignored = []
@@ -636,6 +636,8 @@ class Unit < ApplicationRecord
       errors << { row: [], message: "Header row missing" }
       return
     end
+
+    progress_callback.call(message: "Parsing CSV", rows_processed: 0) if progress_callback;
 
     # Check if these headers should be processed by institution file or from DF format
     # Asking "Who will convert the users to the right format?"
@@ -718,7 +720,7 @@ class Unit < ApplicationRecord
     end # for each csv row
 
     # Now process the listt
-    sync_enrolment_with(student_list, import_settings, result)
+    sync_enrolment_with(student_list, import_settings, result, progress_callback: progress_callback)
   end
 
   # Sync the unit enrolment details eith the list of enrolment data. The enrolment data
@@ -741,7 +743,9 @@ class Unit < ApplicationRecord
   #   fetch_row_data_lambda - lambda to convert row from csv to required import data
   #   replace_existing_tutorial - boolean to indicate if tutorials in csv override ones in doubtfire
   #   replace_existing_campus - boolean to indicate if campus in csv override ones in doubtfire
-  def sync_enrolment_with(enrolment_data, import_settings, result)
+  def sync_enrolment_with(enrolment_data, import_settings, result, progress_callback: nil)
+    progress_callback.call(message: "Validating CSV", rows_processed: 0) if progress_callback;
+
     # Get lists for reporting results
     errors = result[:errors]
     ignored = result[:ignored]
@@ -811,7 +815,7 @@ class Unit < ApplicationRecord
       end
     end # for each csv row
 
-    update_student_enrolments(changes, import_settings, result)
+    update_student_enrolments(changes, import_settings, result, progress_callback: progress_callback)
   end # csv import
 
   # Apply enrolment changes. The changes parameter should be:
@@ -834,7 +838,7 @@ class Unit < ApplicationRecord
   # - :replace_existing_campus boolean
   #
   # Returns hash with :success, :ignored, :errors
-  def update_student_enrolments(changes, import_settings, result)
+  def update_student_enrolments(changes, import_settings, result, progress_callback: nil)
     tutorial_cache = {}
     # Get lists for reporting results
     success = result[:success]
@@ -842,7 +846,10 @@ class Unit < ApplicationRecord
     ignored = result[:ignored]
 
     # now apply the changes...
+    row_count = 0
     changes.each_value do |row_data|
+      row_count += 1
+      progress_callback.call(message: "Importing students", total_rows: changes.count, rows_processed: row_count) if progress_callback
       begin
         row = row_data[:row]
         username = row_data[:username].downcase
