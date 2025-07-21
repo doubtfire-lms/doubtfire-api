@@ -132,7 +132,7 @@ class TasksApi < Grape::API
       task.extensions = params[:extensions]
       task.save
 
-      TaskComment.create(
+      comment = TaskComment.create(
         task: task,
         user: current_user,
         comment: "Planned date adjusted to #{task.due_date.strftime('%d %b')}.",
@@ -140,6 +140,8 @@ class TasksApi < Grape::API
         recipient: project.student,
         extension_weeks: params[:extensions]
       )
+
+      comment.mark_as_read(project.tutor_for(task_definition))
 
       present task, with: Entities::TaskEntity, include_other_projects: true, update_only: true
     else
