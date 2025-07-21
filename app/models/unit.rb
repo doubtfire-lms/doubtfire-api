@@ -1573,7 +1573,7 @@ class Unit < ApplicationRecord
         zip.add(dst_path, src_path)
       end # active_projects
     end # zip
-    result
+    portfolio_zip_name
   end
 
   #
