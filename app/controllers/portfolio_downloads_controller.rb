@@ -29,7 +29,7 @@ class PortfolioDownloadsController < ApplicationController
       error!({ error: "Not authorised to download portfolios for unit '#{params[:id]}'" }, 401)
     end
 
-    output_zip = unit.portfolio_zip_name(current_user)
+    output_zip = unit.get_portfolio_zip_filename(current_user)
     error!({ error: 'No files to download' }, 403) unless File.exist?(output_zip)
 
     # Set download headers...
