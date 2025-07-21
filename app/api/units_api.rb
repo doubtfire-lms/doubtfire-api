@@ -7,6 +7,7 @@ class UnitsApi < Grape::API
   helpers AuthorisationHelpers
   helpers MimeCheckHelpers
   helpers CsvHelper
+  helpers SidekiqHelper
 
   before do
     authenticated?
@@ -334,11 +335,9 @@ class UnitsApi < Grape::API
     end
 
     # Queue student import onto sidekiq
-    job_id = ImportStudentsJob.perform_async(current_user.id, unit.id, file_name)
-    status = Sidekiq::Status.status(job_id)
-
-    # TODO: return sidekiq job entity
-    { job_id: job_id, status: status }
+    job_id = ImportStudentsJob.perform_async(unit.id, file_name)
+    job = setup_job(job_id)
+    present job, with: Entities::SidekiqJobEntity
   end
 
   desc 'Upload CSV with the students to un-enrol from the unit'
