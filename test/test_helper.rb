@@ -67,7 +67,6 @@ class ActiveSupport::TestCase
     DatabaseCleaner.start
     WebMock.reset!
     Sidekiq::Testing.fake!
-    Sidekiq::Testing.inline!
 
     # Ensure turn it in states is cleared
     TurnItIn.reset_rate_limit
