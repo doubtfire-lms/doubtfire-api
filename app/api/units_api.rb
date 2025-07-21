@@ -435,4 +435,18 @@ class UnitsApi < Grape::API
 
     unit.tutor_assessment_csv
   end
+
+  desc 'Compress portfolios into zip file'
+  get '/submission/units/:id/portfolio/zip' do
+    unit = Unit.find(params[:id])
+    unless authorise? current_user, unit, :get_students
+      error!({ error: "Not authorised to download portfolios for unit '#{unit.code}'" }, 403)
+    end
+
+    # Queue portfolio downloads to sidekiq
+    job_id = DownloadPortfoliosJob.perform_async(current_user.id, unit.id)
+    job = setup_job(job_id)
+
+    present job, with: Entities::SidekiqJobEntity
+  end
 end
