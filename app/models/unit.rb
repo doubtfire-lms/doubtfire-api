@@ -1538,21 +1538,32 @@ class Unit < ApplicationRecord
     end
   end
 
+  def get_portfolio_zip_filename(current_user)
+    filename = FileHelper.sanitized_filename("portfolios-#{code}-#{current_user.username}")
+    "#{FileHelper.tmp_file(filename)}.zip"
+  end
+
   #
   # Create a temp zip file with all student portfolios
   #
-  def get_portfolio_zip(current_user)
+  def get_portfolio_zip(current_user, progress_callback: nil)
     # Get a temp file path
-    filename = FileHelper.sanitized_filename("portfolios-#{code}-#{current_user.username}")
-    result = "#{FileHelper.tmp_file(filename)}.zip"
+    portfolio_zip_name = get_portfolio_zip_filename(current_user)
 
-    return result if File.exist?(result)
+    # All active projects with a compiled portfolio
+    portfolio_projects = active_projects.select(&:portfolio_available)
+    progress_callback.call(message: "Initialising portfolio download", total_rows: portfolio_projects.count, rows_processed: portfolio_projects.count) if progress_callback
+
+    return portfolio_zip_name if File.exist?(portfolio_zip_name)
+
+    progress_callback.call(message: "Initialising portfolio download", total_rows: portfolio_projects.count, rows_processed: 0) if progress_callback
+    count = 0
 
     # Create a new zip
-    Zip::File.open(result, Zip::File::CREATE) do |zip|
-      active_projects.each do |project|
-        # Skip if no portfolio at this time...
-        next unless project.portfolio_available
+    Zip::File.open(portfolio_zip_name, Zip::File::CREATE) do |zip|
+      portfolio_projects.each do |project|
+        count += 1
+        progress_callback.call(message: "Compressing portfolios", rows_processed: count) if progress_callback
 
         # Add file to zip in grade folder
         src_path = project.portfolio_path
