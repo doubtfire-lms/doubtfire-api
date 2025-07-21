@@ -9,11 +9,11 @@ class ImportStudentsJob
   include MimeCheckHelpers
   include CsvHelper
 
-  sidekiq_options lock: :until_executed
+  sidekiq_options lock: :until_executed,
+                  lock_args_method: ->(args) { [args.first] }
   sidekiq_options retry: 0
 
-  def perform(initiator_id, unit_id, path_to_csv)
-    store(initiator: initiator_id)
+  def perform(unit_id, path_to_csv)
     logger.info "Starting user imports..."
 
     at(0)
