@@ -326,7 +326,7 @@ class UnitsApi < Grape::API
 
     import_csv_dir = Rails.root.join("tmp/csv")
 
-    file_name = File.join(import_csv_dir, "import-student-csv-#{unit.id}-#{Process.pid}-#{Thread.current.object_id}")
+    file_name = File.join(import_csv_dir, "import-student-csv-#{unit.id}-#{Process.pid}-#{Thread.current.object_id}.csv")
     FileUtils.mkdir_p(import_csv_dir)
 
     csv = CSV.read(params[:file][:tempfile], headers: true)

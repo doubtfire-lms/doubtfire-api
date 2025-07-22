@@ -18,6 +18,8 @@ class ImportStudentsJob
 
     at(0)
 
+    ensure_csv!(path_to_csv)
+
     unit = Unit.find(unit_id)
     result = unit.import_users_from_csv(path_to_csv, progress_callback: lambda { |message: nil, total_rows: nil, rows_processed: nil|
       total(total_rows) if total_rows
@@ -25,8 +27,10 @@ class ImportStudentsJob
     })
 
     store(result: result.to_json)
+
+    FileUtils.rm(path_to_csv)
+
     logger.info "Completed user imports!"
-    # TODO: delete tmp csv file once the job is complete
   rescue StandardError => e
     logger.error e
     raise e
