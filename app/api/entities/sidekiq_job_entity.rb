@@ -7,8 +7,8 @@ module Entities
 
     expose :at, as: :processed_count
     expose :total, as: :total_count
-    expose :working_at, as: :createdAt
-    expose :update_time, as: :updatedAt
+    expose :working_at, as: :created_at
+    expose :update_time, as: :updated_at
 
     expose :worker, as: :job_class
 
