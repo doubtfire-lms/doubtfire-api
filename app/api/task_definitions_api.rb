@@ -32,12 +32,13 @@ class TaskDefinitionsApi < Grape::API
       requires :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
       optional :assessment_enabled,       type: Boolean,  desc: 'Enable or disable assessment'
       optional :overseer_image_id,        type: Integer,  desc: 'The id of the Docker image for overseer'
-      optional :similarity_language,            type: String,   desc: 'The language to use for code similarity checks'
+      optional :similarity_language,      type: String,   desc: 'The language to use for code similarity checks'
       optional :scorm_enabled,            type: Boolean,  desc: 'Whether SCORM assessment is enabled for this task'
       optional :scorm_allow_review,       type: Boolean,  desc: 'Whether a student is allowed to review their completed test attempts'
       optional :scorm_bypass_test,        type: Boolean,  desc: 'Whether a student is allowed to upload files before passing SCORM test'
       optional :scorm_time_delay_enabled, type: Boolean,  desc: 'Whether there is an incremental time delay between SCORM test attempts'
       optional :scorm_attempt_limit,      type: Integer,  desc: 'The number of times a SCORM test can be attempted'
+      optional :assess_in_portfolio_only, type: Boolean,  desc: 'Whether a task can only be signed off during portfolio assessment'
     end
   end
   post '/units/:unit_id/task_definitions/' do
@@ -70,6 +71,7 @@ class TaskDefinitionsApi < Grape::API
                                                 :assessment_enabled,
                                                 :overseer_image_id,
                                                 :similarity_language,
+                                                :assess_in_portfolio_only,
                                                 :upload_requirements,
                                                 :unit_id
                                               )
@@ -125,7 +127,8 @@ class TaskDefinitionsApi < Grape::API
       optional :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
       optional :assessment_enabled,       type: Boolean,  desc: 'Enable or disable assessment'
       optional :overseer_image_id,        type: Integer,  desc: 'The id of the Docker image name for overseer'
-      optional :similarity_language, type: String, desc: 'The language to use for code similarity checks'
+      optional :similarity_language,      type: String,   desc: 'The language to use for code similarity checks'
+      optional :assess_in_portfolio_only, type: Boolean,  desc: 'Whether a task can only be signed off during portfolio assessment'
     end
   end
   put '/units/:unit_id/task_definitions/:id' do
@@ -159,6 +162,7 @@ class TaskDefinitionsApi < Grape::API
                                                 :assessment_enabled,
                                                 :overseer_image_id,
                                                 :similarity_language,
+                                                :assess_in_portfolio_only,
                                                 :upload_requirements
                                               )
 
