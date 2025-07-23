@@ -184,6 +184,10 @@ class TasksApi < Grape::API
           error!({ error: "This task requires a group. Ensure you are in a group for the unit's #{task.task_definition.group_set.name}" }, 403)
         end
 
+        if task.task_definition.assess_in_portfolio_only && params[:trigger] == 'complete'
+          error!({ error: 'This task can only be assessed in portfolio.' }, 403)
+        end
+
         logger.info "#{current_user.username} assessing task #{task.id} to #{params[:trigger]}"
         result = task.trigger_transition(trigger: params[:trigger], by_user: current_user, quality: params[:quality_pts])
         if result.nil? && task.task_definition.restrict_status_updates

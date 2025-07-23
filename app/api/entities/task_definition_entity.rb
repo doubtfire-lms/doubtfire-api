@@ -51,6 +51,7 @@ module Entities
     expose :overseer_image_id, if: ->(unit, options) { staff?(options[:my_role]) }, expose_nil: false
     expose :assessment_enabled, if: ->(unit, options) { staff?(options[:my_role]) }
     expose :similarity_language, if: ->(unit, options) { staff?(options[:my_role]) }, expose_nil: false
+    expose :assess_in_portfolio_only
 
     expose :learning_outcomes, using: LearningOutcomeEntity, as: :ilos
   end
