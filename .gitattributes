@@ -1,2 +1,5 @@
 # Set the default behavior, in case people don't have core.autocrlf set.
 * text=auto eol=lf
+
+# Exclude test files from GitHub language statistics
+test_files/** linguist-vendored
