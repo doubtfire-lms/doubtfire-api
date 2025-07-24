@@ -426,6 +426,45 @@ class TaskStatusTest < ActiveSupport::TestCase
     td.destroy
   end
 
+  def test_assess_in_portfolio_submissions_dont_show_in_tutor_inbox
+    unit = Unit.first
+    td = TaskDefinition.new({
+                              unit_id: unit.id,
+                              tutorial_stream: unit.tutorial_streams.first,
+                              name: 'Task with image2',
+                              description: 'img task2',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: unit.start_date + 1.week,
+                              target_date: unit.start_date + 2.weeks,
+                              abbreviation: 'TaskPdfWithGif2',
+                              restrict_status_updates: false,
+                              upload_requirements: [{ "key" => 'file0', "name" => 'An Image', "type" => 'image' }],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0,
+                              assess_in_portfolio_only: true
+                            })
+    td.save!
+
+    project = unit.active_projects.first
+    tutor = unit.tutors.first
+
+    Task.create!(
+      project_id: project.id,
+      task_definition_id: td.id,
+      task_status: TaskStatus.assess_in_portfolio
+    )
+
+    inbox = unit.tasks_for_task_inbox(tutor)
+
+    inbox.each do |task|
+      assert_not_equal TaskStatus.assess_in_portfolio.id, task.status_id
+    end
+
+    td.destroy
+  end
+
   def test_status_for_name
     assert_equal TaskStatus.status_for_name('complete').name, TaskStatus.complete.name
     assert_equal TaskStatus.status_for_name('fix_and_resubmit').name, TaskStatus.fix_and_resubmit.name
