@@ -566,6 +566,10 @@ class Unit < ApplicationRecord
     end
   end
 
+  def unit_role_for(user)
+    unit_roles.find_by(user: user)
+  end
+
   # Adds a user to this project.
   def enrol_student(user, campus)
     # Validates that a student is not already assigned to the unit
@@ -1727,54 +1731,59 @@ class Unit < ApplicationRecord
   def tutorial_enrolment_subquery
     tutorial_enrolments
       .joins(:tutorial)
-      .select('tutorials.tutorial_stream_id as tutorial_stream_id', 'tutorials.id as tutorial_id', 'project_id').to_sql
+      .select('tutorials.tutorial_stream_id as tutorial_stream_id', 'tutorials.id as tutorial_id', 'project_id', 'tutorials.unit_role_id as unit_role_id').to_sql
   end
 
   #
   # Return all tasks from the database for this unit and given user
   #
-  def get_all_tasks_for(user)
-    student_tasks.
-      joins(:task_status).
-      joins("LEFT OUTER JOIN (#{tutorial_enrolment_subquery}) as sq ON sq.project_id = projects.id AND (sq.tutorial_stream_id = task_definitions.tutorial_stream_id OR sq.tutorial_stream_id IS NULL)").
-      joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment') AND (task_comments.content_type IS NULL OR task_comments.content_type <> 'plan')").
-      joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}").
-      joins("LEFT JOIN task_pins ON task_pins.task_id = tasks.id AND task_pins.user_id = #{user.id}").
-      joins('LEFT OUTER JOIN task_similarities ON tasks.id = task_similarities.task_id').
-      select(
-        'sq.tutorial_id AS tutorial_id',
-        'sq.tutorial_stream_id AS tutorial_stream_id',
-        'tasks.id',
-        "SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread",
-        'COUNT(distinct task_pins.task_id) != 0 as pinned',
-        "SUM(case when task_comments.date_extension_assessed IS NULL AND task_comments.type = 'ExtensionComment' AND NOT task_comments.id IS NULL THEN 1 ELSE 0 END) > 0 as has_extensions",
-        'project_id',
-        'tasks.id as task_id',
-        'task_definition_id',
-        'task_definitions.start_date as start_date',
-        'task_statuses.id as status_id',
-        'completion_date',
-        'times_assessed',
-        'submission_date',
-        'tasks.grade as grade',
-        'quality_pts',
-        'SUM(case when task_similarities.flagged then 1 else 0 end) as similar_to_count'
-      ).
-      group(
-        'sq.tutorial_id',
-        'sq.tutorial_stream_id',
-        'task_statuses.id',
-        'project_id',
-        'tasks.id',
-        'task_definition_id',
-        'task_definitions.start_date',
-        'status_id',
-        'completion_date',
-        'times_assessed',
-        'submission_date',
-        'grade',
-        'quality_pts'
-      )
+  def get_all_tasks_for(user, my_tutorials_only = false)
+    result =  student_tasks.
+              joins(:task_status).
+              joins("LEFT OUTER JOIN (#{tutorial_enrolment_subquery}) as sq ON sq.project_id = projects.id AND (sq.tutorial_stream_id = task_definitions.tutorial_stream_id OR sq.tutorial_stream_id IS NULL)").
+              joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment') AND (task_comments.content_type IS NULL OR task_comments.content_type <> 'plan')").
+              joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}").
+              joins("LEFT JOIN task_pins ON task_pins.task_id = tasks.id AND task_pins.user_id = #{user.id}").
+              joins('LEFT OUTER JOIN task_similarities ON tasks.id = task_similarities.task_id').
+              select(
+                'sq.tutorial_id AS tutorial_id',
+                'sq.tutorial_stream_id AS tutorial_stream_id',
+                'tasks.id',
+                "SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread",
+                'COUNT(distinct task_pins.task_id) != 0 as pinned',
+                "SUM(case when task_comments.date_extension_assessed IS NULL AND task_comments.type = 'ExtensionComment' AND NOT task_comments.id IS NULL THEN 1 ELSE 0 END) > 0 as has_extensions",
+                'project_id',
+                'tasks.id as task_id',
+                'task_definition_id',
+                'task_definitions.start_date as start_date',
+                'task_statuses.id as status_id',
+                'completion_date',
+                'times_assessed',
+                'submission_date',
+                'tasks.grade as grade',
+                'quality_pts',
+                'SUM(case when task_similarities.flagged then 1 else 0 end) as similar_to_count'
+              ).
+              group(
+                'sq.tutorial_id',
+                'sq.tutorial_stream_id',
+                'task_statuses.id',
+                'project_id',
+                'tasks.id',
+                'task_definition_id',
+                'task_definitions.start_date',
+                'status_id',
+                'completion_date',
+                'times_assessed',
+                'submission_date',
+                'grade',
+                'quality_pts'
+              )
+    if my_tutorials_only
+      result = result.where('sq.unit_role_id = :unit_role_id', unit_role_id: unit_role_for(user).id)
+    end
+
+    result
   end
 
   #
@@ -1797,8 +1806,8 @@ class Unit < ApplicationRecord
   # time a task has been "actioned", either the submission date or latest
   # student comment -- whichever is newer.
   #
-  def tasks_for_task_inbox(user)
-    get_all_tasks_for(user)
+  def tasks_for_task_inbox(user, my_students_only = false)
+    get_all_tasks_for(user, my_students_only)
       .having('task_statuses.id IN (:ids) OR COUNT(task_pins.task_id) > 0 OR SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) > 0', ids: [TaskStatus.ready_for_feedback, TaskStatus.need_help])
       .order('pinned DESC, submission_date ASC, MAX(task_comments.created_at) ASC, task_definition_id ASC')
   end
