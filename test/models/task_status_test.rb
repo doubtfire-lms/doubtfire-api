@@ -3,6 +3,7 @@ require 'test_helper'
 class TaskStatusTest < ActiveSupport::TestCase
   include Rack::Test::Methods
   include TestHelpers::AuthHelper
+  include TestHelpers::TestFileHelper
 
   def app
     Rails.application
@@ -262,6 +263,167 @@ class TaskStatusTest < ActiveSupport::TestCase
     tc.reload
     # Ensure tutors can set it to working_on_it state
     assert_equal TaskStatus.working_on_it, tc.task_status
+  end
+
+  def test_student_cant_update_assess_in_portfolio_without_files
+    unit = FactoryBot.create :unit
+    unit.update(mark_late_submissions_as_assess_in_portfolio: true)
+
+    td = TaskDefinition.new({
+                              unit_id: unit.id,
+                              name: 'Task past due - for revert',
+                              description: 'Task past due',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: Time.zone.now - 2.weeks,
+                              target_date: Time.zone.now + 1.week,
+                              due_date: Time.zone.now + 1.week,
+                              abbreviation: 'TaskPastDueForRevert',
+                              restrict_status_updates: false,
+                              upload_requirements: [{ "key" => 'file0', "name" => 'Shape Class', "type" => 'code' }],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0,
+                              tutorial_stream_id: nil,
+                              assess_in_portfolio_only: true
+                            })
+    td.save!
+
+    # Get the first student - who now has this task
+    project = unit.active_projects.first
+
+    # create a task not_started
+    tc = Task.create!(
+      project_id: project.id,
+      task_definition_id: td.id,
+      task_status: TaskStatus.not_started
+    )
+
+    add_auth_header_for(user: project.student)
+
+    data_to_post = {
+      trigger: 'assess_in_portfolio'
+    }
+
+    put "/api/projects/#{project.id}/task_def_id/#{td.id}", data_to_post
+
+    tc.reload
+    # Ensure students cant change status without uploading evidence
+    assert_equal TaskStatus.not_started, tc.task_status
+
+    tutor = unit.tutors.first
+    add_auth_header_for(user: tutor)
+
+    data_to_post = {
+      trigger: 'assess_in_portfolio'
+    }
+
+    put "/api/projects/#{project.id}/task_def_id/#{td.id}", data_to_post
+
+    tc.reload
+    # Tutors should be able to update status to assess_in_portfolio without file upload
+    assert_equal TaskStatus.assess_in_portfolio, tc.task_status
+  end
+
+  def test_student_cant_update_assess_in_portfolio_if_task_def_not_aip
+    unit = FactoryBot.create :unit
+    unit.update(mark_late_submissions_as_assess_in_portfolio: true)
+
+    td = TaskDefinition.new({
+                              unit_id: unit.id,
+                              name: 'Task past due - for revert',
+                              description: 'Task past due',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: Time.zone.now - 2.weeks,
+                              target_date: Time.zone.now + 1.week,
+                              due_date: Time.zone.now + 1.week,
+                              abbreviation: 'TaskPastDueForRevert',
+                              restrict_status_updates: false,
+                              upload_requirements: [],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0,
+                              tutorial_stream_id: nil,
+                              assess_in_portfolio_only: false
+                            })
+    td.save!
+
+    # Get the first student - who now has this task
+    project = unit.active_projects.first
+
+    # create a task not_started
+    tc = Task.create!(
+      project_id: project.id,
+      task_definition_id: td.id,
+      task_status: TaskStatus.not_started
+    )
+
+    add_auth_header_for(user: project.student)
+
+    data_to_post = {
+      trigger: 'assess_in_portfolio'
+    }
+
+    put "/api/projects/#{project.id}/task_def_id/#{td.id}", data_to_post
+
+    tc.reload
+    # Ensure students can't change status to assess_in_portfolio if taskdef.assess_in_portfolio_only = false
+    assert_equal TaskStatus.not_started, tc.task_status
+
+    tutor = unit.tutors.first
+    add_auth_header_for(user: tutor)
+
+    data_to_post = {
+      trigger: 'assess_in_portfolio'
+    }
+
+    put "/api/projects/#{project.id}/task_def_id/#{td.id}", data_to_post
+
+    tc.reload
+    # Tutors should still be able to update status to assess_in_portfolio if assess_in_portfolio_only = false
+    assert_equal TaskStatus.assess_in_portfolio, tc.task_status
+  end
+
+  def test_submission_for_assess_in_portfolio
+    unit = Unit.first
+    td = TaskDefinition.new({
+                              unit_id: unit.id,
+                              tutorial_stream: unit.tutorial_streams.first,
+                              name: 'Task with image2',
+                              description: 'img task2',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: unit.start_date + 1.week,
+                              target_date: unit.start_date + 2.weeks,
+                              abbreviation: 'TaskPdfWithGif2',
+                              restrict_status_updates: false,
+                              upload_requirements: [{ "key" => 'file0', "name" => 'An Image', "type" => 'image' }],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0,
+                              assess_in_portfolio_only: true
+                            })
+    td.save!
+
+    data_to_post = {
+      trigger: 'assess_in_portfolio'
+    }
+
+    data_to_post = with_file('test_files/submissions/unbelievable.gif', 'image/gif', data_to_post)
+
+    project = unit.active_projects.first
+
+    add_auth_header_for user: project.student
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
+    assert_equal 201, last_response.status
+
+    task = project.task_for_task_definition(td)
+
+    task.reload
+    assert_equal TaskStatus.assess_in_portfolio, task.task_status
+
+    td.destroy
   end
 
   def test_status_for_name
