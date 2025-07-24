@@ -521,6 +521,7 @@ class CommentTest < ActiveSupport::TestCase
     project = Project.first
     user = project.student
     unit = project.unit
+    unit.update(allow_flexible_dates: true)
 
     td = TaskDefinition.new(unit_id: unit.id,
                             tutorial_stream: unit.tutorial_streams.first,
@@ -561,5 +562,6 @@ class CommentTest < ActiveSupport::TestCase
     assert_not task_new.comments.last.new_for?(project.tutor_for(td)), "Comment should be read by tutor"
 
     td.destroy!
+    unit.update(allow_flexible_dates: false)
   end
 end
