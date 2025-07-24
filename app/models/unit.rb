@@ -980,7 +980,7 @@ class Unit < ApplicationRecord
                   user_project.enrol_in tutorial
                   success_message << ' Enrolled in ' << tutorial.abbreviation
                 rescue Exception => e
-                  success_message << " UNABLE TO enroll in #{tutorial.abbreviation} #{e.message}"
+                  errors << { row: row, message: "#{success_message} UNABLE TO enroll in #{tutorial.abbreviation} #{e.message}" }
                 end
               end
             end
