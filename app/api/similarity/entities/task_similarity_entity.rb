@@ -16,14 +16,14 @@ module Similarity
       expose :other_task, safe: true
       expose :other_student, safe: true
 
-      expose :parts do |similarity, _options|
+      expose :parts do |similarity, options|
         path = similarity.file_path
         has_resource = path.present? && File.exist?(path)
 
         result = []
         case similarity.type
         when 'JplagTaskSimilarity'
-          # We only display the "Other student" for JPlag similarities
+          # We display just the "Other student" for JPlag similarities
           # JPlag report viewer will show both students side by side
           result <<
             {
