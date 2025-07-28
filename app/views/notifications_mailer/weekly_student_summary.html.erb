@@ -10,7 +10,7 @@
       margin: 100px auto 0px auto;
       font-size: 0.9em;
     }
-    main {
+    main, .main {
       background-image: url('<%= @doubtfire_host %>/assets/images/logo.svg');
       background-size: 3.5em;
       background-repeat: no-repeat;
@@ -31,7 +31,7 @@
     table {
         overflow: scroll;
     }
-    footer {
+    footer, .footer {
       text-align: right;
       margin-top: 10px;
       color: #aaa;
@@ -50,7 +50,7 @@
   </style>
 </head>
 <body>
-  <main>
+  <main class="main">
     <h1><%= @summary_stats[:unit].name %> - Weekly Summary</h1>
     <p class="subtext"><%= "#{@summary_stats[:week_start].day.ordinalize} #{@summary_stats[:week_start].strftime("%B %Y")}" %> to <%= "#{@summary_stats[:week_end].day.ordinalize} #{@summary_stats[:week_end].strftime("%B %Y")}" %></p>
 
@@ -114,7 +114,7 @@
         The <%= @doubtfire_product_name %> Team on behalf of <%= @tutor.name %>
     </p>
   </main>
-  <footer>
+  <footer class="footer">
     <a href="<%= @unsubscribe_url %>">Unsubscribe</a> | Generated with <%= @doubtfire_product_name %>
   </footer>
 </body>
