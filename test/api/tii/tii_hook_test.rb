@@ -221,6 +221,18 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status, last_response_body
     assert_equal :complete_low_similarity, subm.reload.status_sym
 
+    similarity = task.task_similarities.first
+    assert similarity.valid?
+    assert_nil similarity.other_task
+    assert_nil similarity.other_student
+
+    add_auth_header_for(user: task.unit.main_convenor_user)
+    get "/api/tasks/#{task.id}/similarities"
+    assert_equal 1, last_response_body.count
+    assert_equal similarity.id, last_response_body.first['id']
+    assert_nil last_response_body.first['other_task']
+    assert_nil last_response_body.first['other_student']
+
     task.unit.destroy!
   end
 
