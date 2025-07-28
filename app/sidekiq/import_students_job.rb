@@ -10,8 +10,9 @@ class ImportStudentsJob
   include CsvHelper
 
   sidekiq_options lock: :until_executed,
-                  lock_args_method: ->(args) { [args.first] }
-  sidekiq_options retry: 0
+                  lock_args_method: ->(args) { [args.first] },
+                  on_conflict: :reject,
+                  retry: false
 
   def perform(unit_id, path_to_csv)
     logger.info "Starting user imports..."

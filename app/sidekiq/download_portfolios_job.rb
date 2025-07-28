@@ -6,10 +6,9 @@ class DownloadPortfoliosJob
   include LogHelper
 
   sidekiq_options lock: :until_executed,
-                  lock_args_method: ->(args) { args }
-  sidekiq_options on_conflict: :reject
-
-  sidekiq_options retry: 0
+                  lock_args_method: ->(args) { args },
+                  on_conflict: :reject,
+                  retry: false
 
   def perform(current_user_id, unit_id)
     logger.info "Starting portfolio download..."
