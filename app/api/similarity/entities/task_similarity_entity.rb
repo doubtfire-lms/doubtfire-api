@@ -13,34 +13,51 @@ module Similarity
         similarity.ready_for_viewer?
       end
 
-      expose :other_task
-      expose :other_student
+      expose :other_task, safe: true
+      expose :other_student, safe: true
 
-      expose :parts do |similarity, options|
+      expose :parts do |similarity, _options|
         path = similarity.file_path
         has_resource = path.present? && File.exist?(path)
 
-        result = [
-          {
-            idx: 0,
-            format: if has_resource
-                      similarity.type.in?(%w[MossTaskSimilarity JplagTaskSimilarity]) ? 'html' : 'pdf'
-                    end,
-            description: "#{similarity.other_student.name} (#{similarity.other_student.username}) - #{similarity.pct}% similarity"
-          }
-        ]
+        result = []
+        case similarity.type
+        when 'JplagTaskSimilarity'
+          # We only display the "Other student" for JPlag similarities
+          # JPlag report viewer will show both students side by side
+          result <<
+            {
+              idx: 0,
+              format: has_resource ? 'jplag' : nil,
+              description: "#{similarity.other_student&.name} (#{similarity.other_student&.username}) - #{similarity.pct}% similarity"
+            }
+        when 'MossTaskSimilarity'
+          result <<
+            {
+              idx: 0,
+              format: has_resource ? 'html' : nil,
+              description: "#{similarity.student.name} (#{similarity.student.username}) - #{similarity.pct}% similarity"
+            }
 
-        # TODO: jplag integration
-        # For moss similarity, show staff other student details
-        if similarity.type == 'MossTaskSimilarity' && staff?(options[:my_role])
-          other_path = similarity.other_similarity&.file_path
-          has_other_resource = other_path.present? && File.exist?(other_path)
+          # For moss similarity, show staff other student details
+          if staff?(options[:my_role])
+            other_path = similarity.other_similarity&.file_path
+            has_other_resource = other_path.present? && File.exist?(other_path)
+            result <<
+              {
+                idx: 1,
+                format: has_other_resource ? 'html' : nil,
+                description: "#{similarity.other_student.name} (#{similarity.other_student.username}) - #{similarity.pct}% similarity"
+              }
+          end
 
-          result << {
-            idx: 1,
-            format: has_other_resource ? 'html' : nil,
-            description: "Match: #{similarity.other_student&.name} (#{similarity.other_student&.username}) - #{similarity.other_similarity&.pct}"
-          }
+        when 'TiiTaskSimilarity'
+          result <<
+            {
+              idx: 0,
+              format: has_resource ? 'pdf' : nil,
+              description: "#{similarity.pct}% similarity"
+            }
         end
 
         result
