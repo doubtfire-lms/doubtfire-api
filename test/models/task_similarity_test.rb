@@ -68,6 +68,12 @@ class TaskSimilarityTest < ActiveSupport::TestCase
     assert similarity1.valid?, similarity1.errors.full_messages
     assert similarity2.valid?, similarity2.errors.full_messages
 
+    assert similarity1.other_task.valid?, similarity1.errors.full_messages
+    assert similarity2.other_task.valid?, similarity2.errors.full_messages
+
+    assert similarity1.other_student.valid?, similarity1.errors.full_messages
+    assert similarity2.other_student.valid?, similarity2.errors.full_messages
+
     assert_equal similarity1.other_task_id, similarity2.task_id
     assert_equal similarity2.other_task_id, similarity1.task_id
 
