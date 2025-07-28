@@ -133,6 +133,7 @@ class AuthenticationApi < Grape::API
       if user.new_record?
         user.encrypted_password = BCrypt::Password.create(SecureRandom.hex(32))
         unless user.valid?
+          logger.error "User #{user.username} is invalid: #{user.errors.full_messages.join(', ')}"
           error!(error: 'There was an error creating your account. ' \
                         'Please get in contact with your unit convenor or the ' \
                         'system administrators.')
