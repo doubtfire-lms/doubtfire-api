@@ -45,6 +45,6 @@ class JplagTaskSimilarity < TaskSimilarity
   end
 
   def ready_for_viewer?
-    true
+    self.task.task_definition.has_jplag_report?
   end
 end
