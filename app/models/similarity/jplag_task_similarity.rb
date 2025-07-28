@@ -4,7 +4,7 @@ class JplagTaskSimilarity < TaskSimilarity
   belongs_to :other_task, class_name: 'Task'
 
   def file_path
-    self.task.task_definition.has_jplag_report?
+    self.task.task_definition.jplag_report
   end
 
   #
