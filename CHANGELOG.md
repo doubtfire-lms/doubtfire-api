@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-11](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-10...v10.0.0-11) (2025-07-28)
+
+
+### Features
+
+* move portfolio zip downloading to sidekiq ([569540b](https://github.com/b0ink/doubtfire-deploy/commit/569540bd0be1bece7fd958e298ea16a59a78082f))
+* sidekiq job status tracking ([486dbdd](https://github.com/b0ink/doubtfire-deploy/commit/486dbdd3570fdedb07cc3fb789ac722aa651f6f9))
+
+
+### Bug Fixes
+
+* casing typo ([dd40479](https://github.com/b0ink/doubtfire-deploy/commit/dd40479abb832f0b3132e2fffc2e4de9daea9613))
+* ensure allow flexible dates is enabled ([c011b93](https://github.com/b0ink/doubtfire-deploy/commit/c011b93fc6bca90108c4f03b28b1c8bbe2532b35))
+* ensure correct sidekiq-unique options ([2320644](https://github.com/b0ink/doubtfire-deploy/commit/2320644de1745da19a775804b521eb91e38998c7))
+* filter out comments with plan content types ([86516e6](https://github.com/b0ink/doubtfire-deploy/commit/86516e626a1579fdac69484b7f8ec74d586cc378))
+* get portfolio zip filename ([4140473](https://github.com/b0ink/doubtfire-deploy/commit/4140473356ba5f7dedd885e04aa4a64aaa2fc752))
+* return portfolio zip name ([5f897e8](https://github.com/b0ink/doubtfire-deploy/commit/5f897e854247f6951a0cca4c596bcde3fc03397a))
+
 ## [10.0.0-10](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-9...v10.0.0-10) (2025-07-22)
 
 
