@@ -4,7 +4,7 @@ class JplagTaskSimilarity < TaskSimilarity
   belongs_to :other_task, class_name: 'Task'
 
   def file_path
-    FileHelper.path_to_plagarism_html(self)
+    self.task.task_definition.has_jplag_report?
   end
 
   #
