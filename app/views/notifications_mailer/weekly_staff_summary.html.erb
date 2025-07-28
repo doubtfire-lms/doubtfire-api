@@ -11,7 +11,7 @@
       font-size: 0.9em;
     }
     main {
-      background-image: url('https://<%= @doubtfire_host %>/assets/images/logo.svg');
+      background-image: url('<%= @doubtfire_host %>/assets/images/logo.svg');
       background-size: 3.5em;
       background-repeat: no-repeat;
       background-position: 30px 45px;
@@ -53,7 +53,7 @@
   <main>
     <h1><%= @summary_stats[:unit].name %> - Weekly Summary</h1>
     <p class="subtext"><%= "#{@summary_stats[:week_start].day.ordinalize} #{@summary_stats[:week_start].strftime("%B %Y")}" %> to <%= "#{@summary_stats[:week_end].day.ordinalize} #{@summary_stats[:week_end].strftime("%B %Y")}" %></p>
-    
+
     <p>Hi <%= @staff.first_name %>,</p>
     <p>
         Hope you had a good week! Here's a summary of what has happened in this unit over the last week.
@@ -87,7 +87,7 @@
         <ul>
             <li>In total, there <%= were_was(@summary_stats[:unit_week_comments]) %> <%= @summary_stats[:unit_week_comments] %> comment<%= "s" if @summary_stats[:unit_week_comments] != 1 %> made in this unit.</li>
             <li>Tasks changed state <%= @summary_stats[:unit_week_engagements] %> time<%= "s" unless @summary_stats[:unit_week_engagements] == 1 %> in this unit.</li>
-        </ul>    
+        </ul>
     </p>
 <% end %>
 <% if @unit_role.is_convenor? %>
