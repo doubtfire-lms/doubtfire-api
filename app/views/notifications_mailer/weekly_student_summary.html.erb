@@ -11,7 +11,7 @@
       font-size: 0.9em;
     }
     main {
-      background-image: url('https://<%= @doubtfire_host %>/assets/images/logo.svg');
+      background-image: url('<%= @doubtfire_host %>/assets/images/logo.svg');
       background-size: 3.5em;
       background-repeat: no-repeat;
       background-position: 30px 45px;
@@ -64,7 +64,7 @@
 <% end %>
 
 <% if @project.tutorial_enrolments.blank? %>
-    <p>Firstly... it looks like you are not assigned a tutor! Please login and make sure your tutorial is correctly set. You should be able to do that on the <a href="https://<%= @doubtfire_host%>/#/projects/<%= @project.id%>/tutorials">tutorials page</a>.</p>
+    <p>Firstly... it looks like you are not assigned a tutor! Please login and make sure your tutorial is correctly set. You should be able to do that on the <a href="<%= @doubtfire_host%>/#/projects/<%= @project.id%>/tutorials">tutorials page</a>.</p>
 <% end %>
     <p>Here is what you should focus on right now.</p>
 
