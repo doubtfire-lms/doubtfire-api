@@ -98,6 +98,8 @@ GEM
     bunny-pub-sub (0.5.2)
       bunny (~> 2.14)
     byebug (12.0.0)
+    chronic_duration (0.10.6)
+      numerizer (~> 0.1.1)
     ci_reporter (2.1.0)
       builder (>= 2.1.2)
       rexml
@@ -281,6 +283,7 @@ GEM
       racc (~> 1.4)
     nokogiri (1.18.7-x86_64-linux-gnu)
       racc (~> 1.4)
+    numerizer (0.1.1)
     oauth2 (2.0.9)
       faraday (>= 0.17.3, < 3.0)
       jwt (>= 1.0, < 3.0)
@@ -467,6 +470,9 @@ GEM
       fugit (~> 1.8, >= 1.11.1)
       globalid (>= 1.0.1)
       sidekiq (>= 6.5.0)
+    sidekiq-status (3.0.3)
+      chronic_duration
+      sidekiq (>= 6.0, < 8)
     sidekiq-unique-jobs (8.0.10)
       concurrent-ruby (~> 1.0, >= 1.0.5)
       sidekiq (>= 7.0.0, < 8.0.0)
@@ -608,6 +614,7 @@ DEPENDENCIES
   shellwords
   sidekiq
   sidekiq-cron
+  sidekiq-status
   sidekiq-unique-jobs
   simplecov
   solargraph

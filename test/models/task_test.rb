@@ -821,6 +821,7 @@ class TaskTest < ActiveSupport::TestCase
     # convenor = unit.main_convenor_user
     task_definition = unit.task_definitions.first
 
+    task_definition.start_date = Time.zone.now - 1.week
     task_definition.due_date = Time.zone.now + 1.week
     task_definition.upload_requirements = [
       {
