@@ -555,7 +555,9 @@ class UnitModelTest < ActiveSupport::TestCase
 
     result = unit.import_users_from_csv test_file_path('SIT101-Enrol-Students.csv')
     unit.reload
-    assert_equal 1, result[:errors].count, result.inspect
+    # 1 Error due to invalid email + 2 Errors for failed tutorial/campus validation
+    assert_equal 3, result[:errors].count, result.inspect
+    assert_equal(2, result[:errors].count { |e| e[:message].include?("Enrolled student. UNABLE TO enroll in") }, "Expected two students to be created but failed tutorial enrolments")
     assert_equal 1, result[:ignored].count, result.inspect
     assert_equal 10, unit.projects.count, result.inspect
 

@@ -372,28 +372,31 @@ class CsvTest < ActiveSupport::TestCase
 
   #####--------------POST tests - Upload CSV of all the students in a unit------------######
 
-  #22: Testing for CSV upload of all the students in a unit
-  #POST /api/csv/units/{id}
+  # 22: Testing for CSV upload of all the students in a unit
+  # POST /api/csv/units/{id}
   def test_csv_upload_all_students_in_unit
-    unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
+    Sidekiq::Testing.inline! do
+      unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
 
-    data_to_post = {
-      file: upload_file_csv('test_files/csv_test_files/COS10001-Students.csv')
-    }
+      data_to_post = {
+        file: upload_file_csv('test_files/csv_test_files/COS10001-Students.csv')
+      }
 
-    # auth_token and username added to header
-    add_auth_header_for(auth_token: auth_token(unit.main_convenor_user), username: unit.main_convenor_user.username)
+      # auth_token and username added to header
+      add_auth_header_for(auth_token: auth_token(unit.main_convenor_user), username: unit.main_convenor_user.username)
 
-    # perform the POST
-    post "/api/csv/units/#{unit.id}", data_to_post
+      # perform the POST
+      post "/api/csv/units/#{unit.id}", data_to_post
 
-    user_id_check = unit.projects.last.user_id
+      user_id_check = unit.projects.last.user_id
 
-    # Check for response
-    assert_equal 201, last_response.status
-    assert_equal 'test_csv_student', User.where(id: user_id_check).last.username, last_response_body
+      # Check for response
+      assert_equal 201, last_response.status
+      assert_equal 'test_csv_student', User.where(id: user_id_check).last.username, last_response_body
 
-    unit.destroy
+      unit.destroy
+      Sidekiq::Testing.fake!
+    end
   end
 
   #23: Testing for CSV upload failure due to incorrect auth token
