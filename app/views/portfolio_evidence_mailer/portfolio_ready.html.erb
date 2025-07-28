@@ -10,8 +10,8 @@
       margin: 100px auto 0px auto;
       font-size: 0.9em;
     }
-    main {
-      background-image: url('<%= @doubtfire_host[%r{^https?://}] ? @doubtfire_host : "https://#{@doubtfire_host}" %>/assets/images/logo.svg');
+    main, .main {
+      background-image: url('<%= @doubtfire_host %>/assets/images/logo.svg');
       background-size: 3.5em;
       background-repeat: no-repeat;
       background-position: 30px 45px;
@@ -22,7 +22,7 @@
       line-height: 200%;
       text-align: justify;
     }
-    footer {
+    footer, .footer {
       text-align: right;
       margin-top: 10px;
       color: #aaa;
@@ -44,7 +44,7 @@
   </style>
 </head>
 <body>
-  <main>
+  <main class="main">
     <h1> <%= @doubtfire_product_name %> Notification </h1>
     <p>Hi <%= @student.first_name %>,</p>
     <% if @project.portfolio_auto_generated %>
@@ -60,7 +60,7 @@
         The <%= @doubtfire_product_name %> Team on behalf of <%= @convenor.name %>
     </p>
   </main>
-  <footer>
+  <footer class="footer">
     <a href="<%= @unsubscribe_url %>">Unsubscribe</a> | Generated with <%= @doubtfire_product_name %>
   </footer>
 </body>
