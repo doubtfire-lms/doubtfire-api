@@ -28,7 +28,7 @@ RUN apt-get update && \
   rm -rf /tmp/*
 
 
-ENV PATH $PATH:/opt/texlive/bin/x86_64-linux:/opt/texlive/bin/aarch64-linux
+ENV PATH=$PATH:/opt/texlive/bin/x86_64-linux:/opt/texlive/bin/aarch64-linux
 
 # Install required TeX Live packages for lualatex compilation
 RUN tlmgr install \
@@ -74,7 +74,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy only the installed TeX Live binaries and files (excludes build tools like curl, wget)
 COPY --from=texlive-builder /opt/texlive /opt/texlive
 
-ENV PATH $PATH:/opt/texlive/bin/x86_64-linux:/opt/texlive/bin/aarch64-linux
+ENV PATH=$PATH:/opt/texlive/bin/x86_64-linux:/opt/texlive/bin/aarch64-linux
 
 # Preload fonts
 RUN luaotfload-tool --update
