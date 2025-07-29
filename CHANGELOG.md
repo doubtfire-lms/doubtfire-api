@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-12](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-11...v10.0.0-12) (2025-07-29)
+
+
+### Bug Fixes
+
+* ensure styling is applied to elements ([f17b806](https://github.com/b0ink/doubtfire-deploy/commit/f17b8066720705ccc0383f0da651b24e3149e7c7))
+* remove duplicate protocol [#460](https://github.com/b0ink/doubtfire-deploy/issues/460) ([198295b](https://github.com/b0ink/doubtfire-deploy/commit/198295b3ea724262919a502c2b231982cff57ff3))
+* return file path ([457ccd3](https://github.com/b0ink/doubtfire-deploy/commit/457ccd3665b8220a7ed95c2d140dfbcc1ae32b69))
+* validate unique project for same unit and user ([e5f3fa7](https://github.com/b0ink/doubtfire-deploy/commit/e5f3fa72de8279e6e04b1f35a12c9083ba37659d))
+
 ## [10.0.0-11](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-10...v10.0.0-11) (2025-07-28)
 
 
