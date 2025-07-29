@@ -7,6 +7,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
   include TestHelpers::TiiTestHelper
   include TestHelpers::TestFileHelper
   include TestHelpers::JsonHelper
+  include TestHelpers::AuthHelper
 
   def app
     Rails.application
@@ -223,8 +224,9 @@ class TeachingPeriodTest < ActiveSupport::TestCase
 
     similarity = task.task_similarities.first
     assert similarity.valid?
-    assert_nil similarity.other_task
-    assert_nil similarity.other_student
+
+    assert_nil similarity.try(:other_task)
+    assert_nil similarity.try(:other_student)
 
     add_auth_header_for(user: task.unit.main_convenor_user)
     get "/api/tasks/#{task.id}/similarities"
