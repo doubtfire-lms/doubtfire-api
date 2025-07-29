@@ -32,6 +32,7 @@ RUN apt-get update \
     docker-ce \
     docker-ce-cli \
     containerd.io \
+    logrotate \
   && apt-get clean
 
 # Setup the folder where we will deploy the code
@@ -50,6 +51,9 @@ COPY . /doubtfire/
 
 # Crontab file copied to cron.d directory.
 COPY ./.ci-setup/crontab /etc/cron.d/container_cronjob
+
+# Copy log-rotate config
+COPY ./.ci-setup/dflogrotate /etc/logrotate.d/dflogrotate
 
 RUN touch /var/log/cron.log
 

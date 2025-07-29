@@ -34,5 +34,8 @@ fi
 chown root:root /etc/msmtprc
 chmod 600 /etc/msmtprc
 
+# Start log rotation
+/usr/sbin/logrotate -f /etc/logrotate.conf
+
 # Run cron and follow log
 chmod 644 /etc/cron.d/container_cronjob && cron -f && tail -f /var/log/cron.log > /proc/1/fd/1 2>/proc/1/fd/2

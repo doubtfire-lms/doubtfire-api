@@ -1,0 +1,14 @@
+/doubtfire/log/production.log {
+  # Create new log files daily
+  daily
+
+  # Remove old logs after 365 days
+  rotate 365
+
+  compress
+  delaycompress
+  missingok
+  notifempty
+  copytruncate
+  dateext
+}
