@@ -1798,7 +1798,10 @@ class Unit < ApplicationRecord
                 'quality_pts'
               )
     if my_tutorials_only
-      result = result.where('sq.unit_role_id = :unit_role_id', unit_role_id: unit_role_for(user).id)
+      unit_role = unit_role_for(user)
+      unless unit_role.nil?
+        result = result.where('sq.unit_role_id = :unit_role_id', unit_role_id: unit_role.id)
+      end
     end
 
     result
