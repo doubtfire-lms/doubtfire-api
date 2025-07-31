@@ -8,6 +8,7 @@ class UnitsApi < Grape::API
   helpers MimeCheckHelpers
   helpers CsvHelper
   helpers SidekiqHelper
+  helpers FileHelper
 
   before do
     authenticated?
@@ -329,7 +330,7 @@ class UnitsApi < Grape::API
 
     ensure_csv!(params[:file][:tempfile])
 
-    import_csv_dir = Rails.root.join(tmp_file_dir, 'csv')
+    import_csv_dir = Rails.root.join(FileHelper.tmp_file_dir, 'csv')
 
     file_name = File.join(import_csv_dir, "import-student-csv-#{unit.id}-#{Process.pid}-#{Thread.current.object_id}.csv")
     FileUtils.mkdir_p(import_csv_dir)
