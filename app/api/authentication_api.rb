@@ -174,6 +174,109 @@ class AuthenticationApi < Grape::API
   end
 
   #
+  # LTI JWT callback - only mounted if LTI is used
+  #
+  #
+  # if AuthenticationHelpers.lti_auth?
+  # TODO: mount this only if lti_auth? is enabled
+  desc 'LTI1.3 auth'
+  params do
+    requires :lti_token, type: String, desc: 'JWT provided for further processing.'
+  end
+  post '/auth/lti' do
+    begin
+      secret_key = 'ABC123'
+      response = JWT.decode(params[:lti_token], secret_key, true, algorithm: 'HS256').first
+    rescue JWT::DecodeError => e
+      return error!({ error: 'Invalid LTI token.' }, 401)
+    end
+
+    # TODO: confirm this user-agent matches the user agent in our lti_token (same with the IP)
+    # puts request.headers['User-Agent'].inspect
+    # puts request.ip
+
+    user_id_data = {
+      login_id: response["user"],
+      email: response.dig("userInfo", "email"),
+      username: response.dig("userInfo", "email")&.split('@')&.first
+    }
+
+    logger.info "Authenticate #{user_id_data[:email]} from #{request.ip}"
+
+    # Lookup using login_id if it exists
+    # Lookup using email otherwise and set login_id
+    # Otherwise create new
+    user = User.find_by(login_id: user_id_data[:login_id]) ||
+           User.find_by(username: user_id_data[:username]) ||
+           User.find_by(email: user_id_data[:email]) ||
+           User.create do |new_user|
+             # Update new user with details from the SAML response
+             Doubtfire::Application.config.institution_settings.update_user_from_lti_response(
+               new_user,
+               user_id_data,
+               response
+             )
+           end
+
+    # Set login id + username if not yet specified
+    if user.login_id.nil? || user.username.nil?
+      user.update(
+        login_id: user_id_data[:login_id],
+        username: user_id_data[:username]
+      )
+    end
+
+    # Try and save the user once authenticated if new
+    if user.new_record?
+      user.encrypted_password = BCrypt::Password.create(SecureRandom.hex(32))
+      unless user.valid?
+        logger.error "User #{user.username} is invalid: #{user.errors.full_messages.join(', ')}"
+        error!(error: 'There was an error creating your account. ' \
+                      'Please get in contact with your unit convenor or the ' \
+                      'system administrators.')
+      end
+      user.save
+    end
+
+    # Generate a temporary auth_token for future requests
+    onetime_token = user.generate_temporary_authentication_token!
+
+    logger.info "Redirecting #{user.username} from #{request.ip}"
+
+    # Must redirect to the front-end after sign in
+    host = Doubtfire::Application.config.institution[:host]
+    unless host.starts_with?('http')
+      protocol = Rails.env.development? ? 'http' : 'https'
+      host = "#{protocol}://#{host}"
+    end
+
+    logger.info "Login #{params[:username]} from #{request.ip}"
+
+    # Respond user details with temporary auth token
+    present :user, user, with: Entities::UserEntity
+    present :auth_token, onetime_token.authentication_token
+    set_refresh_cookie_in_response(false)
+  end
+
+  # Saml 2 logout callback
+  desc 'SAML2.0 logout callback'
+  params do
+    requires :SAMLResponse, type: String, desc: 'SAML logout response data.'
+  end
+  post '/auth/saml_logout' do
+    response = OneLogin::RubySaml::Logoutresponse.new(params[:SAMLResponse], allowed_clock_drift: 1.second,
+                                                                             settings: AuthenticationHelpers.saml_settings)
+
+    # Check if the SAML response is valid - if not log an error
+    unless response.is_valid?
+      logger.error "Invalid SAML logout response: #{response.errors.join(', ')}"
+    end
+
+    redirect "#{host}/sign_in"
+  end
+  # end
+
+  #
   # AAF JWT callback - only mounted if AAF auth is used
   #
   if AuthenticationHelpers.aaf_auth?
