@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_08_19_001800) do
+ActiveRecord::Schema[8.0].define(version: 20_250_819_001_800) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -67,7 +67,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_19_001800) do
     t.bigint "user_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["task_comment_id", "user_id"], name: "index_comments_read_receipts_on_task_comment_id_and_user_id", unique: true
+    t.index %w[task_comment_id user_id], name: "index_comments_read_receipts_on_task_comment_id_and_user_id", unique: true
     t.index ["task_comment_id"], name: "index_comments_read_receipts_on_task_comment_id"
     t.index ["user_id"], name: "index_comments_read_receipts_on_user_id"
   end
@@ -124,7 +124,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_19_001800) do
     t.datetime "updated_at"
     t.integer "capacity"
     t.boolean "locked", default: false, null: false
-    t.index ["name", "unit_id"], name: "index_group_sets_on_name_and_unit_id", unique: true
+    t.index %w[name unit_id], name: "index_group_sets_on_name_and_unit_id", unique: true
     t.index ["unit_id"], name: "index_group_sets_on_unit_id"
   end
 
@@ -149,7 +149,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_19_001800) do
     t.integer "capacity_adjustment", default: 0, null: false
     t.boolean "locked", default: false, null: false
     t.index ["group_set_id"], name: "index_groups_on_group_set_id"
-    t.index ["name", "group_set_id"], name: "index_groups_on_name_and_group_set_id", unique: true
+    t.index %w[name group_set_id], name: "index_groups_on_name_and_group_set_id", unique: true
     t.index ["tutorial_id"], name: "index_groups_on_tutorial_id"
   end
 
@@ -159,7 +159,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_19_001800) do
     t.string "link_type"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["source_id", "target_id"], name: "index_learning_outcome_links_on_source_id_and_target_id", unique: true
+    t.index %w[source_id target_id], name: "index_learning_outcome_links_on_source_id_and_target_id", unique: true
     t.index ["source_id"], name: "index_learning_outcome_links_on_source_id"
     t.index ["target_id"], name: "index_learning_outcome_links_on_target_id"
   end
@@ -172,8 +172,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_19_001800) do
     t.string "context_type"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["abbreviation", "context_type", "context_id"], name: "index_learning_outcomes_on_abbreviation_and_context", unique: true
-    t.index ["context_id", "context_type"], name: "index_learning_outcomes_on_context_id_and_context_type"
+    t.index %w[abbreviation context_type context_id], name: "index_learning_outcomes_on_abbreviation_and_context", unique: true
+    t.index %w[context_id context_type], name: "index_learning_outcomes_on_context_id_and_context_type"
   end
 
   create_table "logins", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
@@ -191,7 +191,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_19_001800) do
     t.integer "status", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["task_id", "submission_timestamp"], name: "index_overseer_assessments_on_task_id_and_submission_timestamp", unique: true
+    t.index %w[task_id submission_timestamp], name: "index_overseer_assessments_on_task_id_and_submission_timestamp", unique: true
     t.index ["task_id"], name: "index_overseer_assessments_on_task_id"
   end
 
@@ -231,7 +231,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_19_001800) do
     t.integer "spec_con_days", default: 0, null: false
     t.index ["campus_id"], name: "index_projects_on_campus_id"
     t.index ["enrolled"], name: "index_projects_on_enrolled"
-    t.index ["unit_id", "user_id"], name: "index_projects_on_unit_id_and_user_id", unique: true
+    t.index %w[unit_id user_id], name: "index_projects_on_unit_id_and_user_id", unique: true
     t.index ["unit_id"], name: "index_projects_on_unit_id"
     t.index ["user_id"], name: "index_projects_on_user_id"
   end
@@ -280,7 +280,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_19_001800) do
     t.bigint "commentable_id"
     t.string "commentable_type"
     t.index ["assessor_id"], name: "index_task_comments_on_assessor_id"
-    t.index ["commentable_type", "commentable_id"], name: "index_task_comments_on_commentable_type_and_commentable_id"
+    t.index %w[commentable_type commentable_id], name: "index_task_comments_on_commentable_type_and_commentable_id"
     t.index ["discussion_comment_id"], name: "index_task_comments_on_discussion_comment_id"
     t.index ["recipient_id"], name: "fk_rails_1dbb49165b"
     t.index ["reply_to_id"], name: "index_task_comments_on_reply_to_id"
@@ -320,9 +320,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_19_001800) do
     t.boolean "scorm_time_delay_enabled", default: false
     t.integer "scorm_attempt_limit", default: 0
     t.boolean "assess_in_portfolio_only", default: false, null: false
-    t.index ["abbreviation", "unit_id"], name: "index_task_definitions_on_abbreviation_and_unit_id", unique: true
+    t.index %w[abbreviation unit_id], name: "index_task_definitions_on_abbreviation_and_unit_id", unique: true
     t.index ["group_set_id"], name: "index_task_definitions_on_group_set_id"
-    t.index ["name", "unit_id"], name: "index_task_definitions_on_name_and_unit_id", unique: true
+    t.index %w[name unit_id], name: "index_task_definitions_on_name_and_unit_id", unique: true
     t.index ["overseer_image_id"], name: "index_task_definitions_on_overseer_image_id"
     t.index ["tutorial_stream_id"], name: "index_task_definitions_on_tutorial_stream_id"
     t.index ["unit_id"], name: "index_task_definitions_on_unit_id"
@@ -342,7 +342,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_19_001800) do
     t.bigint "user_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["task_id", "user_id"], name: "index_task_pins_on_task_id_and_user_id", unique: true
+    t.index %w[task_id user_id], name: "index_task_pins_on_task_id_and_user_id", unique: true
     t.index ["task_id"], name: "index_task_pins_on_task_id"
     t.index ["user_id"], name: "fk_rails_915df186ed"
   end
@@ -354,7 +354,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_19_001800) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["prerequisite_id"], name: "index_task_prerequisites_on_prerequisite_id"
-    t.index ["task_definition_id", "prerequisite_id"], name: "idx_on_task_definition_id_prerequisite_id_90b47ca126", unique: true
+    t.index %w[task_definition_id prerequisite_id], name: "idx_on_task_definition_id_prerequisite_id_90b47ca126", unique: true
     t.index ["task_definition_id"], name: "index_task_prerequisites_on_task_definition_id"
     t.index ["task_status_id"], name: "index_task_prerequisites_on_task_status_id"
   end
@@ -414,7 +414,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_19_001800) do
     t.integer "extensions", default: 0, null: false
     t.integer "scorm_extensions", default: 0, null: false
     t.index ["group_submission_id"], name: "index_tasks_on_group_submission_id"
-    t.index ["project_id", "task_definition_id"], name: "tasks_uniq_proj_task_def", unique: true
+    t.index %w[project_id task_definition_id], name: "tasks_uniq_proj_task_def", unique: true
     t.index ["project_id"], name: "index_tasks_on_project_id"
     t.index ["task_definition_id"], name: "index_tasks_on_task_definition_id"
     t.index ["task_status_id"], name: "index_tasks_on_task_status_id"
@@ -428,7 +428,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_19_001800) do
     t.datetime "active_until", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["period", "year"], name: "index_teaching_periods_on_period_and_year", unique: true
+    t.index %w[period year], name: "index_teaching_periods_on_period_and_year", unique: true
   end
 
   create_table "test_attempts", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
@@ -460,7 +460,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_19_001800) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["complete"], name: "index_tii_actions_on_complete"
-    t.index ["entity_type", "entity_id"], name: "index_tii_actions_on_entity"
+    t.index %w[entity_type entity_id], name: "index_tii_actions_on_entity"
     t.index ["retry"], name: "index_tii_actions_on_retry"
   end
 
@@ -500,7 +500,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_19_001800) do
     t.bigint "project_id", null: false
     t.bigint "tutorial_id", null: false
     t.index ["project_id"], name: "index_tutorial_enrolments_on_project_id"
-    t.index ["tutorial_id", "project_id"], name: "index_tutorial_enrolments_on_tutorial_id_and_project_id", unique: true
+    t.index %w[tutorial_id project_id], name: "index_tutorial_enrolments_on_tutorial_id_and_project_id", unique: true
     t.index ["tutorial_id"], name: "index_tutorial_enrolments_on_tutorial_id"
   end
 
@@ -511,10 +511,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_19_001800) do
     t.datetime "updated_at", null: false
     t.bigint "activity_type_id", null: false
     t.bigint "unit_id", null: false
-    t.index ["abbreviation", "unit_id"], name: "index_tutorial_streams_on_abbreviation_and_unit_id", unique: true
+    t.index %w[abbreviation unit_id], name: "index_tutorial_streams_on_abbreviation_and_unit_id", unique: true
     t.index ["abbreviation"], name: "index_tutorial_streams_on_abbreviation"
     t.index ["activity_type_id"], name: "fk_rails_14ef80da76"
-    t.index ["name", "unit_id"], name: "index_tutorial_streams_on_name_and_unit_id", unique: true
+    t.index %w[name unit_id], name: "index_tutorial_streams_on_name_and_unit_id", unique: true
     t.index ["unit_id"], name: "index_tutorial_streams_on_unit_id"
   end
 
@@ -531,7 +531,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_19_001800) do
     t.integer "capacity", default: -1
     t.bigint "campus_id"
     t.bigint "tutorial_stream_id"
-    t.index ["abbreviation", "unit_id"], name: "index_tutorials_on_abbreviation_and_unit_id", unique: true
+    t.index %w[abbreviation unit_id], name: "index_tutorials_on_abbreviation_and_unit_id", unique: true
     t.index ["campus_id"], name: "index_tutorials_on_campus_id"
     t.index ["tutorial_stream_id"], name: "index_tutorials_on_tutorial_stream_id"
     t.index ["unit_id"], name: "index_tutorials_on_unit_id"
@@ -645,7 +645,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_19_001800) do
     t.bigint "unit_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["unit_id", "webcal_id"], name: "index_webcal_unit_exclusions_on_unit_id_and_webcal_id", unique: true
+    t.index %w[unit_id webcal_id], name: "index_webcal_unit_exclusions_on_unit_id_and_webcal_id", unique: true
     t.index ["unit_id"], name: "index_webcal_unit_exclusions_on_unit_id"
     t.index ["webcal_id"], name: "fk_rails_d5fab02cb7"
   end
