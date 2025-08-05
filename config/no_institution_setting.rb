@@ -121,6 +121,29 @@ class InstitutionSettings
 
     user
   end
+
+  def update_user_from_lti_response(user, user_id_data, response)
+    user.login_id = user_id_data[:login_id]
+    user.email = user_id_data[:email]
+    user.username = user_id_data[:username]
+
+    # Update new user with details from the LTI payload
+    first_name = response.dig('userInfo', 'given_name') || response.dig('userInfo', 'name')
+    last_name = response.dig('userInfo', 'family_name')
+    nickname = response.dig('userInfo', 'name') || first_name
+
+    first_name ||= last_name
+    last_name ||= first_name
+    nickname ||= first_name
+
+    user.first_name = first_name.squish.capitalize
+    user.last_name = last_name.squish.capitalize
+    user.nickname = nickname.squish.capitalize
+
+    # TODO: get the user roles
+    user.role_id = Role.student.id
+    user
+  end
 end
 
 Doubtfire::Application.config.institution_settings = InstitutionSettings.new
