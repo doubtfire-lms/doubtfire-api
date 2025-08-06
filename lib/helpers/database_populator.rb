@@ -627,12 +627,14 @@ class DatabasePopulator
   #
   def generate_and_align_ilos_for_unit(unit, unit_details)
     # Create the ILOs
-    echo "----> Adding #{unit_details[:ilos]} ILOs\n"
 
-    if File.exist? Rails.root.join('test_files', "#{unit.code}-Outcomes.csv")
-      unit.import_outcomes_from_csv File.open(Rails.root.join('test_files', "#{unit.code}-Outcomes.csv"))
+    if File.exist? Rails.root.join('test_files', "#{unit.code}-UnitAndTaskLearningOutcomes.csv")
+      echo "----> Importing ILOs from CSV \n"
+      unit.import_outcomes_from_csv File.open(Rails.root.join('test_files', "#{unit.code}-UnitAndTaskLearningOutcomes.csv"))
       return
     end
+
+    echo "----> Adding #{unit_details[:ilos]} ILOs\n"
 
     ilo_cache = {}
     unit_details[:ilos].times do |index|
