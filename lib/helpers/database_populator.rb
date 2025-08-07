@@ -261,6 +261,7 @@ class DatabasePopulator
       # Generate other unit-related stuff
       generate_tasks_for_unit(unit, unit_details)
       generate_and_align_ilos_for_unit(unit, unit_details)
+      generate_feedback_chips_for_unit(unit, unit_details)
       generate_tutorial_streams_for(unit)
       generate_tutorials_and_enrol_students_for_unit(unit, unit_details)
     end
@@ -627,12 +628,14 @@ class DatabasePopulator
   #
   def generate_and_align_ilos_for_unit(unit, unit_details)
     # Create the ILOs
-    echo "----> Adding #{unit_details[:ilos]} ILOs\n"
 
-    if File.exist? Rails.root.join('test_files', "#{unit.code}-Outcomes.csv")
-      unit.import_outcomes_from_csv File.open(Rails.root.join('test_files', "#{unit.code}-Outcomes.csv"))
+    if File.exist? Rails.root.join('test_files', "#{unit.code}-UnitAndTaskLearningOutcomes.csv")
+      echo "----> Importing ILOs from CSV \n"
+      unit.import_outcomes_from_csv File.open(Rails.root.join('test_files', "#{unit.code}-UnitAndTaskLearningOutcomes.csv"))
       return
     end
+
+    echo "----> Adding #{unit_details[:ilos]} ILOs\n"
 
     ilo_cache = {}
     unit_details[:ilos].times do |index|
@@ -649,6 +652,21 @@ class DatabasePopulator
       ilo_cache[ilo.id] = ilo
       echo "."
     end
+    echo_line "!"
+  end
+
+  #
+  # Generates Feedback chips related to learning outcomes
+  #
+  def generate_feedback_chips_for_unit(unit, _unit_details)
+    # Create the Feedback Chips
+
+    if File.exist? Rails.root.join('test_files', "#{unit.code}-UnitFeedbackChips.csv")
+      echo "----> Importing Feedback Chips from CSV \n"
+      Feedback::FeedbackChip.import_feedback_chips_from_csv(File.open(Rails.root.join('test_files', "#{unit.code}-UnitFeedbackChips.csv")), "Unit", unit)
+      return
+    end
+    echo "---> No feedback ships CSV found."
     echo_line "!"
   end
 end
