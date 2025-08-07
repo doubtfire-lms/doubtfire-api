@@ -12,6 +12,7 @@ class AuthenticationApi < Grape::API
   helpers LogHelper
   helpers AuthenticationHelpers
   helpers AuthorisationHelpers
+  helpers LtiHelper
 
   #
   # Sign in - only mounted if AAF and SAML auth is NOT used (database auth)
@@ -184,21 +185,16 @@ class AuthenticationApi < Grape::API
     requires :lti_token, type: String, desc: 'JWT provided for further processing.'
   end
   post '/auth/lti' do
-    begin
-      secret_key = 'ABC123'
-      response = JWT.decode(params[:lti_token], secret_key, true, algorithm: 'HS256').first
-    rescue JWT::DecodeError => e
-      return error!({ error: 'Invalid LTI token.' }, 401)
-    end
+    token = decode_lti_token(params[:lti_token])
 
     # TODO: confirm this user-agent matches the user agent in our lti_token (same with the IP)
     # puts request.headers['User-Agent'].inspect
     # puts request.ip
 
     user_id_data = {
-      login_id: response["user"],
-      email: response.dig("userInfo", "email"),
-      username: response.dig("userInfo", "email")&.split('@')&.first
+      login_id: token["user"],
+      email: token.dig("userInfo", "email"),
+      username: token.dig("userInfo", "email")&.split('@')&.first
     }
 
     logger.info "Authenticate #{user_id_data[:email]} from #{request.ip}"
@@ -214,7 +210,7 @@ class AuthenticationApi < Grape::API
              Doubtfire::Application.config.institution_settings.update_user_from_lti_response(
                new_user,
                user_id_data,
-               response
+               token
              )
            end
 
