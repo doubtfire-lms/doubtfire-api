@@ -81,6 +81,11 @@ module Doubtfire
     credentials.secret_key_aaf = ENV.fetch('DF_SECRET_KEY_AAF', Rails.env.production? ? nil : 'secretsecret12345')
     credentials.secret_key_moss = ENV.fetch('DF_SECRET_KEY_MOSS', nil)
 
+    # ==> LTI settings
+    # Shared secret between Ruby on Rails API and the LTI.js API
+    # LTI.js will send signed JWT tokens using this secret
+    config.lti_api_secret = ENV.fetch('LTI_SHARED_API_SECRET', nil)
+
     # ==> Institution settings
     # Institution YAML and ENV (override) config load
     config.institution = YAML.load_file(Rails.root.join('config/institution.yml').to_s).with_indifferent_access
