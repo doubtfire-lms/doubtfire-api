@@ -251,6 +251,7 @@ class AuthenticationApi < Grape::API
     # Respond user details with temporary auth token
     present :user, user, with: Entities::UserEntity
     present :auth_token, onetime_token.authentication_token
+    present :lti_token, params[:lti_token]
     set_refresh_cookie_in_response(false)
   end
 
