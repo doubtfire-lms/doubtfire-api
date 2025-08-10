@@ -16,6 +16,10 @@ module AuthorisationHelpers
     obj_class = object.class == Class ? object : object.class
 
     role_obj = object.role_for(user)
+    # To user read only
+    if role_obj.respond_to?(:observer) && role_obj.observer && action != :get
+      return false
+    end
 
     return false if role_obj.nil?
 
