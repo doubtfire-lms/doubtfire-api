@@ -72,37 +72,6 @@ class LtiApi < Grape::API
     present project, with: Entities::ProjectEntity, user: current_user, for_student: true, in_project: true
   end
 
-  desc 'Get a students grade for a unit'
-  params do
-    requires :ltik, type: String, desc: 'LtiKey provided with user info and deeplink resources'
-  end
-  get '/lti/grade' do
-    authenticated?
-
-    token = decode_lti_token(params[:ltik])
-
-    unit_id = token["unit_id"]
-    if unit_id.nil?
-      error!({ error: 'Invalid LTI token.' }, 401)
-    end
-
-    unit = Unit.find_by(id: unit_id)
-    if unit.nil?
-      error!({ error: 'Unit does not exist' }, 404)
-    end
-
-    project = unit.projects.find_by(user_id: current_user.id)
-    if project.nil?
-      error!({ error: 'Project does not exist' }, 404)
-    end
-
-    if project.grade == 0
-      error!({ error: "Portfolio has not been graded yet" }, 404)
-    end
-
-    project.grade
-  end
-
   desc 'Get grades for a list of students'
   params do
     requires :ltik, type: String, desc: 'LtiKey provided with user info and deeplink resources'
@@ -111,6 +80,10 @@ class LtiApi < Grape::API
     authenticated?
 
     token = decode_lti_token(params[:ltik])
+
+    unless authorise? current_user, User, :convene_units
+      error!({ error: "Not authorised to sync grades." }, 403)
+    end
 
     unit_id = token["unit_id"]
     if unit_id.nil?
@@ -125,13 +98,18 @@ class LtiApi < Grape::API
     student_emails = token["student_emails"]
 
     projects = unit.projects.joins(:user).where(users: { email: student_emails })
+
+    projects_hash = {}
+
     projects.each do |project|
-      unless authorise?(current_user, project, :assess)
-        error!({ error: "You do not have permissions to assess this student" }, 403)
-      end
+      projects_hash[project.user.email] = if authorise?(current_user, project, :assess)
+                                            project.grade
+                                          else
+                                            # Let the lti API know that user doesnt have permission to this project
+                                            -1
+                                          end
     end
 
-    projects_hash = projects.pluck('users.email', :grade).to_h
     projects_hash
   end
 end
