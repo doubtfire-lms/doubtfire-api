@@ -1242,6 +1242,15 @@ class CsvTest < ActiveSupport::TestCase
         assert_equal total_chip_count, Feedback::FeedbackChip.count, "Chips not destroyed in - #{context}"
       end
     end
+
+    users_cant.each do |user|
+      add_auth_header_for(user: user)
+      to_test.each do |test|
+        url = test[:url]
+        post url, file: upload_file_csv('test_files/feedback/unit_feedback_chip.csv')
+        assert_equal 403, last_response.status, "#{user.role.name} - #{url} - #{last_response.status}"
+      end
+    end
   end
 
   def test_upload_global_feedback_chips
@@ -1321,6 +1330,179 @@ class CsvTest < ActiveSupport::TestCase
 
         # Make sure we have deleted all new chips
         assert_equal total_chip_count, Feedback::FeedbackChip.count, "Chips not destroyed in - #{context}"
+      end
+    end
+  end
+
+  def test_download_feedback_chips
+    # Create two identical units with different codes
+    unit = FactoryBot.create(:unit, code: 'UNIT1', student_count: 1, inactive_student_count: 0, unenrolled_student_count: 0, part_enrolled_student_count: 0, task_count: 0, outcome_count: 0)
+    ulos = [
+      FactoryBot.create(:learning_outcome, context_type: 'Unit', context_id: unit.id, abbreviation: 'ULO1'),
+      FactoryBot.create(:learning_outcome, context_type: 'Unit', context_id: unit.id, abbreviation: 'ULO2')
+    ]
+    td = FactoryBot.create(:task_definition, unit: unit, abbreviation: 'P1', outcome_count: 0)
+
+    admin = FactoryBot.create(:user, :admin)
+    tutor = FactoryBot.create(:user, :tutor)
+
+    unit.employ_staff(tutor, Role.tutor)
+
+    to_test = [
+      {
+        # Direct to ULO
+        url: "/api/units/#{unit.id}/outcomes/#{ulos[0].id}/feedback_chips/csv",
+        context: 'Direct - ULO1'
+      },
+      {
+        # To Unit
+        url: "/api/units/#{unit.id}/feedback_chips/csv",
+        context: 'Unit - all'
+      },
+      {
+        # To Task
+        url: "/api/task_definitions/#{td.id}/feedback_chips/csv",
+        context: 'TaskDef - TLO1'
+      }
+    ]
+
+    users_can = [
+      unit.main_convenor_user,
+      admin
+    ]
+    users_cant = [
+      FactoryBot.create(:user, :student),
+      FactoryBot.create(:user, :tutor),
+      tutor,
+      FactoryBot.create(:user, :convenor),
+      FactoryBot.create(:user, :auditor)
+    ]
+
+    users_can.each do |user|
+      add_auth_header_for(user: user)
+
+      to_test.each do |test|
+        url = test[:url]
+        get url
+        assert_equal 200, last_response.status, "#{user.role.name} - #{url} - #{last_response.status}"
+      end
+    end
+
+    users_cant.each do |user|
+      add_auth_header_for(user: user)
+      to_test.each do |test|
+        url = test[:url]
+        post url, file: upload_file_csv('test_files/feedback/unit_feedback_chip.csv')
+        assert_equal 403, last_response.status, "#{user.role.name} - #{url} - #{last_response.status}"
+      end
+    end
+  end
+
+  def test_upload_learning_outcomes
+    # Create two identical units with different codes
+    unit = FactoryBot.create(:unit, code: 'COS10001', student_count: 1, inactive_student_count: 0, unenrolled_student_count: 0, part_enrolled_student_count: 0, task_count: 0, outcome_count: 0)
+
+    td1 = FactoryBot.create(:task_definition, unit: unit, abbreviation: '1.1P', outcome_count: 0)
+    td2 = FactoryBot.create(:task_definition, unit: unit, abbreviation: '1.2P', outcome_count: 0)
+    td3 = FactoryBot.create(:task_definition, unit: unit, abbreviation: '1.3P', outcome_count: 0)
+    td4 = FactoryBot.create(:task_definition, unit: unit, abbreviation: '1.4C', outcome_count: 0)
+
+    admin = FactoryBot.create(:user, :admin)
+    tutor = FactoryBot.create(:user, :tutor)
+
+    unit.employ_staff(tutor, Role.tutor)
+
+    # 4 Unit Learning Outcomes (ULOs)
+    # 8 Task Learning Outcomes (TLOs)
+
+    num_rows_in_csv = 12
+
+    to_test = [
+      {
+        # To Task Definition
+        # NOTE: We expect all rows to fail, because our Unit outcomes don't exist yet
+        # Therefore, out Task outcomes will fail to link to non-existent ULOs
+        url: "/api/task_definitions/#{td1.id}/outcomes/csv",
+        context: 'TaskDef - (No ULOs to link)',
+        expected_success_count: 0,
+        expected_error_count: num_rows_in_csv
+      },
+      {
+        # To Unit
+        url: "/api/units/#{unit.id}/outcomes/csv",
+        context: 'Direct - ULO',
+        expected_success_count: num_rows_in_csv, # Both Unit and Task outcomes should be created
+        expected_error_count: 0
+
+      },
+      {
+        # To Task Definition
+        url: "/api/task_definitions/#{td1.id}/outcomes/csv",
+        context: 'TaskDef 1.1P - TLO',
+        expected_success_count: 2, # 2 outcomes for 1.1P
+        expected_error_count: 10
+      },
+      {
+        # To Task Definition
+        url: "/api/task_definitions/#{td2.id}/outcomes/csv",
+        context: 'TaskDef 1.2P - TLO',
+        expected_success_count: 3, # 3 outcomes for 1.2P
+        expected_error_count: 9
+      },
+      {
+        # To Task Definition
+        url: "/api/task_definitions/#{td3.id}/outcomes/csv",
+        context: 'TaskDef 1.3P - TLO',
+        expected_success_count: 2, # 2 outcomes for 1.3P
+        expected_error_count: 10
+      },
+      {
+        # To Task Definition
+        url: "/api/task_definitions/#{td4.id}/outcomes/csv",
+        context: 'TaskDef 1.4C - TLO',
+        expected_success_count: 1, # 1 outcome for 1.4C
+        expected_error_count: 11
+      }
+    ]
+
+    users_can = [
+      unit.main_convenor_user,
+      admin
+    ]
+
+    users_cant = [
+      FactoryBot.create(:user, :student),
+      FactoryBot.create(:user, :tutor),
+      tutor,
+      FactoryBot.create(:user, :convenor),
+      FactoryBot.create(:user, :auditor)
+    ]
+
+    users_can.each do |user|
+      add_auth_header_for(user: user)
+
+      to_test.each do |test|
+        context = test[:context]
+        expected_success_count = test[:expected_success_count]
+        expected_error_count = test[:expected_error_count]
+        url = test[:url]
+
+        post url, file: upload_file_csv('test_files/COS10001-UnitAndTaskLearningOutcomes.csv')
+        assert_equal 201, last_response.status, "#{user.role.name} - #{url} - #{last_response.status}"
+        assert_equal expected_success_count, last_response_body['success'].count, "#{context}: #{last_response_body}"
+        assert_equal expected_error_count, last_response_body['errors'].count, "#{context}: #{last_response_body}"
+      end
+
+      # Ensure we remove out Unit learning outcomes before going to the next user
+      unit.learning_outcomes.destroy_all
+    end
+
+    users_cant.each do |user|
+      add_auth_header_for(user: user)
+      to_test.each do |test|
+        url = test[:url]
+        post url, file: upload_file_csv('test_files/COS10001-UnitAndTaskLearningOutcomes.csv')
+        assert_equal 403, last_response.status, "#{user.role.name} - #{url} - #{last_response.status}"
       end
     end
   end

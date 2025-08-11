@@ -10,17 +10,22 @@ class TaskDefinition < ApplicationRecord
     convenor_role_permissions = [
       :create_feedback_chips,
       :get_feedback_chips,
-      :update
+      :update,
+      :upload_csv,
+      :get_los
     ]
 
     admin_role_permissions = [
       :create_feedback_chips,
       :get_feedback_chips,
-      :update
+      :update,
+      :upload_csv,
+      :get_los
     ]
 
     tutor_role_permissions = [
-      :get_feedback_chips
+      :get_feedback_chips,
+      :get_los
     ]
 
     auditor_role_permissions = [
