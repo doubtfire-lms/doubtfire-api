@@ -12,7 +12,7 @@ class LtiApi < Grape::API
 
   desc 'Check if current user is allowed to deeplink this data'
   params do
-    optional :ltik, type: String, desc: 'LtiKey provided with user info and deeplink resources'
+    requires :ltik, type: String, desc: 'LtiKey provided with user info and deeplink resources'
   end
   get '/lti/deeplink' do
     authenticated?
@@ -43,7 +43,7 @@ class LtiApi < Grape::API
 
   desc 'Enrol a student into a linked Lti unit'
   params do
-    optional :ltik, type: String, desc: 'LtiKey provided with user info and deeplink resources'
+    requires :ltik, type: String, desc: 'LtiKey provided with user info and deeplink resources'
   end
   post '/lti/enrol' do
     authenticated?
@@ -70,5 +70,68 @@ class LtiApi < Grape::API
     project = unit.enrol_student(current_user, Campus.first)
 
     present project, with: Entities::ProjectEntity, user: current_user, for_student: true, in_project: true
+  end
+
+  desc 'Get a students grade for a unit'
+  params do
+    requires :ltik, type: String, desc: 'LtiKey provided with user info and deeplink resources'
+  end
+  get '/lti/grade' do
+    authenticated?
+
+    token = decode_lti_token(params[:ltik])
+
+    unit_id = token["unit_id"]
+    if unit_id.nil?
+      error!({ error: 'Invalid LTI token.' }, 401)
+    end
+
+    unit = Unit.find_by(id: unit_id)
+    if unit.nil?
+      error!({ error: 'Unit does not exist' }, 404)
+    end
+
+    project = unit.projects.find_by(user_id: current_user.id)
+    if project.nil?
+      error!({ error: 'Project does not exist' }, 404)
+    end
+
+    if project.grade == 0
+      error!({ error: "Portfolio has not been graded yet" }, 404)
+    end
+
+    project.grade
+  end
+
+  desc 'Get grades for a list of students'
+  params do
+    requires :ltik, type: String, desc: 'LtiKey provided with user info and deeplink resources'
+  end
+  get '/lti/grades' do
+    authenticated?
+
+    token = decode_lti_token(params[:ltik])
+
+    unit_id = token["unit_id"]
+    if unit_id.nil?
+      error!({ error: 'Invalid LTI token.' }, 401)
+    end
+
+    unit = Unit.find_by(id: unit_id)
+    if unit.nil?
+      error!({ error: 'Unit does not exist' }, 404)
+    end
+
+    student_emails = token["student_emails"]
+
+    projects = unit.projects.joins(:user).where(users: { email: student_emails })
+    projects.each do |project|
+      unless authorise?(current_user, project, :assess)
+        error!({ error: "You do not have permissions to assess this student" }, 403)
+      end
+    end
+
+    projects_hash = projects.pluck('users.email', :grade).to_h
+    projects_hash
   end
 end
