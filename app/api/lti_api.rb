@@ -67,16 +67,66 @@ class LtiApi < Grape::API
     end
 
     # TODO: which campus?
-    project = unit.enrol_student(current_user, Campus.first)
+    project = unit.enrol_student(current_user, nil)
 
     present project, with: Entities::ProjectEntity, user: current_user, for_student: true, in_project: true
+  end
+
+  desc 'Enrol a list of students into a linked Lti unit'
+  params do
+    requires :ltik, type: String, desc: 'LtiKey provided with unit id and list of members'
+    # requires :members, type: Array,
+    #   requires :email, type: String
+    #   requires :family_name, type: String
+    #   requires :given_name, type: String
+    #   requires :name, type: String
+    #   requires :user_id, type: String
+    #   requires :roles, type: Array[String]
+    # end
+  end
+  post '/lti/enrol/bulk' do
+    authenticated?
+
+    token = decode_lti_token(params[:ltik])
+
+    unit_id = token["unit_id"]
+    if unit_id.nil?
+      error!({ error: 'Invalid LTI token.' }, 401)
+    end
+
+    unit = Unit.find_by(id: unit_id)
+    if unit.nil?
+      error!({ error: 'Unit does not exist' }, 404)
+    end
+
+    token["members"].each do |member|
+      user_id_data = {
+        login_id: member["user_id"],
+        email: member["email"],
+        username: member["email"]&.split('@')&.first
+      }
+      user = User.find_by(login_id: user_id_data[:login_id]) ||
+             User.find_by(username: user_id_data[:username]) ||
+             User.find_by(email: user_id_data[:email]) ||
+             User.create do |new_user|
+               # Update new user with details from the SAML response
+               Doubtfire::Application.config.institution_settings.update_user_from_lti_response(
+                 new_user,
+                 user_id_data,
+                 member
+               )
+             end
+      # TODO: actually check if user is valid
+      project = unit.enrol_student(user, nil)
+    end
+    status 200
   end
 
   desc 'Get grades for a list of students'
   params do
     requires :ltik, type: String, desc: 'LtiKey provided with user info and deeplink resources'
   end
-  get '/lti/grades' do
+  post '/lti/grades' do
     authenticated?
 
     token = decode_lti_token(params[:ltik])
