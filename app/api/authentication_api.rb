@@ -202,10 +202,12 @@ class AuthenticationApi < Grape::API
     # puts request.headers['User-Agent'].inspect
     # puts request.ip
 
+    member = token['member']
+
     user_id_data = {
-      login_id: token.dig("member", "ext_user_username") || token.dig("member", "user_id"),
-      email: token.dig("member", "email"),
-      username: token.dig("member", "email")&.split('@')&.first
+      login_id: member['ext_user_username'] || member['user_id'],
+      email: member['email'],
+      username: member['email']&.split('@')&.first
     }
 
     logger.info "Authenticate #{user_id_data[:email]} from #{request.ip}"
@@ -221,7 +223,7 @@ class AuthenticationApi < Grape::API
              Doubtfire::Application.config.institution_settings.update_user_from_lti_response(
                new_user,
                user_id_data,
-               token
+               member
              )
            end
 
