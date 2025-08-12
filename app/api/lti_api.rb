@@ -10,32 +10,32 @@ class LtiApi < Grape::API
   #   authenticated?
   # end
 
-  desc 'Check if current user is allowed to deeplink this data'
+  desc 'Returns success if current user is allowed to link requested unit'
   params do
     requires :ltik, type: String, desc: 'LtiKey provided with user info and deeplink resources'
   end
-  get '/lti/deeplink' do
+  post '/lti/link' do
     authenticated?
 
     unless authorise? current_user, User, :convene_units
-      error!({ error: "Not authorised to deeplink this unit." }, 403)
+      error!({ error: "Not authorised to link this unit." }, 403)
     end
 
     token = decode_lti_token(params[:ltik])
 
-    unit_id = token.dig("deeplinkRequest", "unit_id")
+    unit_id = token["unit_id"]
     if unit_id.nil?
       error!({ error: 'Invalid LTI token.' }, 401)
     end
 
-    unit = Unit.find_by(code: unit_id)
+    unit = Unit.find_by(id: unit_id)
 
     if unit.nil?
       error!({ error: 'Unit does not exist' }, 404)
     end
 
     unless authorise? current_user, unit, :enrol_student
-      error!({ error: "Not authorised to deeplink this unit." }, 403)
+      error!({ error: "Not authorised to link this unit." }, 403)
     end
 
     status 200
