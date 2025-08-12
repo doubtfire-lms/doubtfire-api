@@ -122,15 +122,15 @@ class InstitutionSettings
     user
   end
 
-  def update_user_from_lti_response(user, user_id_data, response)
+  def update_user_from_lti_response(user, user_id_data, member)
     user.login_id = user_id_data[:login_id]
     user.email = user_id_data[:email]
     user.username = user_id_data[:username]
 
     # Update new user with details from the LTI payload
-    first_name = response.dig('userInfo', 'given_name') || response.dig('userInfo', 'name')
-    last_name = response.dig('userInfo', 'family_name')
-    nickname = response.dig('userInfo', 'name') || first_name
+    first_name = member["name"] || member["family_name"]
+    last_name = member["family_name"] || member["name"]
+    nickname = member["give_name"] || first_name
 
     first_name ||= last_name
     last_name ||= first_name
@@ -140,10 +140,25 @@ class InstitutionSettings
     user.last_name = last_name.squish.capitalize
     user.nickname = nickname.squish.capitalize
 
-    # TODO: get the user roles
     user.role_id = Role.student.id
+
+    # Assigning tutors automatically:
+    # if member['roles'].include?('Instructor')
+    #       user.role_id = Role.tutor.id
+    # end
+
     user
   end
+
+  def should_enrol_lti_member(member)
+    # Example "roles" for a Student => ["Learner"]
+    # Example "roles" for an Instructor, who is a global Administrator => ["Instructor", "http://purl.imsglobal.org/vocab/lis/v2/person#Administrator"],
+
+    # Only enrol course members who are Students/Learners
+    return true if member['roles'].include?('Student') || member['roles'].include?('Learner')
+    false
+  end
+
 end
 
 Doubtfire::Application.config.institution_settings = InstitutionSettings.new
