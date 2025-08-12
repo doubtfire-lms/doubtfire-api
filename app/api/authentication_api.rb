@@ -182,19 +182,30 @@ class AuthenticationApi < Grape::API
   # TODO: mount this only if lti_auth? is enabled
   desc 'LTI1.3 auth'
   params do
-    requires :lti_token, type: String, desc: 'JWT provided for further processing.'
+    requires :ltik, type: String, desc: 'JWT provided for further processing.'
+    # requires :member, type: Hash do
+    #   requires :status, type: String
+    #   requires :roles, type: Array[String]
+    #   requires :user_id, type: String
+    #   optional :lis_person_sourcedid, type: String
+    #   requires :name, type: String
+    #   requires :given_name, type: String
+    #   requires :family_name, type: String
+    #   requires :email, type: String
+    #   requires :ext_user_username, type: String
+    # end
   end
   post '/auth/lti' do
-    token = decode_lti_token(params[:lti_token])
+    token = decode_lti_token(params[:ltik])
 
     # TODO: confirm this user-agent matches the user agent in our lti_token (same with the IP)
     # puts request.headers['User-Agent'].inspect
     # puts request.ip
 
     user_id_data = {
-      login_id: token["user"],
-      email: token.dig("userInfo", "email"),
-      username: token.dig("userInfo", "email")&.split('@')&.first
+      login_id: token.dig("member", "ext_user_username") || token.dig("member", "user_id"),
+      email: token.dig("member", "email"),
+      username: token.dig("member", "email")&.split('@')&.first
     }
 
     logger.info "Authenticate #{user_id_data[:email]} from #{request.ip}"
@@ -249,10 +260,8 @@ class AuthenticationApi < Grape::API
     logger.info "Login #{params[:username]} from #{request.ip}"
 
     # Respond user details with temporary auth token
-    present :user, user, with: Entities::UserEntity
+    present :username, user.username
     present :auth_token, onetime_token.authentication_token
-    present :lti_token, params[:lti_token]
-    set_refresh_cookie_in_response(false)
   end
 
   # end
