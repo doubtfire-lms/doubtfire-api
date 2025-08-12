@@ -66,6 +66,11 @@ class LtiApi < Grape::API
       return nil
     end
 
+    unless Doubtfire::Application.config.institution_settings.should_enrol_lti_member(token['member'])
+      # error!({ error: 'User can not be enrolled into this unit.' }, 404)
+      return nil
+    end
+
     # TODO: which campus?
     project = unit.enrol_student(current_user, nil)
 
