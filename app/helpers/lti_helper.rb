@@ -3,9 +3,17 @@ module LtiHelper
     begin
       secret_key = Doubtfire::Application.config.lti_api_secret
       response = JWT.decode(token, secret_key, true, algorithm: 'HS256').first
-      # TODO: cache our tokens JWT ID (jit) to prevent replay attacks
+
+      jti = response['jti']
+      exp = response['exp']
+
+      raise "Missing jti" if jti.nil?
+      raise "Missing exp" if exp.nil?
     rescue JWT::DecodeError => e
       logger.debug "Failed to validate Lti Token: #{e}"
+      return error!({ error: 'Invalid LTI token.' }, 401)
+    rescue StandardError => e
+      logger.debug "Missing token properties: #{e}"
       return error!({ error: 'Invalid LTI token.' }, 401)
     end
     response
