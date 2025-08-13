@@ -21,7 +21,7 @@ class DownloadTasksAwaitingFeedbackCsvJob
     total(1)
 
     unit = Unit.find(unit_id)
-    csv = unit.tasks_awaiting_feedback
+    csv = unit.days_awaiting_feedback_by_tutorial_csv
 
     store(result: csv)
 

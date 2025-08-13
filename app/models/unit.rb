@@ -1451,7 +1451,7 @@ class Unit < ApplicationRecord
     tutorial_streams.map { |ts| ts.abbreviation }
   end
 
-  def days_awaiting_feedback_by_tutorial
+  def days_awaiting_feedback_by_tutorial_csv
     CSV.generate() do |csv|
       # Add headers
       csv << ([

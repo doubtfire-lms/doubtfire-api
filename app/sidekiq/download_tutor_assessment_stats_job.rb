@@ -1,6 +1,6 @@
 require 'csv'
 
-class DownloadTutorAssessmentStats
+class DownloadTutorAssessmentStatsJob
   include Sidekiq::Job
   include Sidekiq::Status::Worker
   include LogHelper

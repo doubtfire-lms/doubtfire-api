@@ -1,6 +1,6 @@
 require 'csv'
 
-class DownloadTaskCompletionCsv
+class DownloadTaskCompletionCsvJob
   include Sidekiq::Job
   include Sidekiq::Status::Worker
   include LogHelper
