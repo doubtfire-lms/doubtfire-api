@@ -383,6 +383,18 @@ class UnitsApi < Grape::API
     unit.export_users_to_csv
   end
 
+  desc 'Download CSV of all student tasks awaiting feedback in this unit'
+  get '/csv/units/:id/tasks_awaiting_feedback' do
+    unit = Unit.find(params[:id])
+    unless authorise? current_user, unit, :download_unit_csv
+      error!({ error: "Not authorised to download CSV of student tasks in #{unit.code}" }, 403)
+    end
+
+    job_id = DownloadTasksAwaitingFeedbackCsvJob.perform_async(unit.id)
+    job = setup_job(job_id)
+    present job, with: Entities::SidekiqJobEntity
+  end
+
   desc 'Download CSV of all student tasks in this unit'
   get '/csv/units/:id/task_completion' do
     unit = Unit.find(params[:id])
