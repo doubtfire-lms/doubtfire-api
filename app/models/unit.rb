@@ -1451,6 +1451,37 @@ class Unit < ApplicationRecord
     tutorial_streams.map { |ts| ts.abbreviation }
   end
 
+  def days_awaiting_feedback_by_tutorial
+    CSV.generate() do |csv|
+      # Add headers
+      csv << ([
+        'Tutor',
+        'Task Definition',
+        'Project ID',
+        'Task ID',
+        'Days Awaiting Feedback'
+      ])
+
+      # Add data
+      tasks
+      .joins(:task_definition)
+      .joins("LEFT OUTER JOIN (#{tutorial_enrolment_subquery}) as sq ON sq.project_id = projects.id AND (sq.tutorial_stream_id = task_definitions.tutorial_stream_id OR sq.tutorial_stream_id IS NULL)")
+      .select('tasks.id as task_id', 'task_definitions.abbreviation as task_abbr', 'tasks.project_id as project_id', 'DATEDIFF(CURDATE(),submission_date) AS days_since_submission', 'tutorial_id', 'unit_role_id')
+      .group('tasks.id', 'task_definitions.abbreviation', 'tasks.project_id', 'tutorial_id', 'unit_role_id', 'submission_date')
+      .order('unit_role_id', 'days_since_submission DESC')
+      .where(task_status: TaskStatus.ready_for_feedback)
+      .each do |row|
+            csv << ([
+            row['unit_role_id'].present? ? UnitRole.find(row['unit_role_id']).user.name : '',
+            row['task_abbr'],
+            row['project_id'],
+            row['task_id'],
+            row['days_since_submission']
+      ])
+      end
+    end
+  end
+
   def task_completion_csv
     task_def_by_grade = task_definitions_by_grade
     streams = tutorial_streams
