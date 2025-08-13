@@ -390,11 +390,9 @@ class UnitsApi < Grape::API
       error!({ error: "Not authorised to download CSV of student tasks in #{unit.code}" }, 403)
     end
 
-    content_type 'application/octet-stream'
-    header['Content-Disposition'] = "attachment; filename=#{unit.code}-TaskCompletion.csv"
-    header['Access-Control-Expose-Headers'] = 'Content-Disposition'
-    env['api.format'] = :binary
-    unit.task_completion_csv
+    job_id = DownloadTaskCompletionCsv.perform_async(unit.id)
+    job = setup_job(job_id)
+    present job, with: Entities::SidekiqJobEntity
   end
 
   desc 'Download the stats related to the number of students aiming for each grade'
@@ -434,12 +432,9 @@ class UnitsApi < Grape::API
       error!({ error: "Not authorised to download stats of statistics for #{unit.code}" }, 403)
     end
 
-    content_type 'application/octet-stream'
-    header['Content-Disposition'] = "attachment; filename=#{unit.code}-TutorAssessments.csv"
-    header['Access-Control-Expose-Headers'] = 'Content-Disposition'
-    env['api.format'] = :binary
-
-    unit.tutor_assessment_csv
+    job_id = DownloadTasksAwaitingFeedbackCsvJob.perform_async(unit.id)
+    job = setup_job(job_id)
+    present job, with: Entities::SidekiqJobEntity
   end
 
   desc 'Compress portfolios into zip file'
