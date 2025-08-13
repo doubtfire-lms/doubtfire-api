@@ -402,7 +402,7 @@ class UnitsApi < Grape::API
       error!({ error: "Not authorised to download CSV of student tasks in #{unit.code}" }, 403)
     end
 
-    job_id = DownloadTaskCompletionCsv.perform_async(unit.id)
+    job_id = DownloadTaskCompletionCsvJob.perform_async(unit.id)
     job = setup_job(job_id)
     present job, with: Entities::SidekiqJobEntity
   end
@@ -444,7 +444,7 @@ class UnitsApi < Grape::API
       error!({ error: "Not authorised to download stats of statistics for #{unit.code}" }, 403)
     end
 
-    job_id = DownloadTasksAwaitingFeedbackCsvJob.perform_async(unit.id)
+    job_id = DownloadTutorAssessmentStatsJob.perform_async(unit.id)
     job = setup_job(job_id)
     present job, with: Entities::SidekiqJobEntity
   end
