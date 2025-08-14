@@ -11,11 +11,17 @@ module LtiHelper
       raise "Missing exp" if exp.nil?
     rescue JWT::DecodeError => e
       logger.debug "Failed to validate Lti Token: #{e}"
-      return error!({ error: 'Invalid LTI token.' }, 401)
+      return error!({ error: 'Invalid LTI token.' }, 403)
     rescue StandardError => e
       logger.debug "Missing token properties: #{e}"
-      return error!({ error: 'Invalid LTI token.' }, 401)
+      return error!({ error: 'Invalid LTI token.' }, 403)
     end
     response
+  end
+
+  def valid_lti_member?(member)
+    required_fields = %w[user_id email roles given_name family_name name]
+    missing = required_fields.select { |f| member[f].nil? || member[f].to_s.strip.empty? }
+    [missing.empty?, missing]
   end
 end
