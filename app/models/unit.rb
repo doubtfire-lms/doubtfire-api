@@ -1456,7 +1456,7 @@ class Unit < ApplicationRecord
       # Add headers
       csv << ([
         'Tutor',
-        'Student Name',
+        'Username',
         'Project ID',
         'Task Definition',
         'Task ID',
