@@ -1471,6 +1471,7 @@ class Unit < ApplicationRecord
       .select('users.username AS project_name', 'tasks.id as task_id', 'task_definitions.abbreviation as task_abbr', 'tasks.project_id as project_id', 'DATEDIFF(CURDATE(),submission_date) AS days_since_submission', 'tutorial_id', 'unit_role_id')
       .group('tasks.id', 'task_definitions.abbreviation', 'tasks.project_id', 'tutorial_id', 'unit_role_id', 'submission_date')
       .order('unit_role_id', 'days_since_submission DESC')
+      .where(projects: { enrolled: true })
       .where(task_status: TaskStatus.ready_for_feedback)
       .each do |row|
             csv << ([
