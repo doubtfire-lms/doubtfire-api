@@ -759,25 +759,32 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal true, Project.where(user_id: user_id_check).last.enrolled
   end
 
-  #####--------------GET tests - Download CSV of all student tasks in this unit------------######
+  # ####--------------GET tests - Download CSV of all student tasks in this unit------------######
 
-  #40: Testing for CSV download of all  students tasks in a unit
-  #GET /api/csv/units/{id}/task_completion
+  # 40: Testing for CSV download of all  students tasks in a unit
+  # GET /api/csv/units/{id}/task_completion
   def test_download_csv_all_student_tasks_in_unit
+    Sidekiq::Testing.inline! do
+      unit_id_to_test = '1'
+      unit = Unit.find(unit_id_to_test)
 
-    unit_id_to_test = '1'
+      # auth_token and username added to header
+      add_auth_header_for(user: User.first)
 
-   # auth_token and username added to header
-    add_auth_header_for(user: User.first)
+      # perform the get
+      get "/api/csv/units/#{unit_id_to_test}/task_completion"
 
-    # perform the get
-    get "/api/csv/units/#{unit_id_to_test}/task_completion"
+      # Check for response
+      assert_equal 200, last_response.status
 
-    # Check for response
-    assert_equal 200, last_response.status
+      task_completion_stats = unit.task_completion_csv
 
-    # Check for file
-    assert_equal "attachment; filename=COS10001-TaskCompletion.csv",last_response.headers["content-disposition"]
+      assert_not_nil last_response_body['result']
+
+      # Check for CSV data in completed sidekiq job
+      assert_equal task_completion_stats, last_response_body['result']
+      Sidekiq::Testing.fake!
+    end
   end
 
   #41: Testing for unit ID error with empty user ID
@@ -868,19 +875,27 @@ class CsvTest < ActiveSupport::TestCase
   # 46: Testing for CSV download of stats related to number of tasks assessed by each tutor
   # GET /api/csv/units/{id}/tutor_assessments
   def test_download_csv_stats_tutor_assessed
-    unit_id_to_test = '1'
+    Sidekiq::Testing.inline! do
+      unit_id_to_test = '1'
+      unit = Unit.find(unit_id_to_test)
 
-    # Add authentication token to header
-    add_auth_header_for(user: User.first)
+      # Add authentication token to header
+      add_auth_header_for(user: User.first)
 
-    # perform the get
-    get "/api/csv/units/#{unit_id_to_test}/tutor_assessments"
+      # perform the get
+      get "/api/csv/units/#{unit_id_to_test}/tutor_assessments"
 
-    # Check for response
-    assert_equal 200, last_response.status
+      # Check for response
+      assert_equal 200, last_response.status
 
-    # Check for file
-    assert_equal "attachment; filename=COS10001-TutorAssessments.csv",last_response.headers["content-disposition"]
+      tutor_assesment_stats = unit.tutor_assessment_csv
+
+      assert_not_nil last_response_body['result']
+
+      # Check for CSV data in completed sidekiq job
+      assert_equal tutor_assesment_stats, last_response_body['result']
+      Sidekiq::Testing.fake!
+    end
   end
 
   #47: Testing for unit ID error with empty user ID
@@ -1504,6 +1519,29 @@ class CsvTest < ActiveSupport::TestCase
         post url, file: upload_file_csv('test_files/COS10001-UnitAndTaskLearningOutcomes.csv')
         assert_equal 403, last_response.status, "#{user.role.name} - #{url} - #{last_response.status}"
       end
+    end
+  end
+
+  def test_download_csv_days_tasks_awaiting_feedback_per_tutorial
+    Sidekiq::Testing.inline! do
+      unit = Unit.first
+
+      # auth_token and username added to header
+      add_auth_header_for(user: User.first)
+
+      # perform the get
+      get "/api/csv/units/#{unit.id}/tasks_awaiting_feedback"
+
+      # Check for response
+      assert_equal 200, last_response.status
+
+      days_awaiting_feedback_csv = unit.days_awaiting_feedback_by_tutorial_csv
+
+      assert_not_nil last_response_body['result']
+
+      # Check for CSV data in completed sidekiq job
+      assert_equal days_awaiting_feedback_csv, last_response_body['result']
+      Sidekiq::Testing.fake!
     end
   end
 end
