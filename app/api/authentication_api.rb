@@ -198,11 +198,15 @@ class AuthenticationApi < Grape::API
   post '/auth/lti' do
     token = decode_lti_token(params[:ltik])
 
-    # TODO: confirm this user-agent matches the user agent in our lti_token (same with the IP)
-    # puts request.headers['User-Agent'].inspect
-    # puts request.ip
-
     member = token['member']
+    if member.nil?
+      error!({ error: 'Invalid LTI token.' }, 400)
+    end
+
+    valid_member, missing = valid_lti_member?(member)
+    unless valid_member
+      error!({ error: "Missing required fields:  #{missing.join(', ')}" }, 400)
+    end
 
     user_id_data = {
       login_id: member['ext_user_username'] || member['user_id'],
@@ -219,7 +223,7 @@ class AuthenticationApi < Grape::API
            User.find_by(username: user_id_data[:username]) ||
            User.find_by(email: user_id_data[:email]) ||
            User.create do |new_user|
-             # Update new user with details from the SAML response
+             # Update new user with details from the LTI response
              Doubtfire::Application.config.institution_settings.update_user_from_lti_response(
                new_user,
                user_id_data,
@@ -240,7 +244,7 @@ class AuthenticationApi < Grape::API
       user.encrypted_password = BCrypt::Password.create(SecureRandom.hex(32))
       unless user.valid?
         logger.error "User #{user.username} is invalid: #{user.errors.full_messages.join(', ')}"
-        error!(error: 'There was an error creating your account. ' \
+        error!(error: 'There was an error linking your Lti account. ' \
                       'Please get in contact with your unit convenor or the ' \
                       'system administrators.')
       end

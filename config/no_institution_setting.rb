@@ -130,7 +130,7 @@ class InstitutionSettings
     # Update new user with details from the LTI payload
     first_name = member["name"] || member["family_name"]
     last_name = member["family_name"] || member["name"]
-    nickname = member["give_name"] || first_name
+    nickname = member["given_name"] || first_name
 
     first_name ||= last_name
     last_name ||= first_name

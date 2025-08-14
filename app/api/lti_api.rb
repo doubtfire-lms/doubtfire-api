@@ -25,13 +25,13 @@ class LtiApi < Grape::API
 
     unit_id = token["unit_id"]
     if unit_id.nil?
-      error!({ error: 'Invalid LTI token.' }, 401)
+      error!({ error: 'Invalid LTI token.' }, 400)
     end
 
     unit = Unit.find_by(id: unit_id)
 
     if unit.nil?
-      error!({ error: 'Unit does not exist' }, 404)
+      error!({ error: 'Unit does not exist.' }, 404)
     end
 
     unless authorise? current_user, unit, :enrol_student
@@ -52,23 +52,37 @@ class LtiApi < Grape::API
 
     unit_id = token["unit_id"]
     if unit_id.nil?
-      error!({ error: 'Invalid LTI token.' }, 401)
+      error!({ error: 'Invalid LTI token.' }, 400)
     end
 
     unit = Unit.find_by(id: unit_id)
     if unit.nil?
-      error!({ error: 'Unit does not exist' }, 404)
+      error!({ error: 'Unit does not exist.' }, 404)
+    end
+
+    member = token['member']
+    if member.nil?
+      error!({ error: 'Invalid LTI token.' }, 400)
+    end
+
+    valid_member, missing = valid_lti_member?(member)
+    unless valid_member
+      error!({ error: "Missing required fields:  #{missing.join(', ')}" }, 400)
+    end
+
+    if current_user.role_id != Role.student_id
+      return status 204
     end
 
     role = unit.role_for(current_user)
-    if role != Role.student && !role.nil?
+    if !role.nil? && role != Role.student
       # error!({ error: 'Failed to enrol, user is already staff.' }, 400)
-      return nil
+      return status 204
     end
 
     unless Doubtfire::Application.config.institution_settings.should_enrol_lti_member(token['member'])
       # error!({ error: 'User can not be enrolled into this unit.' }, 404)
-      return nil
+      return status 204
     end
 
     # TODO: which campus?
@@ -96,20 +110,37 @@ class LtiApi < Grape::API
 
     unit_id = token["unit_id"]
     if unit_id.nil?
-      error!({ error: 'Invalid LTI token.' }, 401)
+      error!({ error: 'Invalid LTI token.' }, 400)
     end
 
     unit = Unit.find_by(id: unit_id)
     if unit.nil?
-      error!({ error: 'Unit does not exist' }, 404)
+      error!({ error: 'Unit does not exist.' }, 404)
     end
 
+    unless authorise? current_user, unit, :enrol_student
+      error!({ error: "Not authorised to link this unit." }, 403)
+    end
+
+    result = {
+      success: [],
+      ignored: [],
+      errors: []
+    }
+
     token["members"].each do |member|
+      valid_member, missing = valid_lti_member?(member)
+      unless valid_member
+        result[:ignored] << { row: member, message: "Missing required fields: #{missing.join(', ')}" }
+        next
+      end
+
       user_id_data = {
         login_id: member["user_id"],
         email: member["email"],
-        username: member["email"]&.split('@')&.first
+        username: member["email"][/(.*)@/, 1]
       }
+
       user = User.find_by(login_id: user_id_data[:login_id]) ||
              User.find_by(username: user_id_data[:username]) ||
              User.find_by(email: user_id_data[:email]) ||
@@ -121,10 +152,21 @@ class LtiApi < Grape::API
                  member
                )
              end
-      # TODO: actually check if user is valid
-      project = unit.enrol_student(user, nil)
+
+      if user.valid?
+        project = unit.enrol_student(user, nil)
+        if project.valid?
+          result[:success] << { row: member, message: "Successfully enrolled user." }
+        else
+          result[:errors] << { row: member, message: "Failed to enrol student" }
+        end
+      else
+        result[:errors] << { row: member, message: "Failed to create user" }
+      end
+    rescue StandardError => e
+      result[:errors] << { row: member, message: e }
     end
-    status 200
+    result
   end
 
   desc 'Get grades for a list of students'
@@ -142,15 +184,23 @@ class LtiApi < Grape::API
 
     unit_id = token["unit_id"]
     if unit_id.nil?
-      error!({ error: 'Invalid LTI token.' }, 401)
+      error!({ error: 'Invalid LTI token.' }, 400)
     end
 
     unit = Unit.find_by(id: unit_id)
     if unit.nil?
-      error!({ error: 'Unit does not exist' }, 404)
+      error!({ error: 'Unit does not exist.' }, 404)
     end
 
     student_emails = token["student_emails"]
+
+    if student_emails.nil?
+      error!({ error: 'Student emails field does not exist.' }, 400)
+    end
+
+    unless student_emails.is_a?(Array)
+      error!({ error: 'Student emails must be an array.' }, 400)
+    end
 
     projects = unit.projects.joins(:user).where(users: { email: student_emails })
 
