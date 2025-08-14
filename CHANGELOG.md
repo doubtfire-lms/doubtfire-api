@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-18](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-17...v10.0.0-18) (2025-08-14)
+
+
+### Bug Fixes
+
+* fetch enrolled students only ([72b6af8](https://github.com/b0ink/doubtfire-deploy/commit/72b6af858ff30350ff67f10956806d4637e96520))
+
 ## [10.0.0-17](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-16...v10.0.0-17) (2025-08-14)
 
 
