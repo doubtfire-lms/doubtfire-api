@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-17](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-16...v10.0.0-17) (2025-08-14)
+
+
+### Features
+
+* download tasks awaiting feedback stats ([43a2963](https://github.com/b0ink/doubtfire-deploy/commit/43a29633303954c055662e771928e023d44faea4))
+
 ## [10.0.0-16](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-15...v10.0.0-16) (2025-08-07)
 
 
