@@ -128,9 +128,9 @@ class InstitutionSettings
     user.username = user_id_data[:username]
 
     # Update new user with details from the LTI payload
-    first_name = member["name"] || member["family_name"]
-    last_name = member["family_name"] || member["name"]
-    nickname = member["given_name"] || first_name
+    first_name = member["given_name"] || member["family_name"]
+    last_name = member["family_name"] || member["given_name"]
+    nickname = member["name"] || first_name
 
     first_name ||= last_name
     last_name ||= first_name
