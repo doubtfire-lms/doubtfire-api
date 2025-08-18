@@ -82,6 +82,8 @@ module Doubtfire
     credentials.secret_key_moss = ENV.fetch('DF_SECRET_KEY_MOSS', nil)
 
     # ==> LTI settings
+    # If enabled, mounts the LTI routes and enables LTI authentication.
+    config.lti_enabled = ENV.fetch('LTI_ENABLED', false)
     # Shared secret between Ruby on Rails API and the LTI.js API
     # LTI.js will send signed JWT tokens using this secret
     config.lti_api_secret = ENV.fetch('LTI_SHARED_API_SECRET', nil)
