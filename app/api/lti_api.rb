@@ -4,6 +4,7 @@ class LtiApi < Grape::API
   helpers AuthenticationHelpers
   helpers AuthorisationHelpers
   helpers LtiHelper
+  helpers SidekiqHelper
   include LogHelper
 
   # before do
@@ -122,51 +123,9 @@ class LtiApi < Grape::API
       error!({ error: "Not authorised to link this unit." }, 403)
     end
 
-    result = {
-      success: [],
-      ignored: [],
-      errors: []
-    }
-
-    token["members"].each do |member|
-      valid_member, missing = valid_lti_member?(member)
-      unless valid_member
-        result[:ignored] << { row: member, message: "Missing required fields: #{missing.join(', ')}" }
-        next
-      end
-
-      user_id_data = {
-        login_id: member["user_id"],
-        email: member["email"],
-        username: member["email"][/(.*)@/, 1]
-      }
-
-      user = User.find_by(login_id: user_id_data[:login_id]) ||
-             User.find_by(username: user_id_data[:username]) ||
-             User.find_by(email: user_id_data[:email]) ||
-             User.create do |new_user|
-               # Update new user with details from the SAML response
-               Doubtfire::Application.config.institution_settings.update_user_from_lti_response(
-                 new_user,
-                 user_id_data,
-                 member
-               )
-             end
-
-      if user.valid?
-        project = unit.enrol_student(user, nil)
-        if project.valid?
-          result[:success] << { row: member, message: "Successfully enrolled user." }
-        else
-          result[:errors] << { row: member, message: "Failed to enrol student" }
-        end
-      else
-        result[:errors] << { row: member, message: "Failed to create user" }
-      end
-    rescue StandardError => e
-      result[:errors] << { row: member, message: e }
-    end
-    result
+    job_id = ImportStudentsLtiJob.perform_async(unit.id, token['members'])
+    job = setup_job(job_id)
+    present job, with: Entities::SidekiqJobEntity
   end
 
   desc 'Get grades for a list of students'
