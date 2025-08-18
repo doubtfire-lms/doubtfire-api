@@ -29,7 +29,6 @@ class ImportStudentsLtiJob
       errors: []
     }
 
-
     members.each_with_index do |member, i|
       at(i)
       valid_member, missing = valid_lti_member?(member)
