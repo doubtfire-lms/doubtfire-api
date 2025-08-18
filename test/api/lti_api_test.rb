@@ -1,5 +1,6 @@
 require 'test_helper'
 require 'securerandom'
+require 'json'
 
 class LtiApiTest < ActiveSupport::TestCase
   include Rack::Test::Methods
@@ -281,92 +282,101 @@ class LtiApiTest < ActiveSupport::TestCase
   end
 
   def test_enrol_students_bulk
-    unit = FactoryBot.create(:unit, with_students: false)
+    Sidekiq::Testing.inline! do
+      unit = FactoryBot.create(:unit, with_students: false)
 
-    payload = {
-      unit_id: unit.id,
-      members: [
-        # Valid
-        {
-          user_id: '1',
-          name: 'Nickname 1',
-          given_name: 'First name 1',
-          family_name: 'Last name 1',
-          email: 'email1@doubtfire.com',
-          ext_user_username: 'student_test_lti1',
-          roles: ['Learner']
-        },
-        # Valid
-        {
-          user_id: '2',
-          name: 'Nickname 2',
-          given_name: 'First name 2',
-          family_name: 'Last name 2',
-          email: 'email2@doubtfire.com',
-          ext_user_username: 'student_test_lti2',
-          roles: ['Instructor'] # This user should not be enrolled
-        },
-        # Valid
-        {
-          user_id: '3',
-          name: 'Nickname 2',
-          given_name: 'First name 2',
-          family_name: 'Last name 2',
-          email: 'email3@doubtfire.com',
-          ext_user_username: 'student_test_lti3',
-          roles: ['Learner', 'http://purl.imsglobal.org/vocab/lis/v2/person#Administrator']
-        },
-        # Error (Can't create user)
-        {
-          user_id: '4',
-          name: 'Nickname 4',
-          given_name: 'First name 4',
-          family_name: 'Last name 4',
-          email: 'bademail',
-          ext_user_username: 'student_test_lti4',
-          roles: ['Learner', 'http://purl.imsglobal.org/vocab/lis/v2/person#Administrator']
-        },
-        # Ignored: missing member data
-        {
-          # Missing user_id and roles
-          name: 'Nickname 4',
-          given_name: 'First name 4',
-          family_name: 'Last name 4',
-          email: 'email5@doubtfire.com',
-          ext_user_username: 'student_test_lti4'
-        }
-      ],
-      exp: Time.now.to_i + 30,
-      jti: SecureRandom.uuid
-    }
+      payload = {
+        unit_id: unit.id,
+        members: [
+          # Valid
+          {
+            user_id: '1',
+            name: 'Nickname 1',
+            given_name: 'First name 1',
+            family_name: 'Last name 1',
+            email: 'email1@doubtfire.com',
+            ext_user_username: 'student_test_lti1',
+            roles: ['Learner']
+          },
+          # Valid
+          {
+            user_id: '2',
+            name: 'Nickname 2',
+            given_name: 'First name 2',
+            family_name: 'Last name 2',
+            email: 'email2@doubtfire.com',
+            ext_user_username: 'student_test_lti2',
+            roles: ['Instructor'] # This user should not be enrolled
+          },
+          # Valid
+          {
+            user_id: '3',
+            name: 'Nickname 2',
+            given_name: 'First name 2',
+            family_name: 'Last name 2',
+            email: 'email3@doubtfire.com',
+            ext_user_username: 'student_test_lti3',
+            roles: ['Learner', 'http://purl.imsglobal.org/vocab/lis/v2/person#Administrator']
+          },
+          # Error (Can't create user)
+          {
+            user_id: '4',
+            name: 'Nickname 4',
+            given_name: 'First name 4',
+            family_name: 'Last name 4',
+            email: 'bademail',
+            ext_user_username: 'student_test_lti4',
+            roles: ['Learner', 'http://purl.imsglobal.org/vocab/lis/v2/person#Administrator']
+          },
+          # Ignored: missing member data
+          {
+            # Missing user_id and roles
+            name: 'Nickname 4',
+            given_name: 'First name 4',
+            family_name: 'Last name 4',
+            email: 'email5@doubtfire.com',
+            ext_user_username: 'student_test_lti4'
+          }
+        ],
+        exp: Time.now.to_i + 30,
+        jti: SecureRandom.uuid
+      }
 
-    secret_key = Doubtfire::Application.config.lti_api_secret
-    token = JWT.encode(payload, secret_key, 'HS256')
+      secret_key = Doubtfire::Application.config.lti_api_secret
+      token = JWT.encode(payload, secret_key, 'HS256')
 
-    convenor = FactoryBot.create(:user, :convenor)
-    unit.employ_staff(convenor, Role.convenor)
+      convenor = FactoryBot.create(:user, :convenor)
+      unit.employ_staff(convenor, Role.convenor)
 
-    add_auth_header_for(user: convenor)
+      add_auth_header_for(user: convenor)
 
-    expected_enrolled_projects_count = 3
-    expected_error_count = 1
-    expected_ignore_count = 1
-    assert_equal expected_enrolled_projects_count + expected_error_count + expected_ignore_count, payload[:members].count
+      expected_enrolled_projects_count = 3
+      expected_error_count = 1
+      expected_ignore_count = 1
+      assert_equal expected_enrolled_projects_count + expected_error_count + expected_ignore_count, payload[:members].count
 
-    post '/api/lti/enrol/bulk', { ltik: token }
+      post '/api/lti/enrol/bulk', { ltik: token }
+      assert_equal 201, last_response.status
 
-    assert_equal 201, last_response.status
-    assert_equal expected_enrolled_projects_count, unit.projects.count
-    assert_equal expected_enrolled_projects_count, last_response_body['success'].count
-    assert_equal expected_error_count, last_response_body['errors'].count
+      job = last_response_body
 
-    student = FactoryBot.create(:user, :student)
-    unit.enrol_student(student, nil)
+      assert_not_nil job['id']
 
-    # Ensure students cant access this route
-    add_auth_header_for(user: student)
-    post '/api/lti/enrol/bulk', { ltik: token }
-    assert_equal 403, last_response.status
+      results = JSON.parse(job['result'])
+
+      assert_equal expected_enrolled_projects_count, unit.projects.count
+      assert_equal expected_enrolled_projects_count, results['success'].count
+      assert_equal expected_error_count, results['errors'].count
+
+      student = FactoryBot.create(:user, :student)
+      unit.enrol_student(student, nil)
+
+      # Ensure students cant access this route
+      add_auth_header_for(user: student)
+      post '/api/lti/enrol/bulk', { ltik: token }
+      assert_equal 403, last_response.status
+      Sidekiq::Testing.fake!
+    end
   end
 
   def test_get_grades_for_members
