@@ -417,6 +417,59 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     td.upload_requirements[0]['max_file_size'] = 25
     assert td.valid?, 'max_file_size 25 is valid'
+
+    td.upload_requirements =
+      [
+        {
+          "key" => 'file0',
+          "name" => 'Document 1',
+          "type" => 'document',
+          "tii_check" => true,
+          "tii_pct" => 5
+        },
+        {
+          "key" => 'file1',
+          "name" => 'Document 1',
+          "type" => 'document',
+          "tii_check" => true,
+          "tii_pct" => 5
+        },
+        {
+          "key" => 'file3',
+          "name" => 'Document 1',
+          "type" => 'document',
+          "tii_check" => true,
+          "tii_pct" => 5
+        }
+      ]
+
+    assert td.valid?, td.errors.full_messages.join(", ")
+
+    td.upload_requirements =
+      [
+        {
+          "key" => 'file0',
+          "name" => 'Document 1',
+          "type" => 'document',
+          "tii_check" => true,
+          "tii_pct" => 5
+        },
+        {
+          "key" => 'file1',
+          "name" => 'Document 1',
+          "type" => 'document',
+          "tii_check" => true,
+          "tii_pct" => 5
+        },
+        {
+          "key" => 'file0', # Duplicate key
+          "name" => 'Document 1',
+          "type" => 'document',
+          "tii_check" => true,
+          "tii_pct" => 5
+        }
+      ]
+    assert_not td.valid?, 'Upload requirement keys should be unique'
   ensure
     u.destroy
   end

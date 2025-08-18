@@ -211,6 +211,9 @@ class TaskDefinition < ApplicationRecord
       return
     end
 
+    # Track duplicate upreq keys
+    used_keys = []
+
     # Checking each upload requirement - i used to index files and for user errors
     i = 0
     for req in json_data do
@@ -256,7 +259,15 @@ class TaskDefinition < ApplicationRecord
         errors.add(:upload_requirements, "item #{i + 1}'s max file size should be between 5 and 30 MB in steps of 5")
       end
 
+      used_keys.append(req['key'])
+
       i += 1
+    end
+
+    # Ensure each upload requirement key is unique
+    dupes = used_keys.tally.select { |_, v| v > 1 }.keys
+    if dupes.any?
+      errors.add(:upload_requirements, "Each upload requirement key must be unique: #{dupes.join(', ')}")
     end
   end
 
