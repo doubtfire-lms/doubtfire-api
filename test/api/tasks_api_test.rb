@@ -496,4 +496,75 @@ class TasksApiTest < ActiveSupport::TestCase
 
     unit.destroy
   end
+
+  def test_file_size_limit
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
+    # No "max_file_size" should default to 10MB
+    td = TaskDefinition.create!({
+                                  unit_id: unit.id,
+                                  tutorial_stream: unit.tutorial_streams.first,
+                                  name: 'Code task',
+                                  description: 'Code task',
+                                  weighting: 4,
+                                  target_grade: 0,
+                                  start_date: Time.zone.now - 2.weeks,
+                                  target_date: Time.zone.now + 1.week,
+                                  abbreviation: 'CodeTask',
+                                  restrict_status_updates: false,
+                                  upload_requirements: [{ "key" => 'file0', "name" => 'Shape Class', "type" => 'code' }],
+                                  plagiarism_warn_pct: 0.8,
+                                  is_graded: true,
+                                  max_quality_pts: 0
+                                })
+
+    project = unit.active_projects.first
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: project.user)
+
+    file_path = Rails.root.join("tmp/LargeCode.cs")
+
+    File.write(file_path, "class Dummy {}\n" * (15_000_000 / "class Dummy {}\n".bytesize))
+
+    data_to_post = {
+      trigger: 'ready_for_feedback'
+    }
+
+    data_to_post = with_file(file_path, 'application/json', data_to_post)
+
+    # Test to ensure no specified upload limit defaults to 10MB
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
+    assert_equal 403, last_response.status, last_response_body
+    assert_includes last_response_body['error'], "exceeds the 10MB file limit."
+
+    # Test to ensure bad upload limit value defaults to 10MB
+    td.update!(
+      upload_requirements: [{ "key" => 'file0', "name" => 'Shape Class', "type" => 'code', "max_file_size" => nil }]
+    )
+
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
+    assert_equal 403, last_response.status, last_response_body
+    assert_includes last_response_body['error'], "exceeds the 10MB file limit."
+
+    # Test to ensure custom 13MB is enforced
+    td.update!(
+      upload_requirements: [{ "key" => 'file0', "name" => 'Shape Class', "type" => 'code', "max_file_size" => 5 }]
+    )
+
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
+    assert_equal 403, last_response.status, last_response_body
+    assert_includes last_response_body['error'], "exceeds the 5MB file limit."
+
+    # Test to ensure 15MB file is allowed to be uploaded with a new limit of 20MB
+
+    td.update!(
+      upload_requirements: [{ "key" => 'file0', "name" => 'Shape Class', "type" => 'code', "max_file_size" => 20 }]
+    )
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
+    assert_equal 201, last_response.status, last_response_body
+
+    FileUtils.rm_f(file_path)
+
+    unit.destroy
+  end
 end

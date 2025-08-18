@@ -389,6 +389,34 @@ class TaskDefinitionTest < ActiveSupport::TestCase
         }
       ]
     assert_not td.valid?, 'name not valid filename'
+
+    td.upload_requirements =
+      [
+        {
+          "key" => 'file0',
+          "name" => 'Document 1',
+          "type" => 'document',
+          "tii_check" => true,
+          "tii_pct" => 5,
+          "max_file_size" => -5
+        }
+      ]
+    assert_not td.valid?, 'max_file_size below 5'
+
+    td.upload_requirements[0]['max_file_size'] = 8
+    assert_not td.valid?, 'max_file_size not a multiple of 5'
+
+    td.upload_requirements[0]['max_file_size'] = 31
+    assert_not td.valid?, 'max_file_size above 30'
+
+    td.upload_requirements[0]['max_file_size'] = 5
+    assert td.valid?, 'max_file_size 5 is valid'
+
+    td.upload_requirements[0]['max_file_size'] = 10
+    assert td.valid?, 'max_file_size 10 is valid'
+
+    td.upload_requirements[0]['max_file_size'] = 25
+    assert td.valid?, 'max_file_size 25 is valid'
   ensure
     u.destroy
   end

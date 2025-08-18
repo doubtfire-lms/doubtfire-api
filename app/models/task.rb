@@ -1377,8 +1377,11 @@ class Task < ApplicationRecord
         ui.error!({ 'error' => "'#{file[:name]}' is invalid: #{file_result[:msg]}" }, 403)
       end
 
-      if File.size(file["tempfile"].path) > 10_000_000
-        ui.error!({ 'error' => "'#{file[:name]}' exceeds the 10MB file limit. Try compressing or reformat and submit again." }, 403)
+      upload_size_mb = max_file_size_for_upload(index) || 10
+      upload_size_bytes = upload_size_mb * 1_000_000
+
+      if File.size(file["tempfile"].path) > upload_size_bytes
+        ui.error!({ 'error' => "'#{file[:name]}' exceeds the #{upload_size_mb}MB file limit. Try compressing or reformat and submit again." }, 403)
       end
     end
 
@@ -1437,6 +1440,13 @@ class Task < ApplicationRecord
   def filename_for_upload(idx)
     return nil unless idx >= 0 && idx < upload_requirements.length
     "#{upload_requirements[idx]['name']}#{extension_for_upload(idx)}"
+  end
+
+  def max_file_size_for_upload(idx)
+    return 10 unless idx >= 0 && idx < upload_requirements.length
+    upload_size_mb = upload_requirements[idx]['max_file_size'].to_i
+    upload_size_mb = 10 if upload_size_mb <= 0 || upload_size_mb > 30
+    upload_size_mb
   end
 
   def extension_for_upload(idx)

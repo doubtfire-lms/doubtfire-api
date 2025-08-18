@@ -227,7 +227,7 @@ class TaskDefinition < ApplicationRecord
       end
 
       # Check keys only contain key, type, name, tii_check, and tii_pct
-      unless req.keys.excluding('key', 'type', 'name', 'tii_check', 'tii_pct').empty?
+      unless req.keys.excluding('key', 'type', 'name', 'tii_check', 'tii_pct', 'max_file_size').empty?
         errors.add(:upload_requirements, "has additional values for item #{i + 1} --> #{req.keys.join(' ')}.")
       end
 
@@ -249,6 +249,11 @@ class TaskDefinition < ApplicationRecord
       # Check that tii_pct is a non-negative number
       unless req['tii_pct'].blank? || (req['tii_pct'].is_a?(Numeric) && req['tii_pct'] >= 0)
         errors.add(:upload_requirements, "the tii_pct for item #{i + 1} is not a non-negative number --> #{req['tii_pct']}.")
+      end
+
+      max_file_size = req['max_file_size'].to_i
+      unless req['max_file_size'].blank? || (5..30).step(5).include?(max_file_size)
+        errors.add(:upload_requirements, "item #{i + 1}'s max file size should be between 5 and 30 MB in steps of 5")
       end
 
       i += 1
