@@ -880,4 +880,53 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     task_def.reload
     assert_equal upload_reqs, task_def.upload_requirements
   end
- end
+
+  def test_task_prerequisites
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
+    upload_reqs = [{ 'key' => 'file0', 'name' => 'PDF Report', 'type' => 'document' }]
+    task_def1 = FactoryBot.create(:task_definition, unit: unit, upload_requirements: upload_reqs)
+    task_def2 = FactoryBot.create(:task_definition, unit: unit, upload_requirements: upload_reqs)
+
+    admin = FactoryBot.create(:user, :admin)
+    convenor = FactoryBot.create(:user, :convenor)
+    tutor = FactoryBot.create(:user, :tutor)
+    student = unit.students.first.user
+
+    unit.employ_staff(convenor, Role.convenor)
+    unit.employ_staff(tutor, Role.tutor)
+
+    users_can_create = [
+      admin,
+      convenor
+    ]
+
+    users_cant_create = [
+      student,
+      tutor
+    ]
+
+    users_can_create.each do |user|
+      add_auth_header_for(user: user)
+      data_to_post = {
+        prerequisite_id: task_def2.id
+      }
+      post "/api/units/#{unit.id}/task_definitions/#{task_def1.id}/prerequisites", data_to_post
+      assert_equal 201, last_response.status
+
+      delete "/api/units/#{unit.id}/task_definitions/#{task_def1.id}/prerequisites/#{task_def2.id}"
+      assert_equal 200, last_response.status
+    end
+
+    users_cant_create.each do |user|
+      add_auth_header_for(user: user)
+      data_to_post = {
+        prerequisite_id: task_def2.id
+      }
+      post "/api/units/#{unit.id}/task_definitions/#{task_def1.id}/prerequisites", data_to_post
+      assert_equal 403, last_response.status
+
+      delete "/api/units/#{unit.id}/task_definitions/#{task_def1.id}/prerequisites/#{task_def2.id}"
+      assert_equal 403, last_response.status
+    end
+  end
+end
