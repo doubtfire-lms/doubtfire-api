@@ -12,7 +12,8 @@ class TaskDefinition < ApplicationRecord
       :get_feedback_chips,
       :update,
       :upload_csv,
-      :get_los
+      :get_los,
+      :create_task_prerequisite
     ]
 
     admin_role_permissions = [
@@ -20,7 +21,8 @@ class TaskDefinition < ApplicationRecord
       :get_feedback_chips,
       :update,
       :upload_csv,
-      :get_los
+      :get_los,
+      :create_task_prerequisite
     ]
 
     tutor_role_permissions = [
@@ -64,6 +66,9 @@ class TaskDefinition < ApplicationRecord
 
   has_many :tii_group_attachments, dependent: :destroy # destroy uploaded files to tii - after the tasks
   has_many :tii_actions, as: :entity, dependent: :destroy
+
+  has_many :task_prerequisites, dependent: :destroy
+  has_many :prerequisites, through: :task_prerequisites, source: :prerequisite
 
   serialize :upload_requirements, coder: JSON
 
