@@ -769,12 +769,12 @@ class TaskDefinitionsApi < Grape::API
       error!({ error: 'Not authorised to add task prerequisite' }, 403)
     end
 
-    prereq = TaskPrerequisite.create!(
+    TaskPrerequisite.create!(
       task_definition: task_def,
       prerequisite: task_prerequisite
     )
 
-    prereq
+    true
   end
 
   desc 'Remove task definition prerequisite'
