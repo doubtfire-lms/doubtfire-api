@@ -54,4 +54,30 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     )
     assert prereq.valid?
   end
+
+  def test_both_task_definitions_belong_to_same_unit
+    unit1 = FactoryBot.create(:unit, student_count: 1, task_count: 2)
+    unit2 = FactoryBot.create(:unit, student_count: 1, task_count: 2)
+
+    td1 = unit1.task_definitions.first
+    td2 = unit2.task_definitions.first
+
+    assert td1.valid?
+    assert td2.valid?
+
+    # Test that a TaskPrerequisite cannot be created if the task and its prerequisite belong to different units
+    prereq = TaskPrerequisite.new(
+      task_definition: td1,
+      prerequisite: td2
+    )
+    assert_not prereq.valid?, "Prerequisite task must be from the same unit"
+    prereq.destroy!
+
+    prereq = TaskPrerequisite.new(
+      task_definition: td2,
+      prerequisite: td1
+    )
+    assert_not prereq.valid?, "Prerequisite task must be from the same unit"
+    prereq.destroy!
+  end
 end
