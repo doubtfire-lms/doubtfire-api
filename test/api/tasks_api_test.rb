@@ -496,4 +496,61 @@ class TasksApiTest < ActiveSupport::TestCase
 
     unit.destroy
   end
+
+  def test_cant_submit_until_prerequisites_submitted
+    # Create a unit and two task definitions
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 2)
+    td1 = unit.task_definitions.first
+    td2 = unit.task_definitions.second
+
+    td1.update(
+      upload_requirements: [{ "key" => 'file0', "name" => 'Shape Class', "type" => 'code' }]
+    )
+
+    td2.update(
+      upload_requirements: [{ "key" => 'file0', "name" => 'Shape Class', "type" => 'code' }]
+    )
+
+    # Create a prerequisite on the second taskDef that adds the first taskDef as a prereq
+    prereq = TaskPrerequisite.create!(
+      task_definition: td2, # Before you can submit td2...
+      prerequisite: td1 # You need to submit td1
+    )
+
+    assert prereq.valid?
+
+    project = unit.active_projects.first
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: project.user)
+
+    data_to_post = {
+      trigger: 'ready_for_feedback'
+    }
+
+    data_to_post = with_file('test_files/submissions/program.cs', 'application/json', data_to_post)
+
+    # Attempt to make a submission that has an unsubmitted prerequisite
+    post "/api/projects/#{project.id}/task_def_id/#{td2.id}/submission", data_to_post
+    assert_equal 409, last_response.status, last_response_body
+    task = project.task_for_task_definition(td2)
+    # Ensure the submission was denied
+    assert_equal TaskStatus.not_started, task.task_status
+    assert_equal last_response_body['error'], "Cannot submit this task until prerequisite '#{td1.abbreviation}' has been submitted"
+
+    # Make a submission to the prerequsite task
+    post "/api/projects/#{project.id}/task_def_id/#{td1.id}/submission", data_to_post
+    assert_equal 201, last_response.status, last_response_body
+    task = project.task_for_task_definition(td1)
+    assert_equal TaskStatus.ready_for_feedback, task.task_status
+
+    # Re-attempt to make a submission now that the prerequisite has been submitted
+    post "/api/projects/#{project.id}/task_def_id/#{td2.id}/submission", data_to_post
+    assert_equal 201, last_response.status, last_response_body
+    task = project.task_for_task_definition(td2)
+    assert_equal TaskStatus.ready_for_feedback, task.task_status
+
+    prereq.destroy
+    unit.destroy
+  end
 end

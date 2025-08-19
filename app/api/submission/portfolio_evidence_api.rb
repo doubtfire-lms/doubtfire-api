@@ -40,6 +40,15 @@ module Submission
         error!({ error: "This task requires a group submission. Ensure you are in a group for the unit's #{task_definition.group_set.name}" }, 403)
       end
 
+      # Check that prerequisite tasks are in a submitted state
+      prerequisites = task_definition.prerequisites
+      prerequisites.each do |prereq_td|
+        prereq_task = project.task_for_task_definition(prereq_td)
+        unless prereq_task.submitted_status?
+          error!({ error: "Cannot submit this task until prerequisite '#{prereq_td.abbreviation}' has been submitted" }, 409)
+        end
+      end
+
       trigger = if params[:trigger] && params[:trigger].tr('"\'', '') == 'need_help'
                   'need_help'
                 else
