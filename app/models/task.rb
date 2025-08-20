@@ -1380,6 +1380,12 @@ class Task < ApplicationRecord
       upload_size_mb = max_file_size_for_upload(index) || 10
       upload_size_bytes = upload_size_mb * 1_000_000
 
+      # Fallback to 10MB if not set correctly
+      if upload_size_bytes <= 0
+        upload_size_mb = 10
+        upload_size_bytes = 10_000_000
+      end
+
       if File.size(file["tempfile"].path) > upload_size_bytes
         ui.error!({ 'error' => "'#{file[:name]}' exceeds the #{upload_size_mb}MB file limit. Try compressing or reformat and submit again." }, 403)
       end
