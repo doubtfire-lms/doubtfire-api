@@ -1455,8 +1455,10 @@ class Unit < ApplicationRecord
     CSV.generate() do |csv|
       # Add headers
       csv << ([
+        'Tutorial',
         'Tutor',
         'Username',
+        'Student Name',
         'Project ID',
         'Task Definition',
         'Task ID',
@@ -1466,17 +1468,31 @@ class Unit < ApplicationRecord
       # Add data
       tasks
       .joins(:task_definition)
-      .joins("INNER JOIN users ON users.id = projects.user_id")
+      .joins('INNER JOIN users ON users.id = projects.user_id')
       .joins("LEFT OUTER JOIN (#{tutorial_enrolment_subquery}) as sq ON sq.project_id = projects.id AND (sq.tutorial_stream_id = task_definitions.tutorial_stream_id OR sq.tutorial_stream_id IS NULL)")
-      .select('users.username AS project_name', 'tasks.id as task_id', 'task_definitions.abbreviation as task_abbr', 'tasks.project_id as project_id', 'DATEDIFF(CURDATE(),submission_date) AS days_since_submission', 'tutorial_id', 'unit_role_id')
+      .joins('LEFT JOIN tutorials ON tutorials.id = sq.tutorial_id')
+      .select(
+        'users.username AS username',
+        'users.first_name AS first_name',
+        'users.last_name AS last_name',
+        'tasks.id as task_id',
+        'task_definitions.abbreviation as task_abbr',
+        'tasks.project_id as project_id',
+        'DATEDIFF(CURDATE(),submission_date) AS days_since_submission',
+        'tutorial_id',
+        'tutorials.unit_role_id as unit_role_id',
+        'tutorials.abbreviation AS tutorial_abbreviation'
+      )
       .group('tasks.id', 'task_definitions.abbreviation', 'tasks.project_id', 'tutorial_id', 'unit_role_id', 'submission_date')
       .order('unit_role_id', 'days_since_submission DESC')
       .where(projects: { enrolled: true })
       .where(task_status: TaskStatus.ready_for_feedback)
       .each do |row|
             csv << ([
+            row['tutorial_abbreviation'],
             row['unit_role_id'].present? ? UnitRole.find(row['unit_role_id']).user.name : '',
-            row['project_name'],
+            row['username'],
+            "#{row['first_name']} #{row['last_name']}",
             row['project_id'],
             row['task_abbr'],
             row['task_id'],

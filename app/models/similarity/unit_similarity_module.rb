@@ -271,60 +271,57 @@ module UnitSimilarityModule
   end
 
   def process_jplag_plagiarism_report(path, warn_pct, is_group)
-    # Extract overview json from report zip
+    # Extract top comparisons json from report zip
+    # Note: overview.json has been replaced by topComparisons.json since JPlag v6.2.0
     Zip::File.open(path) do |zip_file|
-      overview_entry = zip_file.find_entry('overview.json')
+      top_comparisons_file = zip_file.find_entry('topComparisons.json')
+      raise "topComparisons.json not found in jplag report" if top_comparisons_file.nil?
 
-      if overview_entry
-        # Read the contents of overview.json
-        overview_content = overview_entry.get_input_stream.read
+      # Read the contents of topComparisons.json
+      content = top_comparisons_file.get_input_stream.read
+      # Parse the JSON into a Ruby hash
+      data = JSON.parse(content)
 
-        # Parse the JSON into a Ruby hash
-        overview_data = JSON.parse(overview_content)
+      # Iterate over the top comparisons array and collect the required fields
+      top_comparisons = data.map do |comparison|
+        {
+          first_submission: comparison['firstSubmission'],
+          second_submission: comparison['secondSubmission'],
+          max_similarity: comparison['similarities']['MAX'] * 100
+        }
+      end
 
-        # Iterate over the "top_comparisons" array and collect the required fields
-        top_comparisons = overview_data['top_comparisons'].map do |comparison|
-          {
-            first_submission: comparison['first_submission'],
-            second_submission: comparison['second_submission'],
-            max_similarity: comparison['similarities']['MAX'] * 100
-          }
-        end
-
-        # Save the results to the database
-        top_comparisons.each do |comparison|
-          task1_id = nil
-          task2_id = nil
-          zip_file.each do |entry|
-            if entry.name =~ %r{\Afiles/#{comparison[:first_submission]}/}
-              task1_id = entry.name.split('/')[2].to_i
-            elsif entry.name =~ %r{\Afiles/#{comparison[:second_submission]}/}
-              task2_id = entry.name.split('/')[2].to_i
-            end
-          end
-          first_submission = Task.find(task1_id) if task1_id
-          second_submission = Task.find(task2_id) if task2_id
-
-          if first_submission.nil? || second_submission.nil?
-            logger.error "Could not find tasks #{comparison[:first_submission]} or #{comparison[:second_submission]} for plagiarism stats check!"
-            next
-          end
-
-          if is_group # its a group task
-            g1_tasks = first_submission.group_submission.tasks
-            g2_tasks = second_submission.group_submission.tasks
-            g1_tasks.each do |gt1|
-              g2_tasks.each do |gt2|
-                next if gt1.student == gt2.student
-                create_jplag_plagiarism_link(gt1, gt2, warn_pct, comparison[:max_similarity])
-              end
-            end
-          else # just link the individuals...
-            create_jplag_plagiarism_link(first_submission, second_submission, warn_pct, comparison[:max_similarity])
+      # Save the results to the database
+      top_comparisons.each do |comparison|
+        task1_id = nil
+        task2_id = nil
+        zip_file.each do |entry|
+          if entry.name =~ %r{\Afiles/#{comparison[:first_submission]}/}
+            task1_id = entry.name.split('/')[2].to_i
+          elsif entry.name =~ %r{\Afiles/#{comparison[:second_submission]}/}
+            task2_id = entry.name.split('/')[2].to_i
           end
         end
-      else
-        logger.error 'overview.json not found in the zip file'
+        first_submission = Task.find(task1_id) if task1_id
+        second_submission = Task.find(task2_id) if task2_id
+
+        if first_submission.nil? || second_submission.nil?
+          logger.error "Could not find tasks #{comparison[:first_submission]} or #{comparison[:second_submission]} for plagiarism stats check!"
+          next
+        end
+
+        if is_group # its a group task
+          g1_tasks = first_submission.group_submission.tasks
+          g2_tasks = second_submission.group_submission.tasks
+          g1_tasks.each do |gt1|
+            g2_tasks.each do |gt2|
+              next if gt1.student == gt2.student
+              create_jplag_plagiarism_link(gt1, gt2, warn_pct, comparison[:max_similarity])
+            end
+          end
+        else # just link the individuals...
+          create_jplag_plagiarism_link(first_submission, second_submission, warn_pct, comparison[:max_similarity])
+        end
       end
 
       self
