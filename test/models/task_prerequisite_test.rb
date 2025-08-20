@@ -10,13 +10,15 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
   def test_task_prerequisite_validation
     # Initialise unit and task definitions
-    unit = FactoryBot.create(:unit, student_count: 1, task_count: 2)
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 3)
 
     td1 = unit.task_definitions.first
     td2 = unit.task_definitions.second
+    td3 = unit.task_definitions.third
 
     assert td1.valid?
     assert td2.valid?
+    assert td3.valid?
 
     # Ensure prerequisite cant be the same as the task definition
     prereq = TaskPrerequisite.new(
@@ -44,8 +46,17 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     assert_not prereq2.valid?
     assert_includes prereq2.errors[:base], "reverse prerequisite already exists"
-    prereq1.destroy!
     prereq2.destroy!
+
+    # Ensure that we can still add td1 as prerequisite to another task
+    prereq3 = TaskPrerequisite.new(
+      task_definition: td3,
+      prerequisite: td1
+    )
+
+    assert prereq3.valid?
+    prereq3.destroy!
+    prereq1.destroy!
 
     # Double check that we can now create the same prerequisite after removing the other one
     prereq = TaskPrerequisite.new(
