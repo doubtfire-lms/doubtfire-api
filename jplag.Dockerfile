@@ -1,6 +1,6 @@
 FROM alpine:3.22.1
 
-ENV JPLAG_VERSION=6.1.0
+ENV JPLAG_VERSION=6.2.0
 WORKDIR /jplag
 
 RUN apk update && \
