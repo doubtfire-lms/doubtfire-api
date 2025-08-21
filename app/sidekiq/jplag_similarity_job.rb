@@ -28,9 +28,6 @@ class JplagSimilarityJob
 
     tasks = unit.tasks_for_definition(td)
 
-    if tasks.any?(&:processing_pdf?)
-    end
-
     processing = tasks.select(&:processing_pdf?)
     if processing.any?
       # We can raise errors which will force Sidekiq to retry this job later
