@@ -42,6 +42,9 @@ class Project < ApplicationRecord
   after_update :check_withdraw_from_groups, if: :saved_change_to_enrolled?
   after_update :update_task_stats, if: :saved_change_to_target_grade? # TODO: consider making this an async task!
 
+  # Don't create project if one already exists for user_id in this unit_id
+  validates :user_id, uniqueness: { scope: :unit_id }
+
   #
   # Permissions around project data
   #

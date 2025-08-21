@@ -21,7 +21,8 @@ class LearningOutcome < ApplicationRecord
       :get_los,
       :update_glos,
       :upload_csv,
-      :create_feedback_chips
+      :create_feedback_chips,
+      :get_feedback_chips
     ]
 
     admin_role_permissions = [
@@ -29,7 +30,8 @@ class LearningOutcome < ApplicationRecord
       :get_los,
       :update_glos,
       :upload_csv,
-      :create_feedback_chips
+      :create_feedback_chips,
+      :get_feedback_chips
     ]
 
     tutor_role_permissions = [

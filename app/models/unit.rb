@@ -619,7 +619,7 @@ class Unit < ApplicationRecord
   # Format: Unit Code, Student ID,First Name, Surname, email, tutorial, campus
   # Expected columns: unit_code, username, first_name, last_name, email, tutorial, campus
   #
-  def import_users_from_csv(file)
+  def import_users_from_csv(file, progress_callback: nil)
     success = []
     errors = []
     ignored = []
@@ -640,6 +640,8 @@ class Unit < ApplicationRecord
       errors << { row: [], message: "Header row missing" }
       return
     end
+
+    progress_callback.call(message: "Parsing CSV", rows_processed: 0) if progress_callback;
 
     # Check if these headers should be processed by institution file or from DF format
     # Asking "Who will convert the users to the right format?"
@@ -722,7 +724,7 @@ class Unit < ApplicationRecord
     end # for each csv row
 
     # Now process the listt
-    sync_enrolment_with(student_list, import_settings, result)
+    sync_enrolment_with(student_list, import_settings, result, progress_callback: progress_callback)
   end
 
   # Sync the unit enrolment details eith the list of enrolment data. The enrolment data
@@ -745,7 +747,9 @@ class Unit < ApplicationRecord
   #   fetch_row_data_lambda - lambda to convert row from csv to required import data
   #   replace_existing_tutorial - boolean to indicate if tutorials in csv override ones in doubtfire
   #   replace_existing_campus - boolean to indicate if campus in csv override ones in doubtfire
-  def sync_enrolment_with(enrolment_data, import_settings, result)
+  def sync_enrolment_with(enrolment_data, import_settings, result, progress_callback: nil)
+    progress_callback.call(message: "Validating CSV", rows_processed: 0) if progress_callback;
+
     # Get lists for reporting results
     errors = result[:errors]
     ignored = result[:ignored]
@@ -815,7 +819,7 @@ class Unit < ApplicationRecord
       end
     end # for each csv row
 
-    update_student_enrolments(changes, import_settings, result)
+    update_student_enrolments(changes, import_settings, result, progress_callback: progress_callback)
   end # csv import
 
   # Apply enrolment changes. The changes parameter should be:
@@ -838,7 +842,7 @@ class Unit < ApplicationRecord
   # - :replace_existing_campus boolean
   #
   # Returns hash with :success, :ignored, :errors
-  def update_student_enrolments(changes, import_settings, result)
+  def update_student_enrolments(changes, import_settings, result, progress_callback: nil)
     tutorial_cache = {}
     # Get lists for reporting results
     success = result[:success]
@@ -846,7 +850,10 @@ class Unit < ApplicationRecord
     ignored = result[:ignored]
 
     # now apply the changes...
+    row_count = 0
     changes.each_value do |row_data|
+      row_count += 1
+      progress_callback.call(message: "Importing students", total_rows: changes.count, rows_processed: row_count) if progress_callback
       begin
         row = row_data[:row]
         username = row_data[:username].downcase
@@ -973,7 +980,7 @@ class Unit < ApplicationRecord
                   user_project.enrol_in tutorial
                   success_message << ' Enrolled in ' << tutorial.abbreviation
                 rescue Exception => e
-                  success_message << " UNABLE TO enroll in #{tutorial.abbreviation} #{e.message}"
+                  errors << { row: row, message: "#{success_message} UNABLE TO enroll in #{tutorial.abbreviation} #{e.message}" }
                 end
               end
             end
@@ -1444,6 +1451,57 @@ class Unit < ApplicationRecord
     tutorial_streams.map { |ts| ts.abbreviation }
   end
 
+  def days_awaiting_feedback_by_tutorial_csv
+    CSV.generate() do |csv|
+      # Add headers
+      csv << ([
+        'Tutorial',
+        'Tutor',
+        'Username',
+        'Student Name',
+        'Project ID',
+        'Task Definition',
+        'Task ID',
+        'Days Awaiting Feedback'
+      ])
+
+      # Add data
+      tasks
+      .joins(:task_definition)
+      .joins('INNER JOIN users ON users.id = projects.user_id')
+      .joins("LEFT OUTER JOIN (#{tutorial_enrolment_subquery}) as sq ON sq.project_id = projects.id AND (sq.tutorial_stream_id = task_definitions.tutorial_stream_id OR sq.tutorial_stream_id IS NULL)")
+      .joins('LEFT JOIN tutorials ON tutorials.id = sq.tutorial_id')
+      .select(
+        'users.username AS username',
+        'users.first_name AS first_name',
+        'users.last_name AS last_name',
+        'tasks.id as task_id',
+        'task_definitions.abbreviation as task_abbr',
+        'tasks.project_id as project_id',
+        'DATEDIFF(CURDATE(),submission_date) AS days_since_submission',
+        'tutorial_id',
+        'tutorials.unit_role_id as unit_role_id',
+        'tutorials.abbreviation AS tutorial_abbreviation'
+      )
+      .group('tasks.id', 'task_definitions.abbreviation', 'tasks.project_id', 'tutorial_id', 'unit_role_id', 'submission_date')
+      .order('unit_role_id', 'days_since_submission DESC')
+      .where(projects: { enrolled: true })
+      .where(task_status: TaskStatus.ready_for_feedback)
+      .each do |row|
+            csv << ([
+            row['tutorial_abbreviation'],
+            row['unit_role_id'].present? ? UnitRole.find(row['unit_role_id']).user.name : '',
+            row['username'],
+            "#{row['first_name']} #{row['last_name']}",
+            row['project_id'],
+            row['task_abbr'],
+            row['task_id'],
+            row['days_since_submission']
+      ])
+      end
+    end
+  end
+
   def task_completion_csv
     task_def_by_grade = task_definitions_by_grade
     streams = tutorial_streams
@@ -1535,21 +1593,32 @@ class Unit < ApplicationRecord
     end
   end
 
+  def get_portfolio_zip_filename(current_user)
+    filename = FileHelper.sanitized_filename("portfolios-#{code}-#{current_user.username}")
+    "#{FileHelper.tmp_file(filename)}.zip"
+  end
+
   #
   # Create a temp zip file with all student portfolios
   #
-  def get_portfolio_zip(current_user)
+  def get_portfolio_zip(current_user, progress_callback: nil)
     # Get a temp file path
-    filename = FileHelper.sanitized_filename("portfolios-#{code}-#{current_user.username}")
-    result = "#{FileHelper.tmp_file(filename)}.zip"
+    portfolio_zip_name = get_portfolio_zip_filename(current_user)
 
-    return result if File.exist?(result)
+    # All active projects with a compiled portfolio
+    portfolio_projects = active_projects.select(&:portfolio_available)
+    progress_callback.call(message: "Initialising portfolio download", total_rows: portfolio_projects.count, rows_processed: portfolio_projects.count) if progress_callback
+
+    return portfolio_zip_name if File.exist?(portfolio_zip_name)
+
+    progress_callback.call(message: "Initialising portfolio download", total_rows: portfolio_projects.count, rows_processed: 0) if progress_callback
+    count = 0
 
     # Create a new zip
-    Zip::File.open(result, Zip::File::CREATE) do |zip|
-      active_projects.each do |project|
-        # Skip if no portfolio at this time...
-        next unless project.portfolio_available
+    Zip::File.open(portfolio_zip_name, Zip::File::CREATE) do |zip|
+      portfolio_projects.each do |project|
+        count += 1
+        progress_callback.call(message: "Compressing portfolios", rows_processed: count) if progress_callback
 
         # Add file to zip in grade folder
         src_path = project.portfolio_path
@@ -1559,7 +1628,7 @@ class Unit < ApplicationRecord
         zip.add(dst_path, src_path)
       end # active_projects
     end # zip
-    result
+    portfolio_zip_name
   end
 
   #
@@ -1780,7 +1849,10 @@ class Unit < ApplicationRecord
                 'quality_pts'
               )
     if my_tutorials_only
-      result = result.where('sq.unit_role_id = :unit_role_id', unit_role_id: unit_role_for(user).id)
+      unit_role = unit_role_for(user)
+      unless unit_role.nil?
+        result = result.where('sq.unit_role_id = :unit_role_id', unit_role_id: unit_role.id)
+      end
     end
 
     result
