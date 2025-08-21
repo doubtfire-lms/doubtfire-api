@@ -9,7 +9,7 @@
 #  $: lualatex input.tex
 
 WORK_DIR=$(basename "$PWD")
-IMAGE_NAME="devcontainer-texlive"
+IMAGE_NAME="lmsdoubtfire/formatif-latex:10.0.0-10"
 CONTAINER_NAME="texlive-job-$WORK_DIR"
 
 docker run --rm \

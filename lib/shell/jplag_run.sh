@@ -8,7 +8,7 @@ THRESHOLD=$3
 TASKS_DIR_SPLIT=$4
 WORK_ID=$5
 
-IMAGE_NAME="devcontainer-jplag"
+IMAGE_NAME="lmsdoubtfire/doubtfire-jplag:10.0.0-10"
 CONTAINER_NAME="jplag-$WORK_ID"
 
 docker run --rm \
