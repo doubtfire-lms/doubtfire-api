@@ -20,6 +20,10 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert td2.valid?
     assert td3.valid?
 
+    td1.update(target_grade: 1)
+    td2.update(target_grade: 1)
+    td3.update(target_grade: 1)
+
     # Ensure prerequisite cant be the same as the task definition
     prereq = TaskPrerequisite.new(
       task_definition: td1,
