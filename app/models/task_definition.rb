@@ -89,6 +89,8 @@ class TaskDefinition < ApplicationRecord
 
   validates :weighting, presence: true
 
+  validate :check_existing_prerequisites
+
   include TaskDefinitionTiiModule
   include TaskDefinitionSimilarityModule
 
@@ -101,6 +103,22 @@ class TaskDefinition < ApplicationRecord
   def tutorial_stream_present?
     if tutorial_stream.nil? and unit.tutorial_streams.exists?
       errors.add(:tutorial_stream, "must be one of the tutorial streams in the unit")
+    end
+  end
+
+  def check_existing_prerequisites
+    prereqs = TaskPrerequisite.where(task_definition_id: id)
+    prereqs.each do |dp|
+      if target_grade < dp.prerequisite.target_grade
+        errors.add(:target_grade, "cannot be lower than prerequisite #{dp.prerequisite.abbreviation}'s target grade")
+      end
+    end
+
+    dependents = TaskPrerequisite.where(prerequisite_id: id)
+    dependents.each do |pr|
+      if target_grade > pr.task_definition.target_grade
+        errors.add(:target_grade, "cannot exceed the target grade #{pr.task_definition.abbreviation} because this is a prerequisite")
+      end
     end
   end
 
