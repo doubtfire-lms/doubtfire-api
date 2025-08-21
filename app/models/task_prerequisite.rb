@@ -6,6 +6,7 @@ class TaskPrerequisite < ApplicationRecord
   validate :no_reverse_prerequisite
   validates :prerequisite_id, uniqueness: { scope: :task_definition_id, message: "already exists for this task" }
   validate :same_unit
+  validate :prerequisite_grade_not_higher
 
   def no_reverse_prerequisite
     if TaskPrerequisite.exists?(task_definition: prerequisite, prerequisite: task_definition)
@@ -22,6 +23,16 @@ class TaskPrerequisite < ApplicationRecord
   def same_unit
     if task_definition.unit_id != prerequisite.unit_id
       errors.add(:base, "task definition and prerequisite must belong to the same unit")
+    end
+  end
+
+  # Prevent HD tasks being set as a prerequisite for a Pass task
+  def prerequisite_grade_not_higher
+    return if prerequisite.nil? || task_definition.nil?
+
+    if prerequisite.target_grade.present? && task_definition.target_grade.present? &&
+       prerequisite.target_grade > task_definition.target_grade
+      errors.add(:base, "Prerequisite can not have a higher target grade")
     end
   end
 end
