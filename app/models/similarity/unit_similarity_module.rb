@@ -149,7 +149,7 @@ module UnitSimilarityModule
 
         # There are new tasks, check these with JPLAG
 
-        # TODO:
+        # TODO: cleanup
         JplagSimilarityJob.perform_async(td.id)
 
         # run_jplag_on_done_files(td, tasks_dir, tasks_with_files, unit_code)
