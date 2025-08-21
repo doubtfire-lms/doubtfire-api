@@ -53,28 +53,30 @@ class TaskSimilarityTest < ActiveSupport::TestCase
     post "/api/projects/#{student2_project.id}/task_def_id/#{td.id}/submission", data_to_post
     assert_equal 201, last_response.status
 
-    student2_task = student2_project.task_for_task_definition(td)
-    student2_task.convert_submission_to_pdf(log_to_stdout: false)
-    assert File.exist? student2_task.final_pdf_path
-    assert student2_task.has_pdf
+    Sidekiq::Testing.inline! do
+      student2_task = student2_project.task_for_task_definition(td)
+      student2_task.convert_submission_to_pdf(log_to_stdout: false)
+      assert File.exist? student2_task.final_pdf_path
+      assert student2_task.has_pdf
 
-    # Run jplag
-    unit.check_jplag_similarity(force: true)
+      # Run jplag
+      unit.check_jplag_similarity(force: true)
 
-    # Validate similarities
-    similarity1 = JplagTaskSimilarity.find_by(task_id: student1_task.id)
-    similarity2 = JplagTaskSimilarity.find_by(task_id: student2_task.id)
+      # Validate similarities
+      similarity1 = JplagTaskSimilarity.find_by(task_id: student1_task.id)
+      similarity2 = JplagTaskSimilarity.find_by(task_id: student2_task.id)
 
-    assert similarity1.valid?, similarity1.errors.full_messages
-    assert similarity2.valid?, similarity2.errors.full_messages
+      assert similarity1.valid?, similarity1.errors.full_messages
+      assert similarity2.valid?, similarity2.errors.full_messages
 
-    assert_equal similarity1.other_task_id, similarity2.task_id
-    assert_equal similarity2.other_task_id, similarity1.task_id
+      assert_equal similarity1.other_task_id, similarity2.task_id
+      assert_equal similarity2.other_task_id, similarity1.task_id
 
-    assert_equal 100, similarity1.pct
-    assert_equal 100, similarity2.pct
+      assert_equal 100, similarity1.pct
+      assert_equal 100, similarity2.pct
 
-    assert td.has_jplag_report?, "Expected task definition to have a JPlag report"
+      assert td.has_jplag_report?, "Expected task definition to have a JPlag report"
+    end
   end
 
   # Test that when you create a plagiarism match link, that a moss test needs the other task

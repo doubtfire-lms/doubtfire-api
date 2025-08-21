@@ -1111,6 +1111,7 @@ class Task < ApplicationRecord
       @institution_name = Doubtfire::Application.config.institution[:name]
       @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
       @include_pax = !is_retry
+      @work_id = "task-#{task.id}#{'-retry' if is_retry}"
     end
 
     def make_pdf
