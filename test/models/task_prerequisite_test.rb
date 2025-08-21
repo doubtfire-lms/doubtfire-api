@@ -174,5 +174,26 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     assert prereq.valid?, "Prerequisite task with lower or equal target grade should be valid"
     prereq.destroy!
+
+    assert td2.update(target_grade: 2) # Distinction Task
+    assert td3.update(target_grade: 1) # Credit Task
+
+    prereq = TaskPrerequisite.new(
+      task_definition: td2,
+      prerequisite: td3
+    )
+    prereq.save!
+
+    # Ensure we cant update the Credit task to High Distinction when its a prerequisite TO a higher grade
+    # (Would mean you can't complete a Distinction task until the High Disinction task is completed)
+    td3.target_grade = 3 # HD
+    assert_not td3.valid?
+    assert_includes td3.errors[:target_grade].join, "cannot exceed"
+
+    # Ensure we cant update a Distinction task to Pass task when it has a prequisite OF a higher grade
+    # (The reverse, would mean you can't complete this pass task until the Disinction task is completed)
+    td2.target_grade = 0 # Pass
+    assert_not td2.valid?
+    assert_includes td2.errors[:target_grade].join, "cannot be lower"
   end
 end
