@@ -2,7 +2,6 @@ class AcceptSubmissionJob
   include Sidekiq::Job
   include LogHelper
 
-
   sidekiq_options queue: :task_pdf_gen,
                   lock: :until_and_while_executing,
                   lock_args_method: ->(args) { [args.first] },
@@ -15,7 +14,7 @@ class AcceptSubmissionJob
   # TODO:  errors should clear the in_process files
   # TODO: this job itself should handle the moving of files
   # TODO: sidekiq should handle the retrying of a failed compile (done in convert_submission_to_pdf)
-  
+
   def perform(task_id, user_id, accepted_tii_eula)
     begin
       # Ensure cwd is valid...

@@ -6,10 +6,10 @@ class JplagSimilarityJob
                   lock: :until_and_while_executing,
                   lock_args_method: ->(args) { [args.first] },
                   on_conflict: :reject
-                  # use `retry: false` to execute this once and only once
-                  # use `retry: 0` to send the job to the dead queue
-                  # We can then look at the dead queue and identify the task ID and user ID
-                  # retry: 0
+  # use `retry: false` to execute this once and only once
+  # use `retry: 0` to send the job to the dead queue
+  # We can then look at the dead queue and identify the task ID and user ID
+  # retry: 0
 
   # TODO:  errors should clear the in_process files
   # TODO: this job itself should handle the moving of files
@@ -46,7 +46,6 @@ class JplagSimilarityJob
     # TODO: jplag_run_job
 
     begin
-
       root_work_dir = Rails.root.join("tmp", "jplag", "#{unit.code}-#{unit.id}")
       tasks_dir = "#{root_work_dir}-#{Process.pid}-#{Thread.current.object_id}-#{Time.now.to_i}-#{td.id}"
       FileUtils.mkdir_p(tasks_dir)
