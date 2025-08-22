@@ -256,8 +256,12 @@ module UnitSimilarityModule
       # Convert pct to decimal
       similarity_threshold = similarity_pct.to_f / 100
 
+      min_tokens = Doubtfire::Application.config.jplag_min_tokens.to_i
+      # If empty, let JPlag set the default per-language
+      min_token_string = min_tokens <= 0 ? "" : "--min-tokens=#{min_tokens}"
+
       # Run JPLAG on the extracted files. JPlag container should already be in the /jplag/ workdir.
-      docker_command = "docker exec -i jplag java -jar jplag-jar-with-dependencies.jar #{tasks_dir_split} -l #{file_lang} --similarity-threshold=#{similarity_threshold} -M RUN -r #{results_dir}/#{task_definition.abbreviation}-result"
+      docker_command = "docker exec -i jplag java -jar jplag-jar-with-dependencies.jar #{tasks_dir_split} -l #{file_lang} --similarity-threshold=#{similarity_threshold} #{min_token_string} -M RUN -r #{results_dir}/#{task_definition.abbreviation}-result"
       logger.debug "Executing command: #{docker_command}"
       system(docker_command)
     end
