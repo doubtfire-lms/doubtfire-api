@@ -8,13 +8,13 @@ THRESHOLD=$3
 TASKS_DIR_SPLIT=$4
 WORK_ID=$5
 
-IMAGE_NAME="lmsdoubtfire/doubtfire-jplag:10.0.0-10"
+IMAGE_NAME="$DF_JPLAG_IMAGE_NAME"
 CONTAINER_NAME="jplag-$WORK_ID"
 
 docker run --rm \
   --network none \
   -e TERM=xterm \
-  --volumes-from 1-formatif-dev-container \
+  --volumes-from $DF_API_CONTAINER_NAME \
   --name "$CONTAINER_NAME" \
   "$IMAGE_NAME" \
   java -jar /jplag/jplag-jar-with-dependencies.jar /tmp/jplag/"$WORK_DIR_NAME" -l "$LANGUAGE" --similarity-threshold="$THRESHOLD" -M RUN -r /tmp/jplag/"$WORK_DIR_NAME"/result.jplag

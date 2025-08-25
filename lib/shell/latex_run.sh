@@ -9,12 +9,12 @@
 #  $: lualatex input.tex
 
 WORK_DIR=$(basename "$PWD")
-IMAGE_NAME="lmsdoubtfire/formatif-latex:10.0.0-10"
+IMAGE_NAME="$DF_LATEX_IMAGE_NAME"
 CONTAINER_NAME="texlive-job-$WORK_DIR"
 
 docker run --rm \
   -e TERM=xterm \
-  --volumes-from 1-formatif-dev-container \
+  --volumes-from $DF_API_CONTAINER_NAME \
   --name "$CONTAINER_NAME" \
   "$IMAGE_NAME" \
   ${LATEX_BUILD_PATH:-/texlive/shell/latex_build.sh} $WORK_DIR
