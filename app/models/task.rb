@@ -1377,8 +1377,12 @@ class Task < ApplicationRecord
         ui.error!({ 'error' => "'#{file[:name]}' is invalid: #{file_result[:msg]}" }, 403)
       end
 
-      if File.size(file["tempfile"].path) > 10_000_000
-        ui.error!({ 'error' => "'#{file[:name]}' exceeds the 10MB file limit. Try compressing or reformat and submit again." }, 403)
+      max_file_size = Doubtfire::Application.config.max_file_size.to_i
+      max_file_size = 10_000_000 if max_file_size <= 0
+      size_in_mb = max_file_size / 1_000_000
+
+      if File.size(file["tempfile"].path) > max_file_size
+        ui.error!({ 'error' => "'#{file[:name]}' exceeds the #{size_in_mb}MB file limit. Try compressing or reformat and submit again." }, 403)
       end
     end
 
