@@ -212,12 +212,14 @@ class TasksApi < Grape::API
   desc 'Mark attendance for a task'
   post '/projects/:id/task_def_id/:task_definition_id/attendance' do
     project = Project.find(params[:id])
-    task_definition = project.unit.task_definitions.find(params[:task_definition_id])
-    task = project.task_for_task_definition(task_definition)
 
     unless authorise?(current_user, project, :assess)
       error!({ error: 'You do not have permission to assess this task.' }, 403)
     end
+
+    task_definition = project.unit.task_definitions.find(params[:task_definition_id])
+    task = project.task_for_task_definition(task_definition)
+
     task.add_attended_class_comment(current_user)
   end
 
