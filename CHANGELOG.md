@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-22](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-21...v10.0.0-22) (2025-08-27)
+
+
+### Features
+
+* add attendance marked task comment ([1505242](https://github.com/b0ink/doubtfire-deploy/commit/150524243d99f4821daa7489064d1b324673b9b7))
+
 ## [10.0.0-21](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-20...v10.0.0-21) (2025-08-26)
 
 
