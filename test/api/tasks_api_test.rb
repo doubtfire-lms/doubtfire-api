@@ -496,4 +496,52 @@ class TasksApiTest < ActiveSupport::TestCase
 
     unit.destroy
   end
+
+  def test_mark_attendance
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
+    td = TaskDefinition.create!({
+                                  unit_id: unit.id,
+                                  tutorial_stream: unit.tutorial_streams.first,
+                                  name: 'Code task',
+                                  description: 'Code task',
+                                  weighting: 4,
+                                  target_grade: 0,
+                                  start_date: Time.zone.now - 2.weeks,
+                                  target_date: Time.zone.now + 1.week,
+                                  abbreviation: 'CodeTask',
+                                  restrict_status_updates: false,
+                                  upload_requirements: [{ "key" => 'file0', "name" => 'Shape Class', "type" => 'code' }],
+                                  plagiarism_warn_pct: 0.8,
+                                  is_graded: true,
+                                  max_quality_pts: 0
+                                })
+
+    project = unit.active_projects.first
+    task = project.task_for_task_definition(td)
+
+    student = project.student
+    tutor = unit.tutors.first
+
+    # Ensure student can not add this type of comment
+    add_auth_header_for(user: student)
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/attendance"
+    assert_equal 403, last_response.status
+
+    # Ensure not comment was created
+    lc = task.comments.last
+    assert lc.nil?
+
+    # Ensure tutor can add this type of comment
+    add_auth_header_for(user: tutor)
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/attendance"
+    assert_equal 201, last_response.status
+
+    lc = task.comments.last
+
+    # Ensure comment was created
+    assert_not lc.nil?
+    assert lc.valid?
+    assert "Attendance Marked", lc.comment
+    assert TaskAttendanceComment, lc.type
+  end
 end
