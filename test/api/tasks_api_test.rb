@@ -497,7 +497,7 @@ class TasksApiTest < ActiveSupport::TestCase
     unit.destroy
   end
 
-  def test_mark_attendance
+  def test_check_in_comment
     unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
     td = TaskDefinition.create!({
                                   unit_id: unit.id,
@@ -524,7 +524,7 @@ class TasksApiTest < ActiveSupport::TestCase
 
     # Ensure student can not add this type of comment
     add_auth_header_for(user: student)
-    post "/api/projects/#{project.id}/task_def_id/#{td.id}/attendance"
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/check_in"
     assert_equal 403, last_response.status
 
     # Ensure not comment was created
@@ -533,7 +533,7 @@ class TasksApiTest < ActiveSupport::TestCase
 
     # Ensure tutor can add this type of comment
     add_auth_header_for(user: tutor)
-    post "/api/projects/#{project.id}/task_def_id/#{td.id}/attendance"
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/check_in"
     assert_equal 201, last_response.status
 
     lc = task.comments.last
@@ -541,7 +541,7 @@ class TasksApiTest < ActiveSupport::TestCase
     # Ensure comment was created
     assert_not lc.nil?
     assert lc.valid?
-    assert "Attendance Marked", lc.comment
-    assert TaskAttendanceComment, lc.type
+    assert "Checked In", lc.comment
+    assert TaskCheckedInComment, lc.type
   end
 end
