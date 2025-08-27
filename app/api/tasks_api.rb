@@ -209,6 +209,20 @@ class TasksApi < Grape::API
     end
   end
 
+  desc 'Mark attendance for a task'
+  post '/projects/:id/task_def_id/:task_definition_id/attendance' do
+    project = Project.find(params[:id])
+
+    unless authorise?(current_user, project, :assess)
+      error!({ error: 'You do not have permission to assess this task.' }, 403)
+    end
+
+    task_definition = project.unit.task_definitions.find(params[:task_definition_id])
+    task = project.task_for_task_definition(task_definition)
+
+    task.add_attended_class_comment(current_user)
+  end
+
   desc 'Get the submission details of a task, indicating if it has a pdf to view'
   params do
     requires :id, type: Integer, desc: 'The project id to locate'
