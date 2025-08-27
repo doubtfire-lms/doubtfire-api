@@ -1,6 +1,6 @@
-class TaskAttendanceComment < TaskComment
+class TaskCheckedInComment < TaskComment
   before_create do
-    self.content_type = :attendance_marked
+    self.content_type = :checked_in
   end
 
   after_create do

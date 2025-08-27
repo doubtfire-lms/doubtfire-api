@@ -760,11 +760,11 @@ class Task < ApplicationRecord
     discussed
   end
 
-  def add_attended_class_comment(current_user)
-    discussed = TaskAttendanceComment.create
+  def add_checked_in_comment(current_user)
+    discussed = TaskCheckedInComment.create
     discussed.task = self
     discussed.user = current_user
-    discussed.comment = "Attendance Marked"
+    discussed.comment = "Checked In"
     discussed.recipient = current_user == project.student ? project.tutor_for(task_definition) : project.student
     discussed.save!
     discussed
