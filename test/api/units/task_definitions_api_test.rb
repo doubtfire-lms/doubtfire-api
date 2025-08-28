@@ -887,6 +887,9 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     task_def1 = FactoryBot.create(:task_definition, unit: unit, upload_requirements: upload_reqs)
     task_def2 = FactoryBot.create(:task_definition, unit: unit, upload_requirements: upload_reqs)
 
+    task_def1.update(target_grade: 0)
+    task_def2.update(target_grade: 0)
+
     admin = FactoryBot.create(:user, :admin)
     convenor = FactoryBot.create(:user, :convenor)
     tutor = FactoryBot.create(:user, :tutor)
@@ -911,10 +914,10 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
         prerequisite_id: task_def2.id
       }
       post "/api/units/#{unit.id}/task_definitions/#{task_def1.id}/prerequisites", data_to_post
-      assert_equal 201, last_response.status
+      assert_equal 201, last_response.status, last_response_body
 
       delete "/api/units/#{unit.id}/task_definitions/#{task_def1.id}/prerequisites/#{task_def2.id}"
-      assert_equal 200, last_response.status
+      assert_equal 200, last_response.status, last_response_body
     end
 
     users_cant_create.each do |user|
@@ -923,10 +926,10 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
         prerequisite_id: task_def2.id
       }
       post "/api/units/#{unit.id}/task_definitions/#{task_def1.id}/prerequisites", data_to_post
-      assert_equal 403, last_response.status
+      assert_equal 403, last_response.status, last_response_body
 
       delete "/api/units/#{unit.id}/task_definitions/#{task_def1.id}/prerequisites/#{task_def2.id}"
-      assert_equal 403, last_response.status
+      assert_equal 403, last_response.status, last_response_body
     end
   end
 end
