@@ -51,7 +51,16 @@ module Entities
     expose :overseer_image_id, if: ->(unit, options) { staff?(options[:my_role]) }, expose_nil: false
     expose :assessment_enabled, if: ->(unit, options) { staff?(options[:my_role]) }
     expose :similarity_language, if: ->(unit, options) { staff?(options[:my_role]) }, expose_nil: false
-    expose :task_prerequisites
+    expose :task_prerequisites do |task_definition|
+      task_definition.task_prerequisites.map do |tp|
+        {
+          id: tp.id,
+          task_definition_id: tp.task_definition_id,
+          prerequisite_id: tp.prerequisite_id,
+          task_status: TaskStatus.find(tp.task_status_id).status_key
+        }
+      end
+    end
 
     expose :learning_outcomes, using: LearningOutcomeEntity, as: :ilos
   end
