@@ -503,11 +503,13 @@ class TasksApiTest < ActiveSupport::TestCase
     td2 = unit.task_definitions.second
 
     td1.update(
-      upload_requirements: [{ "key" => 'file0', "name" => 'Shape Class', "type" => 'code' }]
+      upload_requirements: [{ "key" => 'file0', "name" => 'Shape Class', "type" => 'code' }],
+      target_grade: 0 # Pass
     )
 
     td2.update(
-      upload_requirements: [{ "key" => 'file0', "name" => 'Shape Class', "type" => 'code' }]
+      upload_requirements: [{ "key" => 'file0', "name" => 'Shape Class', "type" => 'code' }],
+      target_grade: 3 # HD
     )
 
     # Create a prerequisite on the second taskDef that adds the first taskDef as a prereq
