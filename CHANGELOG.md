@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-23](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-22...v10.0.0-23) (2025-08-27)
+
+## [10.0.0-22](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-21...v10.0.0-22) (2025-08-27)
+
+
+### Features
+
+* add attendance marked task comment ([1505242](https://github.com/b0ink/doubtfire-deploy/commit/150524243d99f4821daa7489064d1b324673b9b7))
+
+## [10.0.0-21](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-20...v10.0.0-21) (2025-08-26)
+
+
+### Features
+
+* env var to set jplag minimum token match ([8c04f38](https://github.com/b0ink/doubtfire-deploy/commit/8c04f388e435451595191c9bc627fdec59cf8244))
+* use env var for max file size ([f5f4b29](https://github.com/b0ink/doubtfire-deploy/commit/f5f4b2955b7910c06b5a552f07549355ac913dd6))
+
+## [10.0.0-20](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-19...v10.0.0-20) (2025-08-21)
+
 ## [10.0.0-19](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-18...v10.0.0-19) (2025-08-14)
 
 

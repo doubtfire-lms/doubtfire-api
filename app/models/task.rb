@@ -760,6 +760,16 @@ class Task < ApplicationRecord
     discussed
   end
 
+  def add_checked_in_comment(current_user)
+    discussed = TaskCheckedInComment.create
+    discussed.task = self
+    discussed.user = current_user
+    discussed.comment = "Checked In"
+    discussed.recipient = current_user == project.student ? project.tutor_for(task_definition) : project.student
+    discussed.save!
+    discussed
+  end
+
   def add_discussion_comment(user, prompts)
     # don't allow if group task.
     discussion = DiscussionComment.create
@@ -1377,8 +1387,12 @@ class Task < ApplicationRecord
         ui.error!({ 'error' => "'#{file[:name]}' is invalid: #{file_result[:msg]}" }, 403)
       end
 
-      if File.size(file["tempfile"].path) > 10_000_000
-        ui.error!({ 'error' => "'#{file[:name]}' exceeds the 10MB file limit. Try compressing or reformat and submit again." }, 403)
+      max_file_size = Doubtfire::Application.config.max_file_size.to_i
+      max_file_size = 10_000_000 if max_file_size <= 0
+      size_in_mb = max_file_size / 1_000_000
+
+      if File.size(file["tempfile"].path) > max_file_size
+        ui.error!({ 'error' => "'#{file[:name]}' exceeds the #{size_in_mb}MB file limit. Try compressing or reformat and submit again." }, 403)
       end
     end
 
