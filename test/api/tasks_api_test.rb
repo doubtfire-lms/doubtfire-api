@@ -513,7 +513,8 @@ class TasksApiTest < ActiveSupport::TestCase
     # Create a prerequisite on the second taskDef that adds the first taskDef as a prereq
     prereq = TaskPrerequisite.create!(
       task_definition: td2, # Before you can submit td2...
-      prerequisite: td1 # You need to submit td1
+      prerequisite: td1, # You need to submit td1
+      task_status_id: TaskStatus.complete.id
     )
 
     assert prereq.valid?

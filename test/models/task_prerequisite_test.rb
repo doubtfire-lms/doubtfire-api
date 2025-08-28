@@ -27,7 +27,8 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     # Ensure prerequisite cant be the same as the task definition
     prereq = TaskPrerequisite.new(
       task_definition: td1,
-      prerequisite: td1
+      prerequisite: td1,
+      task_status_id: TaskStatus.complete.id
     )
 
     assert_not prereq.valid?
@@ -37,7 +38,8 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     # Ensure prerequisite 1 is valid
     prereq1 = TaskPrerequisite.create!(
       task_definition: td1,
-      prerequisite: td2
+      prerequisite: td2,
+      task_status_id: TaskStatus.complete.id
     )
     assert prereq1.valid?
 
@@ -45,7 +47,8 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     # Otherwise, neither task would be able to be submitted
     prereq2 = TaskPrerequisite.new(
       task_definition: td2,
-      prerequisite: td1
+      prerequisite: td1,
+      task_status_id: TaskStatus.complete.id
     )
 
     assert_not prereq2.valid?
@@ -55,7 +58,8 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     # Ensure that we can still add td1 as prerequisite to another task
     prereq3 = TaskPrerequisite.new(
       task_definition: td3,
-      prerequisite: td1
+      prerequisite: td1,
+      task_status_id: TaskStatus.complete.id
     )
 
     assert prereq3.valid?
@@ -65,7 +69,8 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     # Double check that we can now create the same prerequisite after removing the other one
     prereq = TaskPrerequisite.new(
       task_definition: td2,
-      prerequisite: td1
+      prerequisite: td1,
+      task_status_id: TaskStatus.complete.id
     )
     assert prereq.valid?
   end
@@ -83,14 +88,16 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     # Test that a TaskPrerequisite cannot be created if the task and its prerequisite belong to different units
     prereq = TaskPrerequisite.new(
       task_definition: td1,
-      prerequisite: td2
+      prerequisite: td2,
+      task_status_id: TaskStatus.complete.id
     )
     assert_not prereq.valid?, "Prerequisite task must be from the same unit"
     prereq.destroy!
 
     prereq = TaskPrerequisite.new(
       task_definition: td2,
-      prerequisite: td1
+      prerequisite: td1,
+      task_status_id: TaskStatus.complete.id
     )
     assert_not prereq.valid?, "Prerequisite task must be from the same unit"
     prereq.destroy!
@@ -120,7 +127,8 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     prereq = TaskPrerequisite.new(
       task_definition: td2,
-      prerequisite: td1
+      prerequisite: td1,
+      task_status_id: TaskStatus.complete.id
     )
 
     assert_not prereq.valid?, "Prerequisite task can not be of a higher target grade"
@@ -128,7 +136,8 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     prereq = TaskPrerequisite.new(
       task_definition: td3,
-      prerequisite: td2
+      prerequisite: td2,
+      task_status_id: TaskStatus.complete.id
     )
 
     assert_not prereq.valid?, "Prerequisite task can not be of a higher target grade"
@@ -136,7 +145,8 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     prereq = TaskPrerequisite.new(
       task_definition: td4,
-      prerequisite: td3
+      prerequisite: td3,
+      task_status_id: TaskStatus.complete.id
     )
 
     assert_not prereq.valid?, "Prerequisite task can not be of a higher target grade"
@@ -144,7 +154,8 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     prereq = TaskPrerequisite.new(
       task_definition: td4,
-      prerequisite: td1
+      prerequisite: td1,
+      task_status_id: TaskStatus.complete.id
     )
 
     assert_not prereq.valid?, "Prerequisite task can not be of a higher target grade"
@@ -152,7 +163,8 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     prereq = TaskPrerequisite.new(
       task_definition: td4,
-      prerequisite: td2
+      prerequisite: td2,
+      task_status_id: TaskStatus.complete.id
     )
 
     assert_not prereq.valid?, "Prerequisite task can not be of a higher target grade"
@@ -161,7 +173,8 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     # Both pass tasks
     prereq = TaskPrerequisite.new(
       task_definition: td4,
-      prerequisite: td5
+      prerequisite: td5,
+      task_status_id: TaskStatus.complete.id
     )
 
     assert prereq.valid?, "Prerequisite task with lower or equal target grade should be valid"
@@ -169,7 +182,8 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     prereq = TaskPrerequisite.new(
       task_definition: td1,
-      prerequisite: td4
+      prerequisite: td4,
+      task_status_id: TaskStatus.complete.id
     )
 
     assert prereq.valid?, "Prerequisite task with lower or equal target grade should be valid"
@@ -180,7 +194,8 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     prereq = TaskPrerequisite.new(
       task_definition: td2,
-      prerequisite: td3
+      prerequisite: td3,
+      task_status_id: TaskStatus.complete.id
     )
     prereq.save!
 
