@@ -657,9 +657,22 @@ class TasksApiTest < ActiveSupport::TestCase
         required_status: TaskStatus.discuss,
         expected_status: 201,
         expected_error: nil
-      }, {
+      },
+      {
         prerequisite_status: TaskStatus.complete,
         required_status: TaskStatus.complete,
+        expected_status: 201,
+        expected_error: nil
+      },
+      {
+        prerequisite_status: TaskStatus.complete,
+        required_status: TaskStatus.ready_for_feedback,
+        expected_status: 201,
+        expected_error: nil
+      },
+      {
+        prerequisite_status: TaskStatus.discuss,
+        required_status: TaskStatus.ready_for_feedback,
         expected_status: 201,
         expected_error: nil
       }
