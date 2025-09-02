@@ -641,7 +641,7 @@ class Unit < ApplicationRecord
       return
     end
 
-    progress_callback.call(message: "Parsing CSV", rows_processed: 0) if progress_callback;
+    progress_callback.call(message: "Parsing CSV", rows_processed: 0) if progress_callback
 
     # Check if these headers should be processed by institution file or from DF format
     # Asking "Who will convert the users to the right format?"
@@ -715,7 +715,7 @@ class Unit < ApplicationRecord
       row_count += 1
       begin
         # Convert to hash...
-        progress_callback.call(message: "Parsing CSV", total_rows: row_count) if progress_callback;
+        progress_callback.call(message: "Parsing CSV", total_rows: row_count) if progress_callback
         row_data = import_settings[:fetch_row_data_lambda].call(row, self)
         row_data[:row] = row
         # Store in list...
@@ -750,7 +750,7 @@ class Unit < ApplicationRecord
   #   replace_existing_tutorial - boolean to indicate if tutorials in csv override ones in doubtfire
   #   replace_existing_campus - boolean to indicate if campus in csv override ones in doubtfire
   def sync_enrolment_with(enrolment_data, import_settings, result, progress_callback: nil)
-    progress_callback.call(message: "Validating CSV", rows_processed: 0) if progress_callback;
+    progress_callback.call(message: "Validating CSV", rows_processed: 0) if progress_callback
 
     # Get lists for reporting results
     errors = result[:errors]
