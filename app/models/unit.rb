@@ -2446,11 +2446,20 @@ class Unit < ApplicationRecord
     return unless send_notifications
 
     summary_stats[:unit] = self
-    summary_stats[:unit_week_comments] = comments.where("task_comments.created_at > :start AND task_comments.created_at < :end", start: summary_stats[:week_start], end: summary_stats[:week_end]).count
-    summary_stats[:unit_week_engagements] = task_engagements.where("task_engagements.engagement_time > :start AND task_engagements.engagement_time < :end", start: summary_stats[:week_start], end: summary_stats[:week_end]).count
+    summary_stats[:tutorials] = {}
+    summary_stats[:tutorial_streams] = {}
+    summary_stats[:staff] ||= {}
     summary_stats[:revert_count] = 0
     summary_stats[:revert] = {}
-    summary_stats[:staff] = {}
+    summary_stats[:oldest_task_days] ||= 0
+
+    summary_stats[:unit_week_comments] =
+      comments
+      .where("task_comments.created_at > :start AND task_comments.created_at < :end", start: summary_stats[:week_start], end: summary_stats[:week_end])
+      .where(content_type: :text)
+      .count
+
+    summary_stats[:unit_week_engagements] = task_engagements.where("task_engagements.engagement_time > :start AND task_engagements.engagement_time < :end", start: summary_stats[:week_start], end: summary_stats[:week_end]).count
 
     days_to_end_of_unit = (end_date.to_date - DateTime.now).to_i
     days_from_start_of_unit = (DateTime.now - start_date.to_date).to_i
@@ -2465,10 +2474,31 @@ class Unit < ApplicationRecord
       project.send_weekly_status_email(summary_stats, days_from_start_of_unit > 28 && days_to_end_of_unit > 14)
     end
 
-    summary_stats[:num_students_without_tutors] = active_projects.joins('LEFT OUTER JOIN tutorial_enrolments on tutorial_enrolments.project_id = projects.id').where('tutorial_enrolments.tutorial_id' => nil).count
+    tutorial_streams.each do |tutorial_stream|
+      summary_stats[:tutorial_streams][tutorial_stream] ||= {}
 
-    staff.each do |ur|
-      ur.populate_summary_stats(summary_stats)
+      # count projects that have NO enrolment for any tutorial in this stream
+      projects_in_unit = projects.select(:id)
+      tutorial_ids_in_stream = tutorial_stream.tutorials.select(:id)
+      projects_without_tutor = Project
+        .where(id: projects_in_unit)
+        .left_outer_joins(:tutorial_enrolments)
+        .where.not(tutorial_enrolments: { tutorial_id: tutorial_ids_in_stream })
+        .distinct
+        .count
+
+      summary_stats[:tutorial_streams][tutorial_stream][:num_students_without_tutors] = projects_without_tutor
+
+      # Continue if this tutorial stream is not linked to any task definition
+      next unless task_definitions.any? { |td| td.tutorial_stream_id == tutorial_stream.id }
+
+      row = summary_stats[:tutorial_streams][tutorial_stream][:tutorials] = {}
+
+      tutorial_stream.tutorials.each do |tutorial|
+          # Create new entry for tutorial row
+          row = summary_stats[:tutorial_streams][tutorial_stream][:tutorials] [tutorial] ||= {}
+          tutorial.unit_role.populate_summary_stats(summary_stats, tutorial_stream, tutorial, row)
+      end
     end
 
     staff.each do |ur|
