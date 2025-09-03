@@ -126,7 +126,7 @@ class UnitRole < ApplicationRecord
 
     data[:engagements] = all_engagements
     data[:total_staff_engagements] = all_engagements.count
-    data[:staff_engagements] = weekly_engagements.where(engagement: [TaskStatus.complete.name, TaskStatus.feedback_exceeded.name, TaskStatus.redo.name, TaskStatus.discuss.name, TaskStatus.demonstrate.name, TaskStatus.fail.name]).count
+    data[:staff_engagements] = weekly_engagements.where(engagement: [TaskStatus.complete.name, TaskStatus.feedback_exceeded.name, TaskStatus.redo.name, TaskStatus.discuss.name, TaskStatus.demonstrate.name, TaskStatus.fail.name])
 
     # Weekly task engagements for this tutorial
     data[:weekly_engagements_count] = weekly_engagements.count
@@ -176,11 +176,9 @@ class UnitRole < ApplicationRecord
     summary_stats[:staff][data[:staff]][:weekly_engagements_count] ||= 0
     summary_stats[:staff][data[:staff]][:oldest_task_days] ||= 0
 
-    summary_stats[:staff][data[:staff]][:tasks_awaiting_feedback_count] += tutorial_tasks.count
-
-    summary_stats[:staff][data[:staff]][:weekly_engagements_count] += weekly_engagements.count
     summary_stats[:staff][data[:staff]][:staff_engagements] += data[:staff_engagements].count
-
+    summary_stats[:staff][data[:staff]][:tasks_awaiting_feedback_count] += tutorial_tasks.count
+    summary_stats[:staff][data[:staff]][:weekly_engagements_count] += weekly_engagements.count
     summary_stats[:staff][data[:staff]][:oldest_task_days] = [
       summary_stats[:staff][data[:staff]][:oldest_task_days],
       data[:oldest_task_days]
