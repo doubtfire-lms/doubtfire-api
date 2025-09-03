@@ -2478,16 +2478,19 @@ class Unit < ApplicationRecord
       summary_stats[:tutorial_streams][tutorial_stream] ||= {}
 
       # count projects that have NO enrolment for any tutorial in this stream
-      projects_in_unit = projects.select(:id)
+      projects_in_unit = active_projects.select(:id)
       tutorial_ids_in_stream = tutorial_stream.tutorials.select(:id)
       projects_without_tutor = Project
-        .where(id: projects_in_unit)
-        .left_outer_joins(:tutorial_enrolments)
-        .where.not(tutorial_enrolments: { tutorial_id: tutorial_ids_in_stream })
-        .distinct
-        .count
+              .where(id: projects_in_unit)
+              .where(enrolled: true)
+              .where.not(
+                id: TutorialEnrolment
+                  .where(tutorial_id: tutorial_ids_in_stream)
+                  .select(:project_id)
+              )
+              .distinct
 
-      summary_stats[:tutorial_streams][tutorial_stream][:num_students_without_tutors] = projects_without_tutor
+      summary_stats[:tutorial_streams][tutorial_stream][:num_students_without_tutors] = projects_without_tutor.count
 
       # Continue if this tutorial stream is not linked to any task definition
       next unless task_definitions.any? { |td| td.tutorial_stream_id == tutorial_stream.id }
