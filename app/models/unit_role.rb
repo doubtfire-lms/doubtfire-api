@@ -107,39 +107,86 @@ class UnitRole < ApplicationRecord
   #
   # Add data to the summary stats about this staff member
   #
-  def populate_summary_stats(summary_stats)
+  def populate_summary_stats(summary_stats, tutorial_stream, tutorial, row)
     data = {}
 
     data[:staff] = user
     data[:unit_role] = self
 
-    data[:engagements] = task_engagements
-                         .where(
-                           "task_engagements.engagement_time >= :start AND task_engagements.engagement_time < :end",
-                           start: summary_stats[:week_start], end: summary_stats[:week_end]
-                         )
+    # All task engagements for this tutorial
+    all_engagements = TaskEngagement
+        .joins(task: [:project, :task_definition])
+        .where(projects: { id: tutorial.projects.select(:id) })
+        .where(task_definitions: { tutorial_stream_id: tutorial_stream.id })
+        .distinct
 
-    data[:total_engagements_count] = task_engagements.count
-    data[:weekly_engagements_count] = data[:engagements].count
+    weekly_engagements = all_engagements
+        .where("task_engagements.engagement_time >= :start AND task_engagements.engagement_time < :end",
+               start: summary_stats[:week_start], end: summary_stats[:week_end])
 
-    if tasks_awaiting_feedback.count > 0
-      data[:oldest_task_days] = (Time.zone.today - tasks_awaiting_feedback.order("submission_date ASC").first.submission_date.to_date).to_i
-      data[:tasks_awaiting_feedback_count] = tasks_awaiting_feedback.count
+    data[:engagements] = all_engagements
+    data[:total_staff_engagements] = all_engagements.count
+    data[:staff_engagements] = weekly_engagements.where(engagement: [TaskStatus.complete.name, TaskStatus.feedback_exceeded.name, TaskStatus.redo.name, TaskStatus.discuss.name, TaskStatus.demonstrate.name, TaskStatus.fail.name]).count
+
+    # Weekly task engagements for this tutorial
+    data[:weekly_engagements_count] = weekly_engagements.count
+
+    tutorial_tasks = tasks_awaiting_feedback
+      .joins(task_definition: :tutorial_stream)
+      .joins(project: { tutorial_enrolments: :tutorial })
+      .where(tutorials: { id: tutorial.id })
+      .where(task_definitions: { tutorial_stream_id: tutorial_stream.id })
+      .distinct
+
+    if tutorial_tasks.count > 0
+      data[:oldest_task_days] = (Time.zone.now - tutorial_tasks.order("submission_date ASC").first.submission_date.to_time).to_i / 1.day
+      data[:tasks_awaiting_feedback_count] = tutorial_tasks.count
     else
       data[:oldest_task_days] = 0
       data[:tasks_awaiting_feedback_count] = 0
     end
 
-    data[:number_of_students] = number_of_students
+    data[:number_of_students] = tutorial.projects.count
+    tutorial_task_ids = tutorial.projects.joins(:tasks).pluck('tasks.id')
 
-    data[:total_staff_engagements] = task_engagements.where(engagement: [TaskStatus.complete.name, TaskStatus.feedback_exceeded.name, TaskStatus.redo.name, TaskStatus.discuss.name, TaskStatus.demonstrate.name, TaskStatus.fail.name]).count
-    data[:staff_engagements] = data[:engagements].where(engagement: [TaskStatus.complete.name, TaskStatus.feedback_exceeded.name, TaskStatus.redo.name, TaskStatus.discuss.name, TaskStatus.demonstrate.name, TaskStatus.fail.name]).count
+    data[:received_comments] = comments
+      .where(task_id: tutorial_task_ids)
+      .where("recipient_id = :staff_id AND task_comments.created_at > :start",
+             staff_id: data[:staff].id,
+             start: Time.zone.now - 7.days)
+      .distinct
 
-    data[:received_comments] = comments.where("recipient_id = :staff_id AND task_comments.created_at > :start", staff_id: data[:staff].id, start: Time.zone.today - 7.days).count
-    data[:sent_comments] = comments.where("task_comments.user_id = :staff_id AND task_comments.created_at > :start", staff_id: data[:staff].id, start: Time.zone.today - 7.days).count
-    data[:total_comments] = comments.where("task_comments.user_id = :staff_id", staff_id: data[:staff].id).count
+    data[:sent_comments] = comments
+      .where(task_id: tutorial_task_ids)
+      .where("task_comments.user_id = :staff_id AND task_comments.created_at > :start",
+             staff_id: data[:staff].id,
+             start: Time.zone.now - 7.days)
+      .distinct
 
-    summary_stats[:staff][self] = data
+    data[:total_comments] = comments
+      .where(task_id: tutorial_task_ids)
+      .where("task_comments.user_id = :staff_id",
+             staff_id: data[:staff].id)
+      .where(content_type: :text)
+      .distinct
+
+    summary_stats[:staff][data[:staff]] ||= {}
+    summary_stats[:staff][data[:staff]][:staff_engagements] ||= 0
+    summary_stats[:staff][data[:staff]][:tasks_awaiting_feedback_count] ||= 0
+    summary_stats[:staff][data[:staff]][:weekly_engagements_count] ||= 0
+    summary_stats[:staff][data[:staff]][:oldest_task_days] ||= 0
+
+    summary_stats[:staff][data[:staff]][:tasks_awaiting_feedback_count] += tutorial_tasks.count
+
+    summary_stats[:staff][data[:staff]][:weekly_engagements_count] += weekly_engagements.count
+    summary_stats[:staff][data[:staff]][:staff_engagements] += data[:staff_engagements].count
+
+    summary_stats[:staff][data[:staff]][:oldest_task_days] = [
+      summary_stats[:staff][data[:staff]][:oldest_task_days],
+      data[:oldest_task_days]
+    ].max
+
+    row.replace(data)
   end
 
   def send_weekly_status_email(summary_stats)
