@@ -27,7 +27,7 @@ The following students in your tutorials have been advised to revert their grade
 * Tasks changed state <%= @summary_stats[:unit_week_engagements] %> time<%= "s" unless @summary_stats[:unit_week_engagements] == 1 %> in this unit.
 <% end %>
 
-<% if @unit_role.is_convenor? %>
+<% if @unit_role.is_convenor? && !@summary_stats[:tutorial_streams].nil? && !@summary_stats[:tutorial_streams].empty?%>
 Here is a quick summary of how the tutors are going in this unit:
 
 <% @summary_stats[:tutorial_streams].each do |tutorial_stream, tutorial_stream_data | %>
