@@ -2495,17 +2495,22 @@ class Unit < ApplicationRecord
       # Continue if this tutorial stream is not linked to any task definition
       next unless task_definitions.any? { |td| td.tutorial_stream_id == tutorial_stream.id }
 
-      row = summary_stats[:tutorial_streams][tutorial_stream][:tutorials] = {}
+      row = summary_stats[:tutorial_streams][tutorial_stream][:tutorials] ||= {}
 
       tutorial_stream.tutorials.each do |tutorial|
           # Create new entry for tutorial row
-          row = summary_stats[:tutorial_streams][tutorial_stream][:tutorials] [tutorial] ||= {}
+          row = summary_stats[:tutorial_streams][tutorial_stream][:tutorials][tutorial] ||= {}
           tutorial.unit_role.populate_summary_stats(summary_stats, tutorial_stream, tutorial, row)
       end
     end
 
     staff.each do |ur|
-      ur.send_weekly_status_email(summary_stats)
+        summary_stats[:staff][ur.user] ||= {}
+        summary_stats[:staff][ur.user][:staff_engagements] ||= 0
+        summary_stats[:staff][ur.user][:tasks_awaiting_feedback_count] ||= 0
+        summary_stats[:staff][ur.user][:weekly_engagements_count] ||= 0
+        summary_stats[:staff][ur.user][:oldest_task_days] ||= 0
+        ur.send_weekly_status_email(summary_stats)
     end
 
     summary_stats[:staff] = {}
