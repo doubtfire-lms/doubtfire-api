@@ -31,6 +31,7 @@ The following students in your tutorials have been advised to revert their grade
 Here is a quick summary of how the tutors are going in this unit:
 
 <% @summary_stats[:tutorial_streams].each do |tutorial_stream, tutorial_stream_data | %>
+<% next unless tutorial_stream_data[:stream_linked_to_task_definition] %>
 Tutorial Stream: <%= tutorial_stream.name %>
 <% unless tutorial_stream_data.nil? || tutorial_stream_data[:tutorials].nil?%>
 -------------------------------------------------------------------------------------------------

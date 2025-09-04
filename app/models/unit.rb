@@ -2493,7 +2493,7 @@ class Unit < ApplicationRecord
       summary_stats[:tutorial_streams][tutorial_stream][:num_students_without_tutors] = projects_without_tutor.count
 
       # Continue if this tutorial stream is not linked to any task definition
-      next unless task_definitions.any? { |td| td.tutorial_stream_id == tutorial_stream.id }
+      next unless stream_linked_to_task_definition
 
       row = summary_stats[:tutorial_streams][tutorial_stream][:tutorials] ||= {}
 
