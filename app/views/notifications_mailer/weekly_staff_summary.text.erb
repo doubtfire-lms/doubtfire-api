@@ -40,7 +40,7 @@ Tutorial       | Name         | Number   | Task Assessments | Comments Made | Aw
 <%   sorted_data = tutorial_stream_data[:tutorials].sort_by { |tutorial, data| data[:staff]&.name } %>
 <%   sorted_data.each do | tutorial, data | %>
 <%    next unless data[:number_of_students] > 0%>
-<%= '%-14s' % tutorial.abbreviation.reverse.truncate(14).reverse %> | <%='%-12s' % data[:staff].name.truncate(12) %> | <%= '%8i' % data[:number_of_students] %> | <%= '%7i' % data[:total_staff_engagements] %> | <%= '%6i' % data[:staff_engagements].count %> | <%= '%5i' % data[:total_comments].uniq.count %> | <%= '%5i' % data[:sent_comments].uniq.count %> | <%= '%8i' % data[:tasks_awaiting_feedback_count] %> | <%= '%5i' % data[:oldest_task_days] %>d |
+<%= '%-14s' % tutorial.abbreviation&.reverse&.truncate(14)&.reverse || "N/A" %> | <%='%-12s' % data[:staff].name.truncate(12) %> | <%= '%8i' % data[:number_of_students] %> | <%= '%7i' % data[:total_staff_engagements] %> | <%= '%6i' % data[:staff_engagements].count %> | <%= '%5i' % data[:total_comments].uniq.count %> | <%= '%5i' % data[:sent_comments].uniq.count %> | <%= '%8i' % data[:tasks_awaiting_feedback_count] %> | <%= '%5i' % data[:oldest_task_days] %>d |
 <%   end %>
 -------------------------------------------------------------------------------------------------
 <% end %>
