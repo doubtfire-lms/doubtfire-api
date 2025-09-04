@@ -641,7 +641,7 @@ class Unit < ApplicationRecord
       return
     end
 
-    progress_callback.call(message: "Parsing CSV", rows_processed: 0) if progress_callback;
+    progress_callback.call(message: "Parsing CSV", rows_processed: 0) if progress_callback
 
     # Check if these headers should be processed by institution file or from DF format
     # Asking "Who will convert the users to the right format?"
@@ -701,6 +701,7 @@ class Unit < ApplicationRecord
 
     student_list = []
 
+    row_count = 0
     # Loop over csv rows converting to hash values
     CSV.foreach(file, headers: true,
                       header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
@@ -711,9 +712,10 @@ class Unit < ApplicationRecord
         errors << { row: row, message: "Missing headers: #{missing.join(', ')}" }
         next
       end
-
+      row_count += 1
       begin
         # Convert to hash...
+        progress_callback.call(message: "Parsing CSV", total_rows: row_count) if progress_callback
         row_data = import_settings[:fetch_row_data_lambda].call(row, self)
         row_data[:row] = row
         # Store in list...
@@ -748,7 +750,7 @@ class Unit < ApplicationRecord
   #   replace_existing_tutorial - boolean to indicate if tutorials in csv override ones in doubtfire
   #   replace_existing_campus - boolean to indicate if campus in csv override ones in doubtfire
   def sync_enrolment_with(enrolment_data, import_settings, result, progress_callback: nil)
-    progress_callback.call(message: "Validating CSV", rows_processed: 0) if progress_callback;
+    progress_callback.call(message: "Validating CSV", rows_processed: 0) if progress_callback
 
     # Get lists for reporting results
     errors = result[:errors]
@@ -850,10 +852,8 @@ class Unit < ApplicationRecord
     ignored = result[:ignored]
 
     # now apply the changes...
-    row_count = 0
-    changes.each_value do |row_data|
-      row_count += 1
-      progress_callback.call(message: "Importing students", total_rows: changes.count, rows_processed: row_count) if progress_callback
+    changes.each_value.with_index(1) do |row_data, row_count|
+      progress_callback&.call(message: "Importing students", total_rows: changes.count, rows_processed: row_count)
       begin
         row = row_data[:row]
         username = row_data[:username].downcase
@@ -878,27 +878,7 @@ class Unit < ApplicationRecord
 
         # Perform withdraw if needed...
         unless row_data[:enrolled]
-          # Find the user
-          project_participant = User.where(username: username)
-
-          # If they dont exist... ignore
-          if project_participant.nil? || project_participant.count == 0
-            ignored << { row: row, message: "Ignoring student to withdraw, as not enrolled" }
-          else
-            # Get the user's project
-            user_project = projects.where(user_id: project_participant.first.id).first
-
-            # If no project... then not enrolled
-            if user_project.nil? || !user_project.enrolled
-              ignored << { row: row, message: "Ignoring student to withdraw, as not enrolled" }
-            else
-              # Withdraw...
-              user_project.enrolled = false
-              user_project.save
-              success << { row: row, message: "Student was withdrawn" }
-            end
-          end
-
+          withdraw_user(username, success, ignored)
           # Move to next row as this was a withdraw...
           next
         end
@@ -938,6 +918,7 @@ class Unit < ApplicationRecord
 
           # Clear success message...
           success_message = String.new('')
+          ignored_message = String.new('No change.')
 
           # Now find the project for the user
           user_project = projects.where(user_id: project_participant.id).first
@@ -974,20 +955,24 @@ class Unit < ApplicationRecord
               tutorial = tutorial_cache[tutorial_code] || tutorial_with_abbr(tutorial_code)
               tutorial_cache[tutorial_code] ||= tutorial
 
-              if tutorial.present?
-                # Use tutorial as we have it :)
-                begin
+              next if tutorial.blank?
+
+              # Use tutorial as we have it :)
+              begin
+                unless user_project.enrolled_in?(tutorial)
                   user_project.enrol_in tutorial
                   success_message << ' Enrolled in ' << tutorial.abbreviation
-                rescue Exception => e
-                  errors << { row: row, message: "#{success_message} UNABLE TO enroll in #{tutorial.abbreviation} #{e.message}" }
+                  next
                 end
+                ignored_message << ' No change to ' << tutorial.abbreviation
+              rescue Exception => e
+                errors << { row: row, message: "#{success_message} UNABLE TO enroll in #{tutorial.abbreviation} #{e.message}" }
               end
             end
           end
 
           if success_message.empty?
-            ignored << { row: row, message: 'No change.' }
+            ignored << { row: row, message: ignored_message }
           else
             success << { row: row, message: success_message }
           end
@@ -1000,6 +985,32 @@ class Unit < ApplicationRecord
     end
 
     result
+  end
+
+  def withdraw_user(username, result)
+    success = result[:success]
+    ignored = result[:ignored]
+
+    # Find the user
+    project_participant = User.where(username: username)
+
+    # If they dont exist... ignore
+    if project_participant.nil? || project_participant.count == 0
+      ignored << { row: row, message: "Ignoring student to withdraw, as not enrolled" }
+    else
+      # Get the user's project
+      user_project = projects.where(user_id: project_participant.first.id).first
+
+      # If no project... then not enrolled
+      if user_project.nil? || !user_project.enrolled
+        ignored << { row: row, message: "Ignoring student to withdraw, as not enrolled" }
+      else
+        # Withdraw...
+        user_project.enrolled = false
+        user_project.save
+        success << { row: row, message: "Student was withdrawn" }
+      end
+    end
   end
 
   # Use the values in the CSV to set the enrolment of these
