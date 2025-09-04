@@ -149,28 +149,24 @@ class UnitRole < ApplicationRecord
     data[:number_of_students] = tutorial.projects.count
     tutorial_task_ids = tutorial.projects.joins(:tasks).pluck('tasks.id')
 
-    data[:received_comments] = comments
-      .where(task_id: tutorial_task_ids)
-      .where("recipient_id = :staff_id AND task_comments.created_at > :start",
-             staff_id: data[:staff].id,
-             start: Time.zone.now - 7.days)
-      .where(content_type: [:text, :assessment, :audio, :image, :pdf, :discussion, :extension])
-      .distinct
-
-    data[:sent_comments] = comments
-      .where(task_id: tutorial_task_ids)
-      .where("task_comments.user_id = :staff_id AND task_comments.created_at > :start",
-             staff_id: data[:staff].id,
-             start: Time.zone.now - 7.days)
-      .where(content_type: [:text, :assessment, :audio, :image, :pdf, :discussion, :extension])
-      .distinct
-
-    data[:total_comments] = comments
+    total_comments = comments
       .where(task_id: tutorial_task_ids)
       .where("task_comments.user_id = :staff_id",
              staff_id: data[:staff].id)
       .where(content_type: [:text, :assessment, :audio, :image, :pdf, :discussion, :extension])
       .distinct
+
+    data[:received_comments] = total_comments
+      .where("recipient_id = :staff_id AND task_comments.created_at > :start",
+             staff_id: data[:staff].id,
+             start: Time.zone.now - 7.days)
+
+    data[:sent_comments] = total_comments
+      .where("task_comments.user_id = :staff_id AND task_comments.created_at > :start",
+             staff_id: data[:staff].id,
+             start: Time.zone.now - 7.days)
+
+    data[:total_comments] = total_comments
 
     summary_stats[:staff][data[:staff]] ||= {}
     summary_stats[:staff][data[:staff]][:staff_engagements] ||= 0
