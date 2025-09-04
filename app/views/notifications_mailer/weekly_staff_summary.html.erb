@@ -79,6 +79,7 @@
         </ul>
     </p>
 <%  end %>
+<%# Else if unit role has no students %>
 <% else %>
     <p>
         <ul>
@@ -87,45 +88,59 @@
         </ul>
     </p>
 <% end %>
-<% if @unit_role.is_convenor? %>
-    <table>
-        <thead>
-            <tr>
-                <th rowspan="2" style="width:15%">Name</th>
-                <th rowspan="2" style="width:15%"># Stud</th>
-                <th colspan="2" style="width:20%">Assessments</th>
-                <th colspan="2" style="width:20%">Comments</th>
-                <th rowspan="2" style="width:15%">Awaiting Feedback</th>
-                <th rowspan="2" style="width:15%">Oldest Task</th>
-            </tr>
-            <tr>
-                <th>Total</th>
-                <th>Week</th>
-                <th>Total</th>
-                <th>Week</th>
-            </tr>
-        </thead>
-        <tbody>
-<%  @summary_stats[:staff].each do | user, data | %>
-<%    next unless data[:number_of_students] > 0%>
-            <tr>
-                    <td><%= '%-12s' % data[:staff].name.truncate(12) %></td>
-                    <td><%= '%8i'   % data[:number_of_students] %></td>
-                    <td><%= '%7i'   % data[:total_staff_engagements] %></td>
-                    <td><%= '%6i'   % data[:staff_engagements] %></td>
-                    <td><%= '%5i'   % data[:total_comments] %></td>
-                    <td><%= '%5i'   % data[:sent_comments] %></td>
-                    <td><%= '%8i'   % data[:tasks_awaiting_feedback_count] %></td>
-                    <td<%= ' style="background: red"' unless data[:oldest_task_days] < 10%>><%= '%6i'   % data[:oldest_task_days] %> days</td>
-            </tr>
-<%  end %>
-        </tbody>
-    </table>
-<% if @summary_stats[:num_students_without_tutors] > 0 %>
-    <p>
-        Please note that <%=@summary_stats[:num_students_without_tutors]%> student<%= "s" unless @summary_stats[:num_students_without_tutors] == 1 %> <%= are_is(@summary_stats[:num_students_without_tutors]) %> not allocated to a tutorial. Work submitted by <%= this_these(@summary_stats[:num_students_without_tutors]) %> student<%= "s" unless @summary_stats[:num_students_without_tutors] == 1 %> will not appear in any of the tutor inboxes!
-    </p>
-<% end %>
+
+<% if @unit_role.is_convenor? && !@summary_stats[:tutorial_streams].nil? && !@summary_stats[:tutorial_streams].empty?%>
+  <%# Create a table for each tutorial stream %>
+  <% @summary_stats[:tutorial_streams].each do |tutorial_stream, tutorial_stream_data | %>
+  <% next unless tutorial_stream_data[:stream_linked_to_task_definition] %>
+  <p>
+    Tutorial Stream: <%= tutorial_stream.name %>
+  </p>
+  <%# Skip table if no tutorials%>
+  <% unless tutorial_stream_data.nil? || tutorial_stream_data[:tutorials].nil?%>
+      <table>
+          <thead>
+              <tr>
+                  <th rowspan="2" style="width:15%">Tutorial</th>
+                  <th rowspan="2" style="width:15%">Name</th>
+                  <th rowspan="2" style="width:10%">Students</th>
+                  <th colspan="2" style="width:20%">Assessments</th>
+                  <th colspan="2" style="width:20%">Comments</th>
+                  <th rowspan="2" style="width:15%">Awaiting Feedback</th>
+                  <th rowspan="2" style="width:15%">Oldest Task</th>
+              </tr>
+              <tr>
+                  <th>Total</th>
+                  <th>Week</th>
+                  <th>Total</th>
+                  <th>Week</th>
+              </tr>
+          </thead>
+          <tbody>
+  <%   sorted_data = tutorial_stream_data[:tutorials].sort_by { |tutorial, data| data[:staff]&.name } %>
+  <%   sorted_data.each do | tutorial, data | %>
+  <%    next unless data[:number_of_students] > 0%>
+        <tr>
+          <td><%= '%-12s' % tutorial.abbreviation&.reverse&.truncate(14)&.reverse || "N/A" %></td>
+          <td><%= '%-12s' % data[:staff].name.truncate(14) %></td>
+          <td><%= '%8i'   % data[:number_of_students] %></td>
+          <td><%= '%7i'   % data[:total_staff_engagements] %></td>
+          <td><%= '%6i'   % data[:staff_engagements].count %></td>
+          <td><%= '%5i'   % data[:total_comments].uniq.count %></td>
+          <td><%= '%5i'   % data[:sent_comments].uniq.count %></td>
+          <td><%= '%8i'   % data[:tasks_awaiting_feedback_count] %></td>
+          <td <%=' style="background: red"' unless data[:oldest_task_days] < 7%>><%= '%6i'   % data[:oldest_task_days] %> days</td>
+        </tr>
+  <%   end %>
+          </tbody>
+      </table>
+  <%   end %>
+    <% if tutorial_stream_data[:num_students_without_tutors] > 0 %>
+        <p>
+            Please note that <%=tutorial_stream_data[:num_students_without_tutors]%> student<%= "s" unless tutorial_stream_data[:num_students_without_tutors] == 1 %> <%= are_is(tutorial_stream_data[:num_students_without_tutors]) %> not allocated to a tutorial in this stream. Work submitted by <%= this_these(tutorial_stream_data[:num_students_without_tutors]) %> student<%= "s" unless tutorial_stream_data[:num_students_without_tutors] == 1 %> will not appear in any of the tutor inboxes!
+        </p>
+    <% end %>
+  <% end %>
 <% end %>
     <p>
         Cheers, <br />
