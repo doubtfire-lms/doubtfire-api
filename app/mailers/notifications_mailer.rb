@@ -16,12 +16,12 @@ class NotificationsMailer < ApplicationMailer
 
     @received_comments = @unit.comments
                               .where("task_comments.recipient_id = :uid AND task_comments.created_at > :start", uid: @staff.id, start: 7.days.ago)
-                              .where(content_type: :text)
+                              .where(content_type: [:text, :assessment, :audio, :image, :pdf, :discussion, :extension])
                               .count
 
     @sent_comments = @unit.comments
                           .where("task_comments.user_id = :uid AND task_comments.created_at > :start", uid: @staff.id, start: 7.days.ago)
-                          .where(content_type: :text)
+                          .where(content_type: [:text, :assessment, :audio, :image, :pdf, :discussion, :extension])
                           .count
 
     @data = {
