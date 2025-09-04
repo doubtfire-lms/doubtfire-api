@@ -9,9 +9,15 @@ class MarkingSession < ApplicationRecord
   validates :start_time, presence: true
 
   def update_session_details
-    update(
-      end_time: DateTime.now,
-      duration_minutes: ((end_time - start_time) / 60).to_i
-    )
+    now = DateTime.now
+    if start_time.present?
+      duration = ((now.to_f - start_time.to_f) / 60).to_i
+      update(
+        end_time: now,
+        duration_minutes: duration
+      )
+    else
+      update(end_time: now, duration_minutes: 0)
+    end
   end
 end
