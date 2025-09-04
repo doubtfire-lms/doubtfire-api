@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-24](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-23...v10.0.0-24) (2025-09-04)
+
+
+### Bug Fixes
+
+* ensure staff rows are initialised ([a919c27](https://github.com/b0ink/doubtfire-deploy/commit/a919c27b6de13b31aec73021dc07374888eeffb5))
+* get correct number of projects not enrolled in a tutorial per stream ([fbe7252](https://github.com/b0ink/doubtfire-deploy/commit/fbe7252b1f62f44047221504028774e299990d58))
+* get correct staff engagement count ([f813319](https://github.com/b0ink/doubtfire-deploy/commit/f8133193a9ba6140b180bbf6c646f64934a6ec05))
+
 ## [10.0.0-23](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-22...v10.0.0-23) (2025-08-27)
 
 ## [10.0.0-22](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-21...v10.0.0-22) (2025-08-27)
