@@ -915,6 +915,10 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
       }
       post "/api/units/#{unit.id}/task_definitions/#{task_def1.id}/prerequisites", data_to_post
       assert_equal 201, last_response.status, last_response_body
+      assert_equal task_def1.id, last_response_body['task_definition_id']
+      assert_equal task_def2.id, last_response_body['prerequisite_id']
+      # We didn't pass in a task status, so we expect it to default to complete
+      assert_equal 'complete', last_response_body['task_status']
 
       delete "/api/units/#{unit.id}/task_definitions/#{task_def1.id}/prerequisites/#{task_def2.id}"
       assert_equal 200, last_response.status, last_response_body
