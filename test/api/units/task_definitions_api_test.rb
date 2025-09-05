@@ -887,8 +887,8 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     task_def1 = FactoryBot.create(:task_definition, unit: unit, upload_requirements: upload_reqs)
     task_def2 = FactoryBot.create(:task_definition, unit: unit, upload_requirements: upload_reqs)
 
-    task_def1.update(target_grade: 0)
-    task_def2.update(target_grade: 0)
+    task_def1.update(target_grade: 0, target_date: Time.zone.today + 1.week)
+    task_def2.update(target_grade: 0, target_date: Time.zone.today + 1.week)
 
     admin = FactoryBot.create(:user, :admin)
     convenor = FactoryBot.create(:user, :convenor)
