@@ -11,7 +11,7 @@ class TaskPrerequisite < ApplicationRecord
 
   def prerequisite_due_date_not_after_task
     return unless task_definition && prerequisite
-    if prerequisite.due_date > task_definition.due_date
+    if prerequisite.target_date > task_definition.target_date
       errors.add(:prerequisite, "due date cannot be later than the task definition's due date")
     end
   end
