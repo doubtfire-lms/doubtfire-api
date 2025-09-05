@@ -769,13 +769,13 @@ class TaskDefinitionsApi < Grape::API
       error!({ error: 'Not authorised to add task prerequisite' }, 403)
     end
 
-    TaskPrerequisite.create!(
+    prereq = TaskPrerequisite.create!(
       task_definition: task_def,
       prerequisite: task_prerequisite,
       task_status_id: TaskStatus.complete.id
     )
 
-    true
+    present prereq, with: Entities::TaskPrerequisiteEntity
   end
 
   # Create task definition prerequsite
