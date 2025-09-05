@@ -2,28 +2,25 @@
 <html>
 <head>
   <style type="text/css">
-    body {
+    .main {
       font-family: "Lucida Grande", "Helvetica Neue", Helvetica, Arial, sans-serif;
       color: #333;
       font-size: 14px;
-      width: 500px;
+      width: 100%;
+      max-width: 800px;
       margin: 100px auto 0px auto;
-      font-size: 0.9em;
-    }
-    main, .main {
-      background-image: url('<%= @doubtfire_host %>/assets/images/logo.svg');
+      background-image: url('<%= @doubtfire_host %>/assets/images/logo.png');
       background-size: 3.5em;
       background-repeat: no-repeat;
-      background-position: 30px 45px;
+      background-position: top 40px right 45px;
       padding: 30px 40px;
-      padding-left: 100px;
-      border: solid 1px #aaa;
-      border-radius: 7px;
+      border: solid 1px rgb(240, 240, 240);
       line-height: 200%;
       text-align: justify;
     }
     footer, .footer {
-      text-align: right;
+      font-family: "Lucida Grande", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      text-align: center;
       margin-top: 10px;
       color: #aaa;
       font-size: 0.7em;
@@ -44,7 +41,7 @@
   </style>
 </head>
 <body>
-  <main class="main">
+  <div class="main">
     <h1> <%= @doubtfire_product_name %> Notification </h1>
     <p>Hi <%= @student.first_name %>,</p>
     <% if @project.portfolio_auto_generated %>
@@ -59,7 +56,7 @@
         Cheers, <br />
         The <%= @doubtfire_product_name %> Team on behalf of <%= @convenor.name %>
     </p>
-  </main>
+  </div>
   <footer class="footer">
     <a href="<%= @unsubscribe_url %>">Unsubscribe</a> | Generated with <%= @doubtfire_product_name %>
   </footer>
