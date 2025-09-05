@@ -20,9 +20,12 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert td2.valid?
     assert td3.valid?
 
-    td1.update(target_grade: 1)
-    td2.update(target_grade: 1)
-    td3.update(target_grade: 1)
+    td1.update(target_grade: 1, target_date: Time.zone.today + 1.week)
+    td2.update(target_grade: 1, target_date: Time.zone.today + 1.week)
+    td3.update(target_grade: 1, target_date: Time.zone.today + 1.week)
+    td1.reload
+    td2.reload
+    td3.reload
 
     # Ensure prerequisite cant be the same as the task definition
     prereq = TaskPrerequisite.new(
@@ -36,12 +39,14 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     prereq.destroy!
 
     # Ensure prerequisite 1 is valid
-    prereq1 = TaskPrerequisite.create!(
+    prereq1 = TaskPrerequisite.new(
       task_definition: td1,
       prerequisite: td2,
       task_status_id: TaskStatus.complete.id
     )
-    assert prereq1.valid?
+    assert prereq1.valid?, prereq1.errors.full_messages
+
+    prereq1.save!
 
     # Ensure that we cant add a reverse prerequisite while prereq1 exists
     # Otherwise, neither task would be able to be submitted
@@ -51,7 +56,8 @@ class TaskDefinitionTest < ActiveSupport::TestCase
       task_status_id: TaskStatus.complete.id
     )
 
-    assert_not prereq2.valid?
+    assert_not prereq2.valid?, "Reverse task prerequisite should not be valid"
+
     assert_includes prereq2.errors[:base], "reverse prerequisite already exists"
     prereq2.destroy!
 
@@ -62,7 +68,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
       task_status_id: TaskStatus.complete.id
     )
 
-    assert prereq3.valid?
+    assert prereq3.valid?, prereq3.errors.full_messages
     prereq3.destroy!
     prereq1.destroy!
 
@@ -118,12 +124,12 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert td4.valid?
     assert td5.valid?
 
-    td1.update(target_grade: 3) # HD Task
-    td2.update(target_grade: 2) # D Task
-    td3.update(target_grade: 1) # C Task
-    td4.update(target_grade: 0) # P Task
+    td1.update(target_grade: 3, target_date: Time.zone.today + 1.week) # HD Task
+    td2.update(target_grade: 2, target_date: Time.zone.today + 1.week) # D Task
+    td3.update(target_grade: 1, target_date: Time.zone.today + 1.week) # C Task
+    td4.update(target_grade: 0, target_date: Time.zone.today + 1.week) # P Task
 
-    td5.update(target_grade: 0) # P Task
+    td5.update(target_grade: 0, target_date: Time.zone.today + 1.week) # P Task
 
     prereq = TaskPrerequisite.new(
       task_definition: td2,
@@ -177,7 +183,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
       task_status_id: TaskStatus.complete.id
     )
 
-    assert prereq.valid?, "Prerequisite task with lower or equal target grade should be valid"
+    assert prereq.valid?, prereq.errors.full_messages
     prereq.destroy!
 
     prereq = TaskPrerequisite.new(
@@ -224,8 +230,10 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert td3.valid?
 
     # Test 1
-    td1.update(target_grade: 0, due_date: Time.zone.now + 1.week)
-    td2.update(target_grade: 0, due_date: Time.zone.now - 1.week)
+    td1.update(target_grade: 0, due_date: Time.zone.today + 1.week, target_date: Time.zone.today + 1.week)
+    td2.update(target_grade: 0, due_date: Time.zone.today - 1.week, target_date: Time.zone.today - 1.week)
+    td1.reload
+    td2.reload
 
     prereq = TaskPrerequisite.new(
       task_definition: td1,
@@ -238,8 +246,10 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     prereq.destroy!
 
     # Test 2
-    td1.update(target_grade: 0, due_date: Time.zone.now - 1.week)
-    td2.update(target_grade: 0, due_date: Time.zone.now + 1.week)
+    td1.update(target_grade: 0, due_date: Time.zone.today - 1.week, target_date: Time.zone.today - 1.week)
+    td2.update(target_grade: 0, due_date: Time.zone.today + 1.week, target_date: Time.zone.today + 1.week)
+    td1.reload
+    td2.reload
 
     prereq = TaskPrerequisite.new(
       task_definition: td1,
