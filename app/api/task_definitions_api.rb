@@ -786,19 +786,19 @@ class TaskDefinitionsApi < Grape::API
     requires :prerequisite_id, type: Integer, desc: 'The prerequisite task definition'
     requires :task_status_required, type: String, desc: "ID of the task status required to mark the prerequisite as complete"
   end
-  put '/units/:unit_id/task_definitions/:task_def_id/prerequisites' do
+  put '/units/:unit_id/task_definitions/:task_def_id/prerequisites/:prerequisite_id' do
     unit = Unit.find(params[:unit_id])
     task_def = unit.task_definitions.find(params[:task_def_id])
-    task_prerequisite = unit.task_definitions.find(params[:prerequisite_id])
 
     unless authorise? current_user, task_def, :create_task_prerequisite
       error!({ error: 'Not authorised to add task prerequisite' }, 403)
     end
 
-    prereq = TaskPrerequisite.find_by!(
-      task_definition: task_def,
-      prerequisite: task_prerequisite
-    )
+    prereq = TaskPrerequisite.find_by(id: params[:prerequisite_id], task_definition: task_def)
+
+    unless authorise? current_user, prereq.prerequisite, :create_task_prerequisite
+      error!({ error: 'Not authorised to add task prerequisite' }, 403)
+    end
 
     status = TaskStatus.status_for_name(params[:task_status_required])
     prereq.update!(task_status_id: status.id)
