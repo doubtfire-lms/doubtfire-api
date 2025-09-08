@@ -153,8 +153,14 @@ class UnitRole < ApplicationRecord
       .where(task_id: tutorial_task_ids)
       .where("task_comments.user_id = :staff_id",
              staff_id: data[:staff].id)
-      .where(content_type: [:text, :assessment, :audio, :image, :pdf, :discussion, :extension])
+      .where(content_type: [:text, :assessment, :audio, :image, :pdf, :discussion, :extension, :discussed_in_class])
       .distinct
+
+    data[:total_tasks_discussed] = total_comments
+                .where(content_type: :discussed_in_class)
+
+    data[:weekly_tasks_discussed] = data[:total_tasks_discussed]
+                .where("task_comments.created_at > :start", start: Time.zone.now - 7.days)
 
     data[:received_comments] = total_comments
       .where("recipient_id = :staff_id AND task_comments.created_at > :start",
@@ -168,15 +174,10 @@ class UnitRole < ApplicationRecord
 
     data[:total_comments] = total_comments
 
-    summary_stats[:staff][data[:staff]] ||= {}
-    summary_stats[:staff][data[:staff]][:staff_engagements] ||= 0
-    summary_stats[:staff][data[:staff]][:tasks_awaiting_feedback_count] ||= 0
-    summary_stats[:staff][data[:staff]][:weekly_engagements_count] ||= 0
-    summary_stats[:staff][data[:staff]][:oldest_task_days] ||= 0
-
     summary_stats[:staff][data[:staff]][:staff_engagements] += data[:staff_engagements].count
     summary_stats[:staff][data[:staff]][:tasks_awaiting_feedback_count] += tutorial_tasks.count
     summary_stats[:staff][data[:staff]][:weekly_engagements_count] += weekly_engagements.count
+    summary_stats[:staff][data[:staff]][:weekly_total_tasks_discussed] += data[:weekly_tasks_discussed].count
     summary_stats[:staff][data[:staff]][:oldest_task_days] = [
       summary_stats[:staff][data[:staff]][:oldest_task_days],
       data[:oldest_task_days]

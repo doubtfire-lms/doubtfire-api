@@ -30,7 +30,8 @@ class NotificationsMailer < ApplicationMailer
       tasks_awaiting_feedback_count: summary_stats[:staff][unit_role.user][:tasks_awaiting_feedback_count], # For the tutor
       weekly_engagements_count: summary_stats[:staff][unit_role.user][:weekly_engagements_count], # Engagements from the student?
       staff_engagements: summary_stats[:staff][unit_role.user][:staff_engagements], # Engagements by the tutor
-      oldest_task_days: summary_stats[:staff][unit_role.user][:oldest_task_days]
+      oldest_task_days: summary_stats[:staff][unit_role.user][:oldest_task_days],
+      weekly_total_tasks_discussed: summary_stats[:staff][unit_role.user][:weekly_total_tasks_discussed] # Total for the tutor for the week for the tutor
     }
 
     @convenor = @unit.main_convenor_user
