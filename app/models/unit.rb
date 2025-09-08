@@ -2595,6 +2595,16 @@ class Unit < ApplicationRecord
     end
 
     # Group tutorials by tutor
+    group_tutorials_by_tutor(summary_stats)
+
+    staff.each do |ur|
+        ur.send_weekly_status_email(summary_stats)
+    end
+
+    summary_stats[:staff] = {}
+  end
+
+  def group_tutorials_by_tutor(summary_stats)
     summary_stats[:tutorial_streams].each_value do |tutorial_stream_data|
       next unless tutorial_stream_data[:stream_linked_to_task_definition]
       tutorial_stream_data[:unit_roles] ||= {}
@@ -2627,12 +2637,6 @@ class Unit < ApplicationRecord
         unit_role_row[:tutorials] += 1
       end
     end
-
-    staff.each do |ur|
-        ur.send_weekly_status_email(summary_stats)
-    end
-
-    summary_stats[:staff] = {}
   end
 
   def archive_submissions(out)
