@@ -1462,6 +1462,72 @@ class Unit < ApplicationRecord
     tutorial_streams.map { |ts| ts.abbreviation }
   end
 
+  def times_tasks_have_been_assessed
+    CSV.generate() do |csv|
+      # Add headers
+      csv << ([
+        'Tutorial',
+        'Tutor',
+        'Student Username',
+        'Student Name',
+        'Project ID',
+        'Task Definition',
+        'Task ID',
+        'complete',
+        'need_help',
+        'fix_and_resubmit',
+        'redo',
+        'discuss',
+        'demonstrate',
+        'ready_for_feedback',
+      ])
+
+      tasks
+      .joins("LEFT JOIN task_engagements ON task_engagements.task_id = tasks.id")
+      .joins(:task_definition)
+      .joins("INNER JOIN users ON users.id = projects.user_id")
+      .joins("LEFT OUTER JOIN (#{tutorial_enrolment_subquery}) as sq ON sq.project_id = projects.id AND (sq.tutorial_stream_id = task_definitions.tutorial_stream_id OR sq.tutorial_stream_id IS NULL)")
+      .joins("LEFT JOIN tutorials ON tutorials.id = sq.tutorial_id")
+      .select(
+        "tutorials.abbreviation AS tutorial_abbreviation",
+        "tutorials.unit_role_id as unit_role_id",
+        "users.username AS username",
+        "users.first_name AS first_name",
+        "users.last_name AS last_name",
+        "tasks.project_id AS project_id",
+        "task_definitions.abbreviation AS task_abbr",
+        "tasks.id AS task_id",
+        "COUNT(CASE WHEN task_engagements.engagement = 'Complete' THEN 1 END) AS complete_count",
+        "COUNT(CASE WHEN task_engagements.engagement = 'Need Help' THEN 1 END) AS need_help_count",
+        "COUNT(CASE WHEN task_engagements.engagement = 'Fix and Resubmit' THEN 1 END) AS fix_and_resubmit_count",
+        "COUNT(CASE WHEN task_engagements.engagement = 'Redo' THEN 1 END) AS redo_count",
+        "COUNT(CASE WHEN task_engagements.engagement = 'Discuss' THEN 1 END) AS discuss_count",
+        "COUNT(CASE WHEN task_engagements.engagement = 'Demonstrate' THEN 1 END) AS demonstrate_count",
+        "COUNT(CASE WHEN task_engagements.engagement = 'Ready for Feedback' THEN 1 END) AS ready_for_feedback_count"
+      )
+      .group("tasks.id, task_definitions.abbreviation, tutorials.id, users.id")
+      .each do |row|
+        csv << [
+          row["tutorial_abbreviation"],
+          row["unit_role_id"].present? ? UnitRole.find(row["unit_role_id"]).user.name : "",
+          row["username"],
+          "#{row['first_name']} #{row['last_name']}",
+          row["project_id"],
+          row["task_abbr"],
+          row["task_id"],
+          row["complete_count"],
+          row["need_help_count"],
+          row["fix_and_resubmit_count"],
+          row["redo_count"],
+          row["discuss_count"],
+          row["demonstrate_count"],
+          row["ready_for_feedback_count"]
+        ]
+      end
+    end
+  end
+
+
   def days_awaiting_feedback_by_tutorial_csv
     CSV.generate() do |csv|
       # Add headers
