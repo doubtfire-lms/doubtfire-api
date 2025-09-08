@@ -1462,6 +1462,76 @@ class Unit < ApplicationRecord
     tutorial_streams.map { |ts| ts.abbreviation }
   end
 
+  def times_tasks_have_been_assessed
+    CSV.generate() do |csv|
+      # Add headers
+      csv << ([
+        'Tutorial',
+        'Tutor',
+        'Student Username',
+        'Student Name',
+        'Project ID',
+        'Task Definition',
+        'Task ID',
+        'complete',
+        'need_help',
+        'fix_and_resubmit',
+        'redo',
+        'discuss',
+        'demonstrate',
+        'ready_for_feedback',
+        'discussed_in_class'
+      ])
+
+      tasks
+      .joins("LEFT JOIN task_engagements ON task_engagements.task_id = tasks.id")
+      .joins(:task_definition)
+      .joins("INNER JOIN users ON users.id = projects.user_id")
+      .joins("LEFT OUTER JOIN (#{tutorial_enrolment_subquery}) as sq ON sq.project_id = projects.id AND (sq.tutorial_stream_id = task_definitions.tutorial_stream_id OR sq.tutorial_stream_id IS NULL)")
+      .joins("LEFT JOIN tutorials ON tutorials.id = sq.tutorial_id")
+      .joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id AND task_comments.content_type = 'discussed_in_class'")
+      .select(
+        "tutorials.abbreviation AS tutorial_abbreviation",
+        "tutorials.unit_role_id as unit_role_id",
+        "users.username AS username",
+        "users.first_name AS first_name",
+        "users.last_name AS last_name",
+        "tasks.project_id AS project_id",
+        "task_definitions.abbreviation AS task_abbr",
+        "tasks.id AS task_id",
+        "(SELECT COUNT(*) FROM task_engagements te WHERE te.task_id = tasks.id AND te.engagement = 'Complete') AS complete_count",
+        "(SELECT COUNT(*) FROM task_engagements te WHERE te.task_id = tasks.id AND te.engagement = 'Need Help') AS need_help_count",
+        "(SELECT COUNT(*) FROM task_engagements te WHERE te.task_id = tasks.id AND te.engagement = 'Fix and Resubmit') AS fix_and_resubmit_count",
+        "(SELECT COUNT(*) FROM task_engagements te WHERE te.task_id = tasks.id AND te.engagement = 'Redo') AS redo_count",
+        "(SELECT COUNT(*) FROM task_engagements te WHERE te.task_id = tasks.id AND te.engagement = 'Discuss') AS discuss_count",
+        "(SELECT COUNT(*) FROM task_engagements te WHERE te.task_id = tasks.id AND te.engagement = 'Demonstrate') AS demonstrate_count",
+        "(SELECT COUNT(*) FROM task_engagements te WHERE te.task_id = tasks.id AND te.engagement = 'Ready for Feedback') AS ready_for_feedback_count",
+        "(SELECT COUNT(*) FROM task_comments tc WHERE tc.task_id = tasks.id AND tc.content_type = 'discussed_in_class') AS discussed_in_class_count",
+      )
+      .group("tasks.id, task_definitions.abbreviation, tutorials.id, users.id")
+      .each do |row|
+        csv << [
+          row["tutorial_abbreviation"],
+          row["unit_role_id"].present? ? UnitRole.find(row["unit_role_id"]).user.name : "",
+          row["username"],
+          "#{row['first_name']} #{row['last_name']}",
+          row["project_id"],
+          row["task_abbr"],
+          row["task_id"],
+          row["complete_count"],
+          row["need_help_count"],
+          row["fix_and_resubmit_count"],
+          row["redo_count"],
+          row["discuss_count"],
+          row["demonstrate_count"],
+          row["ready_for_feedback_count"],
+          row["discussed_in_class_count"]
+        ]
+      end
+    end
+  end
+
+
   def days_awaiting_feedback_by_tutorial_csv
     CSV.generate() do |csv|
       # Add headers
