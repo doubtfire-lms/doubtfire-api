@@ -7,7 +7,7 @@
       color: #333;
       font-size: 14px;
       width: 100%;
-      max-width: 800px;
+      max-width: 900px;
       margin: 100px auto 0px auto;
       background-image: url('<%= @doubtfire_host %>/assets/images/logo.png');
       background-size: 3.5em;
@@ -63,6 +63,7 @@
             <li>Tasks changed state <%= @summary_stats[:unit_week_engagements] %> time<%= "s" unless @summary_stats[:unit_week_engagements] == 1 %> in this unit.</li>
             <li>Your student's tasks changed state <%= @data[:weekly_engagements_count] %> time<%= "s" unless @data[:weekly_engagements_count] == 1 %>.</li>
             <li>You assigned a new status to <%= @data[:staff_engagements] %> task<%= "s" unless @data[:staff_engagements] == 1 %>.</li>
+            <li>You have discussed <%= @data[:weekly_total_tasks_discussed] %> task<%= "s" unless @data[:weekly_total_tasks_discussed] == 1 %>.</li>
             <li>You have <%= @data[:tasks_awaiting_feedback_count] %> task<%= "s" unless @data[:tasks_awaiting_feedback_count] == 1 %> waiting for feedback.</li>
 <%  if @data[:tasks_awaiting_feedback_count] > 0 %>
             <li>The oldest of these tasks was submitted <%= @data[:oldest_task_days] %> day<%= "s" unless @data[:oldest_task_days] == 1 %> ago.</li>
@@ -107,8 +108,11 @@
                   <th colspan="2" style="width:20%">Comments</th>
                   <th rowspan="2" style="width:15%">Awaiting Feedback</th>
                   <th rowspan="2" style="width:15%">Oldest Task</th>
+                  <th colspan="2" style="width:15%">Discussions</th>
               </tr>
               <tr>
+                  <th>Total</th>
+                  <th>Week</th>
                   <th>Total</th>
                   <th>Week</th>
                   <th>Total</th>
@@ -128,6 +132,8 @@
           <td><%= '%5i'   % data[:sent_comments].uniq.count %></td>
           <td><%= '%8i'   % data[:tasks_awaiting_feedback_count] %></td>
           <td <%=' style="background: red"' unless data[:oldest_task_days] < 7%>><%= '%6i'   % data[:oldest_task_days] %> days</td>
+          <td><%= '%5i'   % data[:total_tasks_discussed].uniq.count %></td>
+          <td><%= '%5i'   % data[:weekly_tasks_discussed].uniq.count %></td>
         </tr>
   <%   end %>
           </tbody>
