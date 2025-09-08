@@ -2594,6 +2594,40 @@ class Unit < ApplicationRecord
       end
     end
 
+    # Group tutorials by tutor
+    summary_stats[:tutorial_streams].each_value do |tutorial_stream_data|
+      next unless tutorial_stream_data[:stream_linked_to_task_definition]
+      tutorial_stream_data[:unit_roles] ||= {}
+
+      tutorial_stream_data[:tutorials].each do |tutorial, data|
+        unit_role = tutorial.unit_role
+        unit_role_row = tutorial_stream_data[:unit_roles][unit_role] ||= {
+          staff_engagements: 0,
+          tasks_awaiting_feedback_count: 0,
+          weekly_engagements_count: 0,
+          total_tasks_discussed: 0,
+          weekly_tasks_discussed: 0,
+          oldest_task_days: 0,
+          number_of_students: 0,
+          total_staff_engagements: 0,
+          total_comments: [],
+          sent_comments: [],
+          tutorials: 0
+        }
+        unit_role_row[:staff_engagements] += data[:staff_engagements].count
+        unit_role_row[:tasks_awaiting_feedback_count] += data[:tasks_awaiting_feedback_count]
+        unit_role_row[:weekly_engagements_count] += data[:weekly_engagements_count]
+        unit_role_row[:total_tasks_discussed] += data[:total_tasks_discussed].count
+        unit_role_row[:weekly_tasks_discussed] += data[:weekly_tasks_discussed].count
+        unit_role_row[:oldest_task_days] = [unit_role_row[:oldest_task_days], data[:oldest_task_days]].max
+        unit_role_row[:number_of_students] += data[:number_of_students]
+        unit_role_row[:total_staff_engagements] += data[:total_staff_engagements]
+        unit_role_row[:total_comments].concat(data[:total_comments].to_a)
+        unit_role_row[:sent_comments].concat(data[:sent_comments].to_a)
+        unit_role_row[:tutorials] += 1
+      end
+    end
+
     staff.each do |ur|
         ur.send_weekly_status_email(summary_stats)
     end

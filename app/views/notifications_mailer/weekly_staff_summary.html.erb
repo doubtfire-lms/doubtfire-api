@@ -120,20 +120,22 @@
               </tr>
           </thead>
           <tbody>
-  <%   sorted_data = tutorial_stream_data[:tutorials].sort_by { |tutorial, data| data[:staff]&.name } %>
-  <%   sorted_data.each do | tutorial, data | %>
+  <% sorted_data = tutorial_stream_data[:unit_roles].sort_by do |unit_role, data|
+     [-data[:oldest_task_days].to_i, -data[:tasks_awaiting_feedback_count].to_i]
+   end %>
+  <%   sorted_data.each do | unit_role, data | %>
   <%    next unless data[:number_of_students] > 0%>
         <tr>
-          <td><%= '%-12s' % data[:staff].name.truncate(14) %></td>
+          <td><%= '%-12s' % unit_role.user.name.truncate(14)  %></td>
           <td><%= '%8i'   % data[:number_of_students] %></td>
           <td><%= '%7i'   % data[:total_staff_engagements] %></td>
-          <td><%= '%6i'   % data[:staff_engagements].count %></td>
+          <td><%= '%6i'   % data[:staff_engagements] %></td>
           <td><%= '%5i'   % data[:total_comments].uniq.count %></td>
           <td><%= '%5i'   % data[:sent_comments].uniq.count %></td>
           <td><%= '%8i'   % data[:tasks_awaiting_feedback_count] %></td>
           <td <%=' style="background: red"' unless data[:oldest_task_days] < 7%>><%= '%6i'   % data[:oldest_task_days] %> days</td>
-          <td><%= '%5i'   % data[:total_tasks_discussed].uniq.count %></td>
-          <td><%= '%5i'   % data[:weekly_tasks_discussed].uniq.count %></td>
+          <td><%= '%5i'   % data[:total_tasks_discussed] %></td>
+          <td><%= '%5i'   % data[:weekly_tasks_discussed] %></td>
         </tr>
   <%   end %>
           </tbody>
