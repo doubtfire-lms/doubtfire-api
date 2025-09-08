@@ -11,6 +11,7 @@ Hope you had a good week! Here's a summary of what has happened in this unit ove
 * Tasks changed state <%= @summary_stats[:unit_week_engagements] %> time<%= "s" unless @summary_stats[:unit_week_engagements] == 1 %> in this unit.
 * Your student's tasks changed state <%= @data[:weekly_engagements_count] %> time<%= "s" unless @data[:weekly_engagements_count] == 1 %>.
 * You assigned a new status to <%= @data[:staff_engagements] %> task<%= "s" unless @data[:staff_engagements] == 1 %>.
+* You have discussed <%= @data[:weekly_total_tasks_discussed] %> task<%= "s" unless @data[:weekly_total_tasks_discussed] == 1 %>.
 * You have <%= @data[:tasks_awaiting_feedback_count] %> task<%= "s" unless @data[:tasks_awaiting_feedback_count] == 1 %> waiting for feedback.
 <%   if @data[:tasks_awaiting_feedback_count] > 0 %>
 * The oldest of these tasks was submitted <%= @data[:oldest_task_days] %> day<%= "s" unless @data[:oldest_task_days] == 1 %> ago.
@@ -34,16 +35,16 @@ Here is a quick summary of how the tutors are going in this unit:
 <% next unless tutorial_stream_data[:stream_linked_to_task_definition] %>
 Tutorial Stream: <%= tutorial_stream.name %>
 <% unless tutorial_stream_data.nil? || tutorial_stream_data[:tutorials].nil?%>
--------------------------------------------------------------------------------------------------
-Tutorial       | Name         | Number   | Task Assessments | Comments Made | Awaiting | Oldest |
-               |              | Students | Total   |  Week  | Total | Week  | Feedback | Task   |
--------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------
+Tutorial       | Name         | Number   | Task Assessments | Comments Made | Awaiting | Oldest | Tasks Discussed
+               |              | Students | Total   |  Week  | Total | Week  | Feedback | Task   | Total   |  Week
+-----------------------------------------------------------------------------------------------------------------
 <%   sorted_data = tutorial_stream_data[:tutorials].sort_by { |tutorial, data| data[:staff]&.name } %>
 <%   sorted_data.each do | tutorial, data | %>
 <%    next unless data[:number_of_students] > 0%>
-<%= '%-14s' % tutorial.abbreviation&.reverse&.truncate(14)&.reverse || "N/A" %> | <%='%-12s' % data[:staff].name.truncate(12) %> | <%= '%8i' % data[:number_of_students] %> | <%= '%7i' % data[:total_staff_engagements] %> | <%= '%6i' % data[:staff_engagements].count %> | <%= '%5i' % data[:total_comments].uniq.count %> | <%= '%5i' % data[:sent_comments].uniq.count %> | <%= '%8i' % data[:tasks_awaiting_feedback_count] %> | <%= '%5i' % data[:oldest_task_days] %>d |
+<%= '%-14s' % tutorial.abbreviation&.reverse&.truncate(14)&.reverse || "N/A" %> | <%='%-12s' % data[:staff].name.truncate(12) %> | <%= '%8i' % data[:number_of_students] %> | <%= '%7i' % data[:total_staff_engagements] %> | <%= '%6i' % data[:staff_engagements].count %> | <%= '%5i' % data[:total_comments].uniq.count %> | <%= '%5i' % data[:sent_comments].uniq.count %> | <%= '%8i' % data[:tasks_awaiting_feedback_count] %> | <%= '%5i' % data[:oldest_task_days] %>d | <%= '%5i' % data[:total_tasks_discussed].count %> | <%= '%5i' % data[:weekly_tasks_discussed].count %> |
 <%   end %>
--------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------
 <% end %>
 <%   if tutorial_stream_data[:num_students_without_tutors].to_i > 0 %>
 Please note that <%=tutorial_stream_data[:num_students_without_tutors].to_i%> student<%= "s" unless tutorial_stream_data[:num_students_without_tutors].to_i == 1 %> <%= are_is(tutorial_stream_data[:num_students_without_tutors].to_i) %> not allocated to a tutorial in this stream. Work submitted by <%= this_these(tutorial_stream_data[:num_students_without_tutors].to_i) %> student<%= "s" unless tutorial_stream_data[:num_students_without_tutors].to_i == 1 %> will not appear in any of the tutor inboxes!
