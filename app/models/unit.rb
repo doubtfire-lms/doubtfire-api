@@ -1480,6 +1480,7 @@ class Unit < ApplicationRecord
         'discuss',
         'demonstrate',
         'ready_for_feedback',
+        'discussed_in_class'
       ])
 
       tasks
@@ -1488,6 +1489,7 @@ class Unit < ApplicationRecord
       .joins("INNER JOIN users ON users.id = projects.user_id")
       .joins("LEFT OUTER JOIN (#{tutorial_enrolment_subquery}) as sq ON sq.project_id = projects.id AND (sq.tutorial_stream_id = task_definitions.tutorial_stream_id OR sq.tutorial_stream_id IS NULL)")
       .joins("LEFT JOIN tutorials ON tutorials.id = sq.tutorial_id")
+      .joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id AND task_comments.content_type = 'discussed_in_class'")
       .select(
         "tutorials.abbreviation AS tutorial_abbreviation",
         "tutorials.unit_role_id as unit_role_id",
@@ -1497,13 +1499,14 @@ class Unit < ApplicationRecord
         "tasks.project_id AS project_id",
         "task_definitions.abbreviation AS task_abbr",
         "tasks.id AS task_id",
-        "COUNT(CASE WHEN task_engagements.engagement = 'Complete' THEN 1 END) AS complete_count",
-        "COUNT(CASE WHEN task_engagements.engagement = 'Need Help' THEN 1 END) AS need_help_count",
-        "COUNT(CASE WHEN task_engagements.engagement = 'Fix and Resubmit' THEN 1 END) AS fix_and_resubmit_count",
-        "COUNT(CASE WHEN task_engagements.engagement = 'Redo' THEN 1 END) AS redo_count",
-        "COUNT(CASE WHEN task_engagements.engagement = 'Discuss' THEN 1 END) AS discuss_count",
-        "COUNT(CASE WHEN task_engagements.engagement = 'Demonstrate' THEN 1 END) AS demonstrate_count",
-        "COUNT(CASE WHEN task_engagements.engagement = 'Ready for Feedback' THEN 1 END) AS ready_for_feedback_count"
+        "(SELECT COUNT(*) FROM task_engagements te WHERE te.task_id = tasks.id AND te.engagement = 'Complete') AS complete_count",
+        "(SELECT COUNT(*) FROM task_engagements te WHERE te.task_id = tasks.id AND te.engagement = 'Need Help') AS need_help_count",
+        "(SELECT COUNT(*) FROM task_engagements te WHERE te.task_id = tasks.id AND te.engagement = 'Fix and Resubmit') AS fix_and_resubmit_count",
+        "(SELECT COUNT(*) FROM task_engagements te WHERE te.task_id = tasks.id AND te.engagement = 'Redo') AS redo_count",
+        "(SELECT COUNT(*) FROM task_engagements te WHERE te.task_id = tasks.id AND te.engagement = 'Discuss') AS discuss_count",
+        "(SELECT COUNT(*) FROM task_engagements te WHERE te.task_id = tasks.id AND te.engagement = 'Demonstrate') AS demonstrate_count",
+        "(SELECT COUNT(*) FROM task_engagements te WHERE te.task_id = tasks.id AND te.engagement = 'Ready for Feedback') AS ready_for_feedback_count",
+        "(SELECT COUNT(*) FROM task_comments tc WHERE tc.task_id = tasks.id AND tc.content_type = 'discussed_in_class') AS discussed_in_class_count",
       )
       .group("tasks.id, task_definitions.abbreviation, tutorials.id, users.id")
       .each do |row|
@@ -1521,7 +1524,8 @@ class Unit < ApplicationRecord
           row["redo_count"],
           row["discuss_count"],
           row["demonstrate_count"],
-          row["ready_for_feedback_count"]
+          row["ready_for_feedback_count"],
+          row["discussed_in_class_count"]
         ]
       end
     end
