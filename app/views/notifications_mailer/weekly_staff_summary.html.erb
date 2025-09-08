@@ -101,7 +101,6 @@
       <table>
           <thead>
               <tr>
-                  <th rowspan="2" style="width:15%">Tutorial</th>
                   <th rowspan="2" style="width:15%">Name</th>
                   <th rowspan="2" style="width:10%">Students</th>
                   <th colspan="2" style="width:20%">Assessments</th>
@@ -121,7 +120,6 @@
   <%   sorted_data.each do | tutorial, data | %>
   <%    next unless data[:number_of_students] > 0%>
         <tr>
-          <td><%= '%-12s' % tutorial.abbreviation&.reverse&.truncate(14)&.reverse || "N/A" %></td>
           <td><%= '%-12s' % data[:staff].name.truncate(14) %></td>
           <td><%= '%8i'   % data[:number_of_students] %></td>
           <td><%= '%7i'   % data[:total_staff_engagements] %></td>
