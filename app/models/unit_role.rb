@@ -174,13 +174,6 @@ class UnitRole < ApplicationRecord
 
     data[:total_comments] = total_comments
 
-    summary_stats[:staff][data[:staff]] ||= {}
-    summary_stats[:staff][data[:staff]][:staff_engagements] ||= 0
-    summary_stats[:staff][data[:staff]][:tasks_awaiting_feedback_count] ||= 0
-    summary_stats[:staff][data[:staff]][:weekly_engagements_count] ||= 0
-    summary_stats[:staff][data[:staff]][:weekly_total_tasks_discussed] ||= 0
-    summary_stats[:staff][data[:staff]][:oldest_task_days] ||= 0
-
     summary_stats[:staff][data[:staff]][:staff_engagements] += data[:staff_engagements].count
     summary_stats[:staff][data[:staff]][:tasks_awaiting_feedback_count] += tutorial_tasks.count
     summary_stats[:staff][data[:staff]][:weekly_engagements_count] += weekly_engagements.count

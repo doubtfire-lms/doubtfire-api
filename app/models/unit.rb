@@ -2478,6 +2478,12 @@ class Unit < ApplicationRecord
     return if days_from_start_of_unit < 4 || days_to_end_of_unit < 0
 
     staff.each do |ur|
+      summary_stats[:staff][ur.user] ||= {}
+      summary_stats[:staff][ur.user][:staff_engagements] ||= 0
+      summary_stats[:staff][ur.user][:tasks_awaiting_feedback_count] ||= 0
+      summary_stats[:staff][ur.user][:weekly_engagements_count] ||= 0
+      summary_stats[:staff][ur.user][:weekly_total_tasks_discussed] ||= 0
+      summary_stats[:staff][ur.user][:oldest_task_days] ||= 0
       summary_stats[:revert][ur.user] = []
     end
 
@@ -2519,11 +2525,6 @@ class Unit < ApplicationRecord
     end
 
     staff.each do |ur|
-        summary_stats[:staff][ur.user] ||= {}
-        summary_stats[:staff][ur.user][:staff_engagements] ||= 0
-        summary_stats[:staff][ur.user][:tasks_awaiting_feedback_count] ||= 0
-        summary_stats[:staff][ur.user][:weekly_engagements_count] ||= 0
-        summary_stats[:staff][ur.user][:oldest_task_days] ||= 0
         ur.send_weekly_status_email(summary_stats)
     end
 
