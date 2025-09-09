@@ -35,14 +35,16 @@ Here is a quick summary of how the tutors are going in this unit:
 <% next unless tutorial_stream_data[:stream_linked_to_task_definition] %>
 Tutorial Stream: <%= tutorial_stream.name %>
 <% unless tutorial_stream_data.nil? || tutorial_stream_data[:tutorials].nil?%>
------------------------------------------------------------------------------------------------------------------
-Tutorial       | Name         | Number   | Task Assessments | Comments Made | Awaiting | Oldest | Tasks Discussed
-               |              | Students | Total   |  Week  | Total | Week  | Feedback | Task   | Total   |  Week
------------------------------------------------------------------------------------------------------------------
-<%   sorted_data = tutorial_stream_data[:tutorials].sort_by { |tutorial, data| data[:staff]&.name } %>
-<%   sorted_data.each do | tutorial, data | %>
+-------------------------------------------------------------------------------------------------
+Name           | Number   | Task Assessments | Comments Made | Awaiting | Oldest | Tasks Discussed
+               | Students | Total   |  Week  | Total | Week  | Feedback | Task   | Total  |  Week
+-------------------------------------------------------------------------------------------------
+<% sorted_data = tutorial_stream_data[:unit_roles].sort_by do |unit_role, data|
+     [-data[:oldest_task_days].to_i, -data[:tasks_awaiting_feedback_count].to_i]
+   end %>
+<%   sorted_data.each do | unit_role, data | %>
 <%    next unless data[:number_of_students] > 0%>
-<%= '%-14s' % tutorial.abbreviation&.reverse&.truncate(14)&.reverse || "N/A" %> | <%='%-12s' % data[:staff].name.truncate(12) %> | <%= '%8i' % data[:number_of_students] %> | <%= '%7i' % data[:total_staff_engagements] %> | <%= '%6i' % data[:staff_engagements].count %> | <%= '%5i' % data[:total_comments].uniq.count %> | <%= '%5i' % data[:sent_comments].uniq.count %> | <%= '%8i' % data[:tasks_awaiting_feedback_count] %> | <%= '%5i' % data[:oldest_task_days] %>d | <%= '%5i' % data[:total_tasks_discussed].count %> | <%= '%5i' % data[:weekly_tasks_discussed].count %> |
+<%='%-14s' % unit_role.user.name.truncate(14) %> | <%= '%8i' % data[:number_of_students] %> | <%= '%7i' % data[:total_staff_engagements] %> | <%= '%6i' % data[:staff_engagements] %> | <%= '%5i' % data[:total_comments].uniq.count %> | <%= '%5i' % data[:sent_comments].uniq.count %> | <%= '%8i' % data[:tasks_awaiting_feedback_count] %> | <%= '%5i' % data[:oldest_task_days] %>d | <%= '%6i' % data[:total_tasks_discussed] %> | <%= '%5i' % data[:weekly_tasks_discussed] %> |
 <%   end %>
 -----------------------------------------------------------------------------------------------------------------
 <% end %>
