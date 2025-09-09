@@ -12,7 +12,7 @@ class SessionTracker
       created_at: DateTime.now
     )
 
-    session.update_session_details if action == 'assessing'
+    session.update_session_details
 
     activity
   end
@@ -22,9 +22,24 @@ class SessionTracker
       marker: user,
       unit: unit,
       ip_address: ip_address
-    ).where("updated_at > ?", THRESHOLD.minutes.ago).last
+    ).where("start_time > ?", THRESHOLD.minutes.ago).last
 
     if session.nil?
+      # Find the last session for this user/unit/ip and end it at 15 minutes
+      last_session = MarkingSession.where(
+        marker: user,
+        unit: unit,
+        ip_address: ip_address
+      ).order(start_time: :desc).first
+
+      if last_session && last_session.end_time.nil?
+        end_time = last_session.start_time + THRESHOLD.minutes
+        last_session.update(
+          end_time: end_time,
+          duration_minutes: THRESHOLD
+        )
+      end
+
       session = MarkingSession.create!(
         marker: user,
         unit: unit,

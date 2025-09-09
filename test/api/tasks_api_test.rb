@@ -41,6 +41,72 @@ class TasksApiTest < ActiveSupport::TestCase
     end
   end
 
+  def test_get_task_submission_details_creates_session_and_activity
+    # Start with a fresh unit and task definition
+    unit = FactoryBot.create(:unit, auto_apply_extension_before_deadline: false)
+    td = TaskDefinition.new({
+        unit_id: unit.id,
+        tutorial_stream: unit.tutorial_streams.first,
+        name: 'Task past due - for revert',
+        description: 'Task past due',
+        weighting: 4,
+        target_grade: 0,
+        start_date: Time.zone.now - 2.weeks,
+        target_date: Time.zone.now - 1.week,
+        due_date: Time.zone.now + 1.week,
+        abbreviation: 'TaskPastDueForRevert',
+        restrict_status_updates: false,
+        upload_requirements: [ ],
+        plagiarism_warn_pct: 0.8,
+        is_graded: false,
+        max_quality_pts: 0
+      })
+    td.save!
+
+    data_to_post = {
+      trigger: 'ready_for_feedback'
+    }
+
+    # Get the first student - who now has this task
+    project = unit.active_projects.first
+
+    # Track the counts before we make the request
+    session_count_before = MarkingSession.count
+    activity_count_before = SessionActivity.count
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: unit.main_convenor_user)
+
+    # Make a submission for this student
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
+    assert_equal 201, last_response.status
+
+    # Make the request
+    get "/api/projects/#{project.id}/task_def_id/#{td.id}/submission_details"
+
+    # Check if counts increased
+    session_count_after = MarkingSession.count
+    activity_count_after = SessionActivity.count
+
+    # Assert that we created at least one new session and activity
+    assert_operator session_count_after, :>, session_count_before, "No new sessions created"
+    assert_operator activity_count_after, :>, activity_count_before, "No new activities created"
+
+    # Get the most recent session and activity
+    # Since we know they were just created
+    session = MarkingSession.order(created_at: :desc).first
+    activity = SessionActivity.order(created_at: :desc).first
+
+    # Now test the associations
+    assert_equal unit.id, session.unit_id
+    assert_equal activity.marking_session_id, session.id
+    assert_equal 'inbox', activity.action
+
+    # Clean up session activities first to avoid foreign key constraint issues
+    SessionActivity.delete_all
+    MarkingSession.delete_all
+  end
+
   def test_task_get_with_streams
     # The GET we are testing
     unit = FactoryBot.create(:unit, perform_submissions: true, stream_count: 1, campus_count: 2)
