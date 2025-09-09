@@ -752,4 +752,83 @@ class TaskDefinitionsApi < Grape::API
 
     task_def.has_jplag_report?
   end
+
+  # Create task definition prerequsite
+  desc 'Create new task definition prerequisite'
+  params do
+    requires :unit_id, type: Integer, desc: 'The unit that has the task definition'
+    requires :task_def_id, type: Integer, desc: 'The task definition to add the prerequisite to'
+    requires :prerequisite_id, type: Integer, desc: 'The prerequisite task definition'
+  end
+  post '/units/:unit_id/task_definitions/:task_def_id/prerequisites' do
+    unit = Unit.find(params[:unit_id])
+    task_def = unit.task_definitions.find(params[:task_def_id])
+    task_prerequisite = unit.task_definitions.find(params[:prerequisite_id])
+
+    unless authorise? current_user, task_def, :create_task_prerequisite
+      error!({ error: 'Not authorised to add task prerequisite' }, 403)
+    end
+
+    prereq = TaskPrerequisite.create!(
+      task_definition: task_def,
+      prerequisite: task_prerequisite,
+      task_status_id: TaskStatus.complete.id
+    )
+
+    present prereq, with: Entities::TaskPrerequisiteEntity
+  end
+
+  # Create task definition prerequsite
+  desc 'Update a task prerequisite'
+  params do
+    requires :unit_id, type: Integer, desc: 'The unit that has the task definition'
+    requires :task_def_id, type: Integer, desc: 'The task definition to add the prerequisite to'
+    requires :prerequisite_id, type: Integer, desc: 'The prerequisite task definition'
+    requires :task_status_required, type: String, desc: "ID of the task status required to mark the prerequisite as complete"
+  end
+  put '/units/:unit_id/task_definitions/:task_def_id/prerequisites/:prerequisite_id' do
+    unit = Unit.find(params[:unit_id])
+    task_def = unit.task_definitions.find(params[:task_def_id])
+
+    unless authorise? current_user, task_def, :create_task_prerequisite
+      error!({ error: 'Not authorised to add task prerequisite' }, 403)
+    end
+
+    prereq = TaskPrerequisite.find_by(id: params[:prerequisite_id], task_definition: task_def)
+
+    unless authorise? current_user, prereq.prerequisite, :create_task_prerequisite
+      error!({ error: 'Not authorised to add task prerequisite' }, 403)
+    end
+
+    status = TaskStatus.status_for_name(params[:task_status_required])
+    prereq.update!(task_status_id: status.id)
+
+    true
+  end
+
+  desc 'Remove task definition prerequisite'
+  params do
+    requires :unit_id, type: Integer, desc: 'The unit that has the task definition'
+    requires :task_def_id, type: Integer, desc: 'The task definition to remove the prerequisite from'
+    requires :prerequisite_id, type: Integer, desc: 'The prerequisite task definition to remove'
+  end
+  delete '/units/:unit_id/task_definitions/:task_def_id/prerequisites/:prerequisite_id' do
+    unit = Unit.find(params[:unit_id])
+    task_def = unit.task_definitions.find(params[:task_def_id])
+    prereq_task = unit.task_definitions.find(params[:prerequisite_id])
+
+    unless authorise? current_user, task_def, :create_task_prerequisite
+      error!({ error: 'Not authorised to remove task prerequisite' }, 403)
+    end
+
+    prereq_record = TaskPrerequisite.find_by(task_definition: task_def, prerequisite: prereq_task)
+    if prereq_record.nil?
+      error!({ error: 'Prerequisite not found' }, 404)
+    end
+
+    prereq_record.destroy
+
+    true
+  end
+
 end
