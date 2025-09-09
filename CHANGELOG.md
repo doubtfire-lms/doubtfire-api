@@ -2,6 +2,57 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-27](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-26...v10.0.0-27) (2025-09-09)
+
+
+### Features
+
+* add task prerequisites ([5a0e673](https://github.com/b0ink/doubtfire-deploy/commit/5a0e6732f779380a7159ff03ee544aef752039f2))
+* ensure prerequisite tasks have been submitted ([013428c](https://github.com/b0ink/doubtfire-deploy/commit/013428c522edf228893f0743a2743170e0e05f0b))
+
+
+### Bug Fixes
+
+* check target date instead of deadline date ([165d1ab](https://github.com/b0ink/doubtfire-deploy/commit/165d1abb143329b5afdeae1afa7ad5b536b3f9fc))
+
+## [10.0.0-26](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-25...v10.0.0-26) (2025-09-09)
+
+## [10.0.0-25](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-24...v10.0.0-25) (2025-09-08)
+
+
+### Features
+
+* add tasks discussed stats ([70dc9c6](https://github.com/b0ink/doubtfire-deploy/commit/70dc9c61e92254c4322f16d90e207fb706cc3c91))
+* csv to download task assessment counts ([f40214e](https://github.com/b0ink/doubtfire-deploy/commit/f40214e338479e8d145ab0f72640daf1bf481707))
+
+## [10.0.0-24](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-23...v10.0.0-24) (2025-09-04)
+
+
+### Bug Fixes
+
+* ensure staff rows are initialised ([a919c27](https://github.com/b0ink/doubtfire-deploy/commit/a919c27b6de13b31aec73021dc07374888eeffb5))
+* get correct number of projects not enrolled in a tutorial per stream ([fbe7252](https://github.com/b0ink/doubtfire-deploy/commit/fbe7252b1f62f44047221504028774e299990d58))
+* get correct staff engagement count ([f813319](https://github.com/b0ink/doubtfire-deploy/commit/f8133193a9ba6140b180bbf6c646f64934a6ec05))
+
+## [10.0.0-23](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-22...v10.0.0-23) (2025-08-27)
+
+## [10.0.0-22](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-21...v10.0.0-22) (2025-08-27)
+
+
+### Features
+
+* add attendance marked task comment ([1505242](https://github.com/b0ink/doubtfire-deploy/commit/150524243d99f4821daa7489064d1b324673b9b7))
+
+## [10.0.0-21](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-20...v10.0.0-21) (2025-08-26)
+
+
+### Features
+
+* env var to set jplag minimum token match ([8c04f38](https://github.com/b0ink/doubtfire-deploy/commit/8c04f388e435451595191c9bc627fdec59cf8244))
+* use env var for max file size ([f5f4b29](https://github.com/b0ink/doubtfire-deploy/commit/f5f4b2955b7910c06b5a552f07549355ac913dd6))
+
+## [10.0.0-20](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-19...v10.0.0-20) (2025-08-21)
+
 ## [10.0.0-19](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-18...v10.0.0-19) (2025-08-14)
 
 
