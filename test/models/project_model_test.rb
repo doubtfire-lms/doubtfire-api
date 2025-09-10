@@ -221,4 +221,23 @@ class ProjectModelTest < ActiveSupport::TestCase
     # Check that the deadline has been extended by the spec con days
     assert_equal task_definition.reload.due_date.to_date + 2.days, task.due_date
   end
+
+  def test_unique_project_on_unit_and_user
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0)
+    student1 = FactoryBot.create(:user, :student)
+    student2 = FactoryBot.create(:user, :student)
+
+    # Create project for student1
+    project1 = FactoryBot.create(:project, unit: unit, user: student1)
+    assert project1.valid?
+
+    # Create project for student2
+    project2 = FactoryBot.build(:project, unit: unit, user: student2)
+    assert project2.valid?
+
+    # Attempt to create duplicate project for student1
+    project3 = FactoryBot.build(:project, unit: unit, user: student1)
+    assert_not project3.valid?
+    assert_includes project3.errors[:user_id], "has already been taken"
+  end
 end

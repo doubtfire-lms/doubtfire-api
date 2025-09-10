@@ -73,6 +73,12 @@ module Doubtfire
     # directory under root but is overridden using DF_JPLAG_REPORT_DIR environment
     # variable.
     config.jplag_report_dir = ENV['DF_JPLAG_REPORT_DIR'] || Rails.root.join('jplag/results').to_s
+    config.jplag_min_tokens = ENV.fetch('DF_JPLAG_MIN_TOKENS', -1)
+
+    # ==> File size limits
+    # Sets the global file size limit per upload requirement
+    # Defaults to 10MB (10,000,000 bytes)
+    config.max_file_size = ENV.fetch('DF_MAX_FILE_SIZE', 10_000_000)
 
     # ==> Load credentials from env
     credentials.secret_key_base = ENV.fetch('DF_SECRET_KEY_BASE', Rails.env.production? ? nil : '9e010ee2f52af762916406fd2ac488c5694a6cc784777136e657511f8bbc7a73f96d59c0a9a778a0d7cf6406f8ecbf77efe4701dfbd63d8248fc7cc7f32dea97')

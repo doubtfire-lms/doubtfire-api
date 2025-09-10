@@ -42,6 +42,9 @@ class Project < ApplicationRecord
   after_update :check_withdraw_from_groups, if: :saved_change_to_enrolled?
   after_update :update_task_stats, if: :saved_change_to_target_grade? # TODO: consider making this an async task!
 
+  # Don't create project if one already exists for user_id in this unit_id
+  validates :user_id, uniqueness: { scope: :unit_id }
+
   #
   # Permissions around project data
   #
@@ -643,14 +646,15 @@ class Project < ApplicationRecord
 
   def send_weekly_status_email(summary_stats, middle_of_unit)
     did_revert_to_pass = false
-    if middle_of_unit && should_revert_to_pass && !portfolio_exists?
-      self.target_grade = 0
-      save
-      did_revert_to_pass = true
+    # TODO: refactor automatic target grade reset
+    # if middle_of_unit && should_revert_to_pass && !portfolio_exists?
+    #   self.target_grade = 0
+    #   save
+    #   did_revert_to_pass = true
 
-      summary_stats[:revert_count] = summary_stats[:revert_count] + 1
-      summary_stats[:revert][main_convenor_user] << self
-    end
+    #   summary_stats[:revert_count] = summary_stats[:revert_count] + 1
+    #   summary_stats[:revert][main_convenor_user] << self
+    # end
 
     return unless student.receive_feedback_notifications
     return if portfolio_exists? && !middle_of_unit

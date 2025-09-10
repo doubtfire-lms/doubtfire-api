@@ -7,6 +7,8 @@ class UnitsApi < Grape::API
   helpers AuthorisationHelpers
   helpers MimeCheckHelpers
   helpers CsvHelper
+  helpers SidekiqHelper
+  helpers FileHelper
 
   before do
     authenticated?
@@ -332,8 +334,20 @@ class UnitsApi < Grape::API
 
     ensure_csv!(params[:file][:tempfile])
 
-    # Actually import...
-    unit.import_users_from_csv(params[:file][:tempfile])
+    import_csv_dir = Rails.root.join(FileHelper.tmp_file_dir, 'csv')
+
+    file_name = File.join(import_csv_dir, "import-student-csv-#{unit.id}-#{Process.pid}-#{Thread.current.object_id}.csv")
+    FileUtils.mkdir_p(import_csv_dir)
+
+    csv = CSV.read(params[:file][:tempfile], headers: true)
+    CSV.open(file_name, "w", write_headers: true, headers: csv.headers) do |out|
+      csv.each { |row| out << row }
+    end
+
+    # Queue student import onto sidekiq
+    job_id = ImportStudentsJob.perform_async(unit.id, file_name)
+    job = setup_job(job_id)
+    present job, with: Entities::SidekiqJobEntity
   end
 
   desc 'Upload CSV with the students to un-enrol from the unit'
@@ -373,6 +387,30 @@ class UnitsApi < Grape::API
     unit.export_users_to_csv
   end
 
+  desc 'Download CSV of how many times each task changed status'
+  get '/csv/units/:id/task_assessment_counts' do
+    unit = Unit.find(params[:id])
+    unless authorise? current_user, unit, :download_unit_csv
+      error!({ error: "Not authorised to download CSV of student tasks in #{unit.code}" }, 403)
+    end
+
+    job_id = DownloadTaskAssessmentCountsCsvJob.perform_async(unit.id)
+    job = setup_job(job_id)
+    present job, with: Entities::SidekiqJobEntity
+  end
+
+  desc 'Download CSV of all student tasks awaiting feedback in this unit'
+  get '/csv/units/:id/tasks_awaiting_feedback' do
+    unit = Unit.find(params[:id])
+    unless authorise? current_user, unit, :download_unit_csv
+      error!({ error: "Not authorised to download CSV of student tasks in #{unit.code}" }, 403)
+    end
+
+    job_id = DownloadTasksAwaitingFeedbackCsvJob.perform_async(unit.id)
+    job = setup_job(job_id)
+    present job, with: Entities::SidekiqJobEntity
+  end
+
   desc 'Download CSV of all student tasks in this unit'
   get '/csv/units/:id/task_completion' do
     unit = Unit.find(params[:id])
@@ -380,11 +418,9 @@ class UnitsApi < Grape::API
       error!({ error: "Not authorised to download CSV of student tasks in #{unit.code}" }, 403)
     end
 
-    content_type 'application/octet-stream'
-    header['Content-Disposition'] = "attachment; filename=#{unit.code}-TaskCompletion.csv"
-    header['Access-Control-Expose-Headers'] = 'Content-Disposition'
-    env['api.format'] = :binary
-    unit.task_completion_csv
+    job_id = DownloadTaskCompletionCsvJob.perform_async(unit.id)
+    job = setup_job(job_id)
+    present job, with: Entities::SidekiqJobEntity
   end
 
   desc 'Download the stats related to the number of students aiming for each grade'
@@ -424,11 +460,22 @@ class UnitsApi < Grape::API
       error!({ error: "Not authorised to download stats of statistics for #{unit.code}" }, 403)
     end
 
-    content_type 'application/octet-stream'
-    header['Content-Disposition'] = "attachment; filename=#{unit.code}-TutorAssessments.csv"
-    header['Access-Control-Expose-Headers'] = 'Content-Disposition'
-    env['api.format'] = :binary
+    job_id = DownloadTutorAssessmentStatsJob.perform_async(unit.id)
+    job = setup_job(job_id)
+    present job, with: Entities::SidekiqJobEntity
+  end
 
-    unit.tutor_assessment_csv
+  desc 'Compress portfolios into zip file'
+  get '/submission/units/:id/portfolio/zip' do
+    unit = Unit.find(params[:id])
+    unless authorise? current_user, unit, :get_students
+      error!({ error: "Not authorised to download portfolios for unit '#{unit.code}'" }, 403)
+    end
+
+    # Queue portfolio downloads to sidekiq
+    job_id = DownloadPortfoliosJob.perform_async(current_user.id, unit.id)
+    job = setup_job(job_id)
+
+    present job, with: Entities::SidekiqJobEntity
   end
 end

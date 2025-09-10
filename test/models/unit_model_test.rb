@@ -20,7 +20,8 @@ class UnitModelTest < ActiveSupport::TestCase
   def test_sync_unit
     import_settings = {
       replace_existing_campus: false,
-      replace_existing_tutorial: false
+      replace_existing_tutorial: false,
+      merge_duplicate_students: false
     }
 
     student = FactoryBot.create :user, :student
@@ -82,6 +83,75 @@ class UnitModelTest < ActiveSupport::TestCase
 
     @unit.projects.first.destroy
     campus2.destroy!
+  end
+
+  def test_sync_unit_merge_duplicate_students
+    import_settings = {
+      replace_existing_campus: false,
+      replace_existing_tutorial: true,
+      merge_duplicate_students: true
+    }
+
+    student = FactoryBot.create :user, :student
+
+    tutorial_stream1 = @unit.tutorial_streams.first
+    tutorial_stream2 = FactoryBot.create(:tutorial_stream, unit: @unit)
+
+    tutorial1 = FactoryBot.create :tutorial, unit: @unit, campus: Campus.first, tutorial_stream: tutorial_stream1
+    tutorial2 = FactoryBot.create :tutorial, unit: @unit, campus: Campus.first, tutorial_stream: tutorial_stream2
+
+    student_list = [
+      {
+        unit_code: 'COS10001',
+        username: student.username,
+        student_id: student.student_id,
+        first_name: student.first_name,
+        last_name: student.last_name,
+        nickname: student.nickname,
+        email: student.email,
+        tutorials: [tutorial1.abbreviation],
+        enrolled: true,
+        campus: Campus.first.abbreviation
+      },
+      {
+        unit_code: 'COS10001',
+        username: student.username,
+        student_id: student.student_id,
+        first_name: student.first_name,
+        last_name: student.last_name,
+        nickname: student.nickname,
+        email: student.email,
+        tutorials: [tutorial2.abbreviation],
+        enrolled: true,
+        campus: Campus.first.abbreviation
+      }
+    ]
+
+    result = {
+      success: [],
+      ignored: [],
+      errors: []
+    }
+
+    @unit.sync_enrolment_with(student_list, import_settings, result)
+
+    assert_equal 1, result[:ignored].count, result.inspect
+    assert_equal 0, result[:errors].count, result.inspect
+    assert_equal 1, result[:success].count, result.inspect
+
+    assert_equal 2, @unit.tutorials.count
+
+    project = @unit.projects.first
+    assert project.valid?
+
+    # Ensure that tutorials from both rows were merged and student was enrolled into each
+    assert project.enrolled_in?(tutorial1)
+    assert project.enrolled_in?(tutorial2)
+
+    @unit.projects.first.destroy
+    tutorial1.destroy!
+    tutorial2.destroy!
+    tutorial_stream2.destroy!
   end
 
   def test_import_tasks_worked
@@ -485,7 +555,9 @@ class UnitModelTest < ActiveSupport::TestCase
 
     result = unit.import_users_from_csv test_file_path('SIT101-Enrol-Students.csv')
     unit.reload
-    assert_equal 1, result[:errors].count, result.inspect
+    # 1 Error due to invalid email + 2 Errors for failed tutorial/campus validation
+    assert_equal 3, result[:errors].count, result.inspect
+    assert_equal(2, result[:errors].count { |e| e[:message].include?("Enrolled student. UNABLE TO enroll in") }, "Expected two students to be created but failed tutorial enrolments")
     assert_equal 1, result[:ignored].count, result.inspect
     assert_equal 10, unit.projects.count, result.inspect
 

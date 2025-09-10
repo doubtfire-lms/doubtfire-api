@@ -161,14 +161,14 @@ module Feedback
       context_model = context_type.classify.constantize.find(params[:context_id])
       learning_outcome = LearningOutcome.find(params[:id])
 
-      unless authorise? current_user, context_model, :get_feedback_chips
+      unless authorise? current_user, context_model, :create_feedback_chips
         error!({ error: 'You are not authorised to download feedback chips in this context.' }, 403)
       end
 
       title = learning_outcome.abbreviation
 
       content_type 'application/octet-stream'
-      header['Content-Disposition'] = "attachment; filename=#{title}--Feedback_Chips.csv"
+      header['Content-Disposition'] = "attachment; filename=#{title}-FeedbackChips.csv"
       header['Access-Control-Expose-Headers'] = 'Content-Disposition'
       env['api.format'] = :binary
       learning_outcome.export_feedback_chips_to_csv
@@ -185,14 +185,14 @@ module Feedback
       context_type = params[:context_type_plural].singularize.camelize
       context_model = context_type.classify.constantize.find(params[:context_id])
 
-      unless authorise? current_user, context_model, :get_los
+      unless authorise? current_user, context_model, :create_feedback_chips
         error!({ error: 'You are not authorised to download feedback chips in this context.' }, 403)
       end
 
       title = context_model.name
 
       content_type 'application/octet-stream'
-      header['Content-Disposition'] = "attachment; filename=#{title}--Feedback_Chips.csv"
+      header['Content-Disposition'] = "attachment; filename=#{title}-FeedbackChips.csv"
       header['Access-Control-Expose-Headers'] = 'Content-Disposition'
       env['api.format'] = :binary
 
@@ -217,7 +217,7 @@ module Feedback
       learning_outcome = context_model.learning_outcomes.find(params[:id])
 
       unless authorise? current_user, learning_outcome, :upload_csv
-        error!({ error: 'Not authorised to upload CSV of outcomes' }, 403)
+        error!({ error: 'Not authorised to upload CSV of feedback chips for this outcome' }, 403)
       end
 
       # Actually import...
@@ -238,7 +238,7 @@ module Feedback
       context_model = context_type.classify.constantize.find(params[:context_id])
 
       unless authorise? current_user, context_model, :create_feedback_chips
-        error!({ error: 'Not authorised to upload CSV of outcomes' }, 403)
+        error!({ error: "Not authorised to upload CSV of feedback chips for #{context_type}" }, 403)
       end
 
       # Actually import...
@@ -254,7 +254,7 @@ module Feedback
       title = 'Global_Learning_Outcomes'
 
       content_type 'application/octet-stream'
-      header['Content-Disposition'] = "attachment; filename=#{title}--Feedback_Chips.csv"
+      header['Content-Disposition'] = "attachment; filename=#{title}-FeedbackChips.csv"
       header['Access-Control-Expose-Headers'] = 'Content-Disposition'
       env['api.format'] = :binary
 

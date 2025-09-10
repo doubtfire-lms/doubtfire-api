@@ -78,7 +78,7 @@ end
     \fancyhead[R]{}
     \fancyfoot[C]
     {
-        \footnotesize Produced by Doubtfire
+        \footnotesize Produced by <%= @doubtfire_product_name %>
     }
     \fancyfoot[R]{}
     \fancyfoot[L]{}

@@ -1,0 +1,13 @@
+unit_code,task_abbreviation,learning_outcome_abbreviation,short_description,full_outcome_description,linked_outcomes
+COS10001,"",ULO1,Use Instructions,"Effectively use variables, conditionals and loops in computer programs",""
+COS10001,"",ULO2,"Programs, Functions, and Types","Design, construct and test simple programs that include user-defined functions and data structures",""
+COS10001,"",ULO3,Use libraries,Write programs efficiently by discovering and leveraging libraries,""
+COS10001,"",ULO4,Use good programming practices,"Implement good programming practices including unit testing, basic documentation and readability.",""
+COS10001,1.1P,TLO1,Reflect,Reflect on prior programming knowledge and articulate goals for learning in this unit.,ULO4
+COS10001,1.1P,TLO2,Plan,"Develop a personal study plan and justify how it aligns with your target grade and unit structure, including engagement with feedback, submission timelines, and assessment requirements.",ULO4
+COS10001,1.2P,TLO1,Document setup and learning,"Document the process of setting up the programming environment and building programs, including evidence of challenges, actions, and outcomes.",ULO4
+COS10001,1.2P,TLO2,Summarise key build concepts,Summarise key compilation concepts and terminal commands used when building and running programs in different languages.,ULO4
+COS10001,1.2P,TLO3,Reflect on learning and strategies,Reflect on your learning process and describe strategies you will use to improve your confidence using the terminal.,ULO4
+COS10001,1.3P,TLO1,Build and explain simple programs,"Develop simple programs using sequence, variables, and method calls, and explain how they work.","ULO1,ULO4"
+COS10001,1.3P,TLO2,Reflect,Reflect on what you have learned and evaluate personal challenges and strategies for programming success.,ULO4
+COS10001,1.4C,TLO1,Apply control flow constructs,Apply control flow concepts (conditions and loops) to write correct and understandable programs.,"ULO1,ULO4"
