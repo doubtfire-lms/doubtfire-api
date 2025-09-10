@@ -357,6 +357,19 @@ class Unit < ApplicationRecord
       end
     end
 
+    # Duplicate task prerequisites
+    task_definitions.each do |td|
+      new_td = new_unit.task_definitions.find_by(abbreviation: td.abbreviation)
+      td.task_prerequisites.each do |prereq|
+        new_prerequisite_td = new_unit.task_definitions.find_by(abbreviation: prereq.prerequisite.abbreviation)
+        TaskPrerequisite.create!(
+          task_definition: new_td,
+          prerequisite: new_prerequisite_td,
+          task_status_id: prereq.task_status_id
+        )
+      end
+    end
+
     # Link outcomes
     outcome_mapping.each do |old_outcome, new_outcome|
       old_outcome.linked_outcomes.each do |old_linked_outcome|
