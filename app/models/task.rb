@@ -132,6 +132,7 @@ class Task < ApplicationRecord
   delegate :update_task_stats, to: :project
 
   after_update :update_task_stats, if: :saved_change_to_task_status_id? # TODO: consider moving to async task
+  after_update :send_feedback_notification, if: :saved_change_to_task_status_id?
 
   validates :task_definition_id, uniqueness: { scope: :project,
                                                message: 'must be unique within the project' }
@@ -1360,6 +1361,20 @@ class Task < ApplicationRecord
     end
     # we got to the end so no match
     nil
+  end
+
+  def send_feedback_notification
+    return unless task_status.in?([TaskStatus.redo, TaskStatus.fail, TaskStatus.fix_and_resubmit, TaskStatus.feedback_exceeded, TaskStatus.discuss, TaskStatus.demonstrate, TaskStatus.complete])
+    return unless project.student.receive_feedback_notifications
+    return unless unit&.send_notifications
+
+    begin
+      logger.info "Checking feedback email for project #{project.id}"
+      logger.info "Emailing feedback notification to #{project.student.name}"
+      PortfolioEvidenceMailer.task_feedback_ready(project, [self]).deliver
+    rescue => e
+      logger.error "Failed to send feedback notification email. Error: #{e.message}"
+    end
   end
 
   private
