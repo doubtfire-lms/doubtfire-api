@@ -301,6 +301,65 @@ class UnitModelTest < ActiveSupport::TestCase
     unit3.destroy!
   end
 
+  def test_rollover_of_task_prerequisites
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 4)
+    td1 = unit.task_definitions.first
+    td2 = unit.task_definitions.second
+
+    td3 = unit.task_definitions.third
+    td4 = unit.task_definitions.fourth
+
+    [td1, td2, td3, td4].each do |td|
+      td.update(
+        target_grade: 0, # Pass
+        start_date: Time.zone.today - 2.weeks,
+        target_date: Time.zone.today + 1.week
+      )
+    end
+
+    prerequisite1 = TaskPrerequisite.create!(
+      task_definition: td1,
+      prerequisite: td2,
+      task_status_id: TaskStatus.discuss.id
+    )
+
+    assert prerequisite1.valid?
+
+    prerequisite2 = TaskPrerequisite.create!(
+      task_definition: td3,
+      prerequisite: td4,
+      task_status_id: TaskStatus.complete.id
+    )
+
+    assert prerequisite2.valid?
+
+    unit2 = unit.rollover(TeachingPeriod.find(2), nil, nil, nil)
+
+    new_td1 = unit2.task_definitions.first
+    new_td2 = unit2.task_definitions.second
+    new_prerequisite = new_td1.task_prerequisites.first
+
+    assert_not_nil new_prerequisite, "Task prerequisites should be duplicated in rollover"
+    assert_equal new_prerequisite.task_definition.id, new_td1.id, "New Task Prerequisite's task definition should match new task definition"
+    assert_equal new_prerequisite.prerequisite.id, new_td2.id
+    assert_equal new_prerequisite.task_status_id,  prerequisite1.task_status_id
+
+    prerequisite_td = new_td1.prerequisites.first
+    assert_equal prerequisite_td.id, new_td2.id
+
+    new_td3 = unit2.task_definitions.third
+    new_td4 = unit2.task_definitions.fourth
+    new_prerequisite2 = new_td3.task_prerequisites.first
+
+    assert_not_nil new_prerequisite2, "Task prerequisites should be duplicated in rollover"
+    assert_equal new_prerequisite2.task_definition.id, new_td3.id, "New Task Prerequisite's task definition should match new task definition"
+    assert_equal new_prerequisite2.prerequisite.id, new_td4.id
+    assert_equal new_prerequisite2.task_status_id, new_prerequisite2.task_status_id
+
+    prerequisite_td2 = new_td3.prerequisites.first
+    assert_equal prerequisite_td2.id, new_td4.id
+  end
+
   def test_updating_unit_dates_propogates_to_tasks
     @unit.teaching_period = nil
     @unit.save!
