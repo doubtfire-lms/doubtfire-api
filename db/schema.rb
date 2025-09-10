@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_07_22_051613) do
+ActiveRecord::Schema[8.0].define(version: 2025_08_19_001800) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -231,6 +231,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_22_051613) do
     t.integer "spec_con_days", default: 0, null: false
     t.index ["campus_id"], name: "index_projects_on_campus_id"
     t.index ["enrolled"], name: "index_projects_on_enrolled"
+    t.index ["unit_id", "user_id"], name: "index_projects_on_unit_id_and_user_id", unique: true
     t.index ["unit_id"], name: "index_projects_on_unit_id"
     t.index ["user_id"], name: "index_projects_on_user_id"
   end
@@ -344,6 +345,18 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_22_051613) do
     t.index ["task_id", "user_id"], name: "index_task_pins_on_task_id_and_user_id", unique: true
     t.index ["task_id"], name: "index_task_pins_on_task_id"
     t.index ["user_id"], name: "fk_rails_915df186ed"
+  end
+
+  create_table "task_prerequisites", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "task_definition_id", null: false
+    t.bigint "prerequisite_id", null: false
+    t.bigint "task_status_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["prerequisite_id"], name: "index_task_prerequisites_on_prerequisite_id"
+    t.index ["task_definition_id", "prerequisite_id"], name: "idx_on_task_definition_id_prerequisite_id_90b47ca126", unique: true
+    t.index ["task_definition_id"], name: "index_task_prerequisites_on_task_definition_id"
+    t.index ["task_status_id"], name: "index_task_prerequisites_on_task_status_id"
   end
 
   create_table "task_similarities", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|

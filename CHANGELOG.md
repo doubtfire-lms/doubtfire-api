@@ -2,6 +2,124 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-27](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-26...v10.0.0-27) (2025-09-09)
+
+
+### Features
+
+* add task prerequisites ([5a0e673](https://github.com/b0ink/doubtfire-deploy/commit/5a0e6732f779380a7159ff03ee544aef752039f2))
+* ensure prerequisite tasks have been submitted ([013428c](https://github.com/b0ink/doubtfire-deploy/commit/013428c522edf228893f0743a2743170e0e05f0b))
+
+
+### Bug Fixes
+
+* check target date instead of deadline date ([165d1ab](https://github.com/b0ink/doubtfire-deploy/commit/165d1abb143329b5afdeae1afa7ad5b536b3f9fc))
+
+## [10.0.0-26](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-25...v10.0.0-26) (2025-09-09)
+
+## [10.0.0-25](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-24...v10.0.0-25) (2025-09-08)
+
+
+### Features
+
+* add tasks discussed stats ([70dc9c6](https://github.com/b0ink/doubtfire-deploy/commit/70dc9c61e92254c4322f16d90e207fb706cc3c91))
+* csv to download task assessment counts ([f40214e](https://github.com/b0ink/doubtfire-deploy/commit/f40214e338479e8d145ab0f72640daf1bf481707))
+
+## [10.0.0-24](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-23...v10.0.0-24) (2025-09-04)
+
+
+### Bug Fixes
+
+* ensure staff rows are initialised ([a919c27](https://github.com/b0ink/doubtfire-deploy/commit/a919c27b6de13b31aec73021dc07374888eeffb5))
+* get correct number of projects not enrolled in a tutorial per stream ([fbe7252](https://github.com/b0ink/doubtfire-deploy/commit/fbe7252b1f62f44047221504028774e299990d58))
+* get correct staff engagement count ([f813319](https://github.com/b0ink/doubtfire-deploy/commit/f8133193a9ba6140b180bbf6c646f64934a6ec05))
+
+## [10.0.0-23](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-22...v10.0.0-23) (2025-08-27)
+
+## [10.0.0-22](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-21...v10.0.0-22) (2025-08-27)
+
+
+### Features
+
+* add attendance marked task comment ([1505242](https://github.com/b0ink/doubtfire-deploy/commit/150524243d99f4821daa7489064d1b324673b9b7))
+
+## [10.0.0-21](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-20...v10.0.0-21) (2025-08-26)
+
+
+### Features
+
+* env var to set jplag minimum token match ([8c04f38](https://github.com/b0ink/doubtfire-deploy/commit/8c04f388e435451595191c9bc627fdec59cf8244))
+* use env var for max file size ([f5f4b29](https://github.com/b0ink/doubtfire-deploy/commit/f5f4b2955b7910c06b5a552f07549355ac913dd6))
+
+## [10.0.0-20](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-19...v10.0.0-20) (2025-08-21)
+
+## [10.0.0-19](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-18...v10.0.0-19) (2025-08-14)
+
+
+### Bug Fixes
+
+* correct header name ([3987a04](https://github.com/b0ink/doubtfire-deploy/commit/3987a0487eb8d56d5d452c30600ec8649b76ccee))
+
+## [10.0.0-18](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-17...v10.0.0-18) (2025-08-14)
+
+
+### Bug Fixes
+
+* fetch enrolled students only ([72b6af8](https://github.com/b0ink/doubtfire-deploy/commit/72b6af858ff30350ff67f10956806d4637e96520))
+
+## [10.0.0-17](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-16...v10.0.0-17) (2025-08-14)
+
+
+### Features
+
+* download tasks awaiting feedback stats ([43a2963](https://github.com/b0ink/doubtfire-deploy/commit/43a29633303954c055662e771928e023d44faea4))
+
+## [10.0.0-16](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-15...v10.0.0-16) (2025-08-07)
+
+
+### Features
+
+* populate feedback chips ([8380b6f](https://github.com/b0ink/doubtfire-deploy/commit/8380b6fa7dec763bca057a00baf3a536b667da9c))
+
+## [10.0.0-15](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-14...v10.0.0-15) (2025-07-31)
+
+## [10.0.0-14](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-13...v10.0.0-14) (2025-07-31)
+
+
+### Bug Fixes
+
+* move tmp csv into shared volume ([d8e77c3](https://github.com/b0ink/doubtfire-deploy/commit/d8e77c351dc38dece9becebbdcc0b2fc9f29e188))
+
+## [10.0.0-13](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-12...v10.0.0-13) (2025-07-31)
+
+## [10.0.0-12](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-11...v10.0.0-12) (2025-07-29)
+
+
+### Bug Fixes
+
+* ensure styling is applied to elements ([f17b806](https://github.com/b0ink/doubtfire-deploy/commit/f17b8066720705ccc0383f0da651b24e3149e7c7))
+* remove duplicate protocol [#460](https://github.com/b0ink/doubtfire-deploy/issues/460) ([198295b](https://github.com/b0ink/doubtfire-deploy/commit/198295b3ea724262919a502c2b231982cff57ff3))
+* return file path ([457ccd3](https://github.com/b0ink/doubtfire-deploy/commit/457ccd3665b8220a7ed95c2d140dfbcc1ae32b69))
+* validate unique project for same unit and user ([e5f3fa7](https://github.com/b0ink/doubtfire-deploy/commit/e5f3fa72de8279e6e04b1f35a12c9083ba37659d))
+
+## [10.0.0-11](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-10...v10.0.0-11) (2025-07-28)
+
+
+### Features
+
+* move portfolio zip downloading to sidekiq ([569540b](https://github.com/b0ink/doubtfire-deploy/commit/569540bd0be1bece7fd958e298ea16a59a78082f))
+* sidekiq job status tracking ([486dbdd](https://github.com/b0ink/doubtfire-deploy/commit/486dbdd3570fdedb07cc3fb789ac722aa651f6f9))
+
+
+### Bug Fixes
+
+* casing typo ([dd40479](https://github.com/b0ink/doubtfire-deploy/commit/dd40479abb832f0b3132e2fffc2e4de9daea9613))
+* ensure allow flexible dates is enabled ([c011b93](https://github.com/b0ink/doubtfire-deploy/commit/c011b93fc6bca90108c4f03b28b1c8bbe2532b35))
+* ensure correct sidekiq-unique options ([2320644](https://github.com/b0ink/doubtfire-deploy/commit/2320644de1745da19a775804b521eb91e38998c7))
+* filter out comments with plan content types ([86516e6](https://github.com/b0ink/doubtfire-deploy/commit/86516e626a1579fdac69484b7f8ec74d586cc378))
+* get portfolio zip filename ([4140473](https://github.com/b0ink/doubtfire-deploy/commit/4140473356ba5f7dedd885e04aa4a64aaa2fc752))
+* return portfolio zip name ([5f897e8](https://github.com/b0ink/doubtfire-deploy/commit/5f897e854247f6951a0cca4c596bcde3fc03397a))
+
 ## [10.0.0-10](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-9...v10.0.0-10) (2025-07-22)
 
 

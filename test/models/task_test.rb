@@ -821,6 +821,7 @@ class TaskTest < ActiveSupport::TestCase
     # convenor = unit.main_convenor_user
     task_definition = unit.task_definitions.first
 
+    task_definition.start_date = Time.zone.now - 1.week
     task_definition.due_date = Time.zone.now + 1.week
     task_definition.upload_requirements = [
       {
@@ -852,6 +853,7 @@ class TaskTest < ActiveSupport::TestCase
 
     # Saving task def
     task_definition.save!
+    task_definition.reload
 
     # Test that the task def is setup correctly
     assert_equal 5, task_definition.number_of_uploaded_files
@@ -906,6 +908,7 @@ class TaskTest < ActiveSupport::TestCase
       }
     ], self, nil, 'ready_for_feedback', nil, accepted_tii_eula: true
 
+    task.reload
     assert_equal :ready_for_feedback, task.status
 
     task_definition.upload_requirements = []

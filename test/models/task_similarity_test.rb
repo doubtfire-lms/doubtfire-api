@@ -65,8 +65,23 @@ class TaskSimilarityTest < ActiveSupport::TestCase
     similarity1 = JplagTaskSimilarity.find_by(task_id: student1_task.id)
     similarity2 = JplagTaskSimilarity.find_by(task_id: student2_task.id)
 
+    assert_not_nil similarity1, "Similarity1 does not exist"
+    assert_not_nil similarity2, "Similarity2 does not exist"
+
     assert similarity1.valid?, similarity1.errors.full_messages
     assert similarity2.valid?, similarity2.errors.full_messages
+
+    assert_not_nil similarity1.other_task, "Similarity1 'other_task' is nil"
+    assert_not_nil similarity2.other_task, "Similarity2 'other_task' is nil"
+
+    assert similarity1.other_task.valid?, similarity1.errors.full_messages
+    assert similarity2.other_task.valid?, similarity2.errors.full_messages
+
+    assert_not_nil similarity1.other_student, "Similarity1 'other_student' is nil"
+    assert_not_nil similarity2.other_student, "Similarity2 'other_student' is nil"
+
+    assert similarity1.other_student.valid?, similarity1.errors.full_messages
+    assert similarity2.other_student.valid?, similarity2.errors.full_messages
 
     assert_equal similarity1.other_task_id, similarity2.task_id
     assert_equal similarity2.other_task_id, similarity1.task_id
