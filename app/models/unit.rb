@@ -143,6 +143,7 @@ class Unit < ApplicationRecord
   has_many :tutorial_streams, dependent: :destroy, inverse_of: :unit
   has_many :unit_roles, dependent: :destroy, inverse_of: :unit
   has_many :learning_outcomes, as: :context, dependent: :destroy # inverse_of: :unit
+  has_many :marking_sessions, dependent: :destroy
 
   has_many :comments, through: :projects
   has_many :tasks, through: :projects

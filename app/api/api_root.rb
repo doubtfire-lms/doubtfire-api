@@ -101,6 +101,7 @@ class ApiRoot < Grape::API
   mount UsersApi
   mount WebcalApi
   mount WebcalPublicApi
+  mount MarkingSessionsApi
 
   mount Feedback::FeedbackChipApi
 
@@ -148,6 +149,7 @@ class ApiRoot < Grape::API
 
   AuthenticationHelpers.add_auth_to D2lIntegrationApi::D2lApi
   AuthenticationHelpers.add_auth_to Feedback::FeedbackChipApi
+  AuthenticationHelpers.add_auth_to MarkingSessionsApi
 
   add_swagger_documentation \
     base_path: nil,

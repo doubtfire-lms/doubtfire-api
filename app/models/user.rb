@@ -149,6 +149,8 @@ class User < ApplicationRecord
   has_one     :webcal, dependent: :destroy, inverse_of: :user
   has_many    :chip_usage, dependent: :destroy, inverse_of: :tutor, class_name: 'Feedback::ChipUsage'
 
+  has_many    :marking_sessions, foreign_key: 'marker_id', dependent: :destroy
+
   # Model validations/constraints
   validates :first_name,  presence: true
   validates :last_name,   presence: true
