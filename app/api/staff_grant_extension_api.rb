@@ -158,7 +158,7 @@ class StaffGrantExtensionApi < Grape::API
 
             Notification.create!(
               user_id: student.id,
-              message: "#{unit.name}: You were granted an extension for task '#{task_definition.name}'."
+              message: "#{unit.code}: You were granted an extension for task '#{task_definition.name}'."
             )
           end
         end
