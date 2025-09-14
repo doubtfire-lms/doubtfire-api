@@ -169,13 +169,13 @@ class NotificationsMailer < ApplicationMailer
 
     begin
       # Send summary to staff member who granted the extensions
-      extension_granted_summary(extensions, granted_by, total_selected, failed_extensions).deliver_now
+      NotificationsMailer.extension_granted_summary(extensions, granted_by, total_selected, failed_extensions).deliver_now
 
       # Send individual notifications only to students who have enabled email notifications
       extensions.each do |extension|
         student = extension.project.student
         if student.receive_task_notifications
-          extension_granted_notification(extension, granted_by).deliver_now
+          NotificationsMailer.extension_granted_notification(extension, granted_by).deliver_now
         end
       end
     rescue => e

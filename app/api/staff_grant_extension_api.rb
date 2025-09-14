@@ -55,8 +55,8 @@ class StaffGrantExtensionApi < Grape::API
   params do
     requires :student_ids, type: Array[Integer], desc: 'List of student IDs to grant extensions to'
     requires :task_definition_id, type: Integer, desc: 'Task definition ID'
-    requires :weeks_requested, type: Integer, desc: 'Number of weeks to extend by'
-    requires :comment, type: String, desc: 'Reason for extension'
+    requires :weeks_requested, type: Integer, desc: 'Number of weeks to extend by (1-4)'
+    requires :comment, type: String, desc: 'Reason for extension (max 300 characters)'
   end
   post '/units/:unit_id/staff-grant-extension' do
     unit = Unit.find(params[:unit_id])
@@ -97,7 +97,8 @@ class StaffGrantExtensionApi < Grape::API
             project_id: project.id,
             weeks_requested: extension_comment.extension_weeks,
             extension_response: extension_comment.extension_response,
-            task_status: extension_comment.task.status
+            task_status: extension_comment.task.status,
+            extension_comment: extension_comment  # Store internally for notifications
           }
         else
           results[:failed] << {
@@ -117,25 +118,38 @@ class StaffGrantExtensionApi < Grape::API
 
       # Send notifications only if successful and after processing all students
       if results[:successful].any?
+        # Use the extension comments directly from the service results (thread-safe)
         successful_extensions = results[:successful].map do |result|
-          # Re-fetch project within the transaction to ensure consistency
-          project = Project.find(result[:project_id])
-          task = project.task_for_task_definition(task_definition)
-          # Ensure we get the latest extension comment created within this transaction
-          task.all_comments.where(content_type: :extension).order(created_at: :desc).first
+          extension_comment = result[:extension_comment]
+          if extension_comment.nil?
+            Rails.logger.warn "No extension comment found for project #{result[:project_id]}"
+            nil
+          else
+            Rails.logger.debug "Using extension comment: #{extension_comment.id} for project #{result[:project_id]}"
+            extension_comment
+          end
         end
 
-        # Filter out any nil results in case a comment wasn't found (shouldn't happen ideally)
+        # Filter out any nil results in case a comment wasn't found
         successful_extensions.compact!
+        Rails.logger.info "Processing #{successful_extensions.count} successful extensions for notifications"
 
         if successful_extensions.any?
-          NotificationsMailer.extension_granted(
-            successful_extensions,
-            current_user,
-            params[:student_ids].count,
-            results[:failed],
-            true # is_staff_grant = true
-          ).deliver_later
+          begin
+            Rails.logger.info "Sending extension notifications for #{successful_extensions.count} extensions"
+            NotificationsMailer.extension_granted(
+              successful_extensions,
+              current_user,
+              params[:student_ids].count,
+              results[:failed],
+              true # is_staff_grant = true
+            ).deliver_now
+            Rails.logger.info "Extension notifications sent successfully"
+          rescue => e
+            Rails.logger.error "Failed to send extension notifications: #{e.message}"
+            Rails.logger.error e.backtrace.join("\n")
+            # Don't fail the entire request if email fails, but log the error
+          end
 
           # Create in-system notifications for successful extensions
           results[:successful].each do |result|
