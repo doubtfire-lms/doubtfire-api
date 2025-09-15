@@ -64,6 +64,10 @@ class TaskStatus < ApplicationRecord
     TaskStatus.find(12)
   end
 
+  def self.assess_in_portfolio
+    TaskStatus.find(13)
+  end
+
   class << self
     # Provide access to the count from the database via a new db_count method
     alias_method :db_count, :count
@@ -76,7 +80,7 @@ class TaskStatus < ApplicationRecord
   # Keep this hard coded! Saves cache load time.
   # Important: count must equal the largest id in the database
   def self.count
-    12
+    13
   end
 
   def self.status_for_name(name)
@@ -105,6 +109,8 @@ class TaskStatus < ApplicationRecord
       TaskStatus.not_started
     when 'time exceeded', 'time_exceeded'
       TaskStatus.time_exceeded
+    when 'assess in portfolio', 'assess_in_portfolio', 'aip'
+      TaskStatus.assess_in_portfolio
     else
       nil
     end
@@ -128,6 +134,7 @@ class TaskStatus < ApplicationRecord
     when 10 then :demonstrate
     when 11 then :fail
     when 12 then :time_exceeded
+    when 13 then :assess_in_portfolio
     else :not_started
     end
   end
@@ -145,6 +152,7 @@ class TaskStatus < ApplicationRecord
     return :fail if self == TaskStatus.fail
     return :feedback_exceeded if self == TaskStatus.feedback_exceeded
     return :time_exceeded if self == TaskStatus.time_exceeded
+    return :assess_in_portfolio if self == TaskStatus.assess_in_portfolio
 
     return :not_started
   end

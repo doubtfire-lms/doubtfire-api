@@ -319,6 +319,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_19_001800) do
     t.boolean "scorm_bypass_test", default: false
     t.boolean "scorm_time_delay_enabled", default: false
     t.integer "scorm_attempt_limit", default: 0
+    t.boolean "assess_in_portfolio_only", default: false, null: false
     t.index ["abbreviation", "unit_id"], name: "index_task_definitions_on_abbreviation_and_unit_id", unique: true
     t.index ["group_set_id"], name: "index_task_definitions_on_group_set_id"
     t.index ["name", "unit_id"], name: "index_task_definitions_on_name_and_unit_id", unique: true
@@ -577,6 +578,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_19_001800) do
     t.boolean "archived", default: false
     t.boolean "allow_flexible_dates", default: false, null: false
     t.datetime "portfolio_due_date"
+    t.boolean "mark_late_submissions_as_assess_in_portfolio", default: false, null: false
     t.index ["draft_task_definition_id"], name: "index_units_on_draft_task_definition_id"
     t.index ["main_convenor_id"], name: "index_units_on_main_convenor_id"
     t.index ["overseer_image_id"], name: "index_units_on_overseer_image_id"
