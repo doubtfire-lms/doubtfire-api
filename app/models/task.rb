@@ -540,10 +540,14 @@ class Task < ApplicationRecord
           end
         end
 
-        assess status, by_user
+        lc = comments.last
+        # Prevent duplicate status comments during feedback
+        unless lc && lc.user == by_user && lc.comment == status.name && lc.task_status == status
+          assess status, by_user
 
-        # Add a status comment for new assessments - only recorded on submitter's task in groups
-        add_status_comment(by_user, status)
+          # Add a status comment for new assessments - only recorded on submitter's task in groups
+          add_status_comment(by_user, status)
+        end
       else
         # Attempt to move to tutor state by non-tutor
         return nil
