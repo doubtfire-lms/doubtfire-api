@@ -7,6 +7,7 @@ class TaskDefinitionsApi < Grape::API
   helpers MimeCheckHelpers
   helpers Submission::GenerateHelpers
   helpers FileStreamHelper
+  helpers SidekiqHelper
 
   before do
     authenticated?
@@ -833,6 +834,46 @@ class TaskDefinitionsApi < Grape::API
     prereq_record.destroy
 
     true
+  end
+
+  desc 'Compress all submission files for a task definition into zip file'
+  params do
+    requires :unit_id, type: Integer, desc: 'The unit that has the task definition'
+    requires :task_def_id, type: Integer, desc: 'The task definition to download submissions for'
+  end
+  get '/submission/units/:unit_id/task_definitions/:task_def_id/download_submissions/zip' do
+    unit = Unit.find(params[:unit_id])
+    unless authorise? current_user, unit, :get_students
+      error!({ error: "Not authorised to download submission files" }, 403)
+    end
+
+    td = unit.task_definitions.find(params[:task_def_id])
+
+    # Queue submission files download to sidekiq
+    job_id = DownloadSubmissionFilesJob.perform_async(current_user.id, unit.id, td.id)
+    job = setup_job(job_id)
+
+    present job, with: Entities::SidekiqJobEntity
+  end
+
+  desc 'Compress all submission pdfs for a task definition into zip file'
+  params do
+    requires :unit_id, type: Integer, desc: 'The unit that has the task definition'
+    requires :task_def_id, type: Integer, desc: 'The task definition to download submissions for'
+  end
+  get '/submission/units/:unit_id/task_definitions/:task_def_id/student_pdfs/zip' do
+    unit = Unit.find(params[:unit_id])
+    unless authorise? current_user, unit, :get_students
+      error!({ error: "Not authorised to download submission pdfs" }, 403)
+    end
+
+    td = unit.task_definitions.find(params[:task_def_id])
+
+    # Queue submission pdfs download to sidekiq
+    job_id = DownloadSubmissionPdfsJob.perform_async(current_user.id, unit.id, td.id)
+    job = setup_job(job_id)
+
+    present job, with: Entities::SidekiqJobEntity
   end
 
 end
