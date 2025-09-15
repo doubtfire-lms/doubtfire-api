@@ -1754,19 +1754,27 @@ class Unit < ApplicationRecord
   #
   # Create a temp zip file with all submission PDFs for a task
   #
-  def get_task_submissions_pdf_zip(current_user, td)
+  def get_task_submissions_pdf_zip(current_user, td, progress_callback: nil)
     # Get a temp file path
     result = FileHelper.tmp_file("submissions-#{code}-#{td.abbreviation}-#{current_user.username}-pdfs.zip")
 
     tasks_with_files = td.related_tasks_with_files
+    progress_callback.call(message: "Initialising submission pdfs download", total_rows: tasks_with_files.count, rows_processed: tasks_with_files.count) if progress_callback
 
     return result if File.exist?(result)
+
+    progress_callback.call(message: "Initialising submission pdfs download", total_rows: tasks_with_files.count, rows_processed: 0) if progress_callback
+
+    count = 0
 
     # Create a new zip
     Zip::File.open(result, Zip::File::CREATE) do |zip|
       Dir.mktmpdir do |dir|
         # Extract all of the files...
         tasks_with_files.each do |task|
+          count += 1
+          progress_callback.call(message: "Compressing submission pdfs", rows_processed: count) if progress_callback
+
           path_part = if td.is_group_task? && task.group
                         task.group.name.to_s
                       else
@@ -1787,19 +1795,26 @@ class Unit < ApplicationRecord
   #
   # Create a temp zip file with all submissions for a task
   #
-  def get_task_submissions_zip(current_user, td)
+  def get_task_submissions_zip(current_user, td, progress_callback: nil)
     # Get a temp file path
     result = FileHelper.tmp_file("submissions-#{code}-#{td.abbreviation}-#{current_user.username}-files.zip")
 
     tasks_with_files = td.related_tasks_with_files
+    progress_callback.call(message: "Initialising submission files download", total_rows: tasks_with_files.count, rows_processed: tasks_with_files.count) if progress_callback
 
     return result if File.exist?(result)
+    progress_callback.call(message: "Initialising submission files download", total_rows: tasks_with_files.count, rows_processed: 0) if progress_callback
+
+    count = 0
 
     # Create a new zip
     Zip::File.open(result, Zip::File::CREATE) do |zip|
       Dir.mktmpdir do |dir|
         # Extract all of the files...
         tasks_with_files.each do |task|
+          count += 1
+          progress_callback.call(message: "Compressing submission files", rows_processed: count) if progress_callback
+
           path_part = if td.is_group_task? && task.group
                         task.group.name.to_s
                       else
