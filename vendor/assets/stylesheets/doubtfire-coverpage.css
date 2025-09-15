@@ -81,3 +81,7 @@ button.task-status.complete {
   background-image: linear-gradient(#62c462, #51a351);
   color: white;
 }
+button.task-status.assess-in-portfolio {
+  background-color: #91b891;
+  color: white;
+}

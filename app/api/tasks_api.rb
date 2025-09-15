@@ -180,8 +180,22 @@ class TasksApi < Grape::API
           error!({ error: 'Cannot set this task status to ready to mark without uploading documents.' }, 403)
         end
 
+        if params[:trigger] == 'assess_in_portfolio' && !authorise?(current_user, project, :assess)
+          # Prevent students from upading status if task definition doesn't enable it
+          if !task_definition.assess_in_portfolio_only
+            error!({ error: 'Cannot set this task status to assess in portfolio if task definition doesnt allow it.' }, 403)
+          elsif needs_upload_docs
+            # Prevent students from updating status without uploading files
+            error!({ error: 'Cannot set this task status to assess in portfolio without uploading documents.' }, 403)
+          end
+        end
+
         if task.group_task? && !task.group
           error!({ error: "This task requires a group. Ensure you are in a group for the unit's #{task.task_definition.group_set.name}" }, 403)
+        end
+
+        if task.task_definition.assess_in_portfolio_only && params[:trigger] == 'complete'
+          error!({ error: 'This task can only be assessed in portfolio.' }, 403)
         end
 
         logger.info "#{current_user.username} assessing task #{task.id} to #{params[:trigger]}"

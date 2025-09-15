@@ -269,6 +269,38 @@ class UnitModelTest < ActiveSupport::TestCase
     unit2.destroy!
   end
 
+  def test_rollover_assess_in_portfolio
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 1)
+    td = unit.task_definitions.first
+
+    # Test with both true
+    unit.update!(mark_late_submissions_as_assess_in_portfolio: true)
+    td.update!(assess_in_portfolio_only: true)
+
+    unit2 = unit.rollover(TeachingPeriod.find(2), nil, nil, nil)
+    td2 = unit2.task_definitions.first
+
+    assert_equal true, unit2.mark_late_submissions_as_assess_in_portfolio, "Rollover must copy over unit mark_late_submissions_as_assess_in_portfolio attribute"
+    assert_equal true, td2.assess_in_portfolio_only, "Rollover must copy over task definition assess_in_portfolio_only attribute"
+
+    unit2.destroy!
+
+    # Test with both false (in case theyre true by default)
+    unit.update!(mark_late_submissions_as_assess_in_portfolio: false)
+    td.update!(assess_in_portfolio_only: false)
+
+    unit.reload
+    td.reload
+
+    unit3 = unit.rollover(TeachingPeriod.find(2), nil, nil, nil)
+    td3 = unit3.task_definitions.first
+
+    assert_equal false, unit3.mark_late_submissions_as_assess_in_portfolio, "Rollover must copy over unit mark_late_submissions_as_assess_in_portfolio attribute"
+    assert_equal false, td3.assess_in_portfolio_only, "Rollover must copy over task definition assess_in_portfolio_only attribute"
+
+    unit3.destroy!
+  end
+
   def test_rollover_of_task_prerequisites
     unit = FactoryBot.create(:unit, with_students: false, task_count: 4)
     td1 = unit.task_definitions.first

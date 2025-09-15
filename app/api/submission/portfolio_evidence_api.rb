@@ -75,6 +75,8 @@ module Submission
 
       trigger = if params[:trigger] && params[:trigger].tr('"\'', '') == 'need_help'
                   'need_help'
+                elsif params[:trigger] && params[:trigger].tr('"\'', '') == 'assess_in_portfolio'
+                  'assess_in_portfolio'
                 else
                   'ready_for_feedback'
                 end
