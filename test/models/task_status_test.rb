@@ -458,9 +458,7 @@ class TaskStatusTest < ActiveSupport::TestCase
 
     inbox = unit.tasks_for_task_inbox(tutor)
 
-    inbox.each do |task|
-      assert_not_equal TaskStatus.assess_in_portfolio.id, task.status_id
-    end
+    assert_not(inbox.any? { |task| task.status_id == TaskStatus.assess_in_portfolio.id }, "Task should not be in inbox")
 
     td.destroy
   end
