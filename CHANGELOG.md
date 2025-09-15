@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-29](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-28...v10.0.0-29) (2025-09-15)
+
+
+### Features
+
+* assess in portfolio status ([b6f0cd4](https://github.com/b0ink/doubtfire-deploy/commit/b6f0cd49715d2ce24078a0506427ab548c8b16a0))
+
 ## [10.0.0-28](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-27...v10.0.0-28) (2025-09-10)
 
 
