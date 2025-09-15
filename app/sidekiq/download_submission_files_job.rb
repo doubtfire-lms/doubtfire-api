@@ -10,7 +10,7 @@ class DownloadSubmissionFilesJob
                   on_conflict: :reject,
                   retry: false
 
-  def perform(current_user_id, task_definition_id, unit_id)
+  def perform(current_user_id, unit_id, task_definition_id)
     logger.info "Starting submission files download..."
 
     at(0)
