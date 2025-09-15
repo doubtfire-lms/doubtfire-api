@@ -10,7 +10,7 @@ class DownloadSubmissionPdfsJob
                   on_conflict: :reject,
                   retry: false
 
-  def perform(current_user_id, task_definition_id, unit_id)
+  def perform(current_user_id, unit_id, task_definition_id)
     logger.info "Starting submission pdfs download..."
 
     at(0)
