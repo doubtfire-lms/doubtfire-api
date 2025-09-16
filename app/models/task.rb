@@ -540,10 +540,14 @@ class Task < ApplicationRecord
           end
         end
 
-        assess status, by_user
+        lc = comments.last
+        # Prevent duplicate status comments during feedback
+        unless lc && lc.user == by_user && lc.comment == status.name && (lc.content_type != 'status' || lc.task_status == status)
+          assess status, by_user
 
-        # Add a status comment for new assessments - only recorded on submitter's task in groups
-        add_status_comment(by_user, status)
+          # Add a status comment for new assessments - only recorded on submitter's task in groups
+          add_status_comment(by_user, status)
+        end
       else
         # Attempt to move to tutor state by non-tutor
         return nil
@@ -786,10 +790,17 @@ class Task < ApplicationRecord
   end
 
   def add_discussed_comment(current_user)
+    comment = 'Discussed in class'
+
+    lc = comments.last
+
+    # don't add if duplicate comment
+    return if lc && lc.user == current_user && lc.content_type == 'discussed_in_class' && lc.comment == comment
+
     discussed = TaskDiscussedComment.create
     discussed.task = self
     discussed.user = current_user
-    discussed.comment = "Discussed in class"
+    discussed.comment = comment
     discussed.recipient = current_user == project.student ? project.tutor_for(task_definition) : project.student
     discussed.save!
     discussed
