@@ -427,7 +427,7 @@ class Task < ApplicationRecord
   end
 
   def ready_or_complete?
-    [:complete, :discuss, :demonstrate, :ready_for_feedback].include? status
+    [:complete, :discuss, :demonstrate, :ready_for_feedback, :assess_in_portfolio].include? status
   end
 
   def submitted_status?
