@@ -542,7 +542,7 @@ class Task < ApplicationRecord
 
         lc = comments.last
         # Prevent duplicate status comments during feedback
-        unless lc && lc.user == by_user && lc.comment == status.name && lc.task_status == status
+        unless lc && lc.user == by_user && lc.comment == status.name && (lc.content_type != 'status' || lc.task_status == status)
           assess status, by_user
 
           # Add a status comment for new assessments - only recorded on submitter's task in groups
