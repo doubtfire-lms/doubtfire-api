@@ -790,10 +790,17 @@ class Task < ApplicationRecord
   end
 
   def add_discussed_comment(current_user)
+    comment = 'Discussed in class'
+
+    lc = comments.last
+
+    # don't add if duplicate comment
+    return if lc && lc.user == current_user && lc.content_type == 'discussed_in_class' && lc.comment == comment
+
     discussed = TaskDiscussedComment.create
     discussed.task = self
     discussed.user = current_user
-    discussed.comment = "Discussed in class"
+    discussed.comment = comment
     discussed.recipient = current_user == project.student ? project.tutor_for(task_definition) : project.student
     discussed.save!
     discussed
