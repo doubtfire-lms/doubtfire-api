@@ -76,6 +76,131 @@ class AuthenticationApi < Grape::API
   end
 
   #
+  # Local registration - only mounted if external auth is NOT used
+  #
+  if !AuthenticationHelpers.aaf_auth? && !AuthenticationHelpers.saml_auth?
+    desc 'Register a new user'
+    params do
+      requires :username, type: String, desc: 'Desired username'
+      requires :email, type: String, desc: 'Email address'
+      requires :first_name, type: String, desc: 'First name'
+      requires :last_name, type: String, desc: 'Last name'
+      requires :password, type: String, desc: 'Password'
+    end
+    post '/auth/register' do
+      username = params[:username].downcase
+      email = params[:email].downcase
+
+      error!({ error: 'Registration not permitted.' }, 403) unless Doubtfire::Application.config.auth_method == :local
+
+      user = User.find_by(username: username) || User.find_by(email: email)
+      error!({ error: 'User already exists.' }, 409) if user
+
+      role_id = Role.student.id
+      user = User.new(
+        username: username,
+        email: email,
+        first_name: params[:first_name],
+        last_name: params[:last_name],
+        nickname: params[:first_name],
+        role_id: role_id,
+        login_id: username
+      )
+      user.encrypted_password = BCrypt::Password.create(params[:password])
+
+      unless user.valid?
+        error!({ error: 'Invalid user details.', details: user.errors.full_messages }, 422)
+      end
+      user.save!
+
+      present :user, user, with: Entities::UserEntity
+      present :auth_token, user.generate_authentication_token!(false).authentication_token
+    end
+  end
+
+  #
+  # Password reset (request + confirm) - only for local database auth
+  #
+  if !AuthenticationHelpers.aaf_auth? && !AuthenticationHelpers.saml_auth?
+    desc 'Request password reset'
+    params do
+      requires :email, type: String, desc: 'Account email address'
+    end
+    post '/auth/password/forgot' do
+      email = params[:email].downcase
+      user = User.find_by(email: email)
+
+      # Always respond 200 to avoid user enumeration
+      if user
+        user.reset_password_token = SecureRandom.hex(24)
+        user.reset_password_sent_at = Time.zone.now
+        user.save(validate: false)
+
+        # In production we would deliver an email. For development, log the token.
+        logger.info("Password reset requested for #{user.username} from #{request.ip}. Token: #{Rails.env.development? ? user.reset_password_token : '[hidden]'}")
+      end
+
+      present nil
+    end
+
+    desc 'Confirm password reset'
+    params do
+      requires :token, type: String, desc: 'Reset password token'
+      requires :password, type: String, desc: 'New password'
+    end
+    post '/auth/password/reset' do
+      token = params[:token]
+      user = User.find_by(reset_password_token: token)
+
+      error!({ error: 'Invalid or expired token.' }, 400) unless user && user.reset_password_sent_at && user.reset_password_sent_at > 2.hours.ago
+
+      user.encrypted_password = BCrypt::Password.create(params[:password])
+      user.reset_password_token = nil
+      user.reset_password_sent_at = nil
+      user.save!
+
+      present nil
+    end
+  end
+
+  #
+  # Change password for authenticated user
+  #
+  desc 'Change password for current user',
+       {
+         headers:
+         {
+           "username" => { description: "User username", required: true },
+           "auth_token" => { description: "Auth token", required: true }
+         }
+       }
+  params do
+    requires :current_password, type: String, desc: 'Current password'
+    requires :new_password, type: String, desc: 'New password'
+  end
+  put '/auth/password' do
+    # Require a valid session
+    error!({ error: 'Unauthenticated.' }, 419) unless authenticated?
+
+    user = current_user
+
+    # Only applicable for local auth
+    if AuthenticationHelpers.aaf_auth? || AuthenticationHelpers.saml_auth? || AuthenticationHelpers.ldap_auth?
+      error!({ error: 'Password change not supported for external authentication.' }, 400)
+    end
+
+    # Verify current password
+    unless user.authenticate?(params[:current_password])
+      error!({ error: 'Current password is incorrect.' }, 400)
+    end
+
+    user.encrypted_password = BCrypt::Password.create(params[:new_password])
+    user.save!
+
+    present nil
+  end
+
+  #
   # AAF JWT callback - only mounted if AAF SAML is used
   # This isn't really a JWT, we will treat it as if it's a SAML response
   #
