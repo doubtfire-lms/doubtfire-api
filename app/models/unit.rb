@@ -490,13 +490,14 @@ class Unit < ApplicationRecord
           'projects.compile_portfolio AS compile_portfolio',
           'projects.grade AS grade',
           'projects.grade_rationale AS grade_rationale',
+          'projects.spec_con_days AS spec_con_days',
           'projects.portfolio_production_date AS portfolio_production_date',
           'MAX(CASE WHEN task_similarities.flagged THEN task_similarities.pct ELSE 0 END) AS task_similarities_max_pct',
           # Get tutorial for each stream in unit
           *tutorial_streams.map { |s| "MAX(CASE WHEN tutorials.tutorial_stream_id = #{s.id} OR tutorials.tutorial_stream_id IS NULL THEN tutorials.id ELSE NULL END) AS tutorial_#{s.id}" },
           # Get tutorial for case when no stream
           "MAX(CASE WHEN tutorial_streams.id IS NULL THEN tutorials.id ELSE NULL END) AS tutorial",
-          'COUNT(DISTINCT staff_notes.id) as staff_note_count'
+          'COUNT(DISTINCT staff_notes.id) AS staff_note_count'
         )
         .order('users.first_name')
 
@@ -531,6 +532,7 @@ class Unit < ApplicationRecord
         has_portfolio: !t.portfolio_production_date.nil?,
         stats: map_stats.call(t),
         staff_note_count: t.staff_note_count,
+        spec_con_days: t.spec_con_days,
         tutorial_enrolments: tutorial_streams.map do |s|
           {
             stream_abbr: s.abbreviation,
