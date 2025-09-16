@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-31](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-30...v10.0.0-31) (2025-09-16)
+
+
+### Bug Fixes
+
+* check task status on status comments only ([8fbe65c](https://github.com/b0ink/doubtfire-deploy/commit/8fbe65c3ab6586012409f69a0c49eecf29a2ced2))
+* ensure simulated jplag submissions doesnt run in prod ([2f2183e](https://github.com/b0ink/doubtfire-deploy/commit/2f2183e912bb6ea54dd763438db952d4ae506936))
+* ensure tasks in assess in portfolio state meet prerequisite task status ([b7a4efa](https://github.com/b0ink/doubtfire-deploy/commit/b7a4efac9f777e71db9f62a649a054ced29b9303))
+* expose projects spec_con_days ([bd7bfee](https://github.com/b0ink/doubtfire-deploy/commit/bd7bfeeeb9ea0dc8e514e867b5f4fca19ff67f1e))
+
 ## [10.0.0-30](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-29...v10.0.0-30) (2025-09-15)
 
 
