@@ -345,7 +345,7 @@ class UnitsApi < Grape::API
     end
 
     # Queue student import onto sidekiq
-    job_id = ImportStudentsJob.perform_async(unit.id, file_name)
+    job_id = ImportStudentsCsvJob.perform_async(unit.id, file_name)
     job = setup_job(job_id)
     present job, with: Entities::SidekiqJobEntity
   end

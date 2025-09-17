@@ -30,6 +30,8 @@ env:
   LATEX_CONTAINER_NAME: doubtfire-texlive
   LATEX_BUILD_PATH: /texlive/shell/latex_build.sh
   DF_JPLAG_REPORT_DIR: /jplag/results
+  LTI_SHARED_API_SECRET: "abc123"
+  LTI_ENABLED: true
 
 jobs:
   unit-tests:
@@ -151,6 +153,8 @@ jobs:
             -e LATEX_CONTAINER_NAME
             -e LATEX_BUILD_PATH
             -e DF_JPLAG_REPORT_DIR
+            -e LTI_SHARED_API_SECRET
+            -e LTI_ENABLED
           run: bundle exec rake db:populate
       - name: Run unit tests
         uses: addnab/docker-run-action@v3
@@ -182,6 +186,8 @@ jobs:
             -e LATEX_CONTAINER_NAME
             -e LATEX_BUILD_PATH
             -e DF_JPLAG_REPORT_DIR
+            -e LTI_SHARED_API_SECRET
+            -e LTI_ENABLED
           run: TERM=xterm bundle exec rails test
       - name: Stop TexLive service
         run: docker rm -f ${{ env.LATEX_CONTAINER_NAME }}

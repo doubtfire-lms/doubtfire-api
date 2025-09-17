@@ -77,6 +77,7 @@ class ApiRoot < Grape::API
   mount TeachingPeriodsAuthenticatedApi
   mount StaffNotesApi
   mount SidekiqApi
+  mount LtiApi if Doubtfire::Application.config.lti_enabled
   mount TaskPrerequisitesApi
 
   mount Tii::TurnItInApi
@@ -127,6 +128,7 @@ class ApiRoot < Grape::API
   AuthenticationHelpers.add_auth_to TeachingPeriodsAuthenticatedApi
   AuthenticationHelpers.add_auth_to StaffNotesApi
   AuthenticationHelpers.add_auth_to SidekiqApi
+  AuthenticationHelpers.add_auth_to LtiApi if Doubtfire::Application.config.lti_enabled
   AuthenticationHelpers.add_auth_to TaskPrerequisitesApi
 
   AuthenticationHelpers.add_auth_to Tii::TurnItInApi
