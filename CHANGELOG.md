@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-32](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-31...v10.0.0-32) (2025-09-17)
+
+
+### Features
+
+* enable lms context and unit deeplinking ([0fa850f](https://github.com/b0ink/doubtfire-deploy/commit/0fa850f661ad4fa0aa15450ee5704bbee6e8cc99))
+* init lti authentication ([182c60c](https://github.com/b0ink/doubtfire-deploy/commit/182c60c78bdc1e1cf0ce9cccf773b358a9a63d7e))
+* lti user enrolment ([c3b2282](https://github.com/b0ink/doubtfire-deploy/commit/c3b2282ad21b6561da788a3730d31f92dcf91b7c))
+* retrieve grades for a list of students ([e588873](https://github.com/b0ink/doubtfire-deploy/commit/e588873f6f061ca63bf30852463df016e86712a4))
+* sync enrolments from lti ([46196fa](https://github.com/b0ink/doubtfire-deploy/commit/46196fa5973c1b96c12ea81cfb26b53824945f54))
+
+
+### Bug Fixes
+
+* check for env var string value ([4ecc22c](https://github.com/b0ink/doubtfire-deploy/commit/4ecc22cab83bd880e80766fbf72386cbafdc2c3e))
+* use given name for first name ([5627bf0](https://github.com/b0ink/doubtfire-deploy/commit/5627bf0909c939004c8e0e7ca7f184784c7990ad))
+
 ## [10.0.0-31](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-30...v10.0.0-31) (2025-09-16)
 
 
