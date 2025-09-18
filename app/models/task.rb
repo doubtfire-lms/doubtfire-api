@@ -150,7 +150,7 @@ class Task < ApplicationRecord
 
   validate :must_have_quality_pts, if: :for_definition_with_quality?
 
-  validate :extensions_must_end_with_due_date, if: :has_requested_extension?
+  validate :extensions_must_end_with_due_date, if: -> { has_requested_extension? && !unit.allow_flexible_dates }
 
   validate :prevent_complete_if_assess_in_portfolio_only
   validate :prevent_feedback_exceeed_if_assess_in_portfolio_enabled
@@ -294,7 +294,7 @@ class Task < ApplicationRecord
   def extension_date
     result = raw_extension_date
     max_date = max_date_with_spec_con_days
-    return max_date if result > max_date
+    return max_date if result > max_date && !unit.allow_flexible_dates
 
     return result
   end
