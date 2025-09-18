@@ -130,7 +130,7 @@ class TasksApi < Grape::API
 
       # update the planned date
       task.extensions = params[:extensions]
-      task.save
+      task.save!
 
       comment = TaskComment.create(
         task: task,
