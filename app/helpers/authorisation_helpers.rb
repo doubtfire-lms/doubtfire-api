@@ -3,6 +3,31 @@ module AuthorisationHelpers
     perm_hash[role] unless perm_hash.nil?
   end
 
+  OBSERVER_ONLY_PERMISSIONS = [
+    :get,
+    :get_unit_roles,
+    :download_unit_csv,
+    :get_teaching_periods,
+    :get_scorm_token,
+    :get_feedback_chips,
+    :get_all_units,
+    :list_users,
+    :get_staff_list,
+    :get_user,
+    :download_system_csv,
+    :get_unit,
+    :get_students,
+    :download_stats,
+    :download_grades,
+    :download_jplag_report,
+    :get_submission,
+    :view_plagiarism,
+    :get_discussion,
+    :get_staff_note,
+    :get_members,
+    :get_groups
+  ]
+
   #
   # Authorises if the user can perform an action on the object
   #
@@ -27,7 +52,7 @@ module AuthorisationHelpers
       unit_role = object.unit.unit_role_for(user)
     end
 
-    if !unit_role.nil? && unit_role.observer_only && !action.start_with?("get")
+    if !unit_role.nil? && unit_role.observer_only && !OBSERVER_ONLY_PERMISSIONS.include?(action)
       return false
     end
 
