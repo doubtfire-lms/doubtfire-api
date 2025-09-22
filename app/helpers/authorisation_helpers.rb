@@ -26,7 +26,7 @@ module AuthorisationHelpers
     :get_staff_note,
     :get_members,
     :get_groups
-  ]
+  ].freeze
 
   #
   # Authorises if the user can perform an action on the object
