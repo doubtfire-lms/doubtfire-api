@@ -19,6 +19,18 @@ module AuthorisationHelpers
 
     return false if role_obj.nil?
 
+    # Attempt to get the unit role from a Unit context
+    unit_role = object&.unit_role_for(user) if object.respond_to?(:unit_role_for)
+
+    # Attempt to get the unit role if object has a unit reference
+    if unit_role.nil? && object.respond_to?(:unit)
+      unit_role = object.unit.unit_role_for(user)
+    end
+
+    if !unit_role.nil? && unit_role.observer_only && !action.start_with?("get")
+      return false
+    end
+
     role = role_obj.to_sym
     perm_hash = obj_class.permissions
     perms = perm_get_fn.call(role, perm_hash, other)
