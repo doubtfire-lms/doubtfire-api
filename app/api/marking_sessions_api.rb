@@ -48,10 +48,10 @@ class MarkingSessionsApi < Grape::API
       error!({ error: "Student not found" }, 404) unless student
 
       sessions = MarkingSession
-        .joins(session_activities: :project)
-        .where(projects: { user_id: params[:student_id] })
-        .distinct
-        .includes(:unit, :session_activities)
+                 .joins(session_activities: :project)
+                 .where(projects: { user_id: params[:student_id] })
+                 .distinct
+                 .includes(:unit, :session_activities)
 
       authorized = sessions.select { |s| can_view_marking_session?(current_user, s) }
       present authorized, with: Entities::MarkingSessionEntity
@@ -81,9 +81,9 @@ class MarkingSessionsApi < Grape::API
       error!({ error: "You are not authorized to view this tutor's activities" }, 403) unless can_view_tutor_sessions?(current_user, tutor)
 
       activities = SessionActivity
-        .joins(:marking_session)
-        .where(marking_sessions: { marker_id: params[:tutor_id] })
-        .includes(:marking_session, :project, :task, :task_definition)
+                   .joins(:marking_session)
+                   .where(marking_sessions: { marker_id: params[:tutor_id] })
+                   .includes(:marking_session, :project, :task, :task_definition)
       present activities, with: Entities::SessionActivityEntity
     end
 
@@ -96,9 +96,9 @@ class MarkingSessionsApi < Grape::API
       error!({ error: "Student not found" }, 404) unless student
 
       activities = SessionActivity
-        .joins(:project)
-        .where(projects: { user_id: params[:student_id] })
-        .includes(:marking_session, :project, :task, :task_definition)
+                   .joins(:project)
+                   .where(projects: { user_id: params[:student_id] })
+                   .includes(:marking_session, :project, :task, :task_definition)
       authorized = activities.select { |a| can_view_marking_session?(current_user, a.marking_session) }
       present authorized, with: Entities::SessionActivityEntity
     end
@@ -151,7 +151,7 @@ class MarkingSessionsApi < Grape::API
         total_duration_minutes: query.sum(:duration_minutes),
         avg_session_duration: query.average(:duration_minutes)&.round(2),
         active_tutors: query.distinct.count(:marker_id),
-        sessions_by_tutor: query.joins(:marker).group('users.first_name','users.last_name','users.id').count,
+        sessions_by_tutor: query.joins(:marker).group('users.first_name', 'users.last_name', 'users.id').count,
         total_activities: SessionActivity.joins(:marking_session).where(marking_sessions: { unit_id: params[:unit_id] }).count
       }
       present analytics

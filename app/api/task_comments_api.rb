@@ -35,11 +35,11 @@ class TaskCommentsApi < Grape::API
     task = project.task_for_task_definition(task_definition)
 
     SessionTracker.record_assessment_activity(
-        action: "assessing",
-        user: current_user,
-        project: project,
-        ip_address: request.ip,
-        task: task
+      action: "assessing",
+      user: current_user,
+      project: project,
+      ip_address: request.ip,
+      task: task
     )
 
     type_string = content_type.to_s
@@ -92,7 +92,7 @@ class TaskCommentsApi < Grape::API
         project: project,
         ip_address: request.ip,
         task: task
-    )
+      )
 
       comment = task.comments.find(params[:id])
 
@@ -132,7 +132,7 @@ class TaskCommentsApi < Grape::API
         project: project,
         ip_address: request.ip,
         task: task
-    )
+      )
 
       comments = task.all_comments.order('created_at ASC')
       result = comments.map { |c| c.serialize(current_user) }
@@ -154,11 +154,11 @@ class TaskCommentsApi < Grape::API
     task_definition = project.unit.task_definitions.find(params[:task_definition_id])
 
     SessionTracker.record_assessment_activity(
-        action: "inbox",
-        user: current_user,
-        project: project,
-        ip_address: request.ip,
-        task: task
+      action: "inbox",
+      user: current_user,
+      project: project,
+      ip_address: request.ip,
+      task: task
     )
 
     unless authorise? current_user, project, :get
@@ -195,11 +195,11 @@ class TaskCommentsApi < Grape::API
     task = project.task_for_task_definition(task_definition)
 
     SessionTracker.record_assessment_activity(
-        action: "inbox",
-        user: current_user,
-        project: project,
-        ip_address: request.ip,
-        task: task
+      action: "inbox",
+      user: current_user,
+      project: project,
+      ip_address: request.ip,
+      task: task
     )
 
     task_comment = task.comments.find(params[:id])
