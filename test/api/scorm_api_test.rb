@@ -10,7 +10,10 @@ class ScormApiTest < ActiveSupport::TestCase
   end
 
   def scorm_path(task_def, user, file, token_type = :scorm)
-    "/api/scorm/#{task_def.id}/#{user.username.gsub('.', '%2e')}/#{auth_token(user, token_type)}/#{file}"
+    # NOTE: Do not encode '.' to '%2e' here. That hid the bug because the request worked regardless
+    # of the route constraint. Keeping the raw username ensures tests fail without the fix and pass
+    # with it.
+    "/api/scorm/#{task_def.id}/#{user.username}/#{auth_token(user, token_type)}/#{file}"
   end
 
   def test_serve_scorm_content
@@ -85,5 +88,23 @@ class ScormApiTest < ActiveSupport::TestCase
     tutor.destroy!
     td.destroy!
     unit.destroy!
+  end
+
+  def test_username_with_dot_fails_without_fix
+    unit = FactoryBot.create(:unit)
+    user = unit.projects.first.student
+    user.update!(username: "user.name")
+
+    td = FactoryBot.create(:task_definition,
+      unit: unit,
+      tutorial_stream: unit.tutorial_streams.first,
+      scorm_enabled: true
+    )
+    td.add_scorm_data(test_file_path("numbas.zip"), copy: true)
+    td.save!
+
+    # This should fail without the route fix (Rails interprets '.' as format separator)
+    get scorm_path(td, user, "index.html")
+    assert_equal 200, last_response.status
   end
 end
