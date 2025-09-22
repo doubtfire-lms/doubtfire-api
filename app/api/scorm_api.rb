@@ -54,7 +54,7 @@ class ScormApi < Grape::API
   end
 
   # NOTE: allow '.' in username; without this Rails/Grape treats '.' as format.
-  get '/scorm/:task_def_id/:username/:auth_token/*file_path', requirements: { username: /[^\/]+/ }  do
+  get '/scorm/:task_def_id/:username/:auth_token/*file_path', requirements: { username: %r{[^/]+} } do
     task_def = TaskDefinition.find(params[:task_def_id])
 
     unless authorise? current_user, task_def.unit, :get_unit
