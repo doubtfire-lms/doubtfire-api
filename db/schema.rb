@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_08_19_001800) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_21_235828) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -545,6 +545,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_19_001800) do
     t.datetime "updated_at", null: false
     t.bigint "role_id"
     t.bigint "unit_id"
+    t.boolean "observer_only", default: false
     t.index ["role_id"], name: "index_unit_roles_on_role_id"
     t.index ["tutorial_id"], name: "index_unit_roles_on_tutorial_id"
     t.index ["unit_id"], name: "index_unit_roles_on_unit_id"
