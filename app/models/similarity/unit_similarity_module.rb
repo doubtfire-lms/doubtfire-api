@@ -247,24 +247,23 @@ module UnitSimilarityModule
         # "name" is {taskId}/{filename}, so it will create a subdir with the task id, but we use this later when processing the report
         t.extract_file_from_done(tasks_dir, pattern, ->(_task, to_path, name) { File.join(to_path.to_s, t.student.username.to_s, name.to_s) })
       end
-
-      logger.info "Starting JPLAG container to run on #{tasks_dir}"
-      root_dir = Rails.root.to_s
-      tasks_dir_split = tasks_dir.to_s.split(root_dir)[1]
-      file_lang = task_definition.similarity_language.to_s
-
-      # Convert pct to decimal
-      similarity_threshold = similarity_pct.to_f / 100
-
-      min_tokens = Doubtfire::Application.config.jplag_min_tokens.to_i
-      # If empty, let JPlag set the default per-language
-      min_token_string = min_tokens <= 0 ? "" : "--min-tokens=#{min_tokens}"
-
-      # Run JPLAG on the extracted files. JPlag container should already be in the /jplag/ workdir.
-      docker_command = "docker exec -i jplag java -jar jplag-jar-with-dependencies.jar #{tasks_dir_split} -l #{file_lang} --similarity-threshold=#{similarity_threshold} #{min_token_string} -M RUN -r #{results_dir}/#{task_definition.abbreviation}-result"
-      logger.debug "Executing command: #{docker_command}"
-      system(docker_command)
     end
+
+    logger.info "Starting JPLAG container to run on #{tasks_dir}"
+    root_dir = Rails.root.to_s
+    tasks_dir_split = tasks_dir.to_s.split(root_dir)[1]
+    file_lang = task_definition.similarity_language.to_s
+
+    # Convert pct to decimal
+    similarity_threshold = similarity_pct.to_f / 100
+
+    min_tokens = Doubtfire::Application.config.jplag_min_tokens.to_i
+    # If empty, let JPlag set the default per-language
+    min_token_string = min_tokens <= 0 ? "" : "--min-tokens=#{min_tokens}"
+    # Run JPLAG on the extracted files. JPlag container should already be in the /jplag/ workdir.
+    docker_command = "docker exec -i jplag java -jar jplag-jar-with-dependencies.jar #{tasks_dir_split} -l #{file_lang} --similarity-threshold=#{similarity_threshold} #{min_token_string} -M RUN -r #{results_dir}/#{task_definition.abbreviation}-result --overwrite"
+    logger.debug "Executing command: #{docker_command}"
+    system(docker_command)
 
     # Delete the extracted code files from tmp
     tmp_dir = Rails.root.join("tmp/jplag")
