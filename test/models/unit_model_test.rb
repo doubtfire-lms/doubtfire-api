@@ -1023,4 +1023,35 @@ class UnitModelTest < ActiveSupport::TestCase
     assert_not unit2.archived
   end
 
+  def test_overdue_tasks_update_to_assess_in_portfolio
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 2)
+    unit.update(mark_late_submissions_as_assess_in_portfolio: false)
+
+    td1 = unit.task_definitions.first
+    td2 = unit.task_definitions.second
+
+    student = unit.projects.first
+
+    task1 = student.task_for_task_definition(td1)
+    task2 = student.task_for_task_definition(td2)
+
+    task1.update(task_status_id: TaskStatus.time_exceeded.id)
+
+    task2.update(task_status_id: TaskStatus.feedback_exceeded.id)
+
+    task1.reload
+    task2.reload
+
+    assert_equal TaskStatus.time_exceeded, task1.task_status
+    assert_equal TaskStatus.feedback_exceeded, task2.task_status
+
+    unit.update(mark_late_submissions_as_assess_in_portfolio: true)
+
+    task1.reload
+    task2.reload
+
+    assert_equal TaskStatus.assess_in_portfolio, task1.task_status
+    assert_equal TaskStatus.assess_in_portfolio, task2.task_status
+  end
+
 end
