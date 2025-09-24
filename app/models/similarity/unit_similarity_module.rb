@@ -142,6 +142,12 @@ module UnitSimilarityModule
         report_path = "#{Doubtfire::Application.config.jplag_report_dir}/#{unit_code}/#{td.abbreviation}-result.jplag"
         warn_pct = td.plagiarism_warn_pct || 50
         logger.debug "Warn PCT: #{warn_pct}"
+
+        # Remove any existing plagiarism links that are below the threshold, in case it has been updated since the last analysis
+        JplagTaskSimilarity.joins(:task)
+                           .where("pct < ? AND tasks.task_definition_id = ?", warn_pct, td.id)
+                           .delete_all
+
         process_jplag_plagiarism_report(report_path, warn_pct, td.group_set)
       end
       self.last_plagarism_scan = Time.zone.now
