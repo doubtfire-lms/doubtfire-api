@@ -249,9 +249,23 @@ module UnitSimilarityModule
 
       pattern = task_definition.glob_for_upload_requirement(idx)
 
+      # Name to save submission file (used in JPlag report)
+      file_name = task_definition.upload_requirements[idx]['name'].to_s
+      file_name = file_name.squish.tr(" ", "_").tr("-", "_").camelize(:upper)
+
       tasks_with_files.each do |t|
         # "name" is {taskId}/{filename}, so it will create a subdir with the task id, but we use this later when processing the report
-        t.extract_file_from_done(tasks_dir, pattern, ->(_task, to_path, name) { File.join(to_path.to_s, t.student.username.to_s, name.to_s) })
+        t.extract_file_from_done(tasks_dir, pattern, lambda { |task, to_path, name|
+          names = name.split("/")
+          if names.count >= 2
+            # "name" will include the upload req name, eg. "401/000-code.cpp"
+            file_extension = File.extname(names[1])
+            File.join(to_path.to_s, t.student.username.to_s, task.id.to_s, "#{idx}-#{file_name}#{file_extension}")
+          else
+            # "name" is simply the directory of the task, eg. "401/"
+            File.join(to_path.to_s, t.student.username.to_s, name.to_s)
+          end
+        })
       end
     end
 
