@@ -133,6 +133,7 @@ class Unit < ApplicationRecord
 
   after_update :move_files_on_code_change, if: :saved_change_to_code?
   after_update :propogate_date_changes_to_tasks, if: :saved_change_to_start_date?
+  after_update :update_overdue_tasks_aip, if: :saved_change_to_mark_late_submissions_as_assess_in_portfolio?
 
   # Model associations.
   # When a Unit is destroyed, any TaskDefinitions, Tutorials, and ProjectConvenor instances will also be destroyed.
@@ -2721,6 +2722,17 @@ class Unit < ApplicationRecord
     FileUtils.rm_rf submission_history_path
 
     FileUtils.cd FileHelper.student_work_dir
+  end
+
+  def update_overdue_tasks_aip
+    return unless saved_change_to_mark_late_submissions_as_assess_in_portfolio? && mark_late_submissions_as_assess_in_portfolio
+
+    # If the mark_late_submissions_as_assess_in_portfolio was enabled, move all Time & Feedback exceeded tasks to Assess in Portfolio
+    overdue_statuses = [TaskStatus.time_exceeded.id, TaskStatus.feedback_exceeded.id]
+
+    tasks.where(task_status_id: overdue_statuses).find_each do |task|
+      task.update(task_status_id: TaskStatus.assess_in_portfolio.id)
+    end
   end
 
   def propogate_date_changes_to_tasks
