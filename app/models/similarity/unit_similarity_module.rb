@@ -142,6 +142,12 @@ module UnitSimilarityModule
         report_path = "#{Doubtfire::Application.config.jplag_report_dir}/#{unit_code}/#{td.abbreviation}-result.jplag"
         warn_pct = td.plagiarism_warn_pct || 50
         logger.debug "Warn PCT: #{warn_pct}"
+
+        # Remove any existing plagiarism links that are below the threshold, in case it has been updated since the last analysis
+        JplagTaskSimilarity.joins(:task)
+                           .where("pct < ? AND tasks.task_definition_id = ?", warn_pct, td.id)
+                           .delete_all
+
         process_jplag_plagiarism_report(report_path, warn_pct, td.group_set)
       end
       self.last_plagarism_scan = Time.zone.now
@@ -243,28 +249,41 @@ module UnitSimilarityModule
 
       pattern = task_definition.glob_for_upload_requirement(idx)
 
+      # Name to save submission file (used in JPlag report)
+      file_name = task_definition.upload_requirements[idx]['name'].to_s
+      file_name = file_name.squish.tr(" ", "_").tr("-", "_").camelize(:upper)
+
       tasks_with_files.each do |t|
         # "name" is {taskId}/{filename}, so it will create a subdir with the task id, but we use this later when processing the report
-        t.extract_file_from_done(tasks_dir, pattern, ->(_task, to_path, name) { File.join(to_path.to_s, t.student.username.to_s, name.to_s) })
+        t.extract_file_from_done(tasks_dir, pattern, lambda { |task, to_path, name|
+          names = name.split("/")
+          if names.count >= 2
+            # "name" will include the upload req name, eg. "401/000-code.cpp"
+            file_extension = File.extname(names[1])
+            File.join(to_path.to_s, t.student.username.to_s, task.id.to_s, "#{idx}-#{file_name}#{file_extension}")
+          else
+            # "name" is simply the directory of the task, eg. "401/"
+            File.join(to_path.to_s, t.student.username.to_s, name.to_s)
+          end
+        })
       end
-
-      logger.info "Starting JPLAG container to run on #{tasks_dir}"
-      root_dir = Rails.root.to_s
-      tasks_dir_split = tasks_dir.to_s.split(root_dir)[1]
-      file_lang = task_definition.similarity_language.to_s
-
-      # Convert pct to decimal
-      similarity_threshold = similarity_pct.to_f / 100
-
-      min_tokens = Doubtfire::Application.config.jplag_min_tokens.to_i
-      # If empty, let JPlag set the default per-language
-      min_token_string = min_tokens <= 0 ? "" : "--min-tokens=#{min_tokens}"
-
-      # Run JPLAG on the extracted files. JPlag container should already be in the /jplag/ workdir.
-      docker_command = "docker exec -i jplag java -jar jplag-jar-with-dependencies.jar #{tasks_dir_split} -l #{file_lang} --similarity-threshold=#{similarity_threshold} #{min_token_string} -M RUN -r #{results_dir}/#{task_definition.abbreviation}-result"
-      logger.debug "Executing command: #{docker_command}"
-      system(docker_command)
     end
+
+    logger.info "Starting JPLAG container to run on #{tasks_dir}"
+    root_dir = Rails.root.to_s
+    tasks_dir_split = tasks_dir.to_s.split(root_dir)[1]
+    file_lang = task_definition.similarity_language.to_s
+
+    # Convert pct to decimal
+    similarity_threshold = similarity_pct.to_f / 100
+
+    min_tokens = Doubtfire::Application.config.jplag_min_tokens.to_i
+    # If empty, let JPlag set the default per-language
+    min_token_string = min_tokens <= 0 ? "" : "--min-tokens=#{min_tokens}"
+    # Run JPLAG on the extracted files. JPlag container should already be in the /jplag/ workdir.
+    docker_command = "docker exec -i jplag java -jar jplag-jar-with-dependencies.jar #{tasks_dir_split} -l #{file_lang} --similarity-threshold=#{similarity_threshold} #{min_token_string} -M RUN -r #{results_dir}/#{task_definition.abbreviation}-result --overwrite"
+    logger.debug "Executing command: #{docker_command}"
+    system(docker_command)
 
     # Delete the extracted code files from tmp
     tmp_dir = Rails.root.join("tmp/jplag")

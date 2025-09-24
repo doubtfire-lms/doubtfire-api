@@ -90,6 +90,27 @@ class TaskSimilarityTest < ActiveSupport::TestCase
     assert_equal 100, similarity2.pct
 
     assert td.has_jplag_report?, "Expected task definition to have a JPlag report"
+
+    # Create a similarity below the threshold
+    similarity1 = JplagTaskSimilarity.create(
+      task: student1_task,
+      other_task: student2_task,
+      pct: 10,
+      flagged: true
+    )
+
+    # Create a similarity above the threshold
+    similarity2 = JplagTaskSimilarity.create(
+      task: student1_task,
+      other_task: student2_task,
+      pct: 99,
+      flagged: true
+    )
+
+    unit.check_jplag_similarity(force: true)
+
+    assert_not JplagTaskSimilarity.exists?(similarity1.id), "Similarity with lower threshold whould have been deleted"
+    assert JplagTaskSimilarity.exists?(similarity2.id), "Similarity with higher threshold should not have been deleted"
   end
 
   # Test that when you create a plagiarism match link, that a moss test needs the other task
