@@ -53,6 +53,7 @@ class TaskDefinition < ApplicationRecord
   after_update :remove_old_group_submissions, if: :has_removed_group?
   after_update :check_and_update_tii_status, if: :saved_change_to_upload_requirements?
   after_update :update_tii_group, if: :saved_change_to_due_date?
+  after_update :update_overdue_tasks_aip, if: :saved_change_to_assess_in_portfolio_only?
 
   # Model associations
   belongs_to :unit, optional: false # Foreign key
@@ -188,6 +189,16 @@ class TaskDefinition < ApplicationRecord
 
   def detailed_name
     "#{abbreviation} #{name}"
+  end
+
+  def update_overdue_tasks_aip
+    return unless saved_change_to_assess_in_portfolio_only? && assess_in_portfolio_only?
+
+    overdue_statuses = [TaskStatus.time_exceeded.id, TaskStatus.feedback_exceeded.id]
+
+    tasks.where(task_status_id: overdue_statuses).find_each do |task|
+      task.update(task_status_id: TaskStatus.assess_in_portfolio.id)
+    end
   end
 
   def move_files_on_abbreviation_change
