@@ -92,6 +92,8 @@ class TaskDefinition < ApplicationRecord
 
   validate :check_existing_prerequisites
 
+  validate :cant_disable_aip_only_if_aip_tasks_exist
+
   include TaskDefinitionTiiModule
   include TaskDefinitionSimilarityModule
 
@@ -104,6 +106,14 @@ class TaskDefinition < ApplicationRecord
   def tutorial_stream_present?
     if tutorial_stream.nil? and unit.tutorial_streams.exists?
       errors.add(:tutorial_stream, "must be one of the tutorial streams in the unit")
+    end
+  end
+
+  def cant_disable_aip_only_if_aip_tasks_exist
+    return if assess_in_portfolio_only? # only care about disabling
+
+    if tasks.where(task_status_id: TaskStatus.assess_in_portfolio.id).exists?
+      errors.add(:assess_in_portfolio_only, "cannot be disabled while tasks are in the Assess in Portfolio state")
     end
   end
 

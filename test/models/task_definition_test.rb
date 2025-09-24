@@ -429,4 +429,24 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     td2.update(assess_in_portfolio_only: true)
     assert_equal TaskStatus.feedback_exceeded, task2.task_status
   end
+
+  def test_cant_disable_aip_only_while_aip_tasks_exist
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 2)
+
+    td1 = unit.task_definitions.first
+
+    td1.update(assess_in_portfolio_only: true)
+
+    student = unit.projects.first
+
+    task1 = student.task_for_task_definition(td1)
+
+    task1.update(task_status_id: TaskStatus.assess_in_portfolio.id)
+
+    assert td1.valid?
+    td1.assess_in_portfolio_only = false
+
+    assert_not td1.valid?, '"Assess in Portfolio Only" cannot be disabled while tasks are in the Assess in Portfolio state'
+    assert_includes td1.errors[:assess_in_portfolio_only], 'cannot be disabled while tasks are in the Assess in Portfolio state'
+  end
 end
