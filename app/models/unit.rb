@@ -185,6 +185,8 @@ class Unit < ApplicationRecord
   # Portfolio autogen date validations, must be after start date and before or equal to end date
   validate :autogen_date_within_unit_active_period, if: -> { start_date_changed? || end_date_changed? || teaching_period_id_changed? || portfolio_auto_generation_date_changed? }
 
+  validate :cant_disable_aip_only_if_aip_tasks_exist
+
   scope :current,               -> { current_for_date(Time.zone.now) }
   scope :current_for_date,      ->(date) { where('start_date <= ? AND end_date >= ?', date, date) }
   scope :not_current,           -> { not_current_for_date(Time.zone.now) }
@@ -278,6 +280,15 @@ class Unit < ApplicationRecord
     errors.add(:main_convenor, "must be configured to administer unit") unless main_convenor.is_convenor?
     errors.add(:main_convenor, "must be capable of administering units - ensure user has appropriate permissions (contact admin staff to update)") unless main_convenor_user.has_convenor_capability?
   end
+
+  def cant_disable_aip_only_if_aip_tasks_exist
+    return if mark_late_submissions_as_assess_in_portfolio # only care about disabling
+
+    if tasks.where(task_status_id: TaskStatus.assess_in_portfolio.id).exists?
+      errors.add(:mark_late_submissions_as_assess_in_portfolio, "cannot be disabled while tasks are in the Assess in Portfolio state")
+    end
+  end
+
 
   def validate_end_date_after_start_date
     if end_date.present? && start_date.present? && end_date < start_date

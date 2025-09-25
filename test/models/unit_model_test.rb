@@ -1068,4 +1068,22 @@ class UnitModelTest < ActiveSupport::TestCase
     lc.destroy!
   end
 
+  def test_cant_disable_aip_only_while_aip_tasks_exist
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 2)
+    unit.update(mark_late_submissions_as_assess_in_portfolio: true)
+
+    td1 = unit.task_definitions.first
+
+    student = unit.projects.first
+
+    task1 = student.task_for_task_definition(td1)
+    task1.update(task_status_id: TaskStatus.assess_in_portfolio.id)
+
+    assert unit.valid?
+    unit.mark_late_submissions_as_assess_in_portfolio = false
+
+    assert_not unit.valid?, '"mark_late_submissions_as_assess_in_portfolio" cannot be disabled while tasks are in the Assess in Portfolio state'
+    assert_includes unit.errors[:mark_late_submissions_as_assess_in_portfolio], 'cannot be disabled while tasks are in the Assess in Portfolio state'
+  end
+
 end
