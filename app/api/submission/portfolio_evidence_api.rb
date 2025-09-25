@@ -149,7 +149,7 @@ module Submission
       project = Project.find(params[:id])
       task_definition = project.unit.task_definitions.find(params[:task_definition_id])
 
-      unless authorise? current_user, project, :get_submission
+      unless authorise? current_user, project, :reprocess_submission
         error!({ error: "Not authorised to get task '#{task_definition.name}'" }, 401)
       end
 
@@ -188,7 +188,7 @@ module Submission
       project = Project.find(params[:id])
       task_definition = project.unit.task_definitions.find(params[:task_definition_id])
 
-      unless authorise? current_user, project, :get_submission
+      unless authorise? current_user, project, :reprocess_submission
         error!({ error: "Not authorised to get task '#{task_definition.name}'" }, 401)
       end
 

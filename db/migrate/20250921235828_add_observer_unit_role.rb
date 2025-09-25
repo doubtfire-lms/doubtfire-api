@@ -1,0 +1,5 @@
+class AddObserverUnitRole < ActiveRecord::Migration[8.0]
+  def change
+    add_column :unit_roles, :observer_only, :boolean, default: false
+  end
+end
