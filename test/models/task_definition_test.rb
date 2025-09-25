@@ -424,12 +424,27 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     task2.reload
 
     assert_equal TaskStatus.assess_in_portfolio, task1.task_status
+
+    missing_aip_status_error = "Assess in Portfolio status comment missing"
+
+    lc = task1.last_comment
+    assert_not lc.nil?, missing_aip_status_error
+    assert_equal TaskStatus.assess_in_portfolio.name, lc.comment, missing_aip_status_error
+    assert_equal TaskStatus.assess_in_portfolio, lc.task_status, missing_aip_status_error
+    lc.destroy!
+
     assert_equal TaskStatus.feedback_exceeded, task2.task_status
 
     td2.update(assess_in_portfolio_only: true)
     task2.reload
 
     assert_equal TaskStatus.assess_in_portfolio, task2.task_status
+
+    lc = task2.last_comment
+    assert_not lc.nil?, missing_aip_status_error
+    assert_equal TaskStatus.assess_in_portfolio.name, lc.comment, missing_aip_status_error
+    assert_equal TaskStatus.assess_in_portfolio, lc.task_status, missing_aip_status_error
+    lc.destroy!
   end
 
   def test_cant_disable_aip_only_while_aip_tasks_exist
