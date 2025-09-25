@@ -153,6 +153,12 @@ class TaskCommentsApi < Grape::API
     project = Project.find(params[:project_id])
     task_definition = project.unit.task_definitions.find(params[:task_definition_id])
 
+    unless authorise? current_user, project, :get
+      error!({ error: 'You cannot read the comments for this task' }, 403)
+    end
+
+    task = project.task_for_task_definition(task_definition)
+
     SessionTracker.record_assessment_activity(
       action: "inbox",
       user: current_user,
@@ -161,11 +167,6 @@ class TaskCommentsApi < Grape::API
       task: task
     )
 
-    unless authorise? current_user, project, :get
-      error!({ error: 'You cannot read the comments for this task' }, 403)
-    end
-
-    task = project.task_for_task_definition(task_definition)
     task_comment = task.all_comments.find(params[:id])
 
     key = if current_user == task_comment.user
