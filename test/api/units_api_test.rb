@@ -345,7 +345,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert actual_unit.key?("staff"), actual_unit.inspect
     assert_equal expected_unit.staff.count, actual_unit["staff"].count, actual_unit["staff"].inspect
     actual_unit["staff"].each do |staff|
-      keys = %w[id role user]
+      keys = %w[id role user observer_only]
       assert_json_limit_keys_to_exactly keys, staff
       ur = UnitRole.find(staff['id'])
       assert_equal ur.id, staff['id']
