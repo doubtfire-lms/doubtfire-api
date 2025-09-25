@@ -19,7 +19,7 @@ class SessionTracker
 
   def self.find_or_create_session(user, unit, ip_address)
     session = MarkingSession.where(
-      marker: user,
+      user: user,
       unit: unit,
       ip_address: ip_address
     ).where("start_time > ?", THRESHOLD.minutes.ago).last
@@ -27,7 +27,7 @@ class SessionTracker
     if session.nil?
       # Find the last session for this user/unit/ip and end it at 15 minutes
       last_session = MarkingSession.where(
-        marker: user,
+        user: user,
         unit: unit,
         ip_address: ip_address
       ).order(start_time: :desc).first
@@ -41,7 +41,7 @@ class SessionTracker
       end
 
       session = MarkingSession.create!(
-        marker: user,
+        user: user,
         unit: unit,
         ip_address: ip_address,
         start_time: DateTime.now

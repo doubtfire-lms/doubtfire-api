@@ -18,12 +18,12 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
     @task = FactoryBot.create(:task, project: @project)
     @unit.employ_staff(@tutor, Role.tutor)
     @unit.employ_staff(@convenor, Role.convenor)
-    @marking_session = FactoryBot.create(:marking_session, 
-                                        marker: @tutor, 
-                                        unit: @unit,
-                                        ip_address: '192.168.1.1',
-                                        start_time: 1.hour.ago,
-                                        duration_minutes: 60)
+    @marking_session = FactoryBot.create(:marking_session,
+                                         user: @tutor,
+                                         unit: @unit,
+                                         ip_address: '192.168.1.1',
+                                         start_time: 1.hour.ago,
+                                         duration_minutes: 60)
   end
 
   def test_get_specific_marking_session
@@ -32,7 +32,7 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
     response_data = last_response_body
     assert_equal @marking_session.id, response_data['id']
-    assert_equal @marking_session.marker_id, response_data['marker_id']
+    assert_equal @marking_session.user_id, response_data['user_id']
     assert_equal @marking_session.unit_id, response_data['unit_id']
   end
 

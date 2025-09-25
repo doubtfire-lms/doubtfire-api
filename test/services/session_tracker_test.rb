@@ -21,14 +21,14 @@ class SessionTrackerTest < ActiveSupport::TestCase
       assert_equal "assessing", activity.action
       assert_equal @project.id, activity.project_id
       assert_equal @task.id, activity.task_id
-      assert_equal @user, activity.marking_session.marker
+      assert_equal @user, activity.marking_session.user
       assert_equal @unit, activity.marking_session.unit
     end
   end
 
   def test_reuses_existing_session_within_threshold
     session = MarkingSession.create!(
-      marker: @user,
+      user: @user,
       unit: @unit,
       ip_address: @ip_address,
       start_time: 10.minutes.ago

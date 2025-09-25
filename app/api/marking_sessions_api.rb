@@ -34,7 +34,7 @@ class MarkingSessionsApi < Grape::API
       error!({ error: "Tutor not found" }, 404) unless tutor
       error!({ error: "You are not authorized to view this tutor's sessions" }, 403) unless can_view_tutor_sessions?(current_user, tutor)
 
-      sessions = MarkingSession.includes(:unit).where(marker_id: params[:tutor_id])
+      sessions = MarkingSession.includes(:unit).where(user_id: params[:tutor_id])
       authorized = sessions.select { |s| can_view_marking_session?(current_user, s) }
       present authorized, with: Entities::MarkingSessionEntity
     end
@@ -82,7 +82,7 @@ class MarkingSessionsApi < Grape::API
 
       activities = SessionActivity
                    .joins(:marking_session)
-                   .where(marking_sessions: { marker_id: params[:tutor_id] })
+                   .where(marking_sessions: { user_id: params[:tutor_id] })
                    .includes(:marking_session, :project, :task, :task_definition)
       present activities, with: Entities::SessionActivityEntity
     end
@@ -117,7 +117,7 @@ class MarkingSessionsApi < Grape::API
       error!({ error: "Tutor not found" }, 404) unless tutor
       error!({ error: "You are not authorized to view this tutor's analytics" }, 403) unless can_view_tutor_sessions?(current_user, tutor)
 
-      query = MarkingSession.where(marker_id: params[:tutor_id])
+      query = MarkingSession.where(user_id: params[:tutor_id])
       query = query.where('start_time >= ?', params[:start_date]) if params[:start_date]
       query = query.where('start_time <= ?', params[:end_date]) if params[:end_date]
 
@@ -150,8 +150,8 @@ class MarkingSessionsApi < Grape::API
         total_sessions: query.count,
         total_duration_minutes: query.sum(:duration_minutes),
         avg_session_duration: query.average(:duration_minutes)&.round(2),
-        active_tutors: query.distinct.count(:marker_id),
-        sessions_by_tutor: query.joins(:marker).group('users.first_name', 'users.last_name', 'users.id').count,
+        active_tutors: query.distinct.count(:user_id),
+        sessions_by_tutor: query.joins(:user).group('users.first_name', 'users.last_name', 'users.id').count,
         total_activities: SessionActivity.joins(:marking_session).where(marking_sessions: { unit_id: params[:unit_id] }).count
       }
       present analytics
@@ -173,7 +173,7 @@ class MarkingSessionsApi < Grape::API
 
     def can_view_marking_session?(user, session)
       return true if admin_user?(user)
-      return session.marker_id == user.id if tutor_user?(user)
+      return session.user_id == user.id if tutor_user?(user)
       return session.unit.unit_roles.exists?(user_id: user.id, role_id: Role.convenor.id) if convenor_user?(user)
       false
     end

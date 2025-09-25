@@ -1,7 +1,7 @@
 module Entities
   class MarkingSessionEntity < Grape::Entity
     expose :id
-    expose :marker_id
+    expose :user_id
     expose :unit_id
     expose :ip_address
     expose :start_time
