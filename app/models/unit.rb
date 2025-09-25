@@ -2731,6 +2731,7 @@ class Unit < ApplicationRecord
     overdue_statuses = [TaskStatus.time_exceeded.id, TaskStatus.feedback_exceeded.id]
 
     tasks.where(task_status_id: overdue_statuses).find_each do |task|
+      task.add_status_comment(main_convenor.user, TaskStatus.assess_in_portfolio)
       task.update(task_status_id: TaskStatus.assess_in_portfolio.id)
     end
   end

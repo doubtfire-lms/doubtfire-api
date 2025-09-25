@@ -1052,6 +1052,20 @@ class UnitModelTest < ActiveSupport::TestCase
 
     assert_equal TaskStatus.assess_in_portfolio, task1.task_status
     assert_equal TaskStatus.assess_in_portfolio, task2.task_status
+
+    missing_aip_status_error = "Assess in Portfolio status comment missing"
+
+    lc = task1.last_comment
+    assert_not lc.nil?, missing_aip_status_error
+    assert_equal TaskStatus.assess_in_portfolio.name, lc.comment, missing_aip_status_error
+    assert_equal TaskStatus.assess_in_portfolio, lc.task_status, missing_aip_status_error
+    lc.destroy!
+
+    lc = task2.last_comment
+    assert_not lc.nil?, missing_aip_status_error
+    assert_equal TaskStatus.assess_in_portfolio.name, lc.comment, missing_aip_status_error
+    assert_equal TaskStatus.assess_in_portfolio, lc.task_status, missing_aip_status_error
+    lc.destroy!
   end
 
 end
