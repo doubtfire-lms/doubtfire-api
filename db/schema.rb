@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_21_235828) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_23_121205) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -184,6 +184,20 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_21_235828) do
     t.index ["user_id"], name: "index_logins_on_user_id"
   end
 
+  create_table "marking_sessions", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "unit_id", null: false
+    t.string "ip_address"
+    t.datetime "start_time"
+    t.datetime "end_time"
+    t.integer "duration_minutes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["unit_id"], name: "index_marking_sessions_on_unit_id"
+    t.index ["user_id", "unit_id", "ip_address", "updated_at"], name: "index_marking_sessions_on_user_unit_ip_and_time"
+    t.index ["user_id"], name: "index_marking_sessions_on_user_id"
+  end
+
   create_table "overseer_assessments", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.bigint "task_id", null: false
     t.string "submission_timestamp", null: false
@@ -241,6 +255,21 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_21_235828) do
     t.text "description"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "session_activities", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "marking_session_id", null: false
+    t.string "action"
+    t.bigint "project_id"
+    t.bigint "task_id"
+    t.bigint "task_definition_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["action", "task_id", "created_at"], name: "index_session_activities_on_action_task_created_at"
+    t.index ["marking_session_id"], name: "index_session_activities_on_marking_session_id"
+    t.index ["project_id"], name: "index_session_activities_on_project_id"
+    t.index ["task_definition_id"], name: "index_session_activities_on_task_definition_id"
+    t.index ["task_id"], name: "index_session_activities_on_task_id"
   end
 
   create_table "staff_notes", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
