@@ -1,12 +1,12 @@
 class CreateSessionActivities < ActiveRecord::Migration[7.1]
   def change
     create_table :session_activities do |t|
-      t.references :marking_session, null: false, foreign_key: true
+      t.references :marking_session, null: false
       t.string :action
 
-      t.references :project, foreign_key: true
-      t.references :task, foreign_key: true
-      t.references :task_definition, foreign_key: true
+      t.references :project
+      t.references :task
+      t.references :task_definition
 
       t.timestamps
     end
