@@ -182,7 +182,7 @@ class MarkingSessionsApi < Grape::API
       return true if admin_user?(user)
       return true if user.id == tutor.id
       if convenor_user?(user)
-        (tutor.unit_roles.pluck(:unit_id) & user.unit_roles.where(role_id: Role.convenor.id).pluck(:unit_id)).any?
+        tutor.unit_roles.pluck(:unit_id).intersect?(user.unit_roles.where(role_id: Role.convenor.id).pluck(:unit_id))
       else
         false
       end
