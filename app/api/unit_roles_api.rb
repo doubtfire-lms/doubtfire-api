@@ -80,10 +80,8 @@ class UnitRolesApi < Grape::API
       error!({ error: "Not authorised to update unit role with id=#{params[:id]}" }, 403)
     end
 
-    unit_role_params = params.dup
-
     # Prevent staff from setting themselves as read-only
-    if unit_role_params[:unit_role][:observer_only] && unit_role.user.id == current_user.id
+    if params[:unit_role][:observer_only] && unit_role.user.id == current_user.id
       error!({ error: "You cannot make yourself an observer" }, 403)
     end
 
@@ -93,7 +91,7 @@ class UnitRolesApi < Grape::API
       error!({ error: "You are not authorised to update this staff member." }, 403)
     end
 
-    unit_role_parameters = ActionController::Parameters.new(unit_role_params)
+    unit_role_parameters = ActionController::Parameters.new(params)
                                                        .require(:unit_role)
                                                        .permit(
                                                          :role_id,
