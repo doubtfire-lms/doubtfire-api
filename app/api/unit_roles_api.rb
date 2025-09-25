@@ -70,19 +70,32 @@ class UnitRolesApi < Grape::API
   params do
     requires :unit_role, type: Hash do
       requires :role_id, type: Integer, desc: 'The role to create with'
+      optional :observer_only, type: Boolean, desc: 'If the staff has read-only permissions'
     end
   end
   put '/unit_roles/:id' do
     unit_role = UnitRole.find_by(id: params[:id])
 
     unless (authorise? current_user, unit_role.unit, :employ_staff) || (authorise? current_user, User, :admin_units)
-      error!({ error: "Couldn't find Unit with id=#{params[:id]}" }, 403)
+      error!({ error: "Not authorised to update unit role with id=#{params[:id]}" }, 403)
+    end
+
+    # Prevent staff from setting themselves as read-only
+    if params[:unit_role][:observer_only] && unit_role.user.id == current_user.id
+      error!({ error: "You cannot make yourself an observer" }, 403)
+    end
+
+    # Once they're an observer, they'll no longer have access to this route to remove the observer status from themselves
+    # But let's double check just in case this route gets whitelisted...
+    if unit_role.observer_only
+      error!({ error: "You are not authorised to update this staff member." }, 403)
     end
 
     unit_role_parameters = ActionController::Parameters.new(params)
                                                        .require(:unit_role)
                                                        .permit(
-                                                         :role_id
+                                                         :role_id,
+                                                         :observer_only
                                                        )
 
     if unit_role_parameters[:role_id] == Role.tutor.id && unit_role.role == Role.convenor && unit_role.unit.convenors.count == 1
