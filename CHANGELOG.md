@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-35](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-34...v10.0.0-35) (2025-09-25)
+
+
+### Features
+
+* add observer updating ([74f01a9](https://github.com/b0ink/doubtfire-deploy/commit/74f01a91fdde6c2712e6927154f2fde0b97f9220))
+* init observer only unit role permissions ([a302a59](https://github.com/b0ink/doubtfire-deploy/commit/a302a597bd73abbe67c5e19d22c24e44bd45bf5e))
+
 ## [10.0.0-34](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-33...v10.0.0-34) (2025-09-24)
 
 
