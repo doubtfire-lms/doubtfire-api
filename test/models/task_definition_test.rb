@@ -427,7 +427,9 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert_equal TaskStatus.feedback_exceeded, task2.task_status
 
     td2.update(assess_in_portfolio_only: true)
-    assert_equal TaskStatus.feedback_exceeded, task2.task_status
+    task2.reload
+
+    assert_equal TaskStatus.assess_in_portfolio, task2.task_status
   end
 
   def test_cant_disable_aip_only_while_aip_tasks_exist
