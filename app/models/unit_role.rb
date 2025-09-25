@@ -17,6 +17,7 @@ class UnitRole < ApplicationRecord
 
   validate :ensure_valid_user_for_role
   validate :ensure_convenor, if: :is_main_convenor?
+  validate :main_convenor_cant_be_observer
 
   before_destroy do
     if is_main_convenor?
@@ -201,6 +202,12 @@ class UnitRole < ApplicationRecord
       errors.add :user, 'must have a role that is able to administer units (request admin to adjust user role)' unless user.has_convenor_capability?
     else
       errors.add :user, 'must have a role that is able to teach units (request admin to adjust user role)' unless user.has_tutor_capability?
+    end
+  end
+
+  def main_convenor_cant_be_observer
+    if unit.main_convenor_id == id && observer_only
+      errors.add(:observer_only, 'cannot be set for the main convenor')
     end
   end
 

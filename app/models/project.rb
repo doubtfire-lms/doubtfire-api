@@ -56,7 +56,8 @@ class Project < ApplicationRecord
       :get,
       :make_submission,
       :get_submission,
-      :change
+      :change,
+      :reprocess_submission
     ]
     # What can tutors do with projects?
     tutor_role_permissions = [
@@ -69,20 +70,23 @@ class Project < ApplicationRecord
       :assess,
       :change_campus,
       :get_staff_note,
-      :create_staff_note
+      :create_staff_note,
+      :reprocess_submission
     ]
 
     # What can admins do with projects?
     admin_role_permissions = [
       :get,
-      :get_submission
+      :get_submission,
+      :reprocess_submission
     ]
 
     # What can auditors do with projects?
     auditor_role_permissions = [
       :get,
       :get_submission,
-      :get_staff_note
+      :get_staff_note,
+      :reprocess_submission
     ]
 
     # What can nil users do with projects?

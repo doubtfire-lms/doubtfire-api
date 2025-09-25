@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-35](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-34...v10.0.0-35) (2025-09-25)
+
+
+### Features
+
+* add observer updating ([74f01a9](https://github.com/b0ink/doubtfire-deploy/commit/74f01a91fdde6c2712e6927154f2fde0b97f9220))
+* init observer only unit role permissions ([a302a59](https://github.com/b0ink/doubtfire-deploy/commit/a302a597bd73abbe67c5e19d22c24e44bd45bf5e))
+
+## [10.0.0-34](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-33...v10.0.0-34) (2025-09-24)
+
+
+### Bug Fixes
+
+* ensure all files are copied first before running jplag ([4ff5f4a](https://github.com/b0ink/doubtfire-deploy/commit/4ff5f4a5f14a12e1f0e556f44acaac7741724e0e))
+* remove old plagiarism links that are below the new threshold ([3abe8e4](https://github.com/b0ink/doubtfire-deploy/commit/3abe8e4d79a69e0832b1263ab3060b2ab8643d06))
+
 ## [10.0.0-33](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-32...v10.0.0-33) (2025-09-18)
 
 
