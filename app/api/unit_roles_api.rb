@@ -84,7 +84,13 @@ class UnitRolesApi < Grape::API
 
     # Prevent staff from setting themselves as read-only
     if unit_role_params[:unit_role][:observer_only] && unit_role.user.id == current_user.id
-      error!({ error: "You cannot make yourself an observer" })
+      error!({ error: "You cannot make yourself an observer" }, 403)
+    end
+
+    # Once they're an observer, they'll no longer have access to this route to remove the observer status from themselves
+    # But let's double check just in case this route gets whitelisted...
+    if unit_role.observer_only
+      error!({ error: "You are not authorised to update this staff member." }, 403)
     end
 
     unit_role_parameters = ActionController::Parameters.new(unit_role_params)
