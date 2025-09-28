@@ -133,6 +133,7 @@ class Unit < ApplicationRecord
 
   after_update :move_files_on_code_change, if: :saved_change_to_code?
   after_update :propogate_date_changes_to_tasks, if: :saved_change_to_start_date?
+  after_update :update_overdue_tasks_aip, if: :saved_change_to_mark_late_submissions_as_assess_in_portfolio?
 
   # Model associations.
   # When a Unit is destroyed, any TaskDefinitions, Tutorials, and ProjectConvenor instances will also be destroyed.
@@ -183,6 +184,8 @@ class Unit < ApplicationRecord
 
   # Portfolio autogen date validations, must be after start date and before or equal to end date
   validate :autogen_date_within_unit_active_period, if: -> { start_date_changed? || end_date_changed? || teaching_period_id_changed? || portfolio_auto_generation_date_changed? }
+
+  validate :cant_disable_aip_only_if_aip_tasks_exist
 
   scope :current,               -> { current_for_date(Time.zone.now) }
   scope :current_for_date,      ->(date) { where('start_date <= ? AND end_date >= ?', date, date) }
@@ -277,6 +280,15 @@ class Unit < ApplicationRecord
     errors.add(:main_convenor, "must be configured to administer unit") unless main_convenor.is_convenor?
     errors.add(:main_convenor, "must be capable of administering units - ensure user has appropriate permissions (contact admin staff to update)") unless main_convenor_user.has_convenor_capability?
   end
+
+  def cant_disable_aip_only_if_aip_tasks_exist
+    return if mark_late_submissions_as_assess_in_portfolio # only care about disabling
+
+    if tasks.where(task_status_id: TaskStatus.assess_in_portfolio.id).exists?
+      errors.add(:mark_late_submissions_as_assess_in_portfolio, "cannot be disabled while tasks are in the Assess in Portfolio state")
+    end
+  end
+
 
   def validate_end_date_after_start_date
     if end_date.present? && start_date.present? && end_date < start_date
@@ -2721,6 +2733,18 @@ class Unit < ApplicationRecord
     FileUtils.rm_rf submission_history_path
 
     FileUtils.cd FileHelper.student_work_dir
+  end
+
+  def update_overdue_tasks_aip
+    return unless saved_change_to_mark_late_submissions_as_assess_in_portfolio? && mark_late_submissions_as_assess_in_portfolio
+
+    # If the mark_late_submissions_as_assess_in_portfolio was enabled, move all Time & Feedback exceeded tasks to Assess in Portfolio
+    overdue_statuses = [TaskStatus.time_exceeded.id, TaskStatus.feedback_exceeded.id]
+
+    tasks.where(task_status_id: overdue_statuses).find_each do |task|
+      task.add_status_comment(main_convenor.user, TaskStatus.assess_in_portfolio)
+      task.update(task_status_id: TaskStatus.assess_in_portfolio.id)
+    end
   end
 
   def propogate_date_changes_to_tasks
