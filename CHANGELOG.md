@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-36](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-35...v10.0.0-36) (2025-09-28)
+
+
+### Features
+
+* ensure overdue tasks update to aip when task definition enables aip only ([0e216cd](https://github.com/b0ink/doubtfire-deploy/commit/0e216cdb8d553d72b663a7ff7649e801c75c5e53))
+* ensure overdue tasks update to aip when unit enables aip ([3599ae6](https://github.com/b0ink/doubtfire-deploy/commit/3599ae6ec7538e0ae310bb671c4d86f99762620b))
+
+
+### Bug Fixes
+
+* assert assess in portfolio status ([9dfc62c](https://github.com/b0ink/doubtfire-deploy/commit/9dfc62ca67c5884a59a1027fafaeab6d329b9529))
+
 ## [10.0.0-35](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-34...v10.0.0-35) (2025-09-25)
 
 
