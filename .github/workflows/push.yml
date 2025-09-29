@@ -117,6 +117,7 @@ jobs:
           image: ${{ env.DF_JPLAG_IMAGE_NAME }}:local
           options: >
             --name jplag
+            -v ${{ github.workspace }}:/doubtfire
             -v ${{ github.workspace }}/student-work:/student-work
             -v ${{ github.workspace }}/jplag/results:${{ env.DF_JPLAG_REPORT_DIR }}
             -v ${{ github.workspace }}/tmp/jplag:/tmp/jplag
