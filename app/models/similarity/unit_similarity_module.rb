@@ -152,7 +152,7 @@ module UnitSimilarityModule
         # process_jplag_plagiarism_report(report_path, warn_pct, td.group_set)
         # run_jplag_on_done_files(td, tasks_dir, tasks_with_files, unit_code)
         # report_path = "#{Doubtfire::Application.config.jplag_report_dir}/#{unit_code}/#{td.abbreviation}-result.jplag"
-        # warn_pct = td.plagiarism_warn_pct || 50
+        warn_pct = td.plagiarism_warn_pct || 50
         # logger.debug "Warn PCT: #{warn_pct}"
 
         # Remove any existing plagiarism links that are below the threshold, in case it has been updated since the last analysis
