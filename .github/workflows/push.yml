@@ -205,6 +205,7 @@ jobs:
             -e LTI_SHARED_API_SECRET
             -e LTI_ENABLED
             -e DF_LATEX_PATH_TO_WORKDIRS=/doubtfire/tmp/rails-latex
+            -e DF_JPLAG_PATH_TO_WORKDIRS=/doubtfire/tmp/jplag
           run: TERM=xterm bundle exec rails test
       - name: Stop TexLive service
         run: docker rm -f ${{ env.LATEX_CONTAINER_NAME }}
