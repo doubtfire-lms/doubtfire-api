@@ -880,4 +880,108 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     task_def.reload
     assert_equal upload_reqs, task_def.upload_requirements
   end
- end
+
+  def test_task_prerequisites
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
+    upload_reqs = [{ 'key' => 'file0', 'name' => 'PDF Report', 'type' => 'document' }]
+    task_def1 = FactoryBot.create(:task_definition, unit: unit, upload_requirements: upload_reqs)
+    task_def2 = FactoryBot.create(:task_definition, unit: unit, upload_requirements: upload_reqs)
+
+    task_def1.update(target_grade: 0, target_date: Time.zone.today + 1.week)
+    task_def2.update(target_grade: 0, target_date: Time.zone.today + 1.week)
+
+    admin = FactoryBot.create(:user, :admin)
+    convenor = FactoryBot.create(:user, :convenor)
+    tutor = FactoryBot.create(:user, :tutor)
+    student = unit.students.first.user
+
+    unit.employ_staff(convenor, Role.convenor)
+    unit.employ_staff(tutor, Role.tutor)
+
+    users_can_create = [
+      admin,
+      convenor
+    ]
+
+    users_cant_create = [
+      student,
+      tutor
+    ]
+
+    users_can_create.each do |user|
+      add_auth_header_for(user: user)
+      data_to_post = {
+        prerequisite_id: task_def2.id
+      }
+      post "/api/units/#{unit.id}/task_definitions/#{task_def1.id}/prerequisites", data_to_post
+      assert_equal 201, last_response.status, last_response_body
+      assert_equal task_def1.id, last_response_body['task_definition_id']
+      assert_equal task_def2.id, last_response_body['prerequisite_id']
+      # We didn't pass in a task status, so we expect it to default to complete
+      assert_equal 'complete', last_response_body['task_status']
+
+      delete "/api/units/#{unit.id}/task_definitions/#{task_def1.id}/prerequisites/#{task_def2.id}"
+      assert_equal 200, last_response.status, last_response_body
+    end
+
+    users_cant_create.each do |user|
+      add_auth_header_for(user: user)
+      data_to_post = {
+        prerequisite_id: task_def2.id
+      }
+      post "/api/units/#{unit.id}/task_definitions/#{task_def1.id}/prerequisites", data_to_post
+      assert_equal 403, last_response.status, last_response_body
+
+      delete "/api/units/#{unit.id}/task_definitions/#{task_def1.id}/prerequisites/#{task_def2.id}"
+      assert_equal 403, last_response.status, last_response_body
+    end
+  end
+
+  def test_download_student_submission_jobs
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 2)
+
+    task_def1 = unit.task_definitions.first
+
+    admin = FactoryBot.create(:user, :admin)
+    convenor = FactoryBot.create(:user, :convenor)
+    tutor = FactoryBot.create(:user, :tutor)
+    student = unit.students.first.user
+
+    unit.employ_staff(convenor, Role.convenor)
+    unit.employ_staff(tutor, Role.tutor)
+
+    users_can = [
+      admin,
+      convenor,
+      tutor
+    ]
+
+    users_cant = [
+      student
+    ]
+
+    Sidekiq::Testing.inline! do
+      users_can.each do |user|
+        add_auth_header_for(user: user)
+
+        get "/api/submission/units/#{unit.id}/task_definitions/#{task_def1.id}/download_submissions/zip"
+        assert_equal 200, last_response.status, last_response_body
+        assert_not_nil last_response_body['id']
+
+        get "/api/submission/units/#{unit.id}/task_definitions/#{task_def1.id}/student_pdfs/zip"
+        assert_equal 200, last_response.status, last_response_body
+        assert_not_nil last_response_body['id']
+      end
+
+      users_cant.each do |user|
+        add_auth_header_for(user: user)
+
+        get "/api/submission/units/#{unit.id}/task_definitions/#{task_def1.id}/student_pdfs/zip"
+        assert_equal 403, last_response.status, "#{user.role.name} should not have permission to download student pdfs"
+
+        get "/api/submission/units/#{unit.id}/task_definitions/#{task_def1.id}/student_pdfs/zip"
+        assert_equal 403, last_response.status, "#{user.role.name} should not have permission to download student pdfs"
+      end
+    end
+  end
+end

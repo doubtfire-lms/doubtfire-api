@@ -1544,4 +1544,28 @@ class CsvTest < ActiveSupport::TestCase
       Sidekiq::Testing.fake!
     end
   end
+
+  def test_download_csv_times_tasks_assessed
+    Sidekiq::Testing.inline! do
+      unit = Unit.first
+
+      # auth_token and username added to header
+      add_auth_header_for(user: User.first)
+
+      # perform the get
+      get "/api/csv/units/#{unit.id}/task_assessment_counts"
+
+      # Check for response
+      assert_equal 200, last_response.status, last_response_body['error']
+
+      times_tasks_assessed = unit.times_tasks_have_been_assessed
+
+      assert_not_nil last_response_body['result']
+
+      # Check for CSV data in completed sidekiq job
+      assert_equal times_tasks_assessed, last_response_body['result']
+
+      Sidekiq::Testing.fake!
+    end
+  end
 end

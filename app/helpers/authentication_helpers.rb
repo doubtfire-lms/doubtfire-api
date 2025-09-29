@@ -185,6 +185,13 @@ module AuthenticationHelpers
   end
 
   #
+  # Returns true if using SAML2.0 auth strategy
+  #
+  def lti_enabled?
+    Doubtfire::Application.config.lti_enabled == true
+  end
+
+  #
   # Returns true if using AAF devise auth strategy
   #
   def aaf_auth?

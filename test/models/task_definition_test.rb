@@ -392,4 +392,78 @@ class TaskDefinitionTest < ActiveSupport::TestCase
   ensure
     u.destroy
   end
+
+  def test_overdue_tasks_update_to_assess_in_portfolio
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 2)
+    unit.update(mark_late_submissions_as_assess_in_portfolio: false)
+
+    td1 = unit.task_definitions.first
+    td2 = unit.task_definitions.second
+
+    td1.update(assess_in_portfolio_only: false)
+    td2.update(assess_in_portfolio_only: false)
+
+    student = unit.projects.first
+
+    task1 = student.task_for_task_definition(td1)
+    task2 = student.task_for_task_definition(td2)
+
+    task1.update(task_status_id: TaskStatus.time_exceeded.id)
+
+    task2.update(task_status_id: TaskStatus.feedback_exceeded.id)
+
+    task1.reload
+    task2.reload
+
+    assert_equal TaskStatus.time_exceeded, task1.task_status
+    assert_equal TaskStatus.feedback_exceeded, task2.task_status
+
+    td1.update(assess_in_portfolio_only: true)
+
+    task1.reload
+    task2.reload
+
+    assert_equal TaskStatus.assess_in_portfolio, task1.task_status
+
+    missing_aip_status_error = "Assess in Portfolio status comment missing"
+
+    lc = task1.last_comment
+    assert_not lc.nil?, missing_aip_status_error
+    assert_equal TaskStatus.assess_in_portfolio.name, lc.comment, missing_aip_status_error
+    assert_equal TaskStatus.assess_in_portfolio, lc.task_status, missing_aip_status_error
+    lc.destroy!
+
+    assert_equal TaskStatus.feedback_exceeded, task2.task_status
+
+    td2.update(assess_in_portfolio_only: true)
+    task2.reload
+
+    assert_equal TaskStatus.assess_in_portfolio, task2.task_status
+
+    lc = task2.last_comment
+    assert_not lc.nil?, missing_aip_status_error
+    assert_equal TaskStatus.assess_in_portfolio.name, lc.comment, missing_aip_status_error
+    assert_equal TaskStatus.assess_in_portfolio, lc.task_status, missing_aip_status_error
+    lc.destroy!
+  end
+
+  def test_cant_disable_aip_only_while_aip_tasks_exist
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 2)
+
+    td1 = unit.task_definitions.first
+
+    td1.update(assess_in_portfolio_only: true)
+
+    student = unit.projects.first
+
+    task1 = student.task_for_task_definition(td1)
+
+    task1.update(task_status_id: TaskStatus.assess_in_portfolio.id)
+
+    assert td1.valid?
+    td1.assess_in_portfolio_only = false
+
+    assert_not td1.valid?, '"Assess in Portfolio Only" cannot be disabled while tasks are in the Assess in Portfolio state'
+    assert_includes td1.errors[:assess_in_portfolio_only], 'cannot be disabled while tasks are in the Assess in Portfolio state'
+  end
 end

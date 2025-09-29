@@ -130,7 +130,7 @@ class TasksApi < Grape::API
 
       # update the planned date
       task.extensions = params[:extensions]
-      task.save
+      task.save!
 
       comment = TaskComment.create(
         task: task,
@@ -180,8 +180,22 @@ class TasksApi < Grape::API
           error!({ error: 'Cannot set this task status to ready to mark without uploading documents.' }, 403)
         end
 
+        if params[:trigger] == 'assess_in_portfolio' && !authorise?(current_user, project, :assess)
+          # Prevent students from upading status if task definition doesn't enable it
+          if !task_definition.assess_in_portfolio_only
+            error!({ error: 'Cannot set this task status to assess in portfolio if task definition doesnt allow it.' }, 403)
+          elsif needs_upload_docs
+            # Prevent students from updating status without uploading files
+            error!({ error: 'Cannot set this task status to assess in portfolio without uploading documents.' }, 403)
+          end
+        end
+
         if task.group_task? && !task.group
           error!({ error: "This task requires a group. Ensure you are in a group for the unit's #{task.task_definition.group_set.name}" }, 403)
+        end
+
+        if task.task_definition.assess_in_portfolio_only && params[:trigger] == 'complete'
+          error!({ error: 'This task can only be assessed in portfolio.' }, 403)
         end
 
         logger.info "#{current_user.username} assessing task #{task.id} to #{params[:trigger]}"
@@ -207,6 +221,20 @@ class TasksApi < Grape::API
     else
       error!({ error: "Couldn't find Task with id=#{params[:id]}" }, 403)
     end
+  end
+
+  desc 'Check in a student for a specific task.'
+  post '/projects/:id/task_def_id/:task_definition_id/check_in' do
+    project = Project.find(params[:id])
+
+    unless authorise?(current_user, project, :assess)
+      error!({ error: 'You do not have permission to assess this task.' }, 403)
+    end
+
+    task_definition = project.unit.task_definitions.find(params[:task_definition_id])
+    task = project.task_for_task_definition(task_definition)
+
+    task.add_checked_in_comment(current_user)
   end
 
   desc 'Get the submission details of a task, indicating if it has a pdf to view'

@@ -59,7 +59,8 @@ RUN tlmgr install \
   tcolorbox \
   tikzfill \
   upquote \
-  xstring
+  xstring \
+  enumitem
 
 # Final image
 FROM debian:bookworm-slim

@@ -2,7 +2,7 @@ class PortfolioEvidenceMailer < ApplicationMailer
   def add_general
     @doubtfire_host = Doubtfire::Application.config.institution[:host]
     @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
-    @unsubscribe_url = "#{@doubtfire_host}/#/home?notifications"
+    @unsubscribe_url = "#{@doubtfire_host}/edit_profile"
   end
 
   def task_pdf_failed(project, tasks)

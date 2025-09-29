@@ -7,6 +7,7 @@ class TaskDefinitionsApi < Grape::API
   helpers MimeCheckHelpers
   helpers Submission::GenerateHelpers
   helpers FileStreamHelper
+  helpers SidekiqHelper
 
   before do
     authenticated?
@@ -32,12 +33,13 @@ class TaskDefinitionsApi < Grape::API
       requires :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
       optional :assessment_enabled,       type: Boolean,  desc: 'Enable or disable assessment'
       optional :overseer_image_id,        type: Integer,  desc: 'The id of the Docker image for overseer'
-      optional :similarity_language,            type: String,   desc: 'The language to use for code similarity checks'
+      optional :similarity_language,      type: String,   desc: 'The language to use for code similarity checks'
       optional :scorm_enabled,            type: Boolean,  desc: 'Whether SCORM assessment is enabled for this task'
       optional :scorm_allow_review,       type: Boolean,  desc: 'Whether a student is allowed to review their completed test attempts'
       optional :scorm_bypass_test,        type: Boolean,  desc: 'Whether a student is allowed to upload files before passing SCORM test'
       optional :scorm_time_delay_enabled, type: Boolean,  desc: 'Whether there is an incremental time delay between SCORM test attempts'
       optional :scorm_attempt_limit,      type: Integer,  desc: 'The number of times a SCORM test can be attempted'
+      optional :assess_in_portfolio_only, type: Boolean,  desc: 'Whether a task can only be signed off during portfolio assessment'
     end
   end
   post '/units/:unit_id/task_definitions/' do
@@ -70,6 +72,7 @@ class TaskDefinitionsApi < Grape::API
                                                 :assessment_enabled,
                                                 :overseer_image_id,
                                                 :similarity_language,
+                                                :assess_in_portfolio_only,
                                                 :upload_requirements,
                                                 :unit_id
                                               )
@@ -125,7 +128,8 @@ class TaskDefinitionsApi < Grape::API
       optional :max_quality_pts,          type: Integer,  desc: 'A range for quality points when quality is assessed'
       optional :assessment_enabled,       type: Boolean,  desc: 'Enable or disable assessment'
       optional :overseer_image_id,        type: Integer,  desc: 'The id of the Docker image name for overseer'
-      optional :similarity_language, type: String, desc: 'The language to use for code similarity checks'
+      optional :similarity_language,      type: String,   desc: 'The language to use for code similarity checks'
+      optional :assess_in_portfolio_only, type: Boolean,  desc: 'Whether a task can only be signed off during portfolio assessment'
     end
   end
   put '/units/:unit_id/task_definitions/:id' do
@@ -159,6 +163,7 @@ class TaskDefinitionsApi < Grape::API
                                                 :assessment_enabled,
                                                 :overseer_image_id,
                                                 :similarity_language,
+                                                :assess_in_portfolio_only,
                                                 :upload_requirements
                                               )
 
@@ -752,4 +757,123 @@ class TaskDefinitionsApi < Grape::API
 
     task_def.has_jplag_report?
   end
+
+  # Create task definition prerequsite
+  desc 'Create new task definition prerequisite'
+  params do
+    requires :unit_id, type: Integer, desc: 'The unit that has the task definition'
+    requires :task_def_id, type: Integer, desc: 'The task definition to add the prerequisite to'
+    requires :prerequisite_id, type: Integer, desc: 'The prerequisite task definition'
+  end
+  post '/units/:unit_id/task_definitions/:task_def_id/prerequisites' do
+    unit = Unit.find(params[:unit_id])
+    task_def = unit.task_definitions.find(params[:task_def_id])
+    task_prerequisite = unit.task_definitions.find(params[:prerequisite_id])
+
+    unless authorise? current_user, task_def, :create_task_prerequisite
+      error!({ error: 'Not authorised to add task prerequisite' }, 403)
+    end
+
+    prereq = TaskPrerequisite.create!(
+      task_definition: task_def,
+      prerequisite: task_prerequisite,
+      task_status_id: TaskStatus.complete.id
+    )
+
+    present prereq, with: Entities::TaskPrerequisiteEntity
+  end
+
+  # Create task definition prerequsite
+  desc 'Update a task prerequisite'
+  params do
+    requires :unit_id, type: Integer, desc: 'The unit that has the task definition'
+    requires :task_def_id, type: Integer, desc: 'The task definition to add the prerequisite to'
+    requires :prerequisite_id, type: Integer, desc: 'The prerequisite task definition'
+    requires :task_status_required, type: String, desc: "ID of the task status required to mark the prerequisite as complete"
+  end
+  put '/units/:unit_id/task_definitions/:task_def_id/prerequisites/:prerequisite_id' do
+    unit = Unit.find(params[:unit_id])
+    task_def = unit.task_definitions.find(params[:task_def_id])
+
+    unless authorise? current_user, task_def, :create_task_prerequisite
+      error!({ error: 'Not authorised to add task prerequisite' }, 403)
+    end
+
+    prereq = TaskPrerequisite.find_by(id: params[:prerequisite_id], task_definition: task_def)
+
+    unless authorise? current_user, prereq.prerequisite, :create_task_prerequisite
+      error!({ error: 'Not authorised to add task prerequisite' }, 403)
+    end
+
+    status = TaskStatus.status_for_name(params[:task_status_required])
+    prereq.update!(task_status_id: status.id)
+
+    true
+  end
+
+  desc 'Remove task definition prerequisite'
+  params do
+    requires :unit_id, type: Integer, desc: 'The unit that has the task definition'
+    requires :task_def_id, type: Integer, desc: 'The task definition to remove the prerequisite from'
+    requires :prerequisite_id, type: Integer, desc: 'The prerequisite task definition to remove'
+  end
+  delete '/units/:unit_id/task_definitions/:task_def_id/prerequisites/:prerequisite_id' do
+    unit = Unit.find(params[:unit_id])
+    task_def = unit.task_definitions.find(params[:task_def_id])
+    prereq_task = unit.task_definitions.find(params[:prerequisite_id])
+
+    unless authorise? current_user, task_def, :create_task_prerequisite
+      error!({ error: 'Not authorised to remove task prerequisite' }, 403)
+    end
+
+    prereq_record = TaskPrerequisite.find_by(task_definition: task_def, prerequisite: prereq_task)
+    if prereq_record.nil?
+      error!({ error: 'Prerequisite not found' }, 404)
+    end
+
+    prereq_record.destroy
+
+    true
+  end
+
+  desc 'Compress all submission files for a task definition into zip file'
+  params do
+    requires :unit_id, type: Integer, desc: 'The unit that has the task definition'
+    requires :task_def_id, type: Integer, desc: 'The task definition to download submissions for'
+  end
+  get '/submission/units/:unit_id/task_definitions/:task_def_id/download_submissions/zip' do
+    unit = Unit.find(params[:unit_id])
+    unless authorise? current_user, unit, :get_students
+      error!({ error: "Not authorised to download submission files" }, 403)
+    end
+
+    td = unit.task_definitions.find(params[:task_def_id])
+
+    # Queue submission files download to sidekiq
+    job_id = DownloadSubmissionFilesJob.perform_async(current_user.id, unit.id, td.id)
+    job = setup_job(job_id)
+
+    present job, with: Entities::SidekiqJobEntity
+  end
+
+  desc 'Compress all submission pdfs for a task definition into zip file'
+  params do
+    requires :unit_id, type: Integer, desc: 'The unit that has the task definition'
+    requires :task_def_id, type: Integer, desc: 'The task definition to download submissions for'
+  end
+  get '/submission/units/:unit_id/task_definitions/:task_def_id/student_pdfs/zip' do
+    unit = Unit.find(params[:unit_id])
+    unless authorise? current_user, unit, :get_students
+      error!({ error: "Not authorised to download submission pdfs" }, 403)
+    end
+
+    td = unit.task_definitions.find(params[:task_def_id])
+
+    # Queue submission pdfs download to sidekiq
+    job_id = DownloadSubmissionPdfsJob.perform_async(current_user.id, unit.id, td.id)
+    job = setup_job(job_id)
+
+    present job, with: Entities::SidekiqJobEntity
+  end
+
 end

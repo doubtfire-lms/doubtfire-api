@@ -12,6 +12,7 @@ class AuthenticationApi < Grape::API
   helpers LogHelper
   helpers AuthenticationHelpers
   helpers AuthorisationHelpers
+  helpers LtiHelper
 
   #
   # Sign in - only mounted if AAF and SAML auth is NOT used (database auth)
@@ -171,6 +172,102 @@ class AuthenticationApi < Grape::API
 
       redirect "#{host}/sign_in"
     end
+  end
+
+  #
+  # LTI JWT callback - only mounted if LTI is used
+  #
+  if AuthenticationHelpers.lti_enabled?
+    desc 'LTI1.3 auth'
+    params do
+      requires :ltik, type: String, desc: 'JWT provided for further processing.'
+      # requires :member, type: Hash do
+      #   requires :status, type: String
+      #   requires :roles, type: Array[String]
+      #   requires :user_id, type: String
+      #   optional :lis_person_sourcedid, type: String
+      #   requires :name, type: String
+      #   requires :given_name, type: String
+      #   requires :family_name, type: String
+      #   requires :email, type: String
+      #   requires :ext_user_username, type: String
+      # end
+    end
+    post '/auth/lti' do
+      token = decode_lti_token(params[:ltik])
+
+      member = token['member']
+      if member.nil?
+        error!({ error: 'Invalid LTI token.' }, 400)
+      end
+
+      valid_member, missing = valid_lti_member?(member)
+      unless valid_member
+        error!({ error: "Missing required fields:  #{missing.join(', ')}" }, 400)
+      end
+
+      user_id_data = {
+        login_id: member['ext_user_username'] || member['user_id'],
+        email: member['email'],
+        username: member['email']&.split('@')&.first
+      }
+
+      logger.info "Authenticate #{user_id_data[:email]} from #{request.ip}"
+
+      # Lookup using login_id if it exists
+      # Lookup using email otherwise and set login_id
+      # Otherwise create new
+      user = User.find_by(login_id: user_id_data[:login_id]) ||
+             User.find_by(username: user_id_data[:username]) ||
+             User.find_by(email: user_id_data[:email]) ||
+             User.create do |new_user|
+               # Update new user with details from the LTI response
+               Doubtfire::Application.config.institution_settings.update_user_from_lti_response(
+                 new_user,
+                 user_id_data,
+                 member
+               )
+             end
+
+      # Set login id + username if not yet specified
+      if user.login_id.nil? || user.username.nil?
+        user.update(
+          login_id: user_id_data[:login_id],
+          username: user_id_data[:username]
+        )
+      end
+
+      # Try and save the user once authenticated if new
+      if user.new_record?
+        user.encrypted_password = BCrypt::Password.create(SecureRandom.hex(32))
+        unless user.valid?
+          logger.error "User #{user.username} is invalid: #{user.errors.full_messages.join(', ')}"
+          error!(error: 'There was an error linking your Lti account. ' \
+                        'Please get in contact with your unit convenor or the ' \
+                        'system administrators.')
+        end
+        user.save
+      end
+
+      # Generate a temporary auth_token for future requests
+      onetime_token = user.generate_temporary_authentication_token!
+
+      logger.info "Redirecting #{user.username} from #{request.ip}"
+
+      # Must redirect to the front-end after sign in
+      host = Doubtfire::Application.config.institution[:host]
+      unless host.starts_with?('http')
+        protocol = Rails.env.development? ? 'http' : 'https'
+        host = "#{protocol}://#{host}"
+      end
+
+      logger.info "Login #{params[:username]} from #{request.ip}"
+
+      # Respond user details with temporary auth token
+      present :username, user.username
+      present :auth_token, onetime_token.authentication_token
+    end
+
   end
 
   #

@@ -2,25 +2,28 @@
 <html>
 <head>
   <style type="text/css">
-    body {
+    .main {
       font-family: "Lucida Grande", "Helvetica Neue", Helvetica, Arial, sans-serif;
       color: #333;
       font-size: 14px;
-      width: 800px;
+      width: 100%;
+      max-width: 800px;
       margin: 100px auto 0px auto;
-      font-size: 0.9em;
-    }
-    main, .main {
-      background-image: url('<%= @doubtfire_host %>/assets/images/logo.svg');
+      background-image: url('<%= @doubtfire_host %>/assets/images/logo.png');
       background-size: 3.5em;
       background-repeat: no-repeat;
-      background-position: 30px 45px;
+      background-position: top 40px right 45px;
       padding: 30px 40px;
-      padding-left: 100px;
-      border: solid 1px #aaa;
-      border-radius: 7px;
+      border: solid 1px rgb(240, 240, 240);
       line-height: 200%;
       text-align: justify;
+    }
+    footer, .footer {
+      font-family: "Lucida Grande", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      text-align: center;
+      margin-top: 10px;
+      color: #aaa;
+      font-size: 0.7em;
     }
     .subtext {
         color: #aaa;
@@ -30,12 +33,6 @@
     }
     table {
         overflow: scroll;
-    }
-    footer, .footer {
-      text-align: right;
-      margin-top: 10px;
-      color: #aaa;
-      font-size: 0.7em;
     }
     a, a:visited {
       color: #6a97d2;
@@ -50,7 +47,7 @@
   </style>
 </head>
 <body>
-  <main class="main">
+  <div class="main">
     <h1><%= @summary_stats[:unit].name %> - Weekly Summary</h1>
     <p class="subtext"><%= "#{@summary_stats[:week_start].day.ordinalize} #{@summary_stats[:week_start].strftime("%B %Y")}" %> to <%= "#{@summary_stats[:week_end].day.ordinalize} #{@summary_stats[:week_end].strftime("%B %Y")}" %></p>
 
@@ -113,7 +110,7 @@
         Cheers, <br />
         The <%= @doubtfire_product_name %> Team on behalf of <%= @tutor.name %>
     </p>
-  </main>
+  </div>
   <footer class="footer">
     <a href="<%= @unsubscribe_url %>">Unsubscribe</a> | Generated with <%= @doubtfire_product_name %>
   </footer>

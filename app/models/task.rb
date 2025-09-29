@@ -150,9 +150,31 @@ class Task < ApplicationRecord
 
   validate :must_have_quality_pts, if: :for_definition_with_quality?
 
-  validate :extensions_must_end_with_due_date, if: :has_requested_extension?
+  validate :extensions_must_end_with_due_date, if: -> { has_requested_extension? && !unit.allow_flexible_dates }
+
+  validate :prevent_complete_if_assess_in_portfolio_only
+  validate :prevent_feedback_exceeed_if_assess_in_portfolio_enabled
+  validate :prevent_time_exceeed_if_assess_in_portfolio_enabled
 
   include TaskTiiModule
+
+  def prevent_complete_if_assess_in_portfolio_only
+    if task_definition&.assess_in_portfolio_only && task_status == TaskStatus.complete
+      errors.add(:task_status, "cannot be 'complete' if task is to be assessed in portfolio only")
+    end
+  end
+
+  def prevent_feedback_exceeed_if_assess_in_portfolio_enabled
+    if (unit.mark_late_submissions_as_assess_in_portfolio || task_definition.assess_in_portfolio_only) && task_status == TaskStatus.feedback_exceeded
+      errors.add(:task_status, "cannot be 'feedback_exceeded' if unit 'has tasks assessed in portolio' enabled")
+    end
+  end
+
+  def prevent_time_exceeed_if_assess_in_portfolio_enabled
+    if (unit.mark_late_submissions_as_assess_in_portfolio || task_definition.assess_in_portfolio_only) && task_status == TaskStatus.time_exceeded
+      errors.add(:task_status, "cannot be 'time_exceeded' if unit 'has tasks assessed in portolio' enabled")
+    end
+  end
 
   def for_definition_with_quality?
     task_definition.has_stars?
@@ -272,7 +294,7 @@ class Task < ApplicationRecord
   def extension_date
     result = raw_extension_date
     max_date = max_date_with_spec_con_days
-    return max_date if result > max_date
+    return max_date if result > max_date && !unit.allow_flexible_dates
 
     return result
   end
@@ -405,7 +427,7 @@ class Task < ApplicationRecord
   end
 
   def ready_or_complete?
-    [:complete, :discuss, :demonstrate, :ready_for_feedback].include? status
+    [:complete, :discuss, :demonstrate, :ready_for_feedback, :assess_in_portfolio].include? status
   end
 
   def submitted_status?
@@ -497,22 +519,35 @@ class Task < ApplicationRecord
       return nil
     when TaskStatus.ready_for_feedback
       submit by_user
-    when TaskStatus.not_started, TaskStatus.need_help, TaskStatus.working_on_it
+    when TaskStatus.not_started, TaskStatus.need_help, TaskStatus.working_on_it, TaskStatus.assess_in_portfolio
       add_status_comment(by_user, status)
       engage status
     else
       # Only tutors can perform these actions
       if role == :tutor
-        if task_definition.max_quality_pts > 0
-          case status
-          when TaskStatus.complete, TaskStatus.discuss, TaskStatus.demonstrate
-            update(quality_pts: quality)
+        if task_definition.assess_in_portfolio_only
+          # Block assess_in_portfolio_only tasks from being signed off as complete
+          if status == TaskStatus.complete
+            return nil
+          end
+        else
+          # Can only be graded if task_def is not assess_in_portfolio_only
+          if task_definition.max_quality_pts > 0
+            case status
+            when TaskStatus.complete, TaskStatus.discuss, TaskStatus.demonstrate
+              update(quality_pts: quality)
+            end
           end
         end
-        assess status, by_user
 
-        # Add a status comment for new assessments - only recorded on submitter's task in groups
-        add_status_comment(by_user, status)
+        lc = comments.last
+        # Prevent duplicate status comments during feedback
+        unless lc && lc.user == by_user && lc.comment == status.name && (lc.content_type != 'status' || lc.task_status == status)
+          assess status, by_user
+
+          # Add a status comment for new assessments - only recorded on submitter's task in groups
+          add_status_comment(by_user, status)
+        end
       else
         # Attempt to move to tutor state by non-tutor
         return nil
@@ -671,7 +706,11 @@ class Task < ApplicationRecord
     if submitted_before_due?
       self.task_status = TaskStatus.ready_for_feedback
     else
-      assess TaskStatus.time_exceeded, by_user
+      if unit.mark_late_submissions_as_assess_in_portfolio || task_definition.assess_in_portfolio_only
+        assess TaskStatus.assess_in_portfolio, by_user
+      else
+        assess TaskStatus.time_exceeded, by_user
+      end
       add_status_comment(project.tutor_for(task_definition), self.task_status)
       grade_task(-1) if task_definition.is_graded? && self.grade.nil?
     end
@@ -751,10 +790,27 @@ class Task < ApplicationRecord
   end
 
   def add_discussed_comment(current_user)
+    comment = 'Discussed in class'
+
+    lc = comments.last
+
+    # don't add if duplicate comment
+    return if lc && lc.user == current_user && lc.content_type == 'discussed_in_class' && lc.comment == comment
+
     discussed = TaskDiscussedComment.create
     discussed.task = self
     discussed.user = current_user
-    discussed.comment = "Discussed in class"
+    discussed.comment = comment
+    discussed.recipient = current_user == project.student ? project.tutor_for(task_definition) : project.student
+    discussed.save!
+    discussed
+  end
+
+  def add_checked_in_comment(current_user)
+    discussed = TaskCheckedInComment.create
+    discussed.task = self
+    discussed.user = current_user
+    discussed.comment = "Checked In"
     discussed.recipient = current_user == project.student ? project.tutor_for(task_definition) : project.student
     discussed.save!
     discussed

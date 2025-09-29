@@ -12,7 +12,8 @@ class TaskDefinition < ApplicationRecord
       :get_feedback_chips,
       :update,
       :upload_csv,
-      :get_los
+      :get_los,
+      :create_task_prerequisite
     ]
 
     admin_role_permissions = [
@@ -20,7 +21,8 @@ class TaskDefinition < ApplicationRecord
       :get_feedback_chips,
       :update,
       :upload_csv,
-      :get_los
+      :get_los,
+      :create_task_prerequisite
     ]
 
     tutor_role_permissions = [
@@ -51,6 +53,7 @@ class TaskDefinition < ApplicationRecord
   after_update :remove_old_group_submissions, if: :has_removed_group?
   after_update :check_and_update_tii_status, if: :saved_change_to_upload_requirements?
   after_update :update_tii_group, if: :saved_change_to_due_date?
+  after_update :update_overdue_tasks_aip, if: :saved_change_to_assess_in_portfolio_only?
 
   # Model associations
   belongs_to :unit, optional: false # Foreign key
@@ -64,6 +67,9 @@ class TaskDefinition < ApplicationRecord
 
   has_many :tii_group_attachments, dependent: :destroy # destroy uploaded files to tii - after the tasks
   has_many :tii_actions, as: :entity, dependent: :destroy
+
+  has_many :task_prerequisites, dependent: :destroy
+  has_many :prerequisites, through: :task_prerequisites, source: :prerequisite
 
   serialize :upload_requirements, coder: JSON
 
@@ -84,6 +90,10 @@ class TaskDefinition < ApplicationRecord
 
   validates :weighting, presence: true
 
+  validate :check_existing_prerequisites
+
+  validate :cant_disable_aip_only_if_aip_tasks_exist
+
   include TaskDefinitionTiiModule
   include TaskDefinitionSimilarityModule
 
@@ -96,6 +106,30 @@ class TaskDefinition < ApplicationRecord
   def tutorial_stream_present?
     if tutorial_stream.nil? and unit.tutorial_streams.exists?
       errors.add(:tutorial_stream, "must be one of the tutorial streams in the unit")
+    end
+  end
+
+  def cant_disable_aip_only_if_aip_tasks_exist
+    return if assess_in_portfolio_only? # only care about disabling
+
+    if tasks.where(task_status_id: TaskStatus.assess_in_portfolio.id).exists?
+      errors.add(:assess_in_portfolio_only, "cannot be disabled while tasks are in the Assess in Portfolio state")
+    end
+  end
+
+  def check_existing_prerequisites
+    prereqs = TaskPrerequisite.where(task_definition_id: id)
+    prereqs.each do |dp|
+      if target_grade < dp.prerequisite.target_grade
+        errors.add(:target_grade, "cannot be lower than prerequisite #{dp.prerequisite.abbreviation}'s target grade")
+      end
+    end
+
+    dependents = TaskPrerequisite.where(prerequisite_id: id)
+    dependents.each do |pr|
+      if target_grade > pr.task_definition.target_grade
+        errors.add(:target_grade, "cannot exceed the target grade #{pr.task_definition.abbreviation} because this is a prerequisite")
+      end
     end
   end
 
@@ -165,6 +199,17 @@ class TaskDefinition < ApplicationRecord
 
   def detailed_name
     "#{abbreviation} #{name}"
+  end
+
+  def update_overdue_tasks_aip
+    return unless saved_change_to_assess_in_portfolio_only? && assess_in_portfolio_only?
+
+    overdue_statuses = [TaskStatus.time_exceeded.id, TaskStatus.feedback_exceeded.id]
+
+    tasks.where(task_status_id: overdue_statuses).find_each do |task|
+      task.add_status_comment(unit.main_convenor.user, TaskStatus.assess_in_portfolio)
+      task.update(task_status_id: TaskStatus.assess_in_portfolio.id)
+    end
   end
 
   def move_files_on_abbreviation_change

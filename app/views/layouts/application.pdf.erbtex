@@ -108,6 +108,7 @@ end
 \definecolor{demo}{rgb}{0.259, 0.545, 0.792}
 \definecolor{fail}{rgb}{0.851, 0.216, 0.075}
 \definecolor{timeexceeded}{rgb}{0.851, 0.216, 0.075}
+\definecolor{assessinportfolio}{rgb}{0.568, 0.721, 0.568}
 
 \begin{document}
 

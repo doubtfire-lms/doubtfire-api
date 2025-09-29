@@ -16,6 +16,14 @@ module Submission
       authenticated?
     end
 
+    TASK_STATES = {
+      ready_for_feedback: 1,
+      assess_in_portfolio: 1,
+      discuss: 2,
+      demonstrate: 2,
+      complete: 3
+    }.freeze
+
     desc 'Upload and generate doubtfire-task-specific submission document'
     params do
       optional :file0, type: File, desc: 'file 0.'
@@ -40,8 +48,36 @@ module Submission
         error!({ error: "This task requires a group submission. Ensure you are in a group for the unit's #{task_definition.group_set.name}" }, 403)
       end
 
+      # Check that prerequisite tasks are in the required minimum submitted state
+      prerequisites = task_definition.task_prerequisites
+      prerequisites.each do |prerequisite|
+        prereq_td = prerequisite.prerequisite
+        minimum_status = TaskStatus.find(prerequisite.task_status_id)
+
+
+        prereq_task = project.task_for_task_definition(prereq_td)
+
+        verb =
+          case minimum_status
+          when TaskStatus.complete
+            'completed'
+          when TaskStatus.discuss
+            'discussed'
+          when TaskStatus.demonstrate
+            'demonstrated'
+          when TaskStatus.ready_for_feedback
+            'submitted'
+          end
+
+        if !prereq_task.ready_or_complete? || TASK_STATES[prereq_task.status] < TASK_STATES[minimum_status.status_key]
+          error!({ error: "Cannot submit this task until prerequisite '#{prereq_td.abbreviation}' has been #{verb}" }, 409)
+        end
+      end
+
       trigger = if params[:trigger] && params[:trigger].tr('"\'', '') == 'need_help'
                   'need_help'
+                elsif params[:trigger] && params[:trigger].tr('"\'', '') == 'assess_in_portfolio'
+                  'assess_in_portfolio'
                 else
                   'ready_for_feedback'
                 end
@@ -113,7 +149,7 @@ module Submission
       project = Project.find(params[:id])
       task_definition = project.unit.task_definitions.find(params[:task_definition_id])
 
-      unless authorise? current_user, project, :get_submission
+      unless authorise? current_user, project, :reprocess_submission
         error!({ error: "Not authorised to get task '#{task_definition.name}'" }, 401)
       end
 
@@ -152,7 +188,7 @@ module Submission
       project = Project.find(params[:id])
       task_definition = project.unit.task_definitions.find(params[:task_definition_id])
 
-      unless authorise? current_user, project, :get_submission
+      unless authorise? current_user, project, :reprocess_submission
         error!({ error: "Not authorised to get task '#{task_definition.name}'" }, 401)
       end
 

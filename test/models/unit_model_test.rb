@@ -269,6 +269,97 @@ class UnitModelTest < ActiveSupport::TestCase
     unit2.destroy!
   end
 
+  def test_rollover_assess_in_portfolio
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 1)
+    td = unit.task_definitions.first
+
+    # Test with both true
+    unit.update!(mark_late_submissions_as_assess_in_portfolio: true)
+    td.update!(assess_in_portfolio_only: true)
+
+    unit2 = unit.rollover(TeachingPeriod.find(2), nil, nil, nil)
+    td2 = unit2.task_definitions.first
+
+    assert_equal true, unit2.mark_late_submissions_as_assess_in_portfolio, "Rollover must copy over unit mark_late_submissions_as_assess_in_portfolio attribute"
+    assert_equal true, td2.assess_in_portfolio_only, "Rollover must copy over task definition assess_in_portfolio_only attribute"
+
+    unit2.destroy!
+
+    # Test with both false (in case theyre true by default)
+    unit.update!(mark_late_submissions_as_assess_in_portfolio: false)
+    td.update!(assess_in_portfolio_only: false)
+
+    unit.reload
+    td.reload
+
+    unit3 = unit.rollover(TeachingPeriod.find(2), nil, nil, nil)
+    td3 = unit3.task_definitions.first
+
+    assert_equal false, unit3.mark_late_submissions_as_assess_in_portfolio, "Rollover must copy over unit mark_late_submissions_as_assess_in_portfolio attribute"
+    assert_equal false, td3.assess_in_portfolio_only, "Rollover must copy over task definition assess_in_portfolio_only attribute"
+
+    unit3.destroy!
+  end
+
+  def test_rollover_of_task_prerequisites
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 4)
+    td1 = unit.task_definitions.first
+    td2 = unit.task_definitions.second
+
+    td3 = unit.task_definitions.third
+    td4 = unit.task_definitions.fourth
+
+    [td1, td2, td3, td4].each do |td|
+      td.update(
+        target_grade: 0, # Pass
+        start_date: Time.zone.today - 2.weeks,
+        target_date: Time.zone.today + 1.week
+      )
+    end
+
+    prerequisite1 = TaskPrerequisite.create!(
+      task_definition: td1,
+      prerequisite: td2,
+      task_status_id: TaskStatus.discuss.id
+    )
+
+    assert prerequisite1.valid?
+
+    prerequisite2 = TaskPrerequisite.create!(
+      task_definition: td3,
+      prerequisite: td4,
+      task_status_id: TaskStatus.complete.id
+    )
+
+    assert prerequisite2.valid?
+
+    unit2 = unit.rollover(TeachingPeriod.find(2), nil, nil, nil)
+
+    new_td1 = unit2.task_definitions.first
+    new_td2 = unit2.task_definitions.second
+    new_prerequisite = new_td1.task_prerequisites.first
+
+    assert_not_nil new_prerequisite, "Task prerequisites should be duplicated in rollover"
+    assert_equal new_prerequisite.task_definition.id, new_td1.id, "New Task Prerequisite's task definition should match new task definition"
+    assert_equal new_prerequisite.prerequisite.id, new_td2.id
+    assert_equal new_prerequisite.task_status_id,  prerequisite1.task_status_id
+
+    prerequisite_td = new_td1.prerequisites.first
+    assert_equal prerequisite_td.id, new_td2.id
+
+    new_td3 = unit2.task_definitions.third
+    new_td4 = unit2.task_definitions.fourth
+    new_prerequisite2 = new_td3.task_prerequisites.first
+
+    assert_not_nil new_prerequisite2, "Task prerequisites should be duplicated in rollover"
+    assert_equal new_prerequisite2.task_definition.id, new_td3.id, "New Task Prerequisite's task definition should match new task definition"
+    assert_equal new_prerequisite2.prerequisite.id, new_td4.id
+    assert_equal new_prerequisite2.task_status_id, new_prerequisite2.task_status_id
+
+    prerequisite_td2 = new_td3.prerequisites.first
+    assert_equal prerequisite_td2.id, new_td4.id
+  end
+
   def test_updating_unit_dates_propogates_to_tasks
     @unit.teaching_period = nil
     @unit.save!
@@ -937,6 +1028,69 @@ class UnitModelTest < ActiveSupport::TestCase
 
     assert unit.archived
     assert_not unit2.archived
+  end
+
+  def test_overdue_tasks_update_to_assess_in_portfolio
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 2)
+    unit.update(mark_late_submissions_as_assess_in_portfolio: false)
+
+    td1 = unit.task_definitions.first
+    td2 = unit.task_definitions.second
+
+    student = unit.projects.first
+
+    task1 = student.task_for_task_definition(td1)
+    task2 = student.task_for_task_definition(td2)
+
+    task1.update(task_status_id: TaskStatus.time_exceeded.id)
+
+    task2.update(task_status_id: TaskStatus.feedback_exceeded.id)
+
+    task1.reload
+    task2.reload
+
+    assert_equal TaskStatus.time_exceeded, task1.task_status
+    assert_equal TaskStatus.feedback_exceeded, task2.task_status
+
+    unit.update(mark_late_submissions_as_assess_in_portfolio: true)
+
+    task1.reload
+    task2.reload
+
+    assert_equal TaskStatus.assess_in_portfolio, task1.task_status
+    assert_equal TaskStatus.assess_in_portfolio, task2.task_status
+
+    missing_aip_status_error = "Assess in Portfolio status comment missing"
+
+    lc = task1.last_comment
+    assert_not lc.nil?, missing_aip_status_error
+    assert_equal TaskStatus.assess_in_portfolio.name, lc.comment, missing_aip_status_error
+    assert_equal TaskStatus.assess_in_portfolio, lc.task_status, missing_aip_status_error
+    lc.destroy!
+
+    lc = task2.last_comment
+    assert_not lc.nil?, missing_aip_status_error
+    assert_equal TaskStatus.assess_in_portfolio.name, lc.comment, missing_aip_status_error
+    assert_equal TaskStatus.assess_in_portfolio, lc.task_status, missing_aip_status_error
+    lc.destroy!
+  end
+
+  def test_cant_disable_aip_only_while_aip_tasks_exist
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 2)
+    unit.update(mark_late_submissions_as_assess_in_portfolio: true)
+
+    td1 = unit.task_definitions.first
+
+    student = unit.projects.first
+
+    task1 = student.task_for_task_definition(td1)
+    task1.update(task_status_id: TaskStatus.assess_in_portfolio.id)
+
+    assert unit.valid?
+    unit.mark_late_submissions_as_assess_in_portfolio = false
+
+    assert_not unit.valid?, '"mark_late_submissions_as_assess_in_portfolio" cannot be disabled while tasks are in the Assess in Portfolio state'
+    assert_includes unit.errors[:mark_late_submissions_as_assess_in_portfolio], 'cannot be disabled while tasks are in the Assess in Portfolio state'
   end
 
 end

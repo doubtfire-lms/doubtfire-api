@@ -54,7 +54,8 @@ class Project < ApplicationRecord
       :get,
       :make_submission,
       :get_submission,
-      :change
+      :change,
+      :reprocess_submission
     ]
     # What can tutors do with projects?
     tutor_role_permissions = [
@@ -67,20 +68,23 @@ class Project < ApplicationRecord
       :assess,
       :change_campus,
       :get_staff_note,
-      :create_staff_note
+      :create_staff_note,
+      :reprocess_submission
     ]
 
     # What can admins do with projects?
     admin_role_permissions = [
       :get,
-      :get_submission
+      :get_submission,
+      :reprocess_submission
     ]
 
     # What can auditors do with projects?
     auditor_role_permissions = [
       :get,
       :get_submission,
-      :get_staff_note
+      :get_staff_note,
+      :reprocess_submission
     ]
 
     # What can nil users do with projects?
@@ -646,14 +650,15 @@ class Project < ApplicationRecord
 
   def send_weekly_status_email(summary_stats, middle_of_unit)
     did_revert_to_pass = false
-    if middle_of_unit && should_revert_to_pass && !portfolio_exists?
-      self.target_grade = 0
-      save
-      did_revert_to_pass = true
+    # TODO: refactor automatic target grade reset
+    # if middle_of_unit && should_revert_to_pass && !portfolio_exists?
+    #   self.target_grade = 0
+    #   save
+    #   did_revert_to_pass = true
 
-      summary_stats[:revert_count] = summary_stats[:revert_count] + 1
-      summary_stats[:revert][main_convenor_user] << self
-    end
+    #   summary_stats[:revert_count] = summary_stats[:revert_count] + 1
+    #   summary_stats[:revert][main_convenor_user] << self
+    # end
 
     return unless student.receive_feedback_notifications
     return if portfolio_exists? && !middle_of_unit

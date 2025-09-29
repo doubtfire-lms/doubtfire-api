@@ -2,6 +2,142 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-37](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-36...v10.0.0-37) (2025-09-29)
+
+## [10.0.0-36](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-35...v10.0.0-36) (2025-09-28)
+
+
+### Features
+
+* ensure overdue tasks update to aip when task definition enables aip only ([0e216cd](https://github.com/b0ink/doubtfire-deploy/commit/0e216cdb8d553d72b663a7ff7649e801c75c5e53))
+* ensure overdue tasks update to aip when unit enables aip ([3599ae6](https://github.com/b0ink/doubtfire-deploy/commit/3599ae6ec7538e0ae310bb671c4d86f99762620b))
+
+
+### Bug Fixes
+
+* assert assess in portfolio status ([9dfc62c](https://github.com/b0ink/doubtfire-deploy/commit/9dfc62ca67c5884a59a1027fafaeab6d329b9529))
+
+## [10.0.0-35](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-34...v10.0.0-35) (2025-09-25)
+
+
+### Features
+
+* add observer updating ([74f01a9](https://github.com/b0ink/doubtfire-deploy/commit/74f01a91fdde6c2712e6927154f2fde0b97f9220))
+* init observer only unit role permissions ([a302a59](https://github.com/b0ink/doubtfire-deploy/commit/a302a597bd73abbe67c5e19d22c24e44bd45bf5e))
+
+## [10.0.0-34](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-33...v10.0.0-34) (2025-09-24)
+
+
+### Bug Fixes
+
+* ensure all files are copied first before running jplag ([4ff5f4a](https://github.com/b0ink/doubtfire-deploy/commit/4ff5f4a5f14a12e1f0e556f44acaac7741724e0e))
+* remove old plagiarism links that are below the new threshold ([3abe8e4](https://github.com/b0ink/doubtfire-deploy/commit/3abe8e4d79a69e0832b1263ab3060b2ab8643d06))
+
+## [10.0.0-33](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-32...v10.0.0-33) (2025-09-18)
+
+
+### Bug Fixes
+
+* ensure task throws validation errors on save ([de240bd](https://github.com/b0ink/doubtfire-deploy/commit/de240bd24f66ac9d57d5d84488eaafa1a379d27c))
+* skip deadline validation for units with flexible due dates ([b317d85](https://github.com/b0ink/doubtfire-deploy/commit/b317d85138c1442fa7f867c4825d970eccdd3cfc))
+
+## [10.0.0-32](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-31...v10.0.0-32) (2025-09-17)
+
+
+### Features
+
+* enable lms context and unit deeplinking ([0fa850f](https://github.com/b0ink/doubtfire-deploy/commit/0fa850f661ad4fa0aa15450ee5704bbee6e8cc99))
+* init lti authentication ([182c60c](https://github.com/b0ink/doubtfire-deploy/commit/182c60c78bdc1e1cf0ce9cccf773b358a9a63d7e))
+* lti user enrolment ([c3b2282](https://github.com/b0ink/doubtfire-deploy/commit/c3b2282ad21b6561da788a3730d31f92dcf91b7c))
+* retrieve grades for a list of students ([e588873](https://github.com/b0ink/doubtfire-deploy/commit/e588873f6f061ca63bf30852463df016e86712a4))
+* sync enrolments from lti ([46196fa](https://github.com/b0ink/doubtfire-deploy/commit/46196fa5973c1b96c12ea81cfb26b53824945f54))
+
+
+### Bug Fixes
+
+* check for env var string value ([4ecc22c](https://github.com/b0ink/doubtfire-deploy/commit/4ecc22cab83bd880e80766fbf72386cbafdc2c3e))
+* use given name for first name ([5627bf0](https://github.com/b0ink/doubtfire-deploy/commit/5627bf0909c939004c8e0e7ca7f184784c7990ad))
+
+## [10.0.0-31](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-30...v10.0.0-31) (2025-09-16)
+
+
+### Bug Fixes
+
+* check task status on status comments only ([8fbe65c](https://github.com/b0ink/doubtfire-deploy/commit/8fbe65c3ab6586012409f69a0c49eecf29a2ced2))
+* ensure simulated jplag submissions doesnt run in prod ([2f2183e](https://github.com/b0ink/doubtfire-deploy/commit/2f2183e912bb6ea54dd763438db952d4ae506936))
+* ensure tasks in assess in portfolio state meet prerequisite task status ([b7a4efa](https://github.com/b0ink/doubtfire-deploy/commit/b7a4efac9f777e71db9f62a649a054ced29b9303))
+* expose projects spec_con_days ([bd7bfee](https://github.com/b0ink/doubtfire-deploy/commit/bd7bfeeeb9ea0dc8e514e867b5f4fca19ff67f1e))
+
+## [10.0.0-30](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-29...v10.0.0-30) (2025-09-15)
+
+
+### Bug Fixes
+
+* ensure correct order of unit and task definition ids ([d941055](https://github.com/b0ink/doubtfire-deploy/commit/d9410556d67d1cbeab16730e34642cda0bc460b5))
+
+## [10.0.0-29](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-28...v10.0.0-29) (2025-09-15)
+
+
+### Features
+
+* assess in portfolio status ([b6f0cd4](https://github.com/b0ink/doubtfire-deploy/commit/b6f0cd49715d2ce24078a0506427ab548c8b16a0))
+
+## [10.0.0-28](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-27...v10.0.0-28) (2025-09-10)
+
+
+### Bug Fixes
+
+* ensure task is reloaded ([5e94099](https://github.com/b0ink/doubtfire-deploy/commit/5e94099024dbf0fee11a412a0c6f06ace3c15559))
+
+## [10.0.0-27](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-26...v10.0.0-27) (2025-09-09)
+
+
+### Features
+
+* add task prerequisites ([5a0e673](https://github.com/b0ink/doubtfire-deploy/commit/5a0e6732f779380a7159ff03ee544aef752039f2))
+* ensure prerequisite tasks have been submitted ([013428c](https://github.com/b0ink/doubtfire-deploy/commit/013428c522edf228893f0743a2743170e0e05f0b))
+
+
+### Bug Fixes
+
+* check target date instead of deadline date ([165d1ab](https://github.com/b0ink/doubtfire-deploy/commit/165d1abb143329b5afdeae1afa7ad5b536b3f9fc))
+
+## [10.0.0-26](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-25...v10.0.0-26) (2025-09-09)
+
+## [10.0.0-25](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-24...v10.0.0-25) (2025-09-08)
+
+
+### Features
+
+* add tasks discussed stats ([70dc9c6](https://github.com/b0ink/doubtfire-deploy/commit/70dc9c61e92254c4322f16d90e207fb706cc3c91))
+* csv to download task assessment counts ([f40214e](https://github.com/b0ink/doubtfire-deploy/commit/f40214e338479e8d145ab0f72640daf1bf481707))
+
+## [10.0.0-24](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-23...v10.0.0-24) (2025-09-04)
+
+
+### Bug Fixes
+
+* ensure staff rows are initialised ([a919c27](https://github.com/b0ink/doubtfire-deploy/commit/a919c27b6de13b31aec73021dc07374888eeffb5))
+* get correct number of projects not enrolled in a tutorial per stream ([fbe7252](https://github.com/b0ink/doubtfire-deploy/commit/fbe7252b1f62f44047221504028774e299990d58))
+* get correct staff engagement count ([f813319](https://github.com/b0ink/doubtfire-deploy/commit/f8133193a9ba6140b180bbf6c646f64934a6ec05))
+
+## [10.0.0-23](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-22...v10.0.0-23) (2025-08-27)
+
+## [10.0.0-22](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-21...v10.0.0-22) (2025-08-27)
+
+
+### Features
+
+* add attendance marked task comment ([1505242](https://github.com/b0ink/doubtfire-deploy/commit/150524243d99f4821daa7489064d1b324673b9b7))
+
+## [10.0.0-21](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-20...v10.0.0-21) (2025-08-26)
+
+
+### Features
+
+* env var to set jplag minimum token match ([8c04f38](https://github.com/b0ink/doubtfire-deploy/commit/8c04f388e435451595191c9bc627fdec59cf8244))
+* use env var for max file size ([f5f4b29](https://github.com/b0ink/doubtfire-deploy/commit/f5f4b2955b7910c06b5a552f07549355ac913dd6))
+
 ## [10.0.0-20](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-19...v10.0.0-20) (2025-08-21)
 
 ## [10.0.0-19](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-18...v10.0.0-19) (2025-08-14)

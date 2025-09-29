@@ -17,6 +17,7 @@ class UnitRole < ApplicationRecord
 
   validate :ensure_valid_user_for_role
   validate :ensure_convenor, if: :is_main_convenor?
+  validate :main_convenor_cant_be_observer
 
   before_destroy do
     if is_main_convenor?
@@ -107,39 +108,83 @@ class UnitRole < ApplicationRecord
   #
   # Add data to the summary stats about this staff member
   #
-  def populate_summary_stats(summary_stats)
+  def populate_summary_stats(summary_stats, tutorial_stream, tutorial, row)
     data = {}
 
     data[:staff] = user
     data[:unit_role] = self
 
-    data[:engagements] = task_engagements
-                         .where(
-                           "task_engagements.engagement_time >= :start AND task_engagements.engagement_time < :end",
-                           start: summary_stats[:week_start], end: summary_stats[:week_end]
-                         )
+    # All task engagements for this tutorial
+    all_engagements = TaskEngagement
+        .joins(task: [:project, :task_definition])
+        .where(projects: { id: tutorial.projects.select(:id) })
+        .where(task_definitions: { tutorial_stream_id: tutorial_stream.id })
+        .distinct
 
-    data[:total_engagements_count] = task_engagements.count
-    data[:weekly_engagements_count] = data[:engagements].count
+    weekly_engagements = all_engagements
+        .where("task_engagements.engagement_time >= :start AND task_engagements.engagement_time < :end",
+               start: summary_stats[:week_start], end: summary_stats[:week_end])
 
-    if tasks_awaiting_feedback.count > 0
-      data[:oldest_task_days] = (Time.zone.today - tasks_awaiting_feedback.order("submission_date ASC").first.submission_date.to_date).to_i
-      data[:tasks_awaiting_feedback_count] = tasks_awaiting_feedback.count
+    data[:engagements] = all_engagements
+    data[:total_staff_engagements] = all_engagements.count
+    data[:staff_engagements] = weekly_engagements.where(engagement: [TaskStatus.complete.name, TaskStatus.feedback_exceeded.name, TaskStatus.redo.name, TaskStatus.discuss.name, TaskStatus.demonstrate.name, TaskStatus.fail.name])
+
+    # Weekly task engagements for this tutorial
+    data[:weekly_engagements_count] = weekly_engagements.count
+
+    tutorial_tasks = tasks_awaiting_feedback
+      .joins(task_definition: :tutorial_stream)
+      .joins(project: { tutorial_enrolments: :tutorial })
+      .where(tutorials: { id: tutorial.id })
+      .where(task_definitions: { tutorial_stream_id: tutorial_stream.id })
+      .distinct
+
+    if tutorial_tasks.count > 0
+      data[:oldest_task_days] = (Time.zone.now - tutorial_tasks.order("submission_date ASC").first.submission_date.to_time).to_i / 1.day
+      data[:tasks_awaiting_feedback_count] = tutorial_tasks.count
     else
       data[:oldest_task_days] = 0
       data[:tasks_awaiting_feedback_count] = 0
     end
 
-    data[:number_of_students] = number_of_students
+    data[:number_of_students] = tutorial.projects.count
+    tutorial_task_ids = tutorial.projects.joins(:tasks).pluck('tasks.id')
 
-    data[:total_staff_engagements] = task_engagements.where(engagement: [TaskStatus.complete.name, TaskStatus.feedback_exceeded.name, TaskStatus.redo.name, TaskStatus.discuss.name, TaskStatus.demonstrate.name, TaskStatus.fail.name]).count
-    data[:staff_engagements] = data[:engagements].where(engagement: [TaskStatus.complete.name, TaskStatus.feedback_exceeded.name, TaskStatus.redo.name, TaskStatus.discuss.name, TaskStatus.demonstrate.name, TaskStatus.fail.name]).count
+    total_comments = comments
+      .where(task_id: tutorial_task_ids)
+      .where("task_comments.user_id = :staff_id",
+             staff_id: data[:staff].id)
+      .where(content_type: [:text, :assessment, :audio, :image, :pdf, :discussion, :extension, :discussed_in_class])
+      .distinct
 
-    data[:received_comments] = comments.where("recipient_id = :staff_id AND task_comments.created_at > :start", staff_id: data[:staff].id, start: Time.zone.today - 7.days).count
-    data[:sent_comments] = comments.where("task_comments.user_id = :staff_id AND task_comments.created_at > :start", staff_id: data[:staff].id, start: Time.zone.today - 7.days).count
-    data[:total_comments] = comments.where("task_comments.user_id = :staff_id", staff_id: data[:staff].id).count
+    data[:total_tasks_discussed] = total_comments
+                .where(content_type: :discussed_in_class)
 
-    summary_stats[:staff][self] = data
+    data[:weekly_tasks_discussed] = data[:total_tasks_discussed]
+                .where("task_comments.created_at > :start", start: Time.zone.now - 7.days)
+
+    data[:received_comments] = total_comments
+      .where("recipient_id = :staff_id AND task_comments.created_at > :start",
+             staff_id: data[:staff].id,
+             start: Time.zone.now - 7.days)
+
+    data[:sent_comments] = total_comments
+      .where("task_comments.user_id = :staff_id AND task_comments.created_at > :start",
+             staff_id: data[:staff].id,
+             start: Time.zone.now - 7.days)
+
+    data[:total_comments] = total_comments
+
+    summary_stats[:staff][data[:staff]][:staff_engagements] += data[:staff_engagements].count
+    summary_stats[:staff][data[:staff]][:tasks_awaiting_feedback_count] += tutorial_tasks.count
+    summary_stats[:staff][data[:staff]][:weekly_engagements_count] += weekly_engagements.count
+    summary_stats[:staff][data[:staff]][:weekly_total_tasks_discussed] += data[:weekly_tasks_discussed].count
+    summary_stats[:staff][data[:staff]][:oldest_task_days] = [
+      summary_stats[:staff][data[:staff]][:oldest_task_days],
+      data[:oldest_task_days]
+    ].max
+
+    row.replace(data)
   end
 
   def send_weekly_status_email(summary_stats)
@@ -157,6 +202,12 @@ class UnitRole < ApplicationRecord
       errors.add :user, 'must have a role that is able to administer units (request admin to adjust user role)' unless user.has_convenor_capability?
     else
       errors.add :user, 'must have a role that is able to teach units (request admin to adjust user role)' unless user.has_tutor_capability?
+    end
+  end
+
+  def main_convenor_cant_be_observer
+    if unit.main_convenor_id == id && observer_only
+      errors.add(:observer_only, 'cannot be set for the main convenor')
     end
   end
 

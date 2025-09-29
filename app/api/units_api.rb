@@ -78,6 +78,7 @@ class UnitsApi < Grape::API
       optional :end_date, type: Date
       optional :main_convenor_id, type: Integer
       optional :auto_apply_extension_before_deadline, type: Boolean, desc: 'Indicates if extensions before the deadline should be automatically applied'
+      optional :mark_late_submissions_as_assess_in_portfolio, type: Boolean, desc: 'Indicates if late submissions should be set Time Exceeded or Assess in Portfolio'
       optional :send_notifications, type: Boolean, desc: 'Indicates if emails should be sent on updates each week'
       optional :enable_sync_timetable, type: Boolean, desc: 'Sync to timetable automatically if supported by deployment'
       optional :enable_sync_enrolments, type: Boolean, desc: 'Sync student enrolments automatically if supported by deployment'
@@ -110,6 +111,7 @@ class UnitsApi < Grape::API
                                                           :active,
                                                           :main_convenor_id,
                                                           :auto_apply_extension_before_deadline,
+                                                          :mark_late_submissions_as_assess_in_portfolio,
                                                           :send_notifications,
                                                           :enable_sync_timetable,
                                                           :enable_sync_enrolments,
@@ -156,6 +158,7 @@ class UnitsApi < Grape::API
       optional :end_date, type: Date
       optional :main_convenor_user_id, type: Integer
       optional :auto_apply_extension_before_deadline, type: Boolean, desc: 'Indicates if extensions before the deadline should be automatically applied', default: true
+      optional :mark_late_submissions_as_assess_in_portfolio, type: Boolean, desc: 'Indicates if late submissions should be set to Time Exceeded or Assess in Portfolio', default: true
       optional :send_notifications, type: Boolean, desc: 'Indicates if emails should be sent on updates each week', default: true
       optional :enable_sync_timetable, type: Boolean, desc: 'Sync to timetable automatically if supported by deployment', default: true
       optional :enable_sync_enrolments, type: Boolean, desc: 'Sync student enrolments automatically if supported by deployment', default: true
@@ -185,6 +188,7 @@ class UnitsApi < Grape::API
                                                     :start_date,
                                                     :end_date,
                                                     :auto_apply_extension_before_deadline,
+                                                    :mark_late_submissions_as_assess_in_portfolio,
                                                     :send_notifications,
                                                     :enable_sync_timetable,
                                                     :enable_sync_enrolments,
@@ -341,7 +345,7 @@ class UnitsApi < Grape::API
     end
 
     # Queue student import onto sidekiq
-    job_id = ImportStudentsJob.perform_async(unit.id, file_name)
+    job_id = ImportStudentsCsvJob.perform_async(unit.id, file_name)
     job = setup_job(job_id)
     present job, with: Entities::SidekiqJobEntity
   end
@@ -381,6 +385,18 @@ class UnitsApi < Grape::API
     header['Access-Control-Expose-Headers'] = 'Content-Disposition'
     env['api.format'] = :binary
     unit.export_users_to_csv
+  end
+
+  desc 'Download CSV of how many times each task changed status'
+  get '/csv/units/:id/task_assessment_counts' do
+    unit = Unit.find(params[:id])
+    unless authorise? current_user, unit, :download_unit_csv
+      error!({ error: "Not authorised to download CSV of student tasks in #{unit.code}" }, 403)
+    end
+
+    job_id = DownloadTaskAssessmentCountsCsvJob.perform_async(unit.id)
+    job = setup_job(job_id)
+    present job, with: Entities::SidekiqJobEntity
   end
 
   desc 'Download CSV of all student tasks awaiting feedback in this unit'

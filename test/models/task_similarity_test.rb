@@ -91,6 +91,27 @@ class TaskSimilarityTest < ActiveSupport::TestCase
       assert_equal 100, similarity2.pct
 
       assert td.has_jplag_report?, "Expected task definition to have a JPlag report"
+
+      # Create a similarity below the threshold
+      similarity1 = JplagTaskSimilarity.create(
+        task: student1_task,
+        other_task: student2_task,
+        pct: 10,
+        flagged: true
+      )
+
+      # Create a similarity above the threshold
+      similarity2 = JplagTaskSimilarity.create(
+        task: student1_task,
+        other_task: student2_task,
+        pct: 99,
+        flagged: true
+      )
+
+      unit.check_jplag_similarity(force: true)
+
+      assert_not JplagTaskSimilarity.exists?(similarity1.id), "Similarity with lower threshold whould have been deleted"
+      assert JplagTaskSimilarity.exists?(similarity2.id), "Similarity with higher threshold should not have been deleted"
     end
   end
 
@@ -103,7 +124,7 @@ class TaskSimilarityTest < ActiveSupport::TestCase
       pct: 10
     )
 
-    refute similarity.valid?, similarity.errors.full_messages
+    assert_not similarity.valid?, similarity.errors.full_messages
 
     similarity.other_task = task
     assert similarity.valid?, similarity.errors.full_messages
@@ -121,7 +142,6 @@ class TaskSimilarityTest < ActiveSupport::TestCase
     )
 
     assert tii_similarity.valid?, tii_similarity.errors.full_messages
-
   ensure
     task&.project&.unit&.destroy
   end
@@ -139,9 +159,9 @@ class TaskSimilarityTest < ActiveSupport::TestCase
     assert similarity.valid?, similarity.errors.full_messages
 
     similarity.pct = -1
-    refute similarity.valid?
+    assert_not similarity.valid?
     similarity.pct = 101
-    refute similarity.valid?
+    assert_not similarity.valid?
 
     similarity.pct = 0
     assert similarity.valid?, similarity.errors.full_messages
@@ -220,10 +240,9 @@ class TaskSimilarityTest < ActiveSupport::TestCase
     add_auth_header_for(user: task.unit.main_convenor_user)
 
     # This will post to get the viewer url
-    viewer_url_request = stub_request(:post, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1223/viewer-url").
-      with(tii_headers).
-      to_return(status: 200, body: TCAClient::SimilarityViewerUrlResponse.new(viewer_url: 'https://viewer.url').to_hash.to_json, headers: {}
-    )
+    viewer_url_request = stub_request(:post, "https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/submissions/1223/viewer-url")
+                         .with(tii_headers)
+                         .to_return(status: 200, body: TCAClient::SimilarityViewerUrlResponse.new(viewer_url: 'https://viewer.url').to_hash.to_json, headers: {})
 
     get "/api/tasks/#{task.id}/similarities/#{sim.id}/viewer_url"
     assert_equal 200, last_response.status
