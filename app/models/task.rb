@@ -1321,6 +1321,8 @@ class Task < ApplicationRecord
         end
       end
 
+      generate_diff(pdf_text)
+
       # Save the file... now using the full path!
       File.open(final_pdf_path, 'w') do |fout|
         fout.puts pdf_text
@@ -1350,6 +1352,28 @@ class Task < ApplicationRecord
 
       clear_in_process
     end
+  end
+
+  def generate_diff(new_pdf_text)
+    root_work_dir = Rails.root.join("tmp", "pdfdiff", self.id.to_s)
+    FileUtils.mkdir_p(root_work_dir)  # ensures all directories exist
+
+    File.binwrite(root_work_dir.join("new.pdf"), new_pdf_text)
+    FileUtils.cp(final_pdf_path, root_work_dir.join("old.pdf"))
+
+    container_name = "pdfdiff"
+    # 1. Using pdf-diff package
+    # Highlights line changes with yellow
+    # Generates changes in multiple PNGs, requires img2pdf to combine them into a pdf
+    docker_command = "docker exec -i #{container_name}  sh -c \"cd /tmp/pdfdiff/#{id}/ && pdf-diff -color fce300 old.pdf new.pdf && img2pdf generated/*.png -o combined.pdf\""
+
+    # 2. Using diff-pdf package
+    # Shows changes in red (before) and blue (after)
+    docker_command = "docker exec -i #{container_name}  sh -c \"cd /tmp/pdfdiff/#{id}/ && diff-pdf --output-diff=output.pdf old.pdf new.pdf"
+
+    logger.debug(docker_command)
+
+    system(docker_command)
   end
 
   #
