@@ -76,7 +76,6 @@ jobs:
           file: jplag.Dockerfile
           push: false
           load: true
-          load: true
           tags: |
             ${{ env.DF_JPLAG_IMAGE_NAME }}:local
             ${{ env.DF_JPLAG_IMAGE_NAME }}:latest
