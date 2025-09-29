@@ -14,6 +14,7 @@ CONTAINER_NAME="jplag-$WORK_ID"
 docker run --rm \
   --network none \
   -e TERM=xterm \
+  -e DF_LATEX_PATH_TO_WORKDIRS="$DF_LATEX_PATH_TO_WORKDIRS" \
   --volumes-from $DF_API_CONTAINER_NAME \
   --name "$CONTAINER_NAME" \
   "$IMAGE_NAME" \
