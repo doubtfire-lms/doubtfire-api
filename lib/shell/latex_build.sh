@@ -4,7 +4,7 @@
 
 OUTPUT_DIR=$1
 
-cd "$RAILS_LATEX_DIR/${OUTPUT_DIR}"
+cd "$DF_LATEX_PATH_TO_WORKDIRS/${OUTPUT_DIR}"
 
 # Initialise work subfolder
 mkdir -p work
