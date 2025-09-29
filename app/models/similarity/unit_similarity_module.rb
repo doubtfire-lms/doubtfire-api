@@ -260,6 +260,10 @@ module UnitSimilarityModule
           if names.count >= 2
             # "name" will include the upload req name, eg. "401/000-code.cpp"
             file_extension = File.extname(names[1])
+
+            # Strip out file_extension from the upload requirement name since we'll append it manually
+            file_name = file_name.gsub(file_extension, "")
+
             File.join(to_path.to_s, t.student.username.to_s, task.id.to_s, "#{idx}-#{file_name}#{file_extension}")
           else
             # "name" is simply the directory of the task, eg. "401/"
