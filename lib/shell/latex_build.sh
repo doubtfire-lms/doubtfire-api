@@ -4,7 +4,7 @@
 
 OUTPUT_DIR=$1
 
-cd /workdir/texlive-latex/${OUTPUT_DIR}
+cd "$RAILS_LATEX_DIR/${OUTPUT_DIR}"
 
 # Initialise work subfolder
 mkdir -p work
