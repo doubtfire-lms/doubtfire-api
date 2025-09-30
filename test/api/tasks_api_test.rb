@@ -100,7 +100,7 @@ class TasksApiTest < ActiveSupport::TestCase
     # Now test the associations
     assert_equal unit.id, session.unit_id
     assert_equal activity.marking_session_id, session.id
-    assert_equal 'inbox', activity.action
+    assert_equal 'get-submission-details', activity.action
 
     # Clean up session activities first to avoid foreign key constraint issues
     SessionActivity.delete_all
