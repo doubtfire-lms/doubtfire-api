@@ -215,9 +215,8 @@ module PdfGeneration
         self.uses_draft_learning_summary = false
         save
       else
-        Dir.chdir(portfolio_tmp_dir)
-        files = Dir.glob('*')
-        idx = files.map { |a_file| a_file.split('-').first.to_i }.max
+        files = Dir.glob(File.join(portfolio_tmp_dir, '*'))
+        idx = files.map { |a_file| File.basename(a_file).split('-').first.to_i }.max
         if idx.nil? || idx < 1
           idx = 1
         else
@@ -238,10 +237,11 @@ module PdfGeneration
 
       result = []
 
-      Dir.chdir(portfolio_tmp_dir)
-      files = Dir.glob('*').select { |f| (f =~ /^\d{3}-(cover|document|code|image)/) == 0 }
+      files = Dir.glob(File.join(portfolio_tmp_dir, '*'))
+                 .select { |f| File.basename(f) =~ /^\d{3}-(cover|document|code|image)/ }
+
       files.each do |file|
-        parts = file.split('-')
+        parts = File.basename(file).split('-')
         idx = parts[0].to_i
         kind = parts[1]
         name = parts.drop(2).join('-')

@@ -103,73 +103,68 @@ module UnitSimilarityModule
     # Get each task...
     return unless active
 
-    # need pwd to restore after cding into submission folder (so the files do not have full path)
-    pwd = FileUtils.pwd
-
     # making temp directory for unit - jplag
     # root_work_dir = Rails.root.join("tmp", "jplag", "#{code}-#{id}")
     # unit_code = "#{code}-#{id}"
 
-    begin
-      logger.info "Checking plagiarsm for unit #{code} - #{name} (id=#{id})"
+    logger.info "Checking plagiarsm for unit #{code} - #{name} (id=#{id})"
 
-      task_definitions.each do |td|
-        next if td.similarity_language.nil? || td.upload_requirements.nil? || td.upload_requirements.select { |upreq| upreq['type'] == 'code' && upreq['tii_check'] }.empty?
+    task_definitions.each do |td|
+      next if td.similarity_language.nil? || td.upload_requirements.nil? || td.upload_requirements.select { |upreq| upreq['type'] == 'code' && upreq['tii_check'] }.empty?
 
-        # Is there anything to check?
-        logger.debug "Checking plagiarism for #{td.name} (id=#{td.id})"
-        # tasks = tasks_for_definition(td)
-        tasks_with_files = tasks_for_definition(td).select(&:has_pdf)
+      # Is there anything to check?
+      logger.debug "Checking plagiarism for #{td.name} (id=#{td.id})"
+      # tasks = tasks_for_definition(td)
+      tasks_with_files = tasks_for_definition(td).select(&:has_pdf)
 
-        # If task is still being processed, Sidekiq will Re-queue the job until all PDFs are ready
-        # tasks_with_files = tasks.select { |t| t.has_pdf || t.processing_pdf? }
+      # If task is still being processed, Sidekiq will Re-queue the job until all PDFs are ready
+      # tasks_with_files = tasks.select { |t| t.has_pdf || t.processing_pdf? }
 
-        # tasks_with_files = tasks.where(ask_definition_id: task_def.id)
+      # tasks_with_files = tasks.where(ask_definition_id: task_def.id)
 
-        # Skip if no files changed
-        next unless tasks_with_files.count > 1 &&
-                    (
-                      # NOTE: `last_plagarism_scan` is currently tracked for each Unit, not each Task Definition
-                      # tasks.where('tasks.file_uploaded_at > ?', last_plagarism_scan).select(&:has_pdf).count > 0 ||
-                      tasks_with_files.any? { |t| t.file_uploaded_at > last_plagarism_scan } ||
-                      td.updated_at > last_plagarism_scan ||
-                      force
-                    )
+      # Skip if no files changed
+      next unless tasks_with_files.count > 1 &&
+                  (
+                    # NOTE: `last_plagarism_scan` is currently tracked for each Unit, not each Task Definition
+                    # tasks.where('tasks.file_uploaded_at > ?', last_plagarism_scan).select(&:has_pdf).count > 0 ||
+                    tasks_with_files.any? { |t| t.file_uploaded_at > last_plagarism_scan } ||
+                    td.updated_at > last_plagarism_scan ||
+                    force
+                  )
 
-        # Ensure work directory for the unit is created
-        # FileUtils.mkdir_p(root_work_dir)
+      # Ensure work directory for the unit is created
+      # FileUtils.mkdir_p(root_work_dir)
 
-        # Init work directory for each task definition
-        # tasks_dir = root_work_dir.join(td.id.to_s)
-        # :workdir => -> { "#{@work_id}-#{Process.pid}-#{Thread.current.object_id}-#{Time.now.to_i}" }
+      # Init work directory for each task definition
+      # tasks_dir = root_work_dir.join(td.id.to_s)
+      # :workdir => -> { "#{@work_id}-#{Process.pid}-#{Thread.current.object_id}-#{Time.now.to_i}" }
 
-        # TODO: create the work folder in the jplag sidekiq job
-        # TODO: running jplag similarity per task definition would be nice (instead of unit)
-        #
+      # TODO: create the work folder in the jplag sidekiq job
+      # TODO: running jplag similarity per task definition would be nice (instead of unit)
+      #
 
-        # There are new tasks, check these with JPLAG
+      # There are new tasks, check these with JPLAG
 
-        # process_jplag_plagiarism_report(report_path, warn_pct, td.group_set)
-        # run_jplag_on_done_files(td, tasks_dir, tasks_with_files, unit_code)
-        # report_path = "#{Doubtfire::Application.config.jplag_report_dir}/#{unit_code}/#{td.abbreviation}-result.jplag"
-        warn_pct = td.plagiarism_warn_pct || 50
-        # logger.debug "Warn PCT: #{warn_pct}"
+      # process_jplag_plagiarism_report(report_path, warn_pct, td.group_set)
+      # run_jplag_on_done_files(td, tasks_dir, tasks_with_files, unit_code)
+      # report_path = "#{Doubtfire::Application.config.jplag_report_dir}/#{unit_code}/#{td.abbreviation}-result.jplag"
+      warn_pct = td.plagiarism_warn_pct || 50
+      # logger.debug "Warn PCT: #{warn_pct}"
 
-        # Remove any existing plagiarism links that are below the threshold, in case it has been updated since the last analysis
-        JplagTaskSimilarity.joins(:task)
-                           .where("pct < ? AND tasks.task_definition_id = ?", warn_pct, td.id)
-                           .delete_all
+      # Remove any existing plagiarism links that are below the threshold, in case it has been updated since the last analysis
+      JplagTaskSimilarity.joins(:task)
+                         .where("pct < ? AND tasks.task_definition_id = ?", warn_pct, td.id)
+                         .delete_all
 
-        # TODO: cleanup
-        JplagSimilarityJob.perform_async(td.id)
+      # byebug
 
-        # process_jplag_plagiarism_report(report_path, warn_pct, td.group_set)
-      end
-      self.last_plagarism_scan = Time.zone.now
-      save!
-    ensure
-      FileUtils.chdir(pwd) if FileUtils.pwd != pwd
+      # TODO: cleanup
+      JplagSimilarityJob.perform_async(td.id)
+
+      # process_jplag_plagiarism_report(report_path, warn_pct, td.group_set)
     end
+    self.last_plagarism_scan = Time.zone.now
+    save!
 
     self
   end
@@ -311,6 +306,7 @@ module UnitSimilarityModule
     # docker_command = "docker exec -i jplag java -jar jplag-jar-with-dependencies.jar #{tasks_dir_split} -l #{file_lang} --similarity-threshold=#{similarity_threshold} #{min_token_string} -M RUN -r #{results_dir}/#{task_definition.abbreviation}-result --overwrite"
 
     jplag_run_script = Rails.root.join("lib/shell/jplag_run.sh")
+    # byebug
     docker_command = "#{jplag_run_script} #{File.basename(tasks_dir)} #{file_lang} #{similarity_threshold} #{tasks_dir_split} #{unit_code}-#{task_definition.id}-#{Thread.current.object_id}"
     # docker_command = "docker exec -i jplag java -jar jplag-jar-with-dependencies.jar #{tasks_dir_split} -l #{file_lang} --similarity-threshold=#{similarity_threshold} #{min_token_string} -M RUN -r #{results_dir}/#{task_definition.abbreviation}-result"
     logger.debug "Executing command: #{docker_command}"
