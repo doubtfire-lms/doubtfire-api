@@ -52,6 +52,7 @@ module Entities
     expose :assessment_enabled, if: ->(unit, options) { staff?(options[:my_role]) }
     expose :similarity_language, if: ->(unit, options) { staff?(options[:my_role]) }, expose_nil: false
     expose :assess_in_portfolio_only
+    expose :use_resources_for_jplag_base_code, if: ->(unit, options) { staff?(options[:my_role]) }
 
     expose :learning_outcomes, using: LearningOutcomeEntity, as: :ilos
   end

@@ -242,6 +242,21 @@ module UnitSimilarityModule
     result_file = "#{results_dir}/#{task_definition.abbreviation}-result.jplag"
     system("docker exec -i jplag sh -c 'if [ -f \"#{result_file}\" ]; then rm \"#{result_file}\"; fi'") || raise('Failed to remove previous JPlag report')
 
+    # Extract task resources for base code
+    use_base_code = false
+    if task_definition.has_task_resources? && task_definition.use_resources_for_jplag_base_code
+      use_base_code = true
+      path = task_definition.task_resources
+
+      Zip::File.open(path) do |zip_file|
+        zip_file.each do |entry|
+          dest = File.join(tasks_dir, 'base', entry.name)
+          FileUtils.mkdir_p(File.dirname(dest))
+          entry.extract(dest) { true }
+        end
+      end
+    end
+
     # get each code file for each task
     task_definition.upload_requirements.each_with_index do |upreq, idx|
       # only check code files marked for similarity checks
@@ -264,10 +279,10 @@ module UnitSimilarityModule
             # Strip out file_extension from the upload requirement name since we'll append it manually
             file_name = file_name.gsub(file_extension, "")
 
-            File.join(to_path.to_s, t.student.username.to_s, task.id.to_s, "#{idx}-#{file_name}#{file_extension}")
+            File.join(to_path.to_s, 'submissions', t.student.username.to_s, task.id.to_s, "#{idx}-#{file_name}#{file_extension}")
           else
             # "name" is simply the directory of the task, eg. "401/"
-            File.join(to_path.to_s, t.student.username.to_s, name.to_s)
+            File.join(to_path.to_s, 'submissions', t.student.username.to_s, name.to_s)
           end
         })
       end
@@ -284,8 +299,11 @@ module UnitSimilarityModule
     min_tokens = Doubtfire::Application.config.jplag_min_tokens.to_i
     # If empty, let JPlag set the default per-language
     min_token_string = min_tokens <= 0 ? "" : "--min-tokens=#{min_tokens}"
+
+    base_code_string = use_base_code ? "--base-code=#{tasks_dir_split}/base" : ""
+
     # Run JPLAG on the extracted files. JPlag container should already be in the /jplag/ workdir.
-    docker_command = "docker exec -i jplag java -jar jplag-jar-with-dependencies.jar #{tasks_dir_split} -l #{file_lang} --similarity-threshold=#{similarity_threshold} #{min_token_string} -M RUN -r #{results_dir}/#{task_definition.abbreviation}-result --overwrite"
+    docker_command = "docker exec -i jplag java -jar jplag-jar-with-dependencies.jar #{tasks_dir_split}/submissions #{base_code_string} -l #{file_lang} --similarity-threshold=#{similarity_threshold} #{min_token_string} -M RUN -r #{results_dir}/#{task_definition.abbreviation}-result --overwrite"
     logger.debug "Executing command: #{docker_command}"
     system(docker_command)
 
