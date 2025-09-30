@@ -204,7 +204,7 @@ class TasksApi < Grape::API
           error!({ error: 'This task can only be updated by your tutor.' }, 403)
         end
         SessionTracker.record_assessment_activity(
-          action: "assessing to #{params[:trigger]}",
+          action: "assessing",
           user: current_user,
           project: project,
           ip_address: request.ip,
