@@ -173,14 +173,6 @@ class TasksApi < Grape::API
         task.add_discussed_comment(current_user)
       end
 
-      SessionTracker.record_assessment_activity(
-        action: "assessing",
-        user: current_user,
-        project: project,
-        ip_address: request.ip,
-        task: task
-      )
-
       # if trigger supplied...
       unless params[:trigger].nil?
         # Check if they should be using portfolio_evidence api
@@ -211,6 +203,13 @@ class TasksApi < Grape::API
         if result.nil? && task.task_definition.restrict_status_updates
           error!({ error: 'This task can only be updated by your tutor.' }, 403)
         end
+        SessionTracker.record_assessment_activity(
+          action: "assessing to #{params[:trigger]}",
+          user: current_user,
+          project: project,
+          ip_address: request.ip,
+          task: task
+        )
       end
 
       # if grade was supplied
@@ -259,13 +258,6 @@ class TasksApi < Grape::API
     error!(error: 'You do not have permission to read submissions for this project.') unless authorise? current_user, project, :get_submission
 
     task = project.has_task_for_task_definition?(task_definition) ? project.task_for_task_definition(task_definition) : nil
-    SessionTracker.record_assessment_activity(
-      action: "inbox",
-      user: current_user,
-      project: project,
-      ip_address: request.ip,
-      task: task
-    )
 
     # ensure there can be a pdf...
     needs_upload_docs = !task_definition.upload_requirements.empty?
@@ -287,6 +279,14 @@ class TasksApi < Grape::API
       }
     end
 
+    SessionTracker.record_assessment_activity(
+      action: 'get-submission-details',
+      user: current_user,
+      project: project,
+      ip_address: request.ip,
+      task: task
+    )
+
     present result, with: Grape::Presenters::Presenter
   end
 
@@ -306,7 +306,7 @@ class TasksApi < Grape::API
     # Get the actual task...
     task = project.task_for_task_definition(task_definition)
     SessionTracker.record_assessment_activity(
-      action: "inbox",
+      action: 'get-submission-files',
       user: current_user,
       project: project,
       ip_address: request.ip,

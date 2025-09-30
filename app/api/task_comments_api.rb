@@ -34,14 +34,6 @@ class TaskCommentsApi < Grape::API
 
     task = project.task_for_task_definition(task_definition)
 
-    SessionTracker.record_assessment_activity(
-      action: "assessing",
-      user: current_user,
-      project: project,
-      ip_address: request.ip,
-      task: task
-    )
-
     type_string = content_type.to_s
 
     if reply_to_id.present?
@@ -67,6 +59,15 @@ class TaskCommentsApi < Grape::API
     if result.nil?
       error!({ error: 'No comment added. Comment duplicates last comment, so ignored.' }, 403)
     else
+
+      SessionTracker.record_assessment_activity(
+        action: 'add-comment',
+        user: current_user,
+        project: project,
+        ip_address: request.ip,
+        task: task
+      )
+
       present result.serialize(current_user), with: Grape::Presenters::Presenter
     end
   end
@@ -86,14 +87,6 @@ class TaskCommentsApi < Grape::API
     if project.has_task_for_task_definition? task_definition
       task = project.task_for_task_definition(task_definition)
 
-      SessionTracker.record_assessment_activity(
-        action: "inbox",
-        user: current_user,
-        project: project,
-        ip_address: request.ip,
-        task: task
-      )
-
       comment = task.comments.find(params[:id])
 
       error!({ error: 'No attachment for this comment.' }, 404) unless %w(audio image pdf).include? comment.content_type
@@ -109,6 +102,14 @@ class TaskCommentsApi < Grape::API
       if params[:as_attachment]
         header['Content-Disposition'] = "attachment; filename=#{comment.attachment_file_name}"
       end
+
+      SessionTracker.record_assessment_activity(
+        action: 'get-comment-attachment',
+        user: current_user,
+        project: project,
+        ip_address: request.ip,
+        task: task
+      )
 
       stream_file comment.attachment_path
     end
@@ -126,14 +127,6 @@ class TaskCommentsApi < Grape::API
     if project.has_task_for_task_definition? task_definition
       task = project.task_for_task_definition(task_definition)
 
-      SessionTracker.record_assessment_activity(
-        action: "inbox",
-        user: current_user,
-        project: project,
-        ip_address: request.ip,
-        task: task
-      )
-
       comments = task.all_comments.order('created_at ASC')
       result = comments.map { |c| c.serialize(current_user) }
       # result = task.comments_for_user(current_user)
@@ -145,6 +138,15 @@ class TaskCommentsApi < Grape::API
     else
       result = []
     end
+
+    SessionTracker.record_assessment_activity(
+      action: 'get-comments',
+      user: current_user,
+      project: project,
+      ip_address: request.ip,
+      task: task
+    )
+
     present result, with: Grape::Presenters::Presenter
   end
 
@@ -158,14 +160,6 @@ class TaskCommentsApi < Grape::API
     end
 
     task = project.task_for_task_definition(task_definition)
-
-    SessionTracker.record_assessment_activity(
-      action: "inbox",
-      user: current_user,
-      project: project,
-      ip_address: request.ip,
-      task: task
-    )
 
     task_comment = task.all_comments.find(params[:id])
 
@@ -181,6 +175,14 @@ class TaskCommentsApi < Grape::API
 
     task_comment.destroy
 
+    SessionTracker.record_assessment_activity(
+      action: 'delete-comment',
+      user: current_user,
+      project: project,
+      ip_address: request.ip,
+      task: task
+    )
+
     present false
   end
 
@@ -195,16 +197,16 @@ class TaskCommentsApi < Grape::API
 
     task = project.task_for_task_definition(task_definition)
 
+    task_comment = task.comments.find(params[:id])
+    task_comment.mark_as_unread(current_user)
+
     SessionTracker.record_assessment_activity(
-      action: "inbox",
+      action: 'mark-comment-unread',
       user: current_user,
       project: project,
       ip_address: request.ip,
       task: task
     )
-
-    task_comment = task.comments.find(params[:id])
-    task_comment.mark_as_unread(current_user)
 
     present task_comment.serialize(current_user), with: Grape::Presenters::Presenter
   end
