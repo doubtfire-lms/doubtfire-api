@@ -14,89 +14,89 @@ module UnitSimilarityModule
   end
 
   # Pass tasks on to plagarism detection software and setup links between students
-  def check_moss_similarity(force: false)
-    # Get each task...
-    return unless active
+  # def check_moss_similarity(force: false)
+  #   # Get each task...
+  #   return unless active
 
-    # need pwd to restore after cding into submission folder (so the files do not have full path)
-    pwd = FileUtils.pwd
+  #   # need pwd to restore after cding into submission folder (so the files do not have full path)
+  #   pwd = FileUtils.pwd
 
-    begin
-      logger.info "Checking plagiarsm for unit #{code} - #{name} (id=#{id})"
+  #   begin
+  #     logger.info "Checking plagiarsm for unit #{code} - #{name} (id=#{id})"
 
-      task_definitions.each do |td|
-        next if td.similarity_language.nil? || td.upload_requirements.nil? || td.upload_requirements.select { |upreq| upreq['type'] == 'code' && upreq['tii_check'] }.empty?
+  #     task_definitions.each do |td|
+  #       next if td.similarity_language.nil? || td.upload_requirements.nil? || td.upload_requirements.select { |upreq| upreq['type'] == 'code' && upreq['tii_check'] }.empty?
 
-        type_data = td.similarity_language.split
-        next if type_data.nil? || (type_data.length != 2) || (type_data[0] != 'moss')
+  #       type_data = td.similarity_language.split
+  #       next if type_data.nil? || (type_data.length != 2) || (type_data[0] != 'moss')
 
-        # Is there anything to check?
-        logger.debug "Checking plagiarism for #{td.name} (id=#{td.id})"
-        tasks = tasks_for_definition(td)
-        tasks_with_files = tasks.select(&:has_pdf)
+  #       # Is there anything to check?
+  #       logger.debug "Checking plagiarism for #{td.name} (id=#{td.id})"
+  #       tasks = tasks_for_definition(td)
+  #       tasks_with_files = tasks.select(&:has_pdf)
 
-        # Skip if not due yet
-        next if td.due_date > Time.zone.now
+  #       # Skip if not due yet
+  #       next if td.due_date > Time.zone.now
 
-        # Skip if no files changed
-        next unless tasks_with_files.count > 1 &&
-                    (
-                      tasks.where('tasks.file_uploaded_at > ?', last_plagarism_scan).select(&:has_pdf).count > 0 ||
-                      td.updated_at > last_plagarism_scan ||
-                      force
-                    )
+  #       # Skip if no files changed
+  #       next unless tasks_with_files.count > 1 &&
+  #                   (
+  #                     tasks.where('tasks.file_uploaded_at > ?', last_plagarism_scan).select(&:has_pdf).count > 0 ||
+  #                     td.updated_at > last_plagarism_scan ||
+  #                     force
+  #                   )
 
-        # There are new tasks, check these
+  #       # There are new tasks, check these
 
-        logger.debug 'Contacting MOSS for new checks'
+  #       logger.debug 'Contacting MOSS for new checks'
 
-        # Create the MossRuby object
-        moss_key = Doubtfire::Application.credentials.secret_key_moss
-        raise "No moss key set. Check ENV['DF_SECRET_KEY_MOSS'] first." if moss_key.nil?
+  #       # Create the MossRuby object
+  #       moss_key = Doubtfire::Application.credentials.secret_key_moss
+  #       raise "No moss key set. Check ENV['DF_SECRET_KEY_MOSS'] first." if moss_key.nil?
 
-        moss = MossRuby.new(moss_key)
+  #       moss = MossRuby.new(moss_key)
 
-        # Set options  -- the options will already have these default values
-        moss.options[:max_matches] = 7
-        moss.options[:directory_submission] = true
-        moss.options[:show_num_matches] = 500
-        moss.options[:experimental_server] = false
-        moss.options[:comment] = ''
-        moss.options[:language] = type_data[1]
+  #       # Set options  -- the options will already have these default values
+  #       moss.options[:max_matches] = 7
+  #       moss.options[:directory_submission] = true
+  #       moss.options[:show_num_matches] = 500
+  #       moss.options[:experimental_server] = false
+  #       moss.options[:comment] = ''
+  #       moss.options[:language] = type_data[1]
 
-        tmp_path = File.join(Dir.tmpdir, 'doubtfire', "check-#{id}-#{td.id}")
+  #       tmp_path = File.join(Dir.tmpdir, 'doubtfire', "check-#{id}-#{td.id}")
 
-        begin
-          # Create a file hash, with the files to be processed
-          to_check = MossRuby.empty_file_hash
-          add_done_files_for_plagiarism_check_of(td, tmp_path, to_check, tasks_with_files)
+  #       begin
+  #         # Create a file hash, with the files to be processed
+  #         to_check = MossRuby.empty_file_hash
+  #         add_done_files_for_plagiarism_check_of(td, tmp_path, to_check, tasks_with_files)
 
-          FileUtils.chdir(tmp_path)
+  #         FileUtils.chdir(tmp_path)
 
-          # Get server to process files
-          logger.debug 'Sending to MOSS...'
-          url = moss.check(to_check, ->(_) { print '.' })
+  #         # Get server to process files
+  #         logger.debug 'Sending to MOSS...'
+  #         url = moss.check(to_check, ->(_) { print '.' })
 
-          logger.info "MOSS check for #{code} #{td.abbreviation} url: #{url}"
+  #         logger.info "MOSS check for #{code} #{td.abbreviation} url: #{url}"
 
-          td.plagiarism_report_url = url
-          td.plagiarism_updated = true
-          td.save
-        rescue StandardError => e
-          logger.error "Failed to check plagiarism for task #{td.name} (id=#{td.id}). Error: #{e.message}"
-        ensure
-          FileUtils.chdir(pwd)
-          FileUtils.rm_rf tmp_path
-        end
-      end
-      self.last_plagarism_scan = Time.zone.now
-      save!
-    ensure
-      FileUtils.chdir(pwd) if FileUtils.pwd != pwd
-    end
+  #         td.plagiarism_report_url = url
+  #         td.plagiarism_updated = true
+  #         td.save
+  #       rescue StandardError => e
+  #         logger.error "Failed to check plagiarism for task #{td.name} (id=#{td.id}). Error: #{e.message}"
+  #       ensure
+  #         FileUtils.chdir(pwd)
+  #         FileUtils.rm_rf tmp_path
+  #       end
+  #     end
+  #     self.last_plagarism_scan = Time.zone.now
+  #     save!
+  #   ensure
+  #     FileUtils.chdir(pwd) if FileUtils.pwd != pwd
+  #   end
 
-    self
-  end
+  #   self
+  # end
 
   # Pass tasks on to plagarism detection software and setup links between students
   def check_jplag_similarity(force: false)
