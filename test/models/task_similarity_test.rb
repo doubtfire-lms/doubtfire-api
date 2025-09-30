@@ -111,6 +111,32 @@ class TaskSimilarityTest < ActiveSupport::TestCase
 
     assert_not JplagTaskSimilarity.exists?(similarity1.id), "Similarity with lower threshold whould have been deleted"
     assert JplagTaskSimilarity.exists?(similarity2.id), "Similarity with higher threshold should not have been deleted"
+
+    JplagTaskSimilarity.delete_all
+
+    # Test JPlag base code: reuse the same file so previous similarity matches are ignored
+
+    java_file = Rails.root.join("test_files/submissions/jplag/Angry Coyote/sociologia.java")
+    zip_path = Rails.root.join("tmp/resources/resources.zip")
+    FileUtils.mkdir_p(zip_path.dirname)
+
+    Zip::File.open(zip_path, Zip::File::CREATE) do |zipfile|
+      zipfile.add(File.basename(java_file), java_file)
+    end
+
+    td.add_task_resources(zip_path, copy: false)
+
+    assert td.has_task_resources?
+
+    td.update(use_resources_for_jplag_base_code: true)
+
+    unit.check_jplag_similarity(force: true)
+
+    similarity1 = JplagTaskSimilarity.find_by(task_id: student1_task.id)
+    similarity2 = JplagTaskSimilarity.find_by(task_id: student2_task.id)
+
+    assert_nil similarity1, "JPlag base code should have been used to ignore similarity"
+    assert_nil similarity2, "JPlag base code should have been used to ignore similarity"
   end
 
   # Test that when you create a plagiarism match link, that a moss test needs the other task
