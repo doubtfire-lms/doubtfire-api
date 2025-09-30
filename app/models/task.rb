@@ -1013,11 +1013,7 @@ class Task < ApplicationRecord
 
   def clear_in_process
     in_process_dir = student_work_dir(:in_process, false)
-    if Dir.exist? in_process_dir
-      Dir.chdir(FileHelper.student_work_root) if FileUtils.pwd == in_process_dir
-      FileUtils.rm_rf in_process_dir
-    end
-
+    FileUtils.rm_rf(in_process_dir) if Dir.exist?(in_process_dir)
   rescue StandardError => e
     logger.error "Error clearing in process directory for task #{log_details} - #{e.message}"
   end
