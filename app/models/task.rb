@@ -1359,6 +1359,8 @@ class Task < ApplicationRecord
     FileUtils.mkdir_p(root_work_dir)  # ensures all directories exist
 
     File.binwrite(root_work_dir.join("new.pdf"), new_pdf_text)
+
+    return unless File.exist?(final_pdf_path)
     FileUtils.cp(final_pdf_path, root_work_dir.join("old.pdf"))
 
     container_name = "pdfdiff"
