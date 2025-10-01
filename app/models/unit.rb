@@ -2723,6 +2723,14 @@ class Unit < ApplicationRecord
       sessions_by_tutor: query.joins(:user).group('users.first_name', 'users.last_name', 'users.id').count,
       total_activities: SessionActivity.joins(:marking_session).where(marking_sessions: { unit_id: id}).count
     }
+
+    # TODO: Ignore tutorial times
+    #
+    # sessions
+    # user ID | Tutor Name | Number of students | Minutes Spent | Assessments made |
+    #
+    #
+    #
   end
 
   private
