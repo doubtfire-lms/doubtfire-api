@@ -587,4 +587,11 @@ class User < ApplicationRecord
       errors: errors
     }
   end
+
+  def get_marking_analytics(unit, start_date: nil, end_date: nil)
+    unit_role = unit.unit_role_for(self)
+    unless unit_role.nil?
+      unit_role.get_marking_analytics(start_date: start_date, end_date: end_date)
+    end
+  end
 end

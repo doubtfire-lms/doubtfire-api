@@ -109,25 +109,17 @@ class MarkingSessionsApi < Grape::API
     desc "Get aggregated marking analytics for a specific tutor"
     params do
       requires :tutor_id, type: Integer, desc: "Tutor ID"
+      requires :unit_id, type: Integer, desc: "Unit ID"
       optional :start_date, type: Date, desc: "Start date for analytics"
       optional :end_date, type: Date, desc: "End date for analytics"
     end
     get 'tutor/:tutor_id' do
-      tutor = User.find_by(id: params[:tutor_id])
-      error!({ error: "Tutor not found" }, 404) unless tutor
-      error!({ error: "You are not authorized to view this tutor's analytics" }, 403) unless can_view_tutor_sessions?(current_user, tutor)
+      user = User.find(params[:tutor_id])
+      unit = User.find(params[:unit_id])
 
-      query = MarkingSession.where(user_id: params[:tutor_id])
-      query = query.where('start_time >= ?', params[:start_date]) if params[:start_date]
-      query = query.where('start_time <= ?', params[:end_date]) if params[:end_date]
+      error!({ error: "You are not authorized to view this tutor's analytics" }, 403) unless can_view_tutor_sessions?(current_user, user)
 
-      analytics = {
-        total_sessions: query.count,
-        total_duration_minutes: query.sum(:duration_minutes),
-        avg_session_duration: query.average(:duration_minutes)&.round(2),
-        total_activities: SessionActivity.joins(:marking_session).where(marking_sessions: { id: query.select(:id) }).count,
-        activities_by_action: SessionActivity.joins(:marking_session).where(marking_sessions: { id: query.select(:id) }).group(:action).count
-      }
+      analytics = user.get_marking_analytics(unit, start_date: params[:start_date], end_date: params[:end_date])
       present analytics
     end
 
@@ -139,21 +131,10 @@ class MarkingSessionsApi < Grape::API
     end
     get 'unit/:unit_id' do
       unit = Unit.find_by(id: params[:unit_id])
-      error!({ error: "Unit not found" }, 404) unless unit
+
       error!({ error: "You are not authorized to view this unit's analytics" }, 403) unless can_view_unit_analytics?(current_user, unit)
 
-      query = MarkingSession.where(unit_id: params[:unit_id])
-      query = query.where('start_time >= ?', params[:start_date]) if params[:start_date]
-      query = query.where('start_time <= ?', params[:end_date]) if params[:end_date]
-
-      analytics = {
-        total_sessions: query.count,
-        total_duration_minutes: query.sum(:duration_minutes),
-        avg_session_duration: query.average(:duration_minutes)&.round(2),
-        active_tutors: query.distinct.count(:user_id),
-        sessions_by_tutor: query.joins(:user).group('users.first_name', 'users.last_name', 'users.id').count,
-        total_activities: SessionActivity.joins(:marking_session).where(marking_sessions: { unit_id: params[:unit_id] }).count
-      }
+      analytics = unit.get_tutor_times(start_date: params[:start_date], end_date: params[:end_date])
       present analytics
     end
   end

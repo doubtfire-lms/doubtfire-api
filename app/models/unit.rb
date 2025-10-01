@@ -2710,6 +2710,21 @@ class Unit < ApplicationRecord
     end
   end
 
+  def get_tutor_times(start_date: nil, end_date: nil)
+    query = MarkingSession.where(unit_id: id)
+    query = query.where('start_time >= ?', start_date) if start_date
+    query = query.where('start_time <= ?', end_date) if end_date
+
+    {
+      total_sessions: query.count,
+      total_duration_minutes: query.sum(:duration_minutes),
+      avg_session_duration: query.average(:duration_minutes)&.round(2),
+      active_tutors: query.distinct.count(:user_id),
+      sessions_by_tutor: query.joins(:user).group('users.first_name', 'users.last_name', 'users.id').count,
+      total_activities: SessionActivity.joins(:marking_session).where(marking_sessions: { unit_id: id}).count
+    }
+  end
+
   private
 
   def delete_associated_files
