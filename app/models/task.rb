@@ -1355,12 +1355,13 @@ class Task < ApplicationRecord
   end
 
   def generate_diff(new_pdf_text)
+    return unless File.exist?(final_pdf_path)
+
     root_work_dir = Rails.root.join("tmp", "pdfdiff", self.id.to_s)
     FileUtils.mkdir_p(root_work_dir)  # ensures all directories exist
 
     File.binwrite(root_work_dir.join("new.pdf"), new_pdf_text)
 
-    return unless File.exist?(final_pdf_path)
     FileUtils.cp(final_pdf_path, root_work_dir.join("old.pdf"))
 
     container_name = "pdfdiff"
@@ -1378,12 +1379,17 @@ class Task < ApplicationRecord
     system(docker_command)
 
     output_file = Rails.root.join('tmp/pdfdiff', id.to_s, 'output.pdf')
-    return unless File.exist?(output_file)
+    unless File.exist?(output_file)
+      FileUtils.rm_rf(root_work_dir)
+      return
+    end
     move_to = FileHelper.student_work_dir(:snapshot, self, true)
 
     count = Dir[File.join(move_to, "*.pdf")].size
     new_path = File.join(move_to, "snapshot_#{count + 1}.pdf")
     FileUtils.cp(output_file, new_path)
+
+    FileUtils.rm_rf(root_work_dir)
   end
 
   #
