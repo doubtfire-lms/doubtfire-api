@@ -128,8 +128,9 @@ class TaskSimilarityTest < ActiveSupport::TestCase
 
     assert td.has_task_resources?
 
-    td.update(use_resources_for_jplag_base_code: true)
+    td.update!(use_resources_for_jplag_base_code: true)
 
+    unit.reload
     unit.check_jplag_similarity(force: true)
 
     similarity1 = JplagTaskSimilarity.find_by(task_id: student1_task.id)
