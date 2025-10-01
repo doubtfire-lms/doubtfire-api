@@ -74,6 +74,16 @@ jobs:
           tags: doubtfire-jplag-development:local
           cache-from: type=gha,scope=jplag
           cache-to: type=gha,mode=max,scope=jplag
+      - name: Build PDF Diff image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: pdf-diff.Dockerfile
+          push: false
+          load: true
+          tags: doubtfire-pdf-diff-development:local
+          cache-from: type=gha,scope=pdf-diff
+          cache-to: type=gha,mode=max,scope=pdf-diff
       - name: Build base doubtfire-api development image
         uses: docker/build-push-action@v5
         with:
@@ -125,6 +135,16 @@ jobs:
             -v ${{ github.workspace }}:/doubtfire
             -v /var/run/docker.sock:/var/run/docker.sock
           run: docker exec -e TERM=xterm -i jplag java -jar /jplag/jplag-jar-with-dependencies.jar /test_files -l java --similarity-threshold=0.30 -M RUN -r test.jplag
+      - name: Start PDF Diff service
+        uses: addnab/docker-run-action@v3
+        with:
+          image: doubtfire-pdf-diff-development:local
+          options: >
+            --name pdfdiff
+            -v ${{ github.workspace }}/student-work:/student-work
+            -v ${{ github.workspace }}/tmp/pdfdiff:/tmp/pdfdiff
+            --detach
+          run: sleep infinity
       - name: Populate database
         uses: addnab/docker-run-action@v3
         with:
