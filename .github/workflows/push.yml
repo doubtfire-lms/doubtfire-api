@@ -213,3 +213,5 @@ jobs:
         run: docker rm -f ${{ env.LATEX_CONTAINER_NAME }}
       - name: Stop JPlag service
         run: docker rm -f jplag
+      - name: Stop PDF Diff service
+        run: docker rm -f pdfdiff
