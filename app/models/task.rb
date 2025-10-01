@@ -1365,15 +1365,23 @@ class Task < ApplicationRecord
     # 1. Using pdf-diff package
     # Highlights line changes with yellow
     # Generates changes in multiple PNGs, requires img2pdf to combine them into a pdf
-    docker_command = "docker exec -i #{container_name}  sh -c \"cd /tmp/pdfdiff/#{id}/ && pdf-diff -color fce300 old.pdf new.pdf && img2pdf generated/*.png -o combined.pdf\""
+    docker_command = "docker exec -i #{container_name}  sh -c \"cd /tmp/pdfdiff/#{id}/ && pdf-diff -color fce300 old.pdf new.pdf && img2pdf generated/*.png -o output.pdf\""
 
     # 2. Using diff-pdf package
     # Shows changes in red (before) and blue (after)
-    docker_command = "docker exec -i #{container_name}  sh -c \"cd /tmp/pdfdiff/#{id}/ && diff-pdf --output-diff=output.pdf old.pdf new.pdf"
+    # docker_command = "docker exec -i #{container_name}  sh -c \"cd /tmp/pdfdiff/#{id}/ && diff-pdf --output-diff=output.pdf old.pdf new.pdf"
 
     logger.debug(docker_command)
 
     system(docker_command)
+
+    output_file = Rails.root.join('tmp/pdfdiff', id.to_s, 'output.pdf')
+    return unless File.exist?(output_file)
+    move_to = FileHelper.student_work_dir(:snapshot, self, true)
+
+    count = Dir[File.join(move_to, "*.pdf")].size
+    new_path = File.join(move_to, "snapshot_#{count + 1}.pdf")
+    FileUtils.cp(output_file, new_path)
   end
 
   #
