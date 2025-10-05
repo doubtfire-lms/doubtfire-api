@@ -47,8 +47,8 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
 
   def test_get_tutor_analytics
     add_auth_header_for(user: @convenor)
-    get "/api/marking_analytics/tutor/#{@tutor.id}"
-    assert_equal 200, last_response.status
+    get "/api/marking_analytics/unit/#{@unit.id}/tutor/#{@tutor.id}"
+    assert_equal 200, last_response.status, last_response_body
     response_data = last_response_body
     assert_equal 1, response_data['total_sessions']
     assert_equal 60, response_data['total_duration_minutes']

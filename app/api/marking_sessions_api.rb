@@ -113,9 +113,9 @@ class MarkingSessionsApi < Grape::API
       optional :start_date, type: Date, desc: "Start date for analytics"
       optional :end_date, type: Date, desc: "End date for analytics"
     end
-    get 'tutor/:tutor_id' do
+    get 'unit/:unit_id/tutor/:tutor_id' do
       user = User.find(params[:tutor_id])
-      unit = User.find(params[:unit_id])
+      unit = Unit.find(params[:unit_id])
 
       error!({ error: "You are not authorized to view this tutor's analytics" }, 403) unless can_view_tutor_sessions?(current_user, user)
 
