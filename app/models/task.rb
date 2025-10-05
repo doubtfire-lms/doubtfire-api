@@ -1372,7 +1372,7 @@ class Task < ApplicationRecord
 
     # 2. Using diff-pdf package
     # Shows changes in red (before) and blue (after)
-    # docker_command = "docker exec -i #{container_name}  sh -c \"cd /tmp/pdfdiff/#{id}/ && diff-pdf --output-diff=output.pdf old.pdf new.pdf"
+    docker_command = "docker exec -i #{container_name}  sh -c \"cd /tmp/pdfdiff/#{id}/ && diff-pdf --output-diff=output.pdf old.pdf new.pdf\""
 
     logger.debug(docker_command)
 
