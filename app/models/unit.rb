@@ -2715,22 +2715,72 @@ class Unit < ApplicationRecord
     query = query.where('start_time >= ?', start_date) if start_date
     query = query.where('start_time <= ?', end_date) if end_date
 
-    {
-      total_sessions: query.count,
-      total_duration_minutes: query.sum(:duration_minutes),
-      avg_session_duration: query.average(:duration_minutes)&.round(2),
-      active_tutors: query.distinct.count(:user_id),
-      sessions_by_tutor: query.joins(:user).group('users.first_name', 'users.last_name', 'users.id').count,
-      total_activities: SessionActivity.joins(:marking_session).where(marking_sessions: { unit_id: id}).count
-    }
+    # sessions = {
+    #   query: query,
+    #   total_sessions: query.count,
+    #   total_duration_minutes: query.sum(:duration_minutes),
+    #   avg_session_duration: query.average(:duration_minutes)&.round(2),
+    #   active_tutors: query.distinct.count(:user_id),
+    #   sessions_by_tutor: query.joins(:user).group('users.first_name', 'users.last_name', 'users.id').count,
+    #   total_activities: SessionActivity.joins(:marking_session).where(marking_sessions: { unit_id: id}).count
+    # }
 
-    # TODO: Ignore tutorial times
-    #
-    # sessions
-    # user ID | Tutor Name | Number of students | Minutes Spent | Assessments made |
-    #
-    #
-    #
+    # TODO: Ignore sessions during class/tutorial hours
+
+    # Precompute sessions grouped by user_id
+    sessions_by_user = query.group(:user_id).sum(:duration_minutes)
+    # => { 2 => 16, 3 => 45, ... }
+
+    # Precompute activities grouped by session_id and action
+    activities_by_session = SessionActivity
+      .joins(:marking_session)
+      .where(marking_sessions: { unit_id: id })
+      .group(:marking_session_id, :action)
+      .count
+    # => { [12, "assessing"] => 3, [12, "add-comment"] => 1, ... }
+
+    # Build a mapping from session_id => user_id for quick lookup
+    session_to_user = query.pluck(:id, :user_id).to_h
+    # => { 12 => 2, 13 => 2, 14 => 2 }
+
+    tutor_summary = Hash.new { |h, k| h[k] = { total_minutes: 0, assessments: 0, comments: 0 } }
+
+    # Sum session durations per user
+    sessions_by_user.each do |user_id, minutes|
+      tutor_summary[user_id][:total_minutes] = minutes
+    end
+
+    # Sum activities per user
+    activities_by_session.each do |(session_id, action), count|
+      user_id = session_to_user[session_id]
+      next unless user_id
+
+      case action
+      when "add-comment"
+        tutor_summary[user_id][:comments] += count
+      when "assessing"
+        tutor_summary[user_id][:assessments] += count
+      end
+    end
+
+    # Get names of the tutors
+    users = User.where(id: tutor_summary.keys).index_by(&:id).transform_values(&:name)
+
+    tutor_summary.map do |user_id, data|
+      {
+        user_id: user_id,
+        tutor_name: users[user_id],
+        total_minutes: data[:total_minutes],
+        assessments_made: data[:assessments],
+        comments_made: data[:comments]
+      }
+    end
+
+    tutor_summary
+  end
+
+  def get_tutor_times_csv(start_date: nil, end_date: nil)
+    summary = get_tutor_times(start_date: start_date, end_date: end_date)
   end
 
   private
