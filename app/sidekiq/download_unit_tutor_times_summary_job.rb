@@ -15,6 +15,8 @@ class DownloadUnitTutorTimesSummaryJob
                   retry: false
 
   def perform(unit_id, start_date, end_date)
+    start_date = Date.parse(start_date) if start_date
+    end_date   = Date.parse(end_date) if end_date
     logger.info "Starting unit tutor times summary csv download..."
 
     at(0)

@@ -400,8 +400,8 @@ class UnitsApi < Grape::API
 
     job_id = DownloadUnitTutorTimesSummaryJob.perform_async(
       unit.id,
-      params[:start_date],
-      params[:end_date]
+      params[:start_date]&.to_s,
+      params[:end_date]&.to_s
     )
 
     job = setup_job(job_id)
