@@ -2775,12 +2775,32 @@ class Unit < ApplicationRecord
         comments_made: data[:comments]
       }
     end
-
-    tutor_summary
   end
 
   def get_tutor_times_csv(start_date: nil, end_date: nil)
     summary = get_tutor_times(start_date: start_date, end_date: end_date)
+
+    CSV.generate() do |csv|
+      # Add headers
+      csv << ([
+        'User ID',
+        'Tutor',
+        'Total Minutes',
+        'Assessments',
+        'Comments',
+      ])
+
+
+      summary.each do |row|
+        csv << ([
+          row[:user_id].to_s,
+          row[:tutor_name],
+          row[:total_minutes].to_s,
+          row[:assessments_made].to_s,
+          row[:comments_made].to_s,
+        ])
+      end
+    end
   end
 
   private
