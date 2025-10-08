@@ -264,9 +264,68 @@ class DatabasePopulator
       generate_feedback_chips_for_unit(unit, unit_details)
       generate_tutorial_streams_for(unit)
       generate_tutorials_and_enrol_students_for_unit(unit, unit_details)
+      generate_marking_sessions(unit)
     end
 
     DatabasePopulator.add_similarities
+  end
+
+  def generate_marking_sessions(unit)
+    tutors = unit.tutors
+    today = Time.zone.today
+
+    tutors.each do |tutor|
+      (0..14).each do |days_ago|
+        date = today - days_ago
+
+        [:morning, :afternoon].each do |period|
+          start_hour = period == :morning ? 7 : 14
+          start_hour += rand(-2..8) if period == :afternoon
+          start_hour += rand(-2..5) if period == :morning
+          duration_minutes = rand(30..120)
+          start_time = Time.zone.local(date.year, date.month, date.day, start_hour, rand(0..30))
+          end_time   = start_time + duration_minutes.minutes
+
+          session = MarkingSession.create!(
+            user_id: tutor.id,
+            unit: unit,
+            ip_address: Faker::Internet.ip_v4_address,
+            start_time: start_time,
+            end_time: end_time,
+            duration_minutes: duration_minutes
+          )
+
+          # Generate session activities
+          num_assessments = (duration_minutes / 7.0).ceil
+          num_assessments.times do |i|
+            activity_time = start_time + Rational(i * 7, 24*60)
+            activity = SessionActivity.create!(
+              marking_session: session,
+              action: 'assessing',
+              project_id: unit.projects.sample&.id,
+              task_id: nil,
+              task_definition_id: unit.task_definitions.sample&.id,
+              created_at: activity_time,
+              updated_at: activity_time
+            )
+
+            # Each assessment gets at least 1 comment
+            rand(1..3).times do
+              comment_time = activity_time + Rational(rand(1..5), 24*60)
+              SessionActivity.create!(
+                marking_session: session,
+                action: 'add-comment',
+                project_id: activity.project_id,
+                task_id: activity.task_id,
+                task_definition_id: activity.task_definition_id,
+                created_at: comment_time,
+                updated_at: comment_time
+              )
+            end
+          end
+        end
+      end
+    end
   end
 
   def generate_tutorial_streams_for(unit)
