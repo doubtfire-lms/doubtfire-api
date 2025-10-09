@@ -17,40 +17,6 @@ class SessionTracker
     activity
   end
 
-  # def self.find_or_create_session(user, unit, ip_address)
-  #   session = MarkingSession.where(
-  #     user: user,
-  #     unit: unit,
-  #     ip_address: ip_address
-  #   ).where("start_time > ?", THRESHOLD.minutes.ago).last
-
-  #   if session.nil?
-  #     # Find the last session for this user/unit/ip and end it at 15 minutes
-  #     last_session = MarkingSession.where(
-  #       user: user,
-  #       unit: unit,
-  #       ip_address: ip_address
-  #     ).order(start_time: :desc).first
-
-  #     if last_session && last_session.end_time.nil?
-  #       end_time = last_session.start_time + THRESHOLD.minutes
-  #       last_session.update(
-  #         end_time: end_time,
-  #         duration_minutes: THRESHOLD
-  #       )
-  #     end
-
-  #     session = MarkingSession.create!(
-  #       user: user,
-  #       unit: unit,
-  #       ip_address: ip_address,
-  #       start_time: DateTime.now
-  #     )
-  #   end
-
-  #   session
-  # end
-
   # Finds the most recent active session for the given user/unit/ip.
   # If there's been less than THRESHOLD minutes of inactivity, it returns that session.
   # Otherwise, it creates a new session starting now
