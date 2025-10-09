@@ -190,7 +190,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_23_121205) do
     t.string "ip_address"
     t.datetime "start_time"
     t.datetime "end_time"
-    t.integer "duration_minutes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["unit_id"], name: "index_marking_sessions_on_unit_id"

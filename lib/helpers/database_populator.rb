@@ -275,7 +275,7 @@ class DatabasePopulator
     today = Time.zone.today
 
     tutors.each do |tutor|
-      (0..14).each do |days_ago|
+      (-14..14).each do |days_ago|
         date = today - days_ago
 
         [:morning, :afternoon].each do |period|
@@ -291,8 +291,7 @@ class DatabasePopulator
             unit: unit,
             ip_address: Faker::Internet.ip_v4_address,
             start_time: start_time,
-            end_time: end_time,
-            duration_minutes: duration_minutes
+            end_time: end_time
           )
 
           # Generate session activities
