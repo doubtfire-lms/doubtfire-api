@@ -5,7 +5,6 @@ module Entities
     expose :unit_id
     expose :start_time
     expose :end_time
-    # TODO: duration_minutes should be a marking_session method not a schema field
     expose :duration_minutes
 
     expose :comments_added do |session, _options|
