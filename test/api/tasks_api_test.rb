@@ -94,8 +94,8 @@ class TasksApiTest < ActiveSupport::TestCase
 
     # Get the most recent session and activity
     # Since we know they were just created
-    session = MarkingSession.order(created_at: :desc).first
-    activity = SessionActivity.order(created_at: :desc).first
+    session = MarkingSession.last
+    activity = SessionActivity.last
 
     # Now test the associations
     assert_equal unit.id, session.unit_id
