@@ -2713,8 +2713,8 @@ class Unit < ApplicationRecord
 
   def get_tutor_times(start_date: nil, end_date: nil)
     query = MarkingSession.where(unit_id: id)
-    query = query.where('start_time >= ?', start_date) if start_date
-    query = query.where('start_time <= ?', end_date) if end_date
+    query = query.where('start_time >= ?', start_date.beginning_of_day) if start_date
+    query = query.where('start_time <= ?', end_date.end_of_day) if end_date
 
     # sessions = {
     #   query: query,

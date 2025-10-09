@@ -58,15 +58,13 @@ class MarkingSessionsApi < Grape::API
         error!({ error: "You are not authorized to view this tutor's sessions" }, 403)
       end
 
+      start_date = params[:start_date].beginning_of_day
+      end_date = params[:end_date].end_of_day
+
       sessions = MarkingSession
                  .includes(:session_activities)
                  .where(unit: unit)
-                 .where('start_time >= ?', params[:start_date])
-                 .where('end_time <= ?', params[:end_date].to_date + 1) # +1 to ensure both start/end dates are inclusive in the filter
-
-      # query = MarkingSession.where(unit_id: id)
-      # query = query.where('start_time >= ?', start_date) if start_date
-      # query = query.where('start_time <= ?', end_date) if end_date
+                 .where(start_time: start_date..end_date)
 
       authorized = sessions.select { |s| can_view_marking_session?(current_user, s) }
       present authorized, with: Entities::MarkingSessionEntity
