@@ -54,13 +54,15 @@ class MarkingSessionsApi < Grape::API
     get 'units/:unit_id' do
       unit = Unit.find(params[:unit_id])
       # error!({ error: "Tutor not found" }, 404) unless tutor
-      error!({ error: "You are not authorized to view this tutor's sessions" }, 403) unless authorise?(current_user, User, :convene_units)
+      unless authorise?(current_user, unit, :get_tutor_times)
+        error!({ error: "You are not authorized to view this tutor's sessions" }, 403)
+      end
 
       sessions = MarkingSession
                  .includes(:session_activities)
                  .where(unit: unit)
                  .where('start_time >= ?', params[:start_date])
-                 .where('end_time < ?', params[:end_date].to_date + 1) # +1 to ensure both start/end dates are inclusive in the filter
+                 .where('end_time <= ?', params[:end_date].to_date + 1) # +1 to ensure both start/end dates are inclusive in the filter
 
       # query = MarkingSession.where(unit_id: id)
       # query = query.where('start_time >= ?', start_date) if start_date

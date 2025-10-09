@@ -58,7 +58,8 @@ class Unit < ApplicationRecord
       :perform_overseer_assessment_test,
       :get_los,
       :create_feedback_chips,
-      :get_feedback_chips
+      :get_feedback_chips,
+      :get_tutor_times
     ]
 
     # What can admin do with units?
