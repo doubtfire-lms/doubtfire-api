@@ -144,8 +144,6 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
     travel 30.minutes # Go past the 15 minute threshold
 
     # Assess a task, ensure activity was created
-    # TODO: actually assess instead of this same one
-    # TODO: test all routes that record an assessment activity
     get "/api/projects/#{project.id}/task_def_id/#{td.id}/submission_details"
     assert_equal 200, last_response.status
     assert_equal 2, MarkingSession.count
@@ -161,6 +159,62 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
 
     assert_equal 10, last_session.duration_minutes
     assert_equal 0, new_session.duration_minutes
+  end
+
+  def test_assesment_activities
+    unit = FactoryBot.create(:unit, student_count: 2, task_count: 2)
+    tutor = FactoryBot.create(:user, :tutor)
+    unit.employ_staff(tutor, Role.tutor)
+
+    project = unit.projects.first
+    td = unit.task_definitions.first
+
+    SessionActivity.delete_all
+    MarkingSession.delete_all
+
+    add_auth_header_for(user: tutor)
+
+    # Test add comment
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/comments", { comment: "Test" }
+    assert_equal 201, last_response.status
+    last_activity = SessionActivity.last
+    assert_equal project.id, last_activity.project.id
+    assert_equal "add-comment", last_activity.action
+
+    # Test get comments
+    get "/api/projects/#{project.id}/task_def_id/#{td.id}/comments"
+    assert_equal 200, last_response.status
+    last_activity = SessionActivity.last
+    assert_equal project.id, last_activity.project.id
+    assert_equal "get-comments", last_activity.action
+
+    # Test delete comment
+    delete "/api/projects/#{project.id}/task_def_id/#{td.id}/comments/#{TaskComment.last.id}"
+    assert_equal 204, last_response.status
+    last_activity = SessionActivity.last
+    assert_equal project.id, last_activity.project.id
+    assert_equal "delete-comment", last_activity.action
+
+    # Test asessment
+    put "/api/projects/#{project.id}/task_def_id/#{td.id}", { trigger: 'complete' }
+    assert_equal 200, last_response.status
+    last_activity = SessionActivity.last
+    assert_equal project.id, last_activity.project.id
+    assert_equal "assessing", last_activity.action
+
+    # Test get sunmission details
+    get "/api/projects/#{project.id}/task_def_id/#{td.id}/submission_details"
+    assert_equal 200, last_response.status
+    last_activity = SessionActivity.last
+    assert_equal project.id, last_activity.project.id
+    assert_equal "get-submission-details", last_activity.action
+
+    # Test get sunmission files
+    get "/api/projects/#{project.id}/task_def_id/#{td.id}/submission_files"
+    assert_equal 200, last_response.status
+    last_activity = SessionActivity.last
+    assert_equal project.id, last_activity.project.id
+    assert_equal "get-submission-files", last_activity.action
   end
 
   # def test_get_specific_marking_session
