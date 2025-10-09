@@ -1,7 +1,17 @@
 class SessionTracker
   THRESHOLD = 15 # minutes
 
-  def self.record_assessment_activity(action:, user:, project:, ip_address:, task: nil)
+  # TODO: this should accept unit, project.unit could be ambiguous
+  def self.record_assessment_activity(action:, user:, project:, ip_address:, task: nil, unit: nil)
+    unit = project.unit if project
+    role = unit.role_for(user) if unit
+
+    return if role.nil?
+
+    if role != Role.admin && role != Role.convenor && role != Role.tutor
+      return
+    end
+
     session = find_or_create_session(user, project.unit, ip_address)
 
     activity = session.session_activities.create!(

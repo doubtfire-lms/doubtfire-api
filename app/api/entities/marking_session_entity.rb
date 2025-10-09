@@ -2,13 +2,11 @@ module Entities
   class MarkingSessionEntity < Grape::Entity
     expose :id
     expose :user_id
-    # expose :unit_id
-    # expose :ip_address
+    expose :unit_id
     expose :start_time
     expose :end_time
+    # TODO: duration_minutes should be a marking_session method not a schema field
     expose :duration_minutes
-    # expose :created_at
-    # expose :updated_at
 
     expose :comments_added do |session, _options|
       session.session_activities.count { |act| act.action == 'add-comment' }
