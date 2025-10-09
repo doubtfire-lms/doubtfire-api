@@ -60,7 +60,8 @@ class MarkingSessionsApi < Grape::API
                  .includes(:session_activities)
                  .where(unit: unit)
                  .where('start_time >= ?', params[:start_date])
-                 .where('end_time <= ?', params[:end_date])
+                 .where('end_time < ?', params[:end_date].to_date + 1) # +1 to ensure both start/end dates are inclusive in the filter
+
       # query = MarkingSession.where(unit_id: id)
       # query = query.where('start_time >= ?', start_date) if start_date
       # query = query.where('start_time <= ?', end_date) if end_date
