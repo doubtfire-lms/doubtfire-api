@@ -22,7 +22,7 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
     @marking_session = FactoryBot.create(:marking_session,
                                          user: @tutor,
                                          unit: @unit,
-                                         ip_address: '192.168.1.1',
+                                         ip_address: '127.0.0.1',
                                          start_time: 1.hour.ago,
                                          end_time: Time.zone.now)
   end
