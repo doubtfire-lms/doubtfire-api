@@ -4,6 +4,6 @@ FactoryBot.define do
     association :unit
     ip_address { "192.168.1.1" }
     start_time { 1.hour.ago }
-    duration_minutes { 60 }
+    end_time { Time.zone.now }
   end
 end
