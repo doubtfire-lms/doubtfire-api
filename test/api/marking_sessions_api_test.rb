@@ -227,38 +227,49 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
     assert_equal "get-submission-files", last_activity.action
   end
 
-  # def test_get_specific_marking_session
-  #   add_auth_header_for(user: @tutor)
-  #   get "/api/marking_sessions/#{@marking_session.id}"
-  #   assert_equal 200, last_response.status
-  #   response_data = last_response_body
-  #   assert_equal @marking_session.id, response_data['id']
-  #   assert_equal @marking_session.user_id, response_data['user_id']
-  #   assert_equal @marking_session.unit_id, response_data['unit_id']
-  # end
+  def test_get_marking_sessions
+    unit = FactoryBot.create(:unit, student_count: 2, task_count: 2)
+    convenor = FactoryBot.create(:user, :convenor)
+    unit.employ_staff(convenor, Role.convenor)
 
-  # def test_get_marking_sessions_by_tutor_id
-  #   add_auth_header_for(user: @convenor)
-  #   get "/api/marking_sessions/tutor/#{@tutor.id}"
-  #   assert_equal 200, last_response.status
-  #   response_data = last_response_body
-  #   assert_equal 1, response_data.length
-  #   assert_equal @marking_session.id, response_data[0]['id']
-  # end
+    add_auth_header_for(user: convenor)
 
-  # def test_get_tutor_analytics
-  #   add_auth_header_for(user: @convenor)
-  #   get "/api/marking_analytics/unit/#{@unit.id}/tutor/#{@tutor.id}"
-  #   assert_equal 200, last_response.status, last_response_body
-  #   response_data = last_response_body
-  #   assert_equal 1, response_data['total_sessions']
-  #   assert_equal 60, response_data['total_duration_minutes']
-  # end
+    MarkingSession.delete_all
 
-  # def test_unauthorized_access_to_other_tutor_session
-  #   other_tutor = FactoryBot.create(:user, :tutor)
-  #   add_auth_header_for(user: other_tutor)
-  #   get "/api/marking_sessions/#{@marking_session.id}"
-  #   assert_equal 403, last_response.status
-  # end
+    sessions_per_day = [2, 4, 8, 16, 32, 64, 128] # 7 days
+    today = Time.zone.today
+
+    sessions_per_day.each_with_index do |count, i|
+      date = today - i.days
+      count.times do
+        create(:marking_session,
+               user: convenor,
+               unit: unit,
+               start_time: date.to_time + rand(0..12).hours,
+               end_time: date.to_time + rand(13..23).hours,
+               ip_address: '127.0.0.1')
+      end
+    end
+
+    assert_equal sessions_per_day.sum, MarkingSession.count
+    # Ensure that we're not retrieving sessions on days we're not requesting for
+    [
+      [0, 1], # today + yesterday, expect 2+4=6 sessions
+      [2, 4], # 2 days ago to 4 days ago, expect 8+16+32=56 sessions
+      [0, 6], # all 7 days, expect 2+4+8+16+32+64+128=254 sessions
+      [4, 5]  # expect 32+64=96 sessions
+    ].each do |range_start, range_end|
+      start_date = (today - range_end).beginning_of_day
+      end_date   = (today - range_start).end_of_day
+
+      get "/api/units/#{unit.id}/marking_sessions?start_date=#{start_date}&end_date=#{end_date}"
+      assert_equal 200, last_response.status
+
+      body = JSON.parse(last_response.body)
+      # sum the sessions in the range
+      expected_count = sessions_per_day[range_start..range_end].sum
+      assert_equal expected_count, body.size, "Expected #{expected_count} sessions from day #{range_end} to #{range_start}"
+    end
+  end
+
 end
