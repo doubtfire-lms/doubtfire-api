@@ -1,7 +1,6 @@
 class SessionTracker
   THRESHOLD = 15 # minutes
 
-  # TODO: this should accept unit, project.unit could be ambiguous
   def self.record_assessment_activity(action:, user:, project:, ip_address:, task: nil, unit: nil)
     unit = project.unit if project
     role = unit.role_for(user) if unit
