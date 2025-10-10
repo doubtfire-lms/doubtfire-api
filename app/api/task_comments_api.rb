@@ -159,7 +159,6 @@ class TaskCommentsApi < Grape::API
     end
 
     task = project.task_for_task_definition(task_definition)
-
     task_comment = task.all_comments.find(params[:id])
 
     key = if current_user == task_comment.user
