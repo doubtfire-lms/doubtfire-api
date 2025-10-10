@@ -33,7 +33,6 @@ class TaskCommentsApi < Grape::API
     end
 
     task = project.task_for_task_definition(task_definition)
-
     type_string = content_type.to_s
 
     if reply_to_id.present?
