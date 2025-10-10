@@ -274,10 +274,13 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
 
   def test_marking_sessions_tutorial_split
     unit = FactoryBot.create(:unit, student_count: 2, task_count: 2)
-    convenor = FactoryBot.create(:user, :convenor)
-    unit_role = unit.employ_staff(convenor, Role.convenor)
+    # convenor = FactoryBot.create(:user, :convenor)
+    unit_role = unit.staff.first
+    convenor = unit_role.user
+    # convenor = user
+    # unit_role = unit.employ_staff(convenor, Role.convenor)
 
-    add_auth_header_for(user: convenor)
+    # add_auth_header_for(user: convenor)
 
     activity_type = ActivityType.find_by(name: "Feedback")
     activity_type = ActivityType.create(name: "Feedback", abbreviation: "Feedback") if activity_type.nil?
@@ -346,8 +349,7 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
 
     current_time = start_time
 
-    unit = Unit.first
-    user = unit.staff.first.user
+    # unit = Unit.first
     project = unit.projects.first
     task = project.tasks.first
 
@@ -355,7 +357,7 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
       travel_to current_time do
         SessionTracker.record_assessment_activity(
           action: 'get-submission-details',
-          user: user,
+          user: convenor,
           project: project,
           ip_address: '127.0.0.1',
           task: task
@@ -385,7 +387,7 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
       travel_to current_time do
         SessionTracker.record_assessment_activity(
           action: 'get-submission-details',
-          user: user,
+          user: convenor,
           project: project,
           ip_address: '127.0.0.1',
           task: task
@@ -404,7 +406,7 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
       travel_to current_time do
         SessionTracker.record_assessment_activity(
           action: 'get-submission-details',
-          user: user,
+          user: convenor,
           project: project,
           ip_address: '127.0.0.1',
           task: task
