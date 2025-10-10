@@ -2770,8 +2770,8 @@ class Unit < ApplicationRecord
     end
   end
 
-  def get_tutor_times_csv(start_date: nil, end_date: nil)
-    summary = get_tutor_times(start_date: start_date, end_date: end_date)
+  def get_tutor_times_csv(start_date: nil, end_date: nil, ignore_sessions_during_tutorials: false)
+    summary = get_tutor_times(start_date: start_date, end_date: end_date, ignore_sessions_during_tutorials: ignore_sessions_during_tutorials)
 
     CSV.generate() do |csv|
       # Add headers
