@@ -425,4 +425,39 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
     assert_equal expected_marking_sessions_outside_tutorial, MarkingSession.where(during_tutorial: false).count
   end
 
+  def test_marking_session_csv_data
+    unit = FactoryBot.create(:unit, student_count: 2, task_count: 2)
+    MarkingSession.delete_all
+
+    user = unit.staff.first.user
+    start_time = Time.zone.now - 2.hours
+
+    session_start = start_time + 1.hour
+    session_end   = session_start + 30.minutes
+
+    15.times do |i|
+      # 5 sessions during tutorial
+      # 10 sessions outside of tutorial
+      during_tutorial = i < 5
+
+      MarkingSession.create!(
+        user: user,
+        unit: unit,
+        ip_address: Faker::Internet.ip_v4_address,
+        start_time: session_start,
+        end_time: session_end,
+        during_tutorial: during_tutorial
+      )
+    end
+
+    summary_without_tutorials = unit.get_tutor_times(start_date: Time.zone.now - 1.week, end_date: Time.zone.now + 1.week, ignore_sessions_during_tutorials: true)
+    summary_with_tutorials = unit.get_tutor_times(start_date: Time.zone.now - 1.week, end_date: Time.zone.now + 1.week, ignore_sessions_during_tutorials: false)
+
+    # 10 sessions, 30 minutes each
+    assert_equal 300, summary_without_tutorials.first[:total_minutes]
+
+    # 15 total sessions, 30 minutes each
+    assert_equal 450, summary_with_tutorials.first[:total_minutes]
+  end
+
 end
