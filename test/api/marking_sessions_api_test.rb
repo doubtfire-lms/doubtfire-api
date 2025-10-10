@@ -314,7 +314,7 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
     tutorial3 = Tutorial.create!({
                                    unit: unit,
                                    meeting_day: "Wednesday",
-                                   meeting_time: "12:00",
+                                   meeting_time: "13:00",
                                    meeting_location: "-",
                                    code: "Tutorial3",
                                    unit_role: unit_role,
@@ -341,8 +341,8 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
     wednesday = today - wednesday_offset.days
 
     # start_time = wednesday.to_time.change(hour: 10, min: 0) # 10:00am
-    start_time = wednesday.to_time.change(hour: 5, min: 4) # 11:05am
-    end_time   = wednesday.to_time.change(hour: 18, min: 0) # 3:00pm
+    start_time = wednesday.in_time_zone.change(hour: 5, min: 4) # 11:05am
+    end_time   = wednesday.in_time_zone.change(hour: 18, min: 0) # 3:00pm
 
     current_time = start_time
 
@@ -371,13 +371,13 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
 
     assert_equal expected_marking_sessions, MarkingSession.count
     assert_equal expected_marking_sessions_during_tutorial, MarkingSession.where(during_tutorial: true).count
-    assert_equal expected_marking_sessions_outside_tutorial, MarkingSession.where(during_tutorial: true).count
+    assert_equal expected_marking_sessions_outside_tutorial, MarkingSession.where(during_tutorial: false).count
 
     thursday_offset = (today.wday - 4) % 7
     thursday = today - thursday_offset.days
 
-    start_time = thursday.to_time.change(hour: 12, min: 4) # 12:05pm
-    end_time   = thursday.to_time.change(hour: 15, min: 0) # 3:00pm
+    start_time = thursday.in_time_zone.change(hour: 12, min: 4) # 12:05pm
+    end_time   = thursday.in_time_zone.change(hour: 15, min: 0) # 3:00pm
 
     current_time = start_time
 
@@ -420,7 +420,7 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
 
     assert_equal expected_marking_sessions, MarkingSession.count
     assert_equal expected_marking_sessions_during_tutorial, MarkingSession.where(during_tutorial: true).count
-    assert_equal expected_marking_sessions_outside_tutorial, MarkingSession.where(during_tutorial: true).count
+    assert_equal expected_marking_sessions_outside_tutorial, MarkingSession.where(during_tutorial: false).count
   end
 
 end
