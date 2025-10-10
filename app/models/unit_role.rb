@@ -224,10 +224,12 @@ class UnitRole < ApplicationRecord
     query = query.where('start_time >= ?', start_date) if start_date
     query = query.where('start_time <= ?', end_date) if end_date
 
+    session_durations = query.map(&:duration_minutes)
+
     {
       total_sessions: query.count,
-      total_duration_minutes: query.sum(:duration_minutes),
-      avg_session_duration: query.average(:duration_minutes)&.round(2),
+      total_duration_minutes: session_durations.sum,
+      avg_session_duration: session_durations.any? ? (session_durations.sum.to_f / session_durations.size).round(2) : 0,
       total_activities: SessionActivity.joins(:marking_session).where(marking_sessions: { id: query.select(:id) }).count,
       activities_by_action: SessionActivity.joins(:marking_session).where(marking_sessions: { id: query.select(:id) }).group(:action).count
     }

@@ -2716,20 +2716,12 @@ class Unit < ApplicationRecord
     query = query.where('start_time >= ?', start_date.beginning_of_day) if start_date
     query = query.where('start_time <= ?', end_date.end_of_day) if end_date
 
-    # sessions = {
-    #   query: query,
-    #   total_sessions: query.count,
-    #   total_duration_minutes: query.sum(:duration_minutes),
-    #   avg_session_duration: query.average(:duration_minutes)&.round(2),
-    #   active_tutors: query.distinct.count(:user_id),
-    #   sessions_by_tutor: query.joins(:user).group('users.first_name', 'users.last_name', 'users.id').count,
-    #   total_activities: SessionActivity.joins(:marking_session).where(marking_sessions: { unit_id: id}).count
-    # }
-
     # TODO: Ignore sessions during class/tutorial hours
 
     # Precompute sessions grouped by user_id
-    sessions_by_user = query.group(:user_id).sum(:duration_minutes)
+    sessions_by_user = query.to_a.group_by(&:user_id).transform_values do |sessions|
+      sessions.sum(&:duration_minutes)
+    end
     # => { 2 => 16, 3 => 45, ... }
 
     # Precompute activities grouped by session_id and action
