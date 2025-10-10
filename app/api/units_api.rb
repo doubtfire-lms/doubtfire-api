@@ -391,6 +391,7 @@ class UnitsApi < Grape::API
   params do
     optional :start_date, type: Date, desc: 'Filter sessions starting from this date'
     optional :end_date, type: Date, desc: 'Filter sessions up to this date'
+    optional :ignore_sessions_during_tutorials, type: Boolean, desc: 'Filter out sessions that occured during tutorials'
   end
   get '/csv/units/:id/tutor_times_summary' do
     unit = Unit.find(params[:id])
@@ -398,10 +399,13 @@ class UnitsApi < Grape::API
       error!({ error: "Not authorised to download CSV of student tasks in #{unit.code}" }, 403)
     end
 
+    ignore_sessions_during_tutorials = params[:ignore_sessions_during_tutorials] || false
+
     job_id = DownloadUnitTutorTimesSummaryJob.perform_async(
       unit.id,
       params[:start_date]&.to_s,
-      params[:end_date]&.to_s
+      params[:end_date]&.to_s,
+      ignore_sessions_during_tutorials
     )
 
     job = setup_job(job_id)

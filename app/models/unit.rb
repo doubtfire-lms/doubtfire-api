@@ -2711,12 +2711,12 @@ class Unit < ApplicationRecord
     end
   end
 
-  def get_tutor_times(start_date: nil, end_date: nil)
+  def get_tutor_times(start_date: nil, end_date: nil, ignore_sessions_during_tutorials: false)
     query = MarkingSession.where(unit_id: id)
     query = query.where('start_time >= ?', start_date.beginning_of_day) if start_date
     query = query.where('start_time <= ?', end_date.end_of_day) if end_date
 
-    # TODO: Ignore sessions during class/tutorial hours
+    query = query.where(during_tutorial: false) if ignore_sessions_during_tutorials
 
     # Precompute sessions grouped by user_id
     sessions_by_user = query.to_a.group_by(&:user_id).transform_values do |sessions|
