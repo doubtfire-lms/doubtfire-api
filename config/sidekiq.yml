@@ -1,1 +1,13 @@
-:concurrency: 1
+# :concurrency: <%= ENV.fetch("SIDEKIQ_CONCURRENCY", 5) %>
+:concurrency: 5
+:queues:
+  - [task_pdf_gen, 10]
+  - [portfolio_pdf_gen, 5]
+  - [portfolio_download, 1]
+  - [jplag, 2]
+
+:capsules:
+  :single_threaded:
+    :queues:
+      - [default, 10]
+    :concurrency: 1

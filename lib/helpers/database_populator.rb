@@ -553,7 +553,7 @@ class DatabasePopulator
     lsr_path = File.join(portfolio_tmp_dir, '000-document-LearningSummaryReport.pdf')
     FileUtils.ln_s(Rails.root.join('test_files/unit_files/sample-learning-summary.pdf'), lsr_path) unless File.exist? lsr_path
     project.compile_portfolio = true
-    project.create_portfolio
+    GeneratePortfolioJob.perform_async(project.id)
   end
 
   private

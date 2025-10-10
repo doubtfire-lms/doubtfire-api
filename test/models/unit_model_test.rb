@@ -782,28 +782,31 @@ class UnitModelTest < ActiveSupport::TestCase
   end
 
   def test_portfolio_zip
-    unit = FactoryBot.create :unit, campus_count: 2, tutorials:2, stream_count:2, task_count:1, student_count:1, unenrolled_student_count: 0, part_enrolled_student_count: 1
+    Sidekiq::Testing.inline! do
+      unit = FactoryBot.create :unit, campus_count: 2, tutorials: 2, stream_count: 2, task_count: 1, student_count: 1, unenrolled_student_count: 0, part_enrolled_student_count: 1
 
-    paths = []
+      paths = []
 
-    unit.active_projects.each do |p|
-      DatabasePopulator.generate_portfolio(p)
-      assert p.portfolio_exists?
-      assert File.exist?(p.portfolio_path)
-      paths << p.portfolio_path
-    end
+      unit.active_projects.each do |p|
+        DatabasePopulator.generate_portfolio(p)
+        p.reload
+        assert p.portfolio_exists?
+        assert File.exist?(p.portfolio_path)
+        paths << p.portfolio_path
+      end
 
-    filename = unit.get_portfolio_zip(unit.main_convenor_user)
-    assert File.exist? filename
-    Zip::File.open(filename) do |zip_file|
-      assert_equal unit.active_projects.count, zip_file.count
-    end
-    FileUtils.rm filename
+      filename = unit.get_portfolio_zip(unit.main_convenor_user)
+      assert File.exist? filename
+      Zip::File.open(filename) do |zip_file|
+        assert_equal unit.active_projects.count, zip_file.count
+      end
+      FileUtils.rm filename
 
-    unit.destroy!
+      unit.destroy!
 
-    paths.each do |path|
-      refute File.exist?(path)
+      paths.each do |path|
+        assert_not File.exist?(path)
+      end
     end
   end
 
@@ -911,81 +914,85 @@ class UnitModelTest < ActiveSupport::TestCase
 
   def test_archive_unit
     Doubtfire::Application.config.archive_units = true
-    unit = FactoryBot.create :unit, student_count: 1, unenrolled_student_count: 0, inactive_student_count: 0, task_count: 1, tutorials: 1, outcome_count: 0, staff_count: 0, campus_count: 1
+    Sidekiq::Testing.inline! do
+      unit = FactoryBot.create :unit, student_count: 1, unenrolled_student_count: 0, inactive_student_count: 0, task_count: 1, tutorials: 1, outcome_count: 0, staff_count: 0, campus_count: 1
 
-    td = unit.task_definitions.first
-    assert_not File.exist?(td.task_sheet)
-    FileUtils.touch(td.task_sheet)
-    assert File.exist?(td.task_sheet)
+      td = unit.task_definitions.first
+      assert_not File.exist?(td.task_sheet)
+      FileUtils.touch(td.task_sheet)
+      assert File.exist?(td.task_sheet)
 
-    old_path = td.task_sheet
+      old_path = td.task_sheet
 
-    # also check tasks
-    p = unit.projects.first
-    task = p.task_for_task_definition(td)
-    task_pdf = task.final_pdf_path
-    FileUtils.touch(task_pdf)
+      # also check tasks
+      p = unit.projects.first
+      task = p.task_for_task_definition(td)
+      task_pdf = task.final_pdf_path
+      FileUtils.touch(task_pdf)
 
-    DatabasePopulator.generate_portfolio(p)
-    old_portfolio_path = p.portfolio_path
+      old_portfolio_path = p.portfolio_path
 
-    old_submission_history_path = FileHelper.task_submission_identifier_path_with_timestamp(:done, task, '123/45')
-    FileUtils.mkdir_p(old_submission_history_path)
-    FileUtils.touch(File.join(old_submission_history_path, 'output.txt'))
+      DatabasePopulator.generate_portfolio(p)
 
-    assert File.exist?(old_path)
-    assert File.exist?(task_pdf)
-    assert File.exist?(old_portfolio_path)
-    assert File.exist?(old_submission_history_path)
-    assert File.exist?(File.join(old_submission_history_path, 'output.txt'))
+      old_submission_history_path = FileHelper.task_submission_identifier_path_with_timestamp(:done, task, '123/45')
+      FileUtils.mkdir_p(old_submission_history_path)
+      FileUtils.touch(File.join(old_submission_history_path, 'output.txt'))
 
-    unit.move_files_to_archive
-    unit.archived = true
-    unit.save!
+      assert File.exist?(old_path)
+      assert File.exist?(task_pdf)
+      assert File.exist?(old_portfolio_path)
+      assert File.exist?(old_submission_history_path)
+      assert File.exist?(File.join(old_submission_history_path, 'output.txt'))
 
-    td.reload
-    task.reload
+      unit.move_files_to_archive
+      unit.archived = true
+      unit.save!
 
-    assert_not File.exist?(old_path), "Old file still exists"
-    assert File.exist?(td.task_sheet), "New file does not exist - #{td.task_sheet}"
-    assert_not File.exist?(task_pdf), "Old task file still exists"
-    assert File.exist?(task.final_pdf_path), "New task file does not exist"
-    assert_not File.exist?(old_portfolio_path), "Old portfolio file still exists - #{old_portfolio_path}"
-    assert File.exist?(p.portfolio_path), "New portfolio file does not exist"
-    assert_not File.exist?(old_submission_history_path), "Old submission history still exists - #{old_submission_history_path}"
-    assert File.exist?(FileHelper.task_submission_identifier_path(:done, task))
-    assert File.exist?(File.join(FileHelper.task_submission_identifier_path_with_timestamp(:done, task, '123_45'), 'output.txt'))
+      td.reload
+      task.reload
+      p.reload
 
-    assert File.exist?(task.final_pdf_path), "Portfolio evidence file does not exist - #{task.final_pdf_path}"
+      assert_not File.exist?(old_path), "Old file still exists"
+      assert File.exist?(td.task_sheet), "New file does not exist - #{td.task_sheet}"
+      assert_not File.exist?(task_pdf), "Old task file still exists"
+      assert File.exist?(task.final_pdf_path), "New task file does not exist"
+      assert_not File.exist?(old_portfolio_path), "Old portfolio file still exists - #{old_portfolio_path}"
+      assert File.exist?(p.portfolio_path), "New portfolio file does not exist"
+      assert_not File.exist?(old_submission_history_path), "Old submission history still exists - #{old_submission_history_path}"
+      assert File.exist?(FileHelper.task_submission_identifier_path(:done, task))
+      assert File.exist?(File.join(FileHelper.task_submission_identifier_path_with_timestamp(:done, task, '123_45'), 'output.txt'))
 
-    td.abbreviation = 'NEW'
-    td.save
-    task.reload
+      assert File.exist?(task.final_pdf_path), "Portfolio evidence file does not exist - #{task.final_pdf_path}"
 
-    # File exists after rename
-    assert File.exist?(task.final_pdf_path), "Portfolio evidence file does not exist - #{task.final_pdf_path}"
-    assert File.exist?(FileHelper.task_submission_identifier_path(:done, task))
-    assert File.exist?(File.join(FileHelper.task_submission_identifier_path_with_timestamp(:done, task, '123_45'), 'output.txt'))
+      td.abbreviation = 'NEW'
+      td.save
+      task.reload
 
-    p.student.update(username: 'NEW_USERNAME')
-    task.reload
-    assert File.exist?(task.final_pdf_path), "Portfolio evidence file does not exist after username change - #{task.final_pdf_path}"
-    assert File.exist?(p.portfolio_path), "New portfolio file does not exist"
-    assert File.exist?(FileHelper.task_submission_identifier_path(:done, task))
-    assert File.exist?(File.join(FileHelper.task_submission_identifier_path_with_timestamp(:done, task, '123_45'), 'output.txt'))
+      # File exists after rename
+      assert File.exist?(task.final_pdf_path), "Portfolio evidence file does not exist - #{task.final_pdf_path}"
+      assert File.exist?(FileHelper.task_submission_identifier_path(:done, task))
+      assert File.exist?(File.join(FileHelper.task_submission_identifier_path_with_timestamp(:done, task, '123_45'), 'output.txt'))
 
-    new_tp = FactoryBot.create :teaching_period
-    new_unit = unit.rollover(new_tp, nil, nil, nil)
+      p.student.update(username: 'NEW_USERNAME')
+      task.reload
+      assert File.exist?(task.final_pdf_path), "Portfolio evidence file does not exist after username change - #{task.final_pdf_path}"
+      assert File.exist?(p.portfolio_path), "New portfolio file does not exist"
+      assert File.exist?(FileHelper.task_submission_identifier_path(:done, task))
+      assert File.exist?(File.join(FileHelper.task_submission_identifier_path_with_timestamp(:done, task, '123_45'), 'output.txt'))
 
-    assert_not new_unit.archived
+      new_tp = FactoryBot.create :teaching_period
+      new_unit = unit.rollover(new_tp, nil, nil, nil)
 
-    unit.destroy!
+      assert_not new_unit.archived
 
-    assert_not File.exist?(td.task_sheet), "New file exists after delete - #{td.task_sheet}"
-    assert_not File.exist?(task.final_pdf_path), "New task file exists after delete - #{task.final_pdf_path}"
-    assert_not File.exist?(p.portfolio_path), "New portfolio exists after delete - #{p.portfolio_path}"
-    assert_not File.exist?(FileHelper.task_submission_identifier_path(:done, task))
-    assert_not File.exist?(File.join(FileHelper.task_submission_identifier_path_with_timestamp(:done, task, '123_45'), 'output.txt'))
+      unit.destroy!
+
+      assert_not File.exist?(td.task_sheet), "New file exists after delete - #{td.task_sheet}"
+      assert_not File.exist?(task.final_pdf_path), "New task file exists after delete - #{task.final_pdf_path}"
+      assert_not File.exist?(p.portfolio_path), "New portfolio exists after delete - #{p.portfolio_path}"
+      assert_not File.exist?(FileHelper.task_submission_identifier_path(:done, task))
+      assert_not File.exist?(File.join(FileHelper.task_submission_identifier_path_with_timestamp(:done, task, '123_45'), 'output.txt'))
+    end
   ensure
     Doubtfire::Application.config.archive_units = false
   end

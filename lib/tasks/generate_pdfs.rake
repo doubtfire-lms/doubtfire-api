@@ -83,7 +83,7 @@ namespace :submission do
 
           puts "Project #{project.id} has a learning summary but no portfolio"
           project.update compile_portfolio: true
-          project.create_portfolio
+          GeneratePortfolioJob.perform_async(project.id)
         end
       end
     end

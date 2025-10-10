@@ -1013,11 +1013,7 @@ class Task < ApplicationRecord
 
   def clear_in_process
     in_process_dir = student_work_dir(:in_process, false)
-    if Dir.exist? in_process_dir
-      Dir.chdir(FileHelper.student_work_root) if FileUtils.pwd == in_process_dir
-      FileUtils.rm_rf in_process_dir
-    end
-
+    FileUtils.rm_rf(in_process_dir) if Dir.exist?(in_process_dir)
   rescue StandardError => e
     logger.error "Error clearing in process directory for task #{log_details} - #{e.message}"
   end
@@ -1050,12 +1046,9 @@ class Task < ApplicationRecord
 
     return false if in_process_dir.nil?
 
-    if Dir.exist? in_process_dir
-      pwd = FileUtils.pwd
-      Dir.chdir(in_process_dir)
-      # move all files to the enq dir
-      FileUtils.rm Dir.glob('*')
-      Dir.chdir(pwd)
+    if Dir.exist?(in_process_dir)
+      files = Dir.glob(File.join(in_process_dir, '*'))
+      FileUtils.rm(files)
     end
 
     # Zip new submission and store in done files (will remove from_dir) - ensure trailing /
@@ -1093,23 +1086,18 @@ class Task < ApplicationRecord
   end
 
   def __output_filename__(in_dir, idx, type)
-    pwd = FileUtils.pwd
-    Dir.chdir(in_dir)
-    begin
-      # Rename files with 000.type.* to 000-type-*
-      result = Dir.glob("#{idx.to_s.rjust(3, '0')}.#{type}.*").first
-
-      if !result.nil? && File.exist?(result)
-        FileUtils.mv result, "#{idx.to_s.rjust(3, '0')}-#{type}#{File.extname(result)}"
-      end
-      result = Dir.glob("#{idx.to_s.rjust(3, '0')}-#{type}.*").first
-    ensure
-      Dir.chdir(pwd)
+    prefix = idx.to_s.rjust(3, '0')
+    result = Dir.glob(File.join(in_dir, "#{prefix}.#{type}.*")).first
+    # Rename files with 000.type.* to 000-type-*
+    if result && File.exist?(result)
+      new_name = "#{prefix}-#{type}#{File.extname(result)}"
+      FileUtils.mv(result, File.join(in_dir, new_name))
+      result = File.join(in_dir, new_name)
+    else
+      result = Dir.glob(File.join(in_dir, "#{prefix}-#{type}.*")).first
     end
 
-    return File.join(in_dir, result) unless result.nil?
-
-    nil
+    result
   end
 
   def in_process_files_for_task(is_retry)
@@ -1167,6 +1155,7 @@ class Task < ApplicationRecord
       @institution_name = Doubtfire::Application.config.institution[:name]
       @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
       @include_pax = !is_retry
+      @work_id = "task-#{task.id}#{'-retry' if is_retry}"
     end
 
     def make_pdf
@@ -1289,7 +1278,7 @@ class Task < ApplicationRecord
         # Try again...
         # Without newpax
         # Ensure latex aux file is removed
-        Dir.glob(Rails.root.join('tmp/rails-latex/**/input.aux')).each { |f| File.delete(f) }
+        # Dir.glob(Rails.root.join('tmp/rails-latex/**/input.aux')).each { |f| File.delete(f) }
 
         tac2 = TaskAppController.new
         tac2.init(self, true)
@@ -1346,7 +1335,7 @@ class Task < ApplicationRecord
       raise e
     ensure
       # Ensure latex aux file is removed - if broken will cause issues for next submission in sidekiq
-      Dir.glob(Rails.root.join('tmp/rails-latex/**/input.aux')).each { |f| File.delete(f) }
+      # Dir.glob(Rails.root.join('tmp/rails-latex/**/input.aux')).each { |f| File.delete(f) }
 
       clear_in_process
     end

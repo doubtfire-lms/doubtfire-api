@@ -14,147 +14,157 @@ module UnitSimilarityModule
   end
 
   # Pass tasks on to plagarism detection software and setup links between students
-  def check_moss_similarity(force: false)
-    # Get each task...
-    return unless active
+  # def check_moss_similarity(force: false)
+  #   # Get each task...
+  #   return unless active
 
-    # need pwd to restore after cding into submission folder (so the files do not have full path)
-    pwd = FileUtils.pwd
+  #   # need pwd to restore after cding into submission folder (so the files do not have full path)
+  #   pwd = FileUtils.pwd
 
-    begin
-      logger.info "Checking plagiarsm for unit #{code} - #{name} (id=#{id})"
+  #   begin
+  #     logger.info "Checking plagiarsm for unit #{code} - #{name} (id=#{id})"
 
-      task_definitions.each do |td|
-        next if td.similarity_language.nil? || td.upload_requirements.nil? || td.upload_requirements.select { |upreq| upreq['type'] == 'code' && upreq['tii_check'] }.empty?
+  #     task_definitions.each do |td|
+  #       next if td.similarity_language.nil? || td.upload_requirements.nil? || td.upload_requirements.select { |upreq| upreq['type'] == 'code' && upreq['tii_check'] }.empty?
 
-        type_data = td.similarity_language.split
-        next if type_data.nil? || (type_data.length != 2) || (type_data[0] != 'moss')
+  #       type_data = td.similarity_language.split
+  #       next if type_data.nil? || (type_data.length != 2) || (type_data[0] != 'moss')
 
-        # Is there anything to check?
-        logger.debug "Checking plagiarism for #{td.name} (id=#{td.id})"
-        tasks = tasks_for_definition(td)
-        tasks_with_files = tasks.select(&:has_pdf)
+  #       # Is there anything to check?
+  #       logger.debug "Checking plagiarism for #{td.name} (id=#{td.id})"
+  #       tasks = tasks_for_definition(td)
+  #       tasks_with_files = tasks.select(&:has_pdf)
 
-        # Skip if not due yet
-        next if td.due_date > Time.zone.now
+  #       # Skip if not due yet
+  #       next if td.due_date > Time.zone.now
 
-        # Skip if no files changed
-        next unless tasks_with_files.count > 1 &&
-                    (
-                      tasks.where('tasks.file_uploaded_at > ?', last_plagarism_scan).select(&:has_pdf).count > 0 ||
-                      td.updated_at > last_plagarism_scan ||
-                      force
-                    )
+  #       # Skip if no files changed
+  #       next unless tasks_with_files.count > 1 &&
+  #                   (
+  #                     tasks.where('tasks.file_uploaded_at > ?', last_plagarism_scan).select(&:has_pdf).count > 0 ||
+  #                     td.updated_at > last_plagarism_scan ||
+  #                     force
+  #                   )
 
-        # There are new tasks, check these
+  #       # There are new tasks, check these
 
-        logger.debug 'Contacting MOSS for new checks'
+  #       logger.debug 'Contacting MOSS for new checks'
 
-        # Create the MossRuby object
-        moss_key = Doubtfire::Application.credentials.secret_key_moss
-        raise "No moss key set. Check ENV['DF_SECRET_KEY_MOSS'] first." if moss_key.nil?
+  #       # Create the MossRuby object
+  #       moss_key = Doubtfire::Application.credentials.secret_key_moss
+  #       raise "No moss key set. Check ENV['DF_SECRET_KEY_MOSS'] first." if moss_key.nil?
 
-        moss = MossRuby.new(moss_key)
+  #       moss = MossRuby.new(moss_key)
 
-        # Set options  -- the options will already have these default values
-        moss.options[:max_matches] = 7
-        moss.options[:directory_submission] = true
-        moss.options[:show_num_matches] = 500
-        moss.options[:experimental_server] = false
-        moss.options[:comment] = ''
-        moss.options[:language] = type_data[1]
+  #       # Set options  -- the options will already have these default values
+  #       moss.options[:max_matches] = 7
+  #       moss.options[:directory_submission] = true
+  #       moss.options[:show_num_matches] = 500
+  #       moss.options[:experimental_server] = false
+  #       moss.options[:comment] = ''
+  #       moss.options[:language] = type_data[1]
 
-        tmp_path = File.join(Dir.tmpdir, 'doubtfire', "check-#{id}-#{td.id}")
+  #       tmp_path = File.join(Dir.tmpdir, 'doubtfire', "check-#{id}-#{td.id}")
 
-        begin
-          # Create a file hash, with the files to be processed
-          to_check = MossRuby.empty_file_hash
-          add_done_files_for_plagiarism_check_of(td, tmp_path, to_check, tasks_with_files)
+  #       begin
+  #         # Create a file hash, with the files to be processed
+  #         to_check = MossRuby.empty_file_hash
+  #         add_done_files_for_plagiarism_check_of(td, tmp_path, to_check, tasks_with_files)
 
-          FileUtils.chdir(tmp_path)
+  #         FileUtils.chdir(tmp_path)
 
-          # Get server to process files
-          logger.debug 'Sending to MOSS...'
-          url = moss.check(to_check, ->(_) { print '.' })
+  #         # Get server to process files
+  #         logger.debug 'Sending to MOSS...'
+  #         url = moss.check(to_check, ->(_) { print '.' })
 
-          logger.info "MOSS check for #{code} #{td.abbreviation} url: #{url}"
+  #         logger.info "MOSS check for #{code} #{td.abbreviation} url: #{url}"
 
-          td.plagiarism_report_url = url
-          td.plagiarism_updated = true
-          td.save
-        rescue StandardError => e
-          logger.error "Failed to check plagiarism for task #{td.name} (id=#{td.id}). Error: #{e.message}"
-        ensure
-          FileUtils.chdir(pwd)
-          FileUtils.rm_rf tmp_path
-        end
-      end
-      self.last_plagarism_scan = Time.zone.now
-      save!
-    ensure
-      FileUtils.chdir(pwd) if FileUtils.pwd != pwd
-    end
+  #         td.plagiarism_report_url = url
+  #         td.plagiarism_updated = true
+  #         td.save
+  #       rescue StandardError => e
+  #         logger.error "Failed to check plagiarism for task #{td.name} (id=#{td.id}). Error: #{e.message}"
+  #       ensure
+  #         FileUtils.chdir(pwd)
+  #         FileUtils.rm_rf tmp_path
+  #       end
+  #     end
+  #     self.last_plagarism_scan = Time.zone.now
+  #     save!
+  #   ensure
+  #     FileUtils.chdir(pwd) if FileUtils.pwd != pwd
+  #   end
 
-    self
-  end
+  #   self
+  # end
 
   # Pass tasks on to plagarism detection software and setup links between students
   def check_jplag_similarity(force: false)
     # Get each task...
     return unless active
 
-    # need pwd to restore after cding into submission folder (so the files do not have full path)
-    pwd = FileUtils.pwd
-
     # making temp directory for unit - jplag
-    root_work_dir = Rails.root.join("tmp", "jplag", "#{code}-#{id}")
-    unit_code = "#{code}-#{id}"
+    # root_work_dir = Rails.root.join("tmp", "jplag", "#{code}-#{id}")
+    # unit_code = "#{code}-#{id}"
 
-    begin
-      logger.info "Checking plagiarsm for unit #{code} - #{name} (id=#{id})"
+    logger.info "Checking plagiarsm for unit #{code} - #{name} (id=#{id})"
 
-      task_definitions.each do |td|
-        next if td.similarity_language.nil? || td.upload_requirements.nil? || td.upload_requirements.select { |upreq| upreq['type'] == 'code' && upreq['tii_check'] }.empty?
+    task_definitions.each do |td|
+      next if td.similarity_language.nil? || td.upload_requirements.nil? || td.upload_requirements.select { |upreq| upreq['type'] == 'code' && upreq['tii_check'] }.empty?
 
-        # Is there anything to check?
-        logger.debug "Checking plagiarism for #{td.name} (id=#{td.id})"
-        tasks = tasks_for_definition(td)
-        tasks_with_files = tasks.select(&:has_pdf)
+      # Is there anything to check?
+      logger.debug "Checking plagiarism for #{td.name} (id=#{td.id})"
+      # tasks = tasks_for_definition(td)
+      tasks_with_files = tasks_for_definition(td).select(&:has_pdf)
 
-        # Skip if no files changed
-        next unless tasks_with_files.count > 1 &&
-                    (
-                      # NOTE: `last_plagarism_scan` is currently tracked for each Unit, not each Task Definition
-                      tasks.where('tasks.file_uploaded_at > ?', last_plagarism_scan).select(&:has_pdf).count > 0 ||
-                      td.updated_at > last_plagarism_scan ||
-                      force
-                    )
+      # If task is still being processed, Sidekiq will Re-queue the job until all PDFs are ready
+      # tasks_with_files = tasks.select { |t| t.has_pdf || t.processing_pdf? }
 
-        # Ensure work directory for the unit is created
-        FileUtils.mkdir_p(root_work_dir)
+      # tasks_with_files = tasks.where(ask_definition_id: task_def.id)
 
-        # Init work directory for each task definition
-        tasks_dir = root_work_dir.join(td.id.to_s)
-        FileUtils.mkdir_p(tasks_dir)
+      # Skip if no files changed
+      next unless tasks_with_files.count > 1 &&
+                  (
+                    # NOTE: `last_plagarism_scan` is currently tracked for each Unit, not each Task Definition
+                    # tasks.where('tasks.file_uploaded_at > ?', last_plagarism_scan).select(&:has_pdf).count > 0 ||
+                    tasks_with_files.any? { |t| t.file_uploaded_at > last_plagarism_scan } ||
+                    td.updated_at > last_plagarism_scan ||
+                    force
+                  )
 
-        # There are new tasks, check these with JPLAG
-        run_jplag_on_done_files(td, tasks_dir, tasks_with_files, unit_code)
-        report_path = "#{Doubtfire::Application.config.jplag_report_dir}/#{unit_code}/#{td.abbreviation}-result.jplag"
-        warn_pct = td.plagiarism_warn_pct || 50
-        logger.debug "Warn PCT: #{warn_pct}"
+      # Ensure work directory for the unit is created
+      # FileUtils.mkdir_p(root_work_dir)
 
-        # Remove any existing plagiarism links that are below the threshold, in case it has been updated since the last analysis
-        JplagTaskSimilarity.joins(:task)
-                           .where("pct < ? AND tasks.task_definition_id = ?", warn_pct, td.id)
-                           .delete_all
+      # Init work directory for each task definition
+      # tasks_dir = root_work_dir.join(td.id.to_s)
+      # :workdir => -> { "#{@work_id}-#{Process.pid}-#{Thread.current.object_id}-#{Time.now.to_i}" }
 
-        process_jplag_plagiarism_report(report_path, warn_pct, td.group_set)
-      end
-      self.last_plagarism_scan = Time.zone.now
-      save!
-    ensure
-      FileUtils.chdir(pwd) if FileUtils.pwd != pwd
+      # TODO: create the work folder in the jplag sidekiq job
+      # TODO: running jplag similarity per task definition would be nice (instead of unit)
+      #
+
+      # There are new tasks, check these with JPLAG
+
+      # process_jplag_plagiarism_report(report_path, warn_pct, td.group_set)
+      # run_jplag_on_done_files(td, tasks_dir, tasks_with_files, unit_code)
+      # report_path = "#{Doubtfire::Application.config.jplag_report_dir}/#{unit_code}/#{td.abbreviation}-result.jplag"
+      warn_pct = td.plagiarism_warn_pct || 50
+      # logger.debug "Warn PCT: #{warn_pct}"
+
+      # Remove any existing plagiarism links that are below the threshold, in case it has been updated since the last analysis
+      JplagTaskSimilarity.joins(:task)
+                         .where("pct < ? AND tasks.task_definition_id = ?", warn_pct, td.id)
+                         .delete_all
+
+      # byebug
+
+      # TODO: cleanup
+      JplagSimilarityJob.perform_async(td.id)
+
+      # process_jplag_plagiarism_report(report_path, warn_pct, td.group_set)
     end
+    self.last_plagarism_scan = Time.zone.now
+    save!
 
     self
   end
@@ -212,7 +222,7 @@ module UnitSimilarityModule
     self
   end
 
-  private
+  # private
 
   # Extract all done files related to a task definition matching a pattern into a given directory.
   # Returns an array of files
@@ -235,12 +245,12 @@ module UnitSimilarityModule
     return if similarity_pct.nil?
 
     # Check if the directory exists and create it if it doesn't
-    results_dir = "/jplag/results/#{unit_code}"
-    system("docker exec -i jplag sh -c 'if [ ! -d \"#{results_dir}\" ]; then mkdir -p \"#{results_dir}\"; fi'") || raise('Failed to create JPlag results directory')
+    # results_dir = "/jplag/results/#{unit_code}"
+    # system("docker exec -i jplag sh -c 'if [ ! -d \"#{results_dir}\" ]; then mkdir -p \"#{results_dir}\"; fi'") || raise('Failed to create JPlag results directory')
 
     # Remove existing result file if it exists
-    result_file = "#{results_dir}/#{task_definition.abbreviation}-result.jplag"
-    system("docker exec -i jplag sh -c 'if [ -f \"#{result_file}\" ]; then rm \"#{result_file}\"; fi'") || raise('Failed to remove previous JPlag report')
+    # result_file = "#{results_dir}/#{task_definition.abbreviation}-result.jplag"
+    # system("docker exec -i jplag sh -c 'if [ -f \"#{result_file}\" ]; then rm \"#{result_file}\"; fi'") || raise('Failed to remove previous JPlag report')
 
     # get each code file for each task
     task_definition.upload_requirements.each_with_index do |upreq, idx|
@@ -255,6 +265,7 @@ module UnitSimilarityModule
 
       tasks_with_files.each do |t|
         # "name" is {taskId}/{filename}, so it will create a subdir with the task id, but we use this later when processing the report
+
         t.extract_file_from_done(tasks_dir, pattern, lambda { |task, to_path, name|
           names = name.split("/")
           if names.count >= 2
@@ -281,19 +292,39 @@ module UnitSimilarityModule
     # Convert pct to decimal
     similarity_threshold = similarity_pct.to_f / 100
 
-    min_tokens = Doubtfire::Application.config.jplag_min_tokens.to_i
+    logger.debug tasks_dir
+    # TODO: clean this up...
+    unit_dir = File.dirname(tasks_dir)
+    # FileUtils.copy(Rails.root.join("lib/shell/jplag_run.sh"), unit_dir)
+
+    #  sudo chown -R $(whoami) /jplag/results
+
+    # min_tokens = Doubtfire::Application.config.jplag_min_tokens.to_i
     # If empty, let JPlag set the default per-language
-    min_token_string = min_tokens <= 0 ? "" : "--min-tokens=#{min_tokens}"
+    # min_token_string = min_tokens <= 0 ? "" : "--min-tokens=#{min_tokens}"
     # Run JPLAG on the extracted files. JPlag container should already be in the /jplag/ workdir.
-    docker_command = "docker exec -i jplag java -jar jplag-jar-with-dependencies.jar #{tasks_dir_split} -l #{file_lang} --similarity-threshold=#{similarity_threshold} #{min_token_string} -M RUN -r #{results_dir}/#{task_definition.abbreviation}-result --overwrite"
+    # docker_command = "docker exec -i jplag java -jar jplag-jar-with-dependencies.jar #{tasks_dir_split} -l #{file_lang} --similarity-threshold=#{similarity_threshold} #{min_token_string} -M RUN -r #{results_dir}/#{task_definition.abbreviation}-result --overwrite"
+
+    jplag_run_script = Rails.root.join("lib/shell/jplag_run.sh")
+    # byebug
+    docker_command = "#{jplag_run_script} #{File.basename(tasks_dir)} #{file_lang} #{similarity_threshold} #{tasks_dir_split} #{unit_code}-#{task_definition.id}-#{Thread.current.object_id}"
+    # docker_command = "docker exec -i jplag java -jar jplag-jar-with-dependencies.jar #{tasks_dir_split} -l #{file_lang} --similarity-threshold=#{similarity_threshold} #{min_token_string} -M RUN -r #{results_dir}/#{task_definition.abbreviation}-result"
     logger.debug "Executing command: #{docker_command}"
     system(docker_command)
+
+    report_path = "#{Doubtfire::Application.config.jplag_report_dir}/#{unit_code}/#{task_definition.abbreviation}-result.jplag"
+    FileUtils.mkdir_p(File.dirname(report_path))
+    FileUtils.copy("#{tasks_dir}/result.jplag", report_path)
+
+    # logger.debug "Executing command: #{docker_command}"
+    # system(docker_command)
 
     # Delete the extracted code files from tmp
     tmp_dir = Rails.root.join("tmp/jplag")
     logger.info "Deleting files in: #{tmp_dir}"
     logger.info "Files to delete: #{Dir.glob("#{tmp_dir}/*")}"
-    FileUtils.rm_rf(Dir.glob("#{tmp_dir}/*"))
+    FileUtils.rm_rf(tasks_dir)
+    # FileUtils.rm_rf(Dir.glob("#{tmp_dir}/*"))
     self
   end
 

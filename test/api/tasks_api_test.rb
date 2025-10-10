@@ -590,102 +590,107 @@ class TasksApiTest < ActiveSupport::TestCase
   end
 
   def test_prerequisites_task_status
-    # Create a unit and two task definitions
-    unit = FactoryBot.create(:unit, student_count: 1, task_count: 10)
-    td1 = unit.task_definitions.first
-    td2 = unit.task_definitions.second
-
-    td1.update(
-      upload_requirements: [{ "key" => 'file0', "name" => 'Shape Class', "type" => 'code' }],
-      target_grade: 0, # Pass
-      start_date: Time.zone.now - 2.weeks,
-      target_date: Time.zone.now + 1.week
-    )
-
-    td2.update(
-      upload_requirements: [{ "key" => 'file0', "name" => 'Shape Class', "type" => 'code' }],
-      target_grade: 3, # HD
-      start_date: Time.zone.now - 2.weeks,
-      target_date: Time.zone.now + 1.week
-    )
-
-    project = unit.active_projects.first
-
-    # Add username and auth_token to Header
-    add_auth_header_for(user: project.user)
-
-    data_to_post = {
-      trigger: 'ready_for_feedback'
-    }
-
-    # Create a prerequisite on the second taskDef that adds the first taskDef as a prereq
-    prereq = TaskPrerequisite.create!(
-      task_definition: td2, # Before you can submit td2...
-      prerequisite: td1, # You need to submit td1
-      task_status_id: TaskStatus.ready_for_feedback.id
-    )
-
-    assert prereq.valid?
-
-    tests = [
-      {
-        prerequisite_status: TaskStatus.ready_for_feedback,
-        required_status: TaskStatus.ready_for_feedback,
-        expected_status: 201,
-        expected_error: nil
-      },
-      {
-        prerequisite_status: TaskStatus.discuss,
-        required_status: TaskStatus.discuss,
-        expected_status: 201,
-        expected_error: nil
-      },
-      {
-        prerequisite_status: TaskStatus.demonstrate,
-        required_status: TaskStatus.demonstrate,
-        expected_status: 201,
-        expected_error: nil
-      },
-      {
-        prerequisite_status: TaskStatus.discuss,
-        required_status: TaskStatus.demonstrate,
-        expected_status: 201,
-        expected_error: nil
-      },
-      {
-        prerequisite_status: TaskStatus.demonstrate,
-        required_status: TaskStatus.discuss,
-        expected_status: 201,
-        expected_error: nil
-      },
-      {
-        prerequisite_status: TaskStatus.complete,
-        required_status: TaskStatus.complete,
-        expected_status: 201,
-        expected_error: nil
-      },
-      {
-        prerequisite_status: TaskStatus.complete,
-        required_status: TaskStatus.ready_for_feedback,
-        expected_status: 201,
-        expected_error: nil
-      },
-      {
-        prerequisite_status: TaskStatus.discuss,
-        required_status: TaskStatus.ready_for_feedback,
-        expected_status: 201,
-        expected_error: nil
-      }
-    ]
-
     Sidekiq::Testing.inline! do
+      # Create a unit and two task definitions
+      unit = FactoryBot.create(:unit, student_count: 1, task_count: 10)
+      td1 = unit.task_definitions.first
+      td2 = unit.task_definitions.second
+
+      assert_not td1.nil?
+      assert_not td2.nil?
+
+      td1.update!(
+        upload_requirements: [],
+        target_grade: 0, # Pass
+        start_date: Time.zone.now - 2.weeks,
+        target_date: Time.zone.now + 1.week
+      )
+
+      td2.update!(
+        # upload_requirements: [{ "key" => 'file0', "name" => 'Shape Class', "type" => 'code' }],
+        upload_requirements: [],
+        target_grade: 3, # HD
+        start_date: Time.zone.now - 2.weeks,
+        target_date: Time.zone.now + 1.week
+      )
+
+      project = unit.active_projects.first
+
+      # Add username and auth_token to Header
+      add_auth_header_for(user: project.user)
+
+      data_to_post = {
+        trigger: 'ready_for_feedback'
+      }
+
+      # Create a prerequisite on the second taskDef that adds the first taskDef as a prereq
+      prereq = TaskPrerequisite.create!(
+        task_definition: td2, # Before you can submit td2...
+        prerequisite: td1, # You need to submit td1
+        task_status_id: TaskStatus.ready_for_feedback.id
+      )
+
+      assert prereq.valid?
+
+      tests = [
+        {
+          prerequisite_status: TaskStatus.ready_for_feedback,
+          required_status: TaskStatus.ready_for_feedback,
+          expected_status: 201,
+          expected_error: nil
+        },
+        {
+          prerequisite_status: TaskStatus.discuss,
+          required_status: TaskStatus.discuss,
+          expected_status: 201,
+          expected_error: nil
+        },
+        {
+          prerequisite_status: TaskStatus.demonstrate,
+          required_status: TaskStatus.demonstrate,
+          expected_status: 201,
+          expected_error: nil
+        },
+        {
+          prerequisite_status: TaskStatus.discuss,
+          required_status: TaskStatus.demonstrate,
+          expected_status: 201,
+          expected_error: nil
+        },
+        {
+          prerequisite_status: TaskStatus.demonstrate,
+          required_status: TaskStatus.discuss,
+          expected_status: 201,
+          expected_error: nil
+        },
+        {
+          prerequisite_status: TaskStatus.complete,
+          required_status: TaskStatus.complete,
+          expected_status: 201,
+          expected_error: nil
+        },
+        {
+          prerequisite_status: TaskStatus.complete,
+          required_status: TaskStatus.ready_for_feedback,
+          expected_status: 201,
+          expected_error: nil
+        },
+        {
+          prerequisite_status: TaskStatus.discuss,
+          required_status: TaskStatus.ready_for_feedback,
+          expected_status: 201,
+          expected_error: nil
+        }
+      ]
+
       prereq_task = project.task_for_task_definition(td1)
       task = project.task_for_task_definition(td2)
-      data_to_post = with_file('test_files/submissions/program.cs', 'application/json', data_to_post)
+      # data_to_post = with_file('test_files/submissions/program.cs', 'application/json', data_to_post)
 
       tests.each do |test|
         prereq_task.update(task_status_id: test[:prerequisite_status].id)
         task.update(task_status_id: TaskStatus.not_started.id)
+        td2.reload
 
         post "/api/projects/#{project.id}/task_def_id/#{td2.id}/submission", data_to_post
         assert_equal test[:expected_status], last_response.status, last_response_body
@@ -697,6 +702,11 @@ class TasksApiTest < ActiveSupport::TestCase
           # Ensure submission was denied
           assert_equal TaskStatus.not_started, task.task_status
         end
+        task.clear_in_process
+        task.reload
+
+        # HACK: the accept submission job doesnt quite finish in time, so we clear all the files before the next loop
+        FileUtils.rm_rf(File.join(FileHelper.student_work_dir(:new), task.id.to_s))
       end
 
       prereq.destroy

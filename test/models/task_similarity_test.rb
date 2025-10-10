@@ -53,64 +53,66 @@ class TaskSimilarityTest < ActiveSupport::TestCase
     post "/api/projects/#{student2_project.id}/task_def_id/#{td.id}/submission", data_to_post
     assert_equal 201, last_response.status
 
-    student2_task = student2_project.task_for_task_definition(td)
-    student2_task.convert_submission_to_pdf(log_to_stdout: false)
-    assert File.exist? student2_task.final_pdf_path
-    assert student2_task.has_pdf
+    Sidekiq::Testing.inline! do
+      student2_task = student2_project.task_for_task_definition(td)
+      student2_task.convert_submission_to_pdf(log_to_stdout: false)
+      assert File.exist? student2_task.final_pdf_path
+      assert student2_task.has_pdf
 
-    # Run jplag
-    unit.check_jplag_similarity(force: true)
+      # Run jplag
+      unit.check_jplag_similarity(force: true)
 
-    # Validate similarities
-    similarity1 = JplagTaskSimilarity.find_by(task_id: student1_task.id)
-    similarity2 = JplagTaskSimilarity.find_by(task_id: student2_task.id)
+      # Validate similarities
+      similarity1 = JplagTaskSimilarity.find_by(task_id: student1_task.id)
+      similarity2 = JplagTaskSimilarity.find_by(task_id: student2_task.id)
 
-    assert_not_nil similarity1, "Similarity1 does not exist"
-    assert_not_nil similarity2, "Similarity2 does not exist"
+      assert_not_nil similarity1, "Similarity1 does not exist"
+      assert_not_nil similarity2, "Similarity2 does not exist"
 
-    assert similarity1.valid?, similarity1.errors.full_messages
-    assert similarity2.valid?, similarity2.errors.full_messages
+      assert similarity1.valid?, similarity1.errors.full_messages
+      assert similarity2.valid?, similarity2.errors.full_messages
 
-    assert_not_nil similarity1.other_task, "Similarity1 'other_task' is nil"
-    assert_not_nil similarity2.other_task, "Similarity2 'other_task' is nil"
+      assert_not_nil similarity1.other_task, "Similarity1 'other_task' is nil"
+      assert_not_nil similarity2.other_task, "Similarity2 'other_task' is nil"
 
-    assert similarity1.other_task.valid?, similarity1.errors.full_messages
-    assert similarity2.other_task.valid?, similarity2.errors.full_messages
+      assert similarity1.other_task.valid?, similarity1.errors.full_messages
+      assert similarity2.other_task.valid?, similarity2.errors.full_messages
 
-    assert_not_nil similarity1.other_student, "Similarity1 'other_student' is nil"
-    assert_not_nil similarity2.other_student, "Similarity2 'other_student' is nil"
+      assert_not_nil similarity1.other_student, "Similarity1 'other_student' is nil"
+      assert_not_nil similarity2.other_student, "Similarity2 'other_student' is nil"
 
-    assert similarity1.other_student.valid?, similarity1.errors.full_messages
-    assert similarity2.other_student.valid?, similarity2.errors.full_messages
+      assert similarity1.other_student.valid?, similarity1.errors.full_messages
+      assert similarity2.other_student.valid?, similarity2.errors.full_messages
 
-    assert_equal similarity1.other_task_id, similarity2.task_id
-    assert_equal similarity2.other_task_id, similarity1.task_id
+      assert_equal similarity1.other_task_id, similarity2.task_id
+      assert_equal similarity2.other_task_id, similarity1.task_id
 
-    assert_equal 100, similarity1.pct
-    assert_equal 100, similarity2.pct
+      assert_equal 100, similarity1.pct
+      assert_equal 100, similarity2.pct
 
-    assert td.has_jplag_report?, "Expected task definition to have a JPlag report"
+      assert td.has_jplag_report?, "Expected task definition to have a JPlag report"
 
-    # Create a similarity below the threshold
-    similarity1 = JplagTaskSimilarity.create(
-      task: student1_task,
-      other_task: student2_task,
-      pct: 10,
-      flagged: true
-    )
+      # Create a similarity below the threshold
+      similarity1 = JplagTaskSimilarity.create(
+        task: student1_task,
+        other_task: student2_task,
+        pct: 10,
+        flagged: true
+      )
 
-    # Create a similarity above the threshold
-    similarity2 = JplagTaskSimilarity.create(
-      task: student1_task,
-      other_task: student2_task,
-      pct: 99,
-      flagged: true
-    )
+      # Create a similarity above the threshold
+      similarity2 = JplagTaskSimilarity.create(
+        task: student1_task,
+        other_task: student2_task,
+        pct: 99,
+        flagged: true
+      )
 
-    unit.check_jplag_similarity(force: true)
+      unit.check_jplag_similarity(force: true)
 
-    assert_not JplagTaskSimilarity.exists?(similarity1.id), "Similarity with lower threshold whould have been deleted"
-    assert JplagTaskSimilarity.exists?(similarity2.id), "Similarity with higher threshold should not have been deleted"
+      assert_not JplagTaskSimilarity.exists?(similarity1.id), "Similarity with lower threshold whould have been deleted"
+      assert JplagTaskSimilarity.exists?(similarity2.id), "Similarity with higher threshold should not have been deleted"
+    end
   end
 
   # Test that when you create a plagiarism match link, that a moss test needs the other task
@@ -122,7 +124,7 @@ class TaskSimilarityTest < ActiveSupport::TestCase
       pct: 10
     )
 
-    refute similarity.valid?, similarity.errors.full_messages
+    assert_not similarity.valid?, similarity.errors.full_messages
 
     similarity.other_task = task
     assert similarity.valid?, similarity.errors.full_messages
@@ -140,7 +142,6 @@ class TaskSimilarityTest < ActiveSupport::TestCase
     )
 
     assert tii_similarity.valid?, tii_similarity.errors.full_messages
-
   ensure
     task&.project&.unit&.destroy
   end
@@ -158,9 +159,9 @@ class TaskSimilarityTest < ActiveSupport::TestCase
     assert similarity.valid?, similarity.errors.full_messages
 
     similarity.pct = -1
-    refute similarity.valid?
+    assert_not similarity.valid?
     similarity.pct = 101
-    refute similarity.valid?
+    assert_not similarity.valid?
 
     similarity.pct = 0
     assert similarity.valid?, similarity.errors.full_messages
@@ -239,10 +240,9 @@ class TaskSimilarityTest < ActiveSupport::TestCase
     add_auth_header_for(user: task.unit.main_convenor_user)
 
     # This will post to get the viewer url
-    viewer_url_request = stub_request(:post, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1223/viewer-url").
-      with(tii_headers).
-      to_return(status: 200, body: TCAClient::SimilarityViewerUrlResponse.new(viewer_url: 'https://viewer.url').to_hash.to_json, headers: {}
-    )
+    viewer_url_request = stub_request(:post, "https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/submissions/1223/viewer-url")
+                         .with(tii_headers)
+                         .to_return(status: 200, body: TCAClient::SimilarityViewerUrlResponse.new(viewer_url: 'https://viewer.url').to_hash.to_json, headers: {})
 
     get "/api/tasks/#{task.id}/similarities/#{sim.id}/viewer_url"
     assert_equal 200, last_response.status
