@@ -58,7 +58,8 @@ class Unit < ApplicationRecord
       :perform_overseer_assessment_test,
       :get_los,
       :create_feedback_chips,
-      :get_feedback_chips
+      :get_feedback_chips,
+      :get_tutor_times
     ]
 
     # What can admin do with units?
@@ -144,6 +145,7 @@ class Unit < ApplicationRecord
   has_many :tutorial_streams, dependent: :destroy, inverse_of: :unit
   has_many :unit_roles, dependent: :destroy, inverse_of: :unit
   has_many :learning_outcomes, as: :context, dependent: :destroy # inverse_of: :unit
+  has_many :marking_sessions, dependent: :destroy
 
   has_many :comments, through: :projects
   has_many :tasks, through: :projects
@@ -2718,6 +2720,91 @@ class Unit < ApplicationRecord
     if File.exist?(original_submission_history_path) && ! File.exist?(archive_submission_history_path)
       FileUtils.mkdir_p(FileHelper.root_submission_history_dir(archived: true))
       FileUtils.mv(original_submission_history_path, archive_submission_history_path)
+    end
+  end
+
+  def get_tutor_times(start_date: nil, end_date: nil, ignore_sessions_during_tutorials: false)
+    query = MarkingSession.where(unit_id: id)
+    query = query.where('start_time >= ?', start_date.beginning_of_day) if start_date
+    query = query.where('start_time <= ?', end_date.end_of_day) if end_date
+
+    query = query.where(during_tutorial: false) if ignore_sessions_during_tutorials
+
+    # Precompute sessions grouped by user_id
+    sessions_by_user = query.to_a.group_by(&:user_id).transform_values do |sessions|
+      sessions.sum(&:duration_minutes)
+    end
+    # => { 2 => 16, 3 => 45, ... }
+
+    # Precompute activities grouped by session_id and action
+    activities_by_session = SessionActivity
+      .joins(:marking_session)
+      .where(marking_sessions: { unit_id: id })
+      .group(:marking_session_id, :action)
+      .count
+    # => { [12, "assessing"] => 3, [12, "add-comment"] => 1, ... }
+
+    # Build a mapping from session_id => user_id for quick lookup
+    session_to_user = query.pluck(:id, :user_id).to_h
+    # => { 12 => 2, 13 => 2, 14 => 2 }
+
+    tutor_summary = Hash.new { |h, k| h[k] = { total_minutes: 0, assessments: 0, comments: 0 } }
+
+    # Sum session durations per user
+    sessions_by_user.each do |user_id, minutes|
+      tutor_summary[user_id][:total_minutes] = minutes
+    end
+
+    # Sum activities per user
+    activities_by_session.each do |(session_id, action), count|
+      user_id = session_to_user[session_id]
+      next unless user_id
+
+      case action
+      when "add-comment"
+        tutor_summary[user_id][:comments] += count
+      when "assessing"
+        tutor_summary[user_id][:assessments] += count
+      end
+    end
+
+    # Get names of the tutors
+    users = User.where(id: tutor_summary.keys).index_by(&:id).transform_values(&:name)
+
+    tutor_summary.map do |user_id, data|
+      {
+        user_id: user_id,
+        tutor_name: users[user_id],
+        total_minutes: data[:total_minutes],
+        assessments_made: data[:assessments],
+        comments_made: data[:comments]
+      }
+    end
+  end
+
+  def get_tutor_times_csv(start_date: nil, end_date: nil, ignore_sessions_during_tutorials: false)
+    summary = get_tutor_times(start_date: start_date, end_date: end_date, ignore_sessions_during_tutorials: ignore_sessions_during_tutorials)
+
+    CSV.generate() do |csv|
+      # Add headers
+      csv << ([
+        'User ID',
+        'Tutor',
+        'Total Minutes',
+        'Assessments',
+        'Comments',
+      ])
+
+
+      summary.each do |row|
+        csv << ([
+          row[:user_id].to_s,
+          row[:tutor_name],
+          row[:total_minutes].to_s,
+          row[:assessments_made].to_s,
+          row[:comments_made].to_s,
+        ])
+      end
     end
   end
 
