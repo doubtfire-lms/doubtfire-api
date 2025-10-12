@@ -203,6 +203,13 @@ class TasksApi < Grape::API
         if result.nil? && task.task_definition.restrict_status_updates
           error!({ error: 'This task can only be updated by your tutor.' }, 403)
         end
+        SessionTracker.record_assessment_activity(
+          action: "assessing",
+          user: current_user,
+          project: project,
+          ip_address: request.ip,
+          task: task
+        )
       end
 
       # if grade was supplied
@@ -253,6 +260,8 @@ class TasksApi < Grape::API
     # ensure there can be a pdf...
     needs_upload_docs = !task_definition.upload_requirements.empty?
 
+    task = nil
+
     # check if we actually have this task... if not must be false.
     if needs_upload_docs && project.has_task_for_task_definition?(task_definition)
       task = project.task_for_task_definition(task_definition)
@@ -269,6 +278,14 @@ class TasksApi < Grape::API
         processing_pdf: false
       }
     end
+
+    SessionTracker.record_assessment_activity(
+      action: 'get-submission-details',
+      user: current_user,
+      project: project,
+      ip_address: request.ip,
+      task: task
+    )
 
     present result, with: Grape::Presenters::Presenter
   end
@@ -288,6 +305,13 @@ class TasksApi < Grape::API
 
     # Get the actual task...
     task = project.task_for_task_definition(task_definition)
+    SessionTracker.record_assessment_activity(
+      action: 'get-submission-files',
+      user: current_user,
+      project: project,
+      ip_address: request.ip,
+      task: task
+    )
 
     # Find the file
     file_loc = FileHelper.zip_file_path_for_done_task(task)

@@ -28,6 +28,8 @@ class Project < ApplicationRecord
   has_many :groups, -> { where('group_memberships.active = :value', value: true) }, through: :group_memberships
   has_many :task_engagements, through: :tasks
   has_many :comments, through: :tasks
+  has_many :tutorial_enrolments, dependent: :destroy
+  has_many :session_activities,  dependent: :destroy
 
   has_many :staff_notes, dependent: :destroy
 
