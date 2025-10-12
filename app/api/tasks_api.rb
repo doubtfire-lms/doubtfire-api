@@ -257,10 +257,10 @@ class TasksApi < Grape::API
     # check the user can put this task
     error!(error: 'You do not have permission to read submissions for this project.') unless authorise? current_user, project, :get_submission
 
-    task = project.has_task_for_task_definition?(task_definition) ? project.task_for_task_definition(task_definition) : nil
-
     # ensure there can be a pdf...
     needs_upload_docs = !task_definition.upload_requirements.empty?
+
+    task = nil
 
     # check if we actually have this task... if not must be false.
     if needs_upload_docs && project.has_task_for_task_definition?(task_definition)
