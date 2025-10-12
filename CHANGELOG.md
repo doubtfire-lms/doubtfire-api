@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-38](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-37...v10.0.0-38) (2025-10-12)
+
+
+### Features
+
+* tutor times 10.0.x ([#518](https://github.com/b0ink/doubtfire-deploy/issues/518)) ([#509](https://github.com/b0ink/doubtfire-deploy/issues/509)) ([3c1cb7e](https://github.com/b0ink/doubtfire-deploy/commit/3c1cb7e93dea50d1f78a7c251e2151dfc9b4089e)), closes [#4](https://github.com/b0ink/doubtfire-deploy/issues/4) [#5](https://github.com/b0ink/doubtfire-deploy/issues/5) [#6](https://github.com/b0ink/doubtfire-deploy/issues/6) [#7](https://github.com/b0ink/doubtfire-deploy/issues/7) [#8](https://github.com/b0ink/doubtfire-deploy/issues/8)
+
+
+### Bug Fixes
+
+* **numbas:** allow '.' in username param for SCORM route ([dc86026](https://github.com/b0ink/doubtfire-deploy/commit/dc86026a6261516270d1cdf55b1517a95cd0e77f))
+
 ## [10.0.0-37](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-36...v10.0.0-37) (2025-09-29)
 
 ## [10.0.0-36](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-35...v10.0.0-36) (2025-09-28)
