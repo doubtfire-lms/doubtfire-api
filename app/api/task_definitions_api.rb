@@ -40,6 +40,7 @@ class TaskDefinitionsApi < Grape::API
       optional :scorm_time_delay_enabled, type: Boolean,  desc: 'Whether there is an incremental time delay between SCORM test attempts'
       optional :scorm_attempt_limit,      type: Integer,  desc: 'The number of times a SCORM test can be attempted'
       optional :assess_in_portfolio_only, type: Boolean,  desc: 'Whether a task can only be signed off during portfolio assessment'
+      optional :use_resources_for_jplag_base_code, type: Boolean, desc: 'Include the common base code from task resources for JPlag comparisons'
     end
   end
   post '/units/:unit_id/task_definitions/' do
@@ -74,7 +75,8 @@ class TaskDefinitionsApi < Grape::API
                                                 :similarity_language,
                                                 :assess_in_portfolio_only,
                                                 :upload_requirements,
-                                                :unit_id
+                                                :unit_id,
+                                                :use_resources_for_jplag_base_code
                                               )
 
     task_params[:unit_id] = unit.id
@@ -130,6 +132,7 @@ class TaskDefinitionsApi < Grape::API
       optional :overseer_image_id,        type: Integer,  desc: 'The id of the Docker image name for overseer'
       optional :similarity_language,      type: String,   desc: 'The language to use for code similarity checks'
       optional :assess_in_portfolio_only, type: Boolean,  desc: 'Whether a task can only be signed off during portfolio assessment'
+      optional :use_resources_for_jplag_base_code, type: Boolean, desc: 'Include the common base code from task resources for JPlag comparisons'
     end
   end
   put '/units/:unit_id/task_definitions/:id' do
@@ -164,7 +167,8 @@ class TaskDefinitionsApi < Grape::API
                                                 :overseer_image_id,
                                                 :similarity_language,
                                                 :assess_in_portfolio_only,
-                                                :upload_requirements
+                                                :upload_requirements,
+                                                :use_resources_for_jplag_base_code
                                               )
 
     if params[:task_def][:upload_requirements].present?
