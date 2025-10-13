@@ -47,6 +47,9 @@ class SessionTracker
     is_during_tutorial = false
 
     tutorial_streams.each do |stream|
+      # TODO: tutorial stream refactor should have an option whether or not to this stream should be used to split marking sessions
+      next if stream.name == "D/HD Feedback"
+
       tutorials = stream.tutorials.where(unit_role: unit_role)
       tutorials.each do |tutorial|
         # Skip if day does not match
