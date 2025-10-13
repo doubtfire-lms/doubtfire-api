@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_23_121205) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_30_021318) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -349,6 +349,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_23_121205) do
     t.boolean "scorm_time_delay_enabled", default: false
     t.integer "scorm_attempt_limit", default: 0
     t.boolean "assess_in_portfolio_only", default: false, null: false
+    t.boolean "use_resources_for_jplag_base_code", default: false, null: false
     t.index ["abbreviation", "unit_id"], name: "index_task_definitions_on_abbreviation_and_unit_id", unique: true
     t.index ["group_set_id"], name: "index_task_definitions_on_group_set_id"
     t.index ["name", "unit_id"], name: "index_task_definitions_on_name_and_unit_id", unique: true
