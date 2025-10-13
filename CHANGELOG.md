@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-40](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-39...v10.0.0-40) (2025-10-13)
+
+
+### Features
+
+* jplag base code ([#522](https://github.com/b0ink/doubtfire-deploy/issues/522)) ([d9bb186](https://github.com/b0ink/doubtfire-deploy/commit/d9bb1862d87c9365a8d8f39cfdca9852d93f764a))
+
 ## [10.0.0-39](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-38...v10.0.0-39) (2025-10-13)
 
 ## [10.0.0-38](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-37...v10.0.0-38) (2025-10-12)
