@@ -391,6 +391,7 @@ class UnitsApi < Grape::API
   params do
     optional :start_date, type: Date, desc: 'Filter sessions starting from this date'
     optional :end_date, type: Date, desc: 'Filter sessions up to this date'
+    optional :timezone, type: String, desc: 'Requested timezone to search sessions for'
     optional :ignore_sessions_during_tutorials, type: Boolean, desc: 'Filter out sessions that occured during tutorials'
   end
   get '/csv/units/:id/tutor_times_summary' do
@@ -405,6 +406,7 @@ class UnitsApi < Grape::API
       unit.id,
       params[:start_date]&.to_s,
       params[:end_date]&.to_s,
+      params[:timezone]&.to_s,
       ignore_sessions_during_tutorials
     )
 

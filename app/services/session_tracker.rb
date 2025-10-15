@@ -18,7 +18,7 @@ class SessionTracker
       project_id: project.id,
       task_id: task&.id,
       task_definition_id: task&.task_definition_id,
-      created_at: DateTime.now
+      created_at: Time.zone.now
     )
 
     session.update_session_details
