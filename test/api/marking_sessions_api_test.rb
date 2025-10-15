@@ -450,8 +450,8 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
       )
     end
 
-    summary_without_tutorials = unit.get_tutor_times(start_date: Time.zone.now - 1.week, end_date: Time.zone.now + 1.week, ignore_sessions_during_tutorials: true)
-    summary_with_tutorials = unit.get_tutor_times(start_date: Time.zone.now - 1.week, end_date: Time.zone.now + 1.week, ignore_sessions_during_tutorials: false)
+    summary_without_tutorials = unit.get_tutor_times(start_date: Time.zone.now - 1.week, end_date: Time.zone.now + 1.week, timezone: Time.zone, ignore_sessions_during_tutorials: true)
+    summary_with_tutorials = unit.get_tutor_times(start_date: Time.zone.now - 1.week, end_date: Time.zone.now + 1.week, timezone: Time.zone, ignore_sessions_during_tutorials: false)
 
     # 10 sessions, 30 minutes each
     assert_equal 300, summary_without_tutorials.first[:total_minutes]
