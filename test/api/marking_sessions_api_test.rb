@@ -375,8 +375,7 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
     assert_equal expected_marking_sessions_during_tutorial, MarkingSession.where(during_tutorial: true).count
     assert_equal expected_marking_sessions_outside_tutorial, MarkingSession.where(during_tutorial: false).count
 
-    thursday_offset = (today.wday - 4) % 7
-    thursday = today - thursday_offset.days
+    thursday = wednesday + 1.day
 
     start_time = thursday.in_time_zone.change(hour: 12, min: 4) # 12:05pm
     end_time   = thursday.in_time_zone.change(hour: 15, min: 0) # 3:00pm
