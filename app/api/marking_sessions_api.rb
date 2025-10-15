@@ -26,7 +26,8 @@ class MarkingSessionsApi < Grape::API
       error!({ error: "You are not authorised to view marking sessions for this unit" }, 403)
     end
 
-    tz = ActiveSupport::TimeZone[params[:timezone]] || Time.zone
+    tz = Time.zone
+    tz = ActiveSupport::TimeZone[params[:timezone]] if params[:timezone]
 
     end_date = if params[:end_date].present?
                  tz.parse(params[:end_date].to_s).end_of_day
