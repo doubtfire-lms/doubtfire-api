@@ -446,7 +446,7 @@ class TaskDefinition < ApplicationRecord
 
   def to_csv_row
     TaskDefinition.csv_columns
-                  .reject { |col| [:start_week, :start_day, :target_week, :target_day, :due_week, :due_day, :upload_requirements, :group_set, :tutorial_stream].include? col }
+                  .reject { |col| [:start_week, :start_day, :target_week, :target_day, :due_week, :due_day, :upload_requirements, :group_set, :tutorial_stream, :assess_in_portfolio_only].include? col }
                   .map { |column| attributes[column.to_s] } +
       [
         group_set.nil? ? "" : group_set.name,
@@ -457,7 +457,8 @@ class TaskDefinition < ApplicationRecord
         target_day,
         due_week,
         due_day,
-        tutorial_stream.present? ? tutorial_stream.abbreviation : nil
+        tutorial_stream.present? ? tutorial_stream.abbreviation : nil,
+        assess_in_portfolio_only
       ]
     # [target_date.strftime('%d-%m-%Y')] +
     # [ self['due_date'].nil? ? '' : due_date.strftime('%d-%m-%Y')]
@@ -467,7 +468,7 @@ class TaskDefinition < ApplicationRecord
     [:name, :abbreviation, :description, :weighting, :target_grade, :restrict_status_updates, :max_quality_pts,
      :is_graded, :plagiarism_warn_pct, :scorm_enabled, :scorm_allow_review, :scorm_bypass_test, :scorm_time_delay_enabled,
      :scorm_attempt_limit, :group_set, :upload_requirements, :start_week, :start_day, :target_week, :target_day,
-     :due_week, :due_day, :tutorial_stream]
+     :due_week, :due_day, :tutorial_stream, :assess_in_portfolio_only]
   end
 
   def self.task_def_for_csv_row(unit, row)
@@ -528,6 +529,8 @@ class TaskDefinition < ApplicationRecord
     if row[:tutorial_stream].present?
       result.tutorial_stream = unit.tutorial_streams.where(abbreviation: row[:tutorial_stream]).first
     end
+
+    result.assess_in_portfolio_only = %w(Yes y Y yes true TRUE 1).include? "#{row[:assess_in_portfolio_only]}".strip
 
     if result.valid? && (row[:group_set].blank? || result.group_set.present?)
       begin
