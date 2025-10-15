@@ -1445,6 +1445,8 @@ class Unit < ApplicationRecord
 
     data = read_file_to_str(file)
 
+    prerequisites_by_task = {}
+
     CSV.parse(data,
               headers: true,
               header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip.tr(' ', '_').to_sym unless hdr.nil? }],
@@ -1459,6 +1461,7 @@ class Unit < ApplicationRecord
         end
 
         task_definition, new_task, message = TaskDefinition.task_def_for_csv_row(self, row)
+        prerequisites_by_task[task_definition.abbreviation] = JSON.parse(row[:task_prerequisites]) unless row[:task_prerequisites].nil?
 
         if task_definition.nil?
           errors << { row: row, message: message }
@@ -1468,6 +1471,26 @@ class Unit < ApplicationRecord
         success << { row: row, message: message }
       rescue Exception => e
         errors << { row: row, message: e.message }
+      end
+    end
+
+    # Parse task prerequisites once all task definitions have been imported
+    prerequisites_by_task.each do |task_abbreviation, prerequisites_list|
+      td = task_definitions.find_by(abbreviation: task_abbreviation)
+      next if td.nil?
+
+      next if prerequisites_list.nil?
+      next if prerequisites_list.empty?
+      prerequisites_list.each do |prerequisite|
+        abbreviation = prerequisite['abbreviation']
+        prerequisite_td = task_definitions.find_by(abbreviation: abbreviation)
+        task_status_id = prerequisite['task_status_id'].to_i
+
+        TaskPrerequisite.create!({
+          task_definition_id: td.id,
+          prerequisite: prerequisite_td,
+          task_status_id: task_status_id
+        })
       end
     end
 
