@@ -2726,10 +2726,27 @@ class Unit < ApplicationRecord
     end
   end
 
-  def get_tutor_times(start_date: nil, end_date: nil, ignore_sessions_during_tutorials: false)
+  def get_tutor_times(start_date: nil, end_date: nil, timezone: nil, ignore_sessions_during_tutorials: false)
     query = MarkingSession.where(unit_id: id)
-    query = query.where('start_time >= ?', start_date.beginning_of_day) if start_date
-    query = query.where('start_time <= ?', end_date.end_of_day) if end_date
+
+
+    tz = Time.zone
+    tz = ActiveSupport::TimeZone[timezone] if timezone
+
+    end_date = if end_date.present?
+             tz.parse(end_date.to_s).end_of_day
+               else
+             tz.today.end_of_day
+               end
+
+    start_date = if start_date.present?
+                   tz.parse(start_date.to_s).beginning_of_day
+                 else
+                   (end_date - 7.days).beginning_of_day
+                 end
+
+    query = query.where(start_time: start_date..end_date)
+
 
     query = query.where(during_tutorial: false) if ignore_sessions_during_tutorials
 
@@ -2785,8 +2802,8 @@ class Unit < ApplicationRecord
     end
   end
 
-  def get_tutor_times_csv(start_date: nil, end_date: nil, ignore_sessions_during_tutorials: false)
-    summary = get_tutor_times(start_date: start_date, end_date: end_date, ignore_sessions_during_tutorials: ignore_sessions_during_tutorials)
+  def get_tutor_times_csv(start_date: nil, end_date: nil, timezone: nil, ignore_sessions_during_tutorials: false)
+    summary = get_tutor_times(start_date: start_date, end_date: end_date, timezone: timezone, ignore_sessions_during_tutorials: ignore_sessions_during_tutorials)
 
     CSV.generate() do |csv|
       # Add headers
