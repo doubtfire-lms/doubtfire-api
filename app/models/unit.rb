@@ -34,6 +34,7 @@ class Unit < ApplicationRecord
       :get_los,
       :get_feedback_chips,
       :download_jplag_report,
+      :get_marking_sessions
     ]
 
     # What can convenors do with units?
@@ -59,7 +60,8 @@ class Unit < ApplicationRecord
       :get_los,
       :create_feedback_chips,
       :get_feedback_chips,
-      :get_tutor_times
+      :get_tutor_times,
+      :get_marking_sessions
     ]
 
     # What can admin do with units?
@@ -83,6 +85,7 @@ class Unit < ApplicationRecord
       :get_feedback_chips,
       :grant_spec_con,
       :download_jplag_report,
+      :get_marking_sessions
     ]
 
     # What can auditors do with units?
