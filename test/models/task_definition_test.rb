@@ -460,9 +460,17 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     task1.update(task_status_id: TaskStatus.assess_in_portfolio.id)
 
-    assert td1.valid?
-    td1.assess_in_portfolio_only = false
+    # Ensure we can update a task definition that as AIP disabled, with AIP tasks
+    due_date = td1.due_date + 1.week
+    td1.update(due_date: due_date)
+    assert td1.valid?, "Task definition should be able to be updated"
 
+    # Enable assess in portfolio
+    td1.update(assess_in_portfolio_only: true)
+    assert td1.valid?
+
+    # Ensure we can't disable assess in portfolio once we have AIP tasks
+    td1.assess_in_portfolio_only = false
     assert_not td1.valid?, '"Assess in Portfolio Only" cannot be disabled while tasks are in the Assess in Portfolio state'
     assert_includes td1.errors[:assess_in_portfolio_only], 'cannot be disabled while tasks are in the Assess in Portfolio state'
   end
