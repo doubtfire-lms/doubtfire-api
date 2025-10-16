@@ -34,7 +34,8 @@ class Unit < ApplicationRecord
       :get_los,
       :get_feedback_chips,
       :download_jplag_report,
-      :get_marking_sessions
+      :get_marking_sessions,
+      :get_tutor_times,
     ]
 
     # What can convenors do with units?
@@ -61,6 +62,7 @@ class Unit < ApplicationRecord
       :create_feedback_chips,
       :get_feedback_chips,
       :get_tutor_times,
+      :get_tutor_times_summary,
       :get_marking_sessions
     ]
 

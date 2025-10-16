@@ -26,6 +26,11 @@ class MarkingSessionsApi < Grape::API
       error!({ error: "You are not authorised to view marking sessions for this unit" }, 403)
     end
 
+    unit_role = unit.unit_role_for(current_user)
+    unless unit_role
+      error!({ error: "You are not authorised to view marking sessions for this unit" }, 403)
+    end
+
     tz = Time.zone
     tz = ActiveSupport::TimeZone[params[:timezone]] if params[:timezone]
 
@@ -45,6 +50,8 @@ class MarkingSessionsApi < Grape::API
                .includes(:session_activities)
                .where(unit: unit)
                .where(start_time: start_date..end_date)
+
+    sessions = sessions.where(user_id: current_user.id) if unit_role.role != Role.convenor
 
     present sessions, with: Entities::MarkingSessionEntity
   end
