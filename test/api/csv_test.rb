@@ -108,14 +108,17 @@ class CsvTest < ActiveSupport::TestCase
 
   #####--------------POST tests - Upload CSV of task definitions to the provided unit------------######
 
-  #7: Testing for CSV upload all task definitions for the given unit
-  #POST /api/csv/task_definitions
+  # 7: Testing for CSV upload all task definitions for the given unit
+  # POST /api/csv/task_definitions
   def test_csv_upload_all_task_definitions_unit
-
     data_to_post = {
       unit_id: '1',
       file: upload_file_csv('test_files/csv_test_files/COS10001-Tasks.csv')
     }
+
+    activity_type = FactoryBot.create(:activity_type)
+    unit = Unit.find(1)
+    unit.add_tutorial_stream('Import-Tasks', 'import-tasks', activity_type)
 
     # auth_token and username added to header
     add_auth_header_for(user: User.first)
@@ -123,8 +126,17 @@ class CsvTest < ActiveSupport::TestCase
     # perform the POST
     post "/api/csv/task_definitions", data_to_post
 
-    assert_equal 201, last_response.status
+    assert_equal 201, last_response.status, last_response_body
     assert_equal 'Assignment 12', TaskDefinition.where(abbreviation: 'A12').first.name
+
+    td = unit.task_definitions.find_by(abbreviation: '5.5D')
+    assert_equal 2, td.task_prerequisites.count, last_response_body
+
+    task_prereq1 = td.task_prerequisites.first
+    assert_equal 2, task_prereq1.task_status_id
+
+    task_prereq2 = td.task_prerequisites.second
+    assert_equal 9, task_prereq2.task_status_id
   end
 
   #8: Testing for CSV upload failure due to incorrect auth token

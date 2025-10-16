@@ -145,7 +145,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     task_defs_csv = CSV.parse unit.task_definitions_csv, headers: true
     task_defs_csv.each do |task_def_csv|
       task_def = unit.task_definitions.find_by(abbreviation: task_def_csv['abbreviation'])
-      keys_to_ignore = ['tutorial_stream', 'start_week', 'start_day', 'target_week', 'target_day', 'due_week', 'due_day', 'upload_requirements']
+      keys_to_ignore = %w[tutorial_stream start_week start_day target_week target_day due_week due_day upload_requirements task_prerequisites]
       task_def_csv.each do |key, value|
         unless keys_to_ignore.include?(key)
           assert_equal(task_def[key].to_s, value)
@@ -160,6 +160,16 @@ class TaskDefinitionTest < ActiveSupport::TestCase
       assert_equal task_def.due_week.to_s, task_def_csv['due_week']
       assert_equal task_def.due_day.to_s, task_def_csv['due_day']
       assert_equal task_def.tutorial_stream.present? ? task_def.tutorial_stream.abbreviation : nil, task_def_csv['tutorial_stream']
+
+      prerequisites = task_def.task_prerequisites.map do |tp|
+        prereq = TaskDefinition.find(tp.prerequisite_id)
+        {
+          abbreviation: prereq.abbreviation,
+          task_status_id: tp.task_status_id
+        }
+      end.to_json
+
+      assert_equal prerequisites, task_def_csv['task_prerequisites']
     end
   end
 
