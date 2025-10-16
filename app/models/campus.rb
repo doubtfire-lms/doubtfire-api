@@ -41,6 +41,10 @@ class Campus < ApplicationRecord
     end
   end
 
+  def timezone
+    super || Time.zone.name
+  end
+
   private
 
   def invalidate_cache
