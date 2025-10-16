@@ -35,7 +35,7 @@ class SessionTracker
   def self.find_or_create_session(user, unit, ip_address)
     now = Time.zone.now
     session = MarkingSession
-              .where(user: user, unit: unit, ip_address: ip_address)
+              .where(user: user, unit: unit)
               .where("end_time IS NULL OR end_time > ?", THRESHOLD.minutes.ago)
               .order(start_time: :desc)
               .first
