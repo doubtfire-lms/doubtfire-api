@@ -110,6 +110,7 @@ class TaskDefinition < ApplicationRecord
   end
 
   def cant_disable_aip_only_if_aip_tasks_exist
+    return unless will_save_change_to_assess_in_portfolio_only?
     return if assess_in_portfolio_only? # only care about disabling
 
     if tasks.where(task_status_id: TaskStatus.assess_in_portfolio.id).exists?
