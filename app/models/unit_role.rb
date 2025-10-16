@@ -245,11 +245,17 @@ class UnitRole < ApplicationRecord
   def get_marking_sessions_csv(start_date: nil, end_date: nil, timezone: nil)
     result = get_marking_sessions(start_date: start_date, end_date: end_date, timezone: timezone)
 
+    tz = Time.zone
+    tz = ActiveSupport::TimeZone[timezone] if timezone
+
     CSV.generate do |csv|
       # Add headers
       csv << ([
+        'Start Date',
         'Start Time',
+        'End Date',
         'End Time',
+        'Timezone',
         'Total Duration (m)',
         'Total Duration (h)',
         'Submissions Opened',
@@ -259,18 +265,21 @@ class UnitRole < ApplicationRecord
       ])
 
       result.each do |row|
-        tz = Time.zone
-        tz = ActiveSupport::TimeZone[timezone] if timezone
+        start_time = row[:start_time].in_time_zone(tz)
+        end_time   = row[:end_time].in_time_zone(tz)
 
         csv << ([
-          row[:start_time].in_time_zone(tz).strftime('%Y-%m-%d %A %H:%M') + " #{tz.name} #{row[:start_time].in_time_zone(tz).strftime('%:z')}",
-          row[:end_time].in_time_zone(tz).strftime('%Y-%m-%d %A %H:%M') + " #{tz.name} #{row[:start_time].in_time_zone(tz).strftime('%:z')}",
+          start_time.strftime('%Y-%m-%d %A'),
+          start_time.strftime('%H:%M'),
+          end_time.strftime('%Y-%m-%d %A'),
+          end_time.strftime('%H:%M'),
+          "#{tz.name} #{start_time.strftime('%:z')}",
           row[:duration_minutes],
           (row[:duration_minutes].to_f / 60).round(1),
           row[:submissions_opened],
           row[:comments_added],
           row[:assessments],
-          row[:during_tutorial]
+          row[:during_tutorial] ? 'TRUE' : 'FALSE'
         ])
       end
     end
