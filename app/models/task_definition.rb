@@ -466,7 +466,6 @@ class TaskDefinition < ApplicationRecord
             task_status_id: tp.task_status_id
           }
         end.to_json
-        # task_prerequisites.map(&:abbreviation).join('; ')
       ]
     # [target_date.strftime('%d-%m-%Y')] +
     # [ self['due_date'].nil? ? '' : due_date.strftime('%d-%m-%Y')]
