@@ -396,8 +396,8 @@ class UnitsApi < Grape::API
   end
   get '/csv/units/:id/tutor_times_summary' do
     unit = Unit.find(params[:id])
-    unless authorise? current_user, unit, :get_tutor_times
-      error!({ error: "Not authorised to download CSV of student tasks in #{unit.code}" }, 403)
+    unless authorise? current_user, unit, :get_tutor_times_summary
+      error!({ error: "Not authorised to download CSV of marking session summary in #{unit.code}" }, 403)
     end
 
     ignore_sessions_during_tutorials = params[:ignore_sessions_during_tutorials] || false
