@@ -284,7 +284,8 @@ class Unit < ApplicationRecord
   end
 
   def cant_disable_aip_only_if_aip_tasks_exist
-    return if mark_late_submissions_as_assess_in_portfolio # only care about disabling
+    return unless will_save_change_to_mark_late_submissions_as_assess_in_portfolio?
+    return if mark_late_submissions_as_assess_in_portfolio? # only care about disabling
 
     if tasks.where(task_status_id: TaskStatus.assess_in_portfolio.id).exists?
       errors.add(:mark_late_submissions_as_assess_in_portfolio, "cannot be disabled while tasks are in the Assess in Portfolio state")
