@@ -55,7 +55,10 @@ class SessionTracker
         # Skip if day does not match
         next if tutorial.meeting_day != now.strftime('%A')
 
-        tutorial_start = Time.zone.parse("#{now.to_date} #{tutorial.meeting_time}")
+        tz = Time.zone
+        tz = ActiveSupport::TimeZone[tutorial.campus&.timezone] if tutorial.campus&.timezone.present?
+        tutorial_start = tz.parse("#{now.to_date} #{tutorial.meeting_time}")
+
         tutorial_end   = tutorial_start + 2.hours
 
         if now >= tutorial_start && now < tutorial_end
