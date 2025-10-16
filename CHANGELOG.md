@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-41](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-40...v10.0.0-41) (2025-10-16)
+
+
+### Bug Fixes
+
+* only trigger assess in portfolio validation when field is about to change ([#526](https://github.com/b0ink/doubtfire-deploy/issues/526)) ([9af06a5](https://github.com/b0ink/doubtfire-deploy/commit/9af06a52ff836c1694f8665dff8b45ed60de41b9))
+
 ## [10.0.0-40](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-39...v10.0.0-40) (2025-10-13)
 
 
