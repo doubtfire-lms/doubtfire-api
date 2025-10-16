@@ -1,0 +1,35 @@
+require 'csv'
+
+class DownloadMarkingSessionsJob
+  include Sidekiq::Job
+  include Sidekiq::Status::Worker
+  include LogHelper
+  include ApplicationHelper
+  include FileHelper
+  include MimeCheckHelpers
+  include CsvHelper
+
+  sidekiq_options lock: :until_executed,
+                  lock_args_method: ->(args) { [args.first] },
+                  on_conflict: :reject,
+                  retry: false
+
+  def perform(unit_role_id, start_date, end_date, timezone)
+    start_date = Date.parse(start_date) if start_date
+    end_date   = Date.parse(end_date) if end_date
+    logger.info "Starting tutor marking sessions csv download..."
+
+    at(0)
+    total(1)
+
+    unit_role = UnitRole.find(unit_role_id)
+    csv = unit_role.get_marking_sessions_csv(start_date: start_date, end_date: end_date, timezone: timezone)
+
+    store(result: csv)
+
+    logger.info "Completed tutor marking sessions csv download!"
+  rescue StandardError => e
+    logger.error e
+    raise e
+  end
+end

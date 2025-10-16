@@ -429,7 +429,9 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
     session_start = start_time + 1.hour
     session_end   = session_start + 30.minutes
 
-    15.times do |i|
+    session_count = 15
+
+    session_count.times do |i|
       # 5 sessions during tutorial
       # 10 sessions outside of tutorial
       during_tutorial = i < 5
@@ -452,6 +454,12 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
 
     # 15 total sessions, 30 minutes each
     assert_equal 450, summary_with_tutorials.first[:total_minutes]
+
+    unit_role = unit.unit_role_for(user)
+
+    sessions_data = unit_role.get_marking_sessions(start_date: Time.zone.now - 1.week, end_date: Time.zone.now + 1.week)
+    assert_equal session_count, sessions_data.count
+    assert_equal 30, sessions_data.first[:duration_minutes]
   end
 
 end
