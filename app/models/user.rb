@@ -588,10 +588,10 @@ class User < ApplicationRecord
     }
   end
 
-  def get_marking_analytics(unit, start_date: nil, end_date: nil)
+  def get_marking_sessions(unit, start_date: nil, end_date: nil, timezone: nil)
     unit_role = unit.unit_role_for(self)
     unless unit_role.nil?
-      unit_role.get_marking_analytics(start_date: start_date, end_date: end_date)
+      unit_role.get_marking_sessions(start_date: start_date, end_date: end_date, timezone: timezone)
     end
   end
 end

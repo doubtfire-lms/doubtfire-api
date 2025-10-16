@@ -396,8 +396,8 @@ class UnitsApi < Grape::API
   end
   get '/csv/units/:id/tutor_times_summary' do
     unit = Unit.find(params[:id])
-    unless authorise? current_user, unit, :get_tutor_times
-      error!({ error: "Not authorised to download CSV of student tasks in #{unit.code}" }, 403)
+    unless authorise? current_user, unit, :get_tutor_times_summary
+      error!({ error: "Not authorised to download CSV of marking session summary in #{unit.code}" }, 403)
     end
 
     ignore_sessions_during_tutorials = params[:ignore_sessions_during_tutorials] || false
@@ -408,6 +408,34 @@ class UnitsApi < Grape::API
       params[:end_date]&.to_s,
       params[:timezone]&.to_s,
       ignore_sessions_during_tutorials
+    )
+
+    job = setup_job(job_id)
+    present job, with: Entities::SidekiqJobEntity
+  end
+
+  desc 'Download CSV of marking sessions for current unit role'
+  params do
+    optional :start_date, type: Date, desc: 'Filter sessions starting from this date'
+    optional :end_date, type: Date, desc: 'Filter sessions up to this date'
+    optional :timezone, type: String, desc: 'Requested timezone to search sessions for'
+  end
+  get '/csv/units/:id/my_marking_sessions' do
+    unit = Unit.find(params[:id])
+    unless authorise? current_user, unit, :get_marking_sessions
+      error!({ error: "Not authorised to download CSV of marking sessions for #{unit.code}" }, 403)
+    end
+
+    unit_role = unit.unit_role_for(current_user)
+    unless unit_role
+      error!({ error: "Not authorised to download CSV of marking sessions for #{unit.code}" }, 403)
+    end
+
+    job_id = DownloadMarkingSessionsJob.perform_async(
+      unit_role.id,
+      params[:start_date]&.to_s,
+      params[:end_date]&.to_s,
+      params[:timezone]&.to_s,
     )
 
     job = setup_job(job_id)

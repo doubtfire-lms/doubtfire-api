@@ -14,6 +14,7 @@ class CampusesAuthenticatedApi < Grape::API
       requires :name,         type: String,  desc: 'The name of the campus'
       requires :mode,         type: String,  desc: 'This will determine the campus mode', values: ['timetable', 'automatic', 'manual']
       requires :abbreviation, type: String,  desc: 'The abbreviation for the campus'
+      optional :timezone,     type: String,  desc: 'The timezone for the campus'
       requires :active,       type: Boolean, desc: 'Determines whether campus is active'
     end
   end
@@ -26,6 +27,7 @@ class CampusesAuthenticatedApi < Grape::API
                                                     .permit(:name,
                                                             :mode,
                                                             :abbreviation,
+                                                            :timezone,
                                                             :active)
 
     result = Campus.create!(campus_parameters)
@@ -43,6 +45,7 @@ class CampusesAuthenticatedApi < Grape::API
       optional :name,         type: String,  desc: 'The name of the campus'
       optional :mode,         type: String,  desc: 'This will determine the campus mode', values: ['timetable', 'automatic', 'manual']
       optional :abbreviation, type: String,  desc: 'The abbreviation for the campus'
+      optional :timezone,     type: String,  desc: 'The timezone for the campus'
       optional :active,       type: Boolean, desc: 'Determines whether campus is active'
     end
   end
@@ -56,6 +59,7 @@ class CampusesAuthenticatedApi < Grape::API
                                                     .permit(:name,
                                                             :mode,
                                                             :abbreviation,
+                                                            :timezone,
                                                             :active)
 
     campus.update!(campus_parameters)

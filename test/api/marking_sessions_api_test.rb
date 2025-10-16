@@ -86,9 +86,6 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
       users_can_get.each do |user|
         add_auth_header_for(user: user)
 
-        get "/api/units/#{unit.id}/marking_sessions"
-        assert_equal 200, last_response.status
-
         get "/api/csv/units/#{unit.id}/tutor_times_summary"
         assert_equal 200, last_response.status, last_response_body
       end
@@ -96,11 +93,32 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
       users_cant_get.each do |user|
         add_auth_header_for(user: user)
 
-        get "/api/units/#{unit.id}/marking_sessions"
-        assert_equal 403, last_response.status
-
         get "/api/csv/units/#{unit.id}/tutor_times_summary"
         assert_equal 403, last_response.status, last_response_body
+      end
+    end
+
+    users_can_get = [
+      convenor, tutor
+    ]
+
+    users_cant_get = [
+      student
+    ]
+
+    Sidekiq::Testing.inline! do
+      users_can_get.each do |user|
+        add_auth_header_for(user: user)
+
+        get "/api/units/#{unit.id}/marking_sessions"
+        assert_equal 200, last_response.status
+      end
+
+      users_cant_get.each do |user|
+        add_auth_header_for(user: user)
+
+        get "/api/units/#{unit.id}/marking_sessions"
+        assert_equal 403, last_response.status
       end
     end
   end
@@ -429,7 +447,9 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
     session_start = start_time + 1.hour
     session_end   = session_start + 30.minutes
 
-    15.times do |i|
+    session_count = 15
+
+    session_count.times do |i|
       # 5 sessions during tutorial
       # 10 sessions outside of tutorial
       during_tutorial = i < 5
@@ -452,6 +472,12 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
 
     # 15 total sessions, 30 minutes each
     assert_equal 450, summary_with_tutorials.first[:total_minutes]
+
+    unit_role = unit.unit_role_for(user)
+
+    sessions_data = unit_role.get_marking_sessions(start_date: Time.zone.now - 1.week, end_date: Time.zone.now + 1.week)
+    assert_equal session_count, sessions_data.count
+    assert_equal 30, sessions_data.first[:duration_minutes]
   end
 
 end

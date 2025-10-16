@@ -219,19 +219,71 @@ class UnitRole < ApplicationRecord
     errors.add(:user, 'must retain current role to administer units as they are currently the main contact for the unit') unless is_convenor?
   end
 
-  def get_marking_analytics(start_date: nil, end_date: nil)
-    query = MarkingSession.where(user_id: user.id, unit_id: unit_id)
-    query = query.where('start_time >= ?', start_date) if start_date
-    query = query.where('start_time <= ?', end_date) if end_date
+  def get_marking_sessions(start_date: nil, end_date: nil, timezone: nil)
+    tz = Time.zone
+    tz = ActiveSupport::TimeZone[timezone] if timezone
 
-    session_durations = query.map(&:duration_minutes)
+    end_date = if end_date.present?
+                 tz.parse(end_date.to_s).end_of_day
+               else
+                 tz.today.end_of_day
+               end
 
-    {
-      total_sessions: query.count,
-      total_duration_minutes: session_durations.sum,
-      avg_session_duration: session_durations.any? ? (session_durations.sum.to_f / session_durations.size).round(2) : 0,
-      total_activities: SessionActivity.joins(:marking_session).where(marking_sessions: { id: query.select(:id) }).count,
-      activities_by_action: SessionActivity.joins(:marking_session).where(marking_sessions: { id: query.select(:id) }).group(:action).count
-    }
+    start_date = if start_date.present?
+                   tz.parse(start_date.to_s).beginning_of_day
+                 else
+                   (end_date - 7.days).beginning_of_day
+                 end
+
+    query = MarkingSession
+            .where(user_id: user.id, unit_id: unit_id)
+            .where(start_time: start_date..end_date)
+            .order(:start_time)
+
+    Entities::MarkingSessionEntity.represent(query).as_json
+  end
+
+  def get_marking_sessions_csv(start_date: nil, end_date: nil, timezone: nil)
+    result = get_marking_sessions(start_date: start_date, end_date: end_date, timezone: timezone)
+
+    tz = Time.zone
+    tz = ActiveSupport::TimeZone[timezone] if timezone
+
+    CSV.generate do |csv|
+      # Add headers
+      csv << ([
+        'Start Date',
+        'Start Time',
+        'End Date',
+        'End Time',
+        'Timezone',
+        'Total Duration (m)',
+        'Total Duration (h)',
+        'Submissions Opened',
+        'Comments Added',
+        'Assessments Made',
+        'During Tutorial'
+      ])
+
+      result.each do |row|
+        start_time = row[:start_time].in_time_zone(tz)
+        end_time   = row[:end_time].in_time_zone(tz)
+
+        csv << ([
+          start_time.strftime('%Y-%m-%d %A'),
+          start_time.strftime('%H:%M'),
+          end_time.strftime('%Y-%m-%d %A'),
+          end_time.strftime('%H:%M'),
+          "#{tz.name} #{start_time.strftime('%:z')}",
+          row[:duration_minutes],
+          (row[:duration_minutes].to_f / 60).round(1),
+          row[:submissions_opened],
+          row[:comments_added],
+          row[:assessments],
+          row[:during_tutorial] ? 'TRUE' : 'FALSE'
+        ])
+      end
+    end
+
   end
 end
