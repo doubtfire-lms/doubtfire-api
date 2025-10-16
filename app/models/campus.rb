@@ -61,10 +61,11 @@ class Campus < ApplicationRecord
   end
 
   def valid_timezone
-    return if timezone.blank?
+    return if timezone.nil?
 
-    unless ActiveSupport::TimeZone[timezone]
-      errors.add(:timezone, " '#{timezone}' is not a valid timezone")
+    tz = timezone.strip
+    if tz.empty? || !ActiveSupport::TimeZone[tz]
+      errors.add(:timezone, "'#{timezone}' is not a valid timezone")
     end
   end
 end

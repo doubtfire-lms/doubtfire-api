@@ -64,5 +64,8 @@ class CampusTest < ActiveSupport::TestCase
     campus.timezone = nil
     assert campus.valid?, "Nil timezone should be valid"
     assert_equal Time.zone.name, campus.timezone, "Nil timezone should return default API timezone"
+
+    campus.timezone = "   "
+    assert_not campus.valid?, "Blank timezone should not be valid"
   end
 end
