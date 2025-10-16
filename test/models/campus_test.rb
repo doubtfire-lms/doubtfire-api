@@ -43,4 +43,29 @@ class CampusTest < ActiveSupport::TestCase
     activity_type = Campus.find_by(abbreviation: abbreviation)
     assert Rails.cache.exist?("campuses/abbreviation=#{abbreviation}")
   end
+
+  def test_valid_timezone
+    campus = FactoryBot.create(:campus)
+    campus.timezone = "Invalid timezone"
+    assert_not campus.valid?, "Timezone should not be valid"
+
+    campus.timezone = "melbourne"
+    assert_not campus.valid?, "Timezone should not be valid due to case sensitivity"
+
+    campus.timezone = "Melbourne"
+    assert campus.valid?, "Timezone should be valid"
+
+    campus.timezone = "Australia/Melbourne"
+    assert campus.valid?, "Timezone should be valid"
+
+    campus.timezone = "Asia/Kuala_Lumpur"
+    assert campus.valid?, "Timezone should be valid"
+
+    campus.timezone = nil
+    assert campus.valid?, "Nil timezone should be valid"
+    assert_equal Time.zone.name, campus.timezone, "Nil timezone should return default API timezone"
+
+    campus.timezone = "   "
+    assert_not campus.valid?, "Blank timezone should not be valid"
+  end
 end

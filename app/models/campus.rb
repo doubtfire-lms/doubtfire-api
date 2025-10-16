@@ -14,6 +14,8 @@ class Campus < ApplicationRecord
 
   validates :active, inclusion: { :in => [true, false] }
 
+  validate :valid_timezone
+
   after_destroy :invalidate_cache
   after_save :invalidate_cache
 
@@ -39,6 +41,10 @@ class Campus < ApplicationRecord
     end
   end
 
+  def timezone
+    super || Time.zone.name
+  end
+
   private
 
   def invalidate_cache
@@ -52,5 +58,14 @@ class Campus < ApplicationRecord
 
     errors.add :base, "Cannot delete campus with projects and tutorials"
     throw :abort
+  end
+
+  def valid_timezone
+    return if timezone.nil?
+
+    tz = timezone.strip
+    if tz.empty? || !ActiveSupport::TimeZone[tz]
+      errors.add(:timezone, "'#{timezone}' is not a valid timezone")
+    end
   end
 end
