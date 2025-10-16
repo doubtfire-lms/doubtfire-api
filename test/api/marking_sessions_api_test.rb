@@ -86,9 +86,6 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
       users_can_get.each do |user|
         add_auth_header_for(user: user)
 
-        get "/api/units/#{unit.id}/marking_sessions"
-        assert_equal 200, last_response.status
-
         get "/api/csv/units/#{unit.id}/tutor_times_summary"
         assert_equal 200, last_response.status, last_response_body
       end
@@ -96,11 +93,32 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
       users_cant_get.each do |user|
         add_auth_header_for(user: user)
 
-        get "/api/units/#{unit.id}/marking_sessions"
-        assert_equal 403, last_response.status
-
         get "/api/csv/units/#{unit.id}/tutor_times_summary"
         assert_equal 403, last_response.status, last_response_body
+      end
+    end
+
+    users_can_get = [
+      convenor, tutor
+    ]
+
+    users_cant_get = [
+      student
+    ]
+
+    Sidekiq::Testing.inline! do
+      users_can_get.each do |user|
+        add_auth_header_for(user: user)
+
+        get "/api/units/#{unit.id}/marking_sessions"
+        assert_equal 200, last_response.status
+      end
+
+      users_cant_get.each do |user|
+        add_auth_header_for(user: user)
+
+        get "/api/units/#{unit.id}/marking_sessions"
+        assert_equal 403, last_response.status
       end
     end
   end
