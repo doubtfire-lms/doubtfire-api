@@ -238,6 +238,7 @@ class UnitRole < ApplicationRecord
     query = MarkingSession
             .where(user_id: user.id, unit_id: unit_id)
             .where(start_time: start_date..end_date)
+            .order(:start_time)
 
     Entities::MarkingSessionEntity.represent(query).as_json
   end
