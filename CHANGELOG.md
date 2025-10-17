@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-42](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-41...v10.0.0-42) (2025-10-17)
+
+
+### Features
+
+* campus timezone ([#527](https://github.com/b0ink/doubtfire-deploy/issues/527)) ([acb570a](https://github.com/b0ink/doubtfire-deploy/commit/acb570a9e8b866191181a9a57917b28a9033bc0b))
+* download marking sessions for tutor ([#525](https://github.com/b0ink/doubtfire-deploy/issues/525)) ([a25dce7](https://github.com/b0ink/doubtfire-deploy/commit/a25dce752474bdc5044a141331a86d50d875ac1a))
+
 ## [10.0.0-41](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-40...v10.0.0-41) (2025-10-16)
 
 
