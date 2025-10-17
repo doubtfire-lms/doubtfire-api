@@ -146,10 +146,17 @@ module PdfGeneration
     # Return the tasks to include in the student's portfolio
     def portfolio_tasks
       # Get assigned tasks that are included in the portfolio
-      tasks = self.tasks.joins(:task_definition).order('task_definitions.target_date, task_definitions.abbreviation').where('tasks.include_in_portfolio = TRUE')
+      tasks = self.tasks.joins(:task_definition).order('task_definitions.target_date, task_definitions.abbreviation')
 
-      # Now select the tasks that and have a PDF... cant include the others...
-      tasks.select(&:has_pdf)
+      # Select tasks that have a PDF, or unless the task has no upload requirements, and is in a submitted state
+      tasks.select do |task|
+        task.has_pdf || (
+          task.task_definition.upload_requirements.blank? &&
+          ![TaskStatus.not_started.id, TaskStatus.redo.id, TaskStatus.need_help.id, TaskStatus.working_on_it.id].include?(task.task_status_id)
+        )
+      end
+
+      tasks
     end
 
     #
