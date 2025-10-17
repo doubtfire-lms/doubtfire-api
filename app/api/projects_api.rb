@@ -199,4 +199,18 @@ class ProjectsApi < Grape::API
       error!({ error: "Couldn't find Unit with id=#{params[:unit_id]}" }, 403)
     end
   end
+
+  desc 'Get task IDs that will be included in portfolio'
+  get '/projects/:id/portfolio_tasks' do
+    project = Project.find(params[:id])
+
+    unless authorise? current_user, project, :get
+      error!({ error: "Couldn't find Project with id=#{params[:id]}" }, 403)
+    end
+
+    portfolio_tasks = project.portfolio_tasks
+
+    present portfolio_tasks.map(&:id)
+  end
+
 end
