@@ -699,7 +699,9 @@ class Task < ApplicationRecord
   # Default submission time to current time.
   #
   def submit(by_user, submit_date = Time.zone.now)
-    self.submission_date = submit_date
+    if self.task_status != TaskStatus.ready_for_feedback || self.submission_date.nil?
+      self.submission_date = submit_date
+    end
 
     add_status_comment(by_user, TaskStatus.ready_for_feedback)
 
@@ -1368,7 +1370,9 @@ class Task < ApplicationRecord
       reload
     else
       self.file_uploaded_at = Time.zone.now
-      self.submission_date = Time.zone.now
+      if self.task_status != TaskStatus.ready_for_feedback || self.submission_date.nil?
+        self.submission_date = Time.zone.now
+      end
 
       # This task is now ready to submit - trigger a transition if not in final state
       unless discuss_or_demonstrate? || complete? || feedback_exceeded? || fail?
