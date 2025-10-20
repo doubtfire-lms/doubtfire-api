@@ -1303,6 +1303,8 @@ class TaskTest < ActiveSupport::TestCase
     # Adjust the due date...
     td.due_date = Time.zone.now - 2.days
     td.save!
+
+    task.update!(submission_date: nil, task_status: TaskStatus.not_started) # If there was a previous submission then it would stay on ready for feedback, so we need to reset it
     task.reload
 
     task.trigger_transition(trigger: 'ready_for_feedback', by_user: unit.main_convenor_user)
