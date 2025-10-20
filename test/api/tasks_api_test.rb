@@ -817,4 +817,61 @@ class TasksApiTest < ActiveSupport::TestCase
     assert "Checked In", lc.comment
     assert TaskCheckedInComment, lc.type
   end
+
+  def test_require_comment_for_feedback_submission_assess_in_portfolio
+    Sidekiq::Testing.inline! do
+      unit = FactoryBot.create(:unit, student_count: 1, task_count: 2)
+      td1 = unit.task_definitions.first
+      project = unit.active_projects.first
+
+      task = project.task_for_task_definition(td1)
+
+      td1.update(
+        upload_requirements: [{ "key" => 'file0', "name" => 'Shape Class', "type" => 'code' }],
+        target_grade: 0, # Pass
+        start_date: Time.zone.now - 2.weeks,
+        target_date: Time.zone.now + 1.week,
+        assess_in_portfolio_only: false
+      )
+
+      add_auth_header_for(user: project.user)
+
+      # Make a submission where a comment isn't required
+      post "/api/projects/#{project.id}/task_def_id/#{td1.id}/submission",
+           with_file('test_files/submissions/program.cs', 'application/json', {
+                       trigger: 'ready_for_feedback'
+                     })
+      assert_equal 201, last_response.status, last_response_body
+      task.reload
+      assert_equal TaskStatus.ready_for_feedback, task.task_status
+
+      task.update(task_status: TaskStatus.not_started)
+
+      td1.update(assess_in_portfolio_only: true)
+
+      # Make a submission where a comment is required
+      post "/api/projects/#{project.id}/task_def_id/#{td1.id}/submission",
+           with_file('test_files/submissions/program.cs', 'application/json', {
+                       trigger: 'ready_for_feedback'
+                     })
+      assert_equal 422, last_response.status, last_response_body
+      task.reload
+      assert_equal TaskStatus.not_started, task.task_status
+
+      comment = 'I would like feedback with my code..'
+
+      # Make a submission with comment
+      post "/api/projects/#{project.id}/task_def_id/#{td1.id}/submission",
+           with_file('test_files/submissions/program.cs', 'application/json', {
+                       trigger: 'ready_for_feedback',
+                       comment: comment
+                     })
+      assert_equal 201, last_response.status, last_response_body
+      task.reload
+      assert_equal TaskStatus.ready_for_feedback, task.task_status
+
+      lc = task.comments.last
+      assert_equal comment, lc.comment
+    end
+  end
 end
