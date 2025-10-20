@@ -5,6 +5,7 @@ class TasksApiTest < ActiveSupport::TestCase
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
   include TestHelpers::TestFileHelper
+  include ActiveSupport::Testing::TimeHelpers
 
   def app
     Rails.application
