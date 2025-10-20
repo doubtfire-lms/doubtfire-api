@@ -54,6 +54,7 @@ class TaskDefinition < ApplicationRecord
   after_update :check_and_update_tii_status, if: :saved_change_to_upload_requirements?
   after_update :update_tii_group, if: :saved_change_to_due_date?
   after_update :update_overdue_tasks_aip, if: :saved_change_to_assess_in_portfolio_only?
+  after_update :reset_overdue_tasks, if: :saved_change_to_due_date?
 
   # Model associations
   belongs_to :unit, optional: false # Foreign key
@@ -210,6 +211,21 @@ class TaskDefinition < ApplicationRecord
     tasks.where(task_status_id: overdue_statuses).find_each do |task|
       task.add_status_comment(unit.main_convenor.user, TaskStatus.assess_in_portfolio)
       task.update(task_status_id: TaskStatus.assess_in_portfolio.id)
+    end
+  end
+
+  def reset_overdue_tasks
+    original_due_date = saved_change_to_due_date&.first
+    return unless original_due_date
+    return if assess_in_portfolio_only
+
+    late_submissions = tasks
+                       .where('submission_date > ?', original_due_date)
+                       .where(task_status: [TaskStatus.time_exceeded, TaskStatus.assess_in_portfolio])
+
+    late_submissions.each do |task|
+      task.add_status_comment(unit.main_convenor.user, TaskStatus.ready_for_feedback)
+      task.update(task_status_id: TaskStatus.ready_for_feedback.id)
     end
   end
 

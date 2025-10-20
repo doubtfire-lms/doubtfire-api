@@ -484,4 +484,62 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert_not td1.valid?, '"Assess in Portfolio Only" cannot be disabled while tasks are in the Assess in Portfolio state'
     assert_includes td1.errors[:assess_in_portfolio_only], 'cannot be disabled while tasks are in the Assess in Portfolio state'
   end
+
+  def test_reset_overdue_tasks_on_due_date_change
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 3)
+
+    td1 = unit.task_definitions.first
+    td2 = unit.task_definitions.second
+    td3 = unit.task_definitions.third
+
+    td3.update!(assess_in_portfolio_only: true)
+
+    student = unit.projects.first
+
+    task1 = student.task_for_task_definition(td1)
+    task2 = student.task_for_task_definition(td2)
+    task3 = student.task_for_task_definition(td3)
+
+    task1.update!(task_status_id: TaskStatus.time_exceeded.id, submission_date: Time.zone.now)
+    task2.update!(task_status_id: TaskStatus.assess_in_portfolio.id, submission_date: Time.zone.now)
+    task3.update!(task_status_id: TaskStatus.assess_in_portfolio.id, submission_date: Time.zone.now)
+
+    # Setting the due date back one day shouldn't reset submissions
+    td1.update!(due_date: Time.zone.today - 1.day)
+    td2.update!(due_date: Time.zone.today - 1.day)
+    td3.update!(due_date: Time.zone.today - 1.day)
+
+    task1.reload
+    task2.reload
+    task3.reload
+
+    assert TaskStatus.time_exceeded, task1.task_status
+    assert TaskStatus.time_exceeded, task2.task_status
+    assert TaskStatus.assess_in_portfolio, task3.task_status
+
+    # Setting the due date after the task submission dates should reset task statuses
+    td1.update!(due_date: Time.zone.today + 2.days)
+    td2.update!(due_date: Time.zone.today + 2.days)
+    td3.update!(due_date: Time.zone.today + 2.days)
+
+    task1.reload
+    task2.reload
+    task3.reload
+
+    assert TaskStatus.ready_for_feedback, task1.task_status
+    assert TaskStatus.ready_for_feedback, task2.task_status
+
+    # Assess in portfolio only task should not be reset
+    assert TaskStatus.assess_in_portfolio, task3.task_status
+
+    # Ensure status comments were created
+    lc1 = task1.comments.last
+    lc2 = task2.comments.last
+
+    assert_not lc1.nil?
+    assert_not lc2.nil?
+
+    assert TaskStatus.ready_for_feedback.name, lc1.comment
+    assert TaskStatus.ready_for_feedback.name, lc2.comment
+  end
 end
