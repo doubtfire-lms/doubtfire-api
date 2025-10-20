@@ -817,4 +817,101 @@ class TasksApiTest < ActiveSupport::TestCase
     assert "Checked In", lc.comment
     assert TaskCheckedInComment, lc.type
   end
+
+  def test_resubmission_doesnt_change_submission_date
+    Sidekiq::Testing.inline! do
+      unit = FactoryBot.create(:unit, task_count: 2)
+      tutor = FactoryBot.create(:user, :tutor)
+
+      td = unit.task_definitions.first
+      assert_not td.nil?
+
+      student1 = FactoryBot.create(:user, :student)
+      student2 = FactoryBot.create(:user, :student)
+
+      project1 = unit.enrol_student(student1, nil)
+      project2 = unit.enrol_student(student2, nil)
+
+      tasks = unit.tasks_for_task_inbox(tutor, false)
+
+      assert tasks.to_a.empty?
+
+      # Submit a task before the due date (student 1)
+      add_auth_header_for(user: student1)
+      data_to_post = {
+        trigger: 'ready_for_feedback'
+      }
+      data_to_post = with_file('test_files/submissions/program.cs', 'application/json', data_to_post)
+      post "/api/projects/#{project1.id}/task_def_id/#{td.id}/submission", data_to_post
+      assert_equal 201, last_response.status, last_response_body
+
+      travel 10.minutes
+
+      # Submit a task before the due date (student 2)
+      add_auth_header_for(user: student2)
+      data_to_post = {
+        trigger: 'ready_for_feedback'
+      }
+      data_to_post = with_file('test_files/submissions/program.cs', 'application/json', data_to_post)
+      post "/api/projects/#{project2.id}/task_def_id/#{td.id}/submission", data_to_post
+      assert_equal 201, last_response.status, last_response_body
+
+      tasks = unit.tasks_for_task_inbox(tutor, false)
+
+      assert_equal project1.id, tasks.first.project.id, "First task in inbox should be project1's task"
+      assert_equal project2.id, tasks.second.project.id, "Second task in inbox should be project2's task"
+
+      task1 = project1.task_for_task_definition(td)
+      task2 = project2.task_for_task_definition(td)
+
+      assert_equal TaskStatus.ready_for_feedback, task1.task_status
+      assert_equal TaskStatus.ready_for_feedback, task2.task_status
+
+      assert task2.submission_date > task1.submission_date
+
+      # Submit the task again, ensure the submission_date hasn't changed (student1)
+      travel 10.minutes
+
+      # Submit a task before the due date (student 1)
+      add_auth_header_for(user: student1)
+      data_to_post = {
+        trigger: 'ready_for_feedback'
+      }
+      data_to_post = with_file('test_files/submissions/program.cs', 'application/json', data_to_post)
+      post "/api/projects/#{project1.id}/task_def_id/#{td.id}/submission", data_to_post
+      assert_equal 201, last_response.status, last_response_body
+
+      tasks = unit.tasks_for_task_inbox(tutor, false)
+
+      assert_equal project1.id, tasks.first.project.id, "First task in inbox should be project1's task"
+      assert_equal project2.id, tasks.second.project.id, "Second task in inbox should be project2's task"
+
+      task1 = project1.task_for_task_definition(td)
+      task2 = project2.task_for_task_definition(td)
+      assert task2.submission_date > task1.submission_date
+
+      task1.update(task_status_id: TaskStatus.fix_and_resubmit.id)
+
+      # Submit the task again, now expecting submission date to update
+      travel 10.minutes
+
+      # Submit a task before the due date (student 1)
+      add_auth_header_for(user: student1)
+      data_to_post = {
+        trigger: 'ready_for_feedback'
+      }
+      data_to_post = with_file('test_files/submissions/program.cs', 'application/json', data_to_post)
+      post "/api/projects/#{project1.id}/task_def_id/#{td.id}/submission", data_to_post
+      assert_equal 201, last_response.status, last_response_body
+
+      tasks = unit.tasks_for_task_inbox(tutor, false)
+
+      assert_equal project2.id, tasks.first.project.id, "First task in inbox should be project1's task"
+      assert_equal project1.id, tasks.second.project.id, "Second task in inbox should be project2's task"
+
+      task1 = project1.task_for_task_definition(td)
+      task2 = project2.task_for_task_definition(td)
+      assert task1.submission_date > task2.submission_date
+    end
+  end
 end
