@@ -824,7 +824,13 @@ class TasksApiTest < ActiveSupport::TestCase
       unit = FactoryBot.create(:unit, task_count: 2)
       tutor = FactoryBot.create(:user, :tutor)
 
+      unit_role = unit.employ_staff(tutor, Role.tutor)
+      tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
+      tutorial = FactoryBot.create(:tutorial, unit: unit, tutorial_stream: tutorial_stream, campus: nil, unit_role: unit_role)
+
       td = unit.task_definitions.first
+
+      td.update!(due_date: Time.zone.today + 1.day)
       assert_not td.nil?
 
       student1 = FactoryBot.create(:user, :student)
@@ -832,6 +838,9 @@ class TasksApiTest < ActiveSupport::TestCase
 
       project1 = unit.enrol_student(student1, nil)
       project2 = unit.enrol_student(student2, nil)
+
+      project1.enrol_in(tutorial)
+      project2.enrol_in(tutorial)
 
       tasks = unit.tasks_for_task_inbox(tutor, false)
 
@@ -890,6 +899,29 @@ class TasksApiTest < ActiveSupport::TestCase
       task1 = project1.task_for_task_definition(td)
       task2 = project2.task_for_task_definition(td)
       assert task2.submission_date > task1.submission_date
+      assert TaskStatus.ready_for_feedback, task1.task_status
+
+      # Submit the task again after the duedate, ensure the submission_date hasn't changed (student1)
+      travel 2.days
+
+      # Submit a task before the due date (student 1)
+      add_auth_header_for(user: student1)
+      data_to_post = {
+        trigger: 'ready_for_feedback'
+      }
+      data_to_post = with_file('test_files/submissions/program.cs', 'application/json', data_to_post)
+      post "/api/projects/#{project1.id}/task_def_id/#{td.id}/submission", data_to_post
+      assert_equal 201, last_response.status, last_response_body
+
+      tasks = unit.tasks_for_task_inbox(tutor, false)
+
+      assert_equal project1.id, tasks.first.project.id, "First task in inbox should be project1's task"
+      assert_equal project2.id, tasks.second.project.id, "Second task in inbox should be project2's task"
+
+      task1 = project1.task_for_task_definition(td)
+      task2 = project2.task_for_task_definition(td)
+      assert task2.submission_date > task1.submission_date
+      assert TaskStatus.ready_for_feedback, task1.task_status
 
       task1.update(task_status_id: TaskStatus.fix_and_resubmit.id)
 

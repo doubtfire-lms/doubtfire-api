@@ -705,8 +705,8 @@ class Task < ApplicationRecord
 
     add_status_comment(by_user, TaskStatus.ready_for_feedback)
 
-    # If it is submitted before the due date...
-    if submitted_before_due?
+    # If it is submitted before the due date, or student has already made a submission before the due date
+    if submitted_before_due? || self.task_status == TaskStatus.ready_for_feedback
       self.task_status = TaskStatus.ready_for_feedback
     else
       if unit.mark_late_submissions_as_assess_in_portfolio || task_definition.assess_in_portfolio_only
