@@ -85,7 +85,8 @@ module Submission
 
 
       comment = params[:comment]
-      if task_definition.assess_in_portfolio_only && (comment.nil? || comment.strip.empty?) && trigger == 'ready_for_feedback'
+      comment = comment.strip unless comment.nil?
+      if task_definition.assess_in_portfolio_only && comment.blank? && trigger == 'ready_for_feedback'
         error!({ error: 'Please provide a comment requesting specific feedback on your submission.' }, 422)
       end
 
@@ -95,7 +96,7 @@ module Submission
       # Copy files to be PDFed
       task.accept_submission(current_user, scoop_files(params, upload_reqs), self, params[:contributions], trigger, alignments, accepted_tii_eula: params[:accepted_tii_eula])
 
-      task.add_text_comment(current_user, comment) if comment
+      task.add_text_comment(current_user, comment) if comment.present?
 
       if task.overseer_enabled?
         overseer_assessment = OverseerAssessment.create_for(task)
