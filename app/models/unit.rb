@@ -1485,18 +1485,24 @@ class Unit < ApplicationRecord
       td = task_definitions.find_by(abbreviation: task_abbreviation)
       next if td.nil?
 
-      next if prerequisites_list.nil?
-      next if prerequisites_list.empty?
-      prerequisites_list.each do |prerequisite|
-        abbreviation = prerequisite['abbreviation']
-        prerequisite_td = task_definitions.find_by(abbreviation: abbreviation)
-        task_status_id = prerequisite['task_status_id'].to_i
+      begin
+        td.task_prerequisites.destroy_all
 
-        TaskPrerequisite.create!({
-          task_definition_id: td.id,
-          prerequisite: prerequisite_td,
-          task_status_id: task_status_id
-        })
+        next if prerequisites_list.nil?
+        next if prerequisites_list.empty?
+        prerequisites_list.each do |prerequisite|
+          abbreviation = prerequisite['abbreviation']
+          prerequisite_td = task_definitions.find_by(abbreviation: abbreviation)
+          task_status_id = prerequisite['task_status_id'].to_i
+
+          TaskPrerequisite.create!({
+            task_definition_id: td.id,
+            prerequisite: prerequisite_td,
+            task_status_id: task_status_id
+          })
+        end
+      rescue Exception => e
+        errors << { row: "TaskDef '#{task_abbreviation}' prerequisites: #{prerequisites_list}", message: e.message }
       end
     end
 
