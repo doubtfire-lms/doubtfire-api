@@ -137,10 +137,46 @@ class CsvTest < ActiveSupport::TestCase
 
     task_prereq2 = td.task_prerequisites.second
     assert_equal 9, task_prereq2.task_status_id
+
+    # Attempt to call it again
+    post "/api/csv/task_definitions", data_to_post
+    assert_equal 201, last_response.status, last_response_body
+
+    # Expect the same data
+    td = unit.task_definitions.find_by(abbreviation: '5.5D')
+    assert_equal 2, td.task_prerequisites.count, last_response_body
+
+    task_prereq1 = td.task_prerequisites.first
+    assert_equal 2, task_prereq1.task_status_id
+
+    task_prereq2 = td.task_prerequisites.second
+    assert_equal 9, task_prereq2.task_status_id
+
+    # Upload same prerequisites in to task 5.5D.new, and clear 5.5D prerequisites
+    data_to_post = {
+      unit_id: '1',
+      file: upload_file_csv('test_files/csv_test_files/COS10001-Tasks-Prerequisites.csv')
+    }
+
+    # Attempt to call it again
+    post "/api/csv/task_definitions", data_to_post
+    assert_equal 201, last_response.status, last_response_body
+
+    td1 = unit.task_definitions.find_by(abbreviation: '5.5D')
+    td2 = unit.task_definitions.find_by(abbreviation: '5.5D.new')
+
+    assert_equal 0, td1.task_prerequisites.count, last_response_body
+    assert_equal 2, td2.task_prerequisites.count, last_response_body
+
+    task_prereq1 = td2.task_prerequisites.first
+    assert_equal 2, task_prereq1.task_status_id
+
+    task_prereq2 = td2.task_prerequisites.second
+    assert_equal 9, task_prereq2.task_status_id
   end
 
-  #8: Testing for CSV upload failure due to incorrect auth token
-  #POST /api/csv/task_definitions
+  # 8: Testing for CSV upload failure due to incorrect auth token
+  # POST /api/csv/task_definitions
   def test_csv_upload_all_task_definitions_unit_incorrect_auth_token
 
     data_to_post = {
