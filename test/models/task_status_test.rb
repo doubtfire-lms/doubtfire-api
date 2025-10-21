@@ -96,7 +96,8 @@ class TaskStatusTest < ActiveSupport::TestCase
     )
 
     data_to_post = {
-      trigger: 'ready_for_feedback'
+      trigger: 'ready_for_feedback',
+      comment: "I would like feedback for my task"
     }
 
     add_auth_header_for(user: project.student)
@@ -190,7 +191,8 @@ class TaskStatusTest < ActiveSupport::TestCase
     )
 
     data_to_post = {
-      trigger: 'ready_for_feedback'
+      trigger: 'ready_for_feedback',
+      comment: 'I would like feedback for my task'
     }
 
     add_auth_header_for(user: project.student)

@@ -46,22 +46,22 @@ class TasksApiTest < ActiveSupport::TestCase
     # Start with a fresh unit and task definition
     unit = FactoryBot.create(:unit, auto_apply_extension_before_deadline: false)
     td = TaskDefinition.new({
-        unit_id: unit.id,
-        tutorial_stream: unit.tutorial_streams.first,
-        name: 'Task past due - for revert',
-        description: 'Task past due',
-        weighting: 4,
-        target_grade: 0,
-        start_date: Time.zone.now - 2.weeks,
-        target_date: Time.zone.now - 1.week,
-        due_date: Time.zone.now + 1.week,
-        abbreviation: 'TaskPastDueForRevert',
-        restrict_status_updates: false,
-        upload_requirements: [ ],
-        plagiarism_warn_pct: 0.8,
-        is_graded: false,
-        max_quality_pts: 0
-      })
+                              unit_id: unit.id,
+                              tutorial_stream: unit.tutorial_streams.first,
+                              name: 'Task past due - for revert',
+                              description: 'Task past due',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: Time.zone.now - 2.weeks,
+                              target_date: Time.zone.now - 1.week,
+                              due_date: Time.zone.now + 1.week,
+                              abbreviation: 'TaskPastDueForRevert',
+                              restrict_status_updates: false,
+                              upload_requirements: [],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0
+                            })
     td.save!
 
     data_to_post = {
@@ -819,9 +819,72 @@ class TasksApiTest < ActiveSupport::TestCase
     assert TaskCheckedInComment, lc.type
   end
 
+  def test_require_comment_for_feedback_submission_assess_in_portfolio
+    Sidekiq::Testing.inline! do
+      unit = FactoryBot.create(:unit, student_count: 1, task_count: 2)
+      td1 = unit.task_definitions.first
+      project = unit.active_projects.first
+
+      task = project.task_for_task_definition(td1)
+
+      td1.update(
+        upload_requirements: [{ "key" => 'file0', "name" => 'Shape Class', "type" => 'code' }],
+        target_grade: 0, # Pass
+        start_date: Time.zone.now - 2.weeks,
+        target_date: Time.zone.now + 1.week,
+        assess_in_portfolio_only: false
+      )
+
+      add_auth_header_for(user: project.user)
+
+      # Make a submission where a comment isn't required
+      post "/api/projects/#{project.id}/task_def_id/#{td1.id}/submission",
+           with_file('test_files/submissions/program.cs', 'application/json', {
+                       trigger: 'ready_for_feedback'
+                     })
+      assert_equal 201, last_response.status, last_response_body
+      task.reload
+      assert_equal TaskStatus.ready_for_feedback, task.task_status
+
+      task.update(task_status: TaskStatus.not_started)
+
+      td1.update(assess_in_portfolio_only: true)
+
+      # Make a submission where a comment is required
+      post "/api/projects/#{project.id}/task_def_id/#{td1.id}/submission",
+           with_file('test_files/submissions/program.cs', 'application/json', {
+                       trigger: 'ready_for_feedback'
+                     })
+      assert_equal 422, last_response.status, last_response_body
+      task.reload
+      assert_equal TaskStatus.not_started, task.task_status
+
+      comment = 'I would like feedback with my code..'
+
+      # Make a submission with comment
+      post "/api/projects/#{project.id}/task_def_id/#{td1.id}/submission",
+           with_file('test_files/submissions/program.cs', 'application/json', {
+                       trigger: 'ready_for_feedback',
+                       comment: comment
+                     })
+      assert_equal 201, last_response.status, last_response_body
+      task.reload
+      assert_equal TaskStatus.ready_for_feedback, task.task_status
+
+      status_comment = task.comments.last
+      text_comment = task.comments.second_to_last
+
+      assert_not status_comment.nil?
+      assert_not text_comment.nil?
+
+      assert_equal TaskStatus.ready_for_feedback.name, status_comment.comment
+      assert_equal comment, text_comment.comment
+    end
+  end
+
   def test_resubmission_doesnt_change_submission_date
     Sidekiq::Testing.inline! do
-      unit = FactoryBot.create(:unit, task_count: 2)
+      unit = FactoryBot.create(:unit, task_count: 2, student_count: 0)
       tutor = FactoryBot.create(:user, :tutor)
 
       unit_role = unit.employ_staff(tutor, Role.tutor)

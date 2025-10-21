@@ -32,6 +32,7 @@ module Submission
       optional :alignment_data, type: JSON, desc: "Data for task alignment, eg: [ { ilo_id: 1, rating: 5, rationale: 'Hello' }, ... ]"
       optional :trigger, type: String, desc: 'Can be need_help to indicate upload is not a ready to mark submission'
       optional :accepted_tii_eula, type: Boolean, desc: 'Whether or not the user has accepted the TII EULA as part of the submission.'
+      optional :comment, type: String, desc: 'Comment to be added together with the submission'
     end
     post '/projects/:id/task_def_id/:task_definition_id/submission' do
       project = Project.find(params[:id])
@@ -81,6 +82,15 @@ module Submission
                 else
                   'ready_for_feedback'
                 end
+
+
+      comment = params[:comment]
+      comment = comment.strip unless comment.nil?
+      if task_definition.assess_in_portfolio_only && comment.blank? && trigger == 'ready_for_feedback'
+        error!({ error: 'Please provide a comment requesting specific feedback on your submission.' }, 422)
+      end
+
+      task.add_text_comment(current_user, comment) if comment.present?
 
       alignments = params[:alignment_data]
       upload_reqs = task.upload_requirements
