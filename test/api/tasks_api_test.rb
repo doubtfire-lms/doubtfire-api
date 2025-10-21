@@ -931,7 +931,7 @@ class TasksApiTest < ActiveSupport::TestCase
 
       tasks = unit.tasks_for_task_inbox(tutor, false)
 
-      assert_equal 2, tasks.count
+      assert_equal 2, tasks.to_a.count
 
       assert_equal project1.id, tasks.first.project.id, "First task in inbox should be project1's task"
       assert_equal project2.id, tasks.second.project.id, "Second task in inbox should be project2's task"
