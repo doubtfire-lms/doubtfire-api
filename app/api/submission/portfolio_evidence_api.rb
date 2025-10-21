@@ -90,13 +90,13 @@ module Submission
         error!({ error: 'Please provide a comment requesting specific feedback on your submission.' }, 422)
       end
 
+      task.add_text_comment(current_user, comment) if comment.present?
+
       alignments = params[:alignment_data]
       upload_reqs = task.upload_requirements
 
       # Copy files to be PDFed
       task.accept_submission(current_user, scoop_files(params, upload_reqs), self, params[:contributions], trigger, alignments, accepted_tii_eula: params[:accepted_tii_eula])
-
-      task.add_text_comment(current_user, comment) if comment.present?
 
       if task.overseer_enabled?
         overseer_assessment = OverseerAssessment.create_for(task)
