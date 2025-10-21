@@ -878,7 +878,7 @@ class TasksApiTest < ActiveSupport::TestCase
 
   def test_resubmission_doesnt_change_submission_date
     Sidekiq::Testing.inline! do
-      unit = FactoryBot.create(:unit, task_count: 2)
+      unit = FactoryBot.create(:unit, task_count: 2, student_count: 0)
       tutor = FactoryBot.create(:user, :tutor)
 
       unit_role = unit.employ_staff(tutor, Role.tutor)
