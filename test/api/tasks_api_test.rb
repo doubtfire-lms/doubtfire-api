@@ -871,8 +871,14 @@ class TasksApiTest < ActiveSupport::TestCase
       task.reload
       assert_equal TaskStatus.ready_for_feedback, task.task_status
 
-      lc = task.comments.last
-      assert_equal comment, lc.comment
+      status_comment = task.comments.last
+      text_comment = task.comments.second_to_last
+
+      assert_not status_comment.nil?
+      assert_not text_comment.nil?
+
+      assert_equal TaskStatus.ready_for_feedback.name, status_comment.comment
+      assert_equal comment, text_comment.comment
     end
   end
 
