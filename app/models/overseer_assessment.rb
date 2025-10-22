@@ -124,11 +124,11 @@ class OverseerAssessment < ApplicationRecord
     # TODO: Check status and do not queue if already queued
     puts "********* Sending #{self.id} to overseer"
 
-    sm_instance = Doubtfire::Application.config.sm_instance
-    if sm_instance.nil?
-      puts "ERROR: Unable to get service manager to send message to overseer. Unable to send - OverseerAssessment #{id}"
-      return { error: "Automated feedback is not configured correctly. Please raise an issue with your administrator. ERR:O1" }
-    end
+    # sm_instance = Doubtfire::Application.config.sm_instance
+    # if sm_instance.nil?
+    #   puts "ERROR: Unable to get service manager to send message to overseer. Unable to send - OverseerAssessment #{id}"
+    #   return { error: "Automated feedback is not configured correctly. Please raise an issue with your administrator. ERR:O1" }
+    # end
 
     unless has_submission_files?
       puts "ERROR: Attempting to send submission to Overseer without associated submission files - OverseerAssessment #{id}"
@@ -181,30 +181,39 @@ class OverseerAssessment < ApplicationRecord
 
     puts message.inspect
 
-    begin
-      sm_instance.clients[:ontrack].publisher.connect_publisher
-      puts("Sending message to rabbitmq for Overseer Assessment #{id}")
-      sm_instance.clients[:ontrack].publisher.publish_message(message)
-      puts("Sent to rabbitmq for Overseer Assessment #{id}")
-      self.status = :queued
-    rescue RuntimeError => e
-      puts "ERROR: OverseerAssessment #{id} failed to send: #{e.inspect}"
-      self.status = :queue_failed
-      return { error: "We are unable to send your submission to the automated feedback service. Please try again later." }
-    ensure
-      puts "saving... #{self.status}"
-      save!
-      sm_instance.clients[:ontrack].publisher.disconnect_publisher
-    end
+    AcceptOverseerJob.perform_async(
+      task.id,
+      output_path,
+      docker_image_name_tag,
+      submission_zip_file_name,
+      assessment_resources_path,
+      submission_timestamp,
+      self.id
+    ) # begin
+    #   sm_instance.clients[:ontrack].publisher.connect_publisher
+    #   puts("Sending message to rabbitmq for Overseer Assessment #{id}")
+    #   sm_instance.clients[:ontrack].publisher.publish_message(message)
+    #   puts("Sent to rabbitmq for Overseer Assessment #{id}")
+    #   self.status = :queued
+    # rescue RuntimeError => e
+    #   puts "ERROR: OverseerAssessment #{id} failed to send: #{e.inspect}"
+    #   self.status = :queue_failed
+    #   return { error: "We are unable to send your submission to the automated feedback service. Please try again later." }
+    # ensure
+    #   puts "saving... #{self.status}"
+    #   save!
+    #   sm_instance.clients[:ontrack].publisher.disconnect_publisher
+    # end
 
-    puts "********* - end perform assessment"
-    if assessment_comments.count == 0
-      result = add_assessment_comment()
-    else
-      result = assessment_comments.last
-      result.update created_at: Time.zone.now
-      result
-    end
+    # puts "********* - end perform assessment"
+    # if assessment_comments.count == 0
+    #   result = add_assessment_comment()
+    # else
+    #   result = assessment_comments.last
+    #   result.update created_at: Time.zone.now
+    #   result
+    # end
+
 
     {
       comment: result,
