@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-45](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-44...v10.0.0-45) (2025-10-23)
+
+
+### Bug Fixes
+
+* convert query to array ([2147b17](https://github.com/b0ink/doubtfire-deploy/commit/2147b17a37fca8c5c1e05d8fd040870eb541511b))
+
 ## [10.0.0-44](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-43...v10.0.0-44) (2025-10-20)
 
 ## [10.0.0-43](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-42...v10.0.0-43) (2025-10-17)
