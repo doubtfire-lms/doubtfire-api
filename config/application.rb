@@ -271,39 +271,47 @@ module Doubtfire
         DOCKER_USER: ENV.fetch('DOCKER_USER', nil)
       }
 
-      publisher_config = {
-        RABBITMQ_HOSTNAME: ENV.fetch('RABBITMQ_HOSTNAME', nil),
-        RABBITMQ_USERNAME: ENV.fetch('RABBITMQ_USERNAME', nil),
-        RABBITMQ_PASSWORD: ENV.fetch('RABBITMQ_PASSWORD', nil),
-        EXCHANGE_NAME: 'ontrack',
-        DURABLE_QUEUE_NAME: 'q.tasks',
-        # Publisher specific key -- all publishers will post task submissions with this key
-        ROUTING_KEY: 'task.submission'
-      }
+      # Path to a physical directory on the host used for mounting overseer task work directories.
+      #
+      # Example (macOS development):
+      #   OVERSEER_WORKDIR_VOLUME_MOUNT=/Users/<name>/Dev/doubtfire-deploy/doubtfire-api/tmp/overseer
+      #
+      # This must point to a real location on your disk or server.
+      # In production, mount a persistent host directory to the container, e.g.:
+      #   /var/lib/doubtfire/overseer:/app/tmp/overseer
+      # Then set:
+      #   OVERSEER_WORKDIR_VOLUME_MOUNT=/var/lib/doubtfire/overseer
+      config.overseer_work_dir_volume_mount = ENV.fetch('OVERSEER_WORKDIR_VOLUME_MOUNT', nil)
 
-      subscriber_config = {
-        RABBITMQ_HOSTNAME: ENV.fetch('RABBITMQ_HOSTNAME', nil),
-        RABBITMQ_USERNAME: ENV.fetch('RABBITMQ_USERNAME', nil),
-        RABBITMQ_PASSWORD: ENV.fetch('RABBITMQ_PASSWORD', nil),
-        EXCHANGE_NAME: 'ontrack',
-        DURABLE_QUEUE_NAME: 'q.overseer',
-        # No need to define BINDING_KEYS for now!
-        # In future, OnTrack will listen to
-        # topics related to PDF generation too.
-        # That is when we should have BINDING_KEYS defined.
-        # BINDING_KEYS: ENV['BINDING_KEYS'],
+      # Optional fallback for when a physical mount cannot be used.
+      #
+      # You can define a shared container in docker-compose, e.g.:
+      #
+      # overseer-volumes:
+      #   container_name: doubtfire-overseer
+      #   image: alpine
+      #   command: sleep infinity
+      #   volumes:
+      #     - ../doubtfire-api/tmp/overseer:/overseer/work-dir
+      #
+      # Warning: this exposes the entire overseer directory to all overseer containers.
+      # A malicious script could potentially delete or corrupt other running overseer jobs.
+      #
+      # This setup is the default for development to avoid requiring a mount,
+      # but it is strongly recommended to leave this nil and use OVERSEER_WORKDIR_VOLUME_MOUNT instead.
+      config.overseer_fallback_volume_container = ENV.fetch('OVERSEER_FALLBACK_VOLUME_CONTAINER', nil)
 
-        # This is enough for now:
-        DEFAULT_BINDING_KEY: '*.result'
-      }
-
-      if config.docker_config[:DOCKER_TOKEN] && config.docker_config[:DOCKER_PROXY_URL]
-        # TODO: move to sidekiq
-        `echo \"${DOCKER_TOKEN}\" | docker login --username ${DOCKER_USER} --password-stdin ${DOCKER_PROXY_URL} >> /dev/null 2>&1`
+      if config.overseer_work_dir_volume_mount.nil? && config.overseer_fallback_volume_container.nil?
+        raise 'Overseer configuration error: you must set either OVERSEER_WORKDIR_VOLUME_MOUNT or OVERSEER_FALLBACK_VOLUME_CONTAINER.'
       end
 
-      config.sm_instance = ServicesManager.instance
-      config.sm_instance.register_client(:ontrack, publisher_config, subscriber_config)
+      # if config.docker_config[:DOCKER_TOKEN] && config.docker_config[:DOCKER_PROXY_URL]
+      #   # TODO: move to sidekiq
+      #   `echo \"${DOCKER_TOKEN}\" | docker login --username ${DOCKER_USER} --password-stdin ${DOCKER_PROXY_URL} >> /dev/null 2>&1`
+      # end
+
+      # config.sm_instance = ServicesManager.instance
+      # config.sm_instance.register_client(:ontrack, publisher_config, subscriber_config)
     end
   end
 end

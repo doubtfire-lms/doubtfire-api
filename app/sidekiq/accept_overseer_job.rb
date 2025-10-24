@@ -78,11 +78,24 @@ class AcceptOverseerJob
 
     system("chmod +x #{work_dir}/run.sh")
 
+    mount = Doubtfire::Application.config.overseer_workdir_volume_mount
+    volume_mount = if mount.nil?
+                     # Fallback for development only — mounts the entire overseer container volume,
+                     # allowing all task work directories to be accessible. This should never be
+                     # used in production, as it breaks isolation between tasks.
+                     "--volumes-from #{Doubtfire::Application.config.overseer_fallback_volume_container}"
+                   else
+                     "-v #{mount}/#{task_id}:/overseer/work-dir/#{task_id}"
+                   end
+
+    container_name = "overseer-#{task_id}-#{timestamp}"
+
     command = %(
       timeout 300 docker run --rm \
       --cpus 1 \
       --network none \
-      --volumes-from doubtfire-overseer \
+      #{volume_mount} \
+      --name #{container_name} \
       doubtfire-deploy_devcontainer-overseer-volumes:latest \
       bash -c "cd /overseer/work-dir/#{task_id} && ./run.sh"
     )
