@@ -61,13 +61,18 @@ class AcceptOverseerJob
 
     # Extract assessment resources
     # TODO: allow run.sh editable directly from within OnTrack
-    Zip::File.open(assessment) do |zip_file|
-      zip_file.each do |entry|
-        dest_path = File.join(work_dir, entry.name)
-        FileUtils.mkdir_p(File.dirname(dest_path))
-        zip_file.extract(entry, dest_path) { true } # overwrite if exists
-      end
-    end
+    # Zip::File.open(assessment) do |zip_file|
+    #   zip_file.each do |entry|
+    #     dest_path = File.join(work_dir, entry.name)
+    #     FileUtils.mkdir_p(File.dirname(dest_path))
+    #     zip_file.extract(entry, dest_path) { true } # overwrite if exists
+    #   end
+    # end
+    script_path = task.task_definition.task_assessment_script
+    script_contents = File.read(script_path)
+    run_sh_path = File.join(work_dir, 'run.sh')
+
+    File.write(run_sh_path, script_contents)
 
     system("chmod +x #{work_dir}/run.sh")
 

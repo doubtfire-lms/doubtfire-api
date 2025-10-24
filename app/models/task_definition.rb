@@ -685,6 +685,10 @@ class TaskDefinition < ApplicationRecord
     task_assessment_resources_with_abbreviation(abbreviation, create)
   end
 
+  def task_assessment_script(create = true)
+    task_assessment_script_with_abbreviation(abbreviation, create)
+  end
+
   def task_scorm_data(create = true)
     task_scorm_data_with_abbreviation(abbreviation, create)
   end
@@ -775,6 +779,25 @@ class TaskDefinition < ApplicationRecord
 
     result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}-assessment.zip"
     result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}-assessment.zip"
+
+    if File.exist? result_with_sanitised_path
+      result_with_sanitised_path
+    else
+      result_with_sanitised_file
+    end
+  end
+
+  def task_assessment_script_with_abbreviation(abbr, create = true)
+    task_path = FileHelper.task_file_dir_for_unit unit, create
+
+    result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}-assessment-script.txt"
+    result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}-assessment-script.txt"
+
+    # TODO: currently its saving 1_P instead of 1.1P
+    if !File.exist?(result_with_sanitised_path) && create
+      FileUtils.mkdir_p(File.dirname(result_with_sanitised_path))
+      File.write(result_with_sanitised_path, '')
+    end
 
     if File.exist? result_with_sanitised_path
       result_with_sanitised_path
