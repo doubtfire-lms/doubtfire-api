@@ -281,7 +281,7 @@ module Doubtfire
       #   /var/lib/doubtfire/overseer:/app/tmp/overseer
       # Then set:
       #   OVERSEER_WORKDIR_VOLUME_MOUNT=/var/lib/doubtfire/overseer
-      config.overseer_work_dir_volume_mount = ENV.fetch('OVERSEER_WORKDIR_VOLUME_MOUNT', nil)
+      config.overseer_workdir_volume_mount = ENV.fetch('OVERSEER_WORKDIR_VOLUME_MOUNT', nil)
 
       # Optional fallback for when a physical mount cannot be used.
       #
@@ -301,7 +301,7 @@ module Doubtfire
       # but it is strongly recommended to leave this nil and use OVERSEER_WORKDIR_VOLUME_MOUNT instead.
       config.overseer_fallback_volume_container = ENV.fetch('OVERSEER_FALLBACK_VOLUME_CONTAINER', nil)
 
-      if config.overseer_work_dir_volume_mount.nil? && config.overseer_fallback_volume_container.nil?
+      if config.overseer_workdir_volume_mount.nil? && config.overseer_fallback_volume_container.nil?
         raise 'Overseer configuration error: you must set either OVERSEER_WORKDIR_VOLUME_MOUNT or OVERSEER_FALLBACK_VOLUME_CONTAINER.'
       end
 
