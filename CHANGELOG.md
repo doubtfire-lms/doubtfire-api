@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-46](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-45...v10.0.0-46) (2025-10-24)
+
+
+### Bug Fixes
+
+* ensure learning outcome description text wraps ([c3c65c9](https://github.com/b0ink/doubtfire-deploy/commit/c3c65c91bd0b0c8391f1851abd843c7e812864c9))
+
 ## [10.0.0-45](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-44...v10.0.0-45) (2025-10-23)
 
 
