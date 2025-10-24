@@ -45,7 +45,7 @@ class AcceptOverseerJob
 
     task = Task.find(task_id)
 
-    raise "PDF is still compiling" if task.processing_pdf?
+    raise "PDF is still compiling" if task.processing_pdf? || !task.has_done_file?
 
     # Extract submission files, removing any parent folders
     Zip::File.open(submission) do |zip_file|
@@ -62,14 +62,15 @@ class AcceptOverseerJob
     end
 
     # Extract assessment resources
-    # TODO: allow run.sh editable directly from within OnTrack
-    # Zip::File.open(assessment) do |zip_file|
-    #   zip_file.each do |entry|
-    #     dest_path = File.join(work_dir, entry.name)
-    #     FileUtils.mkdir_p(File.dirname(dest_path))
-    #     zip_file.extract(entry, dest_path) { true } # overwrite if exists
-    #   end
-    # end
+    Zip::File.open(assessment) do |zip_file|
+      zip_file.each do |entry|
+        dest_path = File.join(work_dir, entry.name)
+        FileUtils.mkdir_p(File.dirname(dest_path))
+        zip_file.extract(entry, dest_path) { true } # overwrite if exists
+      end
+    end
+
+    # Extract execution script
     script_path = task.task_definition.task_assessment_script
     script_contents = File.read(script_path)
     run_sh_path = File.join(work_dir, 'run.sh')
@@ -96,28 +97,11 @@ class AcceptOverseerJob
       --network none \
       #{volume_mount} \
       --name #{container_name} \
-      doubtfire-deploy_devcontainer-overseer-volumes:latest \
+      #{docker_image_name_tag} \
       bash -c "cd /overseer/work-dir/#{task_id} && ./run.sh"
     )
 
     system(command)
-
-    # diff_result = system("docker diff #{container_name}")
-    # diff_result = `docker diff #{container_name}`
-
-    # def extract_docker_diff_file(output_path, diff_result, exec_mode)
-    # File.write("#{output_path}/#{exec_mode}-diff.txt", "docker diff: \n#{diff_result&.strip&.empty? ? 'nothing changed' : diff_result}")
-    # end
-    #
-
-    # TODO: seems like build & run were separated to capture two separate diffs for the build and run process?
-
-    # puts diff_result
-
-    # TODO: docker diff isnt really going to detect changes in our volume, it would have to already be part of the base image
-    # File.write("#{path}/run-diff.txt", "docker diff: \n#{diff_result&.strip&.empty? ? 'nothing changed' : diff_result}")
-
-    # system("docker rm -f #{container_name}")
 
     yaml_path = File.join(work_dir, 'output.yml')
     yaml_data = YAML.load_file(yaml_path)
