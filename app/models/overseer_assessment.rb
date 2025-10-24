@@ -216,7 +216,7 @@ class OverseerAssessment < ApplicationRecord
 
 
     {
-      comment: result,
+      comment: "test",
       error: nil
     }
   end

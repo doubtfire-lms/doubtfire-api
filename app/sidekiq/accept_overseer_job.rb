@@ -10,8 +10,8 @@ class AcceptOverseerJob
   sidekiq_options lock: :until_executed,
                   # TODO: should students be allowed to submit a new task submission when the previous overseer job has not started/completed?
                   lock_args_method: ->(args) { [args.first] },
-                  on_conflict: :reject,
-                  retry: false
+                  on_conflict: :reject
+  # retry: 5
 
   def perform(task_id, output_path, docker_image_name_tag, submission, assessment, timestamp, overseer_assessment_id)
     logger.info "Starting overseer job..."
@@ -44,6 +44,8 @@ class AcceptOverseerJob
     FileUtils.mkdir_p(work_dir)
 
     task = Task.find(task_id)
+
+    raise "PDF is still compiling" if task.processing_pdf?
 
     # Extract submission files, removing any parent folders
     Zip::File.open(submission) do |zip_file|
@@ -87,6 +89,23 @@ class AcceptOverseerJob
 
     system(command)
 
+    # diff_result = system("docker diff #{container_name}")
+    # diff_result = `docker diff #{container_name}`
+
+    # def extract_docker_diff_file(output_path, diff_result, exec_mode)
+    # File.write("#{output_path}/#{exec_mode}-diff.txt", "docker diff: \n#{diff_result&.strip&.empty? ? 'nothing changed' : diff_result}")
+    # end
+    #
+
+    # TODO: seems like build & run were separated to capture two separate diffs for the build and run process?
+
+    # puts diff_result
+
+    # TODO: docker diff isnt really going to detect changes in our volume, it would have to already be part of the base image
+    # File.write("#{path}/run-diff.txt", "docker diff: \n#{diff_result&.strip&.empty? ? 'nothing changed' : diff_result}")
+
+    # system("docker rm -f #{container_name}")
+
     yaml_path = File.join(work_dir, 'output.yml')
     yaml_data = YAML.load_file(yaml_path)
 
@@ -95,8 +114,21 @@ class AcceptOverseerJob
 
     project = task.project
     tutor = project.tutor_for(task.task_definition)
-    task.add_text_comment(tutor, "**Automated Comment**: #{message}")
-    task.trigger_transition(trigger: status, by_user: tutor)
+
+    unless status.nil? || status == "nil"
+      if status == 'fix_and_resubmit'
+        task.add_text_comment(tutor, "**Automated Comment**: <pre>#{message}</pre>")
+      end
+      task.trigger_transition(trigger: status, by_user: tutor)
+    end
+
+    if status.nil? || status == "nil"
+      status = task.task_status.status_key
+    end
+
+    output_path = File.join(work_dir, 'output.yml')
+    path = FileHelper.task_submission_identifier_path_with_timestamp(:done, task, timestamp)
+    FileUtils.cp(output_path, path)
 
     at(0)
     total(1)
@@ -104,8 +136,10 @@ class AcceptOverseerJob
     oa = OverseerAssessment.find(overseer_assessment_id)
     oa.update(
       status: :done,
-      result_task_status: message
+      result_task_status: status
     )
+
+    FileUtils.rm_rf(work_dir)
 
     logger.info "Completed overseer job"
   rescue StandardError => e
