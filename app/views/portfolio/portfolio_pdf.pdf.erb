@@ -239,7 +239,7 @@ end # if there are linked outcomes
 <%
   if task.task_definition.learning_outcomes.count > 0
 %>
-    \begin{tabular}{p{8cm}|l}
+    \begin{tabular}{p{3cm}|p{12cm}}
       \textbf{Outcome} & \textbf{Description}\\
       \hline
 <%
@@ -252,6 +252,7 @@ end # if there are linked outcomes
 %>
       \end{tabular}
       \bigskip
+      \\
 <%
   end # if outcomes exist
   if task.comments.count > 0
