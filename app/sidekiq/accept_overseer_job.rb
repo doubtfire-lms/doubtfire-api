@@ -47,6 +47,8 @@ class AcceptOverseerJob
 
     raise "PDF is still compiling" if task.processing_pdf? || !task.has_done_file?
 
+    raise "Submission file not found: #{submission}" unless File.exist?(submission)
+
     # Extract submission files, removing any parent folders
     Zip::File.open(submission) do |zip_file|
       zip_file.each do |entry|
