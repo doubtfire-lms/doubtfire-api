@@ -103,40 +103,48 @@ class AcceptOverseerJob
       bash -c "cd /overseer/work-dir/#{task_id} && ./run.sh"
     )
 
-    system(command)
+    output = system(command)
 
     yaml_path = File.join(work_dir, 'output.yml')
-    yaml_data = YAML.load_file(yaml_path)
 
-    status  = yaml_data['status'].to_s
-    message = yaml_data['message'].to_s
+    oa = OverseerAssessment.find(overseer_assessment_id)
 
-    project = task.project
-    tutor = project.tutor_for(task.task_definition)
+    if File.exist?(yaml_path)
+      yaml_data = YAML.load_file(yaml_path)
 
-    unless status.nil? || status == "nil"
-      if status == 'fix_and_resubmit'
-        task.add_text_comment(tutor, "**Automated Comment**: <pre>#{message}</pre>")
+      status  = yaml_data['status'].to_s
+      message = yaml_data['message'].to_s
+
+      project = task.project
+      tutor = project.tutor_for(task.task_definition)
+
+      unless status.nil? || status == "nil"
+        if status == 'fix_and_resubmit'
+          task.add_text_comment(tutor, "**Automated Comment**: #{message}")
+        end
+        task.trigger_transition(trigger: status, by_user: tutor)
       end
-      task.trigger_transition(trigger: status, by_user: tutor)
-    end
 
-    if status.nil? || status == "nil"
-      status = task.task_status.status_key
-    end
+      if status.nil? || status == "nil"
+        status = task.task_status.status_key
+      end
 
-    output_path = File.join(work_dir, 'output.yml')
-    path = FileHelper.task_submission_identifier_path_with_timestamp(:done, task, timestamp)
-    FileUtils.cp(output_path, path)
+      output_path = File.join(work_dir, 'output.yml')
+      path = FileHelper.task_submission_identifier_path_with_timestamp(:done, task, timestamp)
+      FileUtils.cp(output_path, path)
+      oa.update(
+        status: :done,
+        result_task_status: status
+      )
+    else
+      oa.update(
+        status: :queue_failed,
+        result_task_status: output
+      )
+    end
 
     at(0)
     total(1)
-
-    oa = OverseerAssessment.find(overseer_assessment_id)
-    oa.update(
-      status: :done,
-      result_task_status: status
-    )
 
     FileUtils.rm_rf(work_dir)
 
