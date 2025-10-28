@@ -10,8 +10,8 @@ class AcceptOverseerJob
   sidekiq_options lock: :until_executed,
                   # TODO: should students be allowed to submit a new task submission when the previous overseer job has not started/completed?
                   lock_args_method: ->(args) { [args.first] },
-                  on_conflict: :reject
-  # retry: 5
+                  on_conflict: :reject,
+                  retry: 1
 
   def perform(task_id, output_path, docker_image_name_tag, submission, assessment, timestamp, overseer_assessment_id)
     logger.info "Starting overseer job..."
