@@ -2878,7 +2878,7 @@ class Unit < ApplicationRecord
     return unless saved_change_to_mark_late_submissions_as_assess_in_portfolio? && mark_late_submissions_as_assess_in_portfolio
 
     # If the mark_late_submissions_as_assess_in_portfolio was enabled, move all Time & Feedback exceeded tasks to Assess in Portfolio
-    overdue_statuses = [TaskStatus.time_exceeded.id, TaskStatus.feedback_exceeded.id]
+    overdue_statuses = [TaskStatus.time_exceeded.id]
 
     tasks.where(task_status_id: overdue_statuses).find_each do |task|
       task.add_status_comment(main_convenor.user, TaskStatus.assess_in_portfolio)
