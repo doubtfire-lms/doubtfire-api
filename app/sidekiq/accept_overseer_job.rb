@@ -64,11 +64,13 @@ class AcceptOverseerJob
     end
 
     # Extract assessment resources
-    Zip::File.open(assessment) do |zip_file|
-      zip_file.each do |entry|
-        dest_path = File.join(work_dir, entry.name)
-        FileUtils.mkdir_p(File.dirname(dest_path))
-        zip_file.extract(entry, dest_path) { true } # overwrite if exists
+    if File.exist?(assessment)
+      Zip::File.open(assessment) do |zip_file|
+        zip_file.each do |entry|
+          dest_path = File.join(work_dir, entry.name)
+          FileUtils.mkdir_p(File.dirname(dest_path))
+          zip_file.extract(entry, dest_path) { true } # overwrite if exists
+        end
       end
     end
 
@@ -105,42 +107,14 @@ class AcceptOverseerJob
 
     output = system(command)
 
-    yaml_path = File.join(work_dir, 'output.yml')
+    yaml_path = File.join(work_dir, 'output.yaml')
 
     oa = OverseerAssessment.find(overseer_assessment_id)
 
+    oa.update_from_output(work_dir)
     if File.exist?(yaml_path)
-      yaml_data = YAML.load_file(yaml_path)
-
-      status  = yaml_data['status'].to_s
-      message = yaml_data['message'].to_s
-
-      project = task.project
-      tutor = project.tutor_for(task.task_definition)
-
-      unless status.nil? || status == "nil"
-        if status == 'fix_and_resubmit'
-          task.add_text_comment(tutor, "**Automated Comment**: #{message}")
-        end
-        task.trigger_transition(trigger: status, by_user: tutor)
-      end
-
-      if status.nil? || status == "nil"
-        status = task.task_status.status_key
-      end
-
-      output_path = File.join(work_dir, 'output.yml')
       path = FileHelper.task_submission_identifier_path_with_timestamp(:done, task, timestamp)
-      FileUtils.cp(output_path, path)
-      oa.update(
-        status: :done,
-        result_task_status: status
-      )
-    else
-      oa.update(
-        status: :queue_failed,
-        result_task_status: output
-      )
+      FileUtils.cp(yaml_path, path)
     end
 
     at(0)
