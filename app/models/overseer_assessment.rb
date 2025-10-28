@@ -124,12 +124,6 @@ class OverseerAssessment < ApplicationRecord
     # TODO: Check status and do not queue if already queued
     puts "********* Sending #{self.id} to overseer"
 
-    # sm_instance = Doubtfire::Application.config.sm_instance
-    # if sm_instance.nil?
-    #   puts "ERROR: Unable to get service manager to send message to overseer. Unable to send - OverseerAssessment #{id}"
-    #   return { error: "Automated feedback is not configured correctly. Please raise an issue with your administrator. ERR:O1" }
-    # end
-
     unless has_submission_files?
       puts "ERROR: Attempting to send submission to Overseer without associated submission files - OverseerAssessment #{id}"
       return { error: "Your submission does not include any files to be processed." }

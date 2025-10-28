@@ -311,8 +311,6 @@ module Doubtfire
         end
       end
 
-      # config.sm_instance = ServicesManager.instance
-      # config.sm_instance.register_client(:ontrack, publisher_config, subscriber_config)
     end
   end
 end
