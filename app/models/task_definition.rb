@@ -572,6 +572,10 @@ class TaskDefinition < ApplicationRecord
     File.exist? task_assessment_resources(false)
   end
 
+  def has_task_assessment_script?
+    File.exist? task_assessment_script(false)
+  end
+
   def has_task_sheet?
     File.exist? task_sheet(false)
   end

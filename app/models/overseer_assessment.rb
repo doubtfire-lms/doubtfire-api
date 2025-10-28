@@ -29,7 +29,7 @@ class OverseerAssessment < ApplicationRecord
     return nil unless task.overseer_enabled?
 
     docker_image_name_tag = task_definition.docker_image_name_tag || unit.docker_image_name_tag
-    assessment_resources_path = task_definition.task_assessment_resources
+    # assessment_resources_path = task_definition.task_assessment_resources
 
     return nil if docker_image_name_tag.nil? || docker_image_name_tag.strip.empty?
 
@@ -148,7 +148,7 @@ class OverseerAssessment < ApplicationRecord
 
     unless  unit.assessment_enabled &&
             task_definition.assessment_enabled &&
-            task_definition.has_task_assessment_resources? &&
+            task_definition.has_task_assessment_script? &&
             (task.has_new_files? || task.has_done_file?)
 
       puts "ERROR: Assessment is no longer configured for overseer assessment. Unable to send - OverseerAssessment #{id}"
@@ -189,54 +189,34 @@ class OverseerAssessment < ApplicationRecord
       assessment_resources_path,
       submission_timestamp,
       self.id
-    ) # begin
-    #   sm_instance.clients[:ontrack].publisher.connect_publisher
-    #   puts("Sending message to rabbitmq for Overseer Assessment #{id}")
-    #   sm_instance.clients[:ontrack].publisher.publish_message(message)
-    #   puts("Sent to rabbitmq for Overseer Assessment #{id}")
-    #   self.status = :queued
-    # rescue RuntimeError => e
-    #   puts "ERROR: OverseerAssessment #{id} failed to send: #{e.inspect}"
-    #   self.status = :queue_failed
-    #   return { error: "We are unable to send your submission to the automated feedback service. Please try again later." }
-    # ensure
-    #   puts "saving... #{self.status}"
-    #   save!
-    #   sm_instance.clients[:ontrack].publisher.disconnect_publisher
-    # end
-
-    # puts "********* - end perform assessment"
-    # if assessment_comments.count == 0
-    #   result = add_assessment_comment()
-    # else
-    #   result = assessment_comments.last
-    #   result.update created_at: Time.zone.now
-    #   result
-    # end
-
-
-    {
-      comment: "test",
-      error: nil
-    }
+    )
   end
 
-  def update_from_output()
+  def update_from_output(work_dir_path)
     # Update the overseer assessment status
     self.status = :done
 
-    yaml_path = "#{output_path}/output.yaml"
+    yaml_path = "#{work_dir_path}/output.yaml"
+
 
     if File.exist? yaml_path
       yaml_file = YAML.load_file(yaml_path).with_indifferent_access
 
       comment_txt = ''
       if !yaml_file['build_message'].nil? && !yaml_file['build_message'].strip.empty?
+        comment_txt += "Build output:\n"
         comment_txt += yaml_file['build_message']
       end
       if !yaml_file['run_message'].nil? && !yaml_file['run_message'].strip.empty?
-        comment_txt += "\n\n" unless comment_txt.empty?
+        comment_txt += "\n" unless comment_txt.empty?
+        comment_txt += "Execution output:\n"
         comment_txt += yaml_file['run_message']
+      end
+
+      if !yaml_file['message'].nil? && !yaml_file['message'].strip.empty?
+        comment_txt += "\n" unless comment_txt.empty?
+        comment_txt += "Message:\n"
+        comment_txt += yaml_file['message']
       end
 
       if comment_txt.present?
@@ -255,6 +235,7 @@ class OverseerAssessment < ApplicationRecord
       end
 
       if task.ready_for_feedback? && new_status.present?
+        task.add_status_comment(task.task_definition.unit.main_convenor.user, new_status)
         task.update task_status: new_status
       end
     else
