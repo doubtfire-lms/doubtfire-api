@@ -509,6 +509,13 @@ class Task < ApplicationRecord
     # Protect closed states from student changes
     return nil if [:student, :group_member].include?(role) && task_submission_closed?
 
+    if task_definition.lock_assessments_to_tutorial_stream
+      unit_role = unit.unit_role_for(by_user)
+      tutorial_stream = task_definition.tutorial_stream
+      tutorials = tutorial_stream.tutorials
+      return nil unless tutorials.any? { |t| t.unit_role == unit_role }
+    end
+
     #
     # State transitions based upon the trigger
     #
