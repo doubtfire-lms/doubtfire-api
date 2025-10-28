@@ -13,32 +13,11 @@ class AcceptOverseerJob
                   on_conflict: :reject,
                   retry: 1
 
-  def perform(task_id, output_path, docker_image_name_tag, submission, assessment, timestamp, overseer_assessment_id)
+  def perform(task_id, _output_path, docker_image_name_tag, submission, assessment, timestamp, overseer_assessment_id)
     logger.info "Starting overseer job..."
 
-    message = {
-      output_path: output_path,
-      docker_image_name_tag: docker_image_name_tag,
-      submission: submission,
-      assessment: assessment,
-      timestamp: timestamp,
-      task_id: task_id,
-      overseer_assessment_id: overseer_assessment_id,
-      zip_file: 1
-    }
-
-    # Example message data
-
-    # {
-    #   output_path: "/student-work/submission_history/COS10001-1/student_0/done/3/1761090610",
-    #   docker_image_name_tag: "doubtfire-deploy_devcontainer-overseer-volumes:latest",
-    #   submission: "/student-work/submission_history/COS10001-1/student_0/done/3/1761090610/submission.zip",
-    #   assessment: "/student-work/COS10001-1/TaskFiles/1.1P-assessment.zip",
-    #   timestamp: "1761090610",
-    #   task_id: 3,
-    #   overseer_assessment_id: 7,
-    #   zip_file: 1
-    # }
+    at(0)
+    total(1)
 
     work_dir = Rails.root.join("tmp", "overseer", task_id.to_s)
     FileUtils.mkdir_p(work_dir)
@@ -63,7 +42,7 @@ class AcceptOverseerJob
       end
     end
 
-    # Extract assessment resources
+    # Extract optional assessment resources
     if File.exist?(assessment)
       Zip::File.open(assessment) do |zip_file|
         zip_file.each do |entry|
@@ -76,11 +55,13 @@ class AcceptOverseerJob
 
     # Extract execution script
     script_path = task.task_definition.task_assessment_script
+    raise "No execution script found" unless File.exist?(script_path)
+
     script_contents = File.read(script_path)
+    raise "Execution script is empty" if script_contents.blank?
+
     run_sh_path = File.join(work_dir, 'run.sh')
-
     File.write(run_sh_path, script_contents)
-
     system("chmod +x #{work_dir}/run.sh")
 
     mount = Doubtfire::Application.config.overseer_workdir_volume_mount
@@ -105,7 +86,7 @@ class AcceptOverseerJob
       bash -c "cd /overseer/work-dir/#{task_id} && ./run.sh"
     )
 
-    output = system(command)
+    system(command)
 
     yaml_path = File.join(work_dir, 'output.yaml')
 
@@ -116,9 +97,6 @@ class AcceptOverseerJob
       path = FileHelper.task_submission_identifier_path_with_timestamp(:done, task, timestamp)
       FileUtils.cp(yaml_path, path)
     end
-
-    at(0)
-    total(1)
 
     FileUtils.rm_rf(work_dir)
 
