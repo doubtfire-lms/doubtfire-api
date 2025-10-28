@@ -305,8 +305,10 @@ module Doubtfire
         raise 'Overseer configuration error: you must set either OVERSEER_WORKDIR_VOLUME_MOUNT or OVERSEER_FALLBACK_VOLUME_CONTAINER.'
       end
 
-      if config.docker_config[:DOCKER_TOKEN] && config.docker_config[:DOCKER_PROXY_URL]
-        LoginDockerJob.perform_async
+      config.after_initialize do
+        if config.docker_config[:DOCKER_TOKEN] && config.docker_config[:DOCKER_PROXY_URL]
+          LoginDockerJob.perform_async
+        end
       end
 
       # config.sm_instance = ServicesManager.instance
