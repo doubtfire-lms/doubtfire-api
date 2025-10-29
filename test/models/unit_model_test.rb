@@ -584,8 +584,8 @@ class UnitModelTest < ActiveSupport::TestCase
               headers: true, return_headers: false,
               header_converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')&.downcase }],
               converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]).each do |entry|
-      assert_json_limit_keys_to_exactly %w[unit_code campus username student_id preferred_name first_name last_name email tutorial], entry.to_hash
-      assert_equal 9, entry.count, entry
+      assert_json_limit_keys_to_exactly %w[unit_code campus username student_id preferred_name first_name last_name email spec_con_days tutorial], entry.to_hash
+      assert_equal 10, entry.count, entry
       user = User.find_by(username: entry['username'])
       assert user.present?, "Unable to find user from #{entry}"
 

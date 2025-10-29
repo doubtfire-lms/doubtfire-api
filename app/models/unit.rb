@@ -1122,7 +1122,7 @@ class Unit < ApplicationRecord
     grp_sets = group_sets
 
     CSV.generate do |csv|
-      csv <<  (%w(unit_code campus username student_id preferred_name first_name last_name email) +
+      csv <<  (%w(unit_code campus username student_id preferred_name first_name last_name email spec_con_days) +
               (streams.count > 0 ? streams.map { |t| t.abbreviation } : ['tutorial']))
 
       active_projects
@@ -1134,7 +1134,7 @@ class Unit < ApplicationRecord
           'LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id',
           'LEFT OUTER JOIN tutorials ON tutorial_enrolments.tutorial_id = tutorials.id'
         ).select(
-          'projects.id as project_id', 'users.student_id as student_id', 'users.username as username', 'users.first_name as first_name',
+          'projects.id as project_id', 'projects.spec_con_days as spec_con_days', 'users.student_id as student_id', 'users.username as username', 'users.first_name as first_name',
           'users.last_name as last_name', 'users.email as email', 'users.nickname as nickname', 'campuses.abbreviation as campus_abbreviation',
           # Get tutorial for each stream in unit
           *streams.map { |s| "MAX(CASE WHEN tutorials.tutorial_stream_id = #{s.id} OR tutorials.tutorial_stream_id IS NULL THEN tutorials.abbreviation ELSE NULL END) AS tutorial_#{s.id}" },
@@ -1151,7 +1151,8 @@ class Unit < ApplicationRecord
             row['nickname'],
             row['first_name'],
             row['last_name'],
-            row['email']
+            row['email'],
+            row['spec_con_days']
           ] + [1].map do
                 if streams.empty?
                   [row['tutorial']]
