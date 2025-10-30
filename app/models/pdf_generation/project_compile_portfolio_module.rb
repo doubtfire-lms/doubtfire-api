@@ -65,6 +65,7 @@ module PdfGeneration
         @institution_name = Doubtfire::Application.config.institution[:name]
         @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
         @is_retry = is_retry
+        @include_pax = !is_retry
       end
 
       def make_pdf
