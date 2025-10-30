@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-48](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-47...v10.0.0-48) (2025-10-30)
+
+
+### Bug Fixes
+
+* ensure pax is included to persist pdf hyperlinks ([e4692aa](https://github.com/b0ink/doubtfire-deploy/commit/e4692aa61798d9f4c2ea429d726e899c302d789c))
+
 ## [10.0.0-47](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-46...v10.0.0-47) (2025-10-29)
 
 ## [10.0.0-46](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-45...v10.0.0-46) (2025-10-24)
