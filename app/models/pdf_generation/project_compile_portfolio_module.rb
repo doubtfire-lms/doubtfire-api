@@ -151,13 +151,12 @@ module PdfGeneration
 
       # Select tasks that have a PDF, or unless the task has no upload requirements, and is in a submitted state
       tasks.select do |task|
+        next if task.task_status_id == TaskStatus.not_started.id
         task.has_pdf || (
           task.task_definition.upload_requirements.blank? &&
-          ![TaskStatus.not_started.id, TaskStatus.redo.id, TaskStatus.need_help.id, TaskStatus.working_on_it.id].include?(task.task_status_id)
+          ![TaskStatus.need_help.id, TaskStatus.working_on_it.id].include?(task.task_status_id)
         )
       end
-
-      tasks
     end
 
     #
