@@ -75,6 +75,16 @@ module PdfGeneration
       end
     end
 
+    # A custom error to capture the log message from the latex error
+    class LatexError < StandardError
+      attr_reader :log_message
+
+      def initialize(log_message)
+        super
+        @log_message = log_message
+      end
+    end
+
     # Create the portfolio for this project
     def create_portfolio
       self.compile_portfolio = false
@@ -112,10 +122,13 @@ module PdfGeneration
 
         log_file = e.message.scan(%r{/.*\.log}).first
         if log_file && File.exist?(log_file)
+
           begin
+            log_message = File.read(log_file)
+
             # rubocop:disable Rails/Output
             puts "--- Latex Log ---\n"
-            puts File.read(log_file)
+            puts log_message
             puts "---    End    ---\n\n"
             # rubocop:enable Rails/Output
           rescue StandardError
@@ -124,7 +137,8 @@ module PdfGeneration
             # rubocop:enable Rails/Output
           end
         end
-        false
+
+        raise LatexError.new(log_message), "Failed to convert portfolio to PDF - #{log_details}"
       end
     end
 
