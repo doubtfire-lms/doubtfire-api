@@ -2,8 +2,10 @@
 
 # This script is copied into the TeX Live container and remotely executed by latex_run.sh
 
+cd "/workdir/texlive-latex"
+
 OUTPUT_DIR=$1
-BASE_DIR="/workdir/texlive-latex/${OUTPUT_DIR}"
+BASE_DIR="./${OUTPUT_DIR}"
 WORK_DIR="${BASE_DIR}/work"
 
 
