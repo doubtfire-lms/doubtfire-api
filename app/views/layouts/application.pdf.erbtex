@@ -8,7 +8,7 @@
     { :command => './latex_run.sh', :runs => 1 }
   ],
   :preservework => false,
-  :workdir => -> @work_id
+  :workdir => -> { @work_id }
 }
 %>
 
