@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-52](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-51...v10.0.0-52) (2025-11-03)
+
+## [10.0.0-51](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-50...v10.0.0-51) (2025-11-03)
+
+
+### Bug Fixes
+
+* concurrent safe pdf generation ([#543](https://github.com/b0ink/doubtfire-deploy/issues/543)) ([d656446](https://github.com/b0ink/doubtfire-deploy/commit/d656446d3ed920c78a16df02b775d9ff2c52ca19))
+
 ## [10.0.0-50](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-49...v10.0.0-50) (2025-11-01)
 
 
