@@ -8,7 +8,7 @@
     { :command => './latex_run.sh', :runs => 1 }
   ],
   :preservework => false,
-  :workdir => -> { "#{Process.pid}-#{Thread.current.object_id}-#{Time.now.to_i}" }
+  :workdir => -> @work_id
 }
 %>
 
