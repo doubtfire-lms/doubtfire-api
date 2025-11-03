@@ -1664,6 +1664,7 @@ class Unit < ApplicationRecord
         'Portfolio',
         'Grade',
         'Rationale',
+        'Assessor',
       ] +
              (streams.count > 0 ? streams.map { |t| t.abbreviation } : ['Tutorial']) +
              grp_sets.map(&:name) +
@@ -1700,7 +1701,7 @@ class Unit < ApplicationRecord
           'LEFT OUTER JOIN group_memberships ON group_memberships.project_id = projects.id AND group_memberships.active = TRUE',
           'LEFT OUTER JOIN groups ON groups.id = group_memberships.group_id'
         ).select(
-          'projects.id as project_id', 'users.student_id as student_id', 'users.username as username', 'users.first_name as first_name',
+          'projects.id as project_id', 'users.student_id as student_id', 'users.username as username', 'users.first_name as first_name', 'projects.assessor_id as project_assessor',
           'users.last_name as last_name', 'projects.target_grade', 'users.email as email', 'compile_portfolio', 'portfolio_production_date', 'grade', 'grade_rationale',
           *td_select,
           # Get tutorial for each stream in unit
@@ -1719,7 +1720,8 @@ class Unit < ApplicationRecord
             row['email'],
             row['portfolio_production_date'].present? && !row['compile_portfolio'] && File.exist?(FileHelper.student_portfolio_path(self, row['username'], create: true)),
             row['grade'] > 0 ? row['grade'] : nil,
-            row['grade_rationale']
+            row['grade_rationale'],
+            row['project_assessor']
           ] + [1].map do
             if streams.empty?
               [row['tutorial']]
@@ -2205,9 +2207,9 @@ class Unit < ApplicationRecord
     students_with_grades = active_projects.where('grade > 0')
 
     CSV.generate do |row|
-      row << %w(unit_code username student_id grade rationale)
+      row << %w(unit_code username student_id grade rationale assessor)
       students_with_grades.each do |project|
-        row << [project.unit.code, project.student.username, project.student.student_id, project.grade, project.grade_rationale]
+        row << [project.unit.code, project.student.username, project.student.student_id, project.grade, project.grade_rationale, project.assessor&.name]
       end
     end
   end

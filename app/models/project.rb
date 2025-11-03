@@ -19,6 +19,7 @@ class Project < ApplicationRecord
   belongs_to :unit, optional: false
   belongs_to :user, optional: false
   belongs_to :campus, optional: true
+  belongs_to :assessor, class_name: 'User', optional: true
 
   # has_one :user, through: :student
   has_many :tasks, dependent: :destroy # Destroying a project will also nuke all of its tasks
