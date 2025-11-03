@@ -140,7 +140,7 @@ namespace :submission do
             success = false
             begin
               # Notify system admin
-              mail = ErrorLogMailer.error_message("Failed portfolio job: #{project.log_details}", "Failed to createfor project #{project.log_details}", e)
+              mail = ErrorLogMailer.error_message("Failed portfolio job: #{project.log_details}", "Failed to create portfolio for project #{project.log_details}", e)
               mail.deliver if mail.present?
             rescue StandardError => e
               logger.error "Failed to send error log to admin"
