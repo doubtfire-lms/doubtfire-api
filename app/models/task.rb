@@ -1292,7 +1292,7 @@ class Task < ApplicationRecord
         # Try again...
         # Without newpax
         # Ensure latex aux file is removed
-        Dir.glob(Rails.root.join('tmp/rails-latex/**/input.aux')).each { |f| File.delete(f) }
+        # Dir.glob(Rails.root.join('tmp/rails-latex/**/input.aux')).each { |f| File.delete(f) }
 
         tac2 = TaskAppController.new
         tac2.init(self, true)
@@ -1349,7 +1349,7 @@ class Task < ApplicationRecord
       raise e
     ensure
       # Ensure latex aux file is removed - if broken will cause issues for next submission in sidekiq
-      Dir.glob(Rails.root.join('tmp/rails-latex/**/input.aux')).each { |f| File.delete(f) }
+      # Dir.glob(Rails.root.join('tmp/rails-latex/**/input.aux')).each { |f| File.delete(f) }
 
       clear_in_process
     end
