@@ -138,6 +138,13 @@ namespace :submission do
             logger.error "Failed creating portfolio for project #{project.id}!\n#{e.message}"
             puts "Failed creating portfolio for project #{project.id}!\n#{e.message}"
             success = false
+            begin
+              # Notify system admin
+              mail = ErrorLogMailer.error_message("Failed portfolio job: #{project.log_details}", "Failed to create portfolio for project #{project.log_details}", e)
+              mail.deliver if mail.present?
+            rescue StandardError => e
+              logger.error "Failed to send error log to admin"
+            end
           end
 
           next unless project.student.receive_portfolio_notifications
