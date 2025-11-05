@@ -131,6 +131,7 @@ class ProjectsApi < Grape::API
 
       project.grade = params[:grade]
       project.grade_rationale = params[:grade_rationale]
+      project.assessor = current_user
       project.save!
 
       present project, Entities::ProjectEntity, for_staff: true

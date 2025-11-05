@@ -63,7 +63,8 @@ class Unit < ApplicationRecord
       :get_feedback_chips,
       :get_tutor_times,
       :get_tutor_times_summary,
-      :get_marking_sessions
+      :get_marking_sessions,
+      :upload_grades_csv
     ]
 
     # What can admin do with units?
@@ -649,6 +650,87 @@ class Unit < ApplicationRecord
     result
   end
 
+  def import_grades_from_csv(file, assessor_id, progress_callback: nil)
+    success = []
+    errors = []
+    ignored = []
+
+    assessor = User.find(assessor_id)
+
+    csv = CSV.new(File.read(file), headers: true,
+                                   header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
+                                   converters: [->(i) { i.nil? ? '' : i }, ->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }])
+    # Read the header row to determine what kind of file it is
+    if csv.header_row?
+      csv.shift
+    else
+      errors << { row: [], message: "Header row missing" }
+      return
+    end
+
+    total_rows = csv.read.size
+    progress_callback.call(message: "Parsing CSV", rows_processed: 0, total_rows: total_rows) if progress_callback
+
+
+    row_count = 0
+    # Loop over csv rows converting to hash values
+    CSV.foreach(file, headers: true,
+                      header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
+                      converters: [->(i) { i.nil? ? '' : i }, ->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]) do |row|
+      begin
+        row_count += 1
+        progress_callback.call(message: "Importing grades", rows_processed: row_count, total_rows: total_rows) if progress_callback
+
+        missing = missing_headers(row, %w(unit_code username student_id rationale))
+        if missing.count > 0
+          errors << { row: row, message: "Missing headers: #{missing.join(', ')}" }
+          next
+        end
+
+        if self.code != row['unit_code']
+          ignored << { row: row, message: "Unit code is different" }
+          next
+        end
+
+        student = User.find_by(username: row['username'])
+
+        if student.nil?
+          errors << { row: row, message: "Could not find student" }
+          next
+        end
+
+        project = self.projects.find_by(user: student)
+
+        if project.nil?
+          errors << { row: row, message: "Student is not enrolled in unit" }
+          next
+        end
+
+        if project.grade == row['grade'].to_i && project.grade_rationale.to_s.strip == row['rationale'].to_s.strip
+          ignored << { row: row, message: "No change" }
+          next
+        end
+
+
+
+        project.update!(
+          grade: row['grade'],
+          grade_rationale: row['rationale'],
+          assessor: assessor
+        )
+
+        success << { row: row, message: "Grade updated: #{row['grade']}" }
+      rescue Exception => e
+          errors << { row: row, message: e.message }
+      end
+    end # for each csv row
+
+    {
+      success: success,
+      ignored: ignored,
+      errors: errors
+    }
+  end
   #
   # Imports users into a project from CSV file.
   # Format: Unit Code, Student ID,First Name, Surname, email, tutorial, campus
@@ -1664,6 +1746,7 @@ class Unit < ApplicationRecord
         'Portfolio',
         'Grade',
         'Rationale',
+        'Assessor',
       ] +
              (streams.count > 0 ? streams.map { |t| t.abbreviation } : ['Tutorial']) +
              grp_sets.map(&:name) +
@@ -1700,7 +1783,7 @@ class Unit < ApplicationRecord
           'LEFT OUTER JOIN group_memberships ON group_memberships.project_id = projects.id AND group_memberships.active = TRUE',
           'LEFT OUTER JOIN groups ON groups.id = group_memberships.group_id'
         ).select(
-          'projects.id as project_id', 'users.student_id as student_id', 'users.username as username', 'users.first_name as first_name',
+          'projects.id as project_id', 'users.student_id as student_id', 'users.username as username', 'users.first_name as first_name', 'projects.assessor_id as project_assessor',
           'users.last_name as last_name', 'projects.target_grade', 'users.email as email', 'compile_portfolio', 'portfolio_production_date', 'grade', 'grade_rationale',
           *td_select,
           # Get tutorial for each stream in unit
@@ -1719,7 +1802,8 @@ class Unit < ApplicationRecord
             row['email'],
             row['portfolio_production_date'].present? && !row['compile_portfolio'] && File.exist?(FileHelper.student_portfolio_path(self, row['username'], create: true)),
             row['grade'] > 0 ? row['grade'] : nil,
-            row['grade_rationale']
+            row['grade_rationale'],
+            row['project_assessor']
           ] + [1].map do
             if streams.empty?
               [row['tutorial']]
@@ -2202,12 +2286,10 @@ class Unit < ApplicationRecord
   end
 
   def student_grades_csv
-    students_with_grades = active_projects.where('grade > 0')
-
     CSV.generate do |row|
-      row << %w(unit_code username student_id grade rationale)
-      students_with_grades.each do |project|
-        row << [project.unit.code, project.student.username, project.student.student_id, project.grade, project.grade_rationale]
+      row << %w(unit_code username student_id target_grade submitted_grade portfolio_production_date has_portfolio spec_con_days grade rationale assessor assessor_id)
+      active_projects.each do |project|
+        row << [project.unit.code, project.student.username, project.student.student_id, project.target_grade, project.submitted_grade, project.portfolio_production_date, project.portfolio_exists?, project.spec_con_days, project.grade, project.grade_rationale, project.assessor&.name, project.assessor&.id]
       end
     end
   end
