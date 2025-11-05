@@ -700,7 +700,6 @@ class Unit < ApplicationRecord
         end
 
         project = self.projects.find_by(user: student)
-        assessor = User.find(row['assessor_id'])
 
         if project.nil?
           errors << { row: row, message: "Could not find project" }
@@ -711,6 +710,13 @@ class Unit < ApplicationRecord
           ignored << { row: row, message: "No change" }
           next
         end
+
+        assessor = User.find_by(id: row['assessor_id'])
+        if assessor.nil?
+          errors << { row: row, message: "Could not find assesor with user ID: #{row['assessor_id']}" }
+          next
+        end
+
 
         project.update!(
           grade: row['grade'],
