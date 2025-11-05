@@ -2285,12 +2285,12 @@ class Unit < ApplicationRecord
   end
 
   def student_grades_csv
-    students_with_grades = active_projects.where('grade > 0')
+    students_with_portfolios = active_projects.select(&:portfolio_exists?)
 
     CSV.generate do |row|
-      row << %w(unit_code username student_id grade rationale assessor assessor_id)
-      students_with_grades.each do |project|
-        row << [project.unit.code, project.student.username, project.student.student_id, project.grade, project.grade_rationale, project.assessor&.name, project.assessor&.id]
+      row << %w(unit_code username student_id portfolio_production_date grade rationale assessor assessor_id)
+      students_with_portfolios.each do |project|
+        row << [project.unit.code, project.student.username, project.student.student_id, project.portfolio_production_date, project.grade, project.grade_rationale, project.assessor&.name, project.assessor&.id]
       end
     end
   end
