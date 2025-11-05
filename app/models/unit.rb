@@ -706,7 +706,7 @@ class Unit < ApplicationRecord
           next
         end
 
-        if project.grade == row['grade'] && project.grade_rationale == row['rationale']
+        if project.grade == row['grade'].to_i && project.grade_rationale == row['rationale']
           ignored << { row: row, message: "No change" }
           next
         end
