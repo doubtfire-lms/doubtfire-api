@@ -1661,10 +1661,23 @@ class CsvTest < ActiveSupport::TestCase
       assert_equal 'Unit code is different', result['ignored'][0]['message']
       assert_equal 'Could not find assesor with user ID: invalid_user_id', result['errors'][1]['message']
 
+      project1.reload
+      project2.reload
+      project3.reload
+      project4.reload
+      project5.reload
+
       assert_equal 63, project1.grade
+      assert_equal "test 1", project1.grade_rationale
+
       assert_equal 0, project2.grade # No change, and attempted to save for a different unit
+
       assert_equal 97, project3.grade
+      assert_equal "test 2", project3.grade_rationale
+
       assert_equal 75, project4.grade
+      assert_equal "test 3", project4.grade_rationale
+
       assert_equal 0, project5.grade # Invalid assessor
 
       Sidekiq::Testing.fake!
