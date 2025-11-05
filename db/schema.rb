@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_16_033638) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_02_221253) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -244,6 +244,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_16_033638) do
     t.boolean "portfolio_auto_generated", default: false, null: false
     t.integer "portfolio_generation_pid"
     t.integer "spec_con_days", default: 0, null: false
+    t.bigint "assessor_id"
+    t.index ["assessor_id"], name: "index_projects_on_assessor_id"
     t.index ["campus_id"], name: "index_projects_on_campus_id"
     t.index ["enrolled"], name: "index_projects_on_enrolled"
     t.index ["unit_id", "user_id"], name: "index_projects_on_unit_id_and_user_id", unique: true

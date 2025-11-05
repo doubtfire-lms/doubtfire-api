@@ -550,8 +550,8 @@ class UnitModelTest < ActiveSupport::TestCase
       end
     end
 
-    # 17 = 8 general + 2 streams + 3 task defs + 1 group details + 1 stars + 1 grade + 1 contrib
-    check_task_completion_csv unit, 17
+    # 18 = 9 general + 2 streams + 3 task defs + 1 group details + 1 stars + 1 grade + 1 contrib
+    check_task_completion_csv unit, 18
   end
 
   def test_task_completion_csv_no_task_data
