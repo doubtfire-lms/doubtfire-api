@@ -2294,9 +2294,9 @@ class Unit < ApplicationRecord
     students_with_portfolios = active_projects.select(&:portfolio_exists?)
 
     CSV.generate do |row|
-      row << %w(unit_code username student_id portfolio_production_date grade rationale assessor assessor_id)
+      row << %w(unit_code username student_id portfolio_production_date spec_con_days grade rationale assessor assessor_id)
       students_with_portfolios.each do |project|
-        row << [project.unit.code, project.student.username, project.student.student_id, project.portfolio_production_date, project.grade, project.grade_rationale, project.assessor&.name, project.assessor&.id]
+        row << [project.unit.code, project.student.username, project.student.student_id, project.portfolio_production_date, project.spec_con_days, project.grade, project.grade_rationale, project.assessor&.name, project.assessor&.id]
       end
     end
   end
