@@ -1635,11 +1635,11 @@ class CsvTest < ActiveSupport::TestCase
       student4.update!(username: 'student_4_test')
       student5.update!(username: 'student_5_test')
 
-      unit.enrol_student(student1, Campus.first)
-      unit.enrol_student(student2, Campus.first)
-      unit.enrol_student(student3, Campus.first)
-      unit.enrol_student(student4, Campus.first)
-      unit.enrol_student(student5, Campus.first)
+      project1 = unit.enrol_student(student1, Campus.first)
+      project2 = unit.enrol_student(student2, Campus.first)
+      project3 = unit.enrol_student(student3, Campus.first)
+      project4 = unit.enrol_student(student4, Campus.first)
+      project5 = unit.enrol_student(student5, Campus.first)
 
       add_auth_header_for(user: convenor)
 
