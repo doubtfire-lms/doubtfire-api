@@ -1616,4 +1616,58 @@ class CsvTest < ActiveSupport::TestCase
       Sidekiq::Testing.fake!
     end
   end
+
+  def test_import_csv_student_grades
+    Sidekiq::Testing.inline! do
+      unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
+      convenor = FactoryBot.create(:user, :convenor)
+      unit.employ_staff(convenor, Role.convenor)
+
+      student1 = FactoryBot.create(:user, :student)
+      student2 = FactoryBot.create(:user, :student)
+      student3 = FactoryBot.create(:user, :student)
+      student4 = FactoryBot.create(:user, :student)
+      student5 = FactoryBot.create(:user, :student)
+
+      student1.update!(username: 'student_1_test')
+      student2.update!(username: 'student_2_test')
+      student3.update!(username: 'student_3_test')
+      student4.update!(username: 'student_4_test')
+      student5.update!(username: 'student_5_test')
+
+      unit.enrol_student(student1, Campus.first)
+      unit.enrol_student(student2, Campus.first)
+      unit.enrol_student(student3, Campus.first)
+      unit.enrol_student(student4, Campus.first)
+      unit.enrol_student(student5, Campus.first)
+
+      add_auth_header_for(user: convenor)
+
+      data_to_post = {
+        file: upload_file_csv('test_files/csv_test_files/COS10001-Grades.csv')
+      }
+
+      post "/api/units/#{unit.id}/grades/csv", data_to_post
+
+      assert_equal 201, last_response.status, last_response_body['error']
+
+      assert_not_nil last_response_body['result']
+
+      result = JSON.parse(last_response_body['result'])
+      assert_equal 3, result['success'].size
+      assert_equal 1, result['ignored'].size
+      assert_equal 2, result['errors'].size
+
+      assert_equal 'Unit code is different', result['ignored'][0]['message']
+      assert_equal 'Could not find assesor with user ID: invalid_user_id', result['errors'][1]['message']
+
+      assert_equal 63, project1.grade
+      assert_equal 0, project2.grade # No change, and attempted to save for a different unit
+      assert_equal 97, project3.grade
+      assert_equal 75, project4.grade
+      assert_equal 0, project5.grade # Invalid assessor
+
+      Sidekiq::Testing.fake!
+    end
+  end
 end

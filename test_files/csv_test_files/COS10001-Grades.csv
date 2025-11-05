@@ -1,0 +1,7 @@
+unit_code,username,student_id,portfolio_production_date,grade,rationale,assessor,assessor_id
+COS10001,student_1_test,,11/4/25,63,test,Andrew Cain,1
+COS10001,student_2_test,,11/4/25,0,,,
+COS10001,student_3_test,,11/4/25,97,test,Andrew Cain,1
+COS10001,student_4_test,,11/4/25,75,test,Andrew Cain,1
+COS12345,student_2_test,,11/4/25,10,test,Andrew Cain,1
+COS10001,student_5_test,,11/4/25,1,test,Andrew Cain,invalid_user_id
