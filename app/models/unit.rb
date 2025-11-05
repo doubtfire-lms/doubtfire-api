@@ -702,7 +702,7 @@ class Unit < ApplicationRecord
         project = self.projects.find_by(user: student)
 
         if project.nil?
-          errors << { row: row, message: "Could not find project" }
+          errors << { row: row, message: "Student is not enrolled in unit" }
           next
         end
 
