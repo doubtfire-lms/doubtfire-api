@@ -650,12 +650,12 @@ class Unit < ApplicationRecord
     result
   end
 
-  def import_grades_from_csv(file, assessor, progress_callback: nil)
+  def import_grades_from_csv(file, assessor_id, progress_callback: nil)
     success = []
     errors = []
     ignored = []
 
-
+    assessor = User.find(assessor_id)
 
     csv = CSV.new(File.read(file), headers: true,
                                    header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
@@ -681,7 +681,7 @@ class Unit < ApplicationRecord
         row_count += 1
         progress_callback.call(message: "Importing grades", rows_processed: row_count, total_rows: total_rows) if progress_callback
 
-        missing = missing_headers(row, %w(unit_code username student_id rationale assessor_id))
+        missing = missing_headers(row, %w(unit_code username student_id rationale))
         if missing.count > 0
           errors << { row: row, message: "Missing headers: #{missing.join(', ')}" }
           next
@@ -706,16 +706,11 @@ class Unit < ApplicationRecord
           next
         end
 
-        if project.grade == row['grade'].to_i && project.grade_rationale == row['rationale']
+        if project.grade == row['grade'].to_i && project.grade_rationale.to_s.strip == row['rationale'].to_s.strip
           ignored << { row: row, message: "No change" }
           next
         end
 
-        assessor = User.find_by(id: row['assessor_id'])
-        if assessor.nil?
-          errors << { row: row, message: "Could not find assesor with user ID: #{row['assessor_id']}" }
-          next
-        end
 
 
         project.update!(

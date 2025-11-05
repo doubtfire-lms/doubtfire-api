@@ -1655,11 +1655,10 @@ class CsvTest < ActiveSupport::TestCase
 
       result = JSON.parse(last_response_body['result'])
       assert_equal 3, result['success'].size
-      assert_equal 1, result['ignored'].size
-      assert_equal 2, result['errors'].size
+      assert_equal 2, result['ignored'].size
+      assert_equal 1, result['errors'].size
 
-      assert_equal 'Unit code is different', result['ignored'][0]['message']
-      assert_equal 'Could not find assesor with user ID: invalid_user_id', result['errors'][1]['message']
+      assert_equal 'Unit code is different', result['ignored'][1]['message']
 
       project1.reload
       project2.reload
@@ -1668,17 +1667,22 @@ class CsvTest < ActiveSupport::TestCase
       project5.reload
 
       assert_equal 63, project1.grade
+      assert_equal convenor, project1.assessor
       assert_equal "test 1", project1.grade_rationale
 
       assert_equal 0, project2.grade # No change, and attempted to save for a different unit
+      assert_nil project2.assessor
 
       assert_equal 97, project3.grade
+      assert_equal convenor, project3.assessor
       assert_equal "test 2", project3.grade_rationale
 
       assert_equal 75, project4.grade
+      assert_equal convenor, project4.assessor
       assert_equal "test 3", project4.grade_rationale
 
-      assert_equal 0, project5.grade # Invalid assessor
+      assert_equal 0, project5.grade # Student does not exist
+      assert_nil project5.assessor
 
       Sidekiq::Testing.fake!
     end
