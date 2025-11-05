@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-53](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-52...v10.0.0-53) (2025-11-05)
+
+
+### Features
+
+* track portfolio assessor + import grades via csv ([#542](https://github.com/b0ink/doubtfire-deploy/issues/542)) ([f546211](https://github.com/b0ink/doubtfire-deploy/commit/f546211832c5d74e3a5df1d0ff89a8a49aa15a61))
+
 ## [10.0.0-52](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-51...v10.0.0-52) (2025-11-03)
 
 ## [10.0.0-51](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-50...v10.0.0-51) (2025-11-03)
