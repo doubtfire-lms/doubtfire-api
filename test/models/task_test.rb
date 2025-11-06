@@ -1318,4 +1318,110 @@ class TaskTest < ActiveSupport::TestCase
     task.trigger_transition(trigger: 'ready_for_feedback', by_user: unit.main_convenor_user)
     assert_equal :ready_for_feedback, task.status, 'Task status should be "ready_for_feedback" - due to spec con days'
   end
+
+  def test_assessment_lock_to_tutorial_stream
+    # unit = FactoryBot.create(:unit, student_count: 1, task_count: 0, stream_count: 0, tutorials: 0)
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
+
+    tutorial_stream_main = FactoryBot.create(:tutorial_stream, unit: unit)
+    # tutorial_stream_main2 = FactoryBot.create(:tutorial_stream, unit: unit)
+    tutorial_stream_hd = FactoryBot.create(:tutorial_stream, unit: unit)
+
+    tutor1 = FactoryBot.create(:user, :tutor)
+    tutor2 = FactoryBot.create(:user, :tutor)
+
+    # Unit role 1 will only have a tutorial in Main
+    # This means they shouldnt be allowed to assess tasks in the HD tutorial stream
+    unit_role1 = unit.employ_staff(tutor1, Role.tutor)
+
+    # Unit role 2 will have a tutorial in both Main and HD
+    # This means they should be allowed to assess tasks in both the Main and HD tutorial streams
+    unit_role2 = unit.employ_staff(tutor2, Role.tutor)
+
+    tutorial_main1 = FactoryBot.create(:tutorial, unit: unit, tutorial_stream: tutorial_stream_main, unit_role: unit_role1)
+    tutorial_main2 = FactoryBot.create(:tutorial, unit: unit, tutorial_stream: tutorial_stream_main, unit_role: unit_role2)
+    tutorial_hd = FactoryBot.create(:tutorial, unit: unit, tutorial_stream: tutorial_stream_hd, unit_role: unit_role2)
+
+    td1 = TaskDefinition.new({
+                               unit_id: unit.id,
+                               tutorial_stream: tutorial_stream_main,
+                               name: 'Test task for main',
+                               description: 'Test task',
+                               weighting: 4,
+                               target_grade: 0,
+                               start_date: Time.zone.now - 3.weeks,
+                               target_date: Time.zone.now - 2.weeks,
+                               due_date: Time.zone.now + 1.week,
+                               abbreviation: 'ABBR1',
+                               restrict_status_updates: false,
+                               upload_requirements: [],
+                               plagiarism_warn_pct: 0.8,
+                               is_graded: false,
+                               max_quality_pts: 0,
+                               lock_assessments_to_tutorial_stream: false
+                             })
+
+    td2 = TaskDefinition.new({
+                               unit_id: unit.id,
+                               tutorial_stream: tutorial_stream_hd,
+                               name: 'Test task for HD',
+                               description: 'Test task',
+                               weighting: 4,
+                               target_grade: 3,
+                               start_date: Time.zone.now - 3.weeks,
+                               target_date: Time.zone.now - 2.weeks,
+                               due_date: Time.zone.now + 1.week,
+                               abbreviation: 'ABBR2',
+                               restrict_status_updates: false,
+                               upload_requirements: [],
+                               plagiarism_warn_pct: 0.8,
+                               is_graded: false,
+                               max_quality_pts: 0,
+                               lock_assessments_to_tutorial_stream: false
+                             })
+    td1.save!
+    td2.save!
+
+    project = unit.active_projects.first
+    task_main = project.task_for_task_definition(td1)
+    task_hd = project.task_for_task_definition(td2)
+
+    task_main.update!(task_status: TaskStatus.ready_for_feedback)
+    task_hd.update!(task_status: TaskStatus.ready_for_feedback)
+    assert_equal TaskStatus.ready_for_feedback, task_main.task_status
+    assert_equal TaskStatus.ready_for_feedback, task_hd.task_status
+
+    # Tutor 1 should be able to mark main feedback task complete
+    result = task_main.trigger_transition(trigger: 'complete', by_user: tutor1)
+    assert_not_nil result, "Task should be able to marked complete by tutor"
+    assert_equal TaskStatus.complete, task_main.task_status, 'Task status should be complete from tutor assessment'
+
+    task_main.update!(task_status: TaskStatus.ready_for_feedback)
+    td1.reload
+    task_main.reload
+
+    # Tutor 1 should be able to mark HD feedback task complete, even though its in another tutorial stream
+    # Because we haven't locked it to the tutorial stream yet
+    result = task_hd.trigger_transition(trigger: 'complete', by_user: tutor1)
+    assert_not_nil result, "Task should be able to marked complete by tutor"
+    assert_equal TaskStatus.complete, task_hd.task_status, 'Task status should be complete from tutor assessment'
+
+    task_hd.update!(task_status: TaskStatus.ready_for_feedback)
+    td2.update!(lock_assessments_to_tutorial_stream: true)
+    td2.reload
+    task_hd.reload
+
+    # Tutor 1 should not be able to mark HD feedback task complete
+    result = task_hd.trigger_transition(trigger: 'complete', by_user: tutor1)
+    assert_nil result, "Task should not be able to marked complete by tutor"
+    assert_equal TaskStatus.ready_for_feedback, task_hd.task_status, 'Tutor should not be able to mark HD task complete'
+
+    task_hd.update!(task_status: TaskStatus.ready_for_feedback)
+    td2.reload
+    task_hd.reload
+    # Tutor 2 should be able to mark HD feedback task complete
+    result = task_hd.trigger_transition(trigger: 'complete', by_user: tutor2)
+    assert_not_nil result, "Task should be able to marked complete by tutor"
+    assert_equal TaskStatus.complete, task_hd.task_status, 'Task status should be complete from tutor assessment'
+  end
 end

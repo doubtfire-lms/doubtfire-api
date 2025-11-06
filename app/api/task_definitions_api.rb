@@ -41,6 +41,7 @@ class TaskDefinitionsApi < Grape::API
       optional :scorm_attempt_limit,      type: Integer,  desc: 'The number of times a SCORM test can be attempted'
       optional :assess_in_portfolio_only, type: Boolean,  desc: 'Whether a task can only be signed off during portfolio assessment'
       optional :use_resources_for_jplag_base_code, type: Boolean, desc: 'Include the common base code from task resources for JPlag comparisons'
+      optional :lock_assessments_to_tutorial_stream, type: Boolean, desc: 'Only allow tutors in this tutorial stream to assess this task'
     end
   end
   post '/units/:unit_id/task_definitions/' do
@@ -76,7 +77,8 @@ class TaskDefinitionsApi < Grape::API
                                                 :assess_in_portfolio_only,
                                                 :upload_requirements,
                                                 :unit_id,
-                                                :use_resources_for_jplag_base_code
+                                                :use_resources_for_jplag_base_code,
+                                                :lock_assessments_to_tutorial_stream
                                               )
 
     task_params[:unit_id] = unit.id
@@ -133,6 +135,7 @@ class TaskDefinitionsApi < Grape::API
       optional :similarity_language,      type: String,   desc: 'The language to use for code similarity checks'
       optional :assess_in_portfolio_only, type: Boolean,  desc: 'Whether a task can only be signed off during portfolio assessment'
       optional :use_resources_for_jplag_base_code, type: Boolean, desc: 'Include the common base code from task resources for JPlag comparisons'
+      optional :lock_assessments_to_tutorial_stream, type: Boolean, desc: 'Only allow tutors in this tutorial stream to assess this task'
     end
   end
   put '/units/:unit_id/task_definitions/:id' do
@@ -168,7 +171,8 @@ class TaskDefinitionsApi < Grape::API
                                                 :similarity_language,
                                                 :assess_in_portfolio_only,
                                                 :upload_requirements,
-                                                :use_resources_for_jplag_base_code
+                                                :use_resources_for_jplag_base_code,
+                                                :lock_assessments_to_tutorial_stream
                                               )
 
     if params[:task_def][:upload_requirements].present?
