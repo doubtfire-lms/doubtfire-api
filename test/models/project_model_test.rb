@@ -222,6 +222,36 @@ class ProjectModelTest < ActiveSupport::TestCase
     assert_equal task_definition.reload.due_date.to_date + 2.days, task.due_date
   end
 
+  def test_spec_con_reverts_overdue_tasks
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0)
+    unit.update!(allow_flexible_dates: true)
+
+    task_definition1 = FactoryBot.create(:task_definition, unit: unit, target_date: Time.zone.now - 1.week, due_date: Time.zone.now - 1.day)
+    task_definition2 = FactoryBot.create(:task_definition, unit: unit, target_date: Time.zone.now - 1.week, due_date: Time.zone.now - 3.days)
+    project = FactoryBot.create(:project, unit: unit)
+    task1 = project.task_for_task_definition(task_definition1)
+    task2 = project.task_for_task_definition(task_definition2)
+
+    task1.update!(submission_date: Time.zone.now, task_status: TaskStatus.time_exceeded)
+    task2.update!(submission_date: Time.zone.now, task_status: TaskStatus.assess_in_portfolio)
+
+    project.update!(spec_con_days: 2)
+
+    task1.reload
+    task2.reload
+
+    assert_equal TaskStatus.ready_for_feedback, task1.task_status
+    assert_equal TaskStatus.assess_in_portfolio, task2.task_status
+
+    project.update!(spec_con_days: 4)
+
+    task1.reload
+    task2.reload
+
+    assert_equal TaskStatus.ready_for_feedback, task1.task_status
+    assert_equal TaskStatus.ready_for_feedback, task2.task_status
+  end
+
   def test_unique_project_on_unit_and_user
     unit = FactoryBot.create(:unit, with_students: false, task_count: 0)
     student1 = FactoryBot.create(:user, :student)
