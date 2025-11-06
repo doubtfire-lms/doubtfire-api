@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-55](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-54...v10.0.0-55) (2025-11-06)
+
+
+### Features
+
+* option to restrict assessments to tutors in the same tutorial stream ([#537](https://github.com/b0ink/doubtfire-deploy/issues/537)) ([e291279](https://github.com/b0ink/doubtfire-deploy/commit/e291279aa82201d40623bd7162850b132a30b1df))
+* revert submissions to ready for feedback if extension applied ([#544](https://github.com/b0ink/doubtfire-deploy/issues/544)) ([1ae5e36](https://github.com/b0ink/doubtfire-deploy/commit/1ae5e36cc7c4e27ad555c892555c8b1031e92ccc))
+
 ## [10.0.0-54](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-53...v10.0.0-54) (2025-11-06)
 
 ## [10.0.0-54](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-53...v10.0.0-54) (2025-11-06)
