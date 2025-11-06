@@ -54,6 +54,7 @@ class TaskDefinition < ApplicationRecord
   after_update :check_and_update_tii_status, if: :saved_change_to_upload_requirements?
   after_update :update_tii_group, if: :saved_change_to_due_date?
   after_update :update_overdue_tasks_aip, if: :saved_change_to_assess_in_portfolio_only?
+  after_update :reset_overdue_tasks, if: :saved_change_to_due_date?
 
   # Model associations
   belongs_to :unit, optional: false # Foreign key
@@ -210,6 +211,21 @@ class TaskDefinition < ApplicationRecord
     tasks.where(task_status_id: overdue_statuses).find_each do |task|
       task.add_status_comment(unit.main_convenor.user, TaskStatus.assess_in_portfolio)
       task.update(task_status_id: TaskStatus.assess_in_portfolio.id)
+    end
+  end
+
+  def reset_overdue_tasks
+    original_due_date = saved_change_to_due_date&.first
+    return unless original_due_date
+    return if assess_in_portfolio_only
+
+    late_submissions = tasks
+                       .where('submission_date > ?', original_due_date)
+                       .where(task_status: [TaskStatus.time_exceeded, TaskStatus.assess_in_portfolio])
+
+    late_submissions.each do |task|
+      task.add_status_comment(unit.main_convenor.user, TaskStatus.ready_for_feedback)
+      task.update(task_status_id: TaskStatus.ready_for_feedback.id)
     end
   end
 
@@ -572,6 +588,10 @@ class TaskDefinition < ApplicationRecord
     File.exist? task_assessment_resources(false)
   end
 
+  def has_task_assessment_script?
+    File.exist? task_assessment_script(false)
+  end
+
   def has_task_sheet?
     File.exist? task_sheet(false)
   end
@@ -685,6 +705,10 @@ class TaskDefinition < ApplicationRecord
     task_assessment_resources_with_abbreviation(abbreviation, create)
   end
 
+  def task_assessment_script(create = true)
+    task_assessment_script_with_abbreviation(abbreviation, create)
+  end
+
   def task_scorm_data(create = true)
     task_scorm_data_with_abbreviation(abbreviation, create)
   end
@@ -775,6 +799,25 @@ class TaskDefinition < ApplicationRecord
 
     result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}-assessment.zip"
     result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}-assessment.zip"
+
+    if File.exist? result_with_sanitised_path
+      result_with_sanitised_path
+    else
+      result_with_sanitised_file
+    end
+  end
+
+  def task_assessment_script_with_abbreviation(abbr, create = true)
+    task_path = FileHelper.task_file_dir_for_unit unit, create
+
+    result_with_sanitised_path = "#{task_path}#{FileHelper.sanitized_path(abbr)}-assessment-script.txt"
+    result_with_sanitised_file = "#{task_path}#{FileHelper.sanitized_filename(abbr)}-assessment-script.txt"
+
+    # TODO: currently its saving 1_P instead of 1.1P
+    if !File.exist?(result_with_sanitised_path) && create
+      FileUtils.mkdir_p(File.dirname(result_with_sanitised_path))
+      File.write(result_with_sanitised_path, '')
+    end
 
     if File.exist? result_with_sanitised_path
       result_with_sanitised_path

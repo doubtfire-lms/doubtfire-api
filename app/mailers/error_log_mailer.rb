@@ -3,7 +3,7 @@ class ErrorLogMailer < ApplicationMailer
     email = Doubtfire::Application.config.email_errors_to
     return nil if email.blank?
 
-    if exception.instance_of?(Task::LatexError)
+    if exception.instance_of?(Task::LatexError) || exception.instance_of?(Project::LatexError)
       attachments['log.txt'] = exception.log_message
     end
 

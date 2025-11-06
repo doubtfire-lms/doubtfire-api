@@ -1177,6 +1177,7 @@ class Task < ApplicationRecord
       @institution_name = Doubtfire::Application.config.institution[:name]
       @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
       @include_pax = !is_retry
+      @work_id = "task-#{task.id}-#{Time.now.to_i}-#{Process.pid}-#{Thread.current.object_id}#{'-retry' if is_retry}"
     end
 
     def make_pdf
@@ -1299,7 +1300,7 @@ class Task < ApplicationRecord
         # Try again...
         # Without newpax
         # Ensure latex aux file is removed
-        Dir.glob(Rails.root.join('tmp/rails-latex/**/input.aux')).each { |f| File.delete(f) }
+        # Dir.glob(Rails.root.join('tmp/rails-latex/**/input.aux')).each { |f| File.delete(f) }
 
         tac2 = TaskAppController.new
         tac2.init(self, true)
@@ -1356,7 +1357,7 @@ class Task < ApplicationRecord
       raise e
     ensure
       # Ensure latex aux file is removed - if broken will cause issues for next submission in sidekiq
-      Dir.glob(Rails.root.join('tmp/rails-latex/**/input.aux')).each { |f| File.delete(f) }
+      # Dir.glob(Rails.root.join('tmp/rails-latex/**/input.aux')).each { |f| File.delete(f) }
 
       clear_in_process
     end
@@ -1572,7 +1573,7 @@ class Task < ApplicationRecord
   def overseer_enabled?
     return  unit.assessment_enabled &&
             task_definition.assessment_enabled &&
-            task_definition.has_task_assessment_resources? &&
+            task_definition.has_task_assessment_script? &&
             (has_new_files? || has_done_file?)
   end
 

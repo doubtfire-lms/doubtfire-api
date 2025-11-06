@@ -270,7 +270,8 @@ class TasksApi < Grape::API
       result = {
         has_pdf: task.has_pdf,
         submission_date: task.submission_date,
-        processing_pdf: task.processing_pdf?
+        processing_pdf: task.processing_pdf?,
+        task_status: task.task_status.status_key
       }
     else
       result = {
