@@ -44,6 +44,7 @@ class Project < ApplicationRecord
 
   after_update :check_withdraw_from_groups, if: :saved_change_to_enrolled?
   after_update :update_task_stats, if: :saved_change_to_target_grade? # TODO: consider making this an async task!
+  after_update :revert_overdue_tasks, if: :saved_change_to_spec_con_days?
 
   # Don't create project if one already exists for user_id in this unit_id
   validates :user_id, uniqueness: { scope: :unit_id }
@@ -522,6 +523,17 @@ class Project < ApplicationRecord
       green_pct: green_pct,
       order_scale: order_scale
     }
+  end
+
+  def revert_overdue_tasks
+    tasks.each do |task|
+      next if task.submission_date.blank?
+
+      if task.submitted_before_due? && ((task.task_status == TaskStatus.assess_in_portfolio && !task.task_definition.assess_in_portfolio_only ) || task.task_status == TaskStatus.time_exceeded)
+        task.update!(task_status: TaskStatus.ready_for_feedback)
+        task.add_status_comment(unit.main_convenor.user, TaskStatus.ready_for_feedback)
+      end
+    end
   end
 
   # Recalculate the task stats for the project, and store in the
