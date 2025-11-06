@@ -226,8 +226,8 @@ class ProjectModelTest < ActiveSupport::TestCase
     unit = FactoryBot.create(:unit, with_students: false, task_count: 0)
     unit.update!(allow_flexible_dates: true)
 
-    task_definition1 = FactoryBot.create(:task_definition, unit: unit, target_date: Time.zone.now - 1.week, due_date: Time.zone.now - 1.day)
-    task_definition2 = FactoryBot.create(:task_definition, unit: unit, target_date: Time.zone.now - 1.week, due_date: Time.zone.now - 3.days)
+    task_definition1 = FactoryBot.create(:task_definition, unit: unit, target_date: Time.zone.today - 1.week, due_date: Time.zone.today - 1.day)
+    task_definition2 = FactoryBot.create(:task_definition, unit: unit, target_date: Time.zone.today - 1.week, due_date: Time.zone.today - 4.days)
     project = FactoryBot.create(:project, unit: unit)
     task1 = project.task_for_task_definition(task_definition1)
     task2 = project.task_for_task_definition(task_definition2)
