@@ -103,13 +103,11 @@ module Submission
         if overseer_assessment.present?
           logger.info "Launching Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id}"
 
-          response = overseer_assessment.send_to_overseer
+          overseer_assessment.send_to_overseer
 
-          if response[:error].present?
-            error!({ error: response[:error] }, 403)
-          end
+
         else
-          logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was not performed"
+          logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was not performed #{overseer_assessment.inspect}"
         end
       end
 
@@ -241,12 +239,16 @@ module Submission
         error!({ error: "No submissions found for project: '#{params[:id]}' task: '#{params[:task_def_id]}' and timestamp: '#{timestamp}'" }, 401)
       end
 
-      unless File.exist? "#{path}/output.txt"
+      unless File.exist? "#{path}/output.yaml"
         error!({ error: "There is no output for this assessment. Either the output wasn't generated, or processing failed. Please review your submission, and discuss with the teaching team if issues persist." }, 401)
       end
 
       result = []
-      result << { label: 'output', result: File.read("#{path}/output.txt") }
+      yaml_data = YAML.load_file("#{path}/output.yaml") # returns a hash
+
+      yaml_data.each do |key, value|
+        result << { label: key, result: value }
+      end
 
       if project.role_for(current_user) == :student
         return result
@@ -285,25 +287,29 @@ module Submission
 
       path = "#{path}/#{FileHelper.latest_submission_timestamp_entry_in_dir(path)}"
 
-      unless File.exist? "#{path}/output.txt"
+      unless File.exist? "#{path}/output.yaml"
         error!({ error: "There is no output for this assessment. Either the output wasn't generated, or processing failed. Please review your submission, and discuss with the teaching team if issues persist." }, 401)
       end
 
       result = []
-      result << { label: 'output', result: File.read("#{path}/output.txt") }
+      yaml_data = YAML.load_file("#{path}/output.yaml") # returns a hash
+
+      yaml_data.each do |key, value|
+        result << { label: key, result: value }
+      end
 
       if project.role_for(current_user) == :student
         present result, with: Grape::Presenters::Presenter
         return
       end
 
-      if File.exist? "#{path}/build-diff.txt"
-        result << { label: 'build-diff', result: File.read("#{path}/build-diff.txt") }
-      end
+      # if File.exist? "#{path}/build-diff.txt"
+      #   result << { label: 'build-diff', result: File.read("#{path}/build-diff.txt") }
+      # end
 
-      if File.exist? "#{path}/run-diff.txt"
-        result << { label: 'run-diff', result: File.read("#{path}/run-diff.txt") }
-      end
+      # if File.exist? "#{path}/run-diff.txt"
+      #   result << { label: 'run-diff', result: File.read("#{path}/run-diff.txt") }
+      # end
 
       present result, with: Grape::Presenters::Presenter
     end

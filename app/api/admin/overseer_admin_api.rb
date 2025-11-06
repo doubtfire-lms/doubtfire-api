@@ -4,6 +4,7 @@ module Admin
   class OverseerAdminApi < Grape::API
     helpers AuthenticationHelpers
     helpers AuthorisationHelpers
+    helpers SidekiqHelper
 
     before do
       authenticated?
@@ -117,9 +118,11 @@ module Admin
       end
 
       overseer_image = OverseerImage.find(params[:id])
-      overseer_image.pull_from_docker
 
-      present overseer_image, with: Entities::OverseerImageEntity
+      job_id = PullDockerImageJob.perform_async(overseer_image.id)
+      job = setup_job(job_id)
+
+      present job, with: Entities::SidekiqJobEntity
     end
   end
 end
