@@ -41,6 +41,7 @@ class TaskDefinitionsApi < Grape::API
       optional :scorm_attempt_limit,      type: Integer,  desc: 'The number of times a SCORM test can be attempted'
       optional :assess_in_portfolio_only, type: Boolean,  desc: 'Whether a task can only be signed off during portfolio assessment'
       optional :use_resources_for_jplag_base_code, type: Boolean, desc: 'Include the common base code from task resources for JPlag comparisons'
+      optional :lock_assessments_to_tutorial_stream, type: Boolean, desc: 'Only allow tutors in this tutorial stream to assess this task'
     end
   end
   post '/units/:unit_id/task_definitions/' do
@@ -76,7 +77,8 @@ class TaskDefinitionsApi < Grape::API
                                                 :assess_in_portfolio_only,
                                                 :upload_requirements,
                                                 :unit_id,
-                                                :use_resources_for_jplag_base_code
+                                                :use_resources_for_jplag_base_code,
+                                                :lock_assessments_to_tutorial_stream
                                               )
 
     task_params[:unit_id] = unit.id
@@ -133,6 +135,7 @@ class TaskDefinitionsApi < Grape::API
       optional :similarity_language,      type: String,   desc: 'The language to use for code similarity checks'
       optional :assess_in_portfolio_only, type: Boolean,  desc: 'Whether a task can only be signed off during portfolio assessment'
       optional :use_resources_for_jplag_base_code, type: Boolean, desc: 'Include the common base code from task resources for JPlag comparisons'
+      optional :lock_assessments_to_tutorial_stream, type: Boolean, desc: 'Only allow tutors in this tutorial stream to assess this task'
     end
   end
   put '/units/:unit_id/task_definitions/:id' do
@@ -168,7 +171,8 @@ class TaskDefinitionsApi < Grape::API
                                                 :similarity_language,
                                                 :assess_in_portfolio_only,
                                                 :upload_requirements,
-                                                :use_resources_for_jplag_base_code
+                                                :use_resources_for_jplag_base_code,
+                                                :lock_assessments_to_tutorial_stream
                                               )
 
     if params[:task_def][:upload_requirements].present?
@@ -336,11 +340,7 @@ class TaskDefinitionsApi < Grape::API
     logger.info '********* - about to perform overseer submission'
     overseer_assessment = OverseerAssessment.create_for(task)
     if overseer_assessment.present?
-      response = overseer_assessment.send_to_overseer
-
-      if response[:error].present?
-        error!({ error: response[:error] }, 403)
-      end
+      overseer_assessment.send_to_overseer
 
       logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was performed"
     else
@@ -878,6 +878,45 @@ class TaskDefinitionsApi < Grape::API
     job = setup_job(job_id)
 
     present job, with: Entities::SidekiqJobEntity
+  end
+
+  desc 'Retrieve the contents of the overseer execution script'
+  params do
+    requires :unit_id, type: Integer, desc: 'The unit that has the task definition'
+    requires :task_def_id, type: Integer, desc: 'The task definition to download submissions for'
+  end
+  get '/units/:unit_id/task_definitions/:task_def_id/overseer_script' do
+    unit = Unit.find(params[:unit_id])
+    unless authorise? current_user, unit, :add_task_def
+      error!({ error: 'Not authorised to edit task details of unit' }, 403)
+    end
+
+    td = unit.task_definitions.find(params[:task_def_id])
+
+    script_path = td.task_assessment_script
+
+    content = File.read(script_path)
+    content
+  end
+
+  desc 'Update the contents of the overseer execution script'
+  params do
+    requires :unit_id, type: Integer, desc: 'The unit that has the task definition'
+    requires :task_def_id, type: Integer, desc: 'The task definition to download submissions for'
+    requires :script_content, type: String, desc: 'Content of the overseer execution script'
+  end
+  put '/units/:unit_id/task_definitions/:task_def_id/overseer_script' do
+    unit = Unit.find(params[:unit_id])
+    unless authorise? current_user, unit, :add_task_def
+      error!({ error: 'Not authorised to edit task details of unit' }, 403)
+    end
+
+    td = unit.task_definitions.find(params[:task_def_id])
+
+    script_path = td.task_assessment_script
+
+    File.write(script_path, params[:script_content])
+    status 200
   end
 
 end

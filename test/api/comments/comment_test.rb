@@ -564,4 +564,49 @@ class CommentTest < ActiveSupport::TestCase
     td.destroy!
     unit.update(allow_flexible_dates: false)
   end
+
+  def test_discussed_in_class_task_comments_dont_show_in_inbox
+    project = Project.first
+    user = project.student
+    unit = project.unit
+
+    td = TaskDefinition.new(unit_id: unit.id,
+                            tutorial_stream: unit.tutorial_streams.first,
+                            name: 'test_discussed_in_class_task_comments_dont_show_in_inbox',
+                            description: 'test_discussed_in_class_task_comments_dont_show_in_inbox',
+                            weighting: 4,
+                            target_grade: 0,
+                            start_date: Time.zone.now - 2.weeks,
+                            target_date: Time.zone.now + 1.week,
+                            due_date: Time.zone.now + 2.weeks,
+                            abbreviation: 'test_discussed_in_class_task_comments_dont_show_in_inbox',
+                            restrict_status_updates: false,
+                            upload_requirements: [],
+                            plagiarism_warn_pct: 0.8,
+                            is_graded: false,
+                            max_quality_pts: 0)
+    td.save!
+
+    task_new = Task.create!(
+      project_id: project.id,
+      task_definition_id: td.id,
+      task_status: TaskStatus.not_started
+    )
+
+    task_new.add_discussed_comment(unit.tutors.first)
+    task_new.reload
+
+    inbox = unit.tasks_for_task_inbox(unit.tutors.first)
+    assert_not_includes inbox.map(&:id), task_new.id, "Task should not be in tutors inbox"
+    assert_not task_new.comments.last.new_for?(user), "Comment should be marked read by student"
+    assert_not task_new.comments.last.new_for?(project.tutor_for(td)), "Comment should be read by tutor"
+
+    task_new.add_text_comment(user, "test comment")
+
+    inbox = unit.tasks_for_task_inbox(unit.tutors.first)
+    assert_includes inbox.map(&:id), task_new.id, "Task should not be in tutors inbox"
+    assert task_new.comments.last.new_for?(project.tutor_for(td)), "Comment should not be read by tutor"
+
+    td.destroy!
+  end
 end

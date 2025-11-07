@@ -39,6 +39,7 @@ module Entities
     expose :has_task_sheet?, as: :has_task_sheet
     expose :has_task_resources?, as: :has_task_resources
     expose :has_task_assessment_resources?, as: :has_task_assessment_resources, if: ->(unit, options) { staff?(options[:my_role]) }
+    expose :has_task_assessment_script?, as: :has_task_assessment_script, if: ->(unit, options) { staff?(options[:my_role]) }
     expose :has_scorm_data?, as: :has_scorm_data
     expose :scorm_enabled
     expose :scorm_allow_review
@@ -53,6 +54,7 @@ module Entities
     expose :similarity_language, if: ->(unit, options) { staff?(options[:my_role]) }, expose_nil: false
     expose :assess_in_portfolio_only
     expose :use_resources_for_jplag_base_code, if: ->(unit, options) { staff?(options[:my_role]) }
+    expose :lock_assessments_to_tutorial_stream, if: ->(unit, options) { staff?(options[:my_role]) }
 
     expose :learning_outcomes, using: LearningOutcomeEntity, as: :ilos
   end

@@ -2,6 +2,57 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-55](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-54...v10.0.0-55) (2025-11-06)
+
+
+### Features
+
+* option to restrict assessments to tutors in the same tutorial stream ([#537](https://github.com/b0ink/doubtfire-deploy/issues/537)) ([e291279](https://github.com/b0ink/doubtfire-deploy/commit/e291279aa82201d40623bd7162850b132a30b1df))
+* revert submissions to ready for feedback if extension applied ([#544](https://github.com/b0ink/doubtfire-deploy/issues/544)) ([1ae5e36](https://github.com/b0ink/doubtfire-deploy/commit/1ae5e36cc7c4e27ad555c892555c8b1031e92ccc))
+
+## [10.0.0-54](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-53...v10.0.0-54) (2025-11-06)
+
+## [10.0.0-54](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-53...v10.0.0-54) (2025-11-06)
+
+## [10.0.0-53](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-52...v10.0.0-53) (2025-11-05)
+
+
+### Features
+
+* track portfolio assessor + import grades via csv ([#542](https://github.com/b0ink/doubtfire-deploy/issues/542)) ([f546211](https://github.com/b0ink/doubtfire-deploy/commit/f546211832c5d74e3a5df1d0ff89a8a49aa15a61))
+
+## [10.0.0-52](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-51...v10.0.0-52) (2025-11-03)
+
+## [10.0.0-51](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-50...v10.0.0-51) (2025-11-03)
+
+
+### Bug Fixes
+
+* concurrent safe pdf generation ([#543](https://github.com/b0ink/doubtfire-deploy/issues/543)) ([d656446](https://github.com/b0ink/doubtfire-deploy/commit/d656446d3ed920c78a16df02b775d9ff2c52ca19))
+
+## [10.0.0-50](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-49...v10.0.0-50) (2025-11-01)
+
+
+### Bug Fixes
+
+* select correct portfolio tasks ([#541](https://github.com/b0ink/doubtfire-deploy/issues/541)) ([e27762b](https://github.com/b0ink/doubtfire-deploy/commit/e27762b17887e7a24ef284a5e36998a2107f8707))
+
+## [10.0.0-49](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-48...v10.0.0-49) (2025-10-30)
+
+
+### Bug Fixes
+
+* filter out both plan and discuss comments ([c1c3e36](https://github.com/b0ink/doubtfire-deploy/commit/c1c3e3636a8a2d21bc047815695f883b08e4a504))
+
+## [10.0.0-48](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-47...v10.0.0-48) (2025-10-30)
+
+
+### Bug Fixes
+
+* ensure pax is included to persist pdf hyperlinks ([e4692aa](https://github.com/b0ink/doubtfire-deploy/commit/e4692aa61798d9f4c2ea429d726e899c302d789c))
+
+## [10.0.0-47](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-46...v10.0.0-47) (2025-10-29)
+
 ## [10.0.0-46](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-45...v10.0.0-46) (2025-10-24)
 
 
