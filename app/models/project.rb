@@ -529,7 +529,7 @@ class Project < ApplicationRecord
     tasks.each do |task|
       next if task.submission_date.blank?
 
-      if task.submitted_before_due? && ((task.task_status == TaskStatus.assess_in_portfolio && !task.task_definition.assess_in_portfolio_only ) || task.task_status == TaskStatus.time_exceeded)
+      if task.submitted_before_due? && (task.task_status == TaskStatus.assess_in_portfolio || task.task_status == TaskStatus.time_exceeded)
         task.update!(task_status: TaskStatus.ready_for_feedback)
         task.add_status_comment(unit.main_convenor.user, TaskStatus.ready_for_feedback)
       end
