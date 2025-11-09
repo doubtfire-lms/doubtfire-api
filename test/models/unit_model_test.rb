@@ -1035,6 +1035,9 @@ class UnitModelTest < ActiveSupport::TestCase
     task1 = student.task_for_task_definition(td1)
     task2 = student.task_for_task_definition(td2)
 
+    task1.comments.delete_all
+    task2.comments.delete_all
+
     task1.update(task_status_id: TaskStatus.time_exceeded.id)
 
     task2.update(task_status_id: TaskStatus.feedback_exceeded.id)
@@ -1050,8 +1053,8 @@ class UnitModelTest < ActiveSupport::TestCase
     task1.reload
     task2.reload
 
-    assert_equal TaskStatus.assess_in_portfolio, task1.task_status
-    assert_equal TaskStatus.assess_in_portfolio, task2.task_status
+    assert_equal TaskStatus.assess_in_portfolio, task1.task_status, "Time exceeded task should have moved to assess in portfolio"
+    assert_equal TaskStatus.feedback_exceeded, task2.task_status, "Feedback exceeded task should not have changes status"
 
     missing_aip_status_error = "Assess in Portfolio status comment missing"
 
@@ -1062,10 +1065,7 @@ class UnitModelTest < ActiveSupport::TestCase
     lc.destroy!
 
     lc = task2.last_comment
-    assert_not lc.nil?, missing_aip_status_error
-    assert_equal TaskStatus.assess_in_portfolio.name, lc.comment, missing_aip_status_error
-    assert_equal TaskStatus.assess_in_portfolio, lc.task_status, missing_aip_status_error
-    lc.destroy!
+    assert_nil lc, "Task 2 should not have been moved to assess in portfolio state"
   end
 
   def test_cant_disable_aip_only_while_aip_tasks_exist
