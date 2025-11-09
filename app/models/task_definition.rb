@@ -206,7 +206,7 @@ class TaskDefinition < ApplicationRecord
   def update_overdue_tasks_aip
     return unless saved_change_to_assess_in_portfolio_only? && assess_in_portfolio_only?
 
-    overdue_statuses = [TaskStatus.time_exceeded.id, TaskStatus.feedback_exceeded.id]
+    overdue_statuses = [TaskStatus.time_exceeded.id]
 
     tasks.where(task_status_id: overdue_statuses).find_each do |task|
       task.add_status_comment(unit.main_convenor.user, TaskStatus.assess_in_portfolio)
