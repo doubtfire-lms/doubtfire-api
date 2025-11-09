@@ -893,7 +893,7 @@ class TasksApiTest < ActiveSupport::TestCase
 
       td = unit.task_definitions.first
 
-      td.update!(due_date: Time.zone.today + 1.day)
+      td.update!(due_date: Time.zone.today + 1.day, tutorial_stream: tutorial_stream)
       assert_not td.nil?
 
       student1 = FactoryBot.create(:user, :student)
