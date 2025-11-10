@@ -69,11 +69,12 @@ class DiscussionPromptsApi < Grape::API
   end
   put '/task_definitions/:task_definition_id/discussion_prompts/:id' do
     task_definition = TaskDefinition.find(params[:task_definition_id])
-    discussion_prompt = task_definition.discussion_prompts.find(params[:id])
 
     unless authorise? current_user, task_definition, :create_discussion_prompt
       error!({ error: 'You do not have permission to access this project' }, 403)
     end
+
+    discussion_prompt = task_definition.discussion_prompts.find(params[:id])
 
     content = params[:content].to_s
     weight = params[:weight].to_i
@@ -92,11 +93,12 @@ class DiscussionPromptsApi < Grape::API
   end
   delete '/task_definitions/:task_definition_id/discussion_prompts/:id' do
     task_definition = TaskDefinition.find(params[:task_definition_id])
-    discussion_prompt = task_definition.discussion_prompts.find(params[:id])
 
     unless authorise? current_user, task_definition, :create_discussion_prompt
       error!({ error: 'You do not have permission to access this project' }, 403)
     end
+
+    discussion_prompt = task_definition.discussion_prompts.find(params[:id])
 
     discussion_prompt.destroy!
     present discussion_prompt.destroyed?, with: Grape::Presenters::Presenter
