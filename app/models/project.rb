@@ -73,14 +73,16 @@ class Project < ApplicationRecord
       :change_campus,
       :get_staff_note,
       :create_staff_note,
-      :reprocess_submission
+      :reprocess_submission,
+      :get_discussion_prompt
     ]
 
     # What can admins do with projects?
     admin_role_permissions = [
       :get,
       :get_submission,
-      :reprocess_submission
+      :reprocess_submission,
+      :get_discussion_prompt
     ]
 
     # What can auditors do with projects?
@@ -88,7 +90,8 @@ class Project < ApplicationRecord
       :get,
       :get_submission,
       :get_staff_note,
-      :reprocess_submission
+      :reprocess_submission,
+      :get_discussion_prompt
     ]
 
     # What can nil users do with projects?

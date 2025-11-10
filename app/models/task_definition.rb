@@ -13,7 +13,9 @@ class TaskDefinition < ApplicationRecord
       :update,
       :upload_csv,
       :get_los,
-      :create_task_prerequisite
+      :create_task_prerequisite,
+      :get_discussion_prompt,
+      :create_discussion_prompt
     ]
 
     admin_role_permissions = [
@@ -22,12 +24,16 @@ class TaskDefinition < ApplicationRecord
       :update,
       :upload_csv,
       :get_los,
-      :create_task_prerequisite
+      :create_task_prerequisite,
+      :get_discussion_prompt,
+      :create_discussion_prompt
     ]
 
     tutor_role_permissions = [
       :get_feedback_chips,
-      :get_los
+      :get_los,
+      :get_discussion_prompt,
+      :create_discussion_prompt
     ]
 
     auditor_role_permissions = [
@@ -71,6 +77,8 @@ class TaskDefinition < ApplicationRecord
 
   has_many :task_prerequisites, dependent: :destroy
   has_many :prerequisites, through: :task_prerequisites, source: :prerequisite
+
+  has_many :discussion_prompts, dependent: :destroy
 
   serialize :upload_requirements, coder: JSON
 
