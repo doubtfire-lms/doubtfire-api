@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_02_221253) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_10_000046) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -88,6 +88,20 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_02_221253) do
     t.integer "number_of_prompts"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "discussion_prompts", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "task_definition_id", null: false
+    t.bigint "project_id"
+    t.bigint "created_by_id", null: false
+    t.text "content", null: false
+    t.integer "weight", default: 0
+    t.datetime "discussed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_discussion_prompts_on_created_by_id"
+    t.index ["project_id"], name: "index_discussion_prompts_on_project_id"
+    t.index ["task_definition_id"], name: "index_discussion_prompts_on_task_definition_id"
   end
 
   create_table "feedback_chips", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
