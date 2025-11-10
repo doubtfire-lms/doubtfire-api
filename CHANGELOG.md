@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-56](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-55...v10.0.0-56) (2025-11-10)
+
+
+### Bug Fixes
+
+* dont revert feedback exceeded tasks to assess in portfolio ([#536](https://github.com/b0ink/doubtfire-deploy/issues/536)) ([1762bee](https://github.com/b0ink/doubtfire-deploy/commit/1762bee328a6e434fbab11fc6f5dbeab3224d798))
+* revert overdue tasks for assess in portfolio status ([4cf18b4](https://github.com/b0ink/doubtfire-deploy/commit/4cf18b4f55e5abce9e788650f62eb71a6a43c27c))
+* set tutorial stream ([4fd98a5](https://github.com/b0ink/doubtfire-deploy/commit/4fd98a5b4297f5f11ea95fd2474bddc47d69b1f1))
+
 ## [10.0.0-55](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-54...v10.0.0-55) (2025-11-06)
 
 
