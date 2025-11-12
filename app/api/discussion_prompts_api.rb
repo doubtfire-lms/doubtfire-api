@@ -57,7 +57,7 @@ class DiscussionPromptsApi < Grape::API
       discussion_prompt.update!({ project: project })
     end
 
-    status 201
+    present discussion_prompt, with: Entities::DiscussionPromptEntity
   end
 
   desc "Update a discussion prompt for a task definition"
