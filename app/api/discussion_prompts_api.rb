@@ -30,7 +30,6 @@ class DiscussionPromptsApi < Grape::API
     requires :task_definition_id, type: Integer, desc: 'Task definition to fetch discussion prompts for'
     requires :content, type: String, desc: 'Discussion prompt content'
     requires :priority, type: Integer, desc: 'The priority of the disucssion prompt'
-    optional :project_id, type: Integer, desc: 'The ID of the project the discussion prompt is for'
   end
   post '/task_definitions/:task_definition_id/discussion_prompts' do
     task_definition = TaskDefinition.find(params[:task_definition_id])
@@ -95,26 +94,6 @@ class DiscussionPromptsApi < Grape::API
 
     discussion_prompt.destroy!
     present discussion_prompt.destroyed?, with: Grape::Presenters::Presenter
-  end
-
-  desc "Get all the discussion prompts for a project's task definition"
-  params do
-    requires :project_id, type: Integer, desc: 'Project to fetch discussion prompts for'
-    requires :task_definition_id, type: Integer, desc: 'Task definition to fetch discussion prompts for'
-  end
-  get 'projects/:project_id/task_definitions/:task_definition_id/discussion_prompts' do
-    project = Project.find(params[:project_id])
-    task_definition = TaskDefinition.find(params[:task_definition_id])
-
-    unless authorise? current_user, task_definition, :get_discussion_prompt
-      error!({ error: 'You do not have permission to access this project' }, 403)
-    end
-
-    result = DiscussionPrompt.where(task_definition: task_definition)
-                             .where('project_id IS NULL OR project_id = ?', project.id)
-                             .order(priority: :desc)
-
-    present result, with: Entities::DiscussionPromptEntity, user: current_user
   end
 
   desc "Get all the discussion prompts for a project"
