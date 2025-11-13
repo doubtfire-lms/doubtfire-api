@@ -257,7 +257,7 @@ end # if there are linked outcomes
   end # if outcomes exist
   if task.comments.count > 0
 %>
-    \begin{tabular}{p{3cm}|p{3cm}|p{9cm}}
+    \begin{longtable}{p{3cm}|p{3cm}|p{9cm}}
       \textbf{Date} & \textbf{Author} & \textbf{Comment} \\ \hline
 <%
     task.comments.each do |comment|
@@ -266,7 +266,7 @@ end # if there are linked outcomes
 <%
     end # comments loop
 %>
-    \end{tabular}
+    \end{longtable}
 <%
   end # if comments exist
 
