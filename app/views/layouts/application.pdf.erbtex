@@ -42,6 +42,7 @@
 \usepackage{lastpage}
 \usepackage{multirow}
 \usepackage[colorlinks]{hyperref}
+\usepackage{longtable}
 \hypersetup{colorlinks,
   linkcolor=black,
   filecolor=black,
