@@ -34,64 +34,68 @@ class DiscussionPromptsApiTest < ActiveSupport::TestCase
     DiscussionPrompt.create!({
                                task_definition: td1,
                                content: 'Ask the student about pointers and references...',
-                               priority: 1,
-                               project: nil
+                               priority: 1
                              })
 
     DiscussionPrompt.create!({
                                task_definition: td2,
                                content: 'Ask the student about passing values by reference...',
-                               priority: 2,
-                               project: nil
+                               priority: 2
                              })
 
-    # Create prompts specific to a project
     DiscussionPrompt.create!({
                                task_definition: td1,
                                content: 'Potential use of GenAI, ask the student to explain their code...',
-                               priority: 3,
-                               project: project1,
-                               created_by: user
+                               priority: 3
                              })
 
     DiscussionPrompt.create!({
                                task_definition: td2,
                                content: 'Ask student to explain why they used std:cin over read_line()...',
-                               priority: 4,
-                               project: project2,
-                               created_by: user
+                               priority: 4
+                             })
+
+    DiscussionPrompt.create!({
+                               task_definition: td2,
+                               content: 'Ask student to explain why they used std:cin over read_line()... 1',
+                               priority: 4
                              })
 
     add_auth_header_for(user: user)
 
     get "/api/task_definitions/#{td1.id}/discussion_prompts"
     assert_equal 200, last_response.status, last_response_body.inspect
-
-    # Ensure we don't get the discussion prompt unique to a project
-    assert_equal 1, last_response_body.count
-
-    get "/api/projects/#{project1.id}/task_definitions/#{td1.id}/discussion_prompts"
-    assert_equal 200, last_response.status, last_response_body.inspect
-
-    # Ensure we get the global + unique discussion prompt
     assert_equal 2, last_response_body.count
-    # Ensure the prompts are ordered by priority
-    assert_equal 'Potential use of GenAI, ask the student to explain their code...', last_response_body.first['content']
-    assert_equal 'Ask the student about pointers and references...', last_response_body.second['content']
 
-    get "/api/projects/#{project1.id}/task_definitions/#{td2.id}/discussion_prompts"
+    get "/api/task_definitions/#{td2.id}/discussion_prompts"
     assert_equal 200, last_response.status, last_response_body.inspect
-    # Ensure we get the single global prompt
-    assert_equal 1, last_response_body.count
+    assert_equal 3, last_response_body.count
 
-    get "/api/projects/#{project2.id}/task_definitions/#{td2.id}/discussion_prompts"
+    project1_task1 =  project1.task_for_task_definition(td1)
+    project1_task2 =  project1.task_for_task_definition(td2)
+
+    project2_task1 =  project2.task_for_task_definition(td1)
+    project2_task2 =  project2.task_for_task_definition(td2)
+
+    project1_task1.update!(task_status: TaskStatus.discuss)
+    project1_task2.update!(task_status: TaskStatus.complete)
+
+    project2_task1.update!(task_status: TaskStatus.ready_for_feedback)
+    project2_task2.update!(task_status: TaskStatus.complete)
+
+    get "/api/projects/#{project1.id}/discussion_prompts"
     assert_equal 200, last_response.status, last_response_body.inspect
-
-    # Ensure we get the global + unique discussion prompt
     assert_equal 2, last_response_body.count
-    # Ensure the prompts are ordered by priority
-    assert_equal 'Ask student to explain why they used std:cin over read_line()...', last_response_body.first['content']
-    assert_equal 'Ask the student about passing values by reference...', last_response_body.second['content']
+
+    project1_task2.update!(task_status: TaskStatus.discuss)
+
+    get "/api/projects/#{project1.id}/discussion_prompts"
+    assert_equal 200, last_response.status, last_response_body.inspect
+    assert_equal 5, last_response_body.count
+
+    get "/api/projects/#{project2.id}/discussion_prompts"
+    assert_equal 200, last_response.status, last_response_body.inspect
+    assert_equal 0, last_response_body.count
   end
 
   def test_student_dicussion_prompts_permissions
@@ -142,9 +146,6 @@ class DiscussionPromptsApiTest < ActiveSupport::TestCase
       assert_equal 200, last_response.status, last_response_body
       assert_nil DiscussionPrompt.find_by(id: last_prompt.id)
 
-      get "/api/projects/#{project.id}/task_definitions/#{td.id}/discussion_prompts"
-      assert_equal 200, last_response.status, last_response_body
-
       get "/api/projects/#{project.id}/discussion_prompts"
       assert_equal 200, last_response.status, last_response_body
     end
@@ -168,9 +169,6 @@ class DiscussionPromptsApiTest < ActiveSupport::TestCase
       assert_equal 403, last_response.status, last_response_body
 
       delete "/api/task_definitions/#{td.id}/discussion_prompts/1"
-      assert_equal 403, last_response.status, last_response_body
-
-      get "/api/projects/#{project.id}/task_definitions/#{td.id}/discussion_prompts"
       assert_equal 403, last_response.status, last_response_body
 
       get "/api/projects/#{project.id}/discussion_prompts"
