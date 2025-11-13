@@ -20,8 +20,7 @@ class DiscussionPromptsApi < Grape::API
     end
 
     result = task_definition.discussion_prompts
-                            .where(project: nil)
-                            .order(weight: :desc)
+                            .order(priority: :desc)
 
     present result, with: Entities::DiscussionPromptEntity, user: current_user
   end
@@ -30,7 +29,7 @@ class DiscussionPromptsApi < Grape::API
   params do
     requires :task_definition_id, type: Integer, desc: 'Task definition to fetch discussion prompts for'
     requires :content, type: String, desc: 'Discussion prompt content'
-    requires :weight, type: Integer, desc: 'The priority of the disucssion prompt'
+    requires :priority, type: Integer, desc: 'The priority of the disucssion prompt'
     optional :project_id, type: Integer, desc: 'The ID of the project the discussion prompt is for'
   end
   post '/task_definitions/:task_definition_id/discussion_prompts' do
@@ -43,19 +42,13 @@ class DiscussionPromptsApi < Grape::API
     unit = task_definition.unit
 
     content = params[:content].to_s
-    weight = params[:weight].to_i
-    project = unit.projects.find(id: params[:project_id]) if params[:project_id]
+    priority = params[:priority].to_i
 
     discussion_prompt = DiscussionPrompt.create!({
                                                    task_definition: task_definition,
                                                    content: content,
-                                                   weight: weight,
-                                                   created_by: current_user
+                                                   priority: priority
                                                  })
-
-    if project
-      discussion_prompt.update!({ project: project })
-    end
 
     present discussion_prompt, with: Entities::DiscussionPromptEntity
   end
@@ -64,7 +57,7 @@ class DiscussionPromptsApi < Grape::API
   params do
     requires :task_definition_id, type: Integer, desc: 'Task definition to fetch discussion prompts for'
     requires :content, type: String, desc: 'Discussion prompt content'
-    requires :weight, type: Integer, desc: 'The priority of the disucssion prompt'
+    requires :priority, type: Integer, desc: 'The priority of the disucssion prompt'
     requires :id, type: Integer, desc: 'The ID of the discussion prompt'
   end
   put '/task_definitions/:task_definition_id/discussion_prompts/:id' do
@@ -77,12 +70,12 @@ class DiscussionPromptsApi < Grape::API
     discussion_prompt = task_definition.discussion_prompts.find(params[:id])
 
     content = params[:content].to_s
-    weight = params[:weight].to_i
+    priority = params[:priority].to_i
 
     discussion_prompt.update({
                                task_definition: task_definition,
                                content: content,
-                               weight: weight
+                               priority: priority
                              })
   end
 
@@ -119,7 +112,7 @@ class DiscussionPromptsApi < Grape::API
 
     result = DiscussionPrompt.where(task_definition: task_definition)
                              .where('project_id IS NULL OR project_id = ?', project.id)
-                             .order(weight: :desc)
+                             .order(priority: :desc)
 
     present result, with: Entities::DiscussionPromptEntity, user: current_user
   end
@@ -139,9 +132,10 @@ class DiscussionPromptsApi < Grape::API
     tasks_to_discuss = project.tasks.where(task_status: [TaskStatus.discuss, TaskStatus.demonstrate])
     task_definition_ids = tasks_to_discuss.pluck(:task_definition_id)
 
-    result = DiscussionPrompt.where(task_definition_id: task_definition_ids)
-                             .where('project_id IS NULL OR project_id = ?', project.id)
-                             .order(weight: :desc)
+    result = DiscussionPrompt
+             .joins(:task_definition)
+             .where(task_definition_id: task_definition_ids)
+             .order('task_definitions.abbreviation ASC, discussion_prompts.priority DESC')
 
     present result, with: Entities::DiscussionPromptEntity, user: current_user
   end

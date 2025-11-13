@@ -3,6 +3,6 @@ module Entities
     expose :id
     expose :task_definition_id
     expose :content
-    expose :weight
+    expose :priority
   end
 end

@@ -92,15 +92,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_000046) do
 
   create_table "discussion_prompts", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.bigint "task_definition_id", null: false
-    t.bigint "project_id"
-    t.bigint "created_by_id"
     t.text "content", null: false
-    t.integer "weight", default: 0
-    t.datetime "discussed_at"
+    t.integer "priority", default: 0
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["created_by_id"], name: "index_discussion_prompts_on_created_by_id"
-    t.index ["project_id"], name: "index_discussion_prompts_on_project_id"
     t.index ["task_definition_id"], name: "index_discussion_prompts_on_task_definition_id"
   end
 

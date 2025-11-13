@@ -34,14 +34,14 @@ class DiscussionPromptsApiTest < ActiveSupport::TestCase
     DiscussionPrompt.create!({
                                task_definition: td1,
                                content: 'Ask the student about pointers and references...',
-                               weight: 1,
+                               priority: 1,
                                project: nil
                              })
 
     DiscussionPrompt.create!({
                                task_definition: td2,
                                content: 'Ask the student about passing values by reference...',
-                               weight: 2,
+                               priority: 2,
                                project: nil
                              })
 
@@ -49,7 +49,7 @@ class DiscussionPromptsApiTest < ActiveSupport::TestCase
     DiscussionPrompt.create!({
                                task_definition: td1,
                                content: 'Potential use of GenAI, ask the student to explain their code...',
-                               weight: 3,
+                               priority: 3,
                                project: project1,
                                created_by: user
                              })
@@ -57,7 +57,7 @@ class DiscussionPromptsApiTest < ActiveSupport::TestCase
     DiscussionPrompt.create!({
                                task_definition: td2,
                                content: 'Ask student to explain why they used std:cin over read_line()...',
-                               weight: 4,
+                               priority: 4,
                                project: project2,
                                created_by: user
                              })
@@ -75,7 +75,7 @@ class DiscussionPromptsApiTest < ActiveSupport::TestCase
 
     # Ensure we get the global + unique discussion prompt
     assert_equal 2, last_response_body.count
-    # Ensure the prompts are ordered by weight
+    # Ensure the prompts are ordered by priority
     assert_equal 'Potential use of GenAI, ask the student to explain their code...', last_response_body.first['content']
     assert_equal 'Ask the student about pointers and references...', last_response_body.second['content']
 
@@ -89,7 +89,7 @@ class DiscussionPromptsApiTest < ActiveSupport::TestCase
 
     # Ensure we get the global + unique discussion prompt
     assert_equal 2, last_response_body.count
-    # Ensure the prompts are ordered by weight
+    # Ensure the prompts are ordered by priority
     assert_equal 'Ask student to explain why they used std:cin over read_line()...', last_response_body.first['content']
     assert_equal 'Ask the student about passing values by reference...', last_response_body.second['content']
   end
@@ -119,7 +119,7 @@ class DiscussionPromptsApiTest < ActiveSupport::TestCase
 
       post "/api/task_definitions/#{td.id}/discussion_prompts", {
         content: 'test content 123',
-        weight: 1
+        priority: 1
       }
       assert_equal 201, last_response.status, last_response_body
 
@@ -127,16 +127,16 @@ class DiscussionPromptsApiTest < ActiveSupport::TestCase
 
       assert_not_nil last_prompt
       assert_equal 'test content 123', last_prompt.content
-      assert_equal 1, last_prompt.weight
+      assert_equal 1, last_prompt.priority
 
       put "/api/task_definitions/#{td.id}/discussion_prompts/#{last_prompt.id}", {
         content: 'test content 456',
-        weight: 2
+        priority: 2
       }
       assert_equal 200, last_response.status, last_response_body
       last_prompt.reload
       assert_equal 'test content 456', last_prompt.content
-      assert_equal 2, last_prompt.weight
+      assert_equal 2, last_prompt.priority
 
       delete "/api/task_definitions/#{td.id}/discussion_prompts/#{last_prompt.id}"
       assert_equal 200, last_response.status, last_response_body
@@ -157,13 +157,13 @@ class DiscussionPromptsApiTest < ActiveSupport::TestCase
 
       post "/api/task_definitions/#{td.id}/discussion_prompts", {
         content: 'test',
-        weight: 0
+        priority: 0
       }
       assert_equal 403, last_response.status, last_response_body
 
       put "/api/task_definitions/#{td.id}/discussion_prompts/1", {
         content: 'test',
-        weight: 0
+        priority: 0
       }
       assert_equal 403, last_response.status, last_response_body
 
