@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_02_221253) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_24_015104) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -88,6 +88,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_02_221253) do
     t.integer "number_of_prompts"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "discussion_prompts", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "task_definition_id", null: false
+    t.text "content", null: false
+    t.integer "priority", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["task_definition_id"], name: "index_discussion_prompts_on_task_definition_id"
   end
 
   create_table "feedback_chips", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
@@ -447,6 +456,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_02_221253) do
     t.integer "quality_pts", default: -1
     t.integer "extensions", default: 0, null: false
     t.integer "scorm_extensions", default: 0, null: false
+    t.datetime "target_start_date"
+    t.datetime "target_due_date"
     t.index ["group_submission_id"], name: "index_tasks_on_group_submission_id"
     t.index ["project_id", "task_definition_id"], name: "tasks_uniq_proj_task_def", unique: true
     t.index ["project_id"], name: "index_tasks_on_project_id"
