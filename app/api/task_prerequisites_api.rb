@@ -26,4 +26,19 @@ class TaskPrerequisitesApi < Grape::API
     present prerequisites, with: Entities::TaskPrerequisiteEntity
   end
 
+  desc 'Get task prerequisites for a unit'
+  params do
+    requires :unit_id, type: Integer, desc: 'The unit to get the task definition from'
+  end
+  get '/units/:unit_id/task_prerequisites' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :get_unit
+      error!({ error: 'Not authorised to get unit' }, 403)
+    end
+
+    prerequisites = unit.task_definitions.flat_map(&:task_prerequisites)
+
+    present prerequisites, with: Entities::TaskPrerequisiteEntity
+  end
 end
