@@ -915,7 +915,9 @@ class TaskDefinitionsApi < Grape::API
 
     script_path = td.task_assessment_script
 
-    File.write(script_path, params[:script_content])
+    decoded = Base64.urlsafe_decode64(params[:script_content])
+
+    File.write(script_path, decoded)
     status 200
   end
 
