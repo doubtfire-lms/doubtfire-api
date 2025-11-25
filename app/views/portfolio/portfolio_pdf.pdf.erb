@@ -257,16 +257,20 @@ end # if there are linked outcomes
   end # if outcomes exist
   if task.comments.count > 0
 %>
-    \begin{tabular}{p{3cm}|p{3cm}|p{9cm}}
+    \begin{longtable}{p{3cm}|p{3cm}|p{9cm}}
       \textbf{Date} & \textbf{Author} & \textbf{Comment} \\ \hline
 <%
     task.comments.each do |comment|
+      full_text = comment.comment
+      chunks = full_text.scan(/.{1,2000}/m) # split into 2000-char chunks
 %>
-        <%= lesc comment.created_at.localtime.strftime("%Y/%m/%d %H:%M") %> & <%= lesc comment.user.name %> & <%= lesc comment.comment %> \\
+    <% chunks.each_with_index do |chunk, i| %>
+      <%= lesc comment.created_at.localtime.strftime("%Y/%m/%d %H:%M") %> & <%= lesc comment.user.name %> & <%if i > 0 %>\textit{\textcolor{gray}{[continued...]}}<% end %> <%= lesc chunk %> <% if i < chunks.size - 1 %> \textit{\textcolor{gray}{[comment has been split due to length]}}<% end %> \\
+    <% end %>
 <%
     end # comments loop
 %>
-    \end{tabular}
+    \end{longtable}
 <%
   end # if comments exist
 
