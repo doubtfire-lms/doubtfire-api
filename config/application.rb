@@ -74,6 +74,7 @@ module Doubtfire
     # variable.
     config.jplag_report_dir = ENV['DF_JPLAG_REPORT_DIR'] || Rails.root.join('jplag/results').to_s
     config.jplag_min_tokens = ENV.fetch('DF_JPLAG_MIN_TOKENS', -1)
+    config.jplag_skip_cluster_check = ENV['DF_JPLAG_SKIP_CLUSTER_CHECK'].present? && (ENV['DF_JPLAG_SKIP_CLUSTER_CHECK'].to_s.downcase == "true" || ENV['DF_JPLAG_SKIP_CLUSTER_CHECK'].to_i == 1)
 
     # ==> File size limits
     # Sets the global file size limit per upload requirement
