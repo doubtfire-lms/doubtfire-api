@@ -90,15 +90,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_24_015104) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "discussion_prompts", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
-    t.bigint "task_definition_id", null: false
-    t.text "content", null: false
-    t.integer "priority", default: 0
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["task_definition_id"], name: "index_discussion_prompts_on_task_definition_id"
-  end
-
   create_table "feedback_chips", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "type"
     t.text "chip_text"
