@@ -49,6 +49,18 @@ class AcceptSubmissionJob
     if TurnItIn.enabled?
       task.send_documents_to_tii(user, accepted_tii_eula: accepted_tii_eula)
     end
+
+    if task.overseer_enabled?
+      overseer_assessment = OverseerAssessment.create_for(task)
+      if overseer_assessment.present?
+        logger.info "Launching Overseer assessment for task_def_id: #{task.task_definition.id} task_id: #{task.id}"
+
+        overseer_assessment.send_to_overseer
+
+      else
+        logger.info "Overseer assessment for task_def_id: #{task.task_definition.id} task_id: #{task.id} was not performed #{overseer_assessment.inspect}"
+      end
+    end
   rescue StandardError => e # to raise error message to avoid unnecessary retry
     logger.error e
     task.clear_in_process

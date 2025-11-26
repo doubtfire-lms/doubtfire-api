@@ -98,18 +98,6 @@ module Submission
       # Copy files to be PDFed
       task.accept_submission(current_user, scoop_files(params, upload_reqs), self, params[:contributions], trigger, alignments, accepted_tii_eula: params[:accepted_tii_eula])
 
-      if task.overseer_enabled?
-        overseer_assessment = OverseerAssessment.create_for(task)
-        if overseer_assessment.present?
-          logger.info "Launching Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id}"
-
-          overseer_assessment.send_to_overseer
-
-
-        else
-          logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was not performed #{overseer_assessment.inspect}"
-        end
-      end
 
       present task, with: Entities::TaskEntity, update_only: true
     end
