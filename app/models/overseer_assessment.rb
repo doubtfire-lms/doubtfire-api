@@ -214,7 +214,7 @@ class OverseerAssessment < ApplicationRecord
       end
 
       if comment_txt.present?
-        update_assessment_comment(comment_txt)
+        update_assessment_comment(comment_txt[0, 4000]) # Truncate to 4000 characters
       else
         puts 'YAML file doesn\'t contain field `build_message` or `run_message`'
       end
