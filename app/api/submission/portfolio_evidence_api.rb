@@ -232,7 +232,11 @@ module Submission
       end
 
       result = []
-      yaml_data = YAML.load_file("#{path}/output.yaml") # returns a hash
+      begin
+        yaml_data = YAML.load_file("#{path}/output.yaml") # returns a hash
+      rescue Psych::SyntaxError => e
+        error!({ error: "Failed to parse overseer output: #{e.message}" }, 401)
+      end
 
       yaml_data.each do |key, value|
         if value.is_a?(String)
@@ -287,7 +291,11 @@ module Submission
       end
 
       result = []
-      yaml_data = YAML.load_file("#{path}/output.yaml") # returns a hash
+      begin
+        yaml_data = YAML.load_file("#{path}/output.yaml") # returns a hash
+      rescue Psych::SyntaxError => e
+        error!({ error: "Failed to parse overseer output: #{e.message}" }, 401)
+      end
 
       yaml_data.each do |key, value|
         if value.is_a?(String)
