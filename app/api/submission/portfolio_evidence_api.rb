@@ -235,6 +235,13 @@ module Submission
       yaml_data = YAML.load_file("#{path}/output.yaml") # returns a hash
 
       yaml_data.each do |key, value|
+        if value.is_a?(String)
+          begin
+            value = Base64.decode64(value)
+          rescue ArgumentError
+            # not valid base64, leave value as-is
+          end
+        end
         result << { label: key, result: value }
       end
 
@@ -283,6 +290,13 @@ module Submission
       yaml_data = YAML.load_file("#{path}/output.yaml") # returns a hash
 
       yaml_data.each do |key, value|
+        if value.is_a?(String)
+          begin
+            value = Base64.decode64(value)
+          rescue ArgumentError
+            # not valid base64, leave value as-is
+          end
+        end
         result << { label: key, result: value }
       end
 

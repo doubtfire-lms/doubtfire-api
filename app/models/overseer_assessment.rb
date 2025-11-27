@@ -199,12 +199,20 @@ class OverseerAssessment < ApplicationRecord
       comment_txt = ''
       if !yaml_file['build_message'].nil? && !yaml_file['build_message'].strip.empty?
         comment_txt += "Build output:\n"
-        comment_txt += yaml_file['build_message']
+        comment_txt += if base64?(yaml_file['run_message'])
+                         Base64.urlsafe_decode64(yaml_file['build_message'])
+                       else
+                         yaml_file['run_message']
+                       end
       end
       if !yaml_file['run_message'].nil? && !yaml_file['run_message'].strip.empty?
         comment_txt += "\n" unless comment_txt.empty?
         comment_txt += "Execution output:\n"
-        comment_txt += yaml_file['run_message']
+        comment_txt += if base64?(yaml_file['run_message'])
+                         Base64.urlsafe_decode64(yaml_file['run_message'])
+                       else
+                         yaml_file['run_message']
+                       end
       end
 
       if !yaml_file['message'].nil? && !yaml_file['message'].strip.empty?
