@@ -36,9 +36,15 @@ class AcceptOverseerJob
         next if entry.name_is_directory?
 
         parts = entry.name.split('/')[1..]
-        next unless parts
+        next unless parts.length >= 1
 
-        dest_path = File.join(work_dir, *parts)
+        file_name = parts.first
+        index = file_name.to_i
+
+        file = task.upload_requirements[index]
+        final_name = file['name']
+
+        dest_path = File.join(work_dir, final_name)
         FileUtils.mkdir_p(File.dirname(dest_path))
         zip_file.extract(entry, dest_path) { true }
       end
