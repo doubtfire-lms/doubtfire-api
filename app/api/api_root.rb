@@ -153,10 +153,10 @@ class ApiRoot < Grape::API
 
   add_swagger_documentation \
     base_path: nil,
-    api_version: 'v1',
+    doc_version: 'v10.0.0',
     hide_documentation_path: true,
     info: {
-      title: 'Doubtfire API Documentaion',
+      title: 'Doubtfire API Documentation',
       description: 'Doubtfire is a modern, lightweight learning management system.',
       license: 'AGPL v3.0',
       license_url: 'https://github.com/doubtfire-lms/doubtfire-api/blob/master/LICENSE'
