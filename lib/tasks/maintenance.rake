@@ -24,6 +24,12 @@ namespace :maintenance do
       end
     end
 
+    # Destroy old marking sessions that have less than 1 minute duration
+    MarkingSession
+      .where("end_time IS NOT NULL AND end_time < ?", 24.hours.ago)
+      .where("TIMESTAMPDIFF(SECOND, start_time, end_time) <= ?", 60)
+      .find_each(&:destroy!)
+
     AuthToken.destroy_old_tokens
   end
 

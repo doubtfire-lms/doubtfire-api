@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-58](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-57...v10.0.0-58) (2025-11-25)
+
+
+### Bug Fixes
+
+* allow pdf gen and overseer job to be queued at the same time ([d1d839b](https://github.com/b0ink/doubtfire-deploy/commit/d1d839ba10ee369faf354d758dd1c746bea9e4a9))
+
+## [10.0.0-57](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-56...v10.0.0-57) (2025-11-25)
+
+
+### Features
+
+* env option to skip jplag submission clusters ([#551](https://github.com/b0ink/doubtfire-deploy/issues/551)) ([5e3b4cc](https://github.com/b0ink/doubtfire-deploy/commit/5e3b4cc437fd296519e904a37e53305b579140dd))
+
+
+### Bug Fixes
+
+* ensure long comments are appended on a new page [#303](https://github.com/b0ink/doubtfire-deploy/issues/303) ([148cbba](https://github.com/b0ink/doubtfire-deploy/commit/148cbba601020eb41d975bb39f17a72378fc36ad))
+
 ## [10.0.0-56](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-55...v10.0.0-56) (2025-11-10)
 
 
