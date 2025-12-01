@@ -57,5 +57,9 @@ module Entities
     expose :lock_assessments_to_tutorial_stream, if: ->(unit, options) { staff?(options[:my_role]) }
 
     expose :learning_outcomes, using: LearningOutcomeEntity, as: :ilos
+
+    expose :discussion_prompts_count do |task_def|
+      task_def.discussion_prompts.size
+    end
   end
 end
