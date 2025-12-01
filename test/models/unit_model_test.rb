@@ -301,6 +301,58 @@ class UnitModelTest < ActiveSupport::TestCase
     unit3.destroy!
   end
 
+  def test_rollover_of_discussion_prompts
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 4)
+    td1 = unit.task_definitions.first
+    td2 = unit.task_definitions.second
+
+    DiscussionPrompt.create!({
+                               task_definition: td1,
+                               content: 'Discuss pointers and references',
+                               priority: 1
+                             })
+
+    DiscussionPrompt.create!({
+                               task_definition: td1,
+                               content: 'Discuss object oriented programming',
+                               priority: 2
+                             })
+
+    DiscussionPrompt.create!({
+                               task_definition: td2,
+                               content: 'Discuss use of AI',
+                               priority: 3
+                             })
+
+    unit2 = unit.rollover(TeachingPeriod.find(2), nil, nil, nil)
+
+    new_td1 = unit2.task_definitions.first
+    new_td2 = unit2.task_definitions.second
+
+    assert_equal 2, new_td1.discussion_prompts.count
+    assert_equal 1, new_td2.discussion_prompts.count
+
+    new_prompt1 = new_td1.discussion_prompts.first
+    new_prompt2 = new_td1.discussion_prompts.second
+    new_prompt3 = new_td2.discussion_prompts.first
+
+    assert_not_nil new_prompt1, "Discussion prompt should be duplicated in rollover"
+    assert_not_nil new_prompt2, "Discussion prompt should be duplicated in rollover"
+    assert_not_nil new_prompt3, "Discussion prompt should be duplicated in rollover"
+
+    assert_equal new_prompt1.task_definition.id, new_td1.id
+    assert_equal new_prompt1.content, 'Discuss pointers and references'
+    assert_equal new_prompt1.priority, 1
+
+    assert_equal new_prompt2.task_definition.id, new_td1.id
+    assert_equal new_prompt2.content, 'Discuss object oriented programming'
+    assert_equal new_prompt2.priority, 2
+
+    assert_equal new_prompt3.task_definition.id, new_td2.id
+    assert_equal new_prompt3.content, 'Discuss use of AI'
+    assert_equal new_prompt3.priority, 3
+  end
+
   def test_rollover_of_task_prerequisites
     unit = FactoryBot.create(:unit, with_students: false, task_count: 4)
     td1 = unit.task_definitions.first
