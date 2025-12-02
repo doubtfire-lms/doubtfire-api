@@ -204,6 +204,7 @@ class OverseerAssessment < ApplicationRecord
                        else
                          yaml_file['run_message']
                        end
+        comment_txt += "\n"
       end
       if !yaml_file['run_message'].nil? && !yaml_file['run_message'].strip.empty?
         comment_txt += "\n" unless comment_txt.empty?
@@ -213,6 +214,7 @@ class OverseerAssessment < ApplicationRecord
                        else
                          yaml_file['run_message']
                        end
+        comment_txt += "\n"
       end
 
       if !yaml_file['message'].nil? && !yaml_file['message'].strip.empty?
