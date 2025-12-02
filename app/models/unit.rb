@@ -1832,6 +1832,30 @@ class Unit < ApplicationRecord
     end
   end
 
+  def aggregate_task_complete_stats
+    result = {}
+
+    task_definitions.each do |td|
+      result[td.abbreviation] = {}
+    end
+
+    active_projects.each do |project|
+      task_definitions.each do |td|
+          task = project.task_for_task_definition(td)
+          status = task.task_status.id.to_s
+          result[task.task_definition.abbreviation][status] ||= 0
+          result[task.task_definition.abbreviation][status] += 1
+      end
+    end
+
+    result.inspect
+
+    file_server = Doubtfire::Application.config.student_work_dir
+    analytics_dir = File.join(file_server, "analytics")
+
+    File.write("#{analytics_dir}/#{unit.code}-#{id}-stats.json", result.to_json)
+  end
+
   def get_portfolio_zip_filename(current_user)
     filename = FileHelper.sanitized_filename("portfolios-#{code}-#{current_user.username}")
     "#{FileHelper.tmp_file(filename)}.zip"
