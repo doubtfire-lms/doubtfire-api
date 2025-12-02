@@ -6,6 +6,8 @@ module Submission
     helpers AuthenticationHelpers
     helpers AuthorisationHelpers
     helpers FileStreamHelper
+    helpers Base64Helper
+
     include LogHelper
 
     def self.logger
@@ -239,12 +241,8 @@ module Submission
       end
 
       yaml_data.each do |key, value|
-        if value.is_a?(String)
-          begin
-            value = Base64.decode64(value)
-          rescue ArgumentError
-            # not valid base64, leave value as-is
-          end
+        if base64?(value)
+          value = Base64.decode64(value)
         end
         result << { label: key, result: value }
       end
@@ -298,12 +296,8 @@ module Submission
       end
 
       yaml_data.each do |key, value|
-        if value.is_a?(String)
-          begin
-            value = Base64.decode64(value)
-          rescue ArgumentError
-            # not valid base64, leave value as-is
-          end
+        if base64?(value)
+          value = Base64.decode64(value)
         end
         result << { label: key, result: value }
       end
