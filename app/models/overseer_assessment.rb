@@ -199,12 +199,22 @@ class OverseerAssessment < ApplicationRecord
       comment_txt = ''
       if !yaml_file['build_message'].nil? && !yaml_file['build_message'].strip.empty?
         comment_txt += "Build output:\n"
-        comment_txt += yaml_file['build_message']
+        comment_txt += if base64?(yaml_file['run_message'])
+                         Base64.urlsafe_decode64(yaml_file['build_message'])
+                       else
+                         yaml_file['run_message']
+                       end
+        comment_txt += "\n"
       end
       if !yaml_file['run_message'].nil? && !yaml_file['run_message'].strip.empty?
         comment_txt += "\n" unless comment_txt.empty?
         comment_txt += "Execution output:\n"
-        comment_txt += yaml_file['run_message']
+        comment_txt += if base64?(yaml_file['run_message'])
+                         Base64.urlsafe_decode64(yaml_file['run_message'])
+                       else
+                         yaml_file['run_message']
+                       end
+        comment_txt += "\n"
       end
 
       if !yaml_file['message'].nil? && !yaml_file['message'].strip.empty?
@@ -214,7 +224,7 @@ class OverseerAssessment < ApplicationRecord
       end
 
       if comment_txt.present?
-        update_assessment_comment(comment_txt)
+        update_assessment_comment(comment_txt[0, 4000]) # Truncate to 4000 characters
       else
         puts 'YAML file doesn\'t contain field `build_message` or `run_message`'
       end
@@ -244,6 +254,10 @@ class OverseerAssessment < ApplicationRecord
 
   def delete_associated_files
     FileUtils.rm_rf output_path
+  end
+
+  def base64?(value)
+    value.is_a?(String) && Base64.strict_encode64(Base64.decode64(value)) == value
   end
 end
 # rubocop:enable Rails/Output
