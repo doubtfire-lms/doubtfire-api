@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-62](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-61...v10.0.0-62) (2025-12-03)
+
+
+### Bug Fixes
+
+* set correct mount ([84b08d8](https://github.com/b0ink/doubtfire-deploy/commit/84b08d8c3e6a18e38585792c873fa174e9bd338a))
+
 ## [10.0.0-61](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-60...v10.0.0-61) (2025-12-03)
 
 ## [10.0.0-60](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-59...v10.0.0-60) (2025-12-03)
