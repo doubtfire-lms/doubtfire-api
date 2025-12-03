@@ -19,10 +19,12 @@ class AcceptOverseerJob
     at(0)
     total(1)
 
-    work_dir = Rails.root.join("tmp", "overseer", task_id.to_s)
-    FileUtils.mkdir_p(work_dir)
-
     task = Task.find(task_id)
+
+    work_dir_name = "#{task.id}-#{overseer_assessment_id}"
+
+    work_dir = Rails.root.join("tmp", "overseer", work_dir_name)
+    FileUtils.mkdir_p(work_dir)
 
     raise "PDF is still compiling" if task.processing_pdf? || !task.has_done_file?
 
@@ -34,9 +36,15 @@ class AcceptOverseerJob
         next if entry.name_is_directory?
 
         parts = entry.name.split('/')[1..]
-        next unless parts
+        next unless parts.length >= 1
 
-        dest_path = File.join(work_dir, *parts)
+        file_name = parts.first
+        index = file_name.to_i
+
+        file = task.upload_requirements[index]
+        final_name = file['name']
+
+        dest_path = File.join(work_dir, final_name)
         FileUtils.mkdir_p(File.dirname(dest_path))
         zip_file.extract(entry, dest_path) { true }
       end
@@ -83,7 +91,7 @@ class AcceptOverseerJob
       #{volume_mount} \
       --name #{container_name} \
       #{docker_image_name_tag} \
-      bash -c "cd /overseer/work-dir/#{task_id} && ./run.sh"
+      bash -c "cd /overseer/work-dir/#{work_dir_name} && ./run.sh"
     )
 
     system(command)

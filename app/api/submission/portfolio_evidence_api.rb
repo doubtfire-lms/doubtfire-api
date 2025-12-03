@@ -6,6 +6,8 @@ module Submission
     helpers AuthenticationHelpers
     helpers AuthorisationHelpers
     helpers FileStreamHelper
+    helpers Base64Helper
+
     include LogHelper
 
     def self.logger
@@ -98,18 +100,6 @@ module Submission
       # Copy files to be PDFed
       task.accept_submission(current_user, scoop_files(params, upload_reqs), self, params[:contributions], trigger, alignments, accepted_tii_eula: params[:accepted_tii_eula])
 
-      if task.overseer_enabled?
-        overseer_assessment = OverseerAssessment.create_for(task)
-        if overseer_assessment.present?
-          logger.info "Launching Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id}"
-
-          overseer_assessment.send_to_overseer
-
-
-        else
-          logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was not performed #{overseer_assessment.inspect}"
-        end
-      end
 
       present task, with: Entities::TaskEntity, update_only: true
     end
@@ -244,9 +234,16 @@ module Submission
       end
 
       result = []
-      yaml_data = YAML.load_file("#{path}/output.yaml") # returns a hash
+      begin
+        yaml_data = YAML.load_file("#{path}/output.yaml") # returns a hash
+      rescue Psych::SyntaxError => e
+        error!({ error: "Failed to parse overseer output: #{e.message}" }, 401)
+      end
 
       yaml_data.each do |key, value|
+        if base64?(value)
+          value = Base64.decode64(value)
+        end
         result << { label: key, result: value }
       end
 
@@ -292,9 +289,16 @@ module Submission
       end
 
       result = []
-      yaml_data = YAML.load_file("#{path}/output.yaml") # returns a hash
+      begin
+        yaml_data = YAML.load_file("#{path}/output.yaml") # returns a hash
+      rescue Psych::SyntaxError => e
+        error!({ error: "Failed to parse overseer output: #{e.message}" }, 401)
+      end
 
       yaml_data.each do |key, value|
+        if base64?(value)
+          value = Base64.decode64(value)
+        end
         result << { label: key, result: value }
       end
 
