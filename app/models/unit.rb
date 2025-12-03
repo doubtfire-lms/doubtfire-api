@@ -1840,11 +1840,18 @@ class Unit < ApplicationRecord
     end
 
     active_projects.each do |project|
+      campus_name = project.campus.name
+      result[campus_name] ||= {}
+
       task_definitions.each do |td|
-          task = project.task_for_task_definition(td)
-          status = task.task_status.id.to_s
-          result[task.task_definition.abbreviation][status] ||= 0
-          result[task.task_definition.abbreviation][status] += 1
+        result[campus_name][td.abbreviation] ||= {}
+
+        task = project.task_for_task_definition(td)
+        next unless task
+
+        status = task.task_status.id.to_s
+        result[campus_name][td.abbreviation][status] ||= 0
+        result[campus_name][td.abbreviation][status] += 1
       end
     end
 
@@ -1852,8 +1859,10 @@ class Unit < ApplicationRecord
 
     file_server = Doubtfire::Application.config.student_work_dir
     analytics_dir = File.join(file_server, "analytics")
+    FileUtils.mkdir_p(analytics_dir)
 
-    File.write("#{analytics_dir}/#{unit.code}-#{id}-stats.json", result.to_json)
+
+    File.write("#{analytics_dir}/#{code}-#{id}-stats.json", result.to_json)
   end
 
   def get_portfolio_zip_filename(current_user)
