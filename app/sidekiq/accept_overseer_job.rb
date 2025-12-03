@@ -104,9 +104,8 @@ class AcceptOverseerJob
     if File.exist?(yaml_path)
       path = FileHelper.task_submission_identifier_path_with_timestamp(:done, task, timestamp)
       FileUtils.cp(yaml_path, path)
+      FileUtils.rm_rf(work_dir)
     end
-
-    FileUtils.rm_rf(work_dir)
 
     logger.info "Completed overseer job"
   rescue StandardError => e
