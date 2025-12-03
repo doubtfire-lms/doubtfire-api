@@ -79,7 +79,7 @@ class AcceptOverseerJob
                      # used in production, as it breaks isolation between tasks.
                      "--volumes-from #{Doubtfire::Application.config.overseer_fallback_volume_container}"
                    else
-                     "-v #{mount}/#{task_id}:/overseer/work-dir/#{work_dir_name}"
+                     "-v #{mount}/#{work_dir_name}:/overseer/work-dir/#{work_dir_name}"
                    end
 
     container_name = "overseer-#{task_id}-#{timestamp}"
