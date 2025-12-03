@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-63](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-62...v10.0.0-63) (2025-12-03)
+
+
+### Features
+
+* add basic health endpoint ([#553](https://github.com/b0ink/doubtfire-deploy/issues/553)) ([e106eeb](https://github.com/b0ink/doubtfire-deploy/commit/e106eebf331bd7f1b12ff1a65fa590d4fba8d9e9))
+
 ## [10.0.0-62](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-61...v10.0.0-62) (2025-12-03)
 
 
