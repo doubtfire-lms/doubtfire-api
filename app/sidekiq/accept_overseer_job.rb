@@ -70,6 +70,7 @@ class AcceptOverseerJob
 
     run_sh_path = File.join(work_dir, 'run.sh')
     File.write(run_sh_path, script_contents)
+    system("chmod +x #{work_dir}/run.sh")
 
     mount = Doubtfire::Application.config.overseer_workdir_volume_mount
     volume_mount = if mount.nil?
@@ -90,7 +91,7 @@ class AcceptOverseerJob
       #{volume_mount} \
       --name #{container_name} \
       #{docker_image_name_tag} \
-      bash -c "cd /overseer/work-dir/#{work_dir_name} && chmod +x ./run.sh && ./run.sh"
+      bash -c "cd /overseer/work-dir/#{work_dir_name} && ./run.sh"
     )
 
     system(command)
