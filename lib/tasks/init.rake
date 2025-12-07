@@ -41,7 +41,8 @@ namespace :db do
       Demonstrate: "Your work looks good, demonstrate it to your tutor to complete.",
       Fail: "You did not successfully demonstrate the required learning in this task.",
       "Time Exceeded": "You did not submit or complete the task before the appropriate deadline.",
-      "Assess in Portfolio": "This task will not be signed off as complete by your tutor, and will be marked directly in your portfolio."
+      "Assess in Portfolio": "This task will not be signed off as complete by your tutor, and will be marked directly in your portfolio.",
+      "Discuss Check": "Your work requires further discussion with your tutor."
     }
     statuses.each do |name, desc|
       print "."

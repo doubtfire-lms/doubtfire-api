@@ -296,9 +296,20 @@ class Project < ApplicationRecord
       )
       .map do |r|
         t = Task.find(r.id)
-        {
+        unit_role = unit.unit_role_for(user)
+
+        # Show the real status_id if this is for a staff remember
+        status = TaskStatus.id_to_key(r.status_id)
+        status_id = if unit_role
+                      r.status_id
+                    else
+                      status.id
+                    end
+
+        result = {
           id: r.id,
-          status: TaskStatus.id_to_key(r.status_id),
+          status: status,
+          status_id: status_id,
           task_definition_id: r.task_definition_id,
           include_in_portfolio: r.include_in_portfolio,
           times_assessed: r.times_assessed,
@@ -312,6 +323,7 @@ class Project < ApplicationRecord
           submission_date: t.submission_date,
           completion_date: t.completion_date
         }
+        result
       end
   end
 
