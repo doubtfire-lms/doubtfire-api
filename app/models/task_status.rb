@@ -115,7 +115,7 @@ class TaskStatus < ApplicationRecord
       TaskStatus.time_exceeded
     when 'assess in portfolio', 'assess_in_portfolio', 'aip'
       TaskStatus.assess_in_portfolio
-    when 'discuss_check', 'discuss check', 'dc'
+    when 'discuss check', 'discuss_check', 'dc'
       TaskStatus.discuss_check
     else
       nil
@@ -160,7 +160,7 @@ class TaskStatus < ApplicationRecord
     return :feedback_exceeded if self == TaskStatus.feedback_exceeded
     return :time_exceeded if self == TaskStatus.time_exceeded
     return :assess_in_portfolio if self == TaskStatus.assess_in_portfolio
-    return :discuss if self == TaskStatus.discuss_check
+    return :discuss_check if self == TaskStatus.discuss_check
 
     return :not_started
   end
