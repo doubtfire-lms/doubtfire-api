@@ -102,6 +102,7 @@ class ApiRoot < Grape::API
   mount WebcalApi
   mount WebcalPublicApi
   mount MarkingSessionsApi
+  mount DiscussionPromptsApi
 
   mount Feedback::FeedbackChipApi
 
@@ -150,13 +151,14 @@ class ApiRoot < Grape::API
   AuthenticationHelpers.add_auth_to D2lIntegrationApi::D2lApi
   AuthenticationHelpers.add_auth_to Feedback::FeedbackChipApi
   AuthenticationHelpers.add_auth_to MarkingSessionsApi
+  AuthenticationHelpers.add_auth_to DiscussionPromptsApi
 
   add_swagger_documentation \
     base_path: nil,
-    api_version: 'v1',
+    doc_version: 'v10.0.0',
     hide_documentation_path: true,
     info: {
-      title: 'Doubtfire API Documentaion',
+      title: 'Doubtfire API Documentation',
       description: 'Doubtfire is a modern, lightweight learning management system.',
       license: 'AGPL v3.0',
       license_url: 'https://github.com/doubtfire-lms/doubtfire-api/blob/master/LICENSE'

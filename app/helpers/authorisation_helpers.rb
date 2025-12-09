@@ -25,7 +25,8 @@ module AuthorisationHelpers
     :get_discussion,
     :get_staff_note,
     :get_members,
-    :get_groups
+    :get_groups,
+    :get_discussion_prompt
   ].freeze
 
   #
