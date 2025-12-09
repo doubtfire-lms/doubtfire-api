@@ -508,11 +508,11 @@ class TaskStatusTest < ActiveSupport::TestCase
   end
 
   def test_staff_assigned_statuses
-    assert_equal TaskStatus.staff_assigned_statuses.count, 9 # number of staff tasks
+    assert_equal TaskStatus.staff_assigned_statuses.count, 10 # number of staff tasks
   end
 
   def test_id_to_key_not_started
-    assert_equal TaskStatus.id_to_key(14), :not_started
+    assert_equal TaskStatus.id_to_key(15), :not_started
   end
 
 end
