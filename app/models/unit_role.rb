@@ -127,7 +127,7 @@ class UnitRole < ApplicationRecord
 
     data[:engagements] = all_engagements
     data[:total_staff_engagements] = all_engagements.count
-    data[:staff_engagements] = weekly_engagements.where(engagement: [TaskStatus.complete.name, TaskStatus.feedback_exceeded.name, TaskStatus.redo.name, TaskStatus.discuss.name, TaskStatus.demonstrate.name, TaskStatus.fail.name])
+    data[:staff_engagements] = weekly_engagements.where(engagement: [TaskStatus.complete.name, TaskStatus.feedback_exceeded.name, TaskStatus.redo.name, TaskStatus.discuss.name, TaskStatus.discuss_check.name, TaskStatus.demonstrate.name, TaskStatus.fail.name])
 
     # Weekly task engagements for this tutorial
     data[:weekly_engagements_count] = weekly_engagements.count
