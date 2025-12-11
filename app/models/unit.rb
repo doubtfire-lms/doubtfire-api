@@ -64,7 +64,8 @@ class Unit < ApplicationRecord
       :get_tutor_times,
       :get_tutor_times_summary,
       :get_marking_sessions,
-      :upload_grades_csv
+      :upload_grades_csv,
+      :get_staff_notes
     ]
 
     # What can admin do with units?
@@ -88,7 +89,8 @@ class Unit < ApplicationRecord
       :get_feedback_chips,
       :grant_spec_con,
       :download_jplag_report,
-      :get_marking_sessions
+      :get_marking_sessions,
+      :get_staff_notes
     ]
 
     # What can auditors do with units?
@@ -1828,6 +1830,36 @@ class Unit < ApplicationRecord
             result << row["people_#{td.id}"] if td.is_group_task?
             result
           end.flatten)
+        end
+    end
+  end
+
+  def staff_notes_csv
+    CSV.generate() do |csv|
+      # Add headers
+      csv << ([
+        'Student Username',
+        'Project ID',
+        'Student Name',
+        'Staff Note',
+        'Created',
+        'Author Name',
+        'Author Username',
+      ])
+
+      StaffNote.joins(project: :unit)
+        .where(units: { id: id })
+        .order('projects.id', 'created_at')
+        .each do |row|
+          csv << [
+            row.project.student.username,
+            row.project.id.to_s,
+            row.project.student.name,
+            row.note,
+            row.created_at.localtime,
+            row.user.name,
+            row.user.username,
+          ]
         end
     end
   end
