@@ -42,7 +42,7 @@ namespace :db do
       Fail: "You did not successfully demonstrate the required learning in this task.",
       "Time Exceeded": "You did not submit or complete the task before the appropriate deadline.",
       "Assess in Portfolio": "This task will not be signed off as complete by your tutor, and will be marked directly in your portfolio.",
-      "Off Track": "This task needs to be discussed with your tutor so that you can get back on track."
+      "Attention Required": "This task needs to be discussed with your tutor so that you can get back on track."
     }
     statuses.each do |name, desc|
       print "."
