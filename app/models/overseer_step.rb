@@ -1,0 +1,2 @@
+class OverseerStep < ApplicationRecord
+end
