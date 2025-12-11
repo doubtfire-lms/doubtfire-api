@@ -77,7 +77,7 @@ button.task-status.discuss {
   color: white;
 }
 button.task-status.discuss-check {
-  background-color: #31b0d5;
+  background-color: #f1814d;
   color: white;
 }
 button.task-status.complete {
@@ -86,6 +86,6 @@ button.task-status.complete {
   color: white;
 }
 button.task-status.assess-in-portfolio {
-  background-color: #91b891;
+  background-color: #f2d85c;
   color: white;
 }
