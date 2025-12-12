@@ -9,9 +9,6 @@ module Entities
     expose :task_definition_id
 
     expose :status
-    expose :status_id, expose_nil: false do |task, options|
-      task.status_id if task.respond_to?(:status_id)
-    end
 
     with_options(format_with: :date_only) do
       expose :due_date
