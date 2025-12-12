@@ -68,7 +68,7 @@ class TaskStatus < ApplicationRecord
     TaskStatus.find(13)
   end
 
-  def self.discuss_check
+  def self.attention_required
     TaskStatus.find(14)
   end
 
@@ -115,8 +115,8 @@ class TaskStatus < ApplicationRecord
       TaskStatus.time_exceeded
     when 'assess in portfolio', 'assess_in_portfolio', 'aip'
       TaskStatus.assess_in_portfolio
-    when 'discuss check', 'discuss_check', 'dc'
-      TaskStatus.discuss_check
+    when 'attention required', 'attention_required', 'ar'
+      TaskStatus.attention_required
     else
       nil
     end
@@ -141,7 +141,7 @@ class TaskStatus < ApplicationRecord
     when 11 then :fail
     when 12 then :time_exceeded
     when 13 then :assess_in_portfolio
-    when 14 then :discuss_check
+    when 14 then :attention_required
     else :not_started
     end
   end
@@ -160,7 +160,7 @@ class TaskStatus < ApplicationRecord
     return :feedback_exceeded if self == TaskStatus.feedback_exceeded
     return :time_exceeded if self == TaskStatus.time_exceeded
     return :assess_in_portfolio if self == TaskStatus.assess_in_portfolio
-    return :discuss_check if self == TaskStatus.discuss_check
+    return :attention_required if self == TaskStatus.attention_required
 
     return :not_started
   end
