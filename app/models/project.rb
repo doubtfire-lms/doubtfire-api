@@ -296,7 +296,6 @@ class Project < ApplicationRecord
       )
       .map do |r|
         t = Task.find(r.id)
-
         {
           id: r.id,
           status: TaskStatus.id_to_key(r.status_id),
