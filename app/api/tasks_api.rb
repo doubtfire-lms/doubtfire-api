@@ -351,7 +351,10 @@ class TasksApi < Grape::API
 
       task = project.task_for_task_definition(task_definition)
 
-      logger.debug params.inspect
+      if task.target_start_date == params[:target_start_date] && task.target_due_date == params[:target_due_date]
+        present task, with: Entities::TaskEntity, include_other_projects: true, update_only: true
+        return
+      end
 
       task.update!(
         target_start_date: params[:target_start_date],
