@@ -335,8 +335,8 @@ class TasksApi < Grape::API
   params do
     requires :id, type: Integer, desc: 'The project id to locate'
     requires :task_definition_id, type: Integer, desc: 'The id of the task definition of the task to update in this project'
-    optional :target_start_date, type: Date, desc: 'Target date to start the task'
-    optional :target_due_date, type: Date, desc: 'Target date to submit the task'
+    requires :target_start_date, type: Date, desc: 'Target date to start the task'
+    requires :target_due_date, type: Date, desc: 'Target date to submit the task'
   end
   put '/projects/:id/task_def_id/:task_definition_id/target_dates' do
     project = Project.find(params[:id])
