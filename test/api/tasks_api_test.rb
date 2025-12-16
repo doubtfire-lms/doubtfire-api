@@ -1012,4 +1012,64 @@ class TasksApiTest < ActiveSupport::TestCase
       assert task1.submission_date > task2.submission_date
     end
   end
+
+  def test_task_target_date_permissions
+    unit = FactoryBot.create(:unit, task_count: 2, student_count: 1)
+    # tutor = FactoryBot.create(:user, :tutor)
+    # convenor = FactoryBot.create(:user, :convenor)
+
+    # convenor_role = unit.employ_staff(convenor, Role.convenor)
+    # tutor_role = unit.employ_staff(tutor, Role.tutor)
+
+    td = unit.task_definitions.first
+
+    original_start_date = Time.zone.today
+    original_end_date = Time.zone.today + 1.day
+    td.update!(target_date: original_end_date, start_date: original_start_date)
+    assert_not td.nil?
+
+    student1 = FactoryBot.create(:user, :student)
+
+    project1 = unit.enrol_student(student1, nil)
+    task = project1.task_for_task_definition(td)
+
+    assert_equal original_end_date, task.due_date
+
+    unit.update!(allow_flexible_dates: false)
+
+    new_start_date = Time.zone.today + 2.days
+    new_end_date = Time.zone.today + 4.days
+
+    add_auth_header_for(user: student1)
+
+    put "/api/projects/#{project1.id}/task_def_id/#{td.id}/target_dates", {
+      target_start_date: new_start_date,
+      target_due_date: new_end_date
+    }
+
+    assert_equal 403, last_response.status
+    assert_equal original_end_date, task.due_date
+
+    unit.update!(allow_flexible_dates: true)
+
+    put "/api/projects/#{project1.id}/task_def_id/#{td.id}/target_dates"
+    assert_equal 400, last_response.status # target_start_date and target_due_date are required
+
+    put "/api/projects/#{project1.id}/task_def_id/#{td.id}/target_dates", {
+      target_start_date: new_start_date,
+      target_due_date: new_end_date
+    }
+    assert_equal 200, last_response.status
+
+    task.reload
+    assert_equal new_start_date, task.target_start_date
+    assert_equal new_end_date, task.target_due_date
+
+    put "/api/projects/#{project1.id}/reset_target_dates"
+    assert_equal 200, last_response.status
+    task.reload
+    assert_nil task.target_start_date
+    assert_nil task.target_due_date
+  end
+
 end
