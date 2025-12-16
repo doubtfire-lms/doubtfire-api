@@ -1070,6 +1070,8 @@ class TasksApiTest < ActiveSupport::TestCase
     task.reload
     assert_nil task.target_start_date
     assert_nil task.target_due_date
+
+    unit.update!(allow_flexible_dates: false)
   end
 
 end
