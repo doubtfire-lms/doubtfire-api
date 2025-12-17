@@ -71,17 +71,22 @@ class LtiApi < Grape::API
       error!({ error: "Missing required fields:  #{missing.join(', ')}" }, 400)
     end
 
-    if current_user.role_id != Role.student_id
-      return status 204
+    # if current_user.role_id != Role.student_id
+    #   return status 204
+    # end
+
+    # role = unit.role_for(current_user)
+    # if !role.nil? && role != Role.student
+    #   # error!({ error: 'Failed to enrol, user is already staff.' }, 400)
+    #   return status 204
+    # end
+
+    unit_role = Doubtfire::Application.config.institution_settings.should_employ_lti_member(member)
+    unless unit_role.nil?
+      unit.employ_staff(current_user, unit_role)
     end
 
-    role = unit.role_for(current_user)
-    if !role.nil? && role != Role.student
-      # error!({ error: 'Failed to enrol, user is already staff.' }, 400)
-      return status 204
-    end
-
-    unless Doubtfire::Application.config.institution_settings.should_enrol_lti_member(token['member'])
+    unless Doubtfire::Application.config.institution_settings.should_enrol_lti_member(member)
       # error!({ error: 'User can not be enrolled into this unit.' }, 404)
       return status 204
     end
