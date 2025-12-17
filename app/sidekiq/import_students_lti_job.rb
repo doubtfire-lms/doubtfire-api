@@ -56,6 +56,10 @@ class ImportStudentsLtiJob
              end
 
       if user.valid?
+        unless Doubtfire::Application.config.institution_settings.should_enrol_lti_member(member)
+          result[:ignored] << { row: member, message: "Enrolment skipped by institution setting" }
+          next
+        end
         project = unit.enrol_student(user, nil)
         if project.valid?
           result[:success] << { row: member, message: "Successfully enrolled user." }
