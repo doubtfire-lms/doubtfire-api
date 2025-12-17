@@ -71,6 +71,7 @@ class TaskDefinition < ApplicationRecord
   has_many :tasks, dependent:  :destroy # Destroying a task definition will also nuke any instances
   has_many :group_submissions, dependent: :destroy # Destroying a task definition will also nuke any group submissions
   has_many :learning_outcomes, as: :context, dependent: :destroy
+  has_many :overseer_steps, dependent: :destroy
 
   has_many :tii_group_attachments, dependent: :destroy # destroy uploaded files to tii - after the tasks
   has_many :tii_actions, as: :entity, dependent: :destroy

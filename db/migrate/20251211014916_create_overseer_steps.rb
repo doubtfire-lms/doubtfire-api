@@ -3,15 +3,22 @@ class CreateOverseerSteps < ActiveRecord::Migration[8.0]
     create_table :overseer_steps do |t|
       t.references :task_definition
 
+      # Staff only
       t.string  :name, null: false
       t.text    :description
-      # t.text    :script, null: false # This will belong to a file path
+
+      # Shown to the student
+      t.string :display_name, null: false
+      t.string :display_description, null: false
+
+      t.text    :run_command
+
       # t.string  :interpreter, default: "bash"
       t.integer :timeout_ms, default: 1000
       t.integer :sort_order, default: 0
 
-      t.string  :step_type, null: false      # "status_check", "output_diff", etc.
-      t.string  :visibility, null: false     # "public", "masked", "hidden"
+      t.string  :step_type, null: false # "status_check", "output_diff", etc.
+      # t.string  :visibility, null: false     # "public", "masked", "hidden"
       # public => Student can see the name/desc, input & output logs and feedback message. Sees if it was a pass or fail
       # masked => Student can see the name/desc, not the input/output. Sees if it was a pass or fail
       # hidden => Student doesn't know this step exists, has no effect on the task status
@@ -23,7 +30,14 @@ class CreateOverseerSteps < ActiveRecord::Migration[8.0]
       t.text :feedback_message # Only shown on fail
 
       t.references :status_on_success
-      t.references :status_on_failed
+      t.references :status_on_failure
+
+      t.boolean :halt_on_success
+      t.boolean :halt_on_failure
+
+      t.boolean :show_expected_output
+      t.boolean :show_stdin
+      t.boolean :show_stdout
 
       t.boolean :enabled, default: true
 

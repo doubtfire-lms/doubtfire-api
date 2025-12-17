@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_10_000046) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_11_014916) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -229,6 +229,34 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_000046) do
     t.datetime "last_pulled_date"
     t.index ["name"], name: "index_overseer_images_on_name", unique: true
     t.index ["tag"], name: "index_overseer_images_on_tag", unique: true
+  end
+
+  create_table "overseer_steps", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "task_definition_id"
+    t.string "name", null: false
+    t.text "description"
+    t.string "display_name", null: false
+    t.string "display_description", null: false
+    t.text "run_command"
+    t.integer "timeout_ms", default: 1000
+    t.integer "sort_order", default: 0
+    t.string "step_type", null: false
+    t.string "stdin_input_file"
+    t.string "expected_output_file"
+    t.text "feedback_message"
+    t.bigint "status_on_success_id"
+    t.bigint "status_on_failure_id"
+    t.boolean "halt_on_success"
+    t.boolean "halt_on_failure"
+    t.boolean "show_expected_output"
+    t.boolean "show_stdin"
+    t.boolean "show_stdout"
+    t.boolean "enabled", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["status_on_failure_id"], name: "index_overseer_steps_on_status_on_failure_id"
+    t.index ["status_on_success_id"], name: "index_overseer_steps_on_status_on_success_id"
+    t.index ["task_definition_id"], name: "index_overseer_steps_on_task_definition_id"
   end
 
   create_table "projects", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
