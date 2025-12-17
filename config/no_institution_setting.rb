@@ -150,6 +150,15 @@ class InstitutionSettings
     user
   end
 
+  # If this returns nil, LTI will move on to check if this member should be enrolled as a student
+  def should_employ_lti_member(member)
+    return nil if member['roles'].include?('Student') || member['roles'].include?('Learner')
+    return Role.convenor if member['roles'].include?("http://purl.imsglobal.org/vocab/lis/v2/person#Administrator")
+    return Role.tutor if member['roles'].include?("Instructor")
+
+    nil
+  end
+
   def should_enrol_lti_member(member)
     # Example "roles" for a Student => ["Learner"]
     # Example "roles" for an Instructor, who is a global Administrator => ["Instructor", "http://purl.imsglobal.org/vocab/lis/v2/person#Administrator"],

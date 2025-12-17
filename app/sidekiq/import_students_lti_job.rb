@@ -56,13 +56,23 @@ class ImportStudentsLtiJob
              end
 
       if user.valid?
+        unit_role = Doubtfire::Application.config.institution_settings.should_employ_lti_member(member)
+        unless unit_role.nil?
+          staff = unit.employ_staff(user, unit_role)
+          if staff.valid?
+            result[:success] << { row: member, message: "Successfully added staff (#{unit_role.role.name})" }
+            next
+          end
+        end
+
         unless Doubtfire::Application.config.institution_settings.should_enrol_lti_member(member)
           result[:ignored] << { row: member, message: "Enrolment skipped by institution setting" }
           next
         end
+
         project = unit.enrol_student(user, nil)
         if project.valid?
-          result[:success] << { row: member, message: "Successfully enrolled user." }
+          result[:success] << { row: member, message: "Successfully enrolled user" }
         else
           result[:errors] << { row: member, message: "Failed to enrol student" }
         end
