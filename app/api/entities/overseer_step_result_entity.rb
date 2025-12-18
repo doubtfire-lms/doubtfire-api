@@ -1,6 +1,7 @@
 module Entities
   class OverseerStepResultEntity < Grape::Entity
     expose :id
+    expose :overseer_step_id
     expose :exit_status
     expose :pass
 

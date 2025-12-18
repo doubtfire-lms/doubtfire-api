@@ -16,6 +16,9 @@ class OverseerAssessment < ApplicationRecord
 
   after_destroy :delete_associated_files
 
+  # TODO: track how many tests ran, and how many tests total at the time
+  # TODO: we might not have an overseerStepResult because a new test was added later
+
   # Creates an OverseerAssessment object for a new submission
   def self.create_for(task)
     # Create only if:
