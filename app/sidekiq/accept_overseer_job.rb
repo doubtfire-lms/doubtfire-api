@@ -132,6 +132,7 @@ class AcceptOverseerJob
         status = wait_thr.value
       end
 
+      output = output.chomp
       pass = true
 
       if status.exitstatus != 0
