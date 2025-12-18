@@ -20,6 +20,7 @@ class OverseerStepsApi < Grape::API
       optional :timeout_ms, type: Integer
       # TODO: rename to execution_order || exec_order?
       optional :sort_order, type: Integer
+      optional :partial_output_diff, type: Boolean
       requires :step_type, type: String
       optional :stdin_input_file, type: String
       optional :expected_output_file, type: String
@@ -67,6 +68,7 @@ class OverseerStepsApi < Grape::API
                                                          :timeout_ms,
                                                          :sort_order,
                                                          :step_type,
+                                                         :partial_output_diff,
                                                          :stdin_input_file,
                                                          :expected_output_file,
                                                          :feedback_message,
@@ -103,6 +105,7 @@ class OverseerStepsApi < Grape::API
       optional :timeout_ms, type: Integer
       optional :sort_order, type: Integer
       optional :step_type, type: String
+      optional :partial_output_diff, type: Boolean
       optional :stdin_input_file, type: String
       optional :expected_output_file, type: String
       optional :feedback_message, type: String
@@ -129,8 +132,6 @@ class OverseerStepsApi < Grape::API
 
     overseer_step = OverseerStep.find(params[:id])
 
-    puts params.inspect
-
     status_on_success_id = params[:status_on_success].present? ? TaskStatus.status_for_name(params[:status_on_success])&.id : nil
     status_on_failure_id = params[:status_on_failure].present? ? TaskStatus.status_for_name(params[:status_on_failure])&.id : nil
 
@@ -145,6 +146,7 @@ class OverseerStepsApi < Grape::API
                                                          :timeout_ms,
                                                          :sort_order,
                                                          :step_type,
+                                                         :partial_output_diff,
                                                          :stdin_input_file,
                                                          :expected_output_file,
                                                          :feedback_message,

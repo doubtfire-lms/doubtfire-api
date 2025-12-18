@@ -13,7 +13,9 @@ module Entities
 
     expose :timeout_ms
     expose :sort_order
+
     expose :step_type
+    expose :partial_output_diff
 
     expose :stdin_input_file
     expose :expected_output_file
