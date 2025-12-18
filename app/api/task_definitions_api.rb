@@ -337,15 +337,15 @@ class TaskDefinitionsApi < Grape::API
     # Copy files to be PDFed
     task.accept_submission(current_user, scoop_files(params, upload_reqs), self, nil, 'ready_for_feedback', nil, accepted_tii_eula: false)
 
-    logger.info '********* - about to perform overseer submission'
-    overseer_assessment = OverseerAssessment.create_for(task)
-    if overseer_assessment.present?
-      overseer_assessment.send_to_overseer
+    # logger.info '********* - about to perform overseer submission'
+    # overseer_assessment = OverseerAssessment.create_for(task)
+    # if overseer_assessment.present?
+    #   overseer_assessment.send_to_overseer
 
-      logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was performed"
-    else
-      logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was not performed"
-    end
+    #   logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was performed"
+    # else
+    #   logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was not performed"
+    # end
 
     # todo: Do we  need to return additional details here? e.g. the comment, and project?
     present task, with: Entities::TaskEntity, include_other_projects: true, update_only: true
