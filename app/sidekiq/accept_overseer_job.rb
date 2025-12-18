@@ -150,8 +150,6 @@ class AcceptOverseerJob
         end
       end
 
-      puts "Test passed?: #{[pass]}"
-
       stdout_sha256 = Digest::SHA256.hexdigest(output)
       stdin_sha256 = stdin_contents && Digest::SHA256.hexdigest(stdin_contents)
       expected_sha256 = expected_output_contents && Digest::SHA256.hexdigest(expected_output_contents)
@@ -168,8 +166,6 @@ class AcceptOverseerJob
                                    stdin_sha256: stdin_sha256,
                                    expected_output_sha256: expected_sha256
                                  })
-
-      byebug
 
       if !pass && step.halt_on_failure
         break
