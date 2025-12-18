@@ -740,10 +740,13 @@ class TaskDefinition < ApplicationRecord
     files = []
     Zip::File.open(task_assessment_resources) do |zip_file|
       zip_file.each do |entry|
-        next if entry.directory?
-        # files << "/#{entry.name}"
-        parts = entry.name.split('/', 2)
-        files << "/#{parts.last}" if parts.size > 1
+      next if entry.directory?
+      # skip macOS metadata files and hidden files
+      next if File.basename(entry.name).start_with?('._', '.')
+
+      # remove top-level folder
+      parts = entry.name.split('/', 2)
+      files << "/#{parts.last}" unless parts.empty?
       end
     end
     files
