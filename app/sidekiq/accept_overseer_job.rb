@@ -72,6 +72,8 @@ class AcceptOverseerJob
     # system(command)
     #
 
+    # TODO: create an assessment comment that shows "Tests in progress..."
+
     success_status = nil
     failure_status = nil
 
@@ -176,7 +178,9 @@ class AcceptOverseerJob
 
     # yaml_path = File.join(work_dir, 'output.yaml')
 
-    # oa = OverseerAssessment.find(overseer_assessment_id)
+    oa = OverseerAssessment.find(overseer_assessment_id)
+
+    # TODO: update assessment comment with "View Overseer Report"
 
     # oa.update_from_output(work_dir)
     # if File.exist?(yaml_path)
