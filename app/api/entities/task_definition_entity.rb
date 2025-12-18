@@ -62,9 +62,7 @@ module Entities
       task_def.discussion_prompts.size
     end
 
-    # expose :overseer_steps, using: OverseerStepEntity
-    expose :overseer_steps do |task_definition|
-      task_definition.overseer_steps.order(:sort_order)
-    end
+    expose :overseer_steps, using: OverseerStepEntity
+
   end
 end

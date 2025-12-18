@@ -21,11 +21,11 @@ module Entities
     expose :feedback_message
 
     expose :status_on_success do |overseer_step|
-      overseer_step.status_on_success_id && TaskStatus.find(overseer_step.status_on_success_id).status_key
+      TaskStatus.find_by(id: overseer_step.status_on_success_id)&.status_key || 'no_change'
     end
 
     expose :status_on_failure do |overseer_step|
-      overseer_step.status_on_failure_id && TaskStatus.find(overseer_step.status_on_failure_id).status_key
+      TaskStatus.find_by(id: overseer_step.status_on_failure_id)&.status_key || 'no_change'
     end
 
     expose :halt_on_success
