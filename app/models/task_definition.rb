@@ -734,6 +734,19 @@ class TaskDefinition < ApplicationRecord
     task_assessment_resources_with_abbreviation(abbreviation, create)
   end
 
+  def overseer_resource_files
+    return [] unless File.exist?(task_assessment_resources)
+
+    files = []
+    Zip::File.open(task_assessment_resources) do |zip_file|
+      zip_file.each do |entry|
+        next if entry.directory?
+        files << "/#{entry.name}"
+      end
+    end
+    files
+  end
+
   def task_assessment_script(create = true)
     task_assessment_script_with_abbreviation(abbreviation, create)
   end
