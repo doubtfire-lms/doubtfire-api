@@ -741,7 +741,9 @@ class TaskDefinition < ApplicationRecord
     Zip::File.open(task_assessment_resources) do |zip_file|
       zip_file.each do |entry|
         next if entry.directory?
-        files << "/#{entry.name}"
+        # files << "/#{entry.name}"
+        parts = entry.name.split('/', 2)
+        files << "/#{parts.last}" if parts.size > 1
       end
     end
     files
