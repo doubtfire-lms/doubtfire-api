@@ -170,6 +170,23 @@ class OverseerStepsApi < Grape::API
     present overseer_step, with: Entities::OverseerStepEntity
   end
 
+  desc 'Delete an overseer step'
+  delete '/overseer_steps/:id' do
+    # unless authorise? current_user, User, :admin_overseer
+    #   error!({ error: 'Not authorised to delete an overseer image' }, 403)
+    # end
+
+    # TODO: permissions
+
+    overseer_step = OverseerStep.find(params[:id])
+    overseer_step.destroy!
+
+    error!({ error: overseer_step.errors.full_messages.last }, 403) unless overseer_step.destroyed?
+
+    present overseer_step.destroyed?, with: Grape::Presenters::Presenter
+  end
+
+  #
   # desc 'Update an overseer image'
   # params do
   #   requires :overseer_image, type: Hash do
@@ -199,19 +216,6 @@ class OverseerStepsApi < Grape::API
 
   #   overseer_image.update!(overseer_image_params)
   #   present overseer_image, with: Entities::OverseerImageEntity
-  # end
-
-  # desc 'Delete an overseer image'
-  # delete '/admin/overseer_images/:id' do
-  #   unless authorise? current_user, User, :admin_overseer
-  #     error!({ error: 'Not authorised to delete an overseer image' }, 403)
-  #   end
-
-  #   overseer_image = OverseerImage.find(params[:id])
-  #   overseer_image.destroy
-  #   error!({ error: overseer_image.errors.full_messages.last }, 403) unless overseer_image.destroyed?
-
-  #   present overseer_image.destroyed?, with: Grape::Presenters::Presenter
   # end
 
   # desc 'Get all overseer images'
