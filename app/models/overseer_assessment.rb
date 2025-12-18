@@ -4,6 +4,7 @@ class OverseerAssessment < ApplicationRecord
 
   has_one :project, through: :task
   has_many :assessment_comments, as: :commentable, dependent: :destroy
+  has_many :overseer_step_results, dependent: :destroy
 
   validates :status,                  presence: true
   validates :task_id,                 presence: true
