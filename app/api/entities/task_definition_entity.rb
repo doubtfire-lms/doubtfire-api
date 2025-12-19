@@ -62,7 +62,10 @@ module Entities
       task_def.discussion_prompts.size
     end
 
-    expose :overseer_steps, using: OverseerStepEntity, if: ->(unit, options) { staff?(options[:my_role]) }
+    # expose :overseer_steps, using: OverseerStepEntity, if: ->(unit, options) { staff?(options[:my_role]) }
+    expose :overseer_steps, using: OverseerStepEntity do |task_def, options|
+      task_def.overseer_steps # options[:my_role] is still available inside the entity
+    end
     expose :overseer_resource_files, if: ->(task_def, options) { staff?(options[:my_role]) }
 
   end
