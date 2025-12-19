@@ -23,6 +23,11 @@ class AcceptOverseerJob
     task = Task.find(task_id)
     task_definition = task.task_definition
 
+    oa = OverseerAssessment.find(overseer_assessment_id)
+    oa.update!(
+      total_steps: task.task_definition.overseer_steps.select(&:enabled).size
+    )
+
     work_dir_name = "#{task.id}-#{overseer_assessment_id}"
 
     work_dir = Rails.root.join("tmp", "overseer", work_dir_name)
@@ -77,6 +82,14 @@ class AcceptOverseerJob
     success_status = nil
     failure_status = nil
 
+    oa.add_assessment_comment("Tests in progress")
+
+    steps_attempted = 0
+    steps_passed = 0
+
+    assessment_pass = true
+
+    # TODO: only get overseer_steps that are enabled
     overseer_steps.each do |step|
       # script_contents = File.read(script_path)
       script_contents = step.run_command
@@ -99,7 +112,7 @@ class AcceptOverseerJob
       container_name = "overseer-#{task_id}-#{timestamp}"
 
       command = %(
-        timeout 300 docker run --rm -i \
+        timeout #{step.timeout_ms} docker run --rm -i \
         --cpus 1 \
         --network none \
         #{volume_mount} \
@@ -179,16 +192,26 @@ class AcceptOverseerJob
                                    expected_output_sha256: expected_sha256
                                  })
 
+      steps_attempted += 1
       if !pass && step.halt_on_failure
+        assessment_pass = false
         break
+      end
+      if pass
+        steps_passed += 1
       end
     end
 
+    oa.update_assessment_comment("Tests complete: #{steps_passed} / #{overseer_steps.count}")
+
+    if steps_attempted == steps_passed
+      oa.update!(status: :passed)
+    else
+      oa.update!(status: :failed)
+      task.trigger_transition(trigger: 'fix', by_user: task.project.tutor_for(task.task_definition))
+      task.add_text_comment(task.project.tutor_for(task.task_definition), "**Automated comment**: Some tests did not pass for this submission. Please review the Overseer report, verify your output, and resubmit.")
+    end
     # yaml_path = File.join(work_dir, 'output.yaml')
-
-    oa = OverseerAssessment.find(overseer_assessment_id)
-
-    # TODO: update assessment comment with "View Overseer Report"
 
     # oa.update_from_output(work_dir)
     # if File.exist?(yaml_path)

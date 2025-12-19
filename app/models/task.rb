@@ -1573,7 +1573,7 @@ class Task < ApplicationRecord
   def overseer_enabled?
     return  unit.assessment_enabled &&
             task_definition.assessment_enabled &&
-            task_definition.has_task_assessment_script? &&
+            # task_definition.has_task_assessment_script? &&
             (has_new_files? || has_done_file?)
   end
 

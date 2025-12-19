@@ -12,7 +12,7 @@ class OverseerAssessment < ApplicationRecord
 
   validates :submission_timestamp, uniqueness: { scope: :task_id }
 
-  enum :status, { pre_queued: 0, queued: 1, queue_failed: 2, done: 3 }
+  enum :status, { pre_queued: 0, passed: 1, failed: 2 }
 
   after_destroy :delete_associated_files
 
@@ -262,6 +262,11 @@ class OverseerAssessment < ApplicationRecord
 
   def base64?(value)
     value.is_a?(String) && Base64.strict_encode64(Base64.decode64(value)) == value
+  end
+
+
+  def passed_steps
+    overseer_step_results.select(&:pass).size
   end
 end
 # rubocop:enable Rails/Output

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_18_052952) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_19_040929) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -215,6 +215,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_18_052952) do
     t.integer "status", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "total_steps"
     t.index ["task_id", "submission_timestamp"], name: "index_overseer_assessments_on_task_id_and_submission_timestamp", unique: true
     t.index ["task_id"], name: "index_overseer_assessments_on_task_id"
   end
@@ -236,6 +237,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_18_052952) do
     t.bigint "overseer_step_id", null: false
     t.integer "exit_status", default: -1, null: false
     t.boolean "pass", default: false, null: false
+    t.text "feedback_message"
     t.text "stdout"
     t.text "stdin"
     t.text "expected_output"
