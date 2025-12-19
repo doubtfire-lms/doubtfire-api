@@ -185,6 +185,14 @@ class OverseerStepsApi < Grape::API
     present overseer_step.destroyed?, with: Grape::Presenters::Presenter
   end
 
+  desc 'Get test results for an overseer assessment'
+  get '/projects/:project_id/task_definitions/:task_def_id/overseer_assessments_results/:id' do
+    # TODO: if current user can get project
+
+    overseer_assessment = OverseerAssessment.find(params[:id])
+    present overseer_assessment.overseer_step_results, with: Entities::OverseerStepResultEntity
+  end
+
   #
   # desc 'Update an overseer image'
   # params do
