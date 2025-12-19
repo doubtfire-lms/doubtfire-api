@@ -155,11 +155,22 @@ class AcceptOverseerJob
       stdin_sha256 = stdin_contents && Digest::SHA256.hexdigest(stdin_contents)
       expected_sha256 = expected_output_contents && Digest::SHA256.hexdigest(expected_output_contents)
 
+      feedback_message = if step.feedback_message.blank?
+                           if step.step_type == 'output_diff'
+                             "Your output did not match the expected result."
+                           elsif step.step_type == 'status_check'
+                             "This test did not complete successfully. Check the output for any errors."
+                           end
+                         else
+                           step.feedback_message
+                         end
+
       OverseerStepResult.create!({
                                    overseer_assessment_id: overseer_assessment_id,
                                    overseer_step: step,
                                    exit_status: status.exitstatus,
                                    pass: pass,
+                                   feedback_message: feedback_message,
                                    stdout: output,
                                    stdin: stdin_contents,
                                    expected_output: expected_output_contents,

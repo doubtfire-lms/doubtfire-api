@@ -4,6 +4,7 @@ module Entities
     expose :overseer_step_id
     expose :exit_status
     expose :pass
+    expose :feedback_message
 
     expose :stdout
 

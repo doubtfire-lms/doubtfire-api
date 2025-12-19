@@ -7,6 +7,8 @@ class CreateOverseerStepResult < ActiveRecord::Migration[8.0]
       t.integer :exit_status, null: false, default: -1
       t.boolean :pass, null: false, default: false
 
+      t.text :feedback_message
+
       # The output from the overseer script and student's submission
       t.text :stdout
 
