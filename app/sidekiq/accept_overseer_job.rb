@@ -23,6 +23,10 @@ class AcceptOverseerJob
     task = Task.find(task_id)
     task_definition = task.task_definition
 
+    raise "PDF is still compiling" if task.processing_pdf? || !task.has_done_file?
+
+    raise "Submission file not found: #{submission}" unless File.exist?(submission)
+
     oa = OverseerAssessment.find(overseer_assessment_id)
     oa.update!(
       total_steps: task.task_definition.overseer_steps.select(&:enabled).size
@@ -32,10 +36,6 @@ class AcceptOverseerJob
 
     work_dir = Rails.root.join("tmp", "overseer", work_dir_name)
     FileUtils.mkdir_p(work_dir)
-
-    raise "PDF is still compiling" if task.processing_pdf? || !task.has_done_file?
-
-    raise "Submission file not found: #{submission}" unless File.exist?(submission)
 
     # Extract submission files, removing any parent folders
     Zip::File.open(submission) do |zip_file|
@@ -76,8 +76,6 @@ class AcceptOverseerJob
 
     # system(command)
     #
-
-    # TODO: create an assessment comment that shows "Tests in progress..."
 
     success_status = nil
     failure_status = nil
@@ -196,6 +194,14 @@ class AcceptOverseerJob
                                  })
 
       steps_attempted += 1
+
+      if pass && !step.status_on_success_id.nil?
+        success_status = TaskStatus.find(step.status_on_success_id)
+      end
+      if !pass && !step.status_on_failure_id.nil?
+        failure_status = TaskStatus.find(step.status_on_failure_id)
+      end
+
       if !pass && step.halt_on_failure
         assessment_pass = false
         break
@@ -209,9 +215,21 @@ class AcceptOverseerJob
 
     if steps_attempted == steps_passed
       oa.update!(status: :passed)
+      unless success_status.nil?
+        # TODO: have an override status setting for the step? eg. if the task is overdue, let it remain overdue, otherwise use this task status
+        task.update!(task_status: success_status)
+        task.add_status_comment(task.project.tutor_for(task.task_definition), success_status)
+
+        oa.update!(result_task_status: success_status.status_key.to_s)
+      end
     else
       oa.update!(status: :failed)
-      task.trigger_transition(trigger: 'fix', by_user: task.project.tutor_for(task.task_definition))
+      unless failure_status.nil?
+        # TODO: have an override status setting for the step? eg. if the task is overdue, let it remain overdue, otherwise use this task status
+        task.update!(task_status: failure_status)
+        task.add_status_comment(task.project.tutor_for(task.task_definition), failure_status)
+        oa.update!(result_task_status: failure_status.status_key.to_s)
+      end
       task.add_text_comment(task.project.tutor_for(task.task_definition), "**Automated comment**: Some tests did not pass for this submission. Please review the Overseer report, verify your output, and resubmit.")
     end
     # yaml_path = File.join(work_dir, 'output.yaml')
