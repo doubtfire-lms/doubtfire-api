@@ -28,8 +28,10 @@ class AcceptOverseerJob
     raise "Submission file not found: #{submission}" unless File.exist?(submission)
 
     oa = OverseerAssessment.find(overseer_assessment_id)
+    active_overseer_steps = task_definition.overseer_steps.select(&:enabled)
+
     oa.update!(
-      total_steps: task.task_definition.overseer_steps.select(&:enabled).size
+      total_steps: active_overseer_steps.size
     )
 
     work_dir_name = "#{task.id}-#{overseer_assessment_id}"
@@ -37,45 +39,8 @@ class AcceptOverseerJob
     work_dir = Rails.root.join("tmp", "overseer", work_dir_name)
     FileUtils.mkdir_p(work_dir)
 
-    # Extract submission files, removing any parent folders
-    Zip::File.open(submission) do |zip_file|
-      zip_file.each do |entry|
-        next if entry.name_is_directory?
-
-        parts = entry.name.split('/')[1..]
-        next unless parts.length >= 1
-
-        file_name = parts.first
-        index = file_name.to_i
-
-        file = task.upload_requirements[index]
-        final_name = file['name']
-
-        dest_path = File.join(work_dir, final_name)
-        FileUtils.mkdir_p(File.dirname(dest_path))
-        zip_file.extract(entry, dest_path) { true }
-      end
-    end
-
-    # Extract optional assessment resources
-    if File.exist?(assessment)
-      Zip::File.open(assessment) do |zip_file|
-        zip_file.each do |entry|
-          dest_path = File.join(work_dir, entry.name)
-          FileUtils.mkdir_p(File.dirname(dest_path))
-          zip_file.extract(entry, dest_path) { true } # overwrite if exists
-        end
-      end
-    end
-
-    overseer_steps = task_definition.overseer_steps
-
-    # Extract execution script
-    # script_path = task.task_definition.task_assessment_script
-    # raise "No execution script found" unless File.exist?(script_path)
-
-    # system(command)
-    #
+    extract_student_submission_files(task, submission, work_dir)
+    extract_overseer_resource_files(assessment, work_dir)
 
     success_status = nil
     failure_status = nil
@@ -88,7 +53,7 @@ class AcceptOverseerJob
     assessment_pass = true
 
     # TODO: only get overseer_steps that are enabled
-    overseer_steps.each do |step|
+    active_overseer_steps.each do |step|
       # script_contents = File.read(script_path)
       script_contents = step.run_command
       raise "Execution script is empty" if script_contents.blank?
@@ -195,25 +160,21 @@ class AcceptOverseerJob
 
       steps_attempted += 1
 
-      if pass && !step.status_on_success_id.nil?
-        success_status = TaskStatus.find(step.status_on_success_id)
-      end
-      if !pass && !step.status_on_failure_id.nil?
-        failure_status = TaskStatus.find(step.status_on_failure_id)
-      end
-
-      if !pass && step.halt_on_failure
-        assessment_pass = false
-        break
-      end
       if pass
         steps_passed += 1
+        success_status = TaskStatus.find(step.status_on_success_id) if step.status_on_success_id
+      else
+        failure_status = TaskStatus.find(step.status_on_failure_id) if step.status_on_failure_id
+        if step.halt_on_failure
+          assessment_pass = false
+          break
+        end
       end
     end
 
-    oa.update_assessment_comment("Tests complete: #{steps_passed} / #{overseer_steps.count}")
+    oa.update_assessment_comment("Tests complete: #{steps_passed} / #{active_overseer_steps.count}")
 
-    if steps_attempted == steps_passed
+    if steps_attempted == steps_passed && assessment_pass
       oa.update!(status: :passed)
       unless success_status.nil?
         # TODO: have an override status setting for the step? eg. if the task is overdue, let it remain overdue, otherwise use this task status
@@ -245,5 +206,40 @@ class AcceptOverseerJob
   rescue StandardError => e
     logger.error e
     raise e
+  end
+
+  def extract_student_submission_files(task, submission, work_dir)
+    # Extract submission files, removing any parent folders
+    Zip::File.open(submission) do |zip_file|
+      zip_file.each do |entry|
+        next if entry.name_is_directory?
+
+        parts = entry.name.split('/')[1..]
+        next unless parts.length >= 1
+
+        file_name = parts.first
+        index = file_name.to_i
+
+        file = task.upload_requirements[index]
+        final_name = file['name']
+
+        dest_path = File.join(work_dir, final_name)
+        FileUtils.mkdir_p(File.dirname(dest_path))
+        zip_file.extract(entry, dest_path) { true }
+      end
+    end
+  end
+
+  def extract_overseer_resource_files(assessment, work_dir)
+    # Extract optional assessment resources
+    if File.exist?(assessment)
+      Zip::File.open(assessment) do |zip_file|
+        zip_file.each do |entry|
+          dest_path = File.join(work_dir, entry.name)
+          FileUtils.mkdir_p(File.dirname(dest_path))
+          zip_file.extract(entry, dest_path) { true } # overwrite if exists
+        end
+      end
+    end
   end
 end
