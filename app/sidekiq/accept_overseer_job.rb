@@ -118,7 +118,7 @@ class AcceptOverseerJob
         #{volume_mount} \
         --name #{container_name} \
         #{docker_image_name_tag} \
-        bash -c "cd /overseer/work-dir/#{work_dir_name} && ./run.sh"
+        bash -c "cd /overseer/work-dir/#{work_dir_name} && timeout #{step.timeout_ms} ./run.sh"
       )
 
       output = ""
