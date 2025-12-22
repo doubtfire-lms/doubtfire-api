@@ -20,7 +20,7 @@ class OverseerAssessment < ApplicationRecord
   # TODO: we might not have an overseerStepResult because a new test was added later
 
   # Creates an OverseerAssessment object for a new submission
-  def self.create_for(task)
+  def self.create_for(task, test_submission)
     # Create only if:
     # unit's assessment is enabled &&
     # task's assessment is enabled &&
@@ -30,7 +30,7 @@ class OverseerAssessment < ApplicationRecord
     task_definition = task.task_definition
     unit = task_definition.unit
 
-    return nil unless task.overseer_enabled?
+    return nil unless task.overseer_enabled? || test_submission
 
     docker_image_name_tag = task_definition.docker_image_name_tag || unit.docker_image_name_tag
     # assessment_resources_path = task_definition.task_assessment_resources
@@ -122,7 +122,7 @@ class OverseerAssessment < ApplicationRecord
     add_assessment_comment text
   end
 
-  def send_to_overseer()
+  def send_to_overseer(test_submission: false)
     return { error: "Your task is already queued for processing. Pleasse wait until you receive a response before queueing your task again." } if self.status == :queued
 
     # TODO: Check status and do not queue if already queued
@@ -144,10 +144,10 @@ class OverseerAssessment < ApplicationRecord
 
     assessment_resources_path = task_definition.task_assessment_resources
 
-    unless  unit.assessment_enabled &&
-            task_definition.assessment_enabled &&
-            # task_definition.has_task_assessment_script? &&
-            (task.has_new_files? || task.has_done_file?)
+    unless unit.assessment_enabled &&
+           (task_definition.assessment_enabled || test_submission) &&
+           # task_definition.has_task_assessment_script? &&
+           (task.has_new_files? || task.has_done_file?)
 
       puts "ERROR: Assessment is no longer configured for overseer assessment. Unable to send - OverseerAssessment #{id}"
       return { error: "This assessment is no longer setup for automated feedback. Automated feedback is turned off at either the unit or task level, or the task does not have the scripts needed to automate assessment." }
