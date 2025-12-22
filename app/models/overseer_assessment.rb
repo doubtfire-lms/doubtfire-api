@@ -146,7 +146,7 @@ class OverseerAssessment < ApplicationRecord
 
     unless  unit.assessment_enabled &&
             task_definition.assessment_enabled &&
-            task_definition.has_task_assessment_script? &&
+            # task_definition.has_task_assessment_script? &&
             (task.has_new_files? || task.has_done_file?)
 
       puts "ERROR: Assessment is no longer configured for overseer assessment. Unable to send - OverseerAssessment #{id}"
