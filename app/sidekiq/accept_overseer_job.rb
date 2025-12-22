@@ -153,7 +153,10 @@ class AcceptOverseerJob
       end
 
       if step.step_type == 'output_diff'
-        expected_output = File.read(expected_output_file)
+        expected_output = ''
+        if !expected_output_file.nil? && File.exist?(expected_output_file)
+          expected_output = File.read(expected_output_file)
+        end
         expected_output_contents = expected_output
         if step.partial_output_diff
           unless output.include?(expected_output)
