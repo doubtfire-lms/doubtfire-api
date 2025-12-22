@@ -189,8 +189,11 @@ class OverseerStepsApi < Grape::API
   get '/projects/:project_id/task_definitions/:task_def_id/overseer_assessments_results/:id' do
     # TODO: if current user can get project
 
+    project = Project.find(params[:project_id])
+    unit = project.unit
+
     overseer_assessment = OverseerAssessment.find(params[:id])
-    present overseer_assessment.overseer_step_results, with: Entities::OverseerStepResultEntity
+    present overseer_assessment.overseer_step_results, with: Entities::OverseerStepResultEntity, my_role: unit.role_for(current_user)
   end
 
   #
