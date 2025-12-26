@@ -17,7 +17,7 @@ class OverseerStepsApi < Grape::API
       optional :display_name, type: String
       optional :display_description, type: String
       optional :run_command, type: String
-      optional :timeout_ms, type: Integer
+      optional :timeout, type: Integer
       # TODO: rename to execution_order || exec_order?
       optional :sort_order, type: Integer
       optional :partial_output_diff, type: Boolean
@@ -62,7 +62,7 @@ class OverseerStepsApi < Grape::API
                                                          :display_name,
                                                          :display_description,
                                                          :run_command,
-                                                         :timeout_ms,
+                                                         :timeout,
                                                          :sort_order,
                                                          :step_type,
                                                          :partial_output_diff,
@@ -99,7 +99,7 @@ class OverseerStepsApi < Grape::API
       optional :display_name, type: String
       optional :display_description, type: String
       optional :run_command, type: String
-      optional :timeout_ms, type: Integer
+      optional :timeout, type: Integer
       optional :sort_order, type: Integer
       optional :step_type, type: String
       optional :partial_output_diff, type: Boolean
@@ -143,7 +143,7 @@ class OverseerStepsApi < Grape::API
                                                          :display_name,
                                                          :display_description,
                                                          :run_command,
-                                                         :timeout_ms,
+                                                         :timeout,
                                                          :sort_order,
                                                          :step_type,
                                                          :partial_output_diff,

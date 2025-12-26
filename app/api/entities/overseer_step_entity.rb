@@ -15,7 +15,7 @@ module Entities
 
     expose :run_command, if: ->(_unit, options) { staff?(options[:my_role]) }
 
-    expose :timeout_ms, if: ->(_unit, options) { staff?(options[:my_role]) }
+    expose :timeout, if: ->(_unit, options) { staff?(options[:my_role]) }
     expose :sort_order, if: ->(_unit, options) { staff?(options[:my_role]) }
 
     expose :step_type

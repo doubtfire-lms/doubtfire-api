@@ -74,14 +74,17 @@ class AcceptOverseerJob
 
       container_name = "overseer-#{task_id}-#{timestamp}"
 
+      timeout = step.timeout
+      timeout = 30 if timeout.nil? || timeout.negative?
+
       command = %(
-        timeout #{step.timeout_ms} docker run --rm -i \
+        timeout #{timeout} docker run --rm -i \
         --cpus 1 \
         --network none \
         #{volume_mount} \
         --name #{container_name} \
         #{docker_image_name_tag} \
-        bash -c "cd /overseer/work-dir/#{work_dir_name} && timeout #{step.timeout_ms} ./run.sh"
+        bash -c "cd /overseer/work-dir/#{work_dir_name} && timeout #{timeout} ./run.sh"
       )
 
       output = ""
