@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_19_040929) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_18_031455) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -251,14 +251,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_19_040929) do
   end
 
   create_table "overseer_steps", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
-    t.bigint "task_definition_id"
+    t.bigint "task_definition_id", null: false
     t.string "name", null: false
     t.text "description"
     t.string "display_name", null: false
-    t.string "display_description", null: false
+    t.string "display_description"
     t.text "run_command"
-    t.integer "timeout_ms", default: 1000
-    t.integer "sort_order", default: 0
+    t.integer "timeout", default: 30, null: false
+    t.integer "sort_order", default: 0, null: false
     t.string "step_type", null: false
     t.boolean "partial_output_diff"
     t.string "stdin_input_file"
