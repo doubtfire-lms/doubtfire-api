@@ -1403,7 +1403,7 @@ class Task < ApplicationRecord
   #
   # Checks to make sure that the files match what we expect
   #
-  def accept_submission(current_user, files, ui, contributions, trigger, alignments, accepted_tii_eula: false)
+  def accept_submission(current_user, files, ui, contributions, trigger, alignments, accepted_tii_eula: false, test_submission: false)
     # Ensure there is not a submission already in process
     if processing_pdf?
       ui.error!({ 'error' => 'A submission is already being processed. Please wait for the current submission process to complete.' }, 403)
@@ -1502,7 +1502,7 @@ class Task < ApplicationRecord
     logger.info "Submission accepted! Status for task #{id} is now #{trigger}"
 
     # Trigger processing of new submission - async
-    AcceptSubmissionJob.perform_async(id, current_user.id, accepted_tii_eula)
+    AcceptSubmissionJob.perform_async(id, current_user.id, accepted_tii_eula, test_submission)
   end
 
   # The name that should be used for the uploaded file (based on index of upload requirements)
