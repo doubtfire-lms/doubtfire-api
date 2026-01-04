@@ -542,7 +542,7 @@ class Task < ApplicationRecord
           # Can only be graded if task_def is not assess_in_portfolio_only
           if task_definition.max_quality_pts > 0
             case status
-            when TaskStatus.complete, TaskStatus.discuss, TaskStatus.demonstrate
+            when TaskStatus.complete, TaskStatus.discuss, TaskStatus.demonstrate, TaskStatus.attention_required
               update(quality_pts: quality)
             end
           end

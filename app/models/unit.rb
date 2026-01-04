@@ -378,9 +378,9 @@ class Unit < ApplicationRecord
       end
     end
 
-    # Duplicate task prerequisites
     task_definitions.each do |td|
       new_td = new_unit.task_definitions.find_by(abbreviation: td.abbreviation)
+      # Duplicate task prerequisites
       td.task_prerequisites.each do |prereq|
         new_prerequisite_td = new_unit.task_definitions.find_by(abbreviation: prereq.prerequisite.abbreviation)
         TaskPrerequisite.create!(
@@ -388,6 +388,15 @@ class Unit < ApplicationRecord
           prerequisite: new_prerequisite_td,
           task_status_id: prereq.task_status_id
         )
+      end
+
+      # Duplicate discussion prompts
+      td.discussion_prompts.each do |prompt|
+        DiscussionPrompt.create!({
+          task_definition: new_td,
+          content: prompt.content,
+          priority: prompt.priority
+        })
       end
     end
 
@@ -2108,7 +2117,7 @@ class Unit < ApplicationRecord
   #
   def tasks_awaiting_feedback(user)
     get_all_tasks_for(user)
-      .where('task_statuses.id IN (:ids)', ids: [TaskStatus.discuss, TaskStatus.redo, TaskStatus.demonstrate, TaskStatus.fix_and_resubmit])
+      .where('task_statuses.id IN (:ids)', ids: [TaskStatus.discuss, TaskStatus.attention_required, TaskStatus.redo, TaskStatus.demonstrate, TaskStatus.fix_and_resubmit])
       .order('task_definition_id')
   end
 
