@@ -27,9 +27,11 @@ class AcceptOverseerJob
 
     raise "Submission file not found: #{submission}" unless File.exist?(submission)
 
-    oa = OverseerAssessment.find(overseer_assessment_id)
     active_overseer_steps = task_definition.overseer_steps.select(&:enabled)
 
+    raise "Task definition has no enabled overseer steps #{task.unit.detailed_name} #{task_definition.abbreviation}" if active_overseer_steps.empty?
+
+    oa = OverseerAssessment.find(overseer_assessment_id)
     oa.update!(
       total_steps: active_overseer_steps.size
     )
@@ -54,116 +56,19 @@ class AcceptOverseerJob
 
     # TODO: only get overseer_steps that are enabled
     active_overseer_steps.each do |step|
-      # script_contents = File.read(script_path)
-      script_contents = step.run_command
-      raise "Execution script is empty" if script_contents.blank?
-
-      run_sh_path = File.join(work_dir, 'run.sh')
-      File.write(run_sh_path, script_contents)
-      system("chmod +x #{work_dir}/run.sh")
-
-      mount = Doubtfire::Application.config.overseer_workdir_volume_mount
-      volume_mount = if mount.nil?
-                       # Fallback for development only — mounts the entire overseer container volume,
-                       # allowing all task work directories to be accessible. This should never be
-                       # used in production, as it breaks isolation between tasks.
-                       "--volumes-from #{Doubtfire::Application.config.overseer_fallback_volume_container}"
-                     else
-                       "-v #{mount}/#{work_dir_name}:/overseer/work-dir/#{work_dir_name}"
-                     end
-
-      container_name = "overseer-#{task_id}-#{timestamp}"
-
-      timeout = step.timeout
-      timeout = 30 if timeout.nil? || timeout.negative?
-
-      command = %(
-        timeout #{timeout} docker run --rm -i \
-        --cpus 1 \
-        --network none \
-        #{volume_mount} \
-        --name #{container_name} \
-        #{docker_image_name_tag} \
-        bash -c "cd /overseer/work-dir/#{work_dir_name} && timeout #{timeout} ./run.sh"
+      result = run_overseer_step(
+        step: step,
+        work_dir: work_dir,
+        work_dir_name: work_dir_name,
+        task_id: task_id,
+        timestamp: timestamp,
+        docker_image_name_tag: docker_image_name_tag,
+        overseer_assessment_id: overseer_assessment_id
       )
-
-      output = ""
-      status = nil
-
-      stdin_input_file = nil
-      expected_output_file = nil
-      if step.step_type == 'output_diff'
-        stdin_input_file = step.stdin_input_file.present? ? File.join(work_dir, step.stdin_input_file) : nil
-        expected_output_file = step.expected_output_file.present? ? File.join(work_dir, step.expected_output_file) : nil
-      end
-
-      stdin_contents = nil
-      expected_output_contents = nil
-
-      Open3.popen2e(command) do |stdin, stdout_err, wait_thr|
-        if stdin_input_file && File.exist?(stdin_input_file)
-          File.open(stdin_input_file, 'rb') { |f| IO.copy_stream(f, stdin) }
-          stdin_contents = File.read(stdin_input_file)
-          stdin.close
-        end
-
-        stdout_err.each { |line| output << line }
-        status = wait_thr.value
-      end
-
-      output = output.chomp
-      pass = true
-
-      if status.exitstatus != 0
-        pass = false
-      end
-
-      if step.step_type == 'output_diff'
-        expected_output = ''
-        if !expected_output_file.nil? && File.exist?(expected_output_file)
-          expected_output = File.read(expected_output_file)
-        end
-        expected_output_contents = expected_output
-        if step.partial_output_diff
-          unless output.include?(expected_output)
-            pass = false
-          end
-        elsif output != expected_output
-          pass = false
-        end
-      end
-
-      stdout_sha256 = Digest::SHA256.hexdigest(output)
-      stdin_sha256 = stdin_contents && Digest::SHA256.hexdigest(stdin_contents)
-      expected_sha256 = expected_output_contents && Digest::SHA256.hexdigest(expected_output_contents)
-
-      feedback_message = if step.feedback_message.blank?
-                           if step.step_type == 'output_diff'
-                             "Your output did not match the expected result."
-                           elsif step.step_type == 'status_check'
-                             "This test did not complete successfully. Check the output for any errors."
-                           end
-                         else
-                           step.feedback_message
-                         end
-
-      OverseerStepResult.create!({
-                                   overseer_assessment_id: overseer_assessment_id,
-                                   overseer_step: step,
-                                   exit_status: status.exitstatus,
-                                   pass: pass,
-                                   feedback_message: feedback_message,
-                                   stdout: output,
-                                   stdin: stdin_contents,
-                                   expected_output: expected_output_contents,
-                                   stdout_sha256: stdout_sha256,
-                                   stdin_sha256: stdin_sha256,
-                                   expected_output_sha256: expected_sha256
-                                 })
 
       steps_attempted += 1
 
-      if pass
+      if result.valid? && result.pass
         steps_passed += 1
         success_status = TaskStatus.find(step.status_on_success_id) if step.status_on_success_id
       else
@@ -196,19 +101,124 @@ class AcceptOverseerJob
       end
       task.add_text_comment(task.project.tutor_for(task.task_definition), "**Automated comment**: Some tests did not pass for this submission. Please review the Overseer report, verify your output, and resubmit.")
     end
-    # yaml_path = File.join(work_dir, 'output.yaml')
-
-    # oa.update_from_output(work_dir)
-    # if File.exist?(yaml_path)
-    #   path = FileHelper.task_submission_identifier_path_with_timestamp(:done, task, timestamp)
-    #   FileUtils.cp(yaml_path, path)
-    #   FileUtils.rm_rf(work_dir)
-    # end
 
     logger.info "Completed overseer job"
   rescue StandardError => e
     logger.error e
     raise e
+  end
+
+  def run_overseer_step(step:, work_dir:, work_dir_name:, task_id:, timestamp:, docker_image_name_tag:, overseer_assessment_id:)
+    script_contents = step.run_command
+    raise "Execution script is empty" if script_contents.blank?
+
+    # Create script
+    run_sh_path = File.join(work_dir, 'run.sh')
+    File.write(run_sh_path, script_contents)
+
+    # Ensure script is executable
+    system("chmod +x #{run_sh_path}")
+
+    mount = Doubtfire::Application.config.overseer_workdir_volume_mount
+    volume_mount =
+      if mount.nil?
+        # Fallback for development only — mounts the entire overseer container volume,
+        # allowing all task work directories to be accessible. This should never be
+        # used in production, as it breaks isolation between tasks.
+        "--volumes-from #{Doubtfire::Application.config.overseer_fallback_volume_container}"
+      else
+        # Absolute path on the hosting server to the shared mount
+        "-v #{mount}/#{work_dir_name}:/overseer/work-dir/#{work_dir_name}"
+      end
+
+    # Max runtime (seconds) before force-killing the step (exit status 124)
+    timeout = step.timeout
+    timeout = 30 if timeout.nil? || timeout.negative?
+
+    container_name = "overseer-#{task_id}-#{timestamp}"
+
+    command = %(
+      timeout #{timeout} docker run --rm -i \
+      --cpus 1 \
+      --network none \
+      #{volume_mount} \
+      --name #{container_name} \
+      #{docker_image_name_tag} \
+      bash -c "cd /overseer/work-dir/#{work_dir_name} && timeout #{timeout} ./run.sh"
+    )
+
+    stdin_input_file = nil
+    expected_output_file = nil
+
+    # Retrieve names of input/output files
+    if step.step_type == 'output_diff'
+      stdin_input_file = step.stdin_input_file.present? ? File.join(work_dir, step.stdin_input_file) : nil
+      expected_output_file = step.expected_output_file.present? ? File.join(work_dir, step.expected_output_file) : nil
+    end
+
+    output = ""
+    status = nil
+    stdin_contents = nil
+
+    # Execute script and capture output
+    Open3.popen2e(command) do |stdin, stdout_err, wait_thr|
+      # If input file exists, pass it as standard input
+      if stdin_input_file && File.exist?(stdin_input_file)
+        File.open(stdin_input_file, 'rb') { |f| IO.copy_stream(f, stdin) }
+        stdin_contents = File.read(stdin_input_file)
+        stdin.close
+      end
+
+      stdout_err.each { |line| output << line }
+      status = wait_thr.value
+    end
+
+    output = output.chomp
+    pass = status.exitstatus == 0
+
+    expected_output_contents = nil
+
+    # If step type is comparing output, retrieve expected output file contents
+    if step.step_type == 'output_diff'
+      expected_output_contents =
+        if expected_output_file && File.exist?(expected_output_file)
+          File.read(expected_output_file)
+        else
+          ''
+        end
+      matches_output = if step.partial_output_diff
+                         output.include?(expected_output_contents)
+                       else
+                         output == expected_output_contents
+                       end
+
+      pass = false unless matches_output
+    end
+
+    feedback_message =
+      if step.feedback_message.blank?
+        if step.step_type == 'output_diff'
+          "Your output did not match the expected result."
+        else
+          "This test did not complete successfully. Check the output for any errors."
+        end
+      else
+        step.feedback_message
+      end
+
+    OverseerStepResult.create!(
+      overseer_assessment_id: overseer_assessment_id,
+      overseer_step: step,
+      exit_status: status.exitstatus,
+      pass: pass,
+      feedback_message: feedback_message,
+      stdout: output,
+      stdin: stdin_contents,
+      expected_output: expected_output_contents,
+      stdout_sha256: Digest::SHA256.hexdigest(output),
+      stdin_sha256: stdin_contents && Digest::SHA256.hexdigest(stdin_contents),
+      expected_output_sha256: expected_output_contents && Digest::SHA256.hexdigest(expected_output_contents)
+    )
   end
 
   def extract_student_submission_files(task, submission, work_dir)
