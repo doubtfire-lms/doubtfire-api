@@ -70,13 +70,14 @@ class AcceptOverseerJob
 
       if result.valid? && result.pass
         steps_passed += 1
-        success_status = TaskStatus.find(step.status_on_success_id) if step.status_on_success_id
-      else
-        failure_status = TaskStatus.find(step.status_on_failure_id) if step.status_on_failure_id
-        if step.halt_on_failure
-          assessment_pass = false
+        if step.halt_on_success && step.status_on_success_id
+          success_status = TaskStatus.find(step.status_on_success_id)
           break
         end
+      elsif step.halt_on_failure
+        failure_status = TaskStatus.find(step.status_on_failure_id) if step.status_on_failure_id
+        assessment_pass = false
+        break
       end
     end
 
