@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-65](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-64...v10.0.0-65) (2026-01-05)
+
+
+### Features
+
+* attention required task status ([#557](https://github.com/b0ink/doubtfire-deploy/issues/557)) ([88e0c7a](https://github.com/b0ink/doubtfire-deploy/commit/88e0c7a9e65a71aed0b9a8453d75af0aa52a09f4))
+* custom project task deadlines ([#550](https://github.com/b0ink/doubtfire-deploy/issues/550)) ([2a50638](https://github.com/b0ink/doubtfire-deploy/commit/2a5063848d9cde0b0277f6e2463613945d720b99))
+* overseer pipeline ([#559](https://github.com/b0ink/doubtfire-deploy/issues/559)) ([d2e49bf](https://github.com/b0ink/doubtfire-deploy/commit/d2e49bfd57e69281923458b8853226a85c9da390))
+
 ## [10.0.0-64](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-63...v10.0.0-64) (2025-12-03)
 
 ## [10.0.0-63](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-62...v10.0.0-63) (2025-12-03)
