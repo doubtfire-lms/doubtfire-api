@@ -26,11 +26,13 @@ module Entities
 
     expose :feedback_message, if: ->(_unit, options) { staff?(options[:my_role]) }
 
-    expose :status_on_success do |overseer_step|
+    expose :status_on_success,
+           if: ->(_obj, options) { staff?(options[:my_role]) } do |overseer_step|
       TaskStatus.find_by(id: overseer_step.status_on_success_id)&.status_key || 'no_change'
     end
 
-    expose :status_on_failure do |overseer_step|
+    expose :status_on_failure,
+           if: ->(_obj, options) { staff?(options[:my_role]) } do |overseer_step|
       TaskStatus.find_by(id: overseer_step.status_on_failure_id)&.status_key || 'no_change'
     end
 
