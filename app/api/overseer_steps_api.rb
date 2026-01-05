@@ -43,7 +43,7 @@ class OverseerStepsApi < Grape::API
 
     task_definition = TaskDefinition.find(params[:task_def_id])
 
-    unless authorise? current_user, overseer_step.task_definition, :manage_overseer_steps
+    unless authorise? current_user, task_definition, :manage_overseer_steps
       error!({ error: 'Not authorised to manage overseer for this task definition' }, 403)
     end
 
@@ -121,7 +121,9 @@ class OverseerStepsApi < Grape::API
       error!({ error: 'Overseer is not enabled. Enable Overseer before updating settings.' }, 403)
     end
 
-    overseer_step = OverseerStep.find(params[:id])
+    unit = Unit.find(params[:unit_id])
+    task_definition = unit.task_definitions.find(params[:task_def_id])
+    overseer_step = task_definition.overseer_steps.find(params[:id])
 
     unless authorise? current_user, overseer_step.task_definition, :manage_overseer_steps
       error!({ error: 'Not authorised to manage overseer for this task definition' }, 403)
