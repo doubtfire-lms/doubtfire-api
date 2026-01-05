@@ -504,6 +504,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_18_031455) do
     t.integer "quality_pts", default: -1
     t.integer "extensions", default: 0, null: false
     t.integer "scorm_extensions", default: 0, null: false
+    t.datetime "target_start_date"
+    t.datetime "target_due_date"
     t.index ["group_submission_id"], name: "index_tasks_on_group_submission_id"
     t.index ["project_id", "task_definition_id"], name: "tasks_uniq_proj_task_def", unique: true
     t.index ["project_id"], name: "index_tasks_on_project_id"

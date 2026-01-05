@@ -14,6 +14,8 @@ module Entities
       expose :due_date
       expose :submission_date, expose_nil: false
       expose :completion_date, expose_nil: false
+      expose :target_due_date, expose_nil: false
+      expose :target_start_date, expose_nil: false
     end
 
     expose :extensions
