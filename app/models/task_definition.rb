@@ -15,7 +15,8 @@ class TaskDefinition < ApplicationRecord
       :get_los,
       :create_task_prerequisite,
       :get_discussion_prompt,
-      :create_discussion_prompt
+      :create_discussion_prompt,
+      :manage_overseer_steps
     ]
 
     admin_role_permissions = [
@@ -26,7 +27,8 @@ class TaskDefinition < ApplicationRecord
       :get_los,
       :create_task_prerequisite,
       :get_discussion_prompt,
-      :create_discussion_prompt
+      :create_discussion_prompt,
+      :manage_overseer_steps
     ]
 
     tutor_role_permissions = [
@@ -303,7 +305,7 @@ class TaskDefinition < ApplicationRecord
       end
 
       # Check the name matches a valid filename format
-      unless req['name'].match?(/^[a-zA-Z0-9_\- \.]+$/)
+      unless req['name'].match?(/^[a-zA-Z0-9_\- .]+$/)
         errors.add(:upload_requirements, "the name for item #{i + 1} does not seem to be a valid filename --> #{req['name']}.")
       end
 

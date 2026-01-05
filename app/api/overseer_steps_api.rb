@@ -37,15 +37,14 @@ class OverseerStepsApi < Grape::API
     requires :task_def_id, type: Integer
   end
   post '/units/:unit_id/task_definitions/:task_def_id/overseer_steps' do
-    # unless authorise? current_user, User, :admin_overseer
-    #   error!({ error: 'Not authorised to create overseer images' }, 403)
-    # end
-    # TODO: ensure correct permissions
+    unless Doubtfire::Application.config.overseer_enabled
+      error!({ error: 'Overseer is not enabled. Enable Overseer before updating settings.' }, 403)
+    end
 
     task_definition = TaskDefinition.find(params[:task_def_id])
 
-    unless Doubtfire::Application.config.overseer_enabled
-      error!({ error: 'Overseer is not enabled. Enable Overseer before updating settings.' }, 403)
+    unless authorise? current_user, overseer_step.task_definition, :manage_overseer_steps
+      error!({ error: 'Not authorised to manage overseer for this task definition' }, 403)
     end
 
     status_on_success_param = params[:overseer_step][:status_on_success]
@@ -118,16 +117,15 @@ class OverseerStepsApi < Grape::API
     requires :task_def_id, type: Integer
   end
   put '/units/:unit_id/task_definitions/:task_def_id/overseer_steps/:id' do
-    # unless authorise? current_user, User, :admin_overseer
-    #   error!({ error: 'Not authorised to create overseer images' }, 403)
-    # end
-    # TODO: ensure correct permissions
-
     unless Doubtfire::Application.config.overseer_enabled
       error!({ error: 'Overseer is not enabled. Enable Overseer before updating settings.' }, 403)
     end
 
     overseer_step = OverseerStep.find(params[:id])
+
+    unless authorise? current_user, overseer_step.task_definition, :manage_overseer_steps
+      error!({ error: 'Not authorised to manage overseer for this task definition' }, 403)
+    end
 
     status_on_success_param = params[:overseer_step][:status_on_success]
     status_on_failure_param = params[:overseer_step][:status_on_failure]
@@ -171,13 +169,12 @@ class OverseerStepsApi < Grape::API
 
   desc 'Delete an overseer step'
   delete '/overseer_steps/:id' do
-    # unless authorise? current_user, User, :admin_overseer
-    #   error!({ error: 'Not authorised to delete an overseer image' }, 403)
-    # end
-
-    # TODO: permissions
-
     overseer_step = OverseerStep.find(params[:id])
+
+    unless authorise? current_user, overseer_step.task_definition, :manage_overseer_steps
+      error!({ error: 'Not authorised to manage overseer for this task definition' }, 403)
+    end
+
     overseer_step.destroy!
 
     error!({ error: overseer_step.errors.full_messages.last }, 403) unless overseer_step.destroyed?
@@ -187,87 +184,15 @@ class OverseerStepsApi < Grape::API
 
   desc 'Get test results for an overseer assessment'
   get '/projects/:project_id/task_definitions/:task_def_id/overseer_assessments_results/:id' do
-    # TODO: if current user can get project
-
     project = Project.find(params[:project_id])
+
+    unless authorise? current_user, project, :get_submission
+      error!({ error: 'Not authorised to view this project' }, 403)
+    end
+
     unit = project.unit
 
     overseer_assessment = OverseerAssessment.find(params[:id])
     present overseer_assessment.overseer_step_results, with: Entities::OverseerStepResultEntity, my_role: unit.role_for(current_user)
   end
-
-  #
-  # desc 'Update an overseer image'
-  # params do
-  #   requires :overseer_image, type: Hash do
-  #     optional :name, type: String,  desc: 'The name of the overseer image'
-  #     optional :tag,  type: String,  desc: 'The tag used to receive from container repo'
-  #   end
-  # end
-  # put '/admin/overseer_images/:id' do
-  #   unless authorise? current_user, User, :admin_overseer
-  #     error!({ error: 'Not authorised to update an overseer image' }, 403)
-  #   end
-  #   unless Doubtfire::Application.config.overseer_enabled
-  #     error!({ error: 'Overseer is not enabled. Enable Overseer before updating settings.' }, 403)
-  #   end
-
-  #   overseer_image = OverseerImage.find(params[:id])
-
-  #   overseer_image_params = ActionController::Parameters.new(params)
-  #                                                       .require(:overseer_image)
-  #                                                       .permit(:name,
-  #                                                               :tag)
-
-  #   # Clear image status and text when updating
-  #   overseer_image_params[:pulled_image_status] = nil
-  #   overseer_image_params[:pulled_image_text] = nil
-  #   overseer_image_params[:last_pulled_date] = nil
-
-  #   overseer_image.update!(overseer_image_params)
-  #   present overseer_image, with: Entities::OverseerImageEntity
-  # end
-
-  # desc 'Get all overseer images'
-  # get '/admin/overseer_images' do
-  #   unless authorise? current_user, User, :use_overseer
-  #     error!({ error: 'Not authorised to get overseer images' }, 403)
-  #   end
-
-  #   if Doubtfire::Application.config.overseer_enabled
-  #     present OverseerImage.all, with: Entities::OverseerImageEntity
-  #   else
-  #     present [], with: Grape::Presenters::Presenter
-  #   end
-  # end
-
-  # desc 'Get all overseer images'
-  # get '/admin/overseer_images/:id' do
-  #   unless authorise? current_user, User, :use_overseer
-  #     error!({ error: 'Not authorised to get overseer images' }, 403)
-  #   end
-
-  #   if Doubtfire::Application.config.overseer_enabled
-  #     present OverseerImage.find(params[:id]), with: Entities::OverseerImageEntity
-  #   else
-  #     present [], with: Grape::Presenters::Presenter
-  #   end
-  # end
-
-  # desc 'Get overseer image by id and pull image'
-  # put '/admin/overseer_images/:id/pull_image' do
-  #   unless authorise? current_user, User, :admin_overseer
-  #     error!({ error: 'Not authorised to pull an overseer image' }, 403)
-  #   end
-  #   unless Doubtfire::Application.config.overseer_enabled
-  #     error!({ error: 'Overseer is not enabled. Enable Overseer before updating settings.' }, 403)
-  #   end
-
-  #   overseer_image = OverseerImage.find(params[:id])
-
-  #   job_id = PullDockerImageJob.perform_async(overseer_image.id)
-  #   job = setup_job(job_id)
-
-  #   present job, with: Entities::SidekiqJobEntity
-  # end
 end
