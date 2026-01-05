@@ -54,7 +54,6 @@ class AcceptOverseerJob
 
     assessment_pass = true
 
-    # TODO: only get overseer_steps that are enabled
     active_overseer_steps.each do |step|
       result = run_overseer_step(
         step: step,
