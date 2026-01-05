@@ -335,17 +335,17 @@ class TaskDefinitionsApi < Grape::API
     upload_reqs = task.upload_requirements
 
     # Copy files to be PDFed
-    task.accept_submission(current_user, scoop_files(params, upload_reqs), self, nil, 'ready_for_feedback', nil, accepted_tii_eula: false)
+    task.accept_submission(current_user, scoop_files(params, upload_reqs), self, nil, 'ready_for_feedback', nil, accepted_tii_eula: false, test_submission: true)
 
-    logger.info '********* - about to perform overseer submission'
-    overseer_assessment = OverseerAssessment.create_for(task)
-    if overseer_assessment.present?
-      overseer_assessment.send_to_overseer
+    # logger.info '********* - about to perform overseer submission'
+    # overseer_assessment = OverseerAssessment.create_for(task)
+    # if overseer_assessment.present?
+    #   overseer_assessment.send_to_overseer
 
-      logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was performed"
-    else
-      logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was not performed"
-    end
+    #   logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was performed"
+    # else
+    #   logger.info "Overseer assessment for task_def_id: #{task_definition.id} task_id: #{task.id} was not performed"
+    # end
 
     # todo: Do we  need to return additional details here? e.g. the comment, and project?
     present task, with: Entities::TaskEntity, include_other_projects: true, update_only: true
@@ -880,45 +880,45 @@ class TaskDefinitionsApi < Grape::API
     present job, with: Entities::SidekiqJobEntity
   end
 
-  desc 'Retrieve the contents of the overseer execution script'
-  params do
-    requires :unit_id, type: Integer, desc: 'The unit that has the task definition'
-    requires :task_def_id, type: Integer, desc: 'The task definition to download submissions for'
-  end
-  get '/units/:unit_id/task_definitions/:task_def_id/overseer_script' do
-    unit = Unit.find(params[:unit_id])
-    unless authorise? current_user, unit, :add_task_def
-      error!({ error: 'Not authorised to edit task details of unit' }, 403)
-    end
+  # desc 'Retrieve the contents of the overseer execution script'
+  # params do
+  #   requires :unit_id, type: Integer, desc: 'The unit that has the task definition'
+  #   requires :task_def_id, type: Integer, desc: 'The task definition to download submissions for'
+  # end
+  # get '/units/:unit_id/task_definitions/:task_def_id/overseer_script' do
+  #   unit = Unit.find(params[:unit_id])
+  #   unless authorise? current_user, unit, :add_task_def
+  #     error!({ error: 'Not authorised to edit task details of unit' }, 403)
+  #   end
 
-    td = unit.task_definitions.find(params[:task_def_id])
+  #   td = unit.task_definitions.find(params[:task_def_id])
 
-    script_path = td.task_assessment_script
+  #   script_path = td.task_assessment_script
 
-    content = File.read(script_path)
-    content
-  end
+  #   content = File.read(script_path)
+  #   content
+  # end
 
-  desc 'Update the contents of the overseer execution script'
-  params do
-    requires :unit_id, type: Integer, desc: 'The unit that has the task definition'
-    requires :task_def_id, type: Integer, desc: 'The task definition to download submissions for'
-    requires :script_content, type: String, desc: 'Content of the overseer execution script'
-  end
-  put '/units/:unit_id/task_definitions/:task_def_id/overseer_script' do
-    unit = Unit.find(params[:unit_id])
-    unless authorise? current_user, unit, :add_task_def
-      error!({ error: 'Not authorised to edit task details of unit' }, 403)
-    end
+  # desc 'Update the contents of the overseer execution script'
+  # params do
+  #   requires :unit_id, type: Integer, desc: 'The unit that has the task definition'
+  #   requires :task_def_id, type: Integer, desc: 'The task definition to download submissions for'
+  #   requires :script_content, type: String, desc: 'Content of the overseer execution script'
+  # end
+  # put '/units/:unit_id/task_definitions/:task_def_id/overseer_script' do
+  #   unit = Unit.find(params[:unit_id])
+  #   unless authorise? current_user, unit, :add_task_def
+  #     error!({ error: 'Not authorised to edit task details of unit' }, 403)
+  #   end
 
-    td = unit.task_definitions.find(params[:task_def_id])
+  #   td = unit.task_definitions.find(params[:task_def_id])
 
-    script_path = td.task_assessment_script
+  #   script_path = td.task_assessment_script
 
-    decoded = Base64.urlsafe_decode64(params[:script_content])
+  #   decoded = Base64.urlsafe_decode64(params[:script_content])
 
-    File.write(script_path, decoded)
-    status 200
-  end
+  #   File.write(script_path, decoded)
+  #   status 200
+  # end
 
 end

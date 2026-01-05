@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_12_010033) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_18_031455) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -215,6 +215,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_12_010033) do
     t.integer "status", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "total_steps"
     t.index ["task_id", "submission_timestamp"], name: "index_overseer_assessments_on_task_id_and_submission_timestamp", unique: true
     t.index ["task_id"], name: "index_overseer_assessments_on_task_id"
   end
@@ -229,6 +230,53 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_12_010033) do
     t.datetime "last_pulled_date"
     t.index ["name"], name: "index_overseer_images_on_name", unique: true
     t.index ["tag"], name: "index_overseer_images_on_tag", unique: true
+  end
+
+  create_table "overseer_step_results", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "overseer_assessment_id", null: false
+    t.bigint "overseer_step_id", null: false
+    t.integer "exit_status", default: -1, null: false
+    t.boolean "pass", default: false, null: false
+    t.text "feedback_message"
+    t.text "stdout"
+    t.text "stdin"
+    t.text "expected_output"
+    t.string "stdout_sha256"
+    t.string "stdin_sha256"
+    t.string "expected_output_sha256"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["overseer_assessment_id"], name: "index_overseer_step_results_on_overseer_assessment_id"
+    t.index ["overseer_step_id"], name: "index_overseer_step_results_on_overseer_step_id"
+  end
+
+  create_table "overseer_steps", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "task_definition_id", null: false
+    t.string "name", null: false
+    t.text "description"
+    t.string "display_name", null: false
+    t.string "display_description"
+    t.text "run_command"
+    t.integer "timeout", default: 30, null: false
+    t.integer "sort_order", default: 0, null: false
+    t.string "step_type", null: false
+    t.boolean "partial_output_diff"
+    t.string "stdin_input_file"
+    t.string "expected_output_file"
+    t.text "feedback_message"
+    t.bigint "status_on_success_id"
+    t.bigint "status_on_failure_id"
+    t.boolean "halt_on_success"
+    t.boolean "halt_on_failure"
+    t.boolean "show_expected_output"
+    t.boolean "show_stdin"
+    t.boolean "show_stdout"
+    t.boolean "enabled", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["status_on_failure_id"], name: "index_overseer_steps_on_status_on_failure_id"
+    t.index ["status_on_success_id"], name: "index_overseer_steps_on_status_on_success_id"
+    t.index ["task_definition_id"], name: "index_overseer_steps_on_task_definition_id"
   end
 
   create_table "projects", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|

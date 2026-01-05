@@ -50,7 +50,8 @@ module Entities
     expose :is_graded
     expose :max_quality_pts
     expose :overseer_image_id, if: ->(unit, options) { staff?(options[:my_role]) }, expose_nil: false
-    expose :assessment_enabled, if: ->(unit, options) { staff?(options[:my_role]) }
+    # expose :assessment_enabled, if: ->(unit, options) { staff?(options[:my_role]) }
+    expose :assessment_enabled
     expose :similarity_language, if: ->(unit, options) { staff?(options[:my_role]) }, expose_nil: false
     expose :assess_in_portfolio_only
     expose :use_resources_for_jplag_base_code, if: ->(unit, options) { staff?(options[:my_role]) }
@@ -61,5 +62,12 @@ module Entities
     expose :discussion_prompts_count do |task_def|
       task_def.discussion_prompts.size
     end
+
+    # expose :overseer_steps, using: OverseerStepEntity, if: ->(unit, options) { staff?(options[:my_role]) }
+    expose :overseer_steps, using: OverseerStepEntity do |task_def, options|
+      task_def.overseer_steps # options[:my_role] is still available inside the entity
+    end
+    expose :overseer_resource_files, if: ->(task_def, options) { staff?(options[:my_role]) }
+
   end
 end

@@ -15,7 +15,8 @@ class TaskDefinition < ApplicationRecord
       :get_los,
       :create_task_prerequisite,
       :get_discussion_prompt,
-      :create_discussion_prompt
+      :create_discussion_prompt,
+      :manage_overseer_steps
     ]
 
     admin_role_permissions = [
@@ -26,7 +27,8 @@ class TaskDefinition < ApplicationRecord
       :get_los,
       :create_task_prerequisite,
       :get_discussion_prompt,
-      :create_discussion_prompt
+      :create_discussion_prompt,
+      :manage_overseer_steps
     ]
 
     tutor_role_permissions = [
@@ -71,6 +73,7 @@ class TaskDefinition < ApplicationRecord
   has_many :tasks, dependent:  :destroy # Destroying a task definition will also nuke any instances
   has_many :group_submissions, dependent: :destroy # Destroying a task definition will also nuke any group submissions
   has_many :learning_outcomes, as: :context, dependent: :destroy
+  has_many :overseer_steps, -> { order(:sort_order) }, inverse_of: :task_definition, dependent: :destroy
 
   has_many :tii_group_attachments, dependent: :destroy # destroy uploaded files to tii - after the tasks
   has_many :tii_actions, as: :entity, dependent: :destroy
@@ -302,7 +305,7 @@ class TaskDefinition < ApplicationRecord
       end
 
       # Check the name matches a valid filename format
-      unless req['name'].match?(/^[a-zA-Z0-9_\- \.]+$/)
+      unless req['name'].match?(/^[a-zA-Z0-9_\- .]+$/)
         errors.add(:upload_requirements, "the name for item #{i + 1} does not seem to be a valid filename --> #{req['name']}.")
       end
 
@@ -731,6 +734,24 @@ class TaskDefinition < ApplicationRecord
 
   def task_assessment_resources(create = true)
     task_assessment_resources_with_abbreviation(abbreviation, create)
+  end
+
+  def overseer_resource_files
+    return [] unless File.exist?(task_assessment_resources)
+
+    files = []
+    Zip::File.open(task_assessment_resources) do |zip_file|
+      zip_file.each do |entry|
+      next if entry.directory?
+      # skip macOS metadata files and hidden files
+      next if File.basename(entry.name).start_with?('._', '.')
+
+      # remove top-level folder
+      parts = entry.name.split('/', 2)
+      files << "/#{parts.last}" unless parts.empty?
+      end
+    end
+    files
   end
 
   def task_assessment_script(create = true)
