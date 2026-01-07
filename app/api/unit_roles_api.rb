@@ -71,6 +71,7 @@ class UnitRolesApi < Grape::API
     requires :unit_role, type: Hash do
       requires :role_id, type: Integer, desc: 'The role to create with'
       optional :observer_only, type: Boolean, desc: 'If the staff has read-only permissions'
+      optional :mentor_id, type: Integer, desc: 'Assign a mentor to this unit role'
     end
   end
   put '/unit_roles/:id' do
@@ -95,7 +96,8 @@ class UnitRolesApi < Grape::API
                                                        .require(:unit_role)
                                                        .permit(
                                                          :role_id,
-                                                         :observer_only
+                                                         :observer_only,
+                                                         :mentor_id
                                                        )
 
     if unit_role_parameters[:role_id] == Role.tutor.id && unit_role.role == Role.convenor && unit_role.unit.convenors.count == 1

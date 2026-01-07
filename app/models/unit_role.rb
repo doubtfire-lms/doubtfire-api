@@ -11,6 +11,8 @@ class UnitRole < ApplicationRecord
   has_many :task_engagements, through: :tasks
   has_many :comments, through: :tasks
 
+  has_many :tutor_notes, dependent: :destroy
+
   validates :unit_id, presence: true
   validates :user_id, presence: true
   validates :role_id, presence: true
@@ -285,5 +287,24 @@ class UnitRole < ApplicationRecord
       end
     end
 
+  end
+
+  def add_tutor_note(user, text, reply_to_id = nil)
+    text = text.strip
+    return nil if user.nil? || text.nil? || text.empty?
+
+    ln = tutor_notes.last
+
+    # don't add if duplicate note
+    return if ln && ln.user == user && ln.note == text
+
+    note = TutorNote.create
+    note.note = text
+    note.user = user
+    note.unit_role = self
+    note.reply_to_id = reply_to_id
+    note.convenor_only = false
+    note.save!
+    note
   end
 end
