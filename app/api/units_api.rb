@@ -303,6 +303,43 @@ class UnitsApi < Grape::API
     present unit.tasks_as_hash(tasks), with: Grape::Presenters::Presenter
   end
 
+  desc 'Get tasks ready for moderation'
+  get '/units/:id/tasks/moderation' do
+    unit = Unit.find(params[:id])
+
+    unless authorise? current_user, unit, :get_students
+      error!({ error: 'Not authorised to provide feedback for this unit' }, 403)
+    end
+
+    my_unit_role = unit.unit_role_for(current_user)
+    mentees = unit.staff.where(mentor_id: my_unit_role.id)
+
+    # TODO: search for ModeratedTask's where feedback has been left by the tutor since last_moderation_date
+
+    tasks = unit.student_tasks
+                .joins(:task_definition)
+                .joins(project: { tutorial_enrolments: :tutorial })
+                .where(tutorials: { unit_role_id: mentees.select(:id) })
+                .where('tutorials.tutorial_stream_id = task_definitions.tutorial_stream_id')
+                .select(
+                  'tasks.id AS task_id',
+                  'tasks.project_id',
+                  'tasks.task_definition_id',
+                  'tutorials.id AS tutorial_id',
+                  'tasks.task_status_id AS status_id',
+                  'tasks.completion_date',
+                  'tasks.submission_date',
+                  'tasks.times_assessed',
+                  'tasks.grade',
+                  'tasks.quality_pts',
+                  '0 AS number_unread',
+                  '0 AS similar_to_count',
+                  'false AS pinned',
+                  'false AS has_extensions'
+      )
+    present unit.tasks_as_hash(tasks), with: Grape::Presenters::Presenter
+  end
+
   desc 'Download the grades for a unit'
   get '/units/:id/grades' do
     unit = Unit.find(params[:id])
