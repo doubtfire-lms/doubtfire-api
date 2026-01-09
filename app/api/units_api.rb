@@ -314,9 +314,11 @@ class UnitsApi < Grape::API
     my_unit_role = unit.unit_role_for(current_user)
     mentees = unit.staff.where(mentor_id: my_unit_role.id)
 
-    # TODO: search for ModeratedTask's where feedback has been left by the tutor since last_moderation_date
-
     tasks = unit.student_tasks
+                .includes(:comments)
+                .left_joins(:moderated_task)
+                .where(moderated_tasks: { dismissed: false })
+                .where(projects: { unit_id: unit.id })
                 .joins(:task_definition)
                 .joins(project: { tutorial_enrolments: :tutorial })
                 .where(tutorials: { unit_role_id: mentees.select(:id) })
@@ -335,8 +337,24 @@ class UnitsApi < Grape::API
                   '0 AS number_unread',
                   '0 AS similar_to_count',
                   'false AS pinned',
-                  'false AS has_extensions'
+                  'false AS has_extensions',
+                  'tasks.*',
       )
+                .distinct
+
+    # Only include tasks where the tutor's latest comment is at least 15 minutes old
+    # to ensure that the feedback is likely complete before adding it for moderation
+    comment_threshold = 15.minutes.ago
+
+    tasks = tasks.select do |task|
+      tutor_comments = task.comments.select { |c| c.user == task.tutor }
+      next false if tutor_comments.empty?
+
+      most_recent = tutor_comments.max_by(&:created_at)
+      most_recent.created_at <= comment_threshold &&
+        most_recent.created_at > (task.moderated_task&.last_moderated_date || Time.at(0))
+    end
+
     present unit.tasks_as_hash(tasks), with: Grape::Presenters::Presenter
   end
 

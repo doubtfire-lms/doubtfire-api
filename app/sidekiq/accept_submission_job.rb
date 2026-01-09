@@ -45,6 +45,10 @@ class AcceptSubmissionJob
       return
     end
 
+    # Mark this task for moderation
+    # TODO: base it on the task's tutor's trust factor
+    task.mark_as_moderated if rand < 0.5
+
     # When converted, we can now send documents to turn it in for checking
     if TurnItIn.enabled?
       task.send_documents_to_tii(user, accepted_tii_eula: accepted_tii_eula)

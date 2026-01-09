@@ -125,6 +125,7 @@ class Task < ApplicationRecord
   belongs_to :group_submission, optional: true
 
   has_one :unit, through: :project
+  has_one :moderated_task, dependent: :destroy
 
   has_many :comments, class_name: 'TaskComment', dependent: :destroy, inverse_of: :task
   has_many :task_similarities, class_name: 'TaskSimilarity', dependent: :destroy, inverse_of: :task
@@ -1575,6 +1576,16 @@ class Task < ApplicationRecord
             task_definition.assessment_enabled &&
             # task_definition.has_task_assessment_script? &&
             (has_new_files? || has_done_file?)
+  end
+
+  def mark_as_moderated
+    moderated_task = ModeratedTask.find_by(task_id: id)
+    if moderated_task.nil?
+      ModeratedTask.create!({
+                              task: self,
+                              last_moderated_date: Time.zone.now
+                            })
+    end
   end
 
   private

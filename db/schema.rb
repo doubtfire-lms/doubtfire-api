@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_06_005505) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_09_033055) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -206,6 +206,17 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_06_005505) do
     t.index ["unit_id"], name: "index_marking_sessions_on_unit_id"
     t.index ["user_id", "unit_id", "ip_address", "updated_at"], name: "index_marking_sessions_on_user_unit_ip_and_time"
     t.index ["user_id"], name: "index_marking_sessions_on_user_id"
+  end
+
+  create_table "moderated_tasks", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "task_id", null: false
+    t.datetime "last_moderated_date"
+    t.bigint "user_id"
+    t.boolean "dismissed", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["task_id"], name: "index_moderated_tasks_on_task_id", unique: true
+    t.index ["user_id"], name: "index_moderated_tasks_on_user_id"
   end
 
   create_table "overseer_assessments", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
@@ -781,6 +792,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_06_005505) do
   add_foreign_key "feedback_chips", "learning_outcomes"
   add_foreign_key "learning_outcome_links", "learning_outcomes", column: "source_id"
   add_foreign_key "learning_outcome_links", "learning_outcomes", column: "target_id"
+  add_foreign_key "moderated_tasks", "tasks"
   add_foreign_key "user_oauth_states", "users"
   add_foreign_key "user_oauth_tokens", "users"
 end
