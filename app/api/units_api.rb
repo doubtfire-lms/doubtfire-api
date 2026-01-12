@@ -352,7 +352,7 @@ class UnitsApi < Grape::API
 
       most_recent = tutor_comments.max_by(&:created_at)
       most_recent.created_at <= comment_threshold &&
-        most_recent.created_at > (task.moderated_task&.last_moderated_date || Time.at(0))
+        most_recent.created_at > (task.moderated_task&.last_moderated_date || Time.zone.at(0))
     end
 
     present unit.tasks_as_hash(tasks), with: Grape::Presenters::Presenter
