@@ -130,14 +130,16 @@ class UnitRolesApi < Grape::API
       error!({ error: 'You do not have permission to moderate this feedback' }, 400)
     end
 
-    score = params[:score]
-    return error!({ error: 'Invalid moderation score' }, 400) unless [-1, 0, 1].include?(score)
+    score = params[:score].to_i
+    unless [-1, 0, 1].include?(score)
+      error!({ error: 'Invalid moderation score' }, 400)
+    end
 
     moderated_task = ModeratedTask.find_by(task: task)
 
     recent_threshold = 15.minutes.ago
     if moderated_task.last_moderated_date && moderated_task.last_moderated_date > recent_threshold
-      error!({ error: 'Invalid moderation score' }, 400)
+      error!({ error: 'Feedback is too new to moderate' }, 400)
     end
 
     # TODO: adjust scale via ENV var?

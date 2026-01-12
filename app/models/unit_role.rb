@@ -5,6 +5,8 @@ class UnitRole < ApplicationRecord
 
   belongs_to :role, optional: false    # Foreign key
 
+  belongs_to :mentor, class_name: 'UnitRole', optional: true
+
   has_many :tutorials, class_name: 'Tutorial', dependent: :nullify
   has_many :projects, through: :tutorials
   has_many :tasks, through: :projects
