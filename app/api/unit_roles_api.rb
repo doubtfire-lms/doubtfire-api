@@ -88,7 +88,11 @@ class UnitRolesApi < Grape::API
 
     # Once they're an observer, they'll no longer have access to this route to remove the observer status from themselves
     # But let's double check just in case this route gets whitelisted...
-    if unit_role.observer_only
+
+    unit = unit_role.unit
+    current_unit_role = unit.unit_role_for(current_user)
+
+    if current_unit_role.observer_only
       error!({ error: "You are not authorised to update this staff member." }, 403)
     end
 
