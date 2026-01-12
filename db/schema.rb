@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_09_033055) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_12_021148) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -668,6 +668,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_09_033055) do
     t.bigint "unit_id"
     t.boolean "observer_only", default: false
     t.bigint "mentor_id"
+    t.integer "trust_factor", default: 50, null: false
     t.index ["mentor_id"], name: "index_unit_roles_on_mentor_id"
     t.index ["role_id"], name: "index_unit_roles_on_role_id"
     t.index ["tutorial_id"], name: "index_unit_roles_on_tutorial_id"

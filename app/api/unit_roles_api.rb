@@ -107,4 +107,55 @@ class UnitRolesApi < Grape::API
     unit_role.update!(unit_role_parameters)
     present unit_role, with: Entities::UnitRoleEntity, in_unit: true
   end
+
+  desc 'Moderate tutor feedback'
+  params do
+    requires :id, type: Integer, desc: 'The id of the unit role to moderate'
+    requires :task_id, type: Integer, desc: 'The id of the task'
+    requires :score, type: Integer, desc: 'Moderation for the task'
+  end
+  post '/unit_roles/:id/moderation/:task_id' do
+    unit_role = UnitRole.find(params[:id])
+    unit = unit_role.unit
+
+    task = Task.find(params[:task_id])
+    tutor_user = task.project.tutor_for(task.task_definition)
+    tutor = unit.unit_role_for(tutor_user)
+    unless tutor.id == unit_role.id
+      error!("Invalid unit role", 400)
+    end
+
+    current_unit_role = unit.unit_role_for(current_user)
+    unless tutor.mentor == current_unit_role
+      error!({ error: 'You do not have permission to moderate this feedback' }, 400)
+    end
+
+    score = params[:score]
+    return error!({ error: 'Invalid moderation score' }, 400) unless [-1, 0, 1].include?(score)
+
+    moderated_task = ModeratedTask.find_by(task: task)
+
+    recent_threshold = 15.minutes.ago
+    if moderated_task.last_moderated_date && moderated_task.last_moderated_date > recent_threshold
+      error!({ error: 'Invalid moderation score' }, 400)
+    end
+
+    # TODO: adjust scale via ENV var?
+    delta = score.to_i * 5
+
+    unit_role.update!(
+      trust_factor: (unit_role.trust_factor + delta).clamp(0, 99)
+    )
+
+    moderated_task.update!(last_moderated_date: Time.zone.now)
+
+    unless score == -1
+      moderated_task.update!({
+                               dismissed: true,
+                               user: current_user
+                             })
+    end
+
+    true
+  end
 end

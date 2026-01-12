@@ -46,8 +46,13 @@ class AcceptSubmissionJob
     end
 
     # Mark this task for moderation
-    # TODO: base it on the task's tutor's trust factor
-    task.mark_as_moderated if rand < 0.5
+    tutor_user = task.project.tutor_for(task.task_definition)
+    if tutor_user
+      tutor = task.unit.unit_role_for(tutor_user)
+      if tutor && rand(0..100) > tutor.trust_factor
+        task.mark_as_moderated
+      end
+    end
 
     # When converted, we can now send documents to turn it in for checking
     if TurnItIn.enabled?
