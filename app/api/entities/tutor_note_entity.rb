@@ -11,6 +11,10 @@ module Entities
 
     expose :reply_to_id
 
+    expose :task_id
+    expose :task_definition_id
+    expose :project_id
+
     # TODO: what is tutor_notes_id?
 
   end

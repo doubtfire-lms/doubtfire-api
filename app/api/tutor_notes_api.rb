@@ -8,6 +8,16 @@ class TutorNotesApi < Grape::API
     authenticated?
   end
 
+  helpers do
+    def can_access_tutor_notes?(unit, current_user, unit_role)
+      current_user_role = unit.unit_role_for(current_user)
+
+      current_user_role.role == Role.convenor ||
+        unit_role.mentor_id == current_user_role.id ||
+        unit_role == current_user_role
+    end
+  end
+
   desc "Get all the tutor notes for a unit role"
   params do
     requires :unit_role_id, type: Integer, desc: 'Unit role to fetch the notes for'
@@ -19,14 +29,11 @@ class TutorNotesApi < Grape::API
       error!({ error: 'You do not have permission to access this unit' }, 403)
     end
 
-    current_user_role = unit.unit_role_for(current_user)
+    unless authorise? current_user, unit_role, :create_tutor_note
+      error!({ error: 'You do not have permission to access this.' }, 403)
+    end
 
-    can_access =
-      current_user_role == Role.convenor ||
-      unit_role.mentor_id == current_user_role.id ||
-      unit_role == current_user_role
-
-    unless can_access
+    unless can_access_tutor_notes?(unit, current_user, unit_role)
       error!({ error: 'You do not have permission to access this.' }, 403)
     end
 
@@ -35,16 +42,25 @@ class TutorNotesApi < Grape::API
     present result, with: Entities::TutorNoteEntity, user: current_user
   end
 
-  desc "Create a new tutor note for a project"
+  desc "Create a new note for a tutor"
   params do
     requires :note,         type: String, desc: 'The text to add to the tutor note'
-    optional :reply_to_id,  type: Integer, desc: 'ID of the staff note this is being replied to'
+    optional :reply_to_id,  type: Integer, desc: 'ID of the tutor note this is being replied to'
+    optional :task_id,      type: Integer, desc: 'ID of the task this note is related to'
   end
   post '/unit_roles/:unit_role_id/tutor_notes' do
     unit_role = UnitRole.find(params[:unit_role_id])
     unit = unit_role.unit
     unless authorise? current_user, unit, :get_unit
-      error!({ error: 'You do not have permission to access this unit' }, 403)
+      error!({ error: 'You do not have permission to access this unit.' }, 403)
+    end
+
+    unless authorise? current_user, unit_role, :create_tutor_note
+      error!({ error: 'You do not have permission to create note.' }, 403)
+    end
+
+    unless can_access_tutor_notes?(unit, current_user, unit_role)
+      error!({ error: 'You do not have permission to create note.' }, 403)
     end
 
     text_note = params[:note]
@@ -56,7 +72,13 @@ class TutorNotesApi < Grape::API
       error!(error: 'Original tutor note is not in this project.') if unit_role.tutor_notes.find(reply_to_id).blank?
     end
 
-    result = unit_role.add_tutor_note(current_user, text_note, reply_to_id)
+    task_id = params[:task_id]
+    if task_id.present?
+      task = Task.find(task_id)
+      error!(error: 'You do not have permission to add a note related to this task') unless authorise?(unit_role.user, task.project, :assess)
+    end
+
+    result = unit_role.add_tutor_note(current_user, text_note, task_id, reply_to_id)
 
     if result.nil?
       error!({ error: 'Duplicate note.' }, 403)
@@ -73,14 +95,17 @@ class TutorNotesApi < Grape::API
       error!({ error: 'You do not have permission to access this unit' }, 403)
     end
 
+    unless can_access_tutor_notes?(unit, current_user, unit_role)
+      error!({ error: 'You do not have permission to access create note.' }, 403)
+    end
+
     tutor_note = unit_role.tutor_notes.find(params[:id])
 
-    # TODO: delete permissions
-    # unless authorise?(current_user, project, :delete_staff_note) || staff_note.user.id == current_user.id
-    #   error!({ error: 'You do not have permission to delete this note.' }, 403)
-    # end
+    error!({ error: 'Note does not belong to this tutor' }, 404) if tutor_note.unit_role != unit_role
 
-    # error!({ error: 'Note does not belong to this tutor' }, 404) if tutor_note.user_role != user_role.id
+    unless authorise?(current_user, unit_role, :delete_tutor_note) || tutor_note.user.id == current_user.id
+      error!({ error: 'You do not have permission to delete this note.' }, 403)
+    end
 
     tutor_note.destroy
     error!({ error: tutor_note.errors.full_messages.last }, 403) unless tutor_note.destroyed?
@@ -101,15 +126,21 @@ class TutorNotesApi < Grape::API
       error!({ error: 'You do not have permission to access this unit' }, 403)
     end
 
+    unless authorise? current_user, unit_role, :create_tutor_note
+      error!({ error: 'You do not have permission to access this.' }, 403)
+    end
+
     tutor_note = unit_role.tutor_notes.find(params[:id])
 
-    # TODO: permissions
+    unless can_access_tutor_notes?(unit, current_user, unit_role)
+      error!({ error: 'You do not have permission to access create note.' }, 403)
+    end
 
-    # unless authorise?(current_user, project, :create_staff_note) && staff_note.user.id == current_user.id
-    #   error!({ error: 'You do not have permission to edit this note.' }, 403)
-    # end
+    error!({ error: 'Note does not belong to this tutor' }, 404) if tutor_note.unit_role != unit_role
 
-    # error!({ error: 'Note does not belong to this project' }, 404) if staff_note.project_id != project.id
+    unless tutor_note.user.id == current_user.id
+      error!({ error: 'You do not have permission to delete this note.' }, 403)
+    end
 
     tutor_note.update!(note: params[:note])
     present tutor_note, with: Entities::TutorNoteEntity, user: current_user
