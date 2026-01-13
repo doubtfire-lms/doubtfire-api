@@ -42,6 +42,35 @@ class TutorNotesApi < Grape::API
     present result, with: Entities::TutorNoteEntity, user: current_user
   end
 
+  desc "Mark a tutor note as read"
+  params do
+    requires :unit_role_id, type: Integer, desc: 'Unit role to fetch the notes for'
+  end
+  put '/unit_roles/:unit_role_id/tutor_notes/:id/mark_as_read' do
+    unit_role = UnitRole.find(params[:unit_role_id])
+
+    unit = unit_role.unit
+    unless authorise? current_user, unit, :get_unit
+      error!({ error: 'You do not have permission to access this unit' }, 403)
+    end
+
+    unless can_access_tutor_notes?(unit, current_user, unit_role)
+      error!({ error: 'You do not have permission to access this.' }, 403)
+    end
+
+    tutor_note = unit_role.tutor_notes.find(params[:id])
+
+    current_unit_role = unit.unit_role_for(current_user)
+
+    unless current_unit_role == unit_role && unit_role == tutor_note.unit_role
+      error!({ error: 'You do not have permission to update this note.' }, 403)
+    end
+
+    tutor_note.update!(read_by_unit_role: true)
+
+    true
+  end
+
   desc "Create a new note for a tutor"
   params do
     requires :note,         type: String, desc: 'The text to add to the tutor note'

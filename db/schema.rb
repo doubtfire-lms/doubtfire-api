@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_12_021148) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_13_033152) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -603,14 +603,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_12_021148) do
     t.bigint "task_id"
     t.bigint "unit_role_id", null: false
     t.bigint "user_id", null: false
-    t.bigint "tutor_notes_id"
     t.bigint "reply_to_id"
-    t.boolean "convenor_only", null: false
+    t.boolean "read_by_unit_role", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["reply_to_id"], name: "index_tutor_notes_on_reply_to_id"
     t.index ["task_id"], name: "index_tutor_notes_on_task_id"
-    t.index ["tutor_notes_id"], name: "index_tutor_notes_on_tutor_notes_id"
     t.index ["unit_role_id"], name: "index_tutor_notes_on_unit_role_id"
     t.index ["user_id"], name: "index_tutor_notes_on_user_id"
   end

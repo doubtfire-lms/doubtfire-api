@@ -309,7 +309,7 @@ class UnitRole < ApplicationRecord
     note.unit_role = self
     note.reply_to_id = reply_to_id
     note.task_id = task_id
-    note.convenor_only = false
+    note.read_by_unit_role = false
     note.save!
     note
   end

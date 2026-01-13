@@ -147,7 +147,7 @@ class UnitRolesApi < Grape::API
     end
 
     # TODO: adjust scale via ENV var?
-    delta = score.to_i * 5
+    delta = score.to_i * 2
 
     unit_role.update!(
       trust_factor: (unit_role.trust_factor + delta).clamp(0, 99)

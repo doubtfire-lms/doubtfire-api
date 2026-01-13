@@ -15,7 +15,7 @@ module Entities
     expose :task_definition_id
     expose :project_id
 
-    # TODO: what is tutor_notes_id?
+    expose :read_by_unit_role
 
   end
 end
