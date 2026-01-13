@@ -62,7 +62,7 @@ class UnitsApi < Grape::API
     # Unit uses user from thread to limit exposure
     #
     my_role = unit.role_for(current_user)
-    present unit, with: Entities::UnitEntity, my_role: my_role, in_unit: true
+    present unit, with: Entities::UnitEntity, user: current_user, my_role: my_role, in_unit: true
   end
 
   desc 'Update unit'
