@@ -68,7 +68,6 @@ class ApiRoot < Grape::API
   # the mount above is available in 9.x but has not been ported to `10.0.x`
   mount NotificationsApi
   mount ProjectsApi
-  mount ProjectsApi
   mount SettingsApi
   mount StaffGrantExtensionApi
   mount StudentsApi

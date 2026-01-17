@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_11_02_221253) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_12_010033) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "abbreviation", null: false
     t.datetime "created_at", null: false
@@ -88,6 +88,15 @@ ActiveRecord::Schema[8.1].define(version: 2025_11_02_221253) do
     t.datetime "time_completed"
     t.datetime "time_started"
     t.datetime "updated_at", null: false
+  end
+
+  create_table "discussion_prompts", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.text "content", null: false
+    t.datetime "created_at", null: false
+    t.integer "priority", default: 0
+    t.bigint "task_definition_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["task_definition_id"], name: "index_discussion_prompts_on_task_definition_id"
   end
 
   create_table "feedback_chips", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
@@ -197,6 +206,13 @@ ActiveRecord::Schema[8.1].define(version: 2025_11_02_221253) do
     t.index ["unit_id"], name: "index_marking_sessions_on_unit_id"
     t.index ["user_id", "unit_id", "ip_address", "updated_at"], name: "index_marking_sessions_on_user_unit_ip_and_time"
     t.index ["user_id"], name: "index_marking_sessions_on_user_id"
+  end
+
+  create_table "notifications", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "message"
+    t.datetime "updated_at", null: false
+    t.integer "user_id"
   end
 
   create_table "overseer_assessments", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
