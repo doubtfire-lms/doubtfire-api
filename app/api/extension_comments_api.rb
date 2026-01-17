@@ -10,13 +10,20 @@ class ExtensionCommentsApi < Grape::API
     requires :weeks_requested, type: Integer, desc: 'The details of the request'
   end
   post '/projects/:project_id/task_def_id/:task_definition_id/request_extension' do
-    project = Project.find(params[:project_id])
-    task_definition = project.unit.task_definitions.find(params[:task_definition_id])
-    task = project.task_for_task_definition(task_definition)
+    # Use the ExtensionService to handle the extension request
+    result = ExtensionService.grant_extension(
+      params[:project_id],
+      params[:task_definition_id],
+      current_user,
+      params[:weeks_requested],
+      params[:comment]
+    )
 
-    # check permissions using specific permission has with addition of request extension if allowed in unit
-    unless authorise? current_user, task, :request_extension, ->(role, perm_hash, other) { task.specific_permission_hash(role, perm_hash, other) }
-      error!({ error: 'Not authorised to request an extension for this task' }, 403)
+    # Handle the service response
+    if result[:success]
+      present result[:result].serialize(current_user), Grape::Presenters::Presenter
+    else
+      error!({ error: result[:error] }, result[:status])
     end
 
     if project.unit.allow_flexible_dates

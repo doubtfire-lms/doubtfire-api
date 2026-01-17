@@ -36,6 +36,7 @@ class Unit < ApplicationRecord
       :download_jplag_report,
       :get_marking_sessions,
       :get_tutor_times,
+      :grant_extensions
     ]
 
     # What can convenors do with units?
@@ -64,7 +65,8 @@ class Unit < ApplicationRecord
       :get_tutor_times,
       :get_tutor_times_summary,
       :get_marking_sessions,
-      :upload_grades_csv
+      :upload_grades_csv,
+      :grant_extensions
     ]
 
     # What can admin do with units?
