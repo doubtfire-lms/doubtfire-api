@@ -163,7 +163,7 @@ class NotificationsMailer < ApplicationMailer
   end
 
   # Main method to handle extension notifications from staff
-  def extension_granted(extensions, granted_by, total_selected, failed_extensions = [], is_staff_grant = false)
+  def extension_granted(extensions, granted_by, total_selected, failed_extensions = [], is_staff_grant: false)
     # Only send notifications for staff-granted bulk extensions
     return unless is_staff_grant && (extensions.any? || failed_extensions.any?)
 
@@ -178,7 +178,7 @@ class NotificationsMailer < ApplicationMailer
           NotificationsMailer.extension_granted_notification(extension, granted_by).deliver_now
         end
       end
-    rescue => e
+    rescue StandardError => e
       Rails.logger.error "Failed to send extension notifications: #{e.message}"
       Rails.logger.error e.backtrace.join("\n")
     end

@@ -10,11 +10,17 @@ class StaffGrantExtensionApi < Grape::API
 
   before do
     authenticated?
-    error!({
-      error: 'Not authorized to grant extensions',
-      code: 'UNAUTHORIZED',
-      details: {}
-    }, 403) unless current_user.has_tutor_capability?
+
+    unless current_user.has_tutor_capability?
+      error!(
+        {
+          error: 'Not authorized to grant extensions',
+          code: 'UNAUTHORIZED',
+          details: {}
+        },
+        403
+      )
+    end
   end
 
   desc 'Grant extensions to multiple students',
@@ -98,7 +104,7 @@ class StaffGrantExtensionApi < Grape::API
             weeks_requested: extension_comment.extension_weeks,
             extension_response: extension_comment.extension_response,
             task_status: extension_comment.task.status,
-            extension_comment: extension_comment  # Store internally for notifications
+            extension_comment: extension_comment # Store internally for notifications
           }
         else
           results[:failed] << {
@@ -145,7 +151,7 @@ class StaffGrantExtensionApi < Grape::API
               true # is_staff_grant = true
             ).deliver_now
             Rails.logger.info "Extension notifications sent successfully"
-          rescue => e
+          rescue StandardError => e
             Rails.logger.error "Failed to send extension notifications: #{e.message}"
             Rails.logger.error e.backtrace.join("\n")
             # Don't fail the entire request if email fails, but log the error
@@ -167,7 +173,6 @@ class StaffGrantExtensionApi < Grape::API
       status 201
       present results, with: Grape::Presenters::Presenter
     end
-
   rescue ActiveRecord::RecordNotFound
     error!({ error: 'Unit or task definition not found' }, 404)
   rescue StandardError

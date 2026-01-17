@@ -1,5 +1,5 @@
 class ExtensionService
-  def self.grant_extension(project_id, task_definition_id, user, weeks_requested, comment, is_staff_grant = false)
+  def self.grant_extension(project_id, task_definition_id, user, weeks_requested, comment, is_staff_grant: false)
     # Find project and task
     project = Project.find(project_id)
     task_definition = project.unit.task_definitions.find(task_definition_id)
@@ -18,19 +18,28 @@ class ExtensionService
     return { success: false, error: 'Extensions cannot be granted beyond task deadline', status: 403 } if duration <= 0
 
     # ===== Student-Initiated Extension Logic (current endpoint) =====
-    unless is_staff_grant
-      # Check task-level authorization for student requests with specific permission hash
-      unless AuthorisationHelpers.authorise?(user, task, :request_extension, ->(role, perm_hash, other) { task.specific_permission_hash(role, perm_hash, other) })
-        return { success: false, error: 'Not authorised to request an extension for this task', status: 403 }
-      end
+    unless is_staff_grant ||
+           AuthorisationHelpers.authorise?(
+             user,
+             task,
+             :request_extension,
+             ->(role, perm_hash, other) { task.specific_permission_hash(role, perm_hash, other) }
+           )
+      return {
+        success: false,
+        error: 'Not authorised to request an extension for this task',
+        status: 403
+      }
     end
 
     # ===== Staff Grant Logic (new endpoint) =====
-    if is_staff_grant
-      # Check unit-level authorization for staff grants
-      unless AuthorisationHelpers.authorise?(user, project.unit, :grant_extensions)
-        return { success: false, error: 'Not authorised to grant extensions for this unit', status: 403 }
-      end
+    if is_staff_grant &&
+       !AuthorisationHelpers.authorise?(user, project.unit, :grant_extensions)
+      return {
+        success: false,
+        error: 'Not authorised to grant extensions for this unit',
+        status: 403
+      }
     end
 
     # ===== Common Extension Logic =====
