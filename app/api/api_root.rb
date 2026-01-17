@@ -107,6 +107,7 @@ class ApiRoot < Grape::API
   mount WebcalPublicApi
   mount MarkingSessionsApi
   mount DiscussionPromptsApi
+  mount OverseerStepsApi
 
   mount Feedback::FeedbackChipApi
 
@@ -157,6 +158,7 @@ class ApiRoot < Grape::API
   AuthenticationHelpers.add_auth_to Feedback::FeedbackChipApi
   AuthenticationHelpers.add_auth_to MarkingSessionsApi
   AuthenticationHelpers.add_auth_to DiscussionPromptsApi
+  AuthenticationHelpers.add_auth_to OverseerStepsApi
 
   add_swagger_documentation \
     base_path: nil,
