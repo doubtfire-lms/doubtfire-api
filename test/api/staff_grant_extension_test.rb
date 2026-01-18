@@ -33,7 +33,6 @@ class StaffGrantExtensionTest < ActiveSupport::TestCase
       max_quality_pts: 0
     })
     td.save!
-
     data_to_post = {
       student_ids: [project.student.id],
       task_definition_id: td.id,
@@ -58,7 +57,7 @@ class StaffGrantExtensionTest < ActiveSupport::TestCase
     notification = notifications.first
     assert_match /You were granted an extension for task/, notification.message
     assert_match /#{td.name}/, notification.message
-    assert_match /#{unit.name}/, notification.message
+    assert_match /#{unit.code}/, notification.message
 
     td.destroy!
     unit.destroy!

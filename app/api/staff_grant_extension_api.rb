@@ -10,7 +10,6 @@ class StaffGrantExtensionApi < Grape::API
 
   before do
     authenticated?
-
     unless current_user.has_tutor_capability?
       error!(
         {
@@ -86,16 +85,14 @@ class StaffGrantExtensionApi < Grape::API
           }
           next
         end
-
         result = ExtensionService.grant_extension(
           project.id,
           task_definition.id,
           current_user,
           params[:weeks_requested],
           params[:comment],
-          true # is_staff_grant = true
+          is_staff_grant: true
         )
-
         if result[:success]
           extension_comment = result[:result]
           results[:successful] << {

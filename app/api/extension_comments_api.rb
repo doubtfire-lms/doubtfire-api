@@ -25,7 +25,7 @@ class ExtensionCommentsApi < Grape::API
     else
       error!({ error: result[:error] }, result[:status])
     end
-
+=begin
     if project.unit.allow_flexible_dates
       error!({ error: 'Extensions are disabled for this unit.' }, 403)
     end
@@ -40,6 +40,7 @@ class ExtensionCommentsApi < Grape::API
 
     result = task.apply_for_extension(current_user, params[:comment], duration)
     present result.serialize(current_user), Grape::Presenters::Presenter
+=end
   end
 
   desc 'Assess an extension for a task'

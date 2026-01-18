@@ -58,8 +58,8 @@ class NotificationsMailerTest < ActionMailer::TestCase
   end
 
   def teardown
-    @task_definition.destroy!
-    @unit.destroy!
+    # @task_definition.destroy!
+    # @unit.destroy!
     ActionMailer::Base.deliveries.clear
   end
 
@@ -190,7 +190,13 @@ class NotificationsMailerTest < ActionMailer::TestCase
     }
 
     unit_role = @unit.unit_roles.find_by(user: @staff)
-    summary_stats[:staff][unit_role] = { data: "test data" }
+    summary_stats[:staff][unit_role.user] = {
+      tasks_awaiting_feedback_count: 1,
+      weekly_engagements_count: 2,
+      staff_engagements: 3,
+      oldest_task_days: 4,
+      weekly_total_tasks_discussed: 5
+    }
 
     # Get the mail object
     mail = NotificationsMailer.weekly_staff_summary(unit_role, summary_stats)

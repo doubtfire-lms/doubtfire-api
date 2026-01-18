@@ -2092,18 +2092,23 @@ class Unit < ApplicationRecord
               group(
                 'sq.tutorial_id',
                 'sq.tutorial_stream_id',
+                'tasks.id',
                 'task_statuses.id',
                 'project_id',
-                'tasks.id',
                 'task_definition_id',
                 'task_definitions.start_date',
-                'status_id',
                 'completion_date',
                 'times_assessed',
                 'submission_date',
                 'grade',
-                'quality_pts'
+                'quality_pts',
+                'task_comments.id',
+                'task_comments.created_at',
+                'task_pins.task_id',
+                'task_similarities.id',
+                'task_similarities.flagged'
               )
+
     if my_tutorials_only
       unit_role = unit_role_for(user)
       unless unit_role.nil?

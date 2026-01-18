@@ -17,6 +17,15 @@ class ExtensionService
     # Check if extension would exceed deadline
     return { success: false, error: 'Extensions cannot be granted beyond task deadline', status: 403 } if duration <= 0
 
+    # === Flexible dates rule ===
+    if !is_staff_grant && project.unit.allow_flexible_dates
+      return {
+        success: false,
+        error: 'Extensions are disabled for this unit.',
+        status: 403
+      }
+    end
+
     # ===== Student-Initiated Extension Logic (current endpoint) =====
     unless is_staff_grant ||
            AuthorisationHelpers.authorise?(
