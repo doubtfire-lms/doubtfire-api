@@ -179,7 +179,8 @@ class StaffGrantExtensionTest < ActiveSupport::TestCase
       weeks_requested: 1,
       comment: 'Initial extensions'
     }
-
+puts unit.students.map(&:id)
+puts project2.student.id
     add_auth_header_for user: staff
     post_json "/api/units/#{unit.id}/staff-grant-extension", data_to_post
     assert_equal 201, last_response.status, 'Should succeed for both students'
