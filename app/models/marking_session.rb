@@ -15,6 +15,14 @@ class MarkingSession < ApplicationRecord
 
   def update_session_details
     now = DateTime.now
-    update(end_time: now)
+    if start_time.present?
+      duration = ((now.to_f - start_time.to_f) / 60).to_i
+      update(
+        end_time: now,
+        duration_minutes: duration
+      )
+    else
+      update(end_time: now, duration_minutes: 0)
+    end
   end
 end

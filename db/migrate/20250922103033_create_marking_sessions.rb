@@ -6,6 +6,7 @@ class CreateMarkingSessions < ActiveRecord::Migration[7.1]
       t.string :ip_address
       t.datetime :start_time
       t.datetime :end_time
+      t.integer :duration_minutes, default: 0
       t.boolean :during_tutorial
 
       t.timestamps

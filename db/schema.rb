@@ -200,6 +200,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_18_031455) do
     t.string "ip_address"
     t.datetime "start_time"
     t.datetime "end_time"
+    t.integer "duration_minutes", default: 0
     t.boolean "during_tutorial"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false

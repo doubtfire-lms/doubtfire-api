@@ -150,16 +150,15 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
     assert_not last_activity.nil?
 
     # > Force the session to be 10 minutes in the past
-    travel 10.minutes
-    travel 5.seconds # Ensure we're past the 10 minute mark
+    travel 10.minutes + 5.seconds # Ensure we're past the 10 minute mark
 
-    # Create a comment as the tutor, ensure activity was created
-    get "/api/projects/#{project.id}/task_def_id/#{td.id}/submission_details"
+    # Use 'put' (assessing) because SessionTracker only updates end_time if action == 'assessing'
+    put "/api/projects/#{project.id}/task_def_id/#{td.id}", { trigger: 'discuss' }
     assert_equal 200, last_response.status
 
-    last_session = MarkingSession.last
-    last_activity = SessionActivity.last
+    last_session.reload
 
+    # Now it should be 10 because the end_time was pushed forward
     assert_equal 10, last_session.duration_minutes
 
     # Ensure activity points to the same session
@@ -263,8 +262,8 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
         create(:marking_session,
                user: convenor,
                unit: unit,
-               start_time: date.to_time + rand(0..12).hours,
-               end_time: date.to_time + rand(13..23).hours,
+               start_time: date.in_time_zone.change(hour: rand(0..12)),
+               end_time: date.in_time_zone.change(hour: rand(13..23)),
                ip_address: '127.0.0.1')
       end
     end
@@ -305,49 +304,49 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
                                                activity_type_id: activity_type.id,
                                                activity_type: activity_type
                                              })
-    tutorial1 = Tutorial.create!({
-                                   unit: unit,
-                                   meeting_day: "Wednesday",
-                                   meeting_time: "8:00",
-                                   meeting_location: "-",
-                                   code: "Tutorial1",
-                                   unit_role: unit_role,
-                                   abbreviation: "Tutorial1",
-                                   tutorial_stream: tutorial_stream
-                                 })
+    Tutorial.create!({
+                       unit: unit,
+                       meeting_day: "Wednesday",
+                       meeting_time: "8:00",
+                       meeting_location: "-",
+                       code: "Tutorial1",
+                       unit_role: unit_role,
+                       abbreviation: "Tutorial1",
+                       tutorial_stream: tutorial_stream
+                     })
 
-    tutorial2 = Tutorial.create!({
-                                   unit: unit,
-                                   meeting_day: "Wednesday",
-                                   meeting_time: "11:00",
-                                   meeting_location: "-",
-                                   code: "Tutorial2",
-                                   unit_role: unit_role,
-                                   abbreviation: "Tutorial2",
-                                   tutorial_stream: tutorial_stream
-                                 })
+    Tutorial.create!({
+                       unit: unit,
+                       meeting_day: "Wednesday",
+                       meeting_time: "11:00",
+                       meeting_location: "-",
+                       code: "Tutorial2",
+                       unit_role: unit_role,
+                       abbreviation: "Tutorial2",
+                       tutorial_stream: tutorial_stream
+                     })
 
-    tutorial3 = Tutorial.create!({
-                                   unit: unit,
-                                   meeting_day: "Wednesday",
-                                   meeting_time: "13:00",
-                                   meeting_location: "-",
-                                   code: "Tutorial3",
-                                   unit_role: unit_role,
-                                   abbreviation: "Tutorial3",
-                                   tutorial_stream: tutorial_stream
-                                 })
+    Tutorial.create!({
+                       unit: unit,
+                       meeting_day: "Wednesday",
+                       meeting_time: "13:00",
+                       meeting_location: "-",
+                       code: "Tutorial3",
+                       unit_role: unit_role,
+                       abbreviation: "Tutorial3",
+                       tutorial_stream: tutorial_stream
+                     })
 
-    tutorial4 = Tutorial.create!({
-                                   unit: unit,
-                                   meeting_day: "Thursday",
-                                   meeting_time: "12:00",
-                                   meeting_location: "-",
-                                   code: "Tutorial4",
-                                   unit_role: unit_role,
-                                   abbreviation: "Tutorial4",
-                                   tutorial_stream: tutorial_stream
-                                 })
+    Tutorial.create!({
+                       unit: unit,
+                       meeting_day: "Thursday",
+                       meeting_time: "12:00",
+                       meeting_location: "-",
+                       code: "Tutorial4",
+                       unit_role: unit_role,
+                       abbreviation: "Tutorial4",
+                       tutorial_stream: tutorial_stream
+                     })
 
     MarkingSession.delete_all
 
@@ -360,7 +359,7 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
     start_time = wednesday.in_time_zone.change(hour: 5, min: 4) # 11:05am
     end_time   = wednesday.in_time_zone.change(hour: 18, min: 0) # 3:00pm
 
-    current_time = start_time
+    current_time = start_time + 0.seconds
 
     # unit = Unit.first
     project = unit.projects.first
@@ -409,8 +408,13 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
       current_time += 5.minutes
     end
 
-    start_time = thursday.to_time.change(hour: 17, min: 0) # 12:05pm
-    end_time   = thursday.to_time.change(hour: 18, min: 0) # 3:00pm
+    # Ensure the next activity MUST create a new one, closing previous one.
+    MarkingSession.last.update(end_time: thursday.in_time_zone.change(hour: 15, min: 1))
+
+    travel 2.hours # ensure testing on a new session
+
+    start_time = thursday.in_time_zone.change(hour: 17, min: 0)
+    end_time   = thursday.in_time_zone.change(hour: 18, min: 0)
 
     current_time = start_time
 
