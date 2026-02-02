@@ -1583,7 +1583,7 @@ class Task < ApplicationRecord
     if moderated_task.nil?
       ModeratedTask.create!({
                               task: self,
-                              type: :moderation,
+                              moderation_type: :moderation,
                               last_moderated_date: Time.zone.now
                             })
     end

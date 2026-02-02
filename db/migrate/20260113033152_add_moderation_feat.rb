@@ -20,7 +20,7 @@ class AddModerationFeat < ActiveRecord::Migration[8.0]
       t.references :user, null: true
       t.boolean :dismissed, null: false, default: false
 
-      t.string :type, null: false
+      t.string :moderation_type, null: false
 
       t.timestamps
     end
