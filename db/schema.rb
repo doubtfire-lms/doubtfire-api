@@ -213,6 +213,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_13_033152) do
     t.datetime "last_moderated_date"
     t.bigint "user_id"
     t.boolean "dismissed", default: false, null: false
+    t.string "type", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["task_id"], name: "index_moderated_tasks_on_task_id", unique: true
