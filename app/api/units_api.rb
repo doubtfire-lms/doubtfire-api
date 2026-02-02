@@ -311,56 +311,7 @@ class UnitsApi < Grape::API
       error!({ error: 'Not authorised to provide feedback for this unit' }, 403)
     end
 
-    my_unit_role = unit.unit_role_for(current_user)
-    mentees = unit.staff.where(mentor_id: my_unit_role.id)
-
-    tasks = unit.student_tasks
-                .includes(:comments)
-                .left_joins(:moderated_task)
-                .where(moderated_tasks: { dismissed: false })
-                .where(projects: { unit_id: unit.id })
-                .joins(:task_definition)
-                .joins(project: { tutorial_enrolments: :tutorial })
-                .where(tutorials: { unit_role_id: mentees.select(:id) })
-                .where('tutorials.tutorial_stream_id = task_definitions.tutorial_stream_id')
-                .select(
-                  'tasks.id AS task_id',
-                  'tasks.project_id',
-                  'tasks.task_definition_id',
-                  'tutorials.id AS tutorial_id',
-                  'tasks.task_status_id AS status_id',
-                  'tasks.completion_date',
-                  'tasks.submission_date',
-                  'tasks.times_assessed',
-                  'tasks.grade',
-                  'tasks.quality_pts',
-                  '0 AS number_unread',
-                  '0 AS similar_to_count',
-                  'false AS pinned',
-                  'false AS has_extensions',
-                  'tasks.*',
-      )
-                .distinct
-
-    # Only include tasks where the tutor's latest comment is at least 15 minutes old
-    # to ensure that the feedback is likely complete before adding it for moderation
-    comment_threshold = 15.minutes.ago
-
-    tasks = tasks.map do |task|
-      tutor_comments = task.comments.select { |c| c.user == task.tutor }
-      next nil if tutor_comments.empty?
-
-      most_recent = tutor_comments.max_by(&:created_at)
-      next nil if most_recent.created_at > comment_threshold ||
-                  most_recent.created_at <= (task.moderated_task&.last_moderated_date || Time.zone.at(0))
-
-      [task, most_recent.created_at]
-    end.compact
-
-    # Sort tasks: show tasks with the oldest feedback first
-    # New feedback will send it to the bottom of the moderation queue
-    tasks.sort_by! { |_task, last_comment_time| last_comment_time }
-    tasks.map!(&:first)
+    tasks = unit.tasks_for_moderation(current_user)
 
     present unit.tasks_as_hash(tasks), with: Grape::Presenters::Presenter
   end
