@@ -345,9 +345,13 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert actual_unit.key?("staff"), actual_unit.inspect
     assert_equal expected_unit.staff.count, actual_unit["staff"].count, actual_unit["staff"].inspect
     actual_unit["staff"].each do |staff|
-      keys = %w[id role user observer_only mentor_id tutor_note_count]
-      assert_json_limit_keys_to_exactly keys, staff
       ur = UnitRole.find(staff['id'])
+
+      keys = %w[id role user observer_only mentor_id]
+      # Check to ensure tutor_note_count is only exposed to the current user's unit role
+      keys << 'tutor_note_count' if ur.unit.unit_role_for(expected_unit.main_convenor_user).id == ur.id
+
+      assert_json_limit_keys_to_exactly keys, staff
       assert_equal ur.id, staff['id']
       assert_equal ur.role.name, staff['role']
       assert_equal ur.user.id, staff['user']['id']
