@@ -146,8 +146,8 @@ class UnitRolesApi < Grape::API
       error!({ error: 'Feedback is too new to moderate' }, 400)
     end
 
-    # TODO: adjust scale via ENV var?
-    delta = score.to_i * 2
+    factor = Doubtfire::Application.config.moderation_score_factor
+    delta = score.to_i * factor
 
     unit_role.update!(
       trust_factor: (unit_role.trust_factor + delta).clamp(0, 99)
