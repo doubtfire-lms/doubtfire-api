@@ -2139,10 +2139,10 @@ class Unit < ApplicationRecord
   end
 
   #
-  # Return the tasks that have been selected for moderation by the tutor's mentor
+  # Return the tasks that have been selected to be moderated by the tutor's mentor
   #
   # Tasks that are included are:
-  # - If a ModeratedTask exists for a task
+  # - If a ModeratedTask exists for a task, and has not been dismissed
   # - A TaskComment exists from the task's tutor, that is atleast 15 minutes old
   #
   # Tasks with the oldest feedback are shown first
