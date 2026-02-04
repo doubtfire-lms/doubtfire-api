@@ -4,34 +4,30 @@ class NotificationsMailerTest < ActionMailer::TestCase
   include TestHelpers::AuthHelper
 
   def setup
-    # Mock Doubtfire configuration
-    Doubtfire::Application.config.institution = {
-      host: 'doubtfire.deakin.edu.au',
-      product_name: 'Doubtfire'
-    }
-
     # Create unit and staff
     @unit = FactoryBot.create(:unit)
     @staff = FactoryBot.create(:user, role: Role.tutor)
     @unit.employ_staff(@staff, Role.tutor)
 
     # Create a task definition
-    @task_definition = @unit.task_definitions.create!({
-      tutorial_stream: @unit.tutorial_streams.first,
-      name: 'Test Task',
-      description: 'Test task for notifications',
-      weighting: 4,
-      target_grade: 0,
-      start_date: Time.zone.now - 1.week,
-      target_date: Time.zone.now + 1.week,
-      due_date: Time.zone.now + 2.weeks,
-      abbreviation: 'TESTTASK',
-      restrict_status_updates: false,
-      upload_requirements: [],
-      plagiarism_warn_pct: 0.8,
-      is_graded: false,
-      max_quality_pts: 0
-    })
+    @task_definition = @unit.task_definitions.create!(
+      {
+        tutorial_stream: @unit.tutorial_streams.first,
+        name: 'Test Task',
+        description: 'Test task for notifications',
+        weighting: 4,
+        target_grade: 0,
+        start_date: Time.zone.now - 1.week,
+        target_date: Time.zone.now + 1.week,
+        due_date: Time.zone.now + 2.weeks,
+        abbreviation: 'TESTTASK',
+        restrict_status_updates: false,
+        upload_requirements: [],
+        plagiarism_warn_pct: 0.8,
+        is_graded: false,
+        max_quality_pts: 0
+      }
+    )
 
     # Create students and projects with notification preferences
     @students = []
@@ -79,11 +75,11 @@ class NotificationsMailerTest < ActionMailer::TestCase
     # Verify email properties
     assert_equal [@staff.email], mail.to
     assert_equal "#{@unit.name}: Staff Grant Extensions", mail.subject
-    assert_match /You have granted extensions for the following students/, mail.html_part.body.to_s
+    assert_match(/You have granted extensions for the following students/, mail.html_part.body.to_s)
 
     # Verify from address contains no-reply
     assert_includes mail.from.first, "no-reply@"
-    assert_includes mail.from.first, NotificationsMailer.doubtfire_host
+    assert_includes mail.from.first, Doubtfire::Application.config.institution[:email_domain]
   end
 
   test 'creates correct extension notification email' do
@@ -99,7 +95,7 @@ class NotificationsMailerTest < ActionMailer::TestCase
     # Verify email properties
     assert_equal [@students.first.email], mail.to
     assert_equal "#{@unit.name}: Extension granted for #{@task_definition.name}", mail.subject
-    assert_match /Dear #{@students.first.first_name}/, mail.html_part.body.to_s
+    assert_match(/Dear #{@students.first.first_name}/, mail.html_part.body.to_s)
 
     # Verify from address contains staff email
     assert_includes mail.from.first, @staff.email
@@ -131,33 +127,35 @@ class NotificationsMailerTest < ActionMailer::TestCase
 
     # Verify email includes failed extensions
     assert_equal [@staff.email], mail.to
-    assert_match /Failed Extensions/, mail.html_part.body.to_s
-    assert_match /999/, mail.html_part.body.to_s
-    assert_match /1000/, mail.html_part.body.to_s
+    assert_match(/Failed Extensions/, mail.html_part.body.to_s)
+    assert_match(/999/, mail.html_part.body.to_s)
+    assert_match(/1000/, mail.html_part.body.to_s)
 
     # Verify from address contains no-reply
     assert_includes mail.from.first, "no-reply@"
-    assert_includes mail.from.first, NotificationsMailer.doubtfire_host
+    assert_includes mail.from.first, Doubtfire::Application.config.institution[:email_domain]
   end
 
   test 'creates correct extension notification with special characters' do
     # Create task with special characters
-    special_task = @unit.task_definitions.create!({
-      tutorial_stream: @unit.tutorial_streams.first,
-      name: 'Test Task with !@#$%^&*()',
-      description: 'Test task with special characters',
-      weighting: 4,
-      target_grade: 0,
-      start_date: Time.zone.now - 1.week,
-      target_date: Time.zone.now + 1.week,
-      due_date: Time.zone.now + 2.weeks,
-      abbreviation: 'SPECIAL',
-      restrict_status_updates: false,
-      upload_requirements: [],
-      plagiarism_warn_pct: 0.8,
-      is_graded: false,
-      max_quality_pts: 0
-    })
+    special_task = @unit.task_definitions.create!(
+      {
+        tutorial_stream: @unit.tutorial_streams.first,
+        name: 'Test Task with !@#$%^&*()',
+        description: 'Test task with special characters',
+        weighting: 4,
+        target_grade: 0,
+        start_date: Time.zone.now - 1.week,
+        target_date: Time.zone.now + 1.week,
+        due_date: Time.zone.now + 2.weeks,
+        abbreviation: 'SPECIAL',
+        restrict_status_updates: false,
+        upload_requirements: [],
+        plagiarism_warn_pct: 0.8,
+        is_graded: false,
+        max_quality_pts: 0
+      }
+    )
 
     # Create extension
     project = @projects.first
@@ -171,7 +169,7 @@ class NotificationsMailerTest < ActionMailer::TestCase
     # Verify email handles special characters
     assert_equal [@students.first.email], mail.to
     assert_equal "#{@unit.name}: Extension granted for #{special_task.name}", mail.subject
-    assert_match /Dear #{@students.first.name}/, mail.html_part.body.to_s
+    assert_match(/Dear #{@students.first.name}/, mail.html_part.body.to_s)
 
     # Verify from address contains staff email
     assert_includes mail.from.first, @staff.email

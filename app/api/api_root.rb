@@ -63,8 +63,6 @@ class ApiRoot < Grape::API
   mount ScormExtensionCommentsApi
   mount GroupSetsApi
   mount LearningOutcomesApi
-  # mount LearningAlignmentApi
-  # the mount above is available in 9.x but has not been ported to `10.0.x`
   mount NotificationsApi
   mount ProjectsApi
   mount SettingsApi

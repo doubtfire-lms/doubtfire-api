@@ -2,11 +2,15 @@ class NotificationsMailer < ApplicationMailer
 
   # Load configuration values at class level
   def self.doubtfire_host
-    Doubtfire::Application.config.institution[:host] || 'doubtfire.deakin.edu.au'
+    Doubtfire::Application.config.institution[:host]
   end
 
   def self.doubtfire_product_name
-    Doubtfire::Application.config.institution[:product_name] || 'Doubtfire'
+    Doubtfire::Application.config.institution[:product_name]
+  end
+
+  def self.doubtfire_email_domain
+    Doubtfire::Application.config.institution[:email_domain]
   end
 
   def add_general
@@ -131,7 +135,7 @@ class NotificationsMailer < ApplicationMailer
 
     email_with_name = %("#{@granted_by.name}" <#{@granted_by.email}>)
     # Set explicit from address using product name and a default sender
-    from_address = %("#{self.class.doubtfire_product_name}" <no-reply@#{self.class.doubtfire_host}>)
+    from_address = %("#{self.class.doubtfire_product_name}" <no-reply@#{self.class.doubtfire_email_domain}>)
 
     mail(
       to: email_with_name,
