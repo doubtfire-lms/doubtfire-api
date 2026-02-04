@@ -666,6 +666,10 @@ class Task < ApplicationRecord
         dependents.each do |prereq|
           td = prereq.task_definition
           task = project.task_for_task_definition(td)
+
+          # Avoid infinite loop
+          next if task.id == id
+
           next unless task.task_status == TaskStatus.ready_for_feedback
           # Since we are calling this assess method again, we recursively check for more dependent tasks that need to be updated
           task.assess(TaskStatus.fix_and_resubmit, assessor, assess_date)
