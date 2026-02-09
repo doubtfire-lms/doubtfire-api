@@ -1596,7 +1596,7 @@ class Task < ApplicationRecord
             (has_new_files? || has_done_file?)
   end
 
-  def mark_as_moderated(moderation_type: :sample)
+  def mark_as_moderated(moderation_type: :random_sample)
     moderated_task = ModeratedTask.find_by(task_id: id)
     if moderated_task.nil?
       ModeratedTask.create!({

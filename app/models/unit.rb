@@ -2154,7 +2154,7 @@ class Unit < ApplicationRecord
     tasks = student_tasks
                 .includes(:comments)
                 .left_joins(:moderated_task)
-                .where(moderated_tasks: { dismissed: false })
+                .where(moderated_tasks: { state: %w[open waiting_for_new_feedback] })
                 .where(projects: { unit_id: id })
                 .joins(:task_definition)
                 .joins(project: { tutorial_enrolments: :tutorial })

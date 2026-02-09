@@ -29,7 +29,7 @@ class AddModerationFeat < ActiveRecord::Migration[8.0]
       #  open | waiting_for_new_feedback | resolved
       t.string :state, null: false
 
-      # sample | initial_feedback | escalation
+      # random_sample | initial_feedback | escalation
       t.string :moderation_type, null: false
 
       t.bigint :assessor_id, null: true

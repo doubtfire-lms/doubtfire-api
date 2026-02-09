@@ -11,7 +11,7 @@ class ModeratedTask < ApplicationRecord
 
   enum :moderation_type, {
     first_feedback: 'first_feedback',
-    sample: 'sample',
+    random_sample: 'random_sample',
     escalation: 'escalation'
   }
 end
