@@ -149,15 +149,17 @@ class UnitRolesApi < Grape::API
     factor = Doubtfire::Application.config.moderation_score_factor
     delta = score.to_i * factor
 
-    unit_role.update!(
-      trust_factor: (unit_role.trust_factor + delta).clamp(0, 99)
+    td_score = TutorFeedbackScore.find_by(unit_role: unit_role, task_definition: task.task_definition)
+
+    td_score.update!(
+      score: (td_score.score + delta).clamp(0, 99)
     )
 
     moderated_task.update!(last_moderated_date: Time.zone.now)
 
     unless score == -1
       moderated_task.update!({
-                               dismissed: true,
+                               state: :resolved,
                                user: current_user
                              })
     end

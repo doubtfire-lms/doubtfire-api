@@ -1578,12 +1578,15 @@ class Task < ApplicationRecord
             (has_new_files? || has_done_file?)
   end
 
-  def mark_as_moderated
+  def mark_as_moderated(moderation_type: :sample)
     moderated_task = ModeratedTask.find_by(task_id: id)
     if moderated_task.nil?
       ModeratedTask.create!({
                               task: self,
-                              moderation_type: :moderation,
+                              task_definition: task_definition,
+                              assessor_id: tutor.id,
+                              state: :open,
+                              moderation_type: moderation_type,
                               last_moderated_date: Time.zone.now
                             })
     end

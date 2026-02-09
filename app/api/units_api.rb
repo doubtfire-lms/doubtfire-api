@@ -311,9 +311,32 @@ class UnitsApi < Grape::API
       error!({ error: 'Not authorised to provide feedback for this unit' }, 403)
     end
 
-    tasks = unit.tasks_for_moderation(current_user)
+    unless authorise? current_user, unit, :provide_feedback
+      error!({ error: 'Not authorised to provide feedback for this unit' }, 403)
+    end
 
-    present unit.tasks_as_hash(tasks), with: Grape::Presenters::Presenter
+    tasks = unit.tasks_for_moderation(current_user)
+    data = tasks.map do |t|
+      {
+        id: t.task_id,
+        project_id: t.project_id,
+        task_definition_id: t.task_definition_id,
+        tutorial_id: t.tutorial_id,
+        status: TaskStatus.id_to_key(t.status_id),
+        completion_date: t.completion_date,
+        submission_date: t.submission_date,
+        times_assessed: t.times_assessed,
+        grade: t.grade,
+        quality_pts: t.quality_pts,
+        num_new_comments: t.number_unread,
+        similarity_flag: t.similar_to_count > 0,
+        pinned: t.pinned,
+        has_extensions: t.has_extensions,
+        moderation_type: t.moderated_task&.moderation_type
+      }
+    end
+    # present unit.tasks_as_hash(tasks), with: Grape::Presenters::Presenter
+    present data, with: Grape::Presenters::Presenter
   end
 
   desc 'Download the grades for a unit'

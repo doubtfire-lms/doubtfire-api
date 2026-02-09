@@ -49,7 +49,7 @@ class AcceptSubmissionJob
     tutor_user = task.project.tutor_for(task.task_definition)
     if tutor_user
       tutor = task.unit.unit_role_for(tutor_user)
-      if tutor && rand(0..100) > tutor.trust_factor
+      if tutor&.should_moderate_task?(task)
         logger.info "Marking task #{task.id} for moderation (project #{task.project.id})"
         task.mark_as_moderated
       end

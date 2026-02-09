@@ -313,4 +313,23 @@ class UnitRole < ApplicationRecord
     note.save!
     note
   end
+
+  def should_moderate_task?(task)
+    td = task.task_definition
+    td_rep = TutorFeedbackScore.find_by(unit_role: self, task_definition: td)
+    if td_rep.nil?
+      td_rep = TutorFeedbackScore.create!({
+                                            unit_role: self,
+                                            task_definition: td,
+                                            score: 50
+                                          })
+    end
+
+    # We sample randomly during a task submission
+    if rand(0..100) > td_rep.score
+      return true
+    end
+    # TODO: integrate escalation
+    false
+  end
 end
