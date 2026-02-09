@@ -660,6 +660,24 @@ class Task < ApplicationRecord
 
     # Save the task
     if save!
+      if assessor == tutor
+        moderated_task = ModeratedTask.find_by(task: self)
+        if moderated_task
+          if  moderated_task.assessor_id != tutor.id
+            moderated_task.update!(assessor_id: tutor.id)
+          end
+        else
+          sample_count = ModeratedTask.where(
+            moderation_type: :first_feedback,
+            assessor_id: tutor.id,
+            task_definition: task_definition
+          ).count
+
+          if sample_count < 3
+            mark_as_moderated(moderation_type: :first_feedback)
+          end
+        end
+      end
       TaskEngagement.create!(task: self, engagement_time: Time.zone.now, engagement: task_status.name)
 
       # Grab the submission for the task if the user made one

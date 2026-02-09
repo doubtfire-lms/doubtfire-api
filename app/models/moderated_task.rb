@@ -8,4 +8,10 @@ class ModeratedTask < ApplicationRecord
     waiting_for_new_feedback: 'waiting_for_new_feedback',
     resolved: 'resolved'
   }
+
+  enum :moderation_type, {
+    first_feedback: 'first_feedback',
+    sample: 'sample',
+    escalation: 'escalation'
+  }
 end
