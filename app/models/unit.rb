@@ -2185,14 +2185,21 @@ class Unit < ApplicationRecord
     comment_threshold = 15.minutes.ago
 
     tasks = tasks.map do |task|
-      tutor_comments = task.comments.select { |c| c.user == task.tutor }
-      next nil if tutor_comments.empty?
+      mt = task.moderated_task
+      next if mt.nil?
 
-      most_recent = tutor_comments.max_by(&:created_at)
-      next nil if most_recent.created_at > comment_threshold ||
-                  most_recent.created_at <= (task.moderated_task&.last_moderated_date || Time.zone.at(0))
+      if mt.escalation?
+        [task, Time.zone.at(0)]
+      else
+        tutor_comments = task.comments.select { |c| c.user == task.tutor }
+        next nil if tutor_comments.empty?
 
-      [task, most_recent.created_at]
+        most_recent = tutor_comments.max_by(&:created_at)
+        next nil if most_recent.created_at > comment_threshold ||
+                    most_recent.created_at <= (task.moderated_task&.last_moderated_date || Time.zone.at(0))
+
+        [task, most_recent.created_at]
+      end
     end.compact
 
     # Sort tasks: show tasks with the oldest feedback first
