@@ -1,0 +1,182 @@
+{
+  "formatting_checks": {
+    "includes": [],
+    "rules": [
+      {
+        "queries": ["varDecl(hasType(isConstQualified()), unless(matchesName(\"\\.*::[A-Z0-9_\\]+$\")), isExpansionInMainFile())"],
+        "id": "FormattingConstant",
+        "description": "Double check how you've formatted your constants."
+      },
+      {
+        "queries": ["varDecl(unless(hasType(isConstQualified())), unless(matchesName(\".*::[a-z0-9_]+$\")), isExpansionInMainFile(), unless(parmVarDecl()))", "fieldDecl(unless(hasType(isConstQualified())), unless(matchesName(\".*::[a-z0-9_]+$\")), isExpansionInMainFile())"],
+        "id": "FormattingVariable",
+        "description": "Double check how you've formatted your variables."
+      }
+    ]
+  },
+
+  "always_checks": {
+    "includes": [],
+    "rules": [
+      {
+        "queries": ["varDecl(hasGlobalStorage(), isExpansionInMainFile(), unless(hasType(isConstQualified())))"],
+        "id": "GlobalVariable",
+        "description": "Make sure you aren't using any global variables."
+      },
+      {
+        "queries": ["declRefExpr(to(functionDecl(hasName(\"printf\"))), isExpansionInMainFile())", "declRefExpr(to(functionDecl(hasName(\"scanf\"))), isExpansionInMainFile())"],
+        "id": "Printf",
+        "description": "Make sure to use the terminal read/write functions we're using."
+      },
+      {
+        "queries": ["declRefExpr(to(varDecl(hasName(\"cin\"))), isExpansionInMainFile())", "declRefExpr(to(varDecl(hasName(\"cout\"))), isExpansionInMainFile())"],
+        "id": "CppIO",
+        "description": "Make sure to use the terminal read/write functions we're using."
+      },
+      {
+        "queries": ["labelStmt(isExpansionInMainFile())", "gotoStmt(isExpansionInMainFile())"],
+        "id": "Goto",
+        "description": "Make sure to use structured control flow statements rather than jumping to labels."
+      }
+    ]
+  },
+
+  "base_checks": {
+    "includes": ["formatting_checks", "always_checks"],
+    "rules": []
+  },
+
+  "chapter_11_memory_deep_dive": {
+    "includes": ["base_checks"],
+    "rules": []
+  },
+
+  "chapter_10_pointers_and_lists": {
+    "includes": ["chapter_11_memory_deep_dive"],
+    "rules": [
+      {
+        "queries": ["declRefExpr(to(functionDecl(hasName(\"malloc\"))))", "declRefExpr(to(functionDecl(hasName(\"free\"))))"],
+        "id": "Malloc",
+        "description": "Try using C++ style memory allocation instead."
+      },
+      {
+        "queries": ["cxxNewExpr(isExpansionInMainFile(), isArray())"],
+        "id": "CppNewArray",
+        "description": "Sorry, we'll cover dynamic arrays soon!"
+      }
+    ]
+  },
+
+  "chapter_09_generics_and_operators": {
+    "includes": ["chapter_10_pointers_and_lists"],
+    "rules": [
+      {
+        "queries": ["varDecl(hasType(qualType(hasUnqualifiedDesugaredType(pointerType(unless(pointee(hasDeclaration(isExpansionInFileMatching(\"splashkit/.*\")))))))), isExpansionInMainFile())"],
+        "id": "Pointer",
+        "description": "Still a bit early for pointers."
+      },
+      {
+        "queries": ["cxxThisExpr(isExpansionInMainFile(), unless(anything()))"],
+        "id": "This - NOTE: unless(isImplicit()) doesn't work on my machine, so for now this is nullified with anything()",
+        "description": "No need to use `this` yet."
+      },
+      {
+        "queries": ["cxxNewExpr(isExpansionInMainFile())"],
+        "id": "CppNew",
+        "description": "For now make sure to keep things on the stack."
+      }
+    ]
+  },
+
+  "chapter_08_member_functions": {
+    "includes": ["chapter_09_generics_and_operators"],
+    "rules": [
+      {
+        "queries": ["templateTypeParmDecl(isExpansionInMainFile())"],
+        "id": "Template",
+        "description": "For now just use concrete types - no need to generalize your code too much."
+      },
+      {
+        "queries": ["functionDecl(matchesName(\"operator\"), isExpansionInMainFile())", "cxxMethodDecl(matchesName(\"operator\"), isExpansionInMainFile())"],
+        "id": "OperatorOverload",
+        "description": "No need to overload operators yet."
+      }
+    ]
+  },
+
+  "chapter_07_handling_multiples": {
+    "includes": ["chapter_08_member_functions"],
+    "rules": [
+      {
+        "queries": ["cxxMethodDecl(isExpansionInMainFile())", "cxxConstructorDecl(isExpansionInMainFile())"],
+        "id": "Method",
+        "description": "Make sure your structs are just data for now."
+      }
+    ]
+  },
+
+  "chapter_06_structuring_data": {
+    "includes": ["chapter_07_handling_multiples"],
+    "rules": [
+      {
+        "queries": ["varDecl(hasType(arrayType()), isExpansionInMainFile())", "fieldDecl(hasType(arrayType()), isExpansionInMainFile())", "declRefExpr(to(functionDecl(hasName(\"operator[]\"))), isExpansionInMainFile())", "cxxNewExpr(isExpansionInMainFile(), isArray())"],
+        "id": "Array",
+        "description": "For now, keep your variables holding only one piece of data at a time."
+      }
+    ]
+  },
+
+  "chapter_05_structuring_code": {
+    "includes": ["chapter_06_structuring_data"],
+    "rules": [
+      {
+        "queries": ["recordDecl(isExpansionInMainFile())"],
+        "id": "Struct",
+        "description": "Keep the code simple for now - just pass around variables seperately, don't group them."
+      },
+      {
+        "queries": ["enumDecl(isExpansionInMainFile())"],
+        "id": "Enum",
+        "description": "Rather than an enum, feel free to just use a series of integer constants for now."
+      }
+    ]
+  },
+
+  "chapter_04_control_flow": {
+    "includes": ["chapter_05_structuring_code"],
+    "rules": [
+      {
+        "queries": ["functionDecl(isExpansionInMainFile(), unless(hasName(\"main\")), unless(cxxMethodDecl()))"],
+        "id": "Function",
+        "description": "Check that all your code is in the one function for now."
+      },
+      {
+        "queries": ["cxxThrowExpr(isExpansionInMainFile())"],
+        "id": "Exception",
+        "description": "Simplify your error handling - you can achieve this in other ways."
+      }
+    ]
+  },
+
+  "chapter_03_data": {
+    "includes": ["chapter_04_control_flow"],
+    "rules": [
+      {
+        "queries": ["ifStmt(isExpansionInMainFile())", "whileStmt(isExpansionInMainFile())", "doStmt(isExpansionInMainFile())", "forStmt(isExpansionInMainFile())", "breakStmt(isExpansionInMainFile())", "continueStmt(isExpansionInMainFile())"],
+        "id": "ControlFlow",
+        "description": "We'll get to flow control soon! For now, keep things simple and linear."
+      }
+    ]
+  },
+
+  "chapter_02_sequence": {
+    "includes": ["chapter_03_data"],
+    "rules": [
+      {
+        "queries": ["varDecl(isExpansionInMainFile())"],
+        "id": "Variable",
+        "description": "No need for variables yet, we'll get to those next."
+      }
+    ]
+  }
+}
