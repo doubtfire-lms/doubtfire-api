@@ -140,7 +140,7 @@ class InstitutionSettings
     user.last_name = last_name.squish.capitalize
     user.nickname = nickname.squish.capitalize
 
-    user.role_id = Role.student.id
+    user.role = should_employ_lti_member(member) || Role.student
 
     # Assigning tutors automatically:
     # if member['roles'].include?('Instructor')
