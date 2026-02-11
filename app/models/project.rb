@@ -310,7 +310,9 @@ class Project < ApplicationRecord
           scorm_extensions: t.scorm_extensions,
           due_date: t.due_date,
           submission_date: t.submission_date,
-          completion_date: t.completion_date
+          completion_date: t.completion_date,
+          target_start_date: t.target_start_date,
+          target_due_date: t.target_due_date
         }
       end
   end
