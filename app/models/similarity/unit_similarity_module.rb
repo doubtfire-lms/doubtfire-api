@@ -306,7 +306,7 @@ module UnitSimilarityModule
     skip_cluster_string = skip_cluster_check ? '--cluster-skip' : ''
 
     # Run JPLAG on the extracted files. JPlag container should already be in the /jplag/ workdir.
-    docker_command = "docker exec -i jplag java -jar jplag-jar-with-dependencies.jar #{tasks_dir_split}/submissions #{base_code_string} -l #{file_lang} --similarity-threshold=#{similarity_threshold} #{min_token_string} #{skip_cluster_string} -M RUN -r #{results_dir}/#{task_definition.abbreviation}-result --overwrite"
+    docker_command = "docker exec -i jplag java -jar jplag-jar-with-dependencies.jar --skip-version-check #{tasks_dir_split}/submissions #{base_code_string} -l #{file_lang} --similarity-threshold=#{similarity_threshold} #{min_token_string} #{skip_cluster_string} -M RUN -r #{results_dir}/#{task_definition.abbreviation}-result --overwrite"
     logger.debug "Executing command: #{docker_command}"
     system(docker_command)
 
