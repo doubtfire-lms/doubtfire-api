@@ -230,16 +230,23 @@ class LtiApiTest < ActiveSupport::TestCase
     unit.destroy
   end
 
-  def test_staff_arent_enrolled_into_units
-    users_can_be_enrolled = [
-      FactoryBot.create(:user, :student)
-    ]
-
-    users_cant_be_enrolled = [
+  def test_correct_roles_are_enrolled
+    users = [
+      FactoryBot.create(:user, :student),
       FactoryBot.create(:user, :admin),
       FactoryBot.create(:user, :convenor),
       FactoryBot.create(:user, :auditor),
       FactoryBot.create(:user, :tutor)
+    ]
+
+    roles_can_be_enrolled = %w[
+      Student
+      Learner
+    ]
+
+    roles_cant_be_enrolled = %w[
+      Admin
+      Instructor
     ]
 
     unit = FactoryBot.create(:unit, with_students: false)
@@ -262,19 +269,29 @@ class LtiApiTest < ActiveSupport::TestCase
     secret_key = Doubtfire::Application.config.lti_api_secret
     token = JWT.encode(payload, secret_key, 'HS256')
 
-    users_cant_be_enrolled.each do |user|
-      add_auth_header_for(user: user)
+    roles_cant_be_enrolled.each do |role|
+      payload[:member][:roles] = [role]
+
+      token = JWT.encode(payload, secret_key, 'HS256')
+
+      add_auth_header_for(user: users.sample)
       post '/api/lti/enrol', { ltik: token }
+
       assert_equal 204, last_response.status
     end
 
-    users_can_be_enrolled.each do |user|
-      add_auth_header_for(user: user)
+    roles_can_be_enrolled.each do |role|
+      payload[:member][:roles] = [role]
+
+      token = JWT.encode(payload, secret_key, 'HS256')
+
+      add_auth_header_for(user: users.sample) # or whichever user you want as caller
       post '/api/lti/enrol', { ltik: token }
 
       assert_equal 201, last_response.status
       id = last_response_body['id']
       assert_not_nil id, "Expected project ID in response"
+
       project = Project.find(id)
       assert project.valid?, "Expected project to be created"
       assert_equal unit.id, project.unit.id
@@ -350,9 +367,10 @@ class LtiApiTest < ActiveSupport::TestCase
 
       add_auth_header_for(user: convenor)
 
-      expected_enrolled_projects_count = 3
+      expected_enrolled_projects_count = 2
+      expected_success_count = 3 # 2 Projects enrolled + 1 Tutor added as staff. The staff will also be added to the ignored row for not being enrolled as a project.
       expected_error_count = 1
-      expected_ignore_count = 1
+      expected_ignore_count = 2
       assert_equal expected_enrolled_projects_count + expected_error_count + expected_ignore_count, payload[:members].count
 
       post '/api/lti/enrol/bulk', { ltik: token }
@@ -365,8 +383,9 @@ class LtiApiTest < ActiveSupport::TestCase
       results = JSON.parse(job['result'])
 
       assert_equal expected_enrolled_projects_count, unit.projects.count
-      assert_equal expected_enrolled_projects_count, results['success'].count
+      assert_equal expected_success_count, results['success'].count
       assert_equal expected_error_count, results['errors'].count
+      assert_equal expected_ignore_count, results['ignored'].count
 
       student = FactoryBot.create(:user, :student)
       unit.enrol_student(student, nil)
