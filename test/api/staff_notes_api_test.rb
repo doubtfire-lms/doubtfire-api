@@ -19,7 +19,10 @@ class StaffNotesApiTest < ActiveSupport::TestCase
     student_project = unit.enrol_student(student, nil)
 
     tutor = FactoryBot.create(:user, :tutor)
+    convenor = FactoryBot.create(:user, :convenor)
+
     unit.employ_staff(tutor, Role.tutor)
+    unit.employ_staff(convenor, Role.convenor)
 
     staff_note = StaffNote.create!({
                                      note: "Test note!",
@@ -38,6 +41,14 @@ class StaffNotesApiTest < ActiveSupport::TestCase
     assert_equal staff_note.id, json.first['id']
     assert_equal staff_note.note, json.first['note']
     assert_equal tutor.id, json.first['user_id']
+
+    get "/api/csv/units/#{unit.id}/staff_notes"
+    assert_equal 200, last_response.status
+
+    add_auth_header_for(user: convenor)
+
+    get "/api/csv/units/#{unit.id}/staff_notes"
+    assert_equal 200, last_response.status
   end
 
   def test_tutor_can_create_staff_notes
@@ -142,21 +153,29 @@ class StaffNotesApiTest < ActiveSupport::TestCase
 
     get "/api/projects/#{student_project.id}/staff_notes"
     assert_equal 403, last_response.status
+
+    get "/api/csv/units/#{unit.id}/staff_notes"
+    assert_equal 403, last_response.status
   end
 
   def test_tutor_not_in_unit_cannot_access_staff_notes
     # Tutor is not employed into any unit, so they shouldn't have access reading staff notes of any project
     tutor = FactoryBot.create(:user, :tutor)
 
+    project = Project.first
+
     StaffNote.create!({
                         note: "Test note",
-                        project: Project.first,
+                        project: project,
                         user: tutor
                       })
 
     add_auth_header_for(user: tutor)
 
-    get "/api/projects/#{Project.first.id}/staff_notes"
+    get "/api/projects/#{project.id}/staff_notes"
+    assert_equal 403, last_response.status
+
+    get "/api/csv/units/#{project.unit.id}/staff_notes"
     assert_equal 403, last_response.status
   end
 
