@@ -2,7 +2,7 @@ class AcceptSubmissionJob
   include Sidekiq::Job
   include LogHelper
 
-  def perform(task_id, user_id, accepted_tii_eula)
+  def perform(task_id, user_id, accepted_tii_eula, test_submission)
     begin
       # Ensure cwd is valid...
       FileUtils.cd(Rails.root)
@@ -50,12 +50,12 @@ class AcceptSubmissionJob
       task.send_documents_to_tii(user, accepted_tii_eula: accepted_tii_eula)
     end
 
-    if task.overseer_enabled?
-      overseer_assessment = OverseerAssessment.create_for(task)
+    if task.overseer_enabled? || test_submission
+      overseer_assessment = OverseerAssessment.create_for(task, test_submission)
       if overseer_assessment.present?
         logger.info "Launching Overseer assessment for task_def_id: #{task.task_definition.id} task_id: #{task.id}"
 
-        overseer_assessment.send_to_overseer
+        overseer_assessment.send_to_overseer(test_submission: test_submission)
 
       else
         logger.info "Overseer assessment for task_def_id: #{task.task_definition.id} task_id: #{task.id} was not performed #{overseer_assessment.inspect}"

@@ -330,4 +330,98 @@ class TasksApi < Grape::API
     # Return the file data
     stream_file file_loc
   end
+
+  desc 'Update the target dates for a task - when date flexibility is allowed'
+  params do
+    requires :id, type: Integer, desc: 'The project id to locate'
+    requires :task_definition_id, type: Integer, desc: 'The id of the task definition of the task to update in this project'
+    requires :target_start_date, type: Date, desc: 'Target date to start the task'
+    requires :target_due_date, type: Date, desc: 'Target date to submit the task'
+  end
+  put '/projects/:id/task_def_id/:task_definition_id/target_dates' do
+    project = Project.find(params[:id])
+    task_definition = project.unit.task_definitions.find(params[:task_definition_id])
+
+    # check the user can put this task
+    if authorise? current_user, project, :make_submission
+      # Check unit allows planned date changes
+      unless project.unit.allow_flexible_dates
+        error!({ error: 'This unit does not allow you to adjust due dates.' }, 403)
+      end
+
+      task = project.task_for_task_definition(task_definition)
+
+      if task.target_start_date == params[:target_start_date] && task.target_due_date == params[:target_due_date]
+        present task, with: Entities::TaskEntity, include_other_projects: true, update_only: true
+        return
+      end
+
+      task.update!(
+        target_start_date: params[:target_start_date],
+        target_due_date: params[:target_due_date]
+      )
+
+      comment_text = if params[:target_start_date].present? && params[:target_due_date].present?
+                       "Planned date adjusted: #{task.target_start_date.strftime('%d %b')} - #{task.target_due_date.strftime('%d %b')}."
+                     else
+                       "Planned date reset: #{task_definition.start_date.strftime('%d %b')} - #{task_definition.target_date.strftime('%d %b')}."
+                     end
+
+      comment = TaskComment.create(
+        task: task,
+        user: current_user,
+        comment: comment_text,
+        content_type: :plan,
+        recipient: project.student
+      )
+
+      comment.mark_as_read(project.tutor_for(task_definition))
+
+      present task, with: Entities::TaskEntity, include_other_projects: true, update_only: true
+    else
+      error!({ error: "You are not permitted to adjust the plan." }, 403)
+    end
+  end
+
+  desc 'Update the target dates for a task - when date flexibility is allowed'
+  params do
+    requires :id, type: Integer, desc: 'The project id to locate'
+  end
+  put '/projects/:id/reset_target_dates' do
+    project = Project.find(params[:id])
+
+    # check the user can put this task
+    if authorise? current_user, project, :make_submission
+      # Check unit allows planned date changes
+      unless project.unit.allow_flexible_dates
+        error!({ error: 'This unit does not allow you to adjust due dates.' }, 403)
+      end
+
+      project.tasks.each do |task|
+        next if task.target_start_date.nil? && task.target_due_date.nil?
+
+        task.update!(
+          target_start_date: nil,
+          target_due_date: nil
+        )
+
+        comment_text = "Planned date reset: #{task.task_definition.start_date.strftime('%d %b')} - #{task.task_definition.target_date.strftime('%d %b')}."
+        comment = TaskComment.create(
+          task: task,
+          user: current_user,
+          comment: comment_text,
+          content_type: :plan,
+          recipient: project.student
+        )
+
+        comment.mark_as_read(project.tutor_for(task.task_definition))
+      end
+
+      present project, with: Entities::ProjectEntity, user: current_user, for_student: true, in_project: true
+
+    else
+      error!({ error: "You are not permitted to adjust the plan." }, 403)
+    end
+  end
+
 end
