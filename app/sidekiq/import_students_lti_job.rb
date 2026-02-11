@@ -46,7 +46,7 @@ class ImportStudentsLtiJob
       user = User.find_by(login_id: user_id_data[:login_id]) ||
              User.find_by(username: user_id_data[:username]) ||
              User.find_by(email: user_id_data[:email]) ||
-             User.create do |new_user|
+             User.create! do |new_user|
                # Update new user with details from the SAML response
                Doubtfire::Application.config.institution_settings.update_user_from_lti_response(
                  new_user,
