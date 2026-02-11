@@ -60,8 +60,7 @@ class ImportStudentsLtiJob
         unless unit_role.nil?
           staff = unit.employ_staff(user, unit_role)
           if staff.valid?
-            result[:success] << { row: member, message: "Successfully added staff (#{unit_role.role.name})" }
-            next
+            result[:success] << { row: member, message: "Successfully added staff (#{unit_role.name})" }
           end
         end
 
