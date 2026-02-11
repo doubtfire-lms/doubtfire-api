@@ -116,7 +116,9 @@ class UnitRolesApi < Grape::API
   params do
     requires :id, type: Integer, desc: 'The id of the unit role to moderate'
     requires :task_id, type: Integer, desc: 'The id of the task'
-    requires :score, type: Integer, desc: 'Moderation for the task'
+    requires :action, type: String, desc: 'Action to apply to this moderated task'
+    # requires :score, type: Integer, desc: 'Moderation for the task'
+    # TODO: accept an "outcome" enum/string?
   end
   post '/unit_roles/:id/moderation/:task_id' do
     unit_role = UnitRole.find(params[:id])
@@ -134,20 +136,32 @@ class UnitRolesApi < Grape::API
       error!({ error: 'You do not have permission to moderate this feedback' }, 400)
     end
 
-    score = params[:score].to_i
-    unless [-1, 0, 1].include?(score)
-      error!({ error: 'Invalid moderation score' }, 400)
+    action = params[:action].lower
+    # unless [-1, 0, 1].include?(score)
+    unless %w[show_more show_less dismiss_ok upheld overturn].include?(action)
+      error!({ error: 'Invalid moderation action' }, 400)
     end
 
     moderated_task = ModeratedTask.find_by(task: task)
 
-    recent_threshold = 15.minutes.ago
+    recent_threshold = 0.minutes.ago
     if moderated_task.last_moderated_date && moderated_task.last_moderated_date > recent_threshold
       error!({ error: 'Feedback is too new to moderate' }, 400)
     end
 
     factor = Doubtfire::Application.config.moderation_score_factor
-    delta = score.to_i * factor
+
+    delta =
+      case action
+      when 'show_more', 'overturn'
+        -1
+      when 'show_less'
+        1
+      when 'dismiss_ok', 'upheld'
+        0
+      end
+
+    score = score.to_i + (delta * factor)
 
     td_score = TutorFeedbackScore.find_by(unit_role: unit_role, task_definition: task.task_definition)
 
