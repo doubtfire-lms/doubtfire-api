@@ -140,7 +140,7 @@ class InstitutionSettings
     user.last_name = last_name.squish.capitalize
     user.nickname = nickname.squish.capitalize
 
-    user.role_id = Role.student.id
+    user.role = should_employ_lti_member(member) || Role.student
 
     # Assigning tutors automatically:
     # if member['roles'].include?('Instructor')
@@ -148,6 +148,15 @@ class InstitutionSettings
     # end
 
     user
+  end
+
+  # If this returns nil, LTI will move on to check if this member should be enrolled as a student
+  def should_employ_lti_member(member)
+    return nil if member['roles'].include?('Student') || member['roles'].include?('Learner')
+    return Role.convenor if member['roles'].include?("http://purl.imsglobal.org/vocab/lis/v2/person#Administrator")
+    return Role.tutor if member['roles'].include?("Instructor")
+
+    nil
   end
 
   def should_enrol_lti_member(member)
