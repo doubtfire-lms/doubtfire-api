@@ -300,7 +300,7 @@ class LtiApiTest < ActiveSupport::TestCase
 
   def test_enrol_students_bulk
     Sidekiq::Testing.inline! do
-      unit = FactoryBot.create(:unit, with_students: false)
+      unit = FactoryBot.create(:unit, with_students: false, student_count: 0)
 
       payload = {
         unit_id: unit.id,
@@ -382,10 +382,10 @@ class LtiApiTest < ActiveSupport::TestCase
 
       results = JSON.parse(job['result'])
 
-      assert_equal expected_enrolled_projects_count, unit.projects.count
-      assert_equal expected_success_count, results['success'].count
-      assert_equal expected_error_count, results['errors'].count
-      assert_equal expected_ignore_count, results['ignored'].count
+      assert_equal expected_enrolled_projects_count, unit.projects.count, results
+      assert_equal expected_success_count, results['success'].count, results
+      assert_equal expected_error_count, results['errors'].count, results
+      assert_equal expected_ignore_count, results['ignored'].count, results
 
       student = FactoryBot.create(:user, :student)
       unit.enrol_student(student, nil)
