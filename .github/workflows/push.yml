@@ -84,47 +84,30 @@ jobs:
           cache-from: type=gha,scope=doubtfire-api
           cache-to: type=gha,mode=max,scope=doubtfire-api
       - name: Start TexLive service
-        uses: addnab/docker-run-action@v3
-        with:
-          image: doubtfire-texlive-development:local
-          options: >
-            --name ${{ env.LATEX_CONTAINER_NAME }}
-            -v ${{ github.workspace }}/student-work:/student-work
-            -v ${{ github.workspace }}/public/assets/images:/doubtfire/public/assets/images
-            -v ${{ github.workspace }}/test_files:/doubtfire/test_files
-            -v ${{ github.workspace }}/tmp/rails-latex:/workdir/texlive-latex
-            --detach
-          run: sleep infinity
+        run: |
+          docker run --name "${LATEX_CONTAINER_NAME}" \
+            -v "${{ github.workspace }}/student-work:/student-work" \
+            -v "${{ github.workspace }}/public/assets/images:/doubtfire/public/assets/images" \
+            -v "${{ github.workspace }}/test_files:/doubtfire/test_files" \
+            -v "${{ github.workspace }}/tmp/rails-latex:/workdir/texlive-latex" \
+            -d doubtfire-texlive-development:local \
+            sleep infinity
       - name: Test TexLive container
-        uses: addnab/docker-run-action@v3
-        with:
-          image: doubtfire-api-development:local
-          options: >
-            -t
-            -v ${{ github.workspace }}:/doubtfire
-            -v /var/run/docker.sock:/var/run/docker.sock
-          run: docker exec -t ${{ env.LATEX_CONTAINER_NAME }} lualatex -v
+        run: |
+          docker exec -t "${LATEX_CONTAINER_NAME}" lualatex -v
       - name: Start JPlag service
-        uses: addnab/docker-run-action@v3
-        with:
-          image: doubtfire-jplag-development:local
-          options: >
-            --name jplag
-            -v ${{ github.workspace }}/student-work:/student-work
-            -v ${{ github.workspace }}/jplag/results:${{ env.DF_JPLAG_REPORT_DIR }}
-            -v ${{ github.workspace }}/tmp/jplag:/tmp/jplag
-            -v ${{ github.workspace }}/test_files/submissions/jplag:/test_files
-            --detach
-          run: sleep infinity
+        run: |
+          docker run --name jplag \
+            -v "${{ github.workspace }}/student-work:/student-work" \
+            -v "${{ github.workspace }}/jplag/results:${DF_JPLAG_REPORT_DIR}" \
+            -v "${{ github.workspace }}/tmp/jplag:/tmp/jplag" \
+            -v "${{ github.workspace }}/test_files/submissions/jplag:/test_files" \
+            -d doubtfire-jplag-development:local \
+            sleep infinity
       - name: Test JPlag service
-        uses: addnab/docker-run-action@v3
-        with:
-          image: doubtfire-api-development:local
-          options: >
-            -t
-            -v ${{ github.workspace }}:/doubtfire
-            -v /var/run/docker.sock:/var/run/docker.sock
-          run: docker exec -e TERM=xterm -i jplag java -jar /jplag/jplag-jar-with-dependencies.jar /test_files -l java --similarity-threshold=0.30 -M RUN -r test.jplag
+        run: |
+          docker exec -e TERM=xterm -i jplag \
+            java -jar /jplag/jplag-jar-with-dependencies.jar /test_files -l java --similarity-threshold=0.30 -M RUN -r test.jplag
       - name: Populate database
         uses: addnab/docker-run-action@v3
         with:
