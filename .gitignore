@@ -37,3 +37,7 @@ student-work/
 .byebug_history
 coverage/
 _history
+
+# Institution specific config
+config/*_setting.rb
+!config/no_institution_setting.rb

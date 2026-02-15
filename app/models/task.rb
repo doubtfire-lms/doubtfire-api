@@ -678,6 +678,25 @@ class Task < ApplicationRecord
           end
         end
       end
+
+      if task_status == TaskStatus.fix_and_resubmit
+        # Look for other submitted tasks from this student that has this task as a prerequisite
+        # If they are ready for feedback, automatically assess them to fix and resubmit
+        dependents = TaskPrerequisite.where(prerequisite_id: task_definition.id)
+        dependents.each do |prereq|
+          td = prereq.task_definition
+          task = project.task_for_task_definition(td)
+
+          # Avoid infinite loop
+          next if task.id == id
+
+          next unless task.task_status == TaskStatus.ready_for_feedback
+          # Since we are calling this assess method again, we recursively check for more dependent tasks that need to be updated
+          task.assess(TaskStatus.fix_and_resubmit, assessor, assess_date)
+          task.add_text_comment(assessor, "**Automated comment**: A prerequisite task was updated to Fix and Resubmit, so this task was updated as well. You may need to review and update the prerequisite before resubmitting.")
+        end
+      end
+
       TaskEngagement.create!(task: self, engagement_time: Time.zone.now, engagement: task_status.name)
 
       # Grab the submission for the task if the user made one
