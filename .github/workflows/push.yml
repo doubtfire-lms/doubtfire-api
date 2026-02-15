@@ -18,7 +18,7 @@ env:
   DF_SECRET_KEY_ATTR: "test-secret-key-test-secret-key!"
   DF_SECRET_KEY_DEVISE: "test-secret-key-test-secret-key!"
   DF_TEST_DB_ADAPTER: "mysql2"
-  DF_TEST_DB_HOST: "mariadb"
+  DF_TEST_DB_HOST: "host.docker.internal"
   DF_TEST_DB_DATABASE: "doubtfire-test"
   DF_TEST_DB_USERNAME: "dfire"
   DF_TEST_DB_PASSWORD: "pwd"
@@ -26,7 +26,7 @@ env:
   DF_ENCRYPTION_PRIMARY_KEY: "AMLOMYA5GV8B4fTK3VKMhVGn8WdvUW8g"
   DF_ENCRYPTION_DETERMINISTIC_KEY: "anlmuJ6cB3bN3biXRbYvmPsC5ALPFqGG"
   DF_ENCRYPTION_KEY_DERIVATION_SALT: "hzPR8D4qpOnAg7VeAhkhWw6JmmzKJB10"
-  DF_REDIS_SIDEKIQ_URL: "redis://redis:6379/0"
+  DF_REDIS_SIDEKIQ_URL: "redis://host.docker.internal:6379/0"
   LATEX_CONTAINER_NAME: doubtfire-texlive
   LATEX_BUILD_PATH: /texlive/shell/latex_build.sh
   DF_JPLAG_REPORT_DIR: /jplag/results
@@ -109,69 +109,68 @@ jobs:
           docker exec -e TERM=xterm -i jplag \
             java -jar /jplag/jplag-jar-with-dependencies.jar /test_files -l java --similarity-threshold=0.30 -M RUN -r test.jplag
       - name: Populate database
-        uses: addnab/docker-run-action@v3
-        with:
-          image: doubtfire-api-development:local
-          options: >
-            -v ${{ github.workspace }}:/doubtfire
-            -v ${{ github.workspace }}/student-work:/student-work
-            -v /var/run/docker.sock:/var/run/docker.sock
-            -e RAILS_ENV
-            -e DF_STUDENT_WORK_DIR
-            -e DF_INSTITUTION_HOST
-            -e DF_INSTITUTION_PRODUCT_NAME
-            -e DF_SECRET_KEY_BASE
-            -e DF_SECRET_KEY_ATTR
-            -e DF_SECRET_KEY_DEVISE
-            -e DF_TEST_DB_ADAPTER
-            -e DF_TEST_DB_HOST
-            -e DF_TEST_DB_DATABASE
-            -e DF_TEST_DB_USERNAME
-            -e DF_TEST_DB_PASSWORD
-            -e OVERSEER_ENABLED
-            -e DF_ENCRYPTION_PRIMARY_KEY
-            -e DF_ENCRYPTION_DETERMINISTIC_KEY
-            -e DF_ENCRYPTION_KEY_DERIVATION_SALT
-            -e DF_REDIS_SIDEKIQ_URL
-            -e LATEX_CONTAINER_NAME
-            -e LATEX_BUILD_PATH
-            -e DF_JPLAG_REPORT_DIR
-            -e LTI_SHARED_API_SECRET
-            -e LTI_ENABLED
-          run: bundle exec rake db:populate
+        run: |
+          docker run --rm \
+            --add-host=host.docker.internal:host-gateway \
+            -v "${{ github.workspace }}:/doubtfire" \
+            -v "${{ github.workspace }}/student-work:/student-work" \
+            -e RAILS_ENV \
+            -e DF_STUDENT_WORK_DIR \
+            -e DF_INSTITUTION_HOST \
+            -e DF_INSTITUTION_PRODUCT_NAME \
+            -e DF_SECRET_KEY_BASE \
+            -e DF_SECRET_KEY_ATTR \
+            -e DF_SECRET_KEY_DEVISE \
+            -e DF_TEST_DB_ADAPTER \
+            -e DF_TEST_DB_HOST \
+            -e DF_TEST_DB_DATABASE \
+            -e DF_TEST_DB_USERNAME \
+            -e DF_TEST_DB_PASSWORD \
+            -e OVERSEER_ENABLED \
+            -e DF_ENCRYPTION_PRIMARY_KEY \
+            -e DF_ENCRYPTION_DETERMINISTIC_KEY \
+            -e DF_ENCRYPTION_KEY_DERIVATION_SALT \
+            -e DF_REDIS_SIDEKIQ_URL \
+            -e LATEX_CONTAINER_NAME \
+            -e LATEX_BUILD_PATH \
+            -e DF_JPLAG_REPORT_DIR \
+            -e LTI_SHARED_API_SECRET \
+            -e LTI_ENABLED \
+            doubtfire-api-development:local \
+            TERM=xterm bundle exec rake db:populate
       - name: Run unit tests
-        uses: addnab/docker-run-action@v3
-        with:
-          image: doubtfire-api-development:local
-          options: >
-            -v ${{ github.workspace }}:/doubtfire
-            -v ${{ github.workspace }}/student-work:/student-work
-            -v /var/run/docker.sock:/var/run/docker.sock
-            -v ${{ github.workspace }}/jplag/results:${{ env.DF_JPLAG_REPORT_DIR }}
-            -v ${{ github.workspace }}/tmp/jplag:/tmp/jplag
-            -e RAILS_ENV
-            -e DF_STUDENT_WORK_DIR
-            -e DF_INSTITUTION_HOST
-            -e DF_INSTITUTION_PRODUCT_NAME
-            -e DF_SECRET_KEY_BASE
-            -e DF_SECRET_KEY_ATTR
-            -e DF_SECRET_KEY_DEVISE
-            -e DF_TEST_DB_ADAPTER
-            -e DF_TEST_DB_HOST
-            -e DF_TEST_DB_DATABASE
-            -e DF_TEST_DB_USERNAME
-            -e DF_TEST_DB_PASSWORD
-            -e OVERSEER_ENABLED
-            -e DF_ENCRYPTION_PRIMARY_KEY
-            -e DF_ENCRYPTION_DETERMINISTIC_KEY
-            -e DF_ENCRYPTION_KEY_DERIVATION_SALT
-            -e DF_REDIS_SIDEKIQ_URL
-            -e LATEX_CONTAINER_NAME
-            -e LATEX_BUILD_PATH
-            -e DF_JPLAG_REPORT_DIR
-            -e LTI_SHARED_API_SECRET
-            -e LTI_ENABLED
-          run: TERM=xterm bundle exec rails test
+        run: |
+          docker run --rm \
+            --add-host=host.docker.internal:host-gateway \
+            -v "${{ github.workspace }}:/doubtfire" \
+            -v "${{ github.workspace }}/student-work:/student-work" \
+            -v "${{ github.workspace }}/jplag/results:${DF_JPLAG_REPORT_DIR}" \
+            -v "${{ github.workspace }}/tmp/jplag:/tmp/jplag" \
+            -e TERM=xterm \
+            -e RAILS_ENV \
+            -e DF_STUDENT_WORK_DIR \
+            -e DF_INSTITUTION_HOST \
+            -e DF_INSTITUTION_PRODUCT_NAME \
+            -e DF_SECRET_KEY_BASE \
+            -e DF_SECRET_KEY_ATTR \
+            -e DF_SECRET_KEY_DEVISE \
+            -e DF_TEST_DB_ADAPTER \
+            -e DF_TEST_DB_HOST \
+            -e DF_TEST_DB_DATABASE \
+            -e DF_TEST_DB_USERNAME \
+            -e DF_TEST_DB_PASSWORD \
+            -e OVERSEER_ENABLED \
+            -e DF_ENCRYPTION_PRIMARY_KEY \
+            -e DF_ENCRYPTION_DETERMINISTIC_KEY \
+            -e DF_ENCRYPTION_KEY_DERIVATION_SALT \
+            -e DF_REDIS_SIDEKIQ_URL \
+            -e LATEX_CONTAINER_NAME \
+            -e LATEX_BUILD_PATH \
+            -e DF_JPLAG_REPORT_DIR \
+            -e LTI_SHARED_API_SECRET \
+            -e LTI_ENABLED \
+            doubtfire-api-development:local \
+            bundle exec rails test
       - name: Stop TexLive service
         run: docker rm -f ${{ env.LATEX_CONTAINER_NAME }}
       - name: Stop JPlag service
