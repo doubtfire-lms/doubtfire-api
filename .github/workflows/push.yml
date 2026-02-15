@@ -137,7 +137,7 @@ jobs:
             -e LTI_SHARED_API_SECRET \
             -e LTI_ENABLED \
             doubtfire-api-development:local \
-            TERM=xterm bundle exec rake db:populate
+            bundle exec rake db:populate
       - name: Run unit tests
         run: |
           docker run --rm \
