@@ -84,7 +84,7 @@ jobs:
           cache-from: type=gha,scope=doubtfire-api
           cache-to: type=gha,mode=max,scope=doubtfire-api
       - name: Start TexLive service
-        uses: addnab/docker-run-action@v3
+        uses: maus007/docker-run-action-fork@207a4e2a8ebf7e4b985656ba990b1e53715dce2a
         with:
           image: doubtfire-texlive-development:local
           options: >
@@ -96,7 +96,7 @@ jobs:
             --detach
           run: sleep infinity
       - name: Test TexLive container
-        uses: addnab/docker-run-action@v3
+        uses: maus007/docker-run-action-fork@207a4e2a8ebf7e4b985656ba990b1e53715dce2a
         with:
           image: doubtfire-api-development:local
           options: >
@@ -105,7 +105,7 @@ jobs:
             -v /var/run/docker.sock:/var/run/docker.sock
           run: docker exec -t ${{ env.LATEX_CONTAINER_NAME }} lualatex -v
       - name: Start JPlag service
-        uses: addnab/docker-run-action@v3
+        uses: maus007/docker-run-action-fork@207a4e2a8ebf7e4b985656ba990b1e53715dce2a
         with:
           image: doubtfire-jplag-development:local
           options: >
@@ -117,7 +117,7 @@ jobs:
             --detach
           run: sleep infinity
       - name: Test JPlag service
-        uses: addnab/docker-run-action@v3
+        uses: maus007/docker-run-action-fork@207a4e2a8ebf7e4b985656ba990b1e53715dce2a
         with:
           image: doubtfire-api-development:local
           options: >
@@ -126,7 +126,7 @@ jobs:
             -v /var/run/docker.sock:/var/run/docker.sock
           run: docker exec -e TERM=xterm -i jplag java -jar /jplag/jplag-jar-with-dependencies.jar /test_files -l java --similarity-threshold=0.30 -M RUN -r test.jplag
       - name: Populate database
-        uses: addnab/docker-run-action@v3
+        uses: maus007/docker-run-action-fork@207a4e2a8ebf7e4b985656ba990b1e53715dce2a
         with:
           image: doubtfire-api-development:local
           options: >
@@ -157,7 +157,7 @@ jobs:
             -e LTI_ENABLED
           run: bundle exec rake db:populate
       - name: Run unit tests
-        uses: addnab/docker-run-action@v3
+        uses: maus007/docker-run-action-fork@207a4e2a8ebf7e4b985656ba990b1e53715dce2a
         with:
           image: doubtfire-api-development:local
           options: >
