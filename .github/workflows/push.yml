@@ -18,7 +18,7 @@ env:
   DF_SECRET_KEY_ATTR: "test-secret-key-test-secret-key!"
   DF_SECRET_KEY_DEVISE: "test-secret-key-test-secret-key!"
   DF_TEST_DB_ADAPTER: "mysql2"
-  DF_TEST_DB_HOST: "host.docker.internal"
+  DF_TEST_DB_HOST: "mariadb"
   DF_TEST_DB_DATABASE: "doubtfire-test"
   DF_TEST_DB_USERNAME: "dfire"
   DF_TEST_DB_PASSWORD: "pwd"
@@ -26,7 +26,7 @@ env:
   DF_ENCRYPTION_PRIMARY_KEY: "AMLOMYA5GV8B4fTK3VKMhVGn8WdvUW8g"
   DF_ENCRYPTION_DETERMINISTIC_KEY: "anlmuJ6cB3bN3biXRbYvmPsC5ALPFqGG"
   DF_ENCRYPTION_KEY_DERIVATION_SALT: "hzPR8D4qpOnAg7VeAhkhWw6JmmzKJB10"
-  DF_REDIS_SIDEKIQ_URL: "redis://host.docker.internal:6379/0"
+  DF_REDIS_SIDEKIQ_URL: "redis://redis:6379/0"
   LATEX_CONTAINER_NAME: doubtfire-texlive
   LATEX_BUILD_PATH: /texlive/shell/latex_build.sh
   DF_JPLAG_REPORT_DIR: /jplag/results
