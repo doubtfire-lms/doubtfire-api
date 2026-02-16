@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-67](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-66...v10.0.0-67) (2026-02-16)
+
+
+### Bug Fixes
+
+* dont overwrite overseer step status when param is absent ([#571](https://github.com/b0ink/doubtfire-deploy/issues/571)) ([400ad4a](https://github.com/b0ink/doubtfire-deploy/commit/400ad4a83bc03b69f96f4d6dc5a92aada81612dc))
+
 ## [10.0.0-66](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-65...v10.0.0-66) (2026-02-11)
 
 
