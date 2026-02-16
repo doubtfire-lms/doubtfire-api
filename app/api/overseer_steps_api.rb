@@ -132,8 +132,19 @@ class OverseerStepsApi < Grape::API
     status_on_success_param = params[:overseer_step][:status_on_success]
     status_on_failure_param = params[:overseer_step][:status_on_failure]
 
-    status_on_success_id = status_on_success_param.present? && status_on_success_param != 'no_change' ? TaskStatus.status_for_name(status_on_success_param)&.id : nil
-    status_on_failure_id = status_on_failure_param.present? && status_on_failure_param != 'no_change' ? TaskStatus.status_for_name(status_on_failure_param)&.id : nil
+    merge_hash = {}
+
+    if status_on_success_param == 'no_change'
+      merge_hash[:status_on_success_id] = nil
+    elsif status_on_success_param.present?
+      merge_hash[:status_on_success_id] = TaskStatus.status_for_name(status_on_success_param)&.id
+    end
+
+    if status_on_failure_param == 'no_change'
+      merge_hash[:status_on_failure_id] = nil
+    elsif status_on_failure_param.present?
+      merge_hash[:status_on_failure_id] = TaskStatus.status_for_name(status_on_failure_param)&.id
+    end
 
     overseer_step_params = ActionController::Parameters.new(params)
                                                        .require(:overseer_step)
@@ -159,10 +170,8 @@ class OverseerStepsApi < Grape::API
                                                          :show_stdout,
                                                          :enabled
                                                        )
-                                                       .merge(
-                                                         status_on_success_id: status_on_success_id,
-                                                         status_on_failure_id: status_on_failure_id
-                                                       )
+
+    overseer_step_params = overseer_step_params.merge(merge_hash)
 
     overseer_step.update!(overseer_step_params)
 
