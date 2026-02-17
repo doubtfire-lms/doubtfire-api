@@ -46,7 +46,7 @@ class ImportStudentsLtiJob
       user = User.find_by(login_id: user_id_data[:login_id]) ||
              User.find_by(username: user_id_data[:username]) ||
              User.find_by(email: user_id_data[:email]) ||
-             User.create do |new_user|
+             User.create! do |new_user|
                # Update new user with details from the SAML response
                Doubtfire::Application.config.institution_settings.update_user_from_lti_response(
                  new_user,
@@ -56,9 +56,22 @@ class ImportStudentsLtiJob
              end
 
       if user.valid?
+        unit_role = Doubtfire::Application.config.institution_settings.should_employ_lti_member(member)
+        unless unit_role.nil?
+          staff = unit.employ_staff(user, unit_role)
+          if staff&.valid?
+            result[:success] << { row: member, message: "Successfully added staff (#{unit_role.name})" }
+          end
+        end
+
+        unless Doubtfire::Application.config.institution_settings.should_enrol_lti_member(member)
+          result[:ignored] << { row: member, message: "Enrolment skipped by institution setting" }
+          next
+        end
+
         project = unit.enrol_student(user, nil)
         if project.valid?
-          result[:success] << { row: member, message: "Successfully enrolled user." }
+          result[:success] << { row: member, message: "Successfully enrolled user" }
         else
           result[:errors] << { row: member, message: "Failed to enrol student" }
         end

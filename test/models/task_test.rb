@@ -1424,4 +1424,119 @@ class TaskTest < ActiveSupport::TestCase
     assert_not_nil result, "Task should be able to marked complete by tutor"
     assert_equal TaskStatus.complete, task_hd.task_status, 'Task status should be complete from tutor assessment'
   end
+
+  def test_prerequisite_tasks_change_to_fix_and_resubmit
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 4)
+    tutor = FactoryBot.create(:user, :tutor)
+    unit.employ_staff(tutor, Role.tutor)
+
+    td1 = unit.task_definitions.first
+    td2 = unit.task_definitions.second
+    td3 = unit.task_definitions.third
+    td4 = unit.task_definitions.fourth
+
+    [td1, td2, td3, td4].each do |td|
+      td.update!(start_date: Time.zone.now - 2.weeks, target_date: Time.zone.now + 2.weeks, due_date: Time.zone.now + 3.weeks, target_grade: 0)
+    end
+
+    TaskPrerequisite.create!(
+      task_definition: td3,
+      prerequisite: td2,
+      task_status_id: TaskStatus.ready_for_feedback.id
+    )
+
+    TaskPrerequisite.create!(
+      task_definition: td2,
+      prerequisite: td1,
+      task_status_id: TaskStatus.ready_for_feedback.id
+    )
+
+    project = unit.active_projects.first
+    task1 = project.task_for_task_definition(td1)
+    task2 = project.task_for_task_definition(td2)
+    task3 = project.task_for_task_definition(td3)
+    task4 = project.task_for_task_definition(td4)
+
+    task1.trigger_transition(trigger: 'ready_for_feedback', by_user: unit.main_convenor_user)
+    task2.trigger_transition(trigger: 'ready_for_feedback', by_user: unit.main_convenor_user)
+    task3.trigger_transition(trigger: 'ready_for_feedback', by_user: unit.main_convenor_user)
+    task4.trigger_transition(trigger: 'ready_for_feedback', by_user: unit.main_convenor_user)
+    task1.reload
+    task2.reload
+    task3.reload
+    task4.reload
+
+    assert_equal TaskStatus.ready_for_feedback, task1.task_status
+    assert_equal TaskStatus.ready_for_feedback, task2.task_status
+    assert_equal TaskStatus.ready_for_feedback, task3.task_status
+    assert_equal TaskStatus.ready_for_feedback, task4.task_status
+
+    # Test case 1: Ensure parent prerequisite is not affected
+    task2.assess(TaskStatus.fix_and_resubmit, tutor)
+
+    task1.reload
+    task2.reload
+    task3.reload
+    task4.reload
+
+    # Task 1 should not be affected if the dependent task is assessed to fix and resubmit
+    assert_equal TaskStatus.ready_for_feedback, task1.task_status, "Parent prerequisite should not be affected"
+    assert_equal TaskStatus.fix_and_resubmit, task2.task_status, "Task should have updated to Fix and Resubmit"
+    assert_equal TaskStatus.fix_and_resubmit, task3.task_status, "Dependent task should have automatically moved to Fix and Resubmit"
+    assert_equal TaskStatus.ready_for_feedback, task4.task_status # Task 4 has no prerequsite links
+
+    # Reset status
+    task1.trigger_transition(trigger: 'ready_for_feedback', by_user: unit.main_convenor_user)
+    task2.trigger_transition(trigger: 'ready_for_feedback', by_user: unit.main_convenor_user)
+    task3.trigger_transition(trigger: 'ready_for_feedback', by_user: unit.main_convenor_user)
+    task4.trigger_transition(trigger: 'ready_for_feedback', by_user: unit.main_convenor_user)
+
+    task2.comments.delete_all
+
+    task1.reload
+    task2.reload
+    task3.reload
+    task4.reload
+
+    # Test case 2: Ensure dependent tasks are recursively moved to fix and resubmit
+    task1.assess(TaskStatus.fix_and_resubmit, tutor)
+
+    task1.reload
+    task2.reload
+    task3.reload
+    task4.reload
+
+    assert_equal TaskStatus.fix_and_resubmit, task1.task_status, "Task should have updated to Fix and Resubmit"
+    assert_equal TaskStatus.fix_and_resubmit, task2.task_status, "Dependent task should have automatically moved to Fix and Resubmit"
+    assert_equal TaskStatus.fix_and_resubmit, task3.task_status, "Dependent task should have automatically moved to Fix and Resubmit"
+    assert_equal TaskStatus.ready_for_feedback, task4.task_status # Task 4 has no prerequsite links
+
+    lc = task2.comments.last
+    assert_not lc.nil?, "Automated comment should have been created"
+    assert lc.comment.start_with?("**Automated comment**: A prerequisite task")
+
+    # Reset status
+    task1.trigger_transition(trigger: 'ready_for_feedback', by_user: unit.main_convenor_user)
+    task2.trigger_transition(trigger: 'ready_for_feedback', by_user: unit.main_convenor_user)
+    task3.trigger_transition(trigger: 'complete', by_user: unit.main_convenor_user)
+    task4.trigger_transition(trigger: 'ready_for_feedback', by_user: unit.main_convenor_user)
+
+    task1.reload
+    task2.reload
+    task3.reload
+    task4.reload
+
+    # Test case 3: Ensure tasks that are not Ready for Feedback are not moved to Fix and resubmit
+    task1.assess(TaskStatus.fix_and_resubmit, tutor)
+
+    task1.reload
+    task2.reload
+    task3.reload
+    task4.reload
+
+    assert_equal TaskStatus.fix_and_resubmit, task1.task_status, "Task should have updated to Fix and Resubmit"
+    assert_equal TaskStatus.fix_and_resubmit, task2.task_status, "Dependent task should have automatically moved to Fix and Resubmit"
+    assert_equal TaskStatus.complete, task3.task_status, "Task not Ready for Feedback should not be affected"
+    assert_equal TaskStatus.ready_for_feedback, task4.task_status # Task 4 has no prerequsite links
+  end
 end

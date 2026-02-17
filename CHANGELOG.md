@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-67](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-66...v10.0.0-67) (2026-02-16)
+
+
+### Bug Fixes
+
+* dont overwrite overseer step status when param is absent ([#571](https://github.com/b0ink/doubtfire-deploy/issues/571)) ([400ad4a](https://github.com/b0ink/doubtfire-deploy/commit/400ad4a83bc03b69f96f4d6dc5a92aada81612dc))
+
+## [10.0.0-66](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-65...v10.0.0-66) (2026-02-11)
+
+
+### Features
+
+* download staff notes csv ([#558](https://github.com/b0ink/doubtfire-deploy/issues/558)) ([9975694](https://github.com/b0ink/doubtfire-deploy/commit/99756942442d669c5d9f2e62c6c88fcbca9a057c))
+* recursively assess dependent tasks if prerequisite changed to fix ([#567](https://github.com/b0ink/doubtfire-deploy/issues/567)) ([d7bc5b4](https://github.com/b0ink/doubtfire-deploy/commit/d7bc5b40ff9b2ab074a72be17d0b3f5e8478da6d))
+
+
+### Bug Fixes
+
+* check correct user permissions when toggling observer only ([#560](https://github.com/b0ink/doubtfire-deploy/issues/560)) ([339b649](https://github.com/b0ink/doubtfire-deploy/commit/339b6493ec73432ef74e96c9983fb17d0659de92))
+* ensure bulk enrolment validates member ([bd2d1c0](https://github.com/b0ink/doubtfire-deploy/commit/bd2d1c095610fdf1c4b4d663ecb5a89e140f95e6))
+* null check staff ([eef82f5](https://github.com/b0ink/doubtfire-deploy/commit/eef82f5643abb38b764f80625f40846478b0dff6))
+* throw error on failed user validation ([aa59f39](https://github.com/b0ink/doubtfire-deploy/commit/aa59f392ab0b75cbebcd9116d5938c9f17702563))
+
 ## [10.0.0-65](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-64...v10.0.0-65) (2026-01-05)
 
 

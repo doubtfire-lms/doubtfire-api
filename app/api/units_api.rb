@@ -565,4 +565,19 @@ class UnitsApi < Grape::API
     job = setup_job(job_id)
     present job, with: Entities::SidekiqJobEntity
   end
+
+  desc 'Download CSV of staff notes'
+  get '/csv/units/:id/staff_notes' do
+    unit = Unit.find(params[:id])
+    unless authorise? current_user, unit, :get_staff_notes
+      error!({ error: "Not authorised to download CSV of marking session summary in #{unit.code}" }, 403)
+    end
+
+    content_type 'application/octet-stream'
+    header['Content-Disposition'] = "attachment; filename=#{unit.code}-#{unit.id}-StaffNotes.csv"
+    header['Access-Control-Expose-Headers'] = 'Content-Disposition'
+    env['api.format'] = :binary
+
+    unit.staff_notes_csv
+  end
 end
