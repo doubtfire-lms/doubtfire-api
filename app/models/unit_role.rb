@@ -329,7 +329,7 @@ class UnitRole < ApplicationRecord
     if rand(0..100) > td_rep.score
       return true
     end
-    # TODO: integrate escalation
+
     false
   end
 end
