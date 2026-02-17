@@ -663,7 +663,7 @@ class Task < ApplicationRecord
       if assessor == tutor
         moderated_task = ModeratedTask.find_by(task: self)
         if moderated_task
-          if  moderated_task.assessor_id != tutor.id
+          if moderated_task.assessor_id != tutor.id
             moderated_task.update!(assessor_id: tutor.id)
           end
         else

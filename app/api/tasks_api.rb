@@ -456,7 +456,7 @@ class TasksApi < Grape::API
       task: task,
       task_definition: task_definition,
       moderation_type: :escalation,
-      state: "open"
+      state: :open
     )
 
     unless moderated_task.valid?

@@ -117,8 +117,7 @@ class UnitRolesApi < Grape::API
     requires :id, type: Integer, desc: 'The id of the unit role to moderate'
     requires :task_id, type: Integer, desc: 'The id of the task'
     requires :action, type: String, desc: 'Action to apply to this moderated task'
-    # requires :score, type: Integer, desc: 'Moderation for the task'
-    # TODO: accept an "outcome" enum/string?
+    optional :apply_to_all, type: Boolean, desc: 'Should this action be applied to all moderated tasks for this tutor in this task definition'
   end
   post '/unit_roles/:id/moderation/:task_id' do
     unit_role = UnitRole.find(params[:id])
@@ -143,9 +142,15 @@ class UnitRolesApi < Grape::API
 
     moderated_task = ModeratedTask.find_by(task: task)
 
-    recent_threshold = 0.minutes.ago
+    recent_threshold = 15.minutes.ago
     if moderated_task.last_moderated_date && moderated_task.last_moderated_date > recent_threshold
       error!({ error: 'Feedback is too new to moderate' }, 400)
+    end
+
+    apply_to_all = params[:apply_to_all]
+
+    if apply_to_all && !%w[show_less dismiss_ok].include?(action)
+      error!({ error: 'Bulk moderation can only be used when dismissing a task or seeing less from a tutor' }, 400)
     end
 
     state = nil
@@ -184,16 +189,38 @@ class UnitRolesApi < Grape::API
                                             })
     end
 
-    td_score.update!(
-      score: (td_score.score + (delta * factor)).clamp(0, 99)
-    )
-
-    moderated_task.update!(
+    attrs = {
       last_moderated_date: Time.zone.now,
       resolved_by_user_id: current_user.id,
       state: state,
       outcome: outcome
-    )
+    }
+
+    ActiveRecord::Base.transaction do
+      count = 1
+
+      if apply_to_all
+        task_ids = unit.tasks.where(task_definition: task.task_definition)
+          .select { |t| t.tutor == tutor.user }
+          .map(&:id)
+
+        moderated_tasks =
+          ModeratedTask.where(task_id: task_ids)
+                       .where(state: %i[open waiting_for_new_feedback]) # Only update active moderation tasks
+                       .where(moderation_type: %i[first_feedback random_sample]) # Don't updated escalated tasks
+
+        count = moderated_tasks.count
+        moderated_tasks.find_each do |mt|
+          mt.update!(attrs)
+        end
+      else
+        moderated_task.update!(attrs)
+      end
+
+      td_score.update!(
+        score: (td_score.score + (delta * factor * count)).clamp(0, 99)
+      )
+    end
 
     true
   end
