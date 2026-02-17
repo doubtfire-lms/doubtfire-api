@@ -67,9 +67,11 @@
 <body>
   <div class="main">
     <h1>Extension Granted</h1>
-    <p class="subtext">The due date has been changed for a task in <%= @extension.unit.name %>.</p>
-
     <% if @is_tutor %>
+      <% unit = @extension&.unit || @extensions.first&.unit %>
+      <p class="subtext">The due date has been changed for a task in <% unit.name%>.</p>
+
+
       <p>Hi <%= @granted_by.first_name %>,</p>
       <p>You have granted extensions for the following students:</p>
 
@@ -126,7 +128,9 @@
       </p>
 
     <% else %>
-      <p>Hi <%= @student.first_name %>,</p>
+      <p class="subtext">The due date has been changed for a task in <%= @extension.unit.name %></p>
+
+      <p>Hi <%= @student.name %>,</p>
 
       <p>
         An extension has been granted for your task:

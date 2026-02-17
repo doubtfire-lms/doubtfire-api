@@ -95,7 +95,7 @@ class NotificationsMailerTest < ActionMailer::TestCase
     # Verify email properties
     assert_equal [@students.first.email], mail.to
     assert_equal "#{@unit.name}: Extension granted for #{@task_definition.name}", mail.subject
-    assert_match(/Dear #{@students.first.first_name}/, mail.html_part.body.to_s)
+    assert_match(/Hi #{@students.first.first_name}/, mail.html_part.body.to_s)
 
     # Verify from address contains staff email
     assert_includes mail.from.first, @staff.email
@@ -169,7 +169,7 @@ class NotificationsMailerTest < ActionMailer::TestCase
     # Verify email handles special characters
     assert_equal [@students.first.email], mail.to
     assert_equal "#{@unit.name}: Extension granted for #{special_task.name}", mail.subject
-    assert_match(/Dear #{@students.first.name}/, mail.html_part.body.to_s)
+    assert_match(/Hi #{@students.first.name}/, mail.html_part.body.to_s)
 
     # Verify from address contains staff email
     assert_includes mail.from.first, @staff.email
