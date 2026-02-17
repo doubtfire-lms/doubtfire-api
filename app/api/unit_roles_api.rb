@@ -153,6 +153,10 @@ class UnitRolesApi < Grape::API
       error!({ error: 'Bulk moderation can only be used when dismissing a task or seeing less from a tutor' }, 400)
     end
 
+    if moderated_task.resolved?
+      error!({ error: 'This moderated task has already been resolved. Please refresh moderation queue.' }, 400)
+    end
+
     state = nil
     outcome = nil
 
@@ -209,8 +213,9 @@ class UnitRolesApi < Grape::API
                        .where(state: %i[open waiting_for_new_feedback]) # Only update active moderation tasks
                        .where(moderation_type: %i[first_feedback random_sample]) # Don't updated escalated tasks
 
-        count = moderated_tasks.count
         moderated_tasks.find_each do |mt|
+          next if mt.resolved?
+          count += 1
           mt.update!(attrs)
         end
       else
