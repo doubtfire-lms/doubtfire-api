@@ -204,6 +204,7 @@ class UnitRolesApi < Grape::API
       count = 1
 
       if apply_to_all
+        count = 0
         task_ids = unit.tasks.where(task_definition: task.task_definition)
           .select { |t| t.tutor == tutor.user }
           .map(&:id)
