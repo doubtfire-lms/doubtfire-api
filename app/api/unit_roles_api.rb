@@ -136,8 +136,7 @@ class UnitRolesApi < Grape::API
       error!({ error: 'You do not have permission to moderate this feedback' }, 400)
     end
 
-    action = params[:action].lower
-    # unless [-1, 0, 1].include?(score)
+    action = params[:action].downcase
     unless %w[show_more show_less dismiss_ok upheld overturn].include?(action)
       error!({ error: 'Invalid moderation action' }, 400)
     end
@@ -149,34 +148,52 @@ class UnitRolesApi < Grape::API
       error!({ error: 'Feedback is too new to moderate' }, 400)
     end
 
+    state = nil
+    outcome = nil
+
+    case action
+    when 'show_more'
+      delta = -1
+      state = :waiting_for_new_feedback
+    when 'show_less'
+      delta = 1
+      state = :resolved
+      outcome = :dismissed_good
+    when 'dismiss_ok'
+      delta = 0
+      state = :resolved
+      outcome = :dismissed_ok
+    when 'overturn'
+      delta = -1
+      state = :resolved
+      outcome = :overturned
+    when 'upheld'
+      delta = 0
+      state = :resolved
+      outcome = :upheld
+    end
+
     factor = Doubtfire::Application.config.moderation_score_factor
 
-    delta =
-      case action
-      when 'show_more', 'overturn'
-        -1
-      when 'show_less'
-        1
-      when 'dismiss_ok', 'upheld'
-        0
-      end
-
-    score = score.to_i + (delta * factor)
-
     td_score = TutorFeedbackScore.find_by(unit_role: unit_role, task_definition: task.task_definition)
+    if td_score.nil?
+      td_score = TutorFeedbackScore.create!({
+                                              unit_role: unit_role,
+                                              task_definition: task.task_definition,
+                                              score: 50
+                                            })
+    end
 
     td_score.update!(
-      score: (td_score.score + delta).clamp(0, 99)
+      score: (td_score.score + (delta * factor)).clamp(0, 99)
     )
 
-    moderated_task.update!(last_moderated_date: Time.zone.now)
-
-    unless score == -1
-      moderated_task.update!({
-                               state: :resolved,
-                               user: current_user
-                             })
-    end
+    moderated_task.update!(
+      last_moderated_date: Time.zone.now,
+      resolved_by_user_id: current_user.id,
+      state: state,
+      outcome: outcome
+    )
 
     true
   end
