@@ -439,7 +439,6 @@ class TasksApi < Grape::API
     if project.escalation_attempts_remaining <= 0
       error!({ error: 'You can not escalate any more tasks.' }, 403)
     end
-    # TODO: ensure that feedback has actually been left by a tutor (task comments)
 
     task_definition = project.unit.task_definitions.find(params[:task_definition_id])
     task = project.task_for_task_definition(task_definition)
