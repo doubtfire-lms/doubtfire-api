@@ -142,6 +142,16 @@ class UnitRolesApi < Grape::API
 
     moderated_task = ModeratedTask.find_by(task: task)
 
+    if moderated_task.escalation?
+      unless %w[upheld overturn].include?(action)
+        error!({ error: 'This task is under Feedback Review. Only review actions (upheld or overturn) are allowed. Please refresh the moderation queue.' }, 400)
+      end
+    else
+      unless %w[show_more show_less dismiss_ok].include?(action)
+        error!({ error: 'Invalid action for this moderated task. Please refresh moderation queue.' }, 400)
+      end
+    end
+
     recent_threshold = 15.minutes.ago
     if moderated_task.last_moderated_date && moderated_task.last_moderated_date > recent_threshold
       error!({ error: 'Feedback is too new to moderate' }, 400)
