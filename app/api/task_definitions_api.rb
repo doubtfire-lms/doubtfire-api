@@ -438,7 +438,7 @@ class TaskDefinitionsApi < Grape::API
 
     # Actually import...
     task_def.add_task_assessment_resources(file_path)
-    true
+    task_def.overseer_resource_files
   end
 
   desc 'Remove the task assessment resources for a given task'
