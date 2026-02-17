@@ -459,7 +459,13 @@ class TasksApi < Grape::API
       state: "open"
     )
 
-    moderated_task.valid?
+    unless moderated_task.valid?
+      error!({ error: "Failed to request a feedback review for this task" }, 400)
+    end
+
+    task.add_feedback_review_request_comment(current_user)
+
+    true
   end
 
 end

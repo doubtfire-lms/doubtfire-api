@@ -911,6 +911,23 @@ class Task < ApplicationRecord
     comment
   end
 
+  def add_feedback_review_request_comment(current_user)
+    comment = 'Feedback Review Requested'
+
+    lc = comments.last
+
+    # don't add if duplicate comment
+    return if lc && lc.user == current_user && lc.content_type == 'feedback_review_request' && lc.comment == comment
+
+    request = TaskFeedbackReviewRequestComment.create
+    request.task = self
+    request.user = current_user
+    request.comment = comment
+    request.recipient = current_user == project.student ? project.tutor_for(task_definition) : project.student
+    request.save!
+    request
+  end
+
   def last_comment
     all_comments.last
   end
