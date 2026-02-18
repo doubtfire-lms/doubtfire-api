@@ -2172,6 +2172,77 @@ class Unit < ApplicationRecord
   end
 
   #
+  # Return the tasks that have been selected to be moderated by the tutor's mentor
+  #
+  # Tasks that are included are:
+  # - If a ModeratedTask exists for a task, and has not been dismissed
+  # - A TaskComment exists from the task's tutor, that is atleast 15 minutes old
+  #
+  # Tasks with the oldest feedback are shown first
+  #
+  def tasks_for_moderation(user)
+    my_unit_role = unit_role_for(user)
+    mentees = staff.where(mentor_id: my_unit_role.id)
+
+    tasks = student_tasks
+                .includes(:comments)
+                .left_joins(:moderated_task)
+                .where(moderated_tasks: { state: %i[open waiting_for_new_feedback] })
+                .where(projects: { unit_id: id })
+                .joins(:task_definition)
+                .joins(project: { tutorial_enrolments: :tutorial })
+                .where(tutorials: { unit_role_id: mentees.select(:id) })
+                .where('tutorials.tutorial_stream_id = task_definitions.tutorial_stream_id')
+                .select(
+                  'tasks.id AS task_id',
+                  'tasks.project_id',
+                  'tasks.task_definition_id',
+                  'tutorials.id AS tutorial_id',
+                  'tasks.task_status_id AS status_id',
+                  'tasks.completion_date',
+                  'tasks.submission_date',
+                  'tasks.times_assessed',
+                  'tasks.grade',
+                  'tasks.quality_pts',
+                  '0 AS number_unread',
+                  '0 AS similar_to_count',
+                  'false AS pinned',
+                  'false AS has_extensions',
+                  'tasks.*',
+      )
+                .distinct
+
+
+    # Only include tasks where the tutor's latest comment is at least 15 minutes old
+    # to ensure that the feedback is likely complete before adding it for moderation
+    comment_threshold = 15.minutes.ago
+
+    tasks = tasks.map do |task|
+      mt = task.moderated_task
+      next if mt.nil?
+
+      if mt.escalation?
+        [task, Time.zone.at(0)]
+      else
+        tutor_comments = task.comments.select { |c| c.user == task.tutor }
+        next nil if tutor_comments.empty?
+
+        most_recent = tutor_comments.max_by(&:created_at)
+        next nil if most_recent.created_at > comment_threshold ||
+                    most_recent.created_at <= (task.moderated_task&.last_moderated_date || Time.zone.at(0))
+
+        [task, most_recent.created_at]
+      end
+    end.compact
+
+    # Sort tasks: show tasks with the oldest feedback first
+    # New feedback will send it to the bottom of the moderation queue
+    tasks.sort_by! { |_task, last_comment_time| last_comment_time }
+    tasks.map!(&:first)
+  end
+
+
+  #
   # Return stats on the number of students in each status for each task / tutorial
   #
   # Returns a map:

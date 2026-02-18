@@ -97,6 +97,9 @@ module Doubtfire
     # LTI.js will send signed JWT tokens using this secret
     config.lti_api_secret = ENV.fetch('LTI_SHARED_API_SECRET', nil)
 
+    # ==> Moderation settings
+    config.moderation_score_factor = Float(ENV.fetch('MODERATION_SCORE_FACTOR', 1.0))
+
     # ==> Institution settings
     # Institution YAML and ENV (override) config load
     config.institution = YAML.load_file(Rails.root.join('config/institution.yml').to_s).with_indifferent_access

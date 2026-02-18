@@ -45,6 +45,16 @@ class AcceptSubmissionJob
       return
     end
 
+    # Mark this task for moderation
+    tutor_user = task.project.tutor_for(task.task_definition)
+    if tutor_user
+      tutor = task.unit.unit_role_for(tutor_user)
+      if tutor&.should_moderate_task?(task)
+        logger.info "Marking task #{task.id} for moderation (project #{task.project.id})"
+        task.mark_as_moderated
+      end
+    end
+
     # When converted, we can now send documents to turn it in for checking
     if TurnItIn.enabled?
       task.send_documents_to_tii(user, accepted_tii_eula: accepted_tii_eula)

@@ -5,11 +5,15 @@ class UnitRole < ApplicationRecord
 
   belongs_to :role, optional: false    # Foreign key
 
+  belongs_to :mentor, class_name: 'UnitRole', optional: true
+
   has_many :tutorials, class_name: 'Tutorial', dependent: :nullify
   has_many :projects, through: :tutorials
   has_many :tasks, through: :projects
   has_many :task_engagements, through: :tasks
   has_many :comments, through: :tasks
+
+  has_many :tutor_notes, dependent: :destroy
 
   validates :unit_id, presence: true
   validates :user_id, presence: true
@@ -47,12 +51,15 @@ class UnitRole < ApplicationRecord
     ]
     # What can tutors do with unit roles?
     tutor_role_permissions = [
-      :get
+      :get,
+      :create_tutor_note
     ]
     # What can convenors do with unit roles?
     convenor_role_permissions = [
       :get,
-      :delete
+      :delete,
+      :delete_tutor_note,
+      :create_tutor_note
     ]
     # What can nil users do with unit roles?
     nil_role_permissions = []
@@ -285,5 +292,44 @@ class UnitRole < ApplicationRecord
       end
     end
 
+  end
+
+  def add_tutor_note(user, text, task_id = nil, reply_to_id = nil)
+    text = text.strip
+    return nil if user.nil? || text.nil? || text.empty?
+
+    ln = tutor_notes.last
+
+    # don't add if duplicate note
+    return if ln && ln.user == user && ln.note == text
+
+    note = TutorNote.create
+    note.note = text
+    note.user = user
+    note.unit_role = self
+    note.reply_to_id = reply_to_id
+    note.task_id = task_id
+    note.read_by_unit_role = false
+    note.save!
+    note
+  end
+
+  def should_moderate_task?(task)
+    td = task.task_definition
+    td_rep = TutorFeedbackScore.find_by(unit_role: self, task_definition: td)
+    if td_rep.nil?
+      td_rep = TutorFeedbackScore.create!({
+                                            unit_role: self,
+                                            task_definition: td,
+                                            score: 50
+                                          })
+    end
+
+    # We sample randomly during a task submission
+    if rand(0..100) > td_rep.score
+      return true
+    end
+
+    false
   end
 end

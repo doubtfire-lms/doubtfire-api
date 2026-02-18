@@ -424,4 +424,47 @@ class TasksApi < Grape::API
     end
   end
 
+  desc 'Request a feedback review (creates an escalation ModeratedTask)'
+  params do
+    requires :id, type: Integer, desc: 'The project id'
+    requires :task_definition_id, type: Integer, desc: 'The id of the task definition for the task to review'
+  end
+  post '/projects/:id/task_def_id/:task_definition_id/feedback_review' do
+    project = Project.find(params[:id])
+
+    unless authorise?(current_user, project, :make_submission)
+      error!({ error: 'You do not have permission to request a feedback review for this project.' }, 403)
+    end
+
+    if project.escalation_attempts_remaining <= 0
+      error!({ error: 'You can not escalate any more tasks.' }, 403)
+    end
+
+    task_definition = project.unit.task_definitions.find(params[:task_definition_id])
+    task = project.task_for_task_definition(task_definition)
+
+    existing = ModeratedTask.find_by(task: task)
+
+    if existing&.moderation_type == "escalation"
+      error!({ error: "A feedback review has already been requested for this task." }, 409)
+    end
+
+    existing&.destroy!
+
+    moderated_task = ModeratedTask.create!(
+      task: task,
+      task_definition: task_definition,
+      moderation_type: :escalation,
+      state: :open
+    )
+
+    unless moderated_task.valid?
+      error!({ error: "Failed to request a feedback review for this task" }, 400)
+    end
+
+    task.add_feedback_review_request_comment(current_user)
+
+    true
+  end
+
 end
