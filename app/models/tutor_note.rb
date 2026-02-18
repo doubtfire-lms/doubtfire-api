@@ -1,7 +1,7 @@
 class TutorNote < ApplicationRecord
   belongs_to :unit_role
   belongs_to :user
-  belongs_to :task
+  belongs_to :task, optional: true
   belongs_to :reply_to, class_name: "TutorNote", optional: true
 
   def task_definition_id
