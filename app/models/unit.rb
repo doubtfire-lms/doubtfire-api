@@ -2242,6 +2242,40 @@ class Unit < ApplicationRecord
   end
 
 
+  # TODO: description
+  def tasks_for_overflow_marking(_user)
+    # threshold = 35.hours.ago
+    threshold = 1.hour.ago
+
+    student_tasks
+      .includes(:comments)
+      .where(projects: { unit_id: id })
+      .joins(:task_definition)
+      .joins(project: { tutorial_enrolments: :tutorial })
+      .where(tasks: { task_status_id: TaskStatus.ready_for_feedback.id })
+      .where('tasks.submission_date <= ?', threshold)
+      .order('tasks.submission_date ASC')
+      .select(
+        'tasks.id AS task_id',
+        'tasks.project_id',
+        'tasks.task_definition_id',
+        'tutorials.id AS tutorial_id',
+        'tasks.task_status_id AS status_id',
+        'tasks.completion_date',
+        'tasks.submission_date',
+        'tasks.times_assessed',
+        'tasks.grade',
+        'tasks.quality_pts',
+        '0 AS number_unread',
+        '0 AS similar_to_count',
+        'false AS pinned',
+        'false AS has_extensions',
+        'tasks.*'
+      )
+      .distinct
+  end
+
+
   #
   # Return stats on the number of students in each status for each task / tutorial
   #

@@ -339,6 +339,43 @@ class UnitsApi < Grape::API
     present data, with: Grape::Presenters::Presenter
   end
 
+  desc 'Get tasks ready for overflow marking'
+  get '/units/:id/tasks/overflow' do
+    unit = Unit.find(params[:id])
+
+    unless authorise? current_user, unit, :get_students
+      error!({ error: 'Not authorised to provide feedback for this unit' }, 403)
+    end
+
+    unless authorise? current_user, unit, :provide_feedback
+      error!({ error: 'Not authorised to provide feedback for this unit' }, 403)
+    end
+
+    # TODO: can this unit_role access overflow marking?
+
+    tasks = unit.tasks_for_overflow_marking(current_user)
+    data = tasks.map do |t|
+      {
+        id: t.task_id,
+        project_id: t.project_id,
+        task_definition_id: t.task_definition_id,
+        tutorial_id: t.tutorial_id,
+        status: TaskStatus.id_to_key(t.status_id),
+        completion_date: t.completion_date,
+        submission_date: t.submission_date,
+        times_assessed: t.times_assessed,
+        grade: t.grade,
+        quality_pts: t.quality_pts,
+        num_new_comments: t.number_unread,
+        similarity_flag: t.similar_to_count > 0,
+        pinned: t.pinned,
+        has_extensions: t.has_extensions
+      }
+    end
+    # present unit.tasks_as_hash(tasks), with: Grape::Presenters::Presenter
+    present data, with: Grape::Presenters::Presenter
+  end
+
   desc 'Download the grades for a unit'
   get '/units/:id/grades' do
     unit = Unit.find(params[:id])
