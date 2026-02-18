@@ -125,6 +125,7 @@ class Task < ApplicationRecord
   belongs_to :group_submission, optional: true
 
   has_one :unit, through: :project
+  has_one :moderated_task, dependent: :destroy
 
   has_many :comments, class_name: 'TaskComment', dependent: :destroy, inverse_of: :task
   has_many :task_similarities, class_name: 'TaskSimilarity', dependent: :destroy, inverse_of: :task
@@ -659,6 +660,25 @@ class Task < ApplicationRecord
 
     # Save the task
     if save!
+      if assessor == tutor && task_status != TaskStatus.time_exceeded && task_status != TaskStatus.assess_in_portfolio
+        moderated_task = ModeratedTask.find_by(task: self)
+        if moderated_task
+          if moderated_task.assessor_id != tutor.id
+            moderated_task.update!(assessor_id: tutor.id)
+          end
+        else
+          sample_count = ModeratedTask.where(
+            moderation_type: :first_feedback,
+            assessor_id: tutor.id,
+            task_definition: task_definition
+          ).count
+
+          if sample_count < 3
+            mark_as_moderated(moderation_type: :first_feedback)
+          end
+        end
+      end
+
       if task_status == TaskStatus.fix_and_resubmit
         # Look for other submitted tasks from this student that has this task as a prerequisite
         # If they are ready for feedback, automatically assess them to fix and resubmit
@@ -889,6 +909,23 @@ class Task < ApplicationRecord
 
     comment.save!
     comment
+  end
+
+  def add_feedback_review_request_comment(current_user)
+    comment = 'Feedback Review Requested'
+
+    lc = comments.last
+
+    # don't add if duplicate comment
+    return if lc && lc.user == current_user && lc.content_type == 'feedback_review_request' && lc.comment == comment
+
+    request = TaskFeedbackReviewRequestComment.create
+    request.task = self
+    request.user = current_user
+    request.comment = comment
+    request.recipient = current_user == project.student ? project.tutor_for(task_definition) : project.student
+    request.save!
+    request
   end
 
   def last_comment
@@ -1593,6 +1630,20 @@ class Task < ApplicationRecord
             task_definition.assessment_enabled &&
             # task_definition.has_task_assessment_script? &&
             (has_new_files? || has_done_file?)
+  end
+
+  def mark_as_moderated(moderation_type: :random_sample)
+    moderated_task = ModeratedTask.find_by(task_id: id)
+    if moderated_task.nil?
+      ModeratedTask.create!({
+                              task: self,
+                              task_definition: task_definition,
+                              assessor_id: tutor.id,
+                              state: :open,
+                              moderation_type: moderation_type,
+                              last_moderated_date: Time.zone.now
+                            })
+    end
   end
 
   private

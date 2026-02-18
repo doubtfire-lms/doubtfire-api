@@ -62,7 +62,7 @@ class UnitsApi < Grape::API
     # Unit uses user from thread to limit exposure
     #
     my_role = unit.role_for(current_user)
-    present unit, with: Entities::UnitEntity, my_role: my_role, in_unit: true
+    present unit, with: Entities::UnitEntity, user: current_user, my_role: my_role, in_unit: true
   end
 
   desc 'Update unit'
@@ -301,6 +301,42 @@ class UnitsApi < Grape::API
 
     tasks = unit.tasks_for_task_inbox(current_user, my_students_only)
     present unit.tasks_as_hash(tasks), with: Grape::Presenters::Presenter
+  end
+
+  desc 'Get tasks ready for moderation'
+  get '/units/:id/tasks/moderation' do
+    unit = Unit.find(params[:id])
+
+    unless authorise? current_user, unit, :get_students
+      error!({ error: 'Not authorised to provide feedback for this unit' }, 403)
+    end
+
+    unless authorise? current_user, unit, :provide_feedback
+      error!({ error: 'Not authorised to provide feedback for this unit' }, 403)
+    end
+
+    tasks = unit.tasks_for_moderation(current_user)
+    data = tasks.map do |t|
+      {
+        id: t.task_id,
+        project_id: t.project_id,
+        task_definition_id: t.task_definition_id,
+        tutorial_id: t.tutorial_id,
+        status: TaskStatus.id_to_key(t.status_id),
+        completion_date: t.completion_date,
+        submission_date: t.submission_date,
+        times_assessed: t.times_assessed,
+        grade: t.grade,
+        quality_pts: t.quality_pts,
+        num_new_comments: t.number_unread,
+        similarity_flag: t.similar_to_count > 0,
+        pinned: t.pinned,
+        has_extensions: t.has_extensions,
+        moderation_type: t.moderated_task&.moderation_type
+      }
+    end
+    # present unit.tasks_as_hash(tasks), with: Grape::Presenters::Presenter
+    present data, with: Grape::Presenters::Presenter
   end
 
   desc 'Download the grades for a unit'

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_18_031455) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_13_033152) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -206,6 +206,24 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_18_031455) do
     t.index ["unit_id"], name: "index_marking_sessions_on_unit_id"
     t.index ["user_id", "unit_id", "ip_address", "updated_at"], name: "index_marking_sessions_on_user_unit_ip_and_time"
     t.index ["user_id"], name: "index_marking_sessions_on_user_id"
+  end
+
+  create_table "moderated_tasks", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "task_id", null: false
+    t.bigint "task_definition_id", null: false
+    t.datetime "last_moderated_date"
+    t.string "state", null: false
+    t.string "moderation_type", null: false
+    t.bigint "assessor_id"
+    t.bigint "resolved_by_user_id"
+    t.datetime "resolved_at"
+    t.string "outcome"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["assessor_id", "task_definition_id", "moderation_type"], name: "idx_mod_tasks_assessor_td_type"
+    t.index ["task_definition_id"], name: "index_moderated_tasks_on_task_definition_id"
+    t.index ["task_id", "moderation_type"], name: "uniq_mod_tasks_task_type", unique: true
+    t.index ["task_id"], name: "index_moderated_tasks_on_task_id"
   end
 
   create_table "overseer_assessments", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
@@ -587,6 +605,31 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_18_031455) do
     t.index ["tii_task_similarity_id"], name: "index_tii_submissions_on_tii_task_similarity_id"
   end
 
+  create_table "tutor_feedback_scores", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "unit_role_id", null: false
+    t.bigint "task_definition_id", null: false
+    t.integer "score", default: 50, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["task_definition_id"], name: "index_tutor_feedback_scores_on_task_definition_id"
+    t.index ["unit_role_id"], name: "index_tutor_feedback_scores_on_unit_role_id"
+  end
+
+  create_table "tutor_notes", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.text "note"
+    t.bigint "task_id"
+    t.bigint "unit_role_id", null: false
+    t.bigint "user_id", null: false
+    t.bigint "reply_to_id"
+    t.boolean "read_by_unit_role", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["reply_to_id"], name: "index_tutor_notes_on_reply_to_id"
+    t.index ["task_id"], name: "index_tutor_notes_on_task_id"
+    t.index ["unit_role_id"], name: "index_tutor_notes_on_unit_role_id"
+    t.index ["user_id"], name: "index_tutor_notes_on_user_id"
+  end
+
   create_table "tutorial_enrolments", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -639,6 +682,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_18_031455) do
     t.bigint "role_id"
     t.bigint "unit_id"
     t.boolean "observer_only", default: false
+    t.bigint "mentor_id"
+    t.index ["mentor_id"], name: "index_unit_roles_on_mentor_id"
     t.index ["role_id"], name: "index_unit_roles_on_role_id"
     t.index ["tutorial_id"], name: "index_unit_roles_on_tutorial_id"
     t.index ["unit_id"], name: "index_unit_roles_on_unit_id"
