@@ -2182,7 +2182,7 @@ class Unit < ApplicationRecord
   #
   def tasks_for_moderation(user)
     my_unit_role = unit_role_for(user)
-    mentees = staff.where(mentor_id: my_unit_role.id)
+    mentees = my_unit_role ? staff.where(mentor_id: my_unit_role.id) : staff.none
 
     tasks = student_tasks
                 .includes(:comments)
