@@ -2191,7 +2191,6 @@ class Unit < ApplicationRecord
                 .where(projects: { unit_id: id })
                 .joins(:task_definition)
                 .joins(project: { tutorial_enrolments: :tutorial })
-                .where(tutorials: { unit_role_id: mentees.select(:id) })
                 .where('tutorials.tutorial_stream_id = task_definitions.tutorial_stream_id')
                 .select(
                   'tasks.id AS task_id',
@@ -2212,6 +2211,9 @@ class Unit < ApplicationRecord
       )
                 .distinct
 
+    if my_unit_role.nil? || my_unit_role.role != Role.convenor
+      tasks = tasks.where(tutorials: { unit_role_id: mentees.select(:id) })
+    end
 
     # Only include tasks where the tutor's latest comment is at least 15 minutes old
     # to ensure that the feedback is likely complete before adding it for moderation
