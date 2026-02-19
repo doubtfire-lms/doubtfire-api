@@ -347,7 +347,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     actual_unit["staff"].each do |staff|
       ur = UnitRole.find(staff['id'])
 
-      keys = %w[id role user observer_only mentor_id]
+      keys = %w[id role user observer_only mentor_id can_mark_overflow_tasks]
       # Check to ensure tutor_note_count is only exposed to the current user's unit role
       keys << 'tutor_note_count' if ur.unit.unit_role_for(expected_unit.main_convenor_user).id == ur.id
 
