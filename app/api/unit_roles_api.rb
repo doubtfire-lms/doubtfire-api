@@ -131,7 +131,7 @@ class UnitRolesApi < Grape::API
     end
 
     current_unit_role = unit.unit_role_for(current_user)
-    unless tutor.mentor == current_unit_role
+    unless tutor.mentor == current_unit_role || current_unit_role.role == Role.convenor
       error!({ error: 'You do not have permission to moderate this feedback' }, 400)
     end
 
