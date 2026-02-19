@@ -719,6 +719,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_18_235901) do
     t.boolean "allow_flexible_dates", default: false, null: false
     t.datetime "portfolio_due_date"
     t.boolean "mark_late_submissions_as_assess_in_portfolio", default: false, null: false
+    t.integer "feedback_warning_threshold_days", default: 5
+    t.integer "feedback_overflow_threshold_days", default: 7
     t.index ["draft_task_definition_id"], name: "index_units_on_draft_task_definition_id"
     t.index ["main_convenor_id"], name: "index_units_on_main_convenor_id"
     t.index ["overseer_image_id"], name: "index_units_on_overseer_image_id"
