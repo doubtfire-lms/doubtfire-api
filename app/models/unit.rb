@@ -2248,6 +2248,8 @@ class Unit < ApplicationRecord
   def tasks_for_overflow_marking(_user)
     threshold = feedback_overflow_threshold_days.days.ago
 
+    # TODO: filter out tasks have been claimed by anyone other than current_user
+    # TODO: if some of these are claimed by the current_user, they should be prioritised to the top
     student_tasks
       .includes(:comments)
       .where(projects: { unit_id: id })
