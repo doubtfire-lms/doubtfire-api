@@ -379,6 +379,7 @@ class UnitsApi < Grape::API
         similarity_flag: t.similar_to_count > 0,
         pinned: t.pinned,
         has_extensions: t.has_extensions
+        # TODO: expose claimed by unit role id?
       }
     end
     # present unit.tasks_as_hash(tasks), with: Grape::Presenters::Presenter

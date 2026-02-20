@@ -2252,7 +2252,6 @@ class Unit < ApplicationRecord
       .includes(:comments)
       .where(projects: { unit_id: id })
       .joins(:task_definition)
-      .joins(project: { tutorial_enrolments: :tutorial })
       .where(tasks: { task_status_id: TaskStatus.ready_for_feedback.id })
       .where('tasks.submission_date <= ?', threshold)
       .order('tasks.submission_date ASC')
@@ -2260,7 +2259,11 @@ class Unit < ApplicationRecord
         'tasks.id AS task_id',
         'tasks.project_id',
         'tasks.task_definition_id',
-        'tutorials.id AS tutorial_id',
+        '(SELECT te.tutorial_id
+            FROM tutorial_enrolments te
+            WHERE te.project_id = tasks.project_id
+            ORDER BY te.created_at DESC
+            LIMIT 1) AS tutorial_id',
         'tasks.task_status_id AS status_id',
         'tasks.completion_date',
         'tasks.submission_date',

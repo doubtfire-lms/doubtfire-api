@@ -226,6 +226,14 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_18_235901) do
     t.index ["task_id"], name: "index_moderated_tasks_on_task_id"
   end
 
+  create_table "overflow_task_claims", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "task_id", null: false
+    t.bigint "claimed_by_unit_role_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["task_id"], name: "index_overflow_task_claims_on_task_id", unique: true
+  end
+
   create_table "overseer_assessments", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.bigint "task_id", null: false
     t.string "submission_timestamp", null: false
@@ -810,6 +818,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_18_235901) do
   add_foreign_key "feedback_chips", "learning_outcomes"
   add_foreign_key "learning_outcome_links", "learning_outcomes", column: "source_id"
   add_foreign_key "learning_outcome_links", "learning_outcomes", column: "target_id"
+  add_foreign_key "overflow_task_claims", "tasks"
   add_foreign_key "user_oauth_states", "users"
   add_foreign_key "user_oauth_tokens", "users"
 end

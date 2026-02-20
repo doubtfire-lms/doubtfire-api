@@ -4,5 +4,12 @@ class AddOverflowMarking < ActiveRecord::Migration[8.0]
 
     add_column :units, :feedback_warning_threshold_days, :integer, default: 5
     add_column :units, :feedback_overflow_threshold_days, :integer, default: 7
+
+    create_table :overflow_task_claims do |t|
+      t.references :task, null: false, foreign_key: true, index: { unique: true }
+      t.bigint :claimed_by_unit_role_id, null: false
+      # TODO: t.int :times_claimed?
+      t.timestamps
+    end
   end
 end

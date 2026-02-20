@@ -126,6 +126,7 @@ class Task < ApplicationRecord
 
   has_one :unit, through: :project
   has_one :moderated_task, dependent: :destroy
+  has_one :overflow_task_claim, dependent: :destroy
 
   has_many :comments, class_name: 'TaskComment', dependent: :destroy, inverse_of: :task
   has_many :task_similarities, class_name: 'TaskSimilarity', dependent: :destroy, inverse_of: :task
@@ -476,6 +477,15 @@ class Task < ApplicationRecord
     !group_submission.nil? || !task_definition.group_set.nil?
   end
 
+  def active_overflow_task_claim
+    claim = overflow_task_claim
+    return nil unless claim
+    # TODO: should it be 30 minutes of inactivity?
+    # TODO: eg. 30 minutes since the last task comment from the claimed tutor
+    return nil if claim.created_at < 30.minutes.ago
+    claim
+  end
+
   def group
     return nil unless group_task?
 
@@ -517,6 +527,13 @@ class Task < ApplicationRecord
       return nil unless tutorials.any? { |t| t.unit_role == unit_role }
     end
 
+    # Check to see if another tutor has claimed this task from overflow
+    if overflow_task_claim
+      unit_role = unit.unit_role_for(by_user)
+      if unit_role && unit_role.id != overflow_task_claim.claimed_by_unit_role_id
+        return nil
+      end
+    end
     #
     # State transitions based upon the trigger
     #

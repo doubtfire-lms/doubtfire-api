@@ -271,7 +271,9 @@ class TasksApi < Grape::API
         has_pdf: task.has_pdf,
         submission_date: task.submission_date,
         processing_pdf: task.processing_pdf?,
-        task_status: task.task_status.status_key
+        task_status: task.task_status.status_key,
+        # TODO: expose to staff only?
+        claimed_by_unit_role_id: task.overflow_task_claim&.claimed_by_unit_role_id
       }
     else
       result = {
@@ -463,6 +465,50 @@ class TasksApi < Grape::API
     end
 
     task.add_feedback_review_request_comment(current_user)
+
+    true
+  end
+
+  desc 'Claim a task from the overflow queue'
+  params do
+    requires :id, type: Integer, desc: 'The project id'
+    requires :task_definition_id, type: Integer, desc: 'The id of the task definition for the task to review'
+  end
+  # post '/tasks/:id/claim_overflow_task' do
+  post '/projects/:id/task_def_id/:task_definition_id/claim_overflow_task' do
+    project = Project.find(params[:id])
+
+    # task = Task.find(params[:id])
+    unit = project.unit
+
+    # TODO: check if current user is a staff in this unit
+    my_unit_role = unit.unit_role_for(current_user)
+    unless my_unit_role
+      error!({ error: "Not a part of this unit" }, 400)
+    end
+
+    unless my_unit_role.can_mark_overflow_tasks?
+      error!({ error: "Not allowed to claim task" }, 400)
+    end
+
+    task_definition = unit.task_definitions.find(params[:task_definition_id])
+    task = project.task_for_task_definition(task_definition)
+
+    task_claim = OverflowTaskClaim.find_by(task: task)
+    if task_claim
+      error!({ error: "This task has already been claimed by another tutor" }, 409)
+    end
+
+    # project.has_task_for_task_definition?(task_definition)
+
+    task_claim = OverflowTaskClaim.create!({
+                                             task: task,
+                                             claimed_by_unit_role_id: my_unit_role.id
+                                           })
+
+    unless task_claim.valid?
+      error!({ error: "Failed to claim task" }, 400)
+    end
 
     true
   end
