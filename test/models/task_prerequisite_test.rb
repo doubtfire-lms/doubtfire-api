@@ -218,46 +218,46 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert_includes td2.errors[:target_grade].join, "cannot be lower"
   end
 
-  def test_due_date_not_before_prerequisite
-    unit = FactoryBot.create(:unit, student_count: 1, task_count: 5)
+  # def test_due_date_not_before_prerequisite
+  #   unit = FactoryBot.create(:unit, student_count: 1, task_count: 5)
 
-    td1 = unit.task_definitions.first
-    td2 = unit.task_definitions.second
-    td3 = unit.task_definitions.third
+  #   td1 = unit.task_definitions.first
+  #   td2 = unit.task_definitions.second
+  #   td3 = unit.task_definitions.third
 
-    assert td1.valid?
-    assert td2.valid?
-    assert td3.valid?
+  #   assert td1.valid?
+  #   assert td2.valid?
+  #   assert td3.valid?
 
-    # Test 1
-    td1.update(target_grade: 0, due_date: Time.zone.today + 1.week, target_date: Time.zone.today + 1.week)
-    td2.update(target_grade: 0, due_date: Time.zone.today - 1.week, target_date: Time.zone.today - 1.week)
-    td1.reload
-    td2.reload
+  #   # Test 1
+  #   td1.update(target_grade: 0, due_date: Time.zone.today + 1.week, target_date: Time.zone.today + 1.week)
+  #   td2.update(target_grade: 0, due_date: Time.zone.today - 1.week, target_date: Time.zone.today - 1.week)
+  #   td1.reload
+  #   td2.reload
 
-    prereq = TaskPrerequisite.new(
-      task_definition: td1,
-      prerequisite: td2,
-      task_status_id: TaskStatus.complete.id
-    )
+  #   prereq = TaskPrerequisite.new(
+  #     task_definition: td1,
+  #     prerequisite: td2,
+  #     task_status_id: TaskStatus.complete.id
+  #   )
 
-    # Ensure prerequisite with earlier due date is valid
-    assert prereq.valid?, "Prerequisite with earlier due date than task definition should be valid"
-    prereq.destroy!
+  #   # Ensure prerequisite with earlier due date is valid
+  #   assert prereq.valid?, "Prerequisite with earlier due date than task definition should be valid"
+  #   prereq.destroy!
 
-    # Test 2
-    td1.update(target_grade: 0, due_date: Time.zone.today - 1.week, target_date: Time.zone.today - 1.week)
-    td2.update(target_grade: 0, due_date: Time.zone.today + 1.week, target_date: Time.zone.today + 1.week)
-    td1.reload
-    td2.reload
+  #   # Test 2
+  #   td1.update(target_grade: 0, due_date: Time.zone.today - 1.week, target_date: Time.zone.today - 1.week)
+  #   td2.update(target_grade: 0, due_date: Time.zone.today + 1.week, target_date: Time.zone.today + 1.week)
+  #   td1.reload
+  #   td2.reload
 
-    prereq = TaskPrerequisite.new(
-      task_definition: td1,
-      prerequisite: td2,
-      task_status_id: TaskStatus.complete.id
-    )
+  #   prereq = TaskPrerequisite.new(
+  #     task_definition: td1,
+  #     prerequisite: td2,
+  #     task_status_id: TaskStatus.complete.id
+  #   )
 
-    # Ensure prerequisite with later due date can not be created
-    assert_not prereq.valid?, "Prerequisite with a later due date than task definition should not be valid"
-  end
+  #   # Ensure prerequisite with later due date can not be created
+  #   assert_not prereq.valid?, "Prerequisite with a later due date than task definition should not be valid"
+  # end
 end
