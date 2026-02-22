@@ -113,19 +113,19 @@ class TaskDefinition < ApplicationRecord
   include TaskDefinitionTiiModule
   include TaskDefinitionSimilarityModule
 
-  # def p_due_date
+  # def p_target_date
   #   due_date
   # end
 
-  def c_due_date
+  def c_target_date
     grade_due_dates.find { |g| g.target_grade == 1 }&.target_due_date
   end
 
-  def d_due_date
+  def d_target_date
     grade_due_dates.find { |g| g.target_grade == 2 }&.target_due_date
   end
 
-  def hd_due_date
+  def hd_target_date
     grade_due_dates.find { |g| g.target_grade == 3 }&.target_due_date
   end
 
