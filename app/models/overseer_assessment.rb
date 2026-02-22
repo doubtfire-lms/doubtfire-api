@@ -32,6 +32,9 @@ class OverseerAssessment < ApplicationRecord
 
     return nil unless task.overseer_enabled? || test_submission
 
+    active_overseer_steps = task.task_definition.overseer_steps.select(&:enabled)
+    return nil if active_overseer_steps.empty?
+
     docker_image_name_tag = task_definition.docker_image_name_tag || unit.docker_image_name_tag
     # assessment_resources_path = task_definition.task_assessment_resources
 
