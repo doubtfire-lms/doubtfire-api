@@ -81,6 +81,10 @@ class TaskDefinition < ApplicationRecord
   has_many :task_prerequisites, dependent: :destroy
   has_many :prerequisites, through: :task_prerequisites, source: :prerequisite
 
+  has_many :grade_due_dates,
+           class_name: "TaskDefinitionGradeDueDate",
+           dependent: :destroy
+
   has_many :discussion_prompts, dependent: :destroy
 
   serialize :upload_requirements, coder: JSON
@@ -108,6 +112,22 @@ class TaskDefinition < ApplicationRecord
 
   include TaskDefinitionTiiModule
   include TaskDefinitionSimilarityModule
+
+  # def p_due_date
+  #   due_date
+  # end
+
+  def c_due_date
+    grade_due_dates.find { |g| g.target_grade == 1 }&.target_due_date
+  end
+
+  def d_due_date
+    grade_due_dates.find { |g| g.target_grade == 2 }&.target_due_date
+  end
+
+  def hd_due_date
+    grade_due_dates.find { |g| g.target_grade == 3 }&.target_due_date
+  end
 
   def unit_must_be_same
     if unit.present? and tutorial_stream.present? and not unit.eql? tutorial_stream.unit

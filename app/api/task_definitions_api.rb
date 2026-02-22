@@ -136,6 +136,10 @@ class TaskDefinitionsApi < Grape::API
       optional :assess_in_portfolio_only, type: Boolean,  desc: 'Whether a task can only be signed off during portfolio assessment'
       optional :use_resources_for_jplag_base_code, type: Boolean, desc: 'Include the common base code from task resources for JPlag comparisons'
       optional :lock_assessments_to_tutorial_stream, type: Boolean, desc: 'Only allow tutors in this tutorial stream to assess this task'
+      # optional :p_due_date, type: Date, desc: 'Pass due date override'
+      optional :c_due_date, type: Date, desc: 'Credit due date override'
+      optional :d_due_date, type: Date, desc: 'Distinction due date override'
+      optional :hd_due_date, type: Date, desc: 'High Distinction due date override'
     end
   end
   put '/units/:unit_id/task_definitions/:id' do
@@ -145,6 +149,10 @@ class TaskDefinitionsApi < Grape::API
     unless authorise? current_user, task_def.unit, :add_task_def
       error!({ error: 'Not authorised to create a task definition of this unit' }, 403)
     end
+
+    # strip these out so TaskDefinition#update! never sees them
+    grade_due_overrides = params[:task_def].slice('p_due_date', 'c_due_date', 'd_due_date', 'hd_due_date')
+    params[:task_def].except!('p_due_date', 'c_due_date', 'd_due_date', 'hd_due_date')
 
     task_params = ActionController::Parameters.new(params)
                                               .require(:task_def)
@@ -193,6 +201,17 @@ class TaskDefinitionsApi < Grape::API
 
     # Bulk update task definition with permitted parameters
     task_def.update!(task_params)
+
+    grade_map = { 'c_due_date' => 1, 'd_due_date' => 2, 'hd_due_date' => 3 }
+
+    grade_due_overrides.each do |key, date|
+      next if date.blank?
+      next unless grade_map.key?(key) # skip p_due_date
+
+      TaskDefinitionGradeDueDate
+        .find_or_initialize_by(task_definition: task_def, target_grade: grade_map[key])
+        .update!(target_due_date: date)
+    end
 
     # Set the tutorial stream
     tutorial_stream_abbr = params[:task_def][:tutorial_stream_abbr]
