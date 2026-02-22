@@ -202,17 +202,6 @@ class TaskDefinitionsApi < Grape::API
     # Bulk update task definition with permitted parameters
     task_def.update!(task_params)
 
-    grade_map = { 'c_target_date' => 1, 'd_target_date' => 2, 'hd_target_date' => 3 }
-
-    grade_due_overrides.each do |key, date|
-      next if date.blank?
-      next unless grade_map.key?(key) # skip p_target_date
-
-      TaskDefinitionGradeDueDate
-        .find_or_initialize_by(task_definition: task_def, target_grade: grade_map[key])
-        .update!(target_due_date: date)
-    end
-
     # Set the tutorial stream
     tutorial_stream_abbr = params[:task_def][:tutorial_stream_abbr]
     unless tutorial_stream_abbr.nil?
@@ -235,6 +224,20 @@ class TaskDefinitionsApi < Grape::API
         task_def.group_set = nil
         task_def.save!
       end
+    end
+
+    grade_map = { 'c_target_date' => 1, 'd_target_date' => 2, 'hd_target_date' => 3 }
+
+    grade_due_overrides.each do |key, date|
+      next if date.blank?
+      next unless grade_map.key?(key) # skip p_target_date
+
+      if task_def.start_date > date
+        error!({ error: 'Target date cannot be earlier than start date' }, 400)
+      end
+      TaskDefinitionGradeDueDate
+        .find_or_initialize_by(task_definition: task_def, target_grade: grade_map[key])
+        .update!(target_due_date: date)
     end
 
     present task_def, with: Entities::TaskDefinitionEntity, my_role: unit.role_for(current_user)
