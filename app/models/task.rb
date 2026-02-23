@@ -480,9 +480,23 @@ class Task < ApplicationRecord
   def active_overflow_task_claim
     claim = overflow_task_claim
     return nil unless claim
-    # TODO: should it be 30 minutes of inactivity?
-    # TODO: eg. 30 minutes since the last task comment from the claimed tutor
-    return nil if claim.created_at < 30.minutes.ago
+
+    threshold = 30.minutes.ago
+    unit = project.unit
+
+    # Find latest comment made by the claiming unit role (on this task)
+    latest_by_claimer =
+      comments
+      .where('task_comments.created_at > ?', claim.created_at)
+      .includes(:user)
+      .select { |c| unit.unit_role_for(c.user)&.id == claim.claimed_by_unit_role_id }
+      .max_by(&:created_at)
+
+    # If they've commented, use that as the activity timer; otherwise fall back to claim time
+    last_activity_at = latest_by_claimer&.created_at || claim.created_at
+
+    return nil if last_activity_at < threshold
+
     claim
   end
 
