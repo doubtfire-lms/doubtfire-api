@@ -19,6 +19,10 @@ module Entities
       expose :target_date
       expose :due_date
       expose :start_date
+      # expose :p_target_date, expose_nil: false
+      expose :c_target_date, expose_nil: false
+      expose :d_target_date, expose_nil: false
+      expose :hd_target_date, expose_nil: false
     end
 
     expose :upload_requirements, expose_nil: false do |task_definition, options|
