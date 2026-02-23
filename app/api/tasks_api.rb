@@ -273,7 +273,7 @@ class TasksApi < Grape::API
         processing_pdf: task.processing_pdf?,
         task_status: task.task_status.status_key,
         # TODO: expose to staff only?
-        claimed_by_unit_role_id: task.overflow_task_claim&.claimed_by_unit_role_id
+        claimed_by_unit_role_id: task.active_overflow_task_claim&.claimed_by_unit_role_id
       }
     else
       result = {
@@ -494,10 +494,13 @@ class TasksApi < Grape::API
     task_definition = unit.task_definitions.find(params[:task_definition_id])
     task = project.task_for_task_definition(task_definition)
 
-    task_claim = OverflowTaskClaim.find_by(task: task)
+    task_claim = task.active_overflow_task_claim
     if task_claim
       error!({ error: "This task has already been claimed by another tutor" }, 409)
     end
+
+    inactive_claim = task.overflow_task_claim
+    inactive_claim&.destroy!
 
     # project.has_task_for_task_definition?(task_definition)
 
@@ -509,6 +512,8 @@ class TasksApi < Grape::API
     unless task_claim.valid?
       error!({ error: "Failed to claim task" }, 400)
     end
+
+    logger.info "Overflow task claim: {\"user_id\": #{current_user.id},\"task_id\": #{task.id}, \"timestamp\": \"#{Time.zone.now}\"}"
 
     true
   end
