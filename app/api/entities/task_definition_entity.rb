@@ -23,6 +23,10 @@ module Entities
       expose :c_target_date, expose_nil: false
       expose :d_target_date, expose_nil: false
       expose :hd_target_date, expose_nil: false
+
+      expose :c_start_date, expose_nil: false
+      expose :d_start_date, expose_nil: false
+      expose :hd_start_date, expose_nil: false
     end
 
     expose :upload_requirements, expose_nil: false do |task_definition, options|
