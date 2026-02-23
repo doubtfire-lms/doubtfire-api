@@ -232,9 +232,9 @@ class TaskDefinitionsApi < Grape::API
       next if date.blank?
       next unless grade_map.key?(key) # skip p_target_date
 
-      if task_def.start_date > date
-        error!({ error: 'Target date cannot be earlier than start date' }, 400)
-      end
+      # if task_def.start_date > date
+      #   error!({ error: 'Target date cannot be earlier than start date' }, 400)
+      # end
 
       unless unit.allow_flexible_dates
         error!({ error: 'This unit must have Allow Flexible Dates enabled to modify target dates per grade' }, 403)
