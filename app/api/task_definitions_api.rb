@@ -235,6 +235,11 @@ class TaskDefinitionsApi < Grape::API
       if task_def.start_date > date
         error!({ error: 'Target date cannot be earlier than start date' }, 400)
       end
+
+      unless unit.allow_flexible_dates
+        error!({ error: 'This unit must have Allow Flexible Dates enabled to modify target dates per grade' }, 403)
+      end
+
       TaskDefinitionGradeDueDate
         .find_or_initialize_by(task_definition: task_def, target_grade: grade_map[key])
         .update!(target_due_date: date)
