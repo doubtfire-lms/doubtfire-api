@@ -159,6 +159,7 @@ class TaskDefinitionsApi < Grape::API
       'p_start_date', 'c_start_date', 'd_start_date', 'hd_start_date'
     )
     params[:task_def].except!(
+      'p_target_date', 'c_target_date', 'd_target_date', 'hd_target_date',
       'p_start_date', 'c_start_date', 'd_start_date', 'hd_start_date'
     )
 
