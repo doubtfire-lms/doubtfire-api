@@ -117,6 +117,8 @@ class TaskDefinition < ApplicationRecord
   #   due_date
   # end
 
+  # Per-grade target date overrides
+
   def c_target_date
     grade_due_dates.find { |g| g.target_grade == 1 }&.target_due_date
   end
@@ -127,6 +129,20 @@ class TaskDefinition < ApplicationRecord
 
   def hd_target_date
     grade_due_dates.find { |g| g.target_grade == 3 }&.target_due_date
+  end
+
+  # Per-grade start date overrides
+
+  def c_start_date
+    grade_due_dates.find { |g| g.target_grade == 1 }&.start_date
+  end
+
+  def d_start_date
+    grade_due_dates.find { |g| g.target_grade == 2 }&.start_date
+  end
+
+  def hd_start_date
+    grade_due_dates.find { |g| g.target_grade == 3 }&.start_date
   end
 
   def unit_must_be_same
