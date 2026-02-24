@@ -8,7 +8,6 @@ class AddOverflowMarking < ActiveRecord::Migration[8.0]
     create_table :overflow_task_claims do |t|
       t.references :task, null: false, index: { unique: true }
       t.bigint :claimed_by_unit_role_id, null: false
-      # TODO: t.int :times_claimed?
       t.timestamps
     end
   end
