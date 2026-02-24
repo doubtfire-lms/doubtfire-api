@@ -116,7 +116,11 @@ class AcceptOverseerJob
 
     decoded =
       if script_contents.start_with?("b64:")
-        Base64.urlsafe_decode64(script_contents.delete_prefix("b64:"))
+        begin
+          Base64.urlsafe_decode64(script_contents.delete_prefix("b64:"))
+        rescue ArgumentError
+          raise "Invalid overseer script content"
+        end
       else
         script_contents
       end
