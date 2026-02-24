@@ -2244,43 +2244,67 @@ class Unit < ApplicationRecord
   end
 
 
-  # TODO: description
-  def tasks_for_overflow_marking(_user)
-    threshold = feedback_overflow_threshold_days.days.ago
+  #
+  # Return the tasks that have been waiting for feedback the longest (past the unit's feedback threshold setting)
+  #
+  # Tasks that are included are:
+  # - If the task is ready for feedback
+  # - Has been submitted more than {{ unit.feedback_overflow_threshold_days }} days ago
+  # - Has not been claimed by another tutor
+  #
+  # Tasks claimed by the current user will be shown first, then sorted by showing oldest submitted tasks first
+  #
+  def tasks_for_overflow_marking(user)
+    threshold     = feedback_overflow_threshold_days.days.ago
+    unit_role_id  = unit_role_for(user)&.id
 
-    # TODO: filter out tasks have been claimed by anyone other than current_user
-    # TODO: if some of these are claimed by the current_user, they should be prioritised to the top
-    student_tasks
-      .includes(:comments)
-      .where(projects: { unit_id: id })
-      .joins(:task_definition)
-      .where(tasks: { task_status_id: TaskStatus.ready_for_feedback.id })
-      .where('tasks.submission_date <= ?', threshold)
-      .order('tasks.submission_date ASC')
-      .select(
-        'tasks.id AS task_id',
-        'tasks.project_id',
-        'tasks.task_definition_id',
-        '(SELECT te.tutorial_id
-            FROM tutorial_enrolments te
-            WHERE te.project_id = tasks.project_id
-            ORDER BY te.created_at DESC
-            LIMIT 1) AS tutorial_id',
-        'tasks.task_status_id AS status_id',
-        'tasks.completion_date',
-        'tasks.submission_date',
-        'tasks.times_assessed',
-        'tasks.grade',
-        'tasks.quality_pts',
-        '0 AS number_unread',
-        '0 AS similar_to_count',
-        'false AS pinned',
-        'false AS has_extensions',
-        'tasks.*'
-      )
-      .distinct
+    tasks = student_tasks
+              .includes(:comments, :overflow_task_claim)
+              .where(projects: { unit_id: id })
+              .joins(:task_definition)
+              .where(tasks: { task_status_id: TaskStatus.ready_for_feedback.id })
+              .where('tasks.submission_date <= ?', threshold)
+              .select(
+                'tasks.id AS task_id',
+                'tasks.project_id',
+                'tasks.task_definition_id',
+                '(SELECT te.tutorial_id
+                      FROM tutorial_enrolments te
+                      WHERE te.project_id = tasks.project_id
+                      ORDER BY te.created_at DESC
+                      LIMIT 1) AS tutorial_id',
+                'tasks.task_status_id AS status_id',
+                'tasks.completion_date',
+                'tasks.submission_date',
+                'tasks.times_assessed',
+                'tasks.grade',
+                'tasks.quality_pts',
+                '0 AS number_unread',
+                '0 AS similar_to_count',
+                'false AS pinned',
+                'false AS has_extensions',
+                'tasks.*'
+          )
+              .distinct
+              .to_a
+
+    # Filter out tasks claimed by someone else (active claim only)
+    tasks = tasks.select do |task|
+      claim = task.active_overflow_task_claim
+      claim.nil? || claim.claimed_by_unit_role_id == unit_role_id
+    end
+
+    # Sort:
+    # 1) tasks claimed by current user (active claim) first
+    # 2) then oldest submission first
+    tasks.sort_by! do |task|
+      claim = task.active_overflow_task_claim
+      claimed_by_me = claim && claim.claimed_by_unit_role_id == unit_role_id ? 0 : 1
+      [claimed_by_me, task.submission_date]
+    end
+
+    tasks
   end
-
 
   #
   # Return stats on the number of students in each status for each task / tutorial
