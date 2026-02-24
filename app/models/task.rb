@@ -724,6 +724,7 @@ class Task < ApplicationRecord
           next unless task.task_status == TaskStatus.ready_for_feedback
           # Since we are calling this assess method again, we recursively check for more dependent tasks that need to be updated
           task.assess(TaskStatus.fix_and_resubmit, assessor, assess_date)
+          task.add_status_comment(assessor, TaskStatus.fix_and_resubmit)
           task.add_text_comment(assessor, "**Automated comment**: A prerequisite task was updated to Fix and Resubmit, so this task was updated as well. You may need to review and update the prerequisite before resubmitting.")
         end
       end

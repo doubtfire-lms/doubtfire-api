@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_23_014709) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_24_222539) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -407,9 +407,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_23_014709) do
   create_table "task_definition_grade_due_dates", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.bigint "task_definition_id", null: false
     t.integer "target_grade", null: false
-    t.datetime "target_due_date", null: false
+    t.datetime "target_due_date"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "start_date"
     t.index ["task_definition_id", "target_grade"], name: "idx_td_grade_due_unique", unique: true
     t.index ["task_definition_id"], name: "index_task_definition_grade_due_dates_on_task_definition_id"
   end
