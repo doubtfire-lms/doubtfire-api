@@ -114,9 +114,20 @@ class AcceptOverseerJob
     script_contents = step.run_command
     raise "Execution script is empty" if script_contents.blank?
 
+    decoded =
+      if script_contents.start_with?("b64:")
+        begin
+          Base64.urlsafe_decode64(script_contents.delete_prefix("b64:"))
+        rescue ArgumentError
+          raise "Invalid overseer script content"
+        end
+      else
+        script_contents
+      end
+
     # Create script
     run_sh_path = File.join(work_dir, 'run.sh')
-    File.write(run_sh_path, script_contents)
+    File.write(run_sh_path, decoded)
 
     # Ensure script is executable
     system("chmod +x #{run_sh_path}")
