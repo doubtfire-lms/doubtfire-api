@@ -276,7 +276,6 @@ class TasksApi < Grape::API
                  processing_pdf: task.processing_pdf?,
                  task_status: task.task_status.status_key
                }
-
              else
                {
                  has_pdf: false,
