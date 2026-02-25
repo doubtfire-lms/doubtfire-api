@@ -479,14 +479,12 @@ class TasksApi < Grape::API
     requires :id, type: Integer, desc: 'The project id'
     requires :task_definition_id, type: Integer, desc: 'The id of the task definition for the task to review'
   end
-  # post '/tasks/:id/claim_overflow_task' do
   post '/projects/:id/task_def_id/:task_definition_id/claim_overflow_task' do
     project = Project.find(params[:id])
 
     # task = Task.find(params[:id])
     unit = project.unit
 
-    # TODO: check if current user is a staff in this unit
     my_unit_role = unit.unit_role_for(current_user)
     unless my_unit_role
       error!({ error: "Not a part of this unit" }, 400)
