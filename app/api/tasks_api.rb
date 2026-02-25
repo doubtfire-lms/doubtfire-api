@@ -482,7 +482,6 @@ class TasksApi < Grape::API
   post '/projects/:id/task_def_id/:task_definition_id/claim_overflow_task' do
     project = Project.find(params[:id])
 
-    # task = Task.find(params[:id])
     unit = project.unit
 
     my_unit_role = unit.unit_role_for(current_user)
@@ -504,8 +503,6 @@ class TasksApi < Grape::API
 
     inactive_claim = task.overflow_task_claim
     inactive_claim&.destroy!
-
-    # project.has_task_for_task_definition?(task_definition)
 
     task_claim = OverflowTaskClaim.create!({
                                              task: task,
