@@ -72,6 +72,7 @@ class UnitRolesApi < Grape::API
       requires :role_id, type: Integer, desc: 'The role to create with'
       optional :observer_only, type: Boolean, desc: 'If the staff has read-only permissions'
       optional :mentor_id, type: Integer, desc: 'Assign a mentor to this unit role'
+      optional :can_mark_overflow_tasks, type: Boolean, desc: 'If the staff can access overflow marking'
     end
   end
   put '/unit_roles/:id' do
@@ -101,7 +102,8 @@ class UnitRolesApi < Grape::API
                                                        .permit(
                                                          :role_id,
                                                          :observer_only,
-                                                         :mentor_id
+                                                         :mentor_id,
+                                                         :can_mark_overflow_tasks
                                                        )
 
     if unit_role_parameters[:role_id] == Role.tutor.id && unit_role.role == Role.convenor && unit_role.unit.convenors.count == 1

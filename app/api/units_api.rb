@@ -90,6 +90,8 @@ class UnitsApi < Grape::API
       optional :extension_weeks_on_resubmit_request, type: Integer, desc: 'Determines the number of weeks extension on a resubmit request'
       optional :overseer_image_id, type: Integer, desc: 'The id of the docker image used with '
       optional :assessment_enabled, type: Boolean
+      optional :feedback_warning_threshold_days, type: Integer, desc: 'Number of days since a submission without feedback before its highlighted in the tutors inbox'
+      optional :feedback_overflow_threshold_days, type: Integer, desc: 'Number of days since a submission without feedback before its added to overflow marking'
 
       mutually_exclusive :teaching_period_id, :start_date
       mutually_exclusive :teaching_period_id, :end_date
@@ -122,7 +124,10 @@ class UnitsApi < Grape::API
                                                           :extension_weeks_on_resubmit_request,
                                                           :allow_student_change_tutorial,
                                                           :overseer_image_id,
-                                                          :assessment_enabled)
+                                                          :assessment_enabled,
+                                                          :feedback_warning_threshold_days,
+                                                          :feedback_overflow_threshold_days
+                                                          )
 
     if unit.teaching_period_id.present? && (unit_parameters.key?(:start_date) || unit_parameters['teaching_period_id'] == -1)
       unit.teaching_period = nil
@@ -167,6 +172,8 @@ class UnitsApi < Grape::API
       optional :extension_weeks_on_resubmit_request, type: Integer, desc: 'Determines the number of weeks extension on a resubmit request', default: 1
       optional :portfolio_auto_generation_date, type: Date, desc: 'Indicates a date where student portfolio will automatically compile'
       optional :allow_student_change_tutorial, type: Boolean, desc: 'Can turn on/off student ability to change tutorials', default: true
+      optional :feedback_warning_threshold_days, type: Integer, desc: 'Number of days since a submission without feedback before its highlighted in the tutors inbox'
+      optional :feedback_overflow_threshold_days, type: Integer, desc: 'Number of days since a submission without feedback before its added to overflow marking'
 
       mutually_exclusive :teaching_period_id, :start_date
       mutually_exclusive :teaching_period_id, :end_date
@@ -197,6 +204,8 @@ class UnitsApi < Grape::API
                                                     :extension_weeks_on_resubmit_request,
                                                     :portfolio_auto_generation_date,
                                                     :allow_student_change_tutorial,
+                                                    :feedback_warning_threshold_days,
+                                                    :feedback_overflow_threshold_days
                                                   )
 
     # Ensure the user is authorised to convene units
@@ -337,6 +346,27 @@ class UnitsApi < Grape::API
     end
     # present unit.tasks_as_hash(tasks), with: Grape::Presenters::Presenter
     present data, with: Grape::Presenters::Presenter
+  end
+
+  desc 'Get tasks ready for overflow marking'
+  get '/units/:id/tasks/overflow' do
+    unit = Unit.find(params[:id])
+
+    unless authorise? current_user, unit, :get_students
+      error!({ error: 'Not authorised to provide feedback for this unit' }, 403)
+    end
+
+    unless authorise? current_user, unit, :provide_feedback
+      error!({ error: 'Not authorised to provide feedback for this unit' }, 403)
+    end
+
+    unit_role = unit.unit_role_for(current_user)
+    unless unit_role&.can_mark_overflow_tasks?
+      error!({ error: 'Not authorised to access overflow queue' }, 403)
+    end
+
+    tasks = unit.tasks_for_overflow_marking(current_user)
+    present unit.tasks_as_hash(tasks), with: Grape::Presenters::Presenter
   end
 
   desc 'Download the grades for a unit'
