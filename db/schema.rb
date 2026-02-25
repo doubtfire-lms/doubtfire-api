@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_23_064434) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_24_222539) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -224,6 +224,14 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_23_064434) do
     t.index ["task_definition_id"], name: "index_moderated_tasks_on_task_definition_id"
     t.index ["task_id", "moderation_type"], name: "uniq_mod_tasks_task_type", unique: true
     t.index ["task_id"], name: "index_moderated_tasks_on_task_id"
+  end
+
+  create_table "overflow_task_claims", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "task_id", null: false
+    t.bigint "claimed_by_unit_role_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["task_id"], name: "index_overflow_task_claims_on_task_id", unique: true
   end
 
   create_table "overseer_assessments", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
@@ -694,6 +702,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_23_064434) do
     t.bigint "unit_id"
     t.boolean "observer_only", default: false
     t.bigint "mentor_id"
+    t.boolean "can_mark_overflow_tasks", default: false
     t.index ["mentor_id"], name: "index_unit_roles_on_mentor_id"
     t.index ["role_id"], name: "index_unit_roles_on_role_id"
     t.index ["tutorial_id"], name: "index_unit_roles_on_tutorial_id"
@@ -729,6 +738,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_23_064434) do
     t.boolean "allow_flexible_dates", default: false, null: false
     t.datetime "portfolio_due_date"
     t.boolean "mark_late_submissions_as_assess_in_portfolio", default: false, null: false
+    t.integer "feedback_warning_threshold_days", default: 5
+    t.integer "feedback_overflow_threshold_days", default: 7
     t.index ["draft_task_definition_id"], name: "index_units_on_draft_task_definition_id"
     t.index ["main_convenor_id"], name: "index_units_on_main_convenor_id"
     t.index ["overseer_image_id"], name: "index_units_on_overseer_image_id"

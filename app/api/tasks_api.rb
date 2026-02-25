@@ -261,23 +261,31 @@ class TasksApi < Grape::API
     needs_upload_docs = !task_definition.upload_requirements.empty?
 
     task = nil
+    unit_role = project.unit.unit_role_for(current_user)
 
     # check if we actually have this task... if not must be false.
-    if needs_upload_docs && project.has_task_for_task_definition?(task_definition)
+    if project.has_task_for_task_definition?(task_definition)
       task = project.task_for_task_definition(task_definition)
+    end
 
-      # return the details as json
-      result = {
-        has_pdf: task.has_pdf,
-        submission_date: task.submission_date,
-        processing_pdf: task.processing_pdf?,
-        task_status: task.task_status.status_key
-      }
-    else
-      result = {
-        has_pdf: false,
-        processing_pdf: false
-      }
+    result = if needs_upload_docs && task
+               # return the details as json
+               {
+                 has_pdf: task.has_pdf,
+                 submission_date: task.submission_date,
+                 processing_pdf: task.processing_pdf?,
+                 task_status: task.task_status.status_key
+               }
+             else
+               {
+                 has_pdf: false,
+                 processing_pdf: false
+               }
+             end
+
+    # Expose task claim to staff only
+    if unit_role
+      result[:claimed_by_unit_role_id] = task&.active_overflow_task_claim&.claimed_by_unit_role_id
     end
 
     SessionTracker.record_assessment_activity(
@@ -463,6 +471,50 @@ class TasksApi < Grape::API
     end
 
     task.add_feedback_review_request_comment(current_user)
+
+    true
+  end
+
+  desc 'Claim a task from the overflow queue'
+  params do
+    requires :id, type: Integer, desc: 'The project id'
+    requires :task_definition_id, type: Integer, desc: 'The id of the task definition for the task to review'
+  end
+  post '/projects/:id/task_def_id/:task_definition_id/claim_overflow_task' do
+    project = Project.find(params[:id])
+
+    unit = project.unit
+
+    my_unit_role = unit.unit_role_for(current_user)
+    unless my_unit_role
+      error!({ error: "Not a part of this unit" }, 400)
+    end
+
+    unless my_unit_role.can_mark_overflow_tasks?
+      error!({ error: "Not allowed to claim task" }, 400)
+    end
+
+    task_definition = unit.task_definitions.find(params[:task_definition_id])
+    task = project.task_for_task_definition(task_definition)
+
+    task_claim = task.active_overflow_task_claim
+    if task_claim
+      error!({ error: "This task has already been claimed by another tutor" }, 409)
+    end
+
+    inactive_claim = task.overflow_task_claim
+    inactive_claim&.destroy!
+
+    task_claim = OverflowTaskClaim.create!({
+                                             task: task,
+                                             claimed_by_unit_role_id: my_unit_role.id
+                                           })
+
+    unless task_claim.valid?
+      error!({ error: "Failed to claim task" }, 400)
+    end
+
+    logger.info "Overflow task claim: {\"user_id\": #{current_user.id},\"task_id\": #{task.id}, \"timestamp\": \"#{Time.zone.now}\"}"
 
     true
   end

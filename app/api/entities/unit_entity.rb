@@ -64,5 +64,8 @@ module Entities
     # expose :group_memberships, using: GroupMembershipEntity, unless: :summary_only do |unit, options|
     #   unit.group_memberships.where(active: true)
     # end
+
+    expose :feedback_warning_threshold_days, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
+    expose :feedback_overflow_threshold_days, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
   end
 end
