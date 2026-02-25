@@ -264,27 +264,29 @@ class TasksApi < Grape::API
     unit_role = project.unit.unit_role_for(current_user)
 
     # check if we actually have this task... if not must be false.
-    if needs_upload_docs && project.has_task_for_task_definition?(task_definition)
+    if project.has_task_for_task_definition?(task_definition)
       task = project.task_for_task_definition(task_definition)
+    end
 
-      # return the details as json
-      result = {
-        has_pdf: task.has_pdf,
-        submission_date: task.submission_date,
-        processing_pdf: task.processing_pdf?,
-        task_status: task.task_status.status_key
-      }
+    result = if needs_upload_docs && task
+               # return the details as json
+               {
+                 has_pdf: task.has_pdf,
+                 submission_date: task.submission_date,
+                 processing_pdf: task.processing_pdf?,
+                 task_status: task.task_status.status_key
+               }
 
-      # Expose task claim to staff only
-      if unit_role
-        result[:claimed_by_unit_role_id] =
-          task.active_overflow_task_claim&.claimed_by_unit_role_id
-      end
-    else
-      result = {
-        has_pdf: false,
-        processing_pdf: false
-      }
+             else
+               {
+                 has_pdf: false,
+                 processing_pdf: false
+               }
+             end
+
+    # Expose task claim to staff only
+    if unit_role
+      result[:claimed_by_unit_role_id] = task&.active_overflow_task_claim&.claimed_by_unit_role_id
     end
 
     SessionTracker.record_assessment_activity(
