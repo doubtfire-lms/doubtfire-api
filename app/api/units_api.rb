@@ -360,7 +360,10 @@ class UnitsApi < Grape::API
       error!({ error: 'Not authorised to provide feedback for this unit' }, 403)
     end
 
-    # TODO: can this unit_role access overflow marking?
+    unit_role = unit.unit_role_for(current_user)
+    unless unit_role&.can_mark_overflow_tasks?
+      error!({ error: 'Not authorised to access overflow queue' }, 403)
+    end
 
     tasks = unit.tasks_for_overflow_marking(current_user)
     data = tasks.map do |t|
@@ -379,7 +382,6 @@ class UnitsApi < Grape::API
         similarity_flag: t.similar_to_count > 0,
         pinned: t.pinned,
         has_extensions: t.has_extensions
-        # TODO: expose claimed by unit role id?
       }
     end
     # present unit.tasks_as_hash(tasks), with: Grape::Presenters::Presenter
