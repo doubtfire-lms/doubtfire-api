@@ -124,5 +124,19 @@ module Admin
 
       present job, with: Entities::SidekiqJobEntity
     end
+    desc 'Get available space'
+    get '/admin/disk_space' do
+      unless authorise? current_user, User, :use_overseer
+        error!({ error: 'Not authorised to get disk space' }, 403)
+      end
+
+      stat = Sys::Filesystem.stat("/")
+      free_bytes = stat.block_size * stat.blocks_available
+      free_gb = free_bytes.to_f / 1024 / 1024 / 1024
+
+      present free_gb.round(2), with: Grape::Presenters::Presenter
+    rescue Sys::Filesystem::Error => e
+      error!({ error: "Filesystem stat failed", detail: e.message }, 500)
+    end
   end
 end
