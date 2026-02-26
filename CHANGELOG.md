@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-77](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-76...v10.0.0-77) (2026-02-26)
+
+
+### Features
+
+* return available server disk space ([#579](https://github.com/b0ink/doubtfire-deploy/issues/579)) ([e2c9fac](https://github.com/b0ink/doubtfire-deploy/commit/e2c9fac1b105ae74c77938ae2777356c778770f4))
+
 ## [10.0.0-76](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-75...v10.0.0-76) (2026-02-25)
 
 
