@@ -56,7 +56,7 @@ class AcceptSubmissionJob
     end
 
     # When converted, we can now send documents to turn it in for checking
-    if TurnItIn.enabled?
+    if TurnItIn.enabled? && !test_submission
       task.send_documents_to_tii(user, accepted_tii_eula: accepted_tii_eula)
     end
 
