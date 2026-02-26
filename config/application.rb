@@ -311,6 +311,10 @@ module Doubtfire
         raise 'Overseer configuration error: you must set either OVERSEER_WORKDIR_VOLUME_MOUNT or OVERSEER_FALLBACK_VOLUME_CONTAINER.'
       end
 
+      # Enables the endpoint to return how much available storage is left on the device the API is hosted on (often docker volume storage)
+      # Used to ensure enough space is available to pull new images for Overseer
+      config.disk_space_endpoint_enabled = %w[true 1 yes].include?(ENV['DISK_SPACE_ENDPOINT_ENABLED']&.downcase)
+
       config.after_initialize do
         if config.docker_config[:DOCKER_TOKEN] && config.docker_config[:DOCKER_PROXY_URL]
           LoginDockerJob.perform_async

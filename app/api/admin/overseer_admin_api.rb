@@ -124,9 +124,14 @@ module Admin
 
       present job, with: Entities::SidekiqJobEntity
     end
+
     desc 'Get available space'
     get '/admin/disk_space' do
       unless authorise? current_user, User, :use_overseer
+        error!({ error: 'Not authorised to get disk space' }, 403)
+      end
+
+      unless  Doubtfire::Application.config.disk_space_endpoint_enabled
         error!({ error: 'Not authorised to get disk space' }, 403)
       end
 
