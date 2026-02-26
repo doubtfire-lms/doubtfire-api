@@ -131,7 +131,7 @@ module Admin
         error!({ error: 'Not authorised to get disk space' }, 403)
       end
 
-      unless  Doubtfire::Application.config.disk_space_endpoint_enabled
+      unless Doubtfire::Application.config.disk_space_endpoint_enabled
         error!({ error: 'Not authorised to get disk space' }, 403)
       end
 
