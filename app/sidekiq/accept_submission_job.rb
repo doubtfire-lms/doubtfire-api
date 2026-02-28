@@ -60,13 +60,16 @@ class AcceptSubmissionJob
       task.send_documents_to_tii(user, accepted_tii_eula: accepted_tii_eula)
     end
 
-    if task.overseer_enabled? || test_submission
-      overseer_assessment = OverseerAssessment.create_for(task, test_submission)
+    # Save a snapshot of the submission files to view later
+    # TODO: enable historu for a task definition? or per upload requirement?
+    submission_history = SubmissionHistory.create_for(task)
+
+    if submission_history.present? && (task.overseer_enabled? || test_submission)
+      # TODO: pass the submission_history ID or timestamp to overseer, to access the submission_history directory
+      overseer_assessment = OverseerAssessment.create_for(submission_history.timestamp, task, test_submission)
       if overseer_assessment.present?
         logger.info "Launching Overseer assessment for task_def_id: #{task.task_definition.id} task_id: #{task.id}"
-
         overseer_assessment.send_to_overseer(test_submission: test_submission)
-
       else
         logger.info "Overseer assessment for task_def_id: #{task.task_definition.id} task_id: #{task.id} was not performed #{overseer_assessment.inspect}"
       end

@@ -20,7 +20,7 @@ class OverseerAssessment < ApplicationRecord
   # TODO: we might not have an overseerStepResult because a new test was added later
 
   # Creates an OverseerAssessment object for a new submission
-  def self.create_for(task, test_submission)
+  def self.create_for(task, _timestamp, test_submission)
     # Create only if:
     # unit's assessment is enabled &&
     # task's assessment is enabled &&
@@ -60,6 +60,7 @@ class OverseerAssessment < ApplicationRecord
   end
 
   def submission_zip_file_name
+    # /submission_history/{UNIT}/{USERNAME}/done/submission.zip
     "#{output_path}/submission.zip"
   end
 
@@ -77,6 +78,8 @@ class OverseerAssessment < ApplicationRecord
       task.compress_new_to_done zip_file_path: zip_file_path, rm_task_dir: false, rename_files: true
     else
       puts "Copying done file to submission at: #{zip_file_path}"
+      # TODO: here is where we might want to refactor submission history - enabling it separate from overseer
+      # TODO: so if "submission history" is enabled for an upload req,
       task.copy_done_to zip_file_path
     end
   end
