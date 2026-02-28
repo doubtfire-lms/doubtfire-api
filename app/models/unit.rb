@@ -2245,7 +2245,14 @@ class Unit < ApplicationRecord
       if mt.escalation?
         [task, Time.zone.at(0)]
       else
-        tutor_comments = task.comments.select { |c| c.user == task.tutor }
+        # Ignore automated comments sent from the tutor
+        tutor_comments = task.comments.select do |c|
+          c.user == task.tutor &&
+            c.content_type != "assessment" &&
+            !c.comment&.include?("**Automated comment**: Some tests did not pass for this submission.") &&
+            !c.comment&.include?("**Automated Comment**: Something went wrong with your submission")
+        end
+
         next nil if tutor_comments.empty?
 
         most_recent = tutor_comments.max_by(&:created_at)
