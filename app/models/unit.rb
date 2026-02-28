@@ -2245,10 +2245,11 @@ class Unit < ApplicationRecord
       if mt.escalation?
         [task, Time.zone.at(0)]
       else
-        # Ignore automated comments sent from the tutor
+        # Skip automated comments that the tutor did not manually send
         tutor_comments = task.comments.select do |c|
           c.user == task.tutor &&
-            c.content_type != "assessment" &&
+            %w[status discussed_in_class text].include?(c.content_type) &&
+            (c.content_type != "status" || c.task_status != "time_exceeded") &&
             !c.comment&.include?("**Automated comment**: Some tests did not pass for this submission.") &&
             !c.comment&.include?("**Automated Comment**: Something went wrong with your submission")
         end
