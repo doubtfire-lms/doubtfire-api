@@ -2245,13 +2245,24 @@ class Unit < ApplicationRecord
       if mt.escalation?
         [task, Time.zone.at(0)]
       else
-        # Skip automated comments that the tutor did not manually send
-        tutor_comments = task.comments.select do |c|
+        sorted = task.comments.sort_by(&:created_at)
+
+        tutor_comments = sorted.select.with_index do |c, i|
+          nxt = sorted[i + 1]
+
+          # Automated comments after a status comment should be filtered out (Overseer test result, corrupt submission)
+          # Except for when its been updated due to a prerequisite fix
+          is_automated_status =
+            c.content_type == "status" &&
+            nxt&.content_type == "text" &&
+           (nxt.comment&.downcase&.include?("**automated comment**: some tests did not pass") ||
+            nxt.comment&.downcase&.include?("**automated comment**: something went wrong with your submission"))
+
           c.user == task.tutor &&
             %w[status discussed_in_class text].include?(c.content_type) &&
             (c.content_type != "status" || c.task_status != "time_exceeded") &&
-            !c.comment&.include?("**Automated comment**: Some tests did not pass for this submission.") &&
-            !c.comment&.include?("**Automated Comment**: Something went wrong with your submission")
+            !is_automated_status &&
+            !c.comment&.downcase&.include?("**automated comment**:")
         end
 
         next nil if tutor_comments.empty?
