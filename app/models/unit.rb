@@ -2203,32 +2203,36 @@ class Unit < ApplicationRecord
     my_unit_role = unit_role_for(user)
     mentees = my_unit_role ? staff.where(mentor_id: my_unit_role.id) : staff.none
 
-    tasks = student_tasks
-                .includes(:comments)
-                .left_joins(:moderated_task)
-                .where(moderated_tasks: { state: %i[open waiting_for_new_feedback] })
-                .where(projects: { unit_id: id })
-                .joins(:task_definition)
-                .joins(project: { tutorial_enrolments: :tutorial })
-                .where('tutorials.tutorial_stream_id = task_definitions.tutorial_stream_id')
-                .select(
-                  'tasks.id AS task_id',
-                  'tasks.project_id',
-                  'tasks.task_definition_id',
-                  'tutorials.id AS tutorial_id',
-                  'tasks.task_status_id AS status_id',
-                  'tasks.completion_date',
-                  'tasks.submission_date',
-                  'tasks.times_assessed',
-                  'tasks.grade',
-                  'tasks.quality_pts',
-                  '0 AS number_unread',
-                  '0 AS similar_to_count',
-                  'false AS pinned',
-                  'false AS has_extensions',
-                  'tasks.*',
+    moderated_tasks = ModeratedTask
+      .where(state: %i[open waiting_for_new_feedback])
+      .joins(task: [:task_definition, { project: { tutorial_enrolments: :tutorial } }])
+      .where(tasks: { project_id: projects.select(:id) })
+      .where('tutorials.tutorial_stream_id = task_definitions.tutorial_stream_id')
+      .includes(task: :comments)
+      .distinct
+
+    tasks = Task
+      .joins(:moderated_task)
+      .merge(moderated_tasks)
+      .includes(:comments)
+      .select(
+        'tasks.id AS task_id',
+        'tasks.project_id',
+        'tasks.task_definition_id',
+        'tutorials.id AS tutorial_id',
+        'tasks.task_status_id AS status_id',
+        'tasks.completion_date',
+        'tasks.submission_date',
+        'tasks.times_assessed',
+        'tasks.grade',
+        'tasks.quality_pts',
+        '0 AS number_unread',
+        '0 AS similar_to_count',
+        'false AS pinned',
+        'false AS has_extensions',
+        'tasks.*',
       )
-                .distinct
+      .distinct
 
     if my_unit_role.nil? || my_unit_role.role != Role.convenor
       tasks = tasks.where(tutorials: { unit_role_id: mentees.select(:id) })
