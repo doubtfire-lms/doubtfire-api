@@ -138,7 +138,7 @@ class UnitRolesApi < Grape::API
     end
 
     action = params[:action].downcase
-    unless %w[show_more show_less dismiss_ok upheld overturn].include?(action)
+    unless %w[show_more show_less dismiss_ok upheld overturn snooze].include?(action)
       error!({ error: 'Invalid moderation action' }, 400)
     end
 
