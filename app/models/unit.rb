@@ -1546,7 +1546,8 @@ class Unit < ApplicationRecord
     if teaching_period.present?
       teaching_period.date_for_week_and_day(week, day)
     else
-      day_num = Date::ABBR_DAYNAMES.index day.titlecase
+      # day_num = Date::ABBR_DAYNAMES.index day.titlecase
+      day_num = %w[Mon Tue Wed Thu Fri Sat Sun].index(day.titlecase) + 1
       return nil if day_num.nil?
 
       start_day_num = start_date.wday
