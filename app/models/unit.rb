@@ -2260,7 +2260,8 @@ class Unit < ApplicationRecord
             c.content_type == "status" &&
             nxt&.content_type == "text" &&
            (nxt.comment&.downcase&.include?("**automated comment**: some tests did not pass") ||
-            nxt.comment&.downcase&.include?("**automated comment**: something went wrong with your submission"))
+            nxt.comment&.downcase&.include?("**automated comment**: something went wrong with your submission") ||
+            nxt.comment&.downcase&.include?("**automated comment**: a prerequisite task was updated to fix and resubmit"))
 
           c.user == task.tutor &&
             %w[status discussed_in_class text].include?(c.content_type) &&
