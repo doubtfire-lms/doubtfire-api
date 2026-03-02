@@ -149,7 +149,7 @@ class UnitRolesApi < Grape::API
         error!({ error: 'This task is under Feedback Review. Only review actions (upheld or overturn) are allowed. Please refresh the moderation queue.' }, 400)
       end
     else
-      unless %w[show_more show_less dismiss_ok].include?(action)
+      unless %w[show_more show_less dismiss_ok snooze].include?(action)
         error!({ error: 'Invalid action for this moderated task. Please refresh moderation queue.' }, 400)
       end
     end
@@ -175,6 +175,9 @@ class UnitRolesApi < Grape::API
     case action
     when 'show_more'
       delta = -1
+      state = :waiting_for_new_feedback
+    when 'snooze'
+      delta = 0
       state = :waiting_for_new_feedback
     when 'show_less'
       delta = 1
