@@ -110,7 +110,8 @@ class TeachingPeriod < ApplicationRecord
 
     week_start = date_for_week(week)
 
-    day_num = Date::ABBR_DAYNAMES.index day.titlecase
+    # day_num = Date::ABBR_DAYNAMES.index day.titlecase
+    day_num = %w[Mon Tue Wed Thu Fri Sat Sun].index(day.titlecase)
     return nil if day_num.nil?
 
     start_day_num = start_date.wday

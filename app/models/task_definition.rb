@@ -451,7 +451,8 @@ class TaskDefinition < ApplicationRecord
   end
 
   def start_day
-    Date::ABBR_DAYNAMES[start_date.wday]
+    # Date::ABBR_DAYNAMES[start_date.wday]
+    %w[Mon Tue Wed Thu Fri Sat Sun][(start_date.wday - 1) % 7]
   end
 
   def start_week_and_day= value
@@ -464,7 +465,8 @@ class TaskDefinition < ApplicationRecord
   end
 
   def target_day
-    Date::ABBR_DAYNAMES[target_date.wday]
+    # Date::ABBR_DAYNAMES[target_date.wday]
+    %w[Mon Tue Wed Thu Fri Sat Sun][(target_date.wday - 1) % 7]
   end
 
   def target_week_and_day= value
@@ -492,9 +494,17 @@ class TaskDefinition < ApplicationRecord
     self.due_date = unit.date_for_week_and_day(week, day)
   end
 
+  # def due_day
+  #   if due_date
+  #     Date::ABBR_DAYNAMES[due_date.wday]
+  #   else
+  #     ''
+  #   end
+  # end
+
   def due_day
     if due_date
-      Date::ABBR_DAYNAMES[due_date.wday]
+      %w[Mon Tue Wed Thu Fri Sat Sun][(due_date.wday - 1) % 7]
     else
       ''
     end

@@ -351,7 +351,12 @@ class Unit < ApplicationRecord
 
     if self.portfolio_auto_generation_date.present?
       # Update the portfolio auto generation date to be the same day of the week and week number as the old date
-      new_unit.portfolio_auto_generation_date = new_unit.date_for_week_and_day(week_number(self.portfolio_auto_generation_date), Date::ABBR_DAYNAMES[self.portfolio_auto_generation_date.wday])
+      new_unit.portfolio_auto_generation_date =
+        new_unit.date_for_week_and_day(
+          week_number(self.portfolio_auto_generation_date),
+          %w[Mon Tue Wed Thu Fri Sat Sun][(self.portfolio_auto_generation_date.wday - 1) % 7]
+        )
+      # new_unit.portfolio_auto_generation_date = new_unit.date_for_week_and_day(week_number(self.portfolio_auto_generation_date), Date::ABBR_DAYNAMES[self.portfolio_auto_generation_date.wday])
     end
 
     # Clear main convenor - do not use old role id
