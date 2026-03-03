@@ -16,7 +16,7 @@ class TutorialsTest < ActiveSupport::TestCase
 
   # --------------------------------------------------------------------------- #
 
-  #####----------POST tests - Create tutorial----------#####
+  # ####----------POST tests - Create tutorial----------#####
 
   def assert_tutorial_model_response(response, expected)
     assert_json_matches_model expected, response, %w[id meeting_day meeting_time meeting_location abbreviation campus_id capacity]
@@ -28,6 +28,7 @@ class TutorialsTest < ActiveSupport::TestCase
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
 
     tutorial = {
       unit_id: unit.id,
@@ -37,7 +38,8 @@ class TutorialsTest < ActiveSupport::TestCase
       abbreviation: 'LA011',
       meeting_location: 'LAB34',
       meeting_day: 'Tuesday',
-      meeting_time: '18:00'
+      meeting_time: '18:00',
+      tutorial_stream_abbr: tutorial_stream.abbreviation
     }
 
     data_to_post = {
@@ -69,6 +71,7 @@ class TutorialsTest < ActiveSupport::TestCase
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
 
     tutorial = {
       unit_id: unit.id,
@@ -78,7 +81,9 @@ class TutorialsTest < ActiveSupport::TestCase
       abbreviation: 'LA011',
       meeting_location: 'LAB34',
       meeting_day: 'Tuesday',
-      meeting_time: '18:00'
+      meeting_time: '18:00',
+      tutorial_stream_abbr: tutorial_stream.abbreviation
+
     }
 
     data_to_post = {
@@ -115,6 +120,7 @@ class TutorialsTest < ActiveSupport::TestCase
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.second
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
 
     tutorial = {
       unit_id: unit.id,
@@ -124,7 +130,9 @@ class TutorialsTest < ActiveSupport::TestCase
       abbreviation: 'La011',
       meeting_location: 'LAB34',
       meeting_day: 'Tuesday',
-      meeting_time: 'string'
+      meeting_time: 'string',
+      tutorial_stream_abbr: tutorial_stream.abbreviation
+
     }
 
     data_to_post = {
@@ -155,6 +163,7 @@ class TutorialsTest < ActiveSupport::TestCase
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
 
     tutorial = {
       unit_id: unit.id,
@@ -164,7 +173,9 @@ class TutorialsTest < ActiveSupport::TestCase
       abbreviation: 'LA011',
       meeting_location: 'LAB34',
       meeting_day: 'Tuesday',
-      meeting_time: '18:00'
+      meeting_time: '18:00',
+      tutorial_stream_abbr: tutorial_stream.abbreviation
+
     }
 
     data_to_post = {
@@ -192,6 +203,7 @@ class TutorialsTest < ActiveSupport::TestCase
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
 
     tutorial = {
       unit_id: unit.id,
@@ -201,7 +213,9 @@ class TutorialsTest < ActiveSupport::TestCase
       abbreviation: 'LA011',
       meeting_location: 'LAB34',
       meeting_day: 'Tuesday',
-      meeting_time: '18:00'
+      meeting_time: '18:00',
+      tutorial_stream_abbr: tutorial_stream.abbreviation
+
     }
 
     data_to_post = {
@@ -211,8 +225,8 @@ class TutorialsTest < ActiveSupport::TestCase
     # Add username and auth_token to Header
     add_auth_header_for(user: User.first)
 
-    #Override header for empty auth_token
-    header 'auth_token',''
+    # Override header for empty auth_token
+    header 'auth_token', ''
 
     # Number of tutorials before POST
     number_of_tutorials = Tutorial.all.length
@@ -232,6 +246,7 @@ class TutorialsTest < ActiveSupport::TestCase
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
 
     tutorial = {
       unit_id: 'string',
@@ -241,7 +256,9 @@ class TutorialsTest < ActiveSupport::TestCase
       abbreviation: 'LA011',
       meeting_location: 'LAB34',
       meeting_day: 'Tuesday',
-      meeting_time: '18:00'
+      meeting_time: '18:00',
+      tutorial_stream_abbr: tutorial_stream.abbreviation
+
     }
 
     data_to_post = {
@@ -270,6 +287,7 @@ class TutorialsTest < ActiveSupport::TestCase
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
 
     tutorial = {
       unit_id: unit.id,
@@ -279,7 +297,9 @@ class TutorialsTest < ActiveSupport::TestCase
       abbreviation: 'LA011',
       meeting_location: 'LAB34',
       meeting_day: 'Tuesday',
-      meeting_time: '18:00'
+      meeting_time: '18:00',
+      tutorial_stream_abbr: tutorial_stream.abbreviation
+
     }
 
     data_to_post = {
@@ -308,6 +328,7 @@ class TutorialsTest < ActiveSupport::TestCase
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
 
     tutorial = {
       unit_id: unit.id,
@@ -317,7 +338,9 @@ class TutorialsTest < ActiveSupport::TestCase
       abbreviation: 'LA011',
       meeting_location: 'LAB34',
       meeting_day: 'Tuesday',
-      meeting_time: '18:00'
+      meeting_time: '18:00',
+      tutorial_stream_abbr: tutorial_stream.abbreviation
+
     }
 
     data_to_post = {
@@ -366,6 +389,7 @@ class TutorialsTest < ActiveSupport::TestCase
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
 
     tutorial = {
       unit_id: '',
@@ -375,7 +399,9 @@ class TutorialsTest < ActiveSupport::TestCase
       abbreviation: 'LA011',
       meeting_location: 'LAB34',
       meeting_day: 'Tuesday',
-      meeting_time: '18:00'
+      meeting_time: '18:00',
+      tutorial_stream_abbr: tutorial_stream.abbreviation
+
     }
 
     data_to_post = {
@@ -404,6 +430,7 @@ class TutorialsTest < ActiveSupport::TestCase
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
 
     tutorial = {
       unit_id: unit.id,
@@ -413,7 +440,9 @@ class TutorialsTest < ActiveSupport::TestCase
       abbreviation: 'LA011',
       meeting_location: 'LAB34',
       meeting_day: 'Tuesday',
-      meeting_time: '18:00'
+      meeting_time: '18:00',
+      tutorial_stream_abbr: tutorial_stream.abbreviation
+
     }
 
     data_to_post = {
@@ -442,6 +471,7 @@ class TutorialsTest < ActiveSupport::TestCase
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
 
     tutorial = {
       unit_id: unit.id,
@@ -451,7 +481,8 @@ class TutorialsTest < ActiveSupport::TestCase
       abbreviation: '',
       meeting_location: 'LAB34',
       meeting_day: 'Tuesday',
-      meeting_time: '18:00'
+      meeting_time: '18:00',
+      tutorial_stream_abbr: tutorial_stream.abbreviation
     }
 
     data_to_post = {
@@ -480,6 +511,7 @@ class TutorialsTest < ActiveSupport::TestCase
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
 
     tutorial = {
       unit_id: unit.id,
@@ -489,7 +521,9 @@ class TutorialsTest < ActiveSupport::TestCase
       abbreviation: 'LA011',
       meeting_location: '',
       meeting_day: 'Tuesday',
-      meeting_time: '18:00'
+      meeting_time: '18:00',
+      tutorial_stream_abbr: tutorial_stream.abbreviation
+
     }
 
     data_to_post = {
@@ -518,6 +552,7 @@ class TutorialsTest < ActiveSupport::TestCase
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
 
     tutorial = {
       unit_id: unit.id,
@@ -527,7 +562,9 @@ class TutorialsTest < ActiveSupport::TestCase
       abbreviation: 'LA011',
       meeting_location: 'LAB34',
       meeting_day: '',
-      meeting_time: '18:00'
+      meeting_time: '18:00',
+      tutorial_stream_abbr: tutorial_stream.abbreviation
+
     }
 
     data_to_post = {
@@ -556,6 +593,7 @@ class TutorialsTest < ActiveSupport::TestCase
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
 
     tutorial = {
       unit_id: unit.id,
@@ -565,7 +603,9 @@ class TutorialsTest < ActiveSupport::TestCase
       abbreviation: 'LA011',
       meeting_location: 'LAB34',
       meeting_day: 'Tuesday',
-      meeting_time: ''
+      meeting_time: '',
+      tutorial_stream_abbr: tutorial_stream.abbreviation
+
     }
 
     data_to_post = {
@@ -594,6 +634,7 @@ class TutorialsTest < ActiveSupport::TestCase
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
 
     tutorial = {
       unit_id: unit.id,
@@ -603,11 +644,12 @@ class TutorialsTest < ActiveSupport::TestCase
       abbreviation: 'LA011',
       meeting_location: 'LAB34',
       meeting_day: 'Tuesday',
-      meeting_time: '18:00'
+      meeting_time: '18:00',
+      tutorial_stream_abbr: tutorial_stream.abbreviation
     }
 
     data_to_post = {
-      tutorial: tutorial,
+      tutorial: tutorial
     }
 
     # Create and add a dedicated tutor into the unit
@@ -636,6 +678,7 @@ class TutorialsTest < ActiveSupport::TestCase
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
 
     tutorial = {
       unit_id: unit.id,
@@ -645,11 +688,12 @@ class TutorialsTest < ActiveSupport::TestCase
       abbreviation: 'LA011',
       meeting_location: 'LAB34',
       meeting_day: 'Tuesday',
-      meeting_time: '18:00'
+      meeting_time: '18:00',
+      tutorial_stream_abbr: tutorial_stream.abbreviation
     }
 
     data_to_post = {
-      tutorial: tutorial,
+      tutorial: tutorial
     }
     number_of_tutorials = Tutorial.all.length
 
@@ -669,7 +713,7 @@ class TutorialsTest < ActiveSupport::TestCase
     assert_equal Tutorial.all.length, number_of_tutorials
   end
 
-  #####----------PUT tests - Update a tutorial----------#####
+  # ####----------PUT tests - Update a tutorial----------#####
 
   # Testing for successful PUT operations
   def test_admin_can_put_tutorials
@@ -680,6 +724,7 @@ class TutorialsTest < ActiveSupport::TestCase
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
 
     tutorial = {
       id: tutorial_old.id,
@@ -690,7 +735,8 @@ class TutorialsTest < ActiveSupport::TestCase
       abbreviation: 'LA011',
       meeting_location: 'LAB34',
       meeting_day: 'Tuesday',
-      meeting_time: '18:00'
+      meeting_time: '18:00',
+      tutorial_stream_abbr: tutorial_stream.abbreviation
     }
 
     data_to_put = {
@@ -725,6 +771,7 @@ class TutorialsTest < ActiveSupport::TestCase
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
 
     tutorial = {
       id: tutorial_old.id,
@@ -735,7 +782,8 @@ class TutorialsTest < ActiveSupport::TestCase
       abbreviation: '',
       meeting_location: 'LAB34',
       meeting_day: 'Tuesday',
-      meeting_time: '18:00'
+      meeting_time: '18:00',
+      tutorial_stream_abbr: tutorial_stream.abbreviation
     }
 
     data_to_put = {
@@ -770,6 +818,7 @@ class TutorialsTest < ActiveSupport::TestCase
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
 
     tutorial = {
       id: tutorial_old.id,
@@ -780,7 +829,8 @@ class TutorialsTest < ActiveSupport::TestCase
       abbreviation: 'LA011',
       meeting_location: '',
       meeting_day: 'Tuesday',
-      meeting_time: '18:00'
+      meeting_time: '18:00',
+      tutorial_stream_abbr: tutorial_stream.abbreviation
     }
 
     data_to_put = {
@@ -815,6 +865,7 @@ class TutorialsTest < ActiveSupport::TestCase
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
 
     tutorial = {
       id: tutorial_old.id,
@@ -825,7 +876,8 @@ class TutorialsTest < ActiveSupport::TestCase
       abbreviation: 'LA011',
       meeting_location: 'LAB34',
       meeting_day: '',
-      meeting_time: '18:00'
+      meeting_time: '18:00',
+      tutorial_stream_abbr: tutorial_stream.abbreviation
     }
 
     data_to_put = {
@@ -860,6 +912,7 @@ class TutorialsTest < ActiveSupport::TestCase
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
 
     tutorial = {
       id: tutorial_old.id,
@@ -870,7 +923,8 @@ class TutorialsTest < ActiveSupport::TestCase
       abbreviation: 'LA011',
       meeting_location: 'LAB34',
       meeting_day: 'Tuesday',
-      meeting_time: ''
+      meeting_time: '',
+      tutorial_stream_abbr: tutorial_stream.abbreviation
     }
 
     data_to_put = {
@@ -906,6 +960,7 @@ class TutorialsTest < ActiveSupport::TestCase
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
 
     tutorial = {
       unit_id: unit.id,
@@ -915,7 +970,8 @@ class TutorialsTest < ActiveSupport::TestCase
       abbreviation: 'LA011',
       meeting_location: 'LAB34',
       meeting_day: 'Tuesday',
-      meeting_time: '18:00'
+      meeting_time: '18:00',
+      tutorial_stream_abbr: tutorial_stream.abbreviation
     }
 
     data_to_put = {
@@ -925,8 +981,8 @@ class TutorialsTest < ActiveSupport::TestCase
     # Add username and auth_token to Header
     add_auth_header_for(user: User.first)
 
-    #Override header for empty auth_token
-    header 'auth_token',''
+    # Override header for empty auth_token
+    header 'auth_token', ''
 
     # perform the PUT with empty auth token
     put_json "/api/tutorials/#{tutorial_old.id}", data_to_put
@@ -943,6 +999,7 @@ class TutorialsTest < ActiveSupport::TestCase
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
 
     tutorial = {
       unit_id: unit.id,
@@ -952,7 +1009,8 @@ class TutorialsTest < ActiveSupport::TestCase
       abbreviation: 'LA011',
       meeting_location: 'LAB34',
       meeting_day: 'Tuesday',
-      meeting_time: '18:00'
+      meeting_time: '18:00',
+      tutorial_stream_abbr: tutorial_stream.abbreviation
     }
 
     data_to_put = {
@@ -977,6 +1035,7 @@ class TutorialsTest < ActiveSupport::TestCase
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
 
     tutorial = {
       unit_id: unit.id,
@@ -986,7 +1045,8 @@ class TutorialsTest < ActiveSupport::TestCase
       abbreviation: 'LA011',
       meeting_location: 'LAB34',
       meeting_day: 'Tuesday',
-      meeting_time: '18:00'
+      meeting_time: '18:00',
+      tutorial_stream_abbr: tutorial_stream.abbreviation
     }
 
     data_to_put = {
@@ -1004,13 +1064,14 @@ class TutorialsTest < ActiveSupport::TestCase
   end
 
   def test_tutor_cannot_replace_tutorial
-     # Create a dummy tutorial
-     tutorial_old = FactoryBot.create(:tutorial)
+    # Create a dummy tutorial
+    tutorial_old = FactoryBot.create(:tutorial)
 
-     # Create dummy attributes for the tutorial
-     campus = FactoryBot.create(:campus)
-     unit = FactoryBot.create(:unit)
-     tutor = unit.tutors.first
+    # Create dummy attributes for the tutorial
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
 
     tutorial = {
       unit_id: unit.id,
@@ -1020,7 +1081,9 @@ class TutorialsTest < ActiveSupport::TestCase
       abbreviation: 'LA011',
       meeting_location: 'LAB34',
       meeting_day: 'Tuesday',
-      meeting_time: '18:00'
+      meeting_time: '18:00',
+      tutorial_stream_abbr: tutorial_stream.abbreviation
+
     }
 
     data_to_put = {
@@ -1050,6 +1113,7 @@ class TutorialsTest < ActiveSupport::TestCase
     campus = FactoryBot.create(:campus)
     unit = FactoryBot.create(:unit)
     tutor = unit.tutors.first
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
 
     tutorial = {
       unit_id: unit.id,
@@ -1059,7 +1123,9 @@ class TutorialsTest < ActiveSupport::TestCase
       abbreviation: 'LA011',
       meeting_location: 'LAB34',
       meeting_day: 'Tuesday',
-      meeting_time: '18:00'
+      meeting_time: '18:00',
+      tutorial_stream_abbr: tutorial_stream.abbreviation
+
     }
 
     data_to_put = {
@@ -1079,7 +1145,7 @@ class TutorialsTest < ActiveSupport::TestCase
     assert_equal 403, last_response.status
   end
 
-  #####----------DELETE tests - Delete a tutorial----------#####
+  # ####----------DELETE tests - Delete a tutorial----------#####
 
   # Testing for successful DELETEs
   def test_admin_delete_tutorial
@@ -1113,7 +1179,7 @@ class TutorialsTest < ActiveSupport::TestCase
     assert_equal number_of_tutorials - 1, Tutorial.all.length
 
     # Check that you can't find the deleted id
-    refute Tutorial.exists?(tutorial.id)
+    assert_not Tutorial.exists?(tutorial.id)
   end
 
   def test_convenor_delete_tutorial
@@ -1142,7 +1208,7 @@ class TutorialsTest < ActiveSupport::TestCase
     assert_equal number_of_tutorials - 1, Tutorial.all.length
 
     # Check that you can't find the deleted id
-    refute Tutorial.exists?(tutorial.id)
+    assert_not Tutorial.exists?(tutorial.id)
   end
 
   # Testing for DELELTE failures
@@ -1211,8 +1277,8 @@ class TutorialsTest < ActiveSupport::TestCase
     # Add username and auth_token to Header
     add_auth_header_for(user: User.first)
 
-    #Override header for empty auth_token
-    header 'auth_token',''
+    # Override header for empty auth_token
+    header 'auth_token', ''
 
     # perform the delete with empty auth token
     delete_json "/api/tutorials/#{tutorial.id}"
@@ -1221,7 +1287,7 @@ class TutorialsTest < ActiveSupport::TestCase
     assert_equal 419, last_response.status
 
     # Check number of tutorials does not change
-    assert_equal number_of_tutorials , Tutorial.all.length
+    assert_equal number_of_tutorials, Tutorial.all.length
 
     # Check that you still can find the deleted id
     assert Tutorial.exists?(tutorial.id)
@@ -1234,8 +1300,8 @@ class TutorialsTest < ActiveSupport::TestCase
     # Add username and auth_token to Header
     add_auth_header_for(username: 'aadmin', auth_token: 'incorrect_auth_token')
 
-     # Number of tutorials before DELETE
-     number_of_tutorials = Tutorial.all.length
+    # Number of tutorials before DELETE
+    number_of_tutorials = Tutorial.all.length
 
     # perform the delete with incorrect auth token
     delete_json "/api/tutorials/#{tutorial.id}"
@@ -1244,7 +1310,7 @@ class TutorialsTest < ActiveSupport::TestCase
     assert_equal 419, last_response.status
 
     # Check number of tutorials does not change
-    assert_equal number_of_tutorials , Tutorial.all.length
+    assert_equal number_of_tutorials, Tutorial.all.length
 
     # Check that you still can find the deleted id
     assert Tutorial.exists?(tutorial.id)
@@ -1252,7 +1318,7 @@ class TutorialsTest < ActiveSupport::TestCase
 
   def test_student_cannot_delete_tutorial
     # Tutorial to delete
-    tutorial = FactoryBot.create (:tutorial)
+    tutorial = FactoryBot.create(:tutorial)
 
     # Number of tutorials before deletion
     number_of_tutorials = Tutorial.count
@@ -1305,6 +1371,84 @@ class TutorialsTest < ActiveSupport::TestCase
 
     assert_equal 403, last_response.status
 
-    refute project.enrolled_in? tutorial
+    assert_not project.enrolled_in? tutorial
+  end
+
+  def test_post_tutorial_with_no_tutorial_stream
+    # Create dummy attributes for the tutorial
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
+
+    tutorial = {
+      unit_id: unit.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
+      capacity: 10,
+      abbreviation: 'LA011',
+      meeting_location: 'LAB34',
+      meeting_day: 'Tuesday',
+      meeting_time: '18:00',
+      tutorial_stream_abbr: ''
+    }
+
+    data_to_post = {
+      tutorial: tutorial
+    }
+
+    # Number of tutorials before POST
+    number_of_tutorials = Tutorial.all.length
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: unit.main_convenor_user)
+
+    # perform the post with the unit main convenor auth token
+    post_json '/api/tutorials', data_to_post
+
+    # Check for error in creation
+    assert_equal 400, last_response.status
+    assert last_response_body['error'].include? 'tutorial[tutorial_stream_abbr] is empty'
+
+    # Check if there is no new tutorial
+    assert_equal Tutorial.all.length, number_of_tutorials
+  end
+
+  def test_post_tutorial_with_invalid_tutorial_stream
+    # Create dummy attributes for the tutorial
+    campus = FactoryBot.create(:campus)
+    unit = FactoryBot.create(:unit)
+    tutor = unit.tutors.first
+
+    tutorial = {
+      unit_id: unit.id,
+      tutor_id: tutor.id,
+      campus_id: campus.id,
+      capacity: 10,
+      abbreviation: 'LA011',
+      meeting_location: 'LAB34',
+      meeting_day: 'Tuesday',
+      meeting_time: '18:00',
+      tutorial_stream_abbr: 'non-existing-tutorial-stream'
+    }
+
+    data_to_post = {
+      tutorial: tutorial
+    }
+
+    # Number of tutorials before POST
+    number_of_tutorials = Tutorial.all.length
+
+    # Add username and auth_token to Header
+    add_auth_header_for(user: unit.main_convenor_user)
+
+    # perform the post with the unit main convenor auth token
+    post_json '/api/tutorials', data_to_post
+
+    # Check for error in creation
+    assert_equal 404, last_response.status, last_response_body
+    assert last_response_body['error'].include?('Unable to find requested TutorialStream'), last_response_body['error']
+
+    # Check if there is no new tutorial
+    assert_equal Tutorial.all.length, number_of_tutorials
   end
 end
