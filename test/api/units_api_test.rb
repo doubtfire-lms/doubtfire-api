@@ -163,6 +163,7 @@ class UnitsApiTest < ActiveSupport::TestCase
   def test_add_tutorial_to_unit
     unit = FactoryBot.create :unit, with_students: false, stream_count: 0
     count_tutorials = Tutorial.all.length
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
 
     tutorial = {
       unit_id: unit.id,
@@ -172,7 +173,8 @@ class UnitsApiTest < ActiveSupport::TestCase
       abbreviation: 'LA011',
       meeting_location: 'LAB34',
       meeting_day: 'Tuesday',
-      meeting_time: '18:00'
+      meeting_time: '18:00',
+      tutorial_stream_abbr: tutorial_stream.abbreviation
     }
 
     data_to_post = {
