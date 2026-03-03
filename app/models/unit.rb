@@ -2204,31 +2204,31 @@ class Unit < ApplicationRecord
     mentees = my_unit_role ? staff.where(mentor_id: my_unit_role.id) : staff.none
 
     tasks = student_tasks
-                .includes(:comments)
-                .left_joins(:moderated_task)
-                .where(moderated_tasks: { state: %i[open waiting_for_new_feedback] })
-                .where(projects: { unit_id: id })
-                .joins(:task_definition)
-                .joins(project: { tutorial_enrolments: :tutorial })
-                .where('tutorials.tutorial_stream_id = task_definitions.tutorial_stream_id')
-                .select(
-                  'tasks.id AS task_id',
-                  'tasks.project_id',
-                  'tasks.task_definition_id',
-                  'tutorials.id AS tutorial_id',
-                  'tasks.task_status_id AS status_id',
-                  'tasks.completion_date',
-                  'tasks.submission_date',
-                  'tasks.times_assessed',
-                  'tasks.grade',
-                  'tasks.quality_pts',
-                  '0 AS number_unread',
-                  '0 AS similar_to_count',
-                  'false AS pinned',
-                  'false AS has_extensions',
-                  'tasks.*',
-      )
-                .distinct
+                  .includes(:comments)
+                  .joins(:moderated_task)
+                  .where(moderated_tasks: { state: %i[open waiting_for_new_feedback] })
+                  .where(projects: { unit_id: id })
+                  .joins(:task_definition)
+                  .joins(project: { tutorial_enrolments: :tutorial })
+                  .where('tutorials.tutorial_stream_id = task_definitions.tutorial_stream_id')
+                  .select(
+                    'tasks.id AS task_id',
+                    'tasks.project_id',
+                    'tasks.task_definition_id',
+                    # 'tutorials.id AS tutorial_id',
+                    'tasks.task_status_id AS status_id',
+                    'tasks.completion_date',
+                    'tasks.submission_date',
+                    # 'tasks.times_assessed',
+                    # 'tasks.grade',
+                    # 'tasks.quality_pts',
+                    # '0 AS number_unread',
+                    # '0 AS similar_to_count',
+                    # 'false AS pinned',
+                    # 'false AS has_extensions',
+                    'tasks.*',
+                  )
+                  .distinct
 
     if my_unit_role.nil? || my_unit_role.role != Role.convenor
       tasks = tasks.where(tutorials: { unit_role_id: mentees.select(:id) })
@@ -2245,7 +2245,27 @@ class Unit < ApplicationRecord
       if mt.escalation?
         [task, Time.zone.at(0)]
       else
-        tutor_comments = task.comments.select { |c| c.user == task.tutor }
+        sorted = task.comments.sort_by(&:created_at)
+
+        tutor_comments = sorted.select.with_index do |c, i|
+          nxt = sorted[i + 1]
+
+          # Automated comments after a status comment should be filtered out (Overseer test result, corrupt submission)
+          # Except for when its been updated due to a prerequisite fix
+          is_automated_status =
+            c.content_type == "status" &&
+            nxt&.content_type == "text" &&
+           (nxt.comment&.downcase&.include?("**automated comment**: some tests did not pass") ||
+            nxt.comment&.downcase&.include?("**automated comment**: something went wrong with your submission") ||
+            nxt.comment&.downcase&.include?("**automated comment**: a prerequisite task was updated to fix and resubmit"))
+
+          c.user == task.tutor &&
+            %w[status discussed_in_class text].include?(c.content_type) &&
+            (c.content_type != "status" || c.task_status != "time_exceeded") &&
+            !is_automated_status &&
+            !c.comment&.downcase&.include?("**automated comment**:")
+        end
+
         next nil if tutor_comments.empty?
 
         most_recent = tutor_comments.max_by(&:created_at)
