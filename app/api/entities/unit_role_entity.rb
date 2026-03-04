@@ -13,7 +13,10 @@ module Entities
 
     expose :mentor_id, if: ->(unit_role, options) { staff?(options[:my_role]) }
     expose :tutor_note_count, if: ->(unit_role, options) { unit_role.unit.unit_role_for(options[:user])&.id == unit_role.id } do |unit_role, options|
-      unit_role.tutor_notes.where(read_by_unit_role: false).count
+      unit_role.tutor_notes
+               .where(read_by_unit_role: false)
+               .where.not(user_id: options[:user].id)
+               .count
     end
 
     expose :can_mark_overflow_tasks, if: ->(unit_role, options) { staff?(options[:my_role]) }
