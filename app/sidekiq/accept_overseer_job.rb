@@ -47,7 +47,10 @@ class AcceptOverseerJob
     success_status = nil
     failure_status = nil
 
-    oa.add_assessment_comment("Tests in progress")
+    comment = task.comments.find_by(commentable: oa)
+    unless comment
+      oa.add_assessment_comment("Tests in progress")
+    end
 
     steps_attempted = 0
     steps_passed = 0
