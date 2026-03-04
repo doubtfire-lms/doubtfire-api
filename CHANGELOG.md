@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-83](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-82...v10.0.0-83) (2026-03-04)
+
+
+### Bug Fixes
+
+* ensure stdout doesnt exceed text limit ([8f5fbb6](https://github.com/b0ink/doubtfire-deploy/commit/8f5fbb624448088aebf0fc506dfa1ffc6770df79))
+
 ## [10.0.0-82](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-81...v10.0.0-82) (2026-03-03)
 
 ## [10.0.0-81](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-80...v10.0.0-81) (2026-03-03)
