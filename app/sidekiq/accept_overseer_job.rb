@@ -219,13 +219,15 @@ class AcceptOverseerJob
         step.feedback_message
       end
 
+    output_truncated = output&.first(20_000)
+
     OverseerStepResult.create!(
       overseer_assessment_id: overseer_assessment_id,
       overseer_step: step,
       exit_status: status.exitstatus,
       pass: pass,
       feedback_message: feedback_message,
-      stdout: output,
+      stdout: output_truncated,
       stdin: stdin_contents,
       expected_output: expected_output_contents,
       stdout_sha256: Digest::SHA256.hexdigest(output),
