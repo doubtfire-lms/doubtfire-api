@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style type="text/css">
+    .main {
+      font-family: "Lucida Grande", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: #333;
+      font-size: 14px;
+      width: 100%;
+      max-width: 800px;
+      margin: 100px auto 0px auto;
+
+      background-image: url('<%= @doubtfire_host %>/assets/images/logo.png');
+      background-size: 3.5em;
+      background-repeat: no-repeat;
+      background-position: top 40px right 45px;
+      padding: 30px 40px;
+      border: solid 1px rgb(240, 240, 240);
+      line-height: 200%;
+      text-align: justify;
+    }
+    footer, .footer {
+      font-family: "Lucida Grande", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      text-align: center;
+      margin-top: 10px;
+      color: #aaa;
+      font-size: 0.7em;
+    }
+    a, a:visited {
+      color: #6a97d2;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    ul {
+      list-style: none;
+    }
+    h1 {
+      font-size: 1.1em;
+    }
+    .note-box {
+      background: #f7f7f7;
+      border-left: 4px solid #1717ff;
+
+      padding: 15px 20px;
+      margin: 20px 0;
+      font-style: italic;
+    }
+    .task-box {
+      background: #fafafa;
+      border: 1px solid #eee;
+      padding: 15px 20px;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="main">
+    <h1><%= @doubtfire_product_name %> Notification</h1>
+
+    <p>Hi <%= @recipient.first_name %>,</p>
+
+    <p>
+      You have received a new tutor note from <%= @from.name %> in <%= @unit.name %>.
+    </p>
+
+    <% if @recipient == @unit.unit_role_for(@from)&.mentor&.user %>
+      <p>You are receiving this message because you are their mentor.</p>
+    <% else %>
+      <p>You are receiving this message because <%= @from.name %> is your mentor.</p>
+    <% end %>
+
+  <div class="note-box">
+    <strong>From <%= @from.name %></strong><br>
+    <%= simple_format(@note.note) %>
+  </div>
+
+    <% if @task.present? %>
+      <div class="task-box">
+        <strong>This note relates to feedback for a task.</strong><br/><br/>
+
+        <strong>Task:</strong>
+        <%= @task.task_definition.abbreviation %> <%= @task.task_definition.name %><br/>
+
+        <strong>Student:</strong>
+        <%= @task.project.user.name %><br/><br/>
+
+        <a href="<%= @doubtfire_host %>/projects/<%= @task.project.id %>/dashboard/<%= @task.task_definition.abbreviation %>?tutor=true">
+          View this task
+        </a>
+      </div>
+    <% end %>
+
+    <p>
+      You can view and respond to this note in
+      <a href="<%= @doubtfire_host %>"><%= @doubtfire_product_name %></a>.
+    </p>
+
+    <p>
+      Cheers,<br/>
+      The <%= @doubtfire_product_name %> Team on behalf of <%= @from.name %>
+    </p>
+
+  </div>
+
+  <footer class="footer">
+    <a href="<%= @unsubscribe_url %>">Unsubscribe</a> | Generated with <%= @doubtfire_product_name %>
+  </footer>
+</body>
+</html>

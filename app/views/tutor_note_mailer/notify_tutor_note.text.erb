@@ -1,0 +1,43 @@
+Hi <%= @recipient.first_name %>,
+
+You have received a new tutor note from <%= @from.name %> in <%= @unit.name %>.
+
+<% if @recipient == @unit.unit_role_for(@from)&.mentor&.user %>
+You are receiving this message because you are their mentor.
+<% else %>
+You are receiving this message because <%= @from.name %> is your mentor.
+<% end %>
+
+Note:
+
+<%= @note.note %>
+
+<% if @task.present? %>
+
+This note relates to feedback for a task.
+
+Task: <%= @task.task_definition.abbreviation %> <%= @task.task_definition.name %>
+Student: <%= @task.project.user.name %>
+
+You can view this task here:
+<%= @doubtfire_host%>/projects/<%=@task.project.id%>/dashboard/<%=@task.task_definition.abbreviation%>?tutor=true
+
+<% end %>
+
+You can view and respond to this note in <%= @doubtfire_product_name %>.
+
+Cheers,
+The <%= @doubtfire_product_name %> Team on behalf of <%= @from.name %>
+
+---
+
+Visit <%= @unsubscribe_url%> to unsubscribe from these notifications.
+
+Generated with <%= @doubtfire_product_name %>
+
+
+<%# You have received a new note from .. @from.name  %>
+<%# You are receiving this message because you are their mentor  %>
+<%# or %>
+<%# You are reciveving this message because @from.name is your mentor %>
+<%# This note is regarding feedback you have left for #{student_name} for task #{definition.name} %>
