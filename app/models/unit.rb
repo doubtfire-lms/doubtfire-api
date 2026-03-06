@@ -2204,7 +2204,6 @@ class Unit < ApplicationRecord
     mentees = my_unit_role ? staff.where(mentor_id: my_unit_role.id) : staff.none
 
     tasks = student_tasks
-                  .includes(:comments)
                   .joins(:moderated_task)
                   .where(moderated_tasks: { state: %i[open waiting_for_new_feedback] })
                   .where(projects: { unit_id: id })
