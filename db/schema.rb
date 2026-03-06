@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_24_222539) do
+ActiveRecord::Schema[8.0].define(version: 2026_03_05_010000) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -543,6 +543,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_24_222539) do
     t.integer "scorm_extensions", default: 0, null: false
     t.datetime "target_start_date"
     t.datetime "target_due_date"
+    t.datetime "last_tutor_feedback_at"
     t.index ["group_submission_id"], name: "index_tasks_on_group_submission_id"
     t.index ["project_id", "task_definition_id"], name: "tasks_uniq_proj_task_def", unique: true
     t.index ["project_id"], name: "index_tasks_on_project_id"

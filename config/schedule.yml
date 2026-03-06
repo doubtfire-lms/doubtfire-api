@@ -12,6 +12,10 @@ clean_up_auth_tokens:
   cron: "every 30 minutes"
   class: "ClearAccessTokensJob"
 
+refresh_moderation_feedback_timestamps:
+  cron: "every 60 minutes"
+  class: "RefreshModerationFeedbackTimestampsJob"
+
 # archive_old_units:
 #   cron: "every 6 months"
 #   class: "ArchiveOldUnitsJob"
