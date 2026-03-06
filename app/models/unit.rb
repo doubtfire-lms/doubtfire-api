@@ -2238,48 +2238,18 @@ class Unit < ApplicationRecord
     # to ensure that the feedback is likely complete before adding it for moderation
     comment_threshold = 15.minutes.ago
 
-    tasks = tasks.map do |task|
+    tasks = tasks.to_a.select do |task|
       mt = task.moderated_task
-      next if mt.nil?
+      next false if mt.nil?
+      next true if mt.escalation?
 
-      if mt.escalation?
-        [task, Time.zone.at(0)]
-      else
-        sorted = task.comments.sort_by(&:created_at)
+      feedback_time = task.last_tutor_feedback_at
+      feedback_time.present? &&
+        feedback_time <= comment_threshold &&
+        feedback_time > (mt.last_moderated_date || epoch)
+    end
 
-        tutor_comments = sorted.select.with_index do |c, i|
-          nxt = sorted[i + 1]
-
-          # Automated comments after a status comment should be filtered out (Overseer test result, corrupt submission)
-          # Except for when its been updated due to a prerequisite fix
-          is_automated_status =
-            c.content_type == "status" &&
-            nxt&.content_type == "text" &&
-           (nxt.comment&.downcase&.include?("**automated comment**: some tests did not pass") ||
-            nxt.comment&.downcase&.include?("**automated comment**: something went wrong with your submission") ||
-            nxt.comment&.downcase&.include?("**automated comment**: a prerequisite task was updated to fix and resubmit"))
-
-          c.user == task.tutor &&
-            %w[status discussed_in_class text].include?(c.content_type) &&
-            (c.content_type != "status" || c.task_status != "time_exceeded") &&
-            !is_automated_status &&
-            !c.comment&.downcase&.include?("**automated comment**:")
-        end
-
-        next nil if tutor_comments.empty?
-
-        most_recent = tutor_comments.max_by(&:created_at)
-        next nil if most_recent.created_at > comment_threshold ||
-                    most_recent.created_at <= (task.moderated_task&.last_moderated_date || Time.zone.at(0))
-
-        [task, most_recent.created_at]
-      end
-    end.compact
-
-    # Sort tasks: show tasks with the oldest feedback first
-    # New feedback will send it to the bottom of the moderation queue
-    tasks.sort_by! { |_task, last_comment_time| last_comment_time }
-    tasks.map!(&:first)
+    tasks.sort_by { |task| [task.moderated_task.escalation? ? 0 : 1, task.last_tutor_feedback_at || Time.zone.at(0)] }
   end
 
 
