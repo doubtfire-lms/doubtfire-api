@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-87](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-86...v10.0.0-87) (2026-03-09)
+
+
+### Features
+
+* notify tutors via email for tutor notes ([#584](https://github.com/b0ink/doubtfire-deploy/issues/584)) ([dccf2df](https://github.com/b0ink/doubtfire-deploy/commit/dccf2dfebb06efa2b24ac3939cf9c7f027c69112))
+
 ## [10.0.0-86](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-85...v10.0.0-86) (2026-03-06)
 
 ## [10.0.0-85](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-84...v10.0.0-85) (2026-03-06)
