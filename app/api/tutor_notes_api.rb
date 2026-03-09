@@ -121,7 +121,7 @@ class TutorNotesApi < Grape::API
       end
 
     if result.present? && notify_unit_role.present? && notify_unit_role.user_id != current_user.id
-      TutorNoteMailer.notify_tutor_note(result, notify_unit_role.user).deliver_later
+      TutorNoteMailer.notify_tutor_note(result, notify_unit_role.user).deliver_now
     end
 
     if result.nil?
