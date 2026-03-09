@@ -107,7 +107,22 @@ class TutorNotesApi < Grape::API
       error!(error: 'You do not have permission to add a note related to this task') unless authorise?(unit_role.user, task.project, :assess)
     end
 
+    current_unit_role = unit.unit_role_for(current_user)
+
     result = unit_role.add_tutor_note(current_user, text_note, task_id, reply_to_id)
+
+    notify_unit_role =
+      if reply_target && original_staff_note.user != current_user
+        reply_target      # tutor is responding to a reply -> notify original user that tutor is replying to
+      elsif current_unit_role == unit_role
+        unit_role.mentor  # tutor is writing on their own notes -> notify the mentor
+      else
+        unit_role         # anyone else wrote about this tutor, whether its their mentor or another convenor -> notify tutor
+      end
+
+    if result.present? && notify_unit_role.present? && notify_unit_role.user_id != current_user.id
+      TutorNoteMailer.notify_tutor_note(result, notify_unit_role.user).deliver_later
+    end
 
     if result.nil?
       error!({ error: 'Duplicate note.' }, 403)
