@@ -111,6 +111,8 @@ class TutorNotesApi < Grape::API
 
     result = unit_role.add_tutor_note(current_user, text_note, task_id, reply_to_id)
 
+    reply_target = original_staff_note && unit.unit_role_for(original_staff_note.user)
+
     notify_unit_role =
       if reply_target && original_staff_note.user != current_user
         reply_target      # tutor is responding to a reply -> notify original user that tutor is replying to
