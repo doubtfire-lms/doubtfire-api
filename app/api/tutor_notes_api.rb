@@ -124,7 +124,7 @@ class TutorNotesApi < Grape::API
 
     if result.present? && notify_unit_role.present? && notify_unit_role.user_id != current_user.id
       begin
-        TutorNoteMailer.notify_tutor_note(result, notify_unit_role.user).deliver
+        NotifyTutorNotesJob.perform_async(result.id, notify_unit_role.user.id)
       rescue StandardError => e
         Rails.logger.error("Failed to send tutor note email for TutorNote #{result.id}: #{e.class} - #{e.message}")
       end
