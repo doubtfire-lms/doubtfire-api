@@ -588,7 +588,10 @@ class TaskDefinition < ApplicationRecord
     result.is_graded                   = %w(Yes y Y yes true TRUE 1).include? "#{row[:is_graded]}".strip
     result.start_date                  = start_date
     result.target_date                 = target_date
-    result.upload_requirements         = JSON.parse(row[:upload_requirements]) unless row[:upload_requirements].nil?
+    unless row[:upload_requirements].nil?
+      upload_requirements = JSON.parse(row[:upload_requirements])
+      result.upload_requirements = normalize_upload_requirement_keys(upload_requirements)
+    end
     result.due_date                    = due_date
 
     result.scorm_enabled               = %w(Yes y Y yes true TRUE 1).include? "#{row[:scorm_enabled]}".strip
@@ -607,19 +610,7 @@ class TaskDefinition < ApplicationRecord
       result.tutorial_stream = unit.tutorial_streams.where(abbreviation: row[:tutorial_stream]).first
     end
 
-    result.discussion_prompts.destroy_all
-
-    if row[:discussion_prompts].present?
-      prompts = JSON.parse(row[:discussion_prompts])
-      prompts.each do |prompt|
-        DiscussionPrompt.create!({
-                                   task_definition: result,
-                                   content: prompt['content'],
-                                   priority: prompt['priority']
-                                 })
-      end
-
-    end
+    import_discussion_prompts_from_csv_row(result, row)
 
     result.assess_in_portfolio_only = %w(Yes y Y yes true TRUE 1).include? "#{row[:assess_in_portfolio_only]}".strip
 
@@ -641,6 +632,30 @@ class TaskDefinition < ApplicationRecord
     end
 
     [result, new_task, new_task ? "Added new task definition #{result.abbreviation}." : "Updated existing task #{result.abbreviation}"]
+  end
+
+  def self.normalize_upload_requirement_keys(upload_requirements)
+    return upload_requirements unless upload_requirements.is_a?(Array)
+
+    upload_requirements.map.with_index do |requirement, idx|
+      next requirement unless requirement.is_a?(Hash)
+
+      requirement.merge('key' => "file#{idx}")
+    end
+  end
+
+  def self.import_discussion_prompts_from_csv_row(task_definition, row)
+    task_definition.discussion_prompts.destroy_all
+    return if row[:discussion_prompts].blank?
+
+    prompts = JSON.parse(row[:discussion_prompts])
+    prompts.each do |prompt|
+      DiscussionPrompt.create!({
+                                 task_definition: task_definition,
+                                 content: prompt['content'],
+                                 priority: prompt['priority']
+                               })
+    end
   end
 
   def is_group_task?
