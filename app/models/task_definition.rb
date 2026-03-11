@@ -610,19 +610,7 @@ class TaskDefinition < ApplicationRecord
       result.tutorial_stream = unit.tutorial_streams.where(abbreviation: row[:tutorial_stream]).first
     end
 
-    result.discussion_prompts.destroy_all
-
-    if row[:discussion_prompts].present?
-      prompts = JSON.parse(row[:discussion_prompts])
-      prompts.each do |prompt|
-        DiscussionPrompt.create!({
-                                   task_definition: result,
-                                   content: prompt['content'],
-                                   priority: prompt['priority']
-                                 })
-      end
-
-    end
+    import_discussion_prompts_from_csv_row(result, row)
 
     result.assess_in_portfolio_only = %w(Yes y Y yes true TRUE 1).include? "#{row[:assess_in_portfolio_only]}".strip
 
@@ -653,6 +641,20 @@ class TaskDefinition < ApplicationRecord
       next requirement unless requirement.is_a?(Hash)
 
       requirement.merge('key' => "file#{idx}")
+    end
+  end
+
+  def self.import_discussion_prompts_from_csv_row(task_definition, row)
+    task_definition.discussion_prompts.destroy_all
+    return if row[:discussion_prompts].blank?
+
+    prompts = JSON.parse(row[:discussion_prompts])
+    prompts.each do |prompt|
+      DiscussionPrompt.create!({
+                                 task_definition: task_definition,
+                                 content: prompt['content'],
+                                 priority: prompt['priority']
+                               })
     end
   end
 
