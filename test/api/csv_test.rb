@@ -175,6 +175,45 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 9, task_prereq2.task_status_id
   end
 
+  # 7b: Testing CSV upload normalises bad upload_requirement file keys
+  # POST /api/csv/task_definitions
+  def test_csv_upload_normalises_bad_upload_requirement_file_keys
+    expected_upload_requirements_by_task = {
+      '1.1P' => '[{"key":"file1","name":"HelloWorld.pas","type":"code"},{"key":"file1","name":"Screenshot","type":"image"}]',
+      '1.2P' => '[{"key":"file0","name":"PictureDrawing.pas","type":"code"},{"key":"file5","name":"Screenshot","type":"image"}]',
+      '1.3P' => '[{"key":"file0","name":"PictureDrawing.pas","type":"code"},{"key":"file3","name":"Screenshot","type":"image"},{"key":"file2","name":"Screenshot","type":"image"}]'
+    }
+
+    bad_csv_rows = CSV.parse(
+      File.read(Rails.root.join('test_files/COS10001-TasksUnorderedUploadReqs.csv')),
+      headers: true
+    )
+    expected_upload_requirements_by_task.each do |abbr, expected_upload_reqs|
+      row = bad_csv_rows.find { |csv_row| csv_row['abbreviation'] == abbr }
+      assert row.present?, "Missing row for #{abbr} in bad file-key fixture"
+      assert_equal expected_upload_reqs, row['upload_requirements']
+    end
+
+    unit = Unit.find(1)
+    activity_type = FactoryBot.create(:activity_type)
+    unit.add_tutorial_stream('Import-Tasks', 'import-tasks', activity_type)
+
+    data_to_post = {
+      unit_id: unit.id,
+      file: upload_file_csv('test_files/COS10001-TasksUnorderedUploadReqs.csv')
+    }
+
+    add_auth_header_for(user: User.first)
+    post '/api/csv/task_definitions', data_to_post
+
+    assert_equal 201, last_response.status, last_response_body
+
+    unit.reload
+    assert_equal ['file0', 'file1'], unit.task_definitions.find_by!(abbreviation: '1.1P').upload_requirements.map { |req| req['key'] }, last_response_body
+    assert_equal ['file0', 'file1'], unit.task_definitions.find_by!(abbreviation: '1.2P').upload_requirements.map { |req| req['key'] }, last_response_body
+    assert_equal ['file0', 'file1', 'file2'], unit.task_definitions.find_by!(abbreviation: '1.3P').upload_requirements.map { |req| req['key'] }, last_response_body
+  end
+
   # 8: Testing for CSV upload failure due to incorrect auth token
   # POST /api/csv/task_definitions
   def test_csv_upload_all_task_definitions_unit_incorrect_auth_token
