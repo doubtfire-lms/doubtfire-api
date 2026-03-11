@@ -178,6 +178,8 @@ class CsvTest < ActiveSupport::TestCase
   # 7b: Testing CSV upload normalises bad upload_requirement file keys
   # POST /api/csv/task_definitions
   def test_csv_upload_normalises_bad_upload_requirement_file_keys
+    # Ensure our test csv has unordered or duplicate file keys
+    # This scenario can happen when moving upload requirements around from different tasks
     expected_upload_requirements_by_task = {
       '1.1P' => '[{"key":"file1","name":"HelloWorld.pas","type":"code"},{"key":"file1","name":"Screenshot","type":"image"}]',
       '1.2P' => '[{"key":"file0","name":"PictureDrawing.pas","type":"code"},{"key":"file5","name":"Screenshot","type":"image"}]',
@@ -209,9 +211,11 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status, last_response_body
 
     unit.reload
-    assert_equal ['file0', 'file1'], unit.task_definitions.find_by!(abbreviation: '1.1P').upload_requirements.map { |req| req['key'] }, last_response_body
-    assert_equal ['file0', 'file1'], unit.task_definitions.find_by!(abbreviation: '1.2P').upload_requirements.map { |req| req['key'] }, last_response_body
-    assert_equal ['file0', 'file1', 'file2'], unit.task_definitions.find_by!(abbreviation: '1.3P').upload_requirements.map { |req| req['key'] }, last_response_body
+
+    # Ensure that our file keys are now ordered correctly
+    assert_equal %w[file0 file1], unit.task_definitions.find_by!(abbreviation: '1.1P').upload_requirements.map { |req| req['key'] }, last_response_body
+    assert_equal %w[file0 file1], unit.task_definitions.find_by!(abbreviation: '1.2P').upload_requirements.map { |req| req['key'] }, last_response_body
+    assert_equal %w[file0 file1 file2], unit.task_definitions.find_by!(abbreviation: '1.3P').upload_requirements.map { |req| req['key'] }, last_response_body
   end
 
   # 8: Testing for CSV upload failure due to incorrect auth token
