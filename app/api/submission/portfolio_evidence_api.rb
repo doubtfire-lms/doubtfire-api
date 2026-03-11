@@ -271,9 +271,7 @@ module Submission
       project = Project.find(params[:id])
       task_definition = project.unit.task_definitions.find(params[:task_definition_id])
 
-      # TODO: should a student be allowed to retrieve the submission?
-
-      unless authorise? current_user, project, :get_submission
+      unless authorise? current_user, project, :assess
         error!({ error: "Not authorised to get task '#{task_definition.name}'" }, 401)
       end
 
