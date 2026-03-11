@@ -542,9 +542,9 @@ class Task < ApplicationRecord
     end
 
     # Check to see if another tutor has claimed this task from overflow
-    if overflow_task_claim
+    if active_overflow_task_claim
       unit_role = unit.unit_role_for(by_user)
-      if unit_role && unit_role.id != overflow_task_claim.claimed_by_unit_role_id
+      if unit_role && unit_role.id != active_overflow_task_claim.claimed_by_unit_role_id
         return nil
       end
     end
