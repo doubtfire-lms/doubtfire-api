@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-92](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-91...v10.0.0-92) (2026-03-11)
+
+
+### Bug Fixes
+
+* check for active overflow task claim ([873c278](https://github.com/b0ink/doubtfire-deploy/commit/873c2787f862d518f74e230fb38a1c8c7b6907ab))
+
 ## [10.0.0-91](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-90...v10.0.0-91) (2026-03-09)
 
 ## [10.0.0-90](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-89...v10.0.0-90) (2026-03-09)
