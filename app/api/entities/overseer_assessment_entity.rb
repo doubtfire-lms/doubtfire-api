@@ -10,5 +10,7 @@ module Entities
 
     expose :total_steps
     expose :passed_steps
+
+    expose :has_submission_files?, as: :has_submission_files
   end
 end
