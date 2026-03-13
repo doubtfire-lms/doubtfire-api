@@ -263,6 +263,40 @@ module Submission
       present result, with: Grape::Presenters::Presenter
     end
 
+    desc 'Get the submission files zip for the overseer assessment made at the given timestamp'
+    params do
+      requires :timestamp, type: Integer, desc: 'The submission timestamp for the overseer assessment'
+    end
+    get '/projects/:id/task_def_id/:task_definition_id/submissions/timestamps/:timestamp/files' do
+      project = Project.find(params[:id])
+      task_definition = project.unit.task_definitions.find(params[:task_definition_id])
+
+      unless authorise? current_user, project.unit, :provide_feedback
+        error!({ error: "Not authorised to get task '#{task_definition.name}'" }, 401)
+      end
+
+      task = project.task_for_task_definition(task_definition)
+      unless task
+        error!({ error: 'A submission for this task definition have never been created' }, 401)
+      end
+
+      oa = task.overseer_assessments.find_by(submission_timestamp: params[:timestamp])
+      unless oa
+        error!({ error: "No overseer assessment found for timestamp '#{params[:timestamp]}'" }, 404)
+      end
+
+      unless oa.has_submission_files?
+        error!({ error: "No submission files are available for timestamp '#{params[:timestamp]}'" }, 404)
+      end
+
+      filename = "#{project.student.username}-#{task.task_definition.abbreviation}-#{params[:timestamp]}.zip"
+
+      content_type 'application/octet-stream'
+      header['Content-Disposition'] = "attachment; filename=#{filename}"
+
+      stream_file oa.submission_zip_file_name
+    end
+
     desc 'Get the result of the submission of a task made last'
     get '/projects/:id/task_def_id/:task_definition_id/submissions/latest' do
       project = Project.find(params[:id])
