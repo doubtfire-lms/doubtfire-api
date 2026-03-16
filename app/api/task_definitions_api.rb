@@ -40,6 +40,7 @@ class TaskDefinitionsApi < Grape::API
       optional :scorm_time_delay_enabled, type: Boolean,  desc: 'Whether there is an incremental time delay between SCORM test attempts'
       optional :scorm_attempt_limit,      type: Integer,  desc: 'The number of times a SCORM test can be attempted'
       optional :assess_in_portfolio_only, type: Boolean,  desc: 'Whether a task can only be signed off during portfolio assessment'
+      optional :requires_discussion,      type: Boolean,  desc: 'Whether task must be discussed in class before it can be signed off as complete'
       optional :use_resources_for_jplag_base_code, type: Boolean, desc: 'Include the common base code from task resources for JPlag comparisons'
       optional :lock_assessments_to_tutorial_stream, type: Boolean, desc: 'Only allow tutors in this tutorial stream to assess this task'
     end
@@ -75,6 +76,7 @@ class TaskDefinitionsApi < Grape::API
                                                 :overseer_image_id,
                                                 :similarity_language,
                                                 :assess_in_portfolio_only,
+                                                :requires_discussion,
                                                 :upload_requirements,
                                                 :unit_id,
                                                 :use_resources_for_jplag_base_code,
@@ -134,6 +136,7 @@ class TaskDefinitionsApi < Grape::API
       optional :overseer_image_id,        type: Integer,  desc: 'The id of the Docker image name for overseer'
       optional :similarity_language,      type: String,   desc: 'The language to use for code similarity checks'
       optional :assess_in_portfolio_only, type: Boolean,  desc: 'Whether a task can only be signed off during portfolio assessment'
+      optional :requires_discussion,      type: Boolean,  desc: 'Whether task must be discussed in class before it can be signed off as complete'
       optional :use_resources_for_jplag_base_code, type: Boolean, desc: 'Include the common base code from task resources for JPlag comparisons'
       optional :lock_assessments_to_tutorial_stream, type: Boolean, desc: 'Only allow tutors in this tutorial stream to assess this task'
       # optional :p_target_date, type: Date, desc: 'Pass due date override'
@@ -187,6 +190,7 @@ class TaskDefinitionsApi < Grape::API
                                                 :overseer_image_id,
                                                 :similarity_language,
                                                 :assess_in_portfolio_only,
+                                                :requires_discussion,
                                                 :upload_requirements,
                                                 :use_resources_for_jplag_base_code,
                                                 :lock_assessments_to_tutorial_stream
