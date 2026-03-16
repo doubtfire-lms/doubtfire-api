@@ -156,6 +156,7 @@ class Task < ApplicationRecord
   validate :extensions_must_end_with_due_date, if: -> { has_requested_extension? && !unit.allow_flexible_dates }
 
   validate :prevent_complete_if_assess_in_portfolio_only
+  validate :prevent_complete_if_requires_discussion
   validate :prevent_feedback_exceeed_if_assess_in_portfolio_enabled
   validate :prevent_time_exceeed_if_assess_in_portfolio_enabled
 
@@ -164,6 +165,12 @@ class Task < ApplicationRecord
   def prevent_complete_if_assess_in_portfolio_only
     if task_definition&.assess_in_portfolio_only && task_status == TaskStatus.complete
       errors.add(:task_status, "cannot be 'complete' if task is to be assessed in portfolio only")
+    end
+  end
+
+  def prevent_complete_if_requires_discussion
+    if task_definition&.requires_discussion && task_status == TaskStatus.complete && !has_discussed_in_class_comment?
+      errors.add(:task_status, "cannot be 'complete' until task has been discussed in class")
     end
   end
 
@@ -565,6 +572,10 @@ class Task < ApplicationRecord
     else
       # Only tutors can perform these actions
       if role == :tutor
+        if status == TaskStatus.complete && task_definition.requires_discussion && !has_discussed_in_class_comment?
+          return nil
+        end
+
         if task_definition.assess_in_portfolio_only
           # Block assess_in_portfolio_only tasks from being signed off as complete
           if status == TaskStatus.complete
@@ -603,6 +614,10 @@ class Task < ApplicationRecord
     end
 
     true
+  end
+
+  def has_discussed_in_class_comment?
+    comments.where(content_type: 'discussed_in_class').exists?
   end
 
   def grade_desc
