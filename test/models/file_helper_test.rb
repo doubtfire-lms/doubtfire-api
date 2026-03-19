@@ -1,4 +1,5 @@
 require "test_helper"
+require "open3"
 
 class FileHelperTest < ActiveSupport::TestCase
   def test_convert_use_with_gif
@@ -24,5 +25,37 @@ class FileHelperTest < ActiveSupport::TestCase
     assert_match %r{^#{FileHelper.archive_root}/portfolio/}, archive_portfolio_path
     assert_match %r{^#{FileHelper.student_work_root}/}, original_work_path
     assert_match %r{^#{FileHelper.student_work_root}/portfolio/}, original_portfolio_path
+  end
+
+  def test_process_audio_converts_webm_audio
+    Dir.mktmpdir("audio path ") do |dir|
+      source_wav = File.join(dir, "source tone.wav")
+      webm_input = File.join(dir, "browser recording.webm")
+      wav_output = File.join(dir, "processed recording.wav")
+
+      source_success = system(
+        Doubtfire::Application.config.institution[:ffmpeg],
+        "-loglevel", "quiet",
+        "-y",
+        "-f", "lavfi",
+        "-i", "sine=frequency=440:duration=1",
+        source_wav
+      )
+      assert source_success, "Expected ffmpeg to create a WAV fixture for the test"
+
+      success = system(
+        Doubtfire::Application.config.institution[:ffmpeg],
+        "-loglevel", "quiet",
+        "-y",
+        "-i", source_wav,
+        "-c:a", "libopus",
+        webm_input
+      )
+      assert success, "Expected ffmpeg to create a WebM fixture for the test"
+
+      assert FileHelper.process_audio(webm_input, wav_output)
+      assert File.exist?(wav_output)
+      assert_operator File.size(wav_output), :>, 0
+    end
   end
 end
