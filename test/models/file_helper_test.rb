@@ -28,11 +28,20 @@ class FileHelperTest < ActiveSupport::TestCase
   end
 
   def test_process_audio_converts_webm_audio
-    source_wav = "/workspace/doubtfire-web/src/assets/sounds/discussion-start-signal.wav"
-
     Dir.mktmpdir("audio path ") do |dir|
+      source_wav = File.join(dir, "source tone.wav")
       webm_input = File.join(dir, "browser recording.webm")
       wav_output = File.join(dir, "processed recording.wav")
+
+      source_success = system(
+        Doubtfire::Application.config.institution[:ffmpeg],
+        "-loglevel", "quiet",
+        "-y",
+        "-f", "lavfi",
+        "-i", "sine=frequency=440:duration=1",
+        source_wav
+      )
+      assert source_success, "Expected ffmpeg to create a WAV fixture for the test"
 
       success = system(
         Doubtfire::Application.config.institution[:ffmpeg],
