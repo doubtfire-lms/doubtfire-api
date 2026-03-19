@@ -658,7 +658,30 @@ module FileHelper
   def process_audio(input_path, output_path)
     logger.info("Trying to process audio in FileHelper")
     path = Doubtfire::Application.config.institution[:ffmpeg]
-    TimeoutHelper.system_try_within 20, "Failed to process audio submission - timeout", "#{path} -loglevel quiet -y -i #{input_path} -ac 1 -ar 16000 -sample_fmt s16 #{output_path}"
+    out_text, error_text, status = Open3.capture3(
+      'timeout', '-k', '2', '20',
+      'nice', '-n', '10',
+      path,
+      '-loglevel', 'quiet',
+      '-y',
+      '-i', input_path.to_s,
+      '-ac', '1',
+      '-ar', '16000',
+      '-sample_fmt', 's16',
+      output_path.to_s
+    )
+
+    return true if status.success?
+
+    logger.error(
+      "Failed to process audio submission from #{input_path} to #{output_path}. " \
+      "Exit status: #{status.exitstatus}. STDERR: #{error_text.presence || '(none)'}. " \
+      "STDOUT: #{out_text.presence || '(none)'}"
+    )
+    false
+  rescue => e
+    logger.error "Failed to process audio submission from #{input_path} to #{output_path}. Rescued with error:\n\t#{e.message}"
+    false
   end
 
   def sorted_timestamp_entries_in_dir(path)
