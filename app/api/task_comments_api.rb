@@ -27,12 +27,19 @@ class TaskCommentsApi < Grape::API
     attached_file = params[:attachment]
     reply_to_id = params[:reply_to_id]
 
+    task = project.task_for_task_definition(task_definition)
+    if task.active_overflow_task_claim
+      unit_role = project.unit.unit_role_for(current_user)
+      if unit_role && unit_role.id != task.overflow_task_claim.claimed_by_unit_role_id
+        error!({ error: 'This task is currently being reviewed by another tutor. Please try again later.' }, 403)
+      end
+    end
+
     if attached_file.present?
       error!({ error: "Attachment is empty." }) if File.size?(attached_file["tempfile"].path).blank?
       error!({ error: "Attachment exceeds the maximum attachment size of 30MB." }) unless File.size?(attached_file["tempfile"].path) < 30_000_000
     end
 
-    task = project.task_for_task_definition(task_definition)
     type_string = content_type.to_s
 
     if reply_to_id.present?

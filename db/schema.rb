@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_18_031455) do
+ActiveRecord::Schema[8.0].define(version: 2026_03_09_065302) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -208,11 +208,30 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_18_031455) do
     t.index ["user_id"], name: "index_marking_sessions_on_user_id"
   end
 
-  create_table "notifications", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
-    t.integer "user_id"
-    t.string "message"
+  create_table "moderated_tasks", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "task_id", null: false
+    t.bigint "task_definition_id", null: false
+    t.datetime "last_moderated_date"
+    t.string "state", null: false
+    t.string "moderation_type", null: false
+    t.bigint "assessor_id"
+    t.bigint "resolved_by_user_id"
+    t.datetime "resolved_at"
+    t.string "outcome"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["assessor_id", "task_definition_id", "moderation_type"], name: "idx_mod_tasks_assessor_td_type"
+    t.index ["task_definition_id"], name: "index_moderated_tasks_on_task_definition_id"
+    t.index ["task_id", "moderation_type"], name: "uniq_mod_tasks_task_type", unique: true
+    t.index ["task_id"], name: "index_moderated_tasks_on_task_id"
+  end
+
+  create_table "overflow_task_claims", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "task_id", null: false
+    t.bigint "claimed_by_unit_role_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["task_id"], name: "index_overflow_task_claims_on_task_id", unique: true
   end
 
   create_table "overseer_assessments", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
@@ -385,6 +404,17 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_18_031455) do
     t.index ["user_id"], name: "index_task_comments_on_user_id"
   end
 
+  create_table "task_definition_grade_due_dates", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "task_definition_id", null: false
+    t.integer "target_grade", null: false
+    t.datetime "target_due_date"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "start_date"
+    t.index ["task_definition_id", "target_grade"], name: "idx_td_grade_due_unique", unique: true
+    t.index ["task_definition_id"], name: "index_task_definition_grade_due_dates_on_task_definition_id"
+  end
+
   create_table "task_definitions", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.bigint "unit_id"
     t.string "name"
@@ -418,6 +448,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_18_031455) do
     t.boolean "assess_in_portfolio_only", default: false, null: false
     t.boolean "use_resources_for_jplag_base_code", default: false, null: false
     t.boolean "lock_assessments_to_tutorial_stream", default: false, null: false
+    t.boolean "requires_discussion", default: false, null: false
     t.index ["abbreviation", "unit_id"], name: "index_task_definitions_on_abbreviation_and_unit_id", unique: true
     t.index ["group_set_id"], name: "index_task_definitions_on_group_set_id"
     t.index ["name", "unit_id"], name: "index_task_definitions_on_name_and_unit_id", unique: true
@@ -513,6 +544,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_18_031455) do
     t.integer "scorm_extensions", default: 0, null: false
     t.datetime "target_start_date"
     t.datetime "target_due_date"
+    t.datetime "last_tutor_feedback_at"
     t.index ["group_submission_id"], name: "index_tasks_on_group_submission_id"
     t.index ["project_id", "task_definition_id"], name: "tasks_uniq_proj_task_def", unique: true
     t.index ["project_id"], name: "index_tasks_on_project_id"
@@ -594,6 +626,31 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_18_031455) do
     t.index ["tii_task_similarity_id"], name: "index_tii_submissions_on_tii_task_similarity_id"
   end
 
+  create_table "tutor_feedback_scores", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "unit_role_id", null: false
+    t.bigint "task_definition_id", null: false
+    t.integer "score", default: 50, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["task_definition_id"], name: "index_tutor_feedback_scores_on_task_definition_id"
+    t.index ["unit_role_id"], name: "index_tutor_feedback_scores_on_unit_role_id"
+  end
+
+  create_table "tutor_notes", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.text "note"
+    t.bigint "task_id"
+    t.bigint "unit_role_id", null: false
+    t.bigint "user_id", null: false
+    t.bigint "reply_to_id"
+    t.boolean "read_by_unit_role", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["reply_to_id"], name: "index_tutor_notes_on_reply_to_id"
+    t.index ["task_id"], name: "index_tutor_notes_on_task_id"
+    t.index ["unit_role_id"], name: "index_tutor_notes_on_unit_role_id"
+    t.index ["user_id"], name: "index_tutor_notes_on_user_id"
+  end
+
   create_table "tutorial_enrolments", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -646,6 +703,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_18_031455) do
     t.bigint "role_id"
     t.bigint "unit_id"
     t.boolean "observer_only", default: false
+    t.bigint "mentor_id"
+    t.boolean "can_mark_overflow_tasks", default: false
+    t.index ["mentor_id"], name: "index_unit_roles_on_mentor_id"
     t.index ["role_id"], name: "index_unit_roles_on_role_id"
     t.index ["tutorial_id"], name: "index_unit_roles_on_tutorial_id"
     t.index ["unit_id"], name: "index_unit_roles_on_unit_id"
@@ -680,6 +740,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_18_031455) do
     t.boolean "allow_flexible_dates", default: false, null: false
     t.datetime "portfolio_due_date"
     t.boolean "mark_late_submissions_as_assess_in_portfolio", default: false, null: false
+    t.integer "feedback_warning_threshold_days", default: 5
+    t.integer "feedback_overflow_threshold_days", default: 7
     t.index ["draft_task_definition_id"], name: "index_units_on_draft_task_definition_id"
     t.index ["main_convenor_id"], name: "index_units_on_main_convenor_id"
     t.index ["overseer_image_id"], name: "index_units_on_overseer_image_id"

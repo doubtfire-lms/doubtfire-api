@@ -163,6 +163,7 @@ class UnitsApiTest < ActiveSupport::TestCase
   def test_add_tutorial_to_unit
     unit = FactoryBot.create :unit, with_students: false, stream_count: 0
     count_tutorials = Tutorial.all.length
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
 
     tutorial = {
       unit_id: unit.id,
@@ -172,7 +173,8 @@ class UnitsApiTest < ActiveSupport::TestCase
       abbreviation: 'LA011',
       meeting_location: 'LAB34',
       meeting_day: 'Tuesday',
-      meeting_time: '18:00'
+      meeting_time: '18:00',
+      tutorial_stream_abbr: tutorial_stream.abbreviation
     }
 
     data_to_post = {
@@ -345,9 +347,13 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert actual_unit.key?("staff"), actual_unit.inspect
     assert_equal expected_unit.staff.count, actual_unit["staff"].count, actual_unit["staff"].inspect
     actual_unit["staff"].each do |staff|
-      keys = %w[id role user observer_only]
-      assert_json_limit_keys_to_exactly keys, staff
       ur = UnitRole.find(staff['id'])
+
+      keys = %w[id role user observer_only mentor_id can_mark_overflow_tasks]
+      # Check to ensure tutor_note_count is only exposed to the current user's unit role
+      keys << 'tutor_note_count' if ur.unit.unit_role_for(expected_unit.main_convenor_user).id == ur.id
+
+      assert_json_limit_keys_to_exactly keys, staff
       assert_equal ur.id, staff['id']
       assert_equal ur.role.name, staff['role']
       assert_equal ur.user.id, staff['user']['id']

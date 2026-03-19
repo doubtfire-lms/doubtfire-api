@@ -190,6 +190,14 @@ class Unit < ApplicationRecord
   validates :code, uniqueness: { scope: :teaching_period, message: "%{value} already exists in this teaching period" }, if: :has_teaching_period?
   validates :extension_weeks_on_resubmit_request, :numericality => { :greater_than_or_equal_to => 0 }
 
+  validates :feedback_warning_threshold_days,
+            numericality: { greater_than_or_equal_to: 0 }
+
+  validates :feedback_overflow_threshold_days,
+            numericality: { greater_than_or_equal_to: 0 }
+
+  validate :warning_not_greater_than_overflow
+
   validate :validate_end_date_after_start_date
   validate :ensure_teaching_period_dates_match, if: :has_teaching_period?
 
@@ -210,6 +218,17 @@ class Unit < ApplicationRecord
   include UnitTiiModule
 
   include UnitSimilarityModule
+
+  validate :warning_not_greater_than_overflow
+
+  def warning_not_greater_than_overflow
+    return if feedback_warning_threshold_days <= feedback_overflow_threshold_days
+
+    errors.add(
+      :feedback_warning_threshold_days,
+      'must be less than or equal to the overflow threshold'
+    )
+  end
 
   def detailed_name
     "#{name} #{teaching_period.present? ? teaching_period.detailed_name : start_date.strftime('%Y-%m-%d')}"
@@ -2176,6 +2195,130 @@ class Unit < ApplicationRecord
     get_all_tasks_for(user, my_students_only)
       .having('task_statuses.id IN (:ids) OR COUNT(task_pins.task_id) > 0 OR SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) > 0', ids: [TaskStatus.ready_for_feedback, TaskStatus.need_help])
       .order('pinned DESC, submission_date ASC, MAX(task_comments.created_at) ASC, task_definition_id ASC')
+  end
+
+  #
+  # Return the tasks that have been selected to be moderated by the tutor's mentor
+  #
+  # Tasks that are included are:
+  # - If a ModeratedTask exists for a task, and has not been dismissed
+  # - A TaskComment exists from the task's tutor, that is atleast 15 minutes old
+  #
+  # Tasks with the oldest feedback are shown first
+  #
+  def tasks_for_moderation(user)
+    my_unit_role = unit_role_for(user)
+    mentees = my_unit_role ? staff.where(mentor_id: my_unit_role.id) : staff.none
+
+    tasks = student_tasks
+                  .joins(:moderated_task)
+                  .where(moderated_tasks: { state: %i[open waiting_for_new_feedback] })
+                  .where(projects: { unit_id: id })
+                  .joins(:task_definition)
+                  .joins(project: { tutorial_enrolments: :tutorial })
+                  .where('tutorials.tutorial_stream_id = task_definitions.tutorial_stream_id')
+                  .select(
+                    'tasks.id AS task_id',
+                    'tasks.project_id',
+                    'tasks.task_definition_id',
+                    # 'tutorials.id AS tutorial_id',
+                    'tasks.task_status_id AS status_id',
+                    'tasks.completion_date',
+                    'tasks.submission_date',
+                    # 'tasks.times_assessed',
+                    # 'tasks.grade',
+                    # 'tasks.quality_pts',
+                    # '0 AS number_unread',
+                    # '0 AS similar_to_count',
+                    # 'false AS pinned',
+                    # 'false AS has_extensions',
+                    'tasks.*',
+                  )
+                  .distinct
+
+    if my_unit_role.nil? || my_unit_role.role != Role.convenor
+      tasks = tasks.where(tutorials: { unit_role_id: mentees.select(:id) })
+    end
+
+    # Only include tasks where the tutor's latest comment is at least 15 minutes old
+    # to ensure that the feedback is likely complete before adding it for moderation
+    comment_threshold = 15.minutes.ago
+
+    tasks = tasks.to_a.select do |task|
+      mt = task.moderated_task
+      next false if mt.nil?
+      next true if mt.escalation?
+
+      feedback_time = task.last_tutor_feedback_at
+      feedback_time.present? &&
+        feedback_time <= comment_threshold &&
+        feedback_time > (mt.last_moderated_date || epoch)
+    end
+
+    tasks.sort_by { |task| [task.moderated_task.escalation? ? 0 : 1, task.last_tutor_feedback_at || Time.zone.at(0)] }
+  end
+
+
+  #
+  # Return the tasks that have been waiting for feedback the longest (past the unit's feedback threshold setting)
+  #
+  # Tasks that are included are:
+  # - If the task is ready for feedback
+  # - Has been submitted more than {{ unit.feedback_overflow_threshold_days }} days ago
+  # - Has not been claimed by another tutor
+  #
+  # Tasks claimed by the current user will be shown first, then sorted by showing oldest submitted tasks first
+  #
+  def tasks_for_overflow_marking(user)
+    threshold     = feedback_overflow_threshold_days.days.ago
+    unit_role_id  = unit_role_for(user)&.id
+
+    tasks = student_tasks
+              .includes(:comments, :overflow_task_claim)
+              .where(projects: { unit_id: id })
+              .joins(:task_definition)
+              .where(tasks: { task_status_id: TaskStatus.ready_for_feedback.id })
+              .where('tasks.submission_date <= ?', threshold)
+              .select(
+                'tasks.id AS task_id',
+                'tasks.project_id',
+                'tasks.task_definition_id',
+                '(SELECT te.tutorial_id
+                      FROM tutorial_enrolments te
+                      WHERE te.project_id = tasks.project_id
+                      ORDER BY te.created_at DESC
+                      LIMIT 1) AS tutorial_id',
+                'tasks.task_status_id AS status_id',
+                'tasks.completion_date',
+                'tasks.submission_date',
+                'tasks.times_assessed',
+                'tasks.grade',
+                'tasks.quality_pts',
+                '0 AS number_unread',
+                '0 AS similar_to_count',
+                'false AS pinned',
+                'false AS has_extensions',
+                'tasks.*'
+          )
+              .distinct
+              .to_a
+
+    # Filter out tasks claimed by someone else (active claim only)
+    tasks = tasks.select do |task|
+      claim = task.active_overflow_task_claim
+      claim.nil? || claim.claimed_by_unit_role_id == unit_role_id
+    end
+
+    # Sort:
+    # 1) tasks claimed by current user (active claim) first
+    # 2) then oldest submission first
+    tasks.sort_by! do |task|
+      claim = task.active_overflow_task_claim
+      claimed_by_me = claim && claim.claimed_by_unit_role_id == unit_role_id ? 0 : 1
+      [claimed_by_me, task.submission_date]
+    end
+
+    tasks
   end
 
   #

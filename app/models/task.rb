@@ -125,6 +125,8 @@ class Task < ApplicationRecord
   belongs_to :group_submission, optional: true
 
   has_one :unit, through: :project
+  has_one :moderated_task, dependent: :destroy
+  has_one :overflow_task_claim, dependent: :destroy
 
   has_many :comments, class_name: 'TaskComment', dependent: :destroy, inverse_of: :task
   has_many :task_similarities, class_name: 'TaskSimilarity', dependent: :destroy, inverse_of: :task
@@ -154,6 +156,7 @@ class Task < ApplicationRecord
   validate :extensions_must_end_with_due_date, if: -> { has_requested_extension? && !unit.allow_flexible_dates }
 
   validate :prevent_complete_if_assess_in_portfolio_only
+  validate :prevent_complete_if_requires_discussion
   validate :prevent_feedback_exceeed_if_assess_in_portfolio_enabled
   validate :prevent_time_exceeed_if_assess_in_portfolio_enabled
 
@@ -162,6 +165,12 @@ class Task < ApplicationRecord
   def prevent_complete_if_assess_in_portfolio_only
     if task_definition&.assess_in_portfolio_only && task_status == TaskStatus.complete
       errors.add(:task_status, "cannot be 'complete' if task is to be assessed in portfolio only")
+    end
+  end
+
+  def prevent_complete_if_requires_discussion
+    if task_definition&.requires_discussion && task_status == TaskStatus.complete && !has_discussed_in_class_comment?
+      errors.add(:task_status, "cannot be 'complete' until task has been discussed in class")
     end
   end
 
@@ -475,6 +484,29 @@ class Task < ApplicationRecord
     !group_submission.nil? || !task_definition.group_set.nil?
   end
 
+  def active_overflow_task_claim
+    claim = overflow_task_claim
+    return nil unless claim
+
+    threshold = 30.minutes.ago
+    unit = project.unit
+
+    # Find latest comment made by the claiming unit role (on this task)
+    latest_by_claimer =
+      comments
+      .where('task_comments.created_at > ?', claim.created_at)
+      .includes(:user)
+      .select { |c| unit.unit_role_for(c.user)&.id == claim.claimed_by_unit_role_id }
+      .max_by(&:created_at)
+
+    # If they've commented, use that as the activity timer; otherwise fall back to claim time
+    last_activity_at = latest_by_claimer&.created_at || claim.created_at
+
+    return nil if last_activity_at < threshold
+
+    claim
+  end
+
   def group
     return nil unless group_task?
 
@@ -516,6 +548,13 @@ class Task < ApplicationRecord
       return nil unless tutorials.any? { |t| t.unit_role == unit_role }
     end
 
+    # Check to see if another tutor has claimed this task from overflow
+    if active_overflow_task_claim
+      unit_role = unit.unit_role_for(by_user)
+      if unit_role && unit_role.id != active_overflow_task_claim.claimed_by_unit_role_id
+        return nil
+      end
+    end
     #
     # State transitions based upon the trigger
     #
@@ -533,6 +572,10 @@ class Task < ApplicationRecord
     else
       # Only tutors can perform these actions
       if role == :tutor
+        if status == TaskStatus.complete && task_definition.requires_discussion && !has_discussed_in_class_comment?
+          return nil
+        end
+
         if task_definition.assess_in_portfolio_only
           # Block assess_in_portfolio_only tasks from being signed off as complete
           if status == TaskStatus.complete
@@ -571,6 +614,10 @@ class Task < ApplicationRecord
     end
 
     true
+  end
+
+  def has_discussed_in_class_comment?
+    comments.where(content_type: 'discussed_in_class').exists?
   end
 
   def grade_desc
@@ -659,6 +706,25 @@ class Task < ApplicationRecord
 
     # Save the task
     if save!
+      if assessor == tutor && task_status != TaskStatus.time_exceeded && task_status != TaskStatus.assess_in_portfolio
+        moderated_task = ModeratedTask.find_by(task: self)
+        if moderated_task
+          if moderated_task.assessor_id != tutor.id
+            moderated_task.update!(assessor_id: tutor.id)
+          end
+        else
+          sample_count = ModeratedTask.where(
+            moderation_type: :first_feedback,
+            assessor_id: tutor.id,
+            task_definition: task_definition
+          ).count
+
+          if sample_count < 3
+            mark_as_moderated(moderation_type: :first_feedback)
+          end
+        end
+      end
+
       if task_status == TaskStatus.fix_and_resubmit
         # Look for other submitted tasks from this student that has this task as a prerequisite
         # If they are ready for feedback, automatically assess them to fix and resubmit
@@ -673,6 +739,7 @@ class Task < ApplicationRecord
           next unless task.task_status == TaskStatus.ready_for_feedback
           # Since we are calling this assess method again, we recursively check for more dependent tasks that need to be updated
           task.assess(TaskStatus.fix_and_resubmit, assessor, assess_date)
+          task.add_status_comment(assessor, TaskStatus.fix_and_resubmit)
           task.add_text_comment(assessor, "**Automated comment**: A prerequisite task was updated to Fix and Resubmit, so this task was updated as well. You may need to review and update the prerequisite before resubmitting.")
         end
       end
@@ -889,6 +956,23 @@ class Task < ApplicationRecord
 
     comment.save!
     comment
+  end
+
+  def add_feedback_review_request_comment(current_user)
+    comment = 'Feedback Review Requested'
+
+    lc = comments.last
+
+    # don't add if duplicate comment
+    return if lc && lc.user == current_user && lc.content_type == 'feedback_review_request' && lc.comment == comment
+
+    request = TaskFeedbackReviewRequestComment.create
+    request.task = self
+    request.user = current_user
+    request.comment = comment
+    request.recipient = current_user == project.student ? project.tutor_for(task_definition) : project.student
+    request.save!
+    request
   end
 
   def last_comment
@@ -1593,6 +1677,20 @@ class Task < ApplicationRecord
             task_definition.assessment_enabled &&
             # task_definition.has_task_assessment_script? &&
             (has_new_files? || has_done_file?)
+  end
+
+  def mark_as_moderated(moderation_type: :random_sample)
+    moderated_task = ModeratedTask.find_by(task_id: id)
+    if moderated_task.nil?
+      ModeratedTask.create!({
+                              task: self,
+                              task_definition: task_definition,
+                              assessor_id: tutor.id,
+                              state: :open,
+                              moderation_type: moderation_type,
+                              last_moderated_date: Time.zone.now
+                            })
+    end
   end
 
   private

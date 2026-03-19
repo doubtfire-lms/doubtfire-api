@@ -96,6 +96,7 @@ class ApiRoot < Grape::API
   mount TutorialEnrolmentsApi
   mount UnitRolesApi
   mount UnitsApi
+  mount TutorNotesApi
 
   mount D2lIntegrationApi::D2lApi
   mount D2lIntegrationApi::OauthPublicApi
@@ -157,6 +158,7 @@ class ApiRoot < Grape::API
   AuthenticationHelpers.add_auth_to MarkingSessionsApi
   AuthenticationHelpers.add_auth_to DiscussionPromptsApi
   AuthenticationHelpers.add_auth_to OverseerStepsApi
+  AuthenticationHelpers.add_auth_to TutorNotesApi
 
   add_swagger_documentation \
     base_path: nil,

@@ -819,6 +819,52 @@ class TasksApiTest < ActiveSupport::TestCase
     assert TaskCheckedInComment, lc.type
   end
 
+  def test_requires_discussion_blocks_complete_until_discussed_comment_added
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
+    td = TaskDefinition.create!({
+                                  unit_id: unit.id,
+                                  tutorial_stream: unit.tutorial_streams.first,
+                                  name: 'Discussion required task',
+                                  description: 'Task that requires discussion before complete',
+                                  weighting: 4,
+                                  target_grade: 0,
+                                  start_date: Time.zone.now - 2.weeks,
+                                  target_date: Time.zone.now + 1.week,
+                                  abbreviation: 'DiscussReqTask',
+                                  restrict_status_updates: false,
+                                  requires_discussion: true,
+                                  upload_requirements: [],
+                                  plagiarism_warn_pct: 0.8,
+                                  is_graded: false,
+                                  max_quality_pts: 0
+                                })
+
+    project = unit.active_projects.first
+    task = project.task_for_task_definition(td)
+    tutor = unit.tutors.first
+
+    add_auth_header_for(user: tutor)
+
+    put "/api/projects/#{project.id}/task_def_id/#{td.id}", { trigger: 'complete' }
+    assert_equal 403, last_response.status
+    assert_equal 'This task must be discussed in class before it can be marked complete.', last_response_body['error']
+    task.reload
+    assert_not_equal TaskStatus.complete, task.task_status
+
+    put "/api/projects/#{project.id}/task_def_id/#{td.id}", { discussed: true }
+    assert_equal 200, last_response.status
+    task.reload
+    discussed_comment = task.comments.last
+    assert_not_nil discussed_comment
+    assert_instance_of TaskDiscussedComment, discussed_comment
+    assert_equal 'discussed_in_class', discussed_comment.content_type
+
+    put "/api/projects/#{project.id}/task_def_id/#{td.id}", { trigger: 'complete' }
+    assert_equal 200, last_response.status
+    task.reload
+    assert_equal TaskStatus.complete, task.task_status
+  end
+
   def test_require_comment_for_feedback_submission_assess_in_portfolio
     Sidekiq::Testing.inline! do
       unit = FactoryBot.create(:unit, student_count: 1, task_count: 2)

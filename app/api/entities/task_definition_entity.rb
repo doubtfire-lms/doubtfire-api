@@ -19,6 +19,14 @@ module Entities
       expose :target_date
       expose :due_date
       expose :start_date
+      # expose :p_target_date, expose_nil: false
+      expose :c_target_date, expose_nil: false
+      expose :d_target_date, expose_nil: false
+      expose :hd_target_date, expose_nil: false
+
+      expose :c_start_date, expose_nil: false
+      expose :d_start_date, expose_nil: false
+      expose :hd_start_date, expose_nil: false
     end
 
     expose :upload_requirements, expose_nil: false do |task_definition, options|
@@ -54,6 +62,7 @@ module Entities
     expose :assessment_enabled
     expose :similarity_language, if: ->(unit, options) { staff?(options[:my_role]) }, expose_nil: false
     expose :assess_in_portfolio_only
+    expose :requires_discussion
     expose :use_resources_for_jplag_base_code, if: ->(unit, options) { staff?(options[:my_role]) }
     expose :lock_assessments_to_tutorial_stream, if: ->(unit, options) { staff?(options[:my_role]) }
 

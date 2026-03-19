@@ -40,6 +40,7 @@ class TaskDefinitionsApi < Grape::API
       optional :scorm_time_delay_enabled, type: Boolean,  desc: 'Whether there is an incremental time delay between SCORM test attempts'
       optional :scorm_attempt_limit,      type: Integer,  desc: 'The number of times a SCORM test can be attempted'
       optional :assess_in_portfolio_only, type: Boolean,  desc: 'Whether a task can only be signed off during portfolio assessment'
+      optional :requires_discussion,      type: Boolean,  desc: 'Whether task must be discussed in class before it can be signed off as complete'
       optional :use_resources_for_jplag_base_code, type: Boolean, desc: 'Include the common base code from task resources for JPlag comparisons'
       optional :lock_assessments_to_tutorial_stream, type: Boolean, desc: 'Only allow tutors in this tutorial stream to assess this task'
     end
@@ -75,6 +76,7 @@ class TaskDefinitionsApi < Grape::API
                                                 :overseer_image_id,
                                                 :similarity_language,
                                                 :assess_in_portfolio_only,
+                                                :requires_discussion,
                                                 :upload_requirements,
                                                 :unit_id,
                                                 :use_resources_for_jplag_base_code,
@@ -134,8 +136,16 @@ class TaskDefinitionsApi < Grape::API
       optional :overseer_image_id,        type: Integer,  desc: 'The id of the Docker image name for overseer'
       optional :similarity_language,      type: String,   desc: 'The language to use for code similarity checks'
       optional :assess_in_portfolio_only, type: Boolean,  desc: 'Whether a task can only be signed off during portfolio assessment'
+      optional :requires_discussion,      type: Boolean,  desc: 'Whether task must be discussed in class before it can be signed off as complete'
       optional :use_resources_for_jplag_base_code, type: Boolean, desc: 'Include the common base code from task resources for JPlag comparisons'
       optional :lock_assessments_to_tutorial_stream, type: Boolean, desc: 'Only allow tutors in this tutorial stream to assess this task'
+      # optional :p_target_date, type: Date, desc: 'Pass due date override'
+      optional :c_target_date,            type: Date,     desc: 'Credit due date override'
+      optional :d_target_date,            type: Date,     desc: 'Distinction due date override'
+      optional :hd_target_date,           type: Date,     desc: 'High Distinction due date override'
+      optional :c_start_date,             type: Date,     desc: 'Credit start date override'
+      optional :d_start_date,             type: Date,     desc: 'Distinction start date override'
+      optional :hd_start_date,            type: Date,     desc: 'High Distinction start date override'
     end
   end
   put '/units/:unit_id/task_definitions/:id' do
@@ -145,6 +155,16 @@ class TaskDefinitionsApi < Grape::API
     unless authorise? current_user, task_def.unit, :add_task_def
       error!({ error: 'Not authorised to create a task definition of this unit' }, 403)
     end
+
+    # strip these out so TaskDefinition#update! never sees them
+    grade_due_overrides = params[:task_def].slice(
+      'p_target_date', 'c_target_date', 'd_target_date', 'hd_target_date',
+      'p_start_date', 'c_start_date', 'd_start_date', 'hd_start_date'
+    )
+    params[:task_def].except!(
+      'p_target_date', 'c_target_date', 'd_target_date', 'hd_target_date',
+      'p_start_date', 'c_start_date', 'd_start_date', 'hd_start_date'
+    )
 
     task_params = ActionController::Parameters.new(params)
                                               .require(:task_def)
@@ -170,6 +190,7 @@ class TaskDefinitionsApi < Grape::API
                                                 :overseer_image_id,
                                                 :similarity_language,
                                                 :assess_in_portfolio_only,
+                                                :requires_discussion,
                                                 :upload_requirements,
                                                 :use_resources_for_jplag_base_code,
                                                 :lock_assessments_to_tutorial_stream
@@ -216,6 +237,31 @@ class TaskDefinitionsApi < Grape::API
         task_def.group_set = nil
         task_def.save!
       end
+    end
+
+    grade_number = { 'c' => 1, 'd' => 2, 'hd' => 3 }
+    field_map = { 'target_date' => :target_due_date, 'start_date' => :start_date }
+
+    grade_due_overrides.each do |key, date|
+      next if date.blank?
+
+      # if task_def.start_date > date
+      #   error!({ error: 'Target date cannot be earlier than start date' }, 400)
+      # end
+
+      unless unit.allow_flexible_dates
+        error!({ error: 'This unit must have Allow Flexible Dates enabled to modify target dates per grade' }, 403)
+      end
+
+      grade_key, kind = key.to_s.split('_', 2) # e.g. "c", "target_date"
+      next unless grade_number.key?(grade_key)
+      next unless field_map.key?(kind)
+
+      row = TaskDefinitionGradeDueDate.find_or_initialize_by(
+        task_definition: task_def,
+        target_grade: grade_number[grade_key]
+      )
+      row.update!(field_map[kind] => date)
     end
 
     present task_def, with: Entities::TaskDefinitionEntity, my_role: unit.role_for(current_user)
@@ -438,7 +484,7 @@ class TaskDefinitionsApi < Grape::API
 
     # Actually import...
     task_def.add_task_assessment_resources(file_path)
-    true
+    task_def.overseer_resource_files
   end
 
   desc 'Remove the task assessment resources for a given task'

@@ -29,5 +29,7 @@ module Entities
 
     expose :grade, if: :for_staff
     expose :grade_rationale, if: :for_staff
+
+    expose :escalation_attempts_remaining
   end
 end

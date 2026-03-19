@@ -715,6 +715,12 @@ class Project < ApplicationRecord
     note
   end
 
+  # TODO: env var for escalation attempts -- per unit setting? max_feedback_escalation_attempts
+
+  def escalation_attempts_remaining
+    3 - ModeratedTask.where(task: tasks, moderation_type: :escalation, outcome: [nil, 'upheld']).count
+  end
+
   private
 
   def can_destroy?

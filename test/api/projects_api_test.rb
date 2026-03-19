@@ -51,8 +51,8 @@ class ProjectsApiTest < ActiveSupport::TestCase
     # Add username and auth_token to Header
     add_auth_header_for(user: user)
 
-    keys = %w(id unit campus_id user_id target_grade portfolio_available spec_con_days)
-    key_test = %w(campus_id target_grade spec_con_days)
+    keys = %w[id unit campus_id user_id target_grade portfolio_available spec_con_days escalation_attempts_remaining]
+    key_test = %w[campus_id target_grade spec_con_days]
 
     get '/api/projects'
     assert_equal 2, last_response_body.count, last_response_body
@@ -76,7 +76,7 @@ class ProjectsApiTest < ActiveSupport::TestCase
     # Add username and auth_token to Header
     add_auth_header_for(user: user)
 
-    keys = %w[id unit unit_id user_id campus_id target_grade submitted_grade portfolio_files compile_portfolio portfolio_available uses_draft_learning_summary tasks tutorial_enrolments groups spec_con_days]
+    keys = %w[id unit unit_id user_id campus_id target_grade submitted_grade portfolio_files compile_portfolio portfolio_available uses_draft_learning_summary tasks tutorial_enrolments groups spec_con_days escalation_attempts_remaining]
     key_test = keys - %w[unit user_id portfolio_available tasks tutorial_enrolments groups]
 
     get "/api/projects/#{project.id}"

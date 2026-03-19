@@ -65,7 +65,7 @@ class TutorialsApi < Grape::API
       requires :meeting_location,     type: String,   desc: 'The tutorials location',                         allow_blank: false
       requires :meeting_day,          type: String,   desc: 'Day of the tutorial',                            allow_blank: false
       requires :meeting_time,         type: String,   desc: 'Time of the tutorial',                           allow_blank: false
-      optional :tutorial_stream_abbr, type: String,   desc: 'Abbreviation of the associated tutorial stream', allow_blank: false
+      requires :tutorial_stream_abbr, type: String,   desc: 'Abbreviation of the associated tutorial stream', allow_blank: false
     end
   end
   post '/tutorials' do
@@ -82,6 +82,10 @@ class TutorialsApi < Grape::API
     # Set Tutorial Stream if available
     tutorial_stream_abbr = tut_params[:tutorial_stream_abbr]
     tutorial_stream = unit.tutorial_streams.find_by!(abbreviation: tutorial_stream_abbr) unless tutorial_stream_abbr.nil?
+
+    unless tutorial_stream
+      error!({ error: 'Tutorial must belong to a tutorial stream' }, 403)
+    end
 
     tutorial = unit.add_tutorial(tut_params[:meeting_day], tut_params[:meeting_time], tut_params[:meeting_location], tutor, campus, tut_params[:capacity], tut_params[:abbreviation], tutorial_stream)
 
