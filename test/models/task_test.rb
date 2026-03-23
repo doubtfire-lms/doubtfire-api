@@ -1471,7 +1471,7 @@ class TaskTest < ActiveSupport::TestCase
     assert_equal TaskStatus.ready_for_feedback, task3.task_status
     assert_equal TaskStatus.ready_for_feedback, task4.task_status
 
-    # Test case 1: Ensure parent prerequisite is not affected
+    # Test case 1: Without recursive_fix, dependent tasks should not be affected
     task2.assess(TaskStatus.fix_and_resubmit, tutor)
 
     task1.reload
@@ -1479,10 +1479,10 @@ class TaskTest < ActiveSupport::TestCase
     task3.reload
     task4.reload
 
-    # Task 1 should not be affected if the dependent task is assessed to fix and resubmit
+    # Task 1 should not be affected, and recursive fixes should not run by default
     assert_equal TaskStatus.ready_for_feedback, task1.task_status, "Parent prerequisite should not be affected"
     assert_equal TaskStatus.fix_and_resubmit, task2.task_status, "Task should have updated to Fix and Resubmit"
-    assert_equal TaskStatus.fix_and_resubmit, task3.task_status, "Dependent task should have automatically moved to Fix and Resubmit"
+    assert_equal TaskStatus.ready_for_feedback, task3.task_status, "Dependent task should not change without recursive_fix"
     assert_equal TaskStatus.ready_for_feedback, task4.task_status # Task 4 has no prerequsite links
 
     # Reset status
@@ -1499,7 +1499,7 @@ class TaskTest < ActiveSupport::TestCase
     task4.reload
 
     # Test case 2: Ensure dependent tasks are recursively moved to fix and resubmit
-    task1.assess(TaskStatus.fix_and_resubmit, tutor)
+    task1.assess(TaskStatus.fix_and_resubmit, tutor, Time.zone.now, true)
 
     task1.reload
     task2.reload
@@ -1527,7 +1527,7 @@ class TaskTest < ActiveSupport::TestCase
     task4.reload
 
     # Test case 3: Ensure tasks that are not Ready for Feedback are not moved to Fix and resubmit
-    task1.assess(TaskStatus.fix_and_resubmit, tutor)
+    task1.assess(TaskStatus.fix_and_resubmit, tutor, Time.zone.now, true)
 
     task1.reload
     task2.reload
