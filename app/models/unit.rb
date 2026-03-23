@@ -155,6 +155,7 @@ class Unit < ApplicationRecord
   has_many :unit_roles, dependent: :destroy, inverse_of: :unit
   has_many :learning_outcomes, as: :context, dependent: :destroy # inverse_of: :unit
   has_many :marking_sessions, dependent: :destroy
+  has_many :task_completion_snapshots, dependent: :destroy, inverse_of: :unit
 
   has_many :comments, through: :projects
   has_many :tasks, through: :projects
@@ -3125,6 +3126,42 @@ class Unit < ApplicationRecord
           row[:comments_made].to_s,
         ])
       end
+    end
+  end
+
+  def aggregate_task_complete_stats
+    result = {}
+
+    task_definitions.each do |td|
+      result[td.abbreviation] = {}
+    end
+
+    active_projects.each do |project|
+      campus_name = project.campus.name
+      result[campus_name] ||= {}
+
+      task_definitions.each do |td|
+        result[campus_name][td.abbreviation] ||= {}
+
+        task = project.task_for_task_definition(td)
+        next unless task
+
+        status = task.task_status.id.to_s
+        result[campus_name][td.abbreviation][status] ||= 0
+        result[campus_name][td.abbreviation][status] += 1
+      end
+    end
+
+    result
+  end
+
+  def capture_task_complete_stats_snapshot!(captured_at: Time.zone.now)
+    task_completion_snapshots
+      .find_or_initialize_by(snapshot_date: captured_at.to_date)
+      .tap do |snapshot|
+      snapshot.captured_at = captured_at
+      snapshot.stats = aggregate_task_complete_stats
+      snapshot.save!
     end
   end
 

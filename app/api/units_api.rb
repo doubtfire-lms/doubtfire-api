@@ -574,6 +574,52 @@ class UnitsApi < Grape::API
     present unit.student_task_completion_stats, with: Grape::Presenters::Presenter
   end
 
+  desc 'Get historical task completion snapshots'
+  params do
+    optional :start_date, type: Date, desc: 'Include snapshots captured on or after this date'
+    optional :end_date, type: Date, desc: 'Include snapshots captured on or before this date'
+    optional :limit, type: Integer, desc: 'Maximum number of snapshots to return', default: 365
+  end
+  get '/units/:id/stats/task_completion_snapshots' do
+    unit = Unit.find(params[:id])
+    unless authorise? current_user, unit, :download_stats
+      error!({ error: "Not authorised to download stats of student tasks in #{unit.code}" }, 403)
+    end
+
+    snapshots = unit.task_completion_snapshots.order(captured_at: :desc)
+    snapshots = snapshots.where('snapshot_date >= ?', params[:start_date]) if params[:start_date].present?
+    snapshots = snapshots.where('snapshot_date <= ?', params[:end_date]) if params[:end_date].present?
+    snapshots = snapshots.limit([params[:limit].to_i, 365].min)
+
+    present snapshots.map { |snapshot|
+      {
+        snapshot_date: snapshot.snapshot_date,
+        captured_at: snapshot.captured_at,
+        stats: snapshot.stats
+      }
+    }, with: Grape::Presenters::Presenter
+  end
+
+  desc 'Capture task completion snapshot immediately for this unit'
+  post '/units/:id/stats/task_completion_snapshots/capture' do
+    unit = Unit.find(params[:id])
+    unless authorise? current_user, unit, :download_stats
+      error!({ error: "Not authorised to capture stats of student tasks in #{unit.code}" }, 403)
+    end
+
+    begin
+      snapshot = unit.capture_task_complete_stats_snapshot!
+      present(
+        {
+          snapshot_date: snapshot.snapshot_date,
+          captured_at: snapshot.captured_at,
+          stats: snapshot.stats
+        },
+        with: Grape::Presenters::Presenter
+      )
+    end
+  end
+
   desc 'Download stats related to the number of tasks assessed by each tutor'
   get '/csv/units/:id/tutor_assessments' do
     unit = Unit.find(params[:id])

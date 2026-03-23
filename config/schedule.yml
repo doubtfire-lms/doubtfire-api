@@ -16,6 +16,10 @@ refresh_moderation_feedback_timestamps:
   cron: "every 60 minutes"
   class: "RefreshModerationFeedbackTimestampsJob"
 
+aggregate_task_completion_stats:
+  cron: "every day at 1"
+  class: "AggregateTaskCompletionStatsJob"
+
 # archive_old_units:
 #   cron: "every 6 months"
 #   class: "ArchiveOldUnitsJob"

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_03_09_065302) do
+ActiveRecord::Schema[8.0].define(version: 2026_03_22_143502) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -402,6 +402,19 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_09_065302) do
     t.index ["task_id"], name: "index_task_comments_on_task_id"
     t.index ["task_status_id"], name: "index_task_comments_on_task_status_id"
     t.index ["user_id"], name: "index_task_comments_on_user_id"
+  end
+
+  create_table "task_completion_snapshots", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "unit_id", null: false
+    t.date "snapshot_date", null: false
+    t.datetime "captured_at", null: false
+    t.text "stats", size: :long, null: false, collation: "utf8mb4_bin"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["captured_at"], name: "index_task_completion_snapshots_on_captured_at"
+    t.index ["unit_id", "snapshot_date"], name: "index_task_completion_snapshots_on_unit_id_and_snapshot_date", unique: true
+    t.index ["unit_id"], name: "index_task_completion_snapshots_on_unit_id"
+    t.check_constraint "json_valid(`stats`)", name: "stats"
   end
 
   create_table "task_definition_grade_due_dates", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
@@ -831,6 +844,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_09_065302) do
   add_foreign_key "feedback_chips", "learning_outcomes"
   add_foreign_key "learning_outcome_links", "learning_outcomes", column: "source_id"
   add_foreign_key "learning_outcome_links", "learning_outcomes", column: "target_id"
+  add_foreign_key "task_completion_snapshots", "units"
   add_foreign_key "user_oauth_states", "users"
   add_foreign_key "user_oauth_tokens", "users"
 end
