@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-94](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-93...v10.0.0-94) (2026-03-23)
+
+
+### Features
+
+* require discussion before marking complete ([#587](https://github.com/b0ink/doubtfire-deploy/issues/587)) ([034a5bd](https://github.com/b0ink/doubtfire-deploy/commit/034a5bda2bb4b77d789168c21c923d7ffb07b284))
+* track when portfolio was submitted for compile ([5979655](https://github.com/b0ink/doubtfire-deploy/commit/5979655ed013cf3430730c0290e5fdb5c3920de2))
+* track when portfolio was submitted for compile ([#591](https://github.com/b0ink/doubtfire-deploy/issues/591)) ([1b9f1da](https://github.com/b0ink/doubtfire-deploy/commit/1b9f1da3803d799ea60cfc901c7434cdfb942278))
+
 ## [10.0.0-93](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-92...v10.0.0-93) (2026-03-13)
 
 
