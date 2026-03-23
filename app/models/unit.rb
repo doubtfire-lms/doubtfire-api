@@ -549,7 +549,8 @@ class Unit < ApplicationRecord
           *tutorial_streams.map { |s| "MAX(CASE WHEN tutorials.tutorial_stream_id = #{s.id} OR tutorials.tutorial_stream_id IS NULL THEN tutorials.id ELSE NULL END) AS tutorial_#{s.id}" },
           # Get tutorial for case when no stream
           "MAX(CASE WHEN tutorial_streams.id IS NULL THEN tutorials.id ELSE NULL END) AS tutorial",
-          'COUNT(DISTINCT staff_notes.id) AS staff_note_count'
+          'COUNT(DISTINCT staff_notes.id) AS staff_note_count',
+          'projects.portfolio_submission_date as portfolio_submission_date'
         )
         .order('users.first_name')
 
@@ -584,6 +585,7 @@ class Unit < ApplicationRecord
         has_portfolio: !t.portfolio_production_date.nil?,
         stats: map_stats.call(t),
         staff_note_count: t.staff_note_count,
+        portfolio_submission_date: t.portfolio_submission_date,
         spec_con_days: t.spec_con_days,
         tutorial_enrolments: tutorial_streams.map do |s|
           {
