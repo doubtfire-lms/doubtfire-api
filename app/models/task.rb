@@ -522,7 +522,7 @@ class Task < ApplicationRecord
     group.create_submission self, '', group.projects.map { |proj| { project: proj, pct: 100 / group.projects.count } }
   end
 
-  def trigger_transition(trigger: '', by_user: nil, bulk: false, group_transition: false, quality: 1)
+  def trigger_transition(trigger: '', by_user: nil, bulk: false, group_transition: false, quality: 1, recursive_fix: false)
     #
     # Ensure that assessor is allowed to update the task in the indicated way
     #
@@ -594,7 +594,7 @@ class Task < ApplicationRecord
         lc = comments.last
         # Prevent duplicate status comments during feedback
         unless lc && lc.user == by_user && lc.comment == status.name && (lc.content_type != 'status' || lc.task_status == status)
-          assess status, by_user
+          assess status, by_user, Time.zone.now, recursive_fix
 
           # Add a status comment for new assessments - only recorded on submitter's task in groups
           add_status_comment(by_user, status)
@@ -674,7 +674,7 @@ class Task < ApplicationRecord
     end
   end
 
-  def assess(task_status, assessor, assess_date = Time.zone.now)
+  def assess(task_status, assessor, assess_date = Time.zone.now, recursive_fix = false)
     # Set the task's status to the assessment outcome status
     # and flag it as no longer awaiting signoff
     self.task_status = task_status
@@ -725,7 +725,7 @@ class Task < ApplicationRecord
         end
       end
 
-      if task_status == TaskStatus.fix_and_resubmit
+      if task_status == TaskStatus.fix_and_resubmit && recursive_fix
         # Look for other submitted tasks from this student that has this task as a prerequisite
         # If they are ready for feedback, automatically assess them to fix and resubmit
         dependents = TaskPrerequisite.where(prerequisite_id: task_definition.id)
