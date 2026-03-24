@@ -158,6 +158,7 @@ class TasksApi < Grape::API
     optional :grade, type: Integer, desc: 'Grade value if task is a graded task (required if task definition is a graded task)'
     optional :quality_pts, type: Integer, desc: 'Quality points value if task has quality assessment'
     optional :discussed, type: Boolean, desc: 'Mark task as discussed'
+    optional :trigger_recursive_fix, desc: 'If marking fix and resubmit, recursively update preqreuisite submissions to fix'
   end
   put '/projects/:id/task_def_id/:task_definition_id' do
     project = Project.find(params[:id])
@@ -203,7 +204,7 @@ class TasksApi < Grape::API
         end
 
         logger.info "#{current_user.username} assessing task #{task.id} to #{params[:trigger]}"
-        result = task.trigger_transition(trigger: params[:trigger], by_user: current_user, quality: params[:quality_pts])
+        result = task.trigger_transition(trigger: params[:trigger], by_user: current_user, quality: params[:quality_pts], recursive_fix: params[:trigger_recursive_fix])
         if result.nil? && task.task_definition.restrict_status_updates
           error!({ error: 'This task can only be updated by your tutor.' }, 403)
         end
