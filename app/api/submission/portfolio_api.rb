@@ -55,6 +55,10 @@ module Submission
 
       # Remove file or portfolio?
       if params[:idx].nil? && params[:name].nil? && params[:kind].nil?
+        project.update!({
+                          portfolio_submission_date: nil,
+                          portfolio_production_date: nil
+                        })
         project.remove_portfolio # returns details of file
       elsif !(params[:idx].nil? || params[:name].nil? || params[:kind].nil?)
         idx = params[:idx]

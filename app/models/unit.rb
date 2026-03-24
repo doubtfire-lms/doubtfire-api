@@ -2474,9 +2474,9 @@ class Unit < ApplicationRecord
 
   def student_grades_csv
     CSV.generate do |row|
-      row << %w(unit_code username student_id target_grade submitted_grade portfolio_production_date has_portfolio spec_con_days grade rationale assessor assessor_id)
+      row << %w(unit_code username student_id target_grade submitted_grade portfolio_submission_date portfolio_production_date has_portfolio spec_con_days grade rationale assessor assessor_id)
       active_projects.each do |project|
-        row << [project.unit.code, project.student.username, project.student.student_id, project.target_grade, project.submitted_grade, project.portfolio_production_date, project.portfolio_exists?, project.spec_con_days, project.grade, project.grade_rationale, project.assessor&.name, project.assessor&.id]
+        row << [project.unit.code, project.student.username, project.student.student_id, project.target_grade, project.submitted_grade, project.portfolio_submission_date, project.portfolio_production_date, project.portfolio_exists?, project.spec_con_days, project.grade, project.grade_rationale, project.assessor&.name, project.assessor&.id]
       end
     end
   end
