@@ -930,17 +930,30 @@ class TasksApiTest < ActiveSupport::TestCase
 
   def test_resubmission_doesnt_change_submission_date
     Sidekiq::Testing.inline! do
-      unit = FactoryBot.create(:unit, task_count: 2, student_count: 0)
+      unit = FactoryBot.create(
+        :unit,
+        with_students: false,
+        student_count: 0,
+        task_count: 0,
+        tutorials: 0,
+        stream_count: 0,
+        staff_count: 0,
+        campus_count: 0,
+        outcome_count: 0
+      )
       tutor = FactoryBot.create(:user, :tutor)
 
       unit_role = unit.employ_staff(tutor, Role.tutor)
       tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
       tutorial = FactoryBot.create(:tutorial, unit: unit, tutorial_stream: tutorial_stream, campus: nil, unit_role: unit_role)
-
-      td = unit.task_definitions.first
-
-      td.update!(due_date: Time.zone.today + 1.day, tutorial_stream: tutorial_stream)
-      assert_not td.nil?
+      td = FactoryBot.create(
+        :task_definition,
+        unit: unit,
+        tutorial_stream: tutorial_stream,
+        target_grade: 0,
+        outcome_count: 0
+      )
+      td.update!(due_date: Time.zone.today + 1.day)
 
       student1 = FactoryBot.create(:user, :student)
       student2 = FactoryBot.create(:user, :student)
