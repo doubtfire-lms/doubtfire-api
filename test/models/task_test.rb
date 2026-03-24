@@ -822,7 +822,9 @@ class TaskTest < ActiveSupport::TestCase
     task_definition = unit.task_definitions.first
 
     task_definition.start_date = Time.zone.now - 1.week
+    task_definition.target_date = Time.zone.now + 1.day
     task_definition.due_date = Time.zone.now + 1.week
+    task_definition.target_grade = 0
     task_definition.upload_requirements = [
       {
         "key" => 'file0',
