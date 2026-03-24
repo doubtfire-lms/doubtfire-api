@@ -95,15 +95,10 @@ class TaskStatusTest < ActiveSupport::TestCase
       task_status: TaskStatus.not_started
     )
 
-    data_to_post = {
-      trigger: 'ready_for_feedback',
-      comment: "I would like feedback for my task"
-    }
+    late_submission_time = td.due_date + 1.minute
 
-    add_auth_header_for(user: project.student)
-
-    # Make a submission for this student
-    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
+    # Make a late submission for this student.
+    tc.submit(project.student, late_submission_time)
 
     # Get the exceeded exceeded task and check it is now assess_in_portfolio
     tc.reload
@@ -144,14 +139,10 @@ class TaskStatusTest < ActiveSupport::TestCase
       task_status: TaskStatus.not_started
     )
 
-    data_to_post = {
-      trigger: 'ready_for_feedback'
-    }
+    late_submission_time = td.due_date + 1.minute
 
-    add_auth_header_for(user: project.student)
-
-    # Make a submission for this student
-    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
+    # Make a late submission for this student.
+    tc.submit(project.student, late_submission_time)
     tc.reload
     assert_equal TaskStatus.assess_in_portfolio, tc.task_status
   end
@@ -190,15 +181,8 @@ class TaskStatusTest < ActiveSupport::TestCase
       task_status: TaskStatus.not_started
     )
 
-    data_to_post = {
-      trigger: 'ready_for_feedback',
-      comment: 'I would like feedback for my task'
-    }
-
-    add_auth_header_for(user: project.student)
-
-    # Make a submission for this student
-    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
+    # Move the task to ready_for_feedback without waiting for submission processing.
+    tc.submit(project.student)
 
     tc.reload
 
