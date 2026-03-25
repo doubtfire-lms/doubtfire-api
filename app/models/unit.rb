@@ -91,7 +91,8 @@ class Unit < ApplicationRecord
       :grant_spec_con,
       :download_jplag_report,
       :get_marking_sessions,
-      :get_staff_notes
+      :get_staff_notes,
+      :get_tutor_times
     ]
 
     # What can auditors do with units?
