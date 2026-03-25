@@ -38,7 +38,9 @@ class UnitRole < ApplicationRecord
   end
 
   def oldest_task_awaiting_feedback
-    tasks_awaiting_feedback.order("submission_date ASC").first
+    tasks_awaiting_feedback
+      .includes(project: { unit: { teaching_period: :breaks } })
+      .max_by(&:days_awaiting_feedback)
   end
 
   #
@@ -147,7 +149,11 @@ class UnitRole < ApplicationRecord
       .distinct
 
     if tutorial_tasks.count > 0
-      data[:oldest_task_days] = (Time.zone.now - tutorial_tasks.order("submission_date ASC").first.submission_date.to_time).to_i / 1.day
+      oldest_task = tutorial_tasks
+        .includes(project: { unit: { teaching_period: :breaks } })
+        .max_by(&:days_awaiting_feedback)
+
+      data[:oldest_task_days] = oldest_task&.days_awaiting_feedback || 0
       data[:tasks_awaiting_feedback_count] = tutorial_tasks.count
     else
       data[:oldest_task_days] = 0
