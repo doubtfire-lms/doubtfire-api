@@ -38,7 +38,9 @@ class UnitRole < ApplicationRecord
   end
 
   def oldest_task_awaiting_feedback
-    tasks_awaiting_feedback.order("submission_date ASC").first
+    tasks_awaiting_feedback
+      .includes(project: { unit: { teaching_period: :breaks } })
+      .max_by(&:days_awaiting_feedback)
   end
 
   #
@@ -147,7 +149,11 @@ class UnitRole < ApplicationRecord
       .distinct
 
     if tutorial_tasks.count > 0
-      data[:oldest_task_days] = (Time.zone.now - tutorial_tasks.order("submission_date ASC").first.submission_date.to_time).to_i / 1.day
+      oldest_task = tutorial_tasks
+        .includes(project: { unit: { teaching_period: :breaks } })
+        .max_by(&:days_awaiting_feedback)
+
+      data[:oldest_task_days] = oldest_task&.days_awaiting_feedback || 0
       data[:tasks_awaiting_feedback_count] = tutorial_tasks.count
     else
       data[:oldest_task_days] = 0
@@ -258,7 +264,7 @@ class UnitRole < ApplicationRecord
 
     CSV.generate do |csv|
       # Add headers
-      csv << ([
+      csv << [
         'Start Date',
         'Start Time',
         'End Date',
@@ -270,13 +276,13 @@ class UnitRole < ApplicationRecord
         'Comments Added',
         'Assessments Made',
         'During Tutorial'
-      ])
+      ]
 
       result.each do |row|
         start_time = row[:start_time].in_time_zone(tz)
         end_time   = row[:end_time].in_time_zone(tz)
 
-        csv << ([
+        csv << [
           start_time.strftime('%Y-%m-%d %A'),
           start_time.strftime('%H:%M'),
           end_time.strftime('%Y-%m-%d %A'),
@@ -288,7 +294,7 @@ class UnitRole < ApplicationRecord
           row[:comments_added],
           row[:assessments],
           row[:during_tutorial] ? 'TRUE' : 'FALSE'
-        ])
+        ]
       end
     end
 
