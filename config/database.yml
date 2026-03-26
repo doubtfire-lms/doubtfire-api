@@ -1,29 +1,29 @@
 development:
-  adapter:      <%= ENV['DF_DEV_DB_ADAPTER'] %>
-  database:     <%= ENV['DF_DEV_DB_DATABASE'] %>
-  username:     <%= ENV['DF_DEV_DB_USERNAME'] %>
-  password:     <%= ENV['DF_DEV_DB_PASSWORD'] %>
-  host:         <%= ENV['DF_DEV_DB_HOST']     %>
+  adapter:      <%= Rails.application.credentials.dig(:database, :development, :adapter) || ENV['DF_DEV_DB_ADAPTER'] %>
+  database:     <%= Rails.application.credentials.dig(:database, :development, :database) || ENV['DF_DEV_DB_DATABASE'] %>
+  username:     <%= Rails.application.credentials.dig(:database, :development, :username) || ENV['DF_DEV_DB_USERNAME'] %>
+  password:     <%= Rails.application.credentials.dig(:database, :development, :password) || ENV['DF_DEV_DB_PASSWORD'] %>
+  host:         <%= Rails.application.credentials.dig(:database, :development, :host) || ENV['DF_DEV_DB_HOST'] %>
   min_messages: warning
 
 test:
-  adapter:      <%= ENV['DF_TEST_DB_ADAPTER'] %>
-  database:     <%= ENV['DF_TEST_DB_DATABASE'] %>
-  username:     <%= ENV['DF_TEST_DB_USERNAME'] %>
-  password:     <%= ENV['DF_TEST_DB_PASSWORD'] %>
-  host:         <%= ENV['DF_TEST_DB_HOST']     %>
+  adapter:      <%= Rails.application.credentials.dig(:database, :test, :adapter) || ENV['DF_TEST_DB_ADAPTER'] %>
+  database:     <%= Rails.application.credentials.dig(:database, :test, :database) || ENV['DF_TEST_DB_DATABASE'] %>
+  username:     <%= Rails.application.credentials.dig(:database, :test, :username) || ENV['DF_TEST_DB_USERNAME'] %>
+  password:     <%= Rails.application.credentials.dig(:database, :test, :password) || ENV['DF_TEST_DB_PASSWORD'] %>
+  host:         <%= Rails.application.credentials.dig(:database, :test, :host) || ENV['DF_TEST_DB_HOST'] %>
   min_messages: warning
 
 staging:
-  adapter:  <%= ENV['DF_STAGING_DB_ADAPTER']  %>
-  host:     <%= ENV['DF_STAGING_DB_HOST']     %>
-  database: <%= ENV['DF_STAGING_DB_DATABASE'] %>
-  username: <%= ENV['DF_STAGING_DB_USERNAME'] %>
-  password: <%= ENV['DF_STAGING_DB_PASSWORD'] %>
+  adapter:  <%= Rails.application.credentials.dig(:database, :staging, :adapter) || ENV['DF_STAGING_DB_ADAPTER'] %>
+  host:     <%= Rails.application.credentials.dig(:database, :staging, :host) || ENV['DF_STAGING_DB_HOST'] %>
+  database: <%= Rails.application.credentials.dig(:database, :staging, :database) || ENV['DF_STAGING_DB_DATABASE'] %>
+  username: <%= Rails.application.credentials.dig(:database, :staging, :username) || ENV['DF_STAGING_DB_USERNAME'] %>
+  password: <%= Rails.application.credentials.dig(:database, :staging, :password) || ENV['DF_STAGING_DB_PASSWORD'] %>
 
 production:
-  adapter:  <%= ENV['DF_PRODUCTION_DB_ADAPTER']  %>
-  host:     <%= ENV['DF_PRODUCTION_DB_HOST']     %>
-  database: <%= ENV['DF_PRODUCTION_DB_DATABASE'] %>
-  username: <%= ENV['DF_PRODUCTION_DB_USERNAME'] %>
-  password: <%= ENV['DF_PRODUCTION_DB_PASSWORD'] %>
+  adapter:  <%= Rails.application.credentials.dig(:database, :production, :adapter) || ENV['DF_PRODUCTION_DB_ADAPTER'] %>
+  host:     <%= Rails.application.credentials.dig(:database, :production, :host) || ENV['DF_PRODUCTION_DB_HOST'] %>
+  database: <%= Rails.application.credentials.dig(:database, :production, :database) || ENV['DF_PRODUCTION_DB_DATABASE'] %>
+  username: <%= Rails.application.credentials.dig(:database, :production, :username) || ENV['DF_PRODUCTION_DB_USERNAME'] %>
+  password: <%= Rails.application.credentials.dig(:database, :production, :password) || ENV['DF_PRODUCTION_DB_PASSWORD'] %>
