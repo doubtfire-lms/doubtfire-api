@@ -9,6 +9,7 @@ class TaskTest < ActiveSupport::TestCase
   include TestHelpers::TestFileHelper
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
+  include ActiveSupport::Testing::TimeHelpers
 
   def error!(msg, _code)
     raise StandardError, msg
@@ -46,6 +47,63 @@ class TaskTest < ActiveSupport::TestCase
     comments.each do |data|
       assert_equal 0, data.is_new
     end
+  end
+
+  def test_days_awaiting_feedback_pauses_during_break
+    travel_to Time.zone.parse('2026-04-10 00:00:00 UTC') do
+      teaching_period = FactoryBot.create(
+        :teaching_period,
+        start_date: Time.zone.parse('2026-03-01 00:00:00 UTC'),
+        end_date: Time.zone.parse('2026-04-30 00:00:00 UTC'),
+        active_until: Time.zone.parse('2026-05-31 00:00:00 UTC')
+      )
+      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 2)
+
+      unit = FactoryBot.create(:unit, teaching_period: teaching_period, with_students: false)
+      task = FactoryBot.create(:task, project: FactoryBot.create(:project, unit: unit))
+      task.update!(submission_date: Time.zone.parse('2026-03-29 00:00:00 UTC'))
+
+      assert_equal 3.0, task.days_awaiting_feedback
+    end
+    travel_back
+  end
+
+  def test_days_awaiting_feedback_resumes_after_break
+    travel_to Time.zone.parse('2026-04-18 00:00:00 UTC') do
+      teaching_period = FactoryBot.create(
+        :teaching_period,
+        start_date: Time.zone.parse('2026-03-01 00:00:00 UTC'),
+        end_date: Time.zone.parse('2026-04-30 00:00:00 UTC'),
+        active_until: Time.zone.parse('2026-05-31 00:00:00 UTC')
+      )
+      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 2)
+
+      unit = FactoryBot.create(:unit, teaching_period: teaching_period, with_students: false)
+      task = FactoryBot.create(:task, project: FactoryBot.create(:project, unit: unit))
+      task.update!(submission_date: Time.zone.parse('2026-03-29 00:00:00 UTC'))
+
+      assert_equal 6.0, task.days_awaiting_feedback
+    end
+    travel_back
+  end
+
+  def test_days_awaiting_feedback_stays_at_zero_for_submissions_made_during_break
+    travel_to Time.zone.parse('2026-04-10 00:00:00 UTC') do
+      teaching_period = FactoryBot.create(
+        :teaching_period,
+        start_date: Time.zone.parse('2026-03-01 00:00:00 UTC'),
+        end_date: Time.zone.parse('2026-04-30 00:00:00 UTC'),
+        active_until: Time.zone.parse('2026-05-31 00:00:00 UTC')
+      )
+      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 2)
+
+      unit = FactoryBot.create(:unit, teaching_period: teaching_period, with_students: false)
+      task = FactoryBot.create(:task, project: FactoryBot.create(:project, unit: unit))
+      task.update!(submission_date: Time.zone.parse('2026-04-05 00:00:00 UTC'))
+
+      assert_equal 0.0, task.days_awaiting_feedback
+    end
+    travel_back
   end
 
   def test_pdf_creation_with_gif

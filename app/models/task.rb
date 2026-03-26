@@ -408,6 +408,19 @@ class Task < ApplicationRecord
     return extension_date
   end
 
+  def days_awaiting_feedback(now_time = Time.zone.now)
+    return 0 if submission_date.blank?
+
+    submission_time = submission_date.to_f
+    current_time = now_time.to_f
+    return 0 if current_time <= submission_time
+
+    teaching_breaks = unit&.teaching_period&.breaks || []
+    paused_seconds = break_overlap_seconds(submission_time, current_time, teaching_breaks)
+
+    ([0, current_time - submission_time - paused_seconds].max / 1.day).floor
+  end
+
   def complete?
     status == :complete
   end
@@ -1694,6 +1707,21 @@ class Task < ApplicationRecord
   end
 
   private
+
+  def break_overlap_seconds(start_time, end_time, teaching_breaks)
+    teaching_breaks.sum do |teaching_break|
+      break_start = teaching_break.start_date.to_f
+      break_duration = teaching_break.number_of_weeks.to_i.weeks
+      break_end = break_start + break_duration
+
+      next 0 unless break_start.finite? && break_duration.positive?
+
+      overlap_start = [start_time, break_start].max
+      overlap_end = [end_time, break_end].min
+
+      [0, overlap_end - overlap_start].max
+    end
+  end
 
   def delete_associated_files
     if group_submission && group_submission.tasks.count <= 1
