@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-96](https://github.com/b0ink/doubtfire-api/compare/v10.0.0-95...v10.0.0-96) (2026-03-26)
+
+
+### Features
+
+* allow admin users to view any unit analytics ([#597](https://github.com/b0ink/doubtfire-api/issues/597)) ([eb2195a](https://github.com/b0ink/doubtfire-api/commit/eb2195a18d148264eb0570cdfc3ecfa6b577e1f9))
+* pause days awaiting feedback during breaks ([#599](https://github.com/b0ink/doubtfire-api/issues/599)) ([0aa2208](https://github.com/b0ink/doubtfire-api/commit/0aa220863329083b1fe7d53fc2a4f9ee9a3f9386))
+
 ## [10.0.0-95](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-94...v10.0.0-95) (2026-03-24)
 
 
