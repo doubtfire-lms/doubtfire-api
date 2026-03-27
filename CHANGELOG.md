@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-97](https://github.com/b0ink/doubtfire-api/compare/v10.0.0-96...v10.0.0-97) (2026-03-27)
+
+
+### Features
+
+* prefer encrypted rails credentials over env vars ([#600](https://github.com/b0ink/doubtfire-api/issues/600)) ([b1946bd](https://github.com/b0ink/doubtfire-api/commit/b1946bd8105e70e4baff1e0547b1b728d8a731c8))
+
 ## [10.0.0-96](https://github.com/b0ink/doubtfire-api/compare/v10.0.0-95...v10.0.0-96) (2026-03-26)
 
 
