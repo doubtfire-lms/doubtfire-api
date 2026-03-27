@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-98](https://github.com/b0ink/doubtfire-api/compare/v10.0.0-97...v10.0.0-98) (2026-03-27)
+
+
+### Features
+
+* move tii and active record secrets to rails credentials ([#601](https://github.com/b0ink/doubtfire-api/issues/601)) ([4357f5c](https://github.com/b0ink/doubtfire-api/commit/4357f5c17db2d937aa0ab573567d45f41cadcf5b))
+
 ## [10.0.0-97](https://github.com/b0ink/doubtfire-api/compare/v10.0.0-96...v10.0.0-97) (2026-03-27)
 
 
