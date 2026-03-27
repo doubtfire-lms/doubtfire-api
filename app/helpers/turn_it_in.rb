@@ -31,7 +31,7 @@ class TurnItIn
       # Setup authorization
       TCAClient.configure do |tii_config|
         # Configure API key authorization: api_key
-        tii_config.api_key['api_key'] = ENV.fetch('TCA_API_KEY', nil)
+        tii_config.api_key['api_key'] = Doubtfire::Application.fetch_credential_or_env(:tii, :api_key, env_key: 'TCA_API_KEY')
         # Uncomment the following line to set a prefix for the API key, e.g. 'Bearer' (defaults to nil)
         tii_config.api_key_prefix['api_key'] = 'Bearer'
         tii_config.host = ENV.fetch('TCA_HOST', nil)

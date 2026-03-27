@@ -8,9 +8,10 @@ module TestHelpers
     module_function
 
     def tii_headers(base = {})
+      api_key = Doubtfire::Application.fetch_credential_or_env(:tii, :api_key, env_key: 'TCA_API_KEY')
       base["headers"] = {
         'Accept'=>'application/json',
-        'Authorization'=>"Bearer #{ENV['TCA_API_KEY']}",
+        'Authorization'=>"Bearer #{api_key}",
         'Content-Type'=>'application/json',
         'X-Turnitin-Integration-Name'=>'formatif-tii',
         'X-Turnitin-Integration-Version'=>'1.0'
