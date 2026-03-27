@@ -50,7 +50,7 @@ Doubtfire::Application.configure do
     config.action_mailer.smtp_settings[:authentication] = nil if %w[no_auth none].include?(config.action_mailer.smtp_settings[:authentication])
   end
 
-  config.active_record.encryption.key_derivation_salt = ENV.fetch('DF_ENCRYPTION_KEY_DERIVATION_SALT', nil)
-  config.active_record.encryption.deterministic_key = ENV.fetch('DF_ENCRYPTION_DETERMINISTIC_KEY', nil)
-  config.active_record.encryption.primary_key = ENV.fetch('DF_ENCRYPTION_PRIMARY_KEY', nil)
+  config.active_record.encryption.key_derivation_salt = Doubtfire::Application.fetch_credential_or_env(:active_record_encryption, :key_derivation_salt, env_key: 'DF_ENCRYPTION_KEY_DERIVATION_SALT')
+  config.active_record.encryption.deterministic_key = Doubtfire::Application.fetch_credential_or_env(:active_record_encryption, :deterministic_key, env_key: 'DF_ENCRYPTION_DETERMINISTIC_KEY')
+  config.active_record.encryption.primary_key = Doubtfire::Application.fetch_credential_or_env(:active_record_encryption, :primary_key, env_key: 'DF_ENCRYPTION_PRIMARY_KEY')
 end
