@@ -1577,7 +1577,7 @@ class Unit < ApplicationRecord
       next if row[0] =~ /^(Task Name)|(name)/ # Skip header
 
       begin
-        missing = missing_headers(row, TaskDefinition.csv_columns)
+        missing = missing_headers(row, TaskDefinition.required_csv_columns)
         if missing.count > 0
           errors << { row: row, message: "Missing headers: #{missing.join(', ')}" }
           next
