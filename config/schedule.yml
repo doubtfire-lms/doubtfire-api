@@ -17,7 +17,7 @@ refresh_moderation_feedback_timestamps:
   class: "RefreshModerationFeedbackTimestampsJob"
 
 aggregate_task_completion_stats:
-  cron: "every day at 1"
+  cron: "every day at 11:55pm"
   class: "AggregateTaskCompletionStatsJob"
 
 # archive_old_units:

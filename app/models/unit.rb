@@ -3132,23 +3132,23 @@ class Unit < ApplicationRecord
   def aggregate_task_complete_stats
     result = {}
 
-    task_definitions.each do |td|
-      result[td.abbreviation] = {}
-    end
-
     active_projects.each do |project|
       campus_name = project.campus.name
       result[campus_name] ||= {}
 
       task_definitions.each do |td|
-        result[campus_name][td.abbreviation] ||= {}
+        tutorial = project.tutorial_for(td)
+        tutorial_name = tutorial&.abbreviation || 'Unassigned'
+
+        result[campus_name][tutorial_name] ||= {}
+        result[campus_name][tutorial_name][td.abbreviation] ||= {}
 
         task = project.task_for_task_definition(td)
         next unless task
 
         status = task.task_status.id.to_s
-        result[campus_name][td.abbreviation][status] ||= 0
-        result[campus_name][td.abbreviation][status] += 1
+        result[campus_name][tutorial_name][td.abbreviation][status] ||= 0
+        result[campus_name][tutorial_name][td.abbreviation][status] += 1
       end
     end
 

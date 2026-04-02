@@ -592,10 +592,21 @@ class UnitsApi < Grape::API
     snapshots = snapshots.limit([params[:limit].to_i, 365].min)
 
     present snapshots.map { |snapshot|
+      converted_stats = snapshot.stats.transform_values do |tutorials|
+        tutorials.transform_values do |task_defs|
+          task_defs.transform_values do |status_counts|
+            status_counts.each_with_object({}) do |(status_id, count), status_acc|
+              status_key = TaskStatus.id_to_key(status_id.to_i).to_s
+              status_acc[status_key] = status_acc[status_key].to_i + count
+            end
+          end
+        end
+      end
+
       {
         snapshot_date: snapshot.snapshot_date,
         captured_at: snapshot.captured_at,
-        stats: snapshot.stats
+        stats: converted_stats
       }
     }, with: Grape::Presenters::Presenter
   end
