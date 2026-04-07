@@ -78,6 +78,7 @@ class ApiRoot < Grape::API
   mount WebcalApi
   mount WebcalPublicApi
   mount PrivacyApi
+  mount PerformanceBandsApi
 
   #
   # Add auth details to all end points
