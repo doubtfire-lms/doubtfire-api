@@ -1138,4 +1138,107 @@ class UnitModelTest < ActiveSupport::TestCase
     assert_includes unit.errors[:mark_late_submissions_as_assess_in_portfolio], 'cannot be disabled while tasks are in the Assess in Portfolio state'
   end
 
+  test 'aggregate-task-complete-stats groups by campus tutorial task and status' do
+    data = build_unit_with_controlled_task_statuses
+    unit = data[:unit]
+    tutorial = data[:tutorial]
+    task_definitions = data[:task_definitions]
+
+    stats = unit.aggregate_task_complete_stats
+
+    expected = {
+      tutorial.campus.name => {
+        tutorial.abbreviation => {
+          task_definitions[0].abbreviation => {
+            TaskStatus.complete.id.to_s => 2
+          },
+          task_definitions[1].abbreviation => {
+            TaskStatus.fail.id.to_s => 1,
+            TaskStatus.not_started.id.to_s => 1
+          }
+        }
+      }
+    }
+
+    assert_equal expected, stats
+  ensure
+    unit&.destroy
+  end
+
+  test 'capture-task-complete-stats-snapshot creates snapshot for date' do
+    data = build_unit_with_controlled_task_statuses
+    unit = data[:unit]
+    captured_at = Time.zone.local(2026, 4, 8, 23, 55, 0)
+    expected_stats = unit.aggregate_task_complete_stats
+
+    count_before = unit.task_completion_snapshots.count
+    snapshot = unit.capture_task_complete_stats_snapshot!(captured_at: captured_at)
+
+    assert_equal count_before + 1, unit.task_completion_snapshots.count
+    assert_equal captured_at.to_date, snapshot.snapshot_date
+    assert_equal captured_at.to_i, snapshot.captured_at.to_i
+    assert_equal expected_stats, snapshot.stats
+
+    persisted_snapshot = unit.task_completion_snapshots.find_by(snapshot_date: captured_at.to_date)
+    assert_not_nil persisted_snapshot
+    assert_equal snapshot.id, persisted_snapshot.id
+  ensure
+    unit&.destroy
+  end
+
+  test 'capture-task-complete-stats-snapshot updates existing snapshot for same date' do
+    data = build_unit_with_controlled_task_statuses
+    unit = data[:unit]
+    task_definitions = data[:task_definitions]
+    student2 = data[:student2]
+
+    first_time = Time.zone.local(2026, 4, 8, 9, 0, 0)
+    second_time = Time.zone.local(2026, 4, 8, 20, 0, 0)
+
+    first_snapshot = unit.capture_task_complete_stats_snapshot!(captured_at: first_time)
+    first_stats = first_snapshot.stats.deep_dup
+    count_before = unit.task_completion_snapshots.count
+
+    # Change one task status so the new capture has different stats.
+    student2.task_for_task_definition(task_definitions[0]).update!(task_status: TaskStatus.fail)
+    expected_updated_stats = unit.aggregate_task_complete_stats
+
+    updated_snapshot = unit.capture_task_complete_stats_snapshot!(captured_at: second_time)
+
+    assert_equal count_before, unit.task_completion_snapshots.count
+    assert_equal first_snapshot.id, updated_snapshot.id
+    assert_equal second_time.to_i, updated_snapshot.captured_at.to_i
+    assert_not_equal first_stats, updated_snapshot.stats
+    assert_equal expected_updated_stats, updated_snapshot.stats
+  ensure
+    unit&.destroy
+  end
+
+  private
+
+  def build_unit_with_controlled_task_statuses
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 2, stream_count: 0, tutorials: 1, campus_count: 1)
+    tutorial = unit.tutorials.first
+    campus = tutorial.campus
+    task_definitions = unit.task_definitions.order(:id).to_a
+
+    student1 = unit.enrol_student(FactoryBot.create(:user, :student), campus)
+    student2 = unit.enrol_student(FactoryBot.create(:user, :student), campus)
+    student1.enrol_in(tutorial)
+    student2.enrol_in(tutorial)
+
+    student1.task_for_task_definition(task_definitions[0]).update!(task_status: TaskStatus.complete)
+    student2.task_for_task_definition(task_definitions[0]).update!(task_status: TaskStatus.complete)
+    student1.task_for_task_definition(task_definitions[1]).update!(task_status: TaskStatus.fail)
+    student2.task_for_task_definition(task_definitions[1]).update!(task_status: TaskStatus.not_started)
+
+    {
+      unit: unit,
+      tutorial: tutorial,
+      task_definitions: task_definitions,
+      student1: student1,
+      student2: student2
+    }
+  end
+
 end
