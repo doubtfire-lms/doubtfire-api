@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-99](https://github.com/b0ink/doubtfire-api/compare/v10.0.0-98...v10.0.0-99) (2026-04-13)
+
+
+### Features
+
+* ensure tutorials are reassigned before deleting a unit role ([0bba827](https://github.com/b0ink/doubtfire-api/commit/0bba8279da40a8674f802b961302b84560855e76))
+
 ## [10.0.0-98](https://github.com/b0ink/doubtfire-api/compare/v10.0.0-97...v10.0.0-98) (2026-03-27)
 
 
