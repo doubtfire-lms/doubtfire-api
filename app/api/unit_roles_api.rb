@@ -50,7 +50,9 @@ class UnitRolesApi < Grape::API
       end
 
       ActiveRecord::Base.transaction do
-        tutorials.update_all(unit_role_id: reassignment_role.id)
+        tutorials.find_each do |tutorial|
+          tutorial.update!(unit_role: reassignment_role)
+        end
         unit_role.destroy!
       end
     else
