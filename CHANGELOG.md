@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-100](https://github.com/b0ink/doubtfire-api/compare/v10.0.0-99...v10.0.0-100) (2026-04-15)
+
+
+### Features
+
+* add enforce feedback unit setting ([4d1c6ee](https://github.com/b0ink/doubtfire-api/commit/4d1c6ee8d227b1d4b0ac57bbeea30f20f47e8b71))
+
 ## [10.0.0-99](https://github.com/b0ink/doubtfire-api/compare/v10.0.0-98...v10.0.0-99) (2026-04-13)
 
 
