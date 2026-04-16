@@ -61,5 +61,22 @@ module Submission
 
     #   present unit.upload_batch_task_zip_or_csv(current_user, params[:file]), with: Grape::Presenters::Presenter
     # end # post
+
+    desc 'Upload a batch feedback CSV for a selected task definition.'
+    params do
+      requires :file, type: File, desc: 'Batch feedback csv upload'
+      requires :unit_id, type: Integer, desc: 'Unit ID to upload marked submissions to.'
+      requires :task_definition_id, type: Integer, desc: 'Task definition ID the uploaded CSV relates to.'
+    end
+    post '/submission/batch_feedback_csv/' do
+      unit = Unit.find(params[:unit_id])
+      task_definition = unit.task_definitions.find(params[:task_definition_id])
+
+      unless authorise? current_user, unit, :provide_bulk_feedback
+        error!({ error: 'Not authorised to batch upload feedback csv' }, 401)
+      end
+
+      present unit.upload_batch_feedback_csv(current_user, task_definition, params[:file]), with: Grape::Presenters::Presenter
+    end
   end
 end

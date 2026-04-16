@@ -52,6 +52,7 @@ class Unit < ApplicationRecord
       :add_tutorial,
       :add_task_def,
       :provide_feedback,
+      :provide_bulk_feedback,
       :change_project_enrolment,
       :download_stats,
       :download_grades,
@@ -2871,6 +2872,191 @@ class Unit < ApplicationRecord
       # Remove the extract dir
       FileUtils.rm_rf tmp_dir
     end
+
+    {
+      success: success,
+      ignored: ignored,
+      errors: errors
+    }
+  end
+
+  def batch_feedback_csv_required_headers
+    ['username', 'student id', 'status', 'comment']
+  end
+
+  def parse_batch_feedback_csv(csv_str, return_headers: false)
+    CSV.parse(
+      csv_str,
+      headers: true,
+      return_headers: return_headers,
+      header_converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')&.downcase }],
+      converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]
+    )
+  end
+
+  def find_project_for_batch_feedback_csv_entry(task_entry)
+    username = task_entry['username'].to_s.strip
+    student_id = task_entry['student id'].to_s.strip
+
+    return [nil, 'Provide either Username or Student ID.'] if username.blank? && student_id.blank?
+
+    username_project = if username.present?
+                         projects.joins(:user).where('LOWER(users.username) = ?', username.downcase).first
+                       end
+    student_id_project = if student_id.present?
+                           projects.joins(:user).where(users: { student_id: student_id }).first
+                         end
+
+    if username.present? && username_project.nil? && student_id.blank?
+      return [nil, "Unable to find student with username '#{username}'."]
+    end
+
+    if student_id.present? && student_id_project.nil? && username.blank?
+      return [nil, "Unable to find student with student ID '#{student_id}'."]
+    end
+
+    if username_project.present? && student_id_project.present? && username_project != student_id_project
+      return [nil, "Username '#{username}' and student ID '#{student_id}' refer to different students."]
+    end
+
+    project = username_project || student_id_project
+    return [nil, 'Unable to find student project for this row.'] if project.nil?
+
+    [project, nil]
+  end
+
+  def update_task_status_from_batch_feedback_csv(user, task_definition, csv_str, success, ignored, errors)
+    done = {}
+
+    csv_str.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
+    csv_str.tr!("\r", "\n")
+    csv_str.gsub!("\n\n", "\n")
+
+    parse_batch_feedback_csv(csv_str, return_headers: true).each do |task_entry|
+      if task_entry.header_row?
+        batch_feedback_csv_required_headers.each do |expect_header|
+          unless task_entry.to_hash.keys.include?(expect_header)
+            errors << { row: task_entry, message: "Missing header '#{expect_header}', ensure first row has header information." }
+            return false
+          end
+        end
+        next
+      end
+
+      next if task_entry.to_hash.values.all? { |value| value.to_s.strip.blank? }
+
+      project, project_error = find_project_for_batch_feedback_csv_entry(task_entry)
+      if project_error.present?
+        errors << { row: task_entry, message: project_error }
+        next
+      end
+
+      task = project.task_for_task_definition(task_definition)
+      if task.nil?
+        errors << { row: task_entry, message: "Unable to find task for #{task_definition.abbreviation}" }
+        next
+      end
+
+      unless AuthorisationHelpers.authorise? user, task, :put
+        errors << { row: task_entry, error: 'You do not have permission to assess this task.' }
+        next
+      end
+
+      status = task_entry['status'].to_s.strip
+      comment = task_entry['comment'].to_s.strip
+
+      if status.blank?
+        errors << { row: task_entry, message: 'Status cannot be blank.' }
+        next
+      end
+
+      begin
+        requested_status = TaskStatus.status_for_name(status)
+        raise "Unable to update task status to '#{status}'." if requested_status.nil?
+
+        status_changed = false
+        comment_added = false
+
+        unless task.task_status == requested_status
+          updated = task.trigger_transition(
+            trigger: status,
+            by_user: user,
+            quality: task.quality_pts || task.task_definition.max_quality_pts
+          )
+          raise "Unable to update task status to '#{status}'." unless updated
+
+          status_changed = true
+        end
+
+        last_comment = task.comments.last&.comment.to_s.strip
+        if comment.present? && last_comment != comment
+          task.add_text_comment(user, comment)
+          comment_added = true
+        end
+
+        unless status_changed || comment_added
+          ignored << {
+            row: task_entry,
+            message: "No changes required for #{task.task_definition.abbreviation} and #{project.user.name}"
+          }
+          next
+        end
+
+        message = []
+        message << "Updated task #{task.task_definition.abbreviation} for #{project.user.name}" if status_changed
+        message << "Added comment to #{task.task_definition.abbreviation} for #{project.user.name}" if comment_added
+        success << {
+          row: task_entry,
+          message: message.join(' and ')
+        }
+      rescue StandardError => e
+        errors << { row: task_entry, message: e.message }
+        next
+      end
+
+      done[project] = [] if done[project].nil?
+      done[project] << task unless done[project].include?(task)
+    end
+
+    begin
+      done.each do |project, tasks|
+        logger.info "Checking feedback email for project #{project.id}"
+        if project.student.receive_feedback_notifications
+          logger.info "Emailing feedback notification to #{project.student.name}"
+          PortfolioEvidenceMailer.task_feedback_ready(project, tasks).deliver
+        end
+      end
+    rescue => e
+      logger.error "Failed to send emails from feedback submission. Rescued with error: #{e.message}"
+    end
+
+    true
+  end
+
+  def upload_batch_feedback_csv(user, task_definition, file)
+    success = []
+    errors = []
+    ignored = []
+
+    type = mime_type(file["tempfile"].path)
+
+    unless mime_in_list?(file["tempfile"].path, ['text/', 'text/plain', 'text/csv'])
+      errors << { row: {}, message: "File given is not a csv file - detected #{type}" }
+      return {
+        success: success,
+        ignored: ignored,
+        errors: errors
+      }
+    end
+
+    update_task_status_from_batch_feedback_csv(
+      user,
+      task_definition,
+      File.read(file["tempfile"].path),
+      success,
+      ignored,
+      errors
+    )
 
     {
       success: success,
