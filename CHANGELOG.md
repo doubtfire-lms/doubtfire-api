@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-101](https://github.com/b0ink/doubtfire-api/compare/v10.0.0-100...v10.0.0-101) (2026-04-18)
+
+
+### Features
+
+* batch upload feedback csv ([#609](https://github.com/b0ink/doubtfire-api/issues/609)) ([5baa171](https://github.com/b0ink/doubtfire-api/commit/5baa171baff4343161e13e79613b81eb985acc29))
+* query pinned tasks in task explorer ([7a10685](https://github.com/b0ink/doubtfire-api/commit/7a10685138a99eac0719aa2a37f8f883167edc45))
+
 ## [10.0.0-100](https://github.com/b0ink/doubtfire-api/compare/v10.0.0-99...v10.0.0-100) (2026-04-15)
 
 
