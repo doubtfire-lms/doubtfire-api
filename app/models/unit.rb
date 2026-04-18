@@ -3051,18 +3051,20 @@ class Unit < ApplicationRecord
         errors
       )
 
-      return {
-        success: success,
-        ignored: ignored,
-        errors: errors
-      } if task_rows.nil? || task_rows.empty?
+      if task_rows.blank?
+        return {
+          success: success,
+          ignored: ignored,
+          errors: errors
+        }
+      end
 
       converted_csv = write_batch_feedback_csv_file(task_rows)
       result = upload_batch_task_zip_or_csv(user, { 'tempfile' => converted_csv })
       result[:errors] = errors + result[:errors]
-      return result
+      result
     else
-      return upload_batch_feedback_zip(user, task_definition, file)
+      upload_batch_feedback_zip(user, task_definition, file)
     end
   ensure
     converted_csv.close! if defined?(converted_csv) && converted_csv.present?
