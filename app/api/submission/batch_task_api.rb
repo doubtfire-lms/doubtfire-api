@@ -62,9 +62,9 @@ module Submission
     #   present unit.upload_batch_task_zip_or_csv(current_user, params[:file]), with: Grape::Presenters::Presenter
     # end # post
 
-    desc 'Upload a batch feedback CSV for a selected task definition.'
+    desc 'Upload a batch feedback CSV or zip package for a selected task definition.'
     params do
-      requires :file, type: File, desc: 'Batch feedback csv upload'
+      requires :file, type: File, desc: 'Batch feedback csv or zip upload'
       requires :unit_id, type: Integer, desc: 'Unit ID to upload marked submissions to.'
       requires :task_definition_id, type: Integer, desc: 'Task definition ID the uploaded CSV relates to.'
     end
