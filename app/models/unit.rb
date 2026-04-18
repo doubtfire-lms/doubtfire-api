@@ -3106,6 +3106,19 @@ class Unit < ApplicationRecord
     end
   end
 
+  def batch_feedback_entries_for_username(zip, username)
+    zip.select do |entry|
+      path_parts = entry.name.split('/').reject(&:blank?)
+      next false if path_parts.empty?
+
+      if entry.name_is_directory?
+        path_parts.any? { |part| part.casecmp(username).zero? }
+      else
+        path_parts[0...-1].any? { |part| part.casecmp(username).zero? }
+      end
+    end
+  end
+
   def build_batch_feedback_legacy_marks_csv(task_rows)
     CSV.generate do |csv|
       csv << check_mark_csv_headers.split(',')
@@ -3191,19 +3204,27 @@ class Unit < ApplicationRecord
           next
         end
 
-        requirement_entry = find_batch_feedback_requirement_entry(
-          zip,
-          project.user.username,
-          task.upload_requirements.first
-        )
+        student_entries = batch_feedback_entries_for_username(zip, project.user.username)
+        requirement_entry = nil
 
-        if requirement_entry.nil?
-          expected = batch_feedback_zip_requirement_candidates(task.upload_requirements.first).join(' or ')
-          errors << {
-            row: task_entry,
-            message: "Missing required file for #{project.user.username}. Expected #{expected} inside that student's folder."
-          }
-          next
+        if student_entries.any?
+          requirement = task.upload_requirements.first
+          expected_candidates = batch_feedback_zip_requirement_candidates(requirement)
+
+          requirement_entry = find_batch_feedback_requirement_entry(
+            zip,
+            project.user.username,
+            requirement
+          )
+
+          if requirement_entry.nil?
+            expected = expected_candidates.join(' or ')
+            errors << {
+              row: task_entry,
+              message: "Missing required file for #{project.user.username}. Expected #{expected} inside that student's folder."
+            }
+            next
+          end
         end
 
         task_rows << {
@@ -3228,6 +3249,8 @@ class Unit < ApplicationRecord
         end
 
         task_rows.each do |task_row|
+          next if task_row[:requirement_entry].nil?
+
           output_name = "#{task_row[:task].task_definition.abbreviation}-#{task_row[:task].id}.pdf"
           output_zip.get_output_stream(output_name) do |f|
             f.write(task_row[:requirement_entry].get_input_stream.read)
