@@ -2941,14 +2941,28 @@ class Unit < ApplicationRecord
     [project, nil]
   end
 
-  def build_batch_feedback_task_rows(task_definition, csv_str, errors, zip: nil)
+  def build_batch_feedback_task_rows(task_definition, csv_str, errors, zip: nil, progress_callback: nil)
     task_rows = []
 
     csv_str.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
     csv_str.tr!("\r", "\n")
     csv_str.gsub!("\n\n", "\n")
 
-    parse_batch_feedback_csv(csv_str, return_headers: true).each do |task_entry|
+    entries = parse_batch_feedback_csv(csv_str, return_headers: true)
+    total_rows = 0
+
+    entries.each do |task_entry|
+      next if task_entry.header_row?
+      next if task_entry.to_hash.values.all? { |value| value.to_s.strip.blank? }
+
+      total_rows += 1
+    end
+
+    rows_processed = 0
+
+    progress_callback&.call(message: 'Validating batch feedback rows', total_rows: total_rows, rows_processed: 0)
+
+    entries.each do |task_entry|
       if task_entry.header_row?
         batch_feedback_csv_required_headers.each do |expect_header|
           unless task_entry.to_hash.keys.include?(expect_header)
@@ -2960,6 +2974,9 @@ class Unit < ApplicationRecord
       end
 
       next if task_entry.to_hash.values.all? { |value| value.to_s.strip.blank? }
+
+      rows_processed += 1
+      progress_callback&.call(message: 'Validating batch feedback rows', rows_processed: rows_processed)
 
       project, project_error = find_project_for_batch_feedback_csv_entry(task_entry)
       if project_error.present?
@@ -3028,7 +3045,7 @@ class Unit < ApplicationRecord
     file
   end
 
-  def upload_batch_feedback_csv(user, task_definition, file)
+  def upload_batch_feedback_csv(user, task_definition, file, progress_callback: nil)
     success = []
     errors = []
     ignored = []
@@ -3048,7 +3065,8 @@ class Unit < ApplicationRecord
       task_rows = build_batch_feedback_task_rows(
         task_definition,
         File.read(file["tempfile"].path),
-        errors
+        errors,
+        progress_callback: progress_callback
       )
 
       if task_rows.blank?
@@ -3060,11 +3078,12 @@ class Unit < ApplicationRecord
       end
 
       converted_csv = write_batch_feedback_csv_file(task_rows)
+      progress_callback&.call(message: 'Applying batch feedback updates', total_rows: task_rows.count, rows_processed: 0)
       result = upload_batch_task_zip_or_csv(user, { 'tempfile' => converted_csv })
       result[:errors] = errors + result[:errors]
       result
     else
-      upload_batch_feedback_zip(user, task_definition, file)
+      upload_batch_feedback_zip(user, task_definition, file, progress_callback: progress_callback)
     end
   ensure
     converted_csv.close! if defined?(converted_csv) && converted_csv.present?
@@ -3116,7 +3135,7 @@ class Unit < ApplicationRecord
     end
   end
 
-  def upload_batch_feedback_zip(user, task_definition, file)
+  def upload_batch_feedback_zip(user, task_definition, file, progress_callback: nil)
     success = []
     errors = []
     ignored = []
@@ -3136,7 +3155,7 @@ class Unit < ApplicationRecord
       csv_str = marking_file.get_input_stream.read
       csv_str.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless csv_str.nil?
 
-      task_rows = build_batch_feedback_task_rows(task_definition, csv_str, errors, zip: zip)
+      task_rows = build_batch_feedback_task_rows(task_definition, csv_str, errors, zip: zip, progress_callback: progress_callback)
 
       if task_rows.blank?
         return {
@@ -3151,13 +3170,17 @@ class Unit < ApplicationRecord
           f.write(build_batch_feedback_legacy_marks_csv(task_rows))
         end
 
-        task_rows.each do |task_row|
+        progress_callback&.call(message: 'Preparing PDF replacements', total_rows: task_rows.count, rows_processed: 0)
+
+        task_rows.each_with_index do |task_row, index|
           next if task_row[:pdf_entry].nil?
 
           output_name = "#{task_row[:task].task_definition.abbreviation}-#{task_row[:task].id}.pdf"
           output_zip.get_output_stream(output_name) do |f|
             f.write(task_row[:pdf_entry].get_input_stream.read)
           end
+
+          progress_callback&.call(message: 'Preparing PDF replacements', rows_processed: index + 1)
         end
       end
     end
