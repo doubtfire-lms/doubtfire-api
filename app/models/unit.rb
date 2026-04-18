@@ -3138,7 +3138,7 @@ class Unit < ApplicationRecord
 
       task_rows = build_batch_feedback_task_rows(task_definition, csv_str, errors, zip: zip)
 
-      if task_rows.nil? || task_rows.empty?
+      if task_rows.blank?
         return {
           success: success,
           ignored: ignored,
