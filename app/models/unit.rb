@@ -2868,7 +2868,10 @@ class Unit < ApplicationRecord
           file.extract(tmp_file) { true }
 
           # copy tmp_file to dest
-          if FileHelper.copy_pdf(tmp_file, task.final_pdf_path)
+          destination_path = task.final_pdf_path(ignore_portfolio_evidence: true)
+
+          if FileHelper.copy_pdf(tmp_file, destination_path)
+            task.update(portfolio_evidence: nil) if task.portfolio_evidence.present?
             if task.group.nil?
               success << { row: "File #{file.name}", message: "Replace PDF of task #{task.task_definition.abbreviation} for #{task.student.name}" }
             else
@@ -2938,8 +2941,8 @@ class Unit < ApplicationRecord
     [project, nil]
   end
 
-  def update_task_status_from_batch_feedback_csv(user, task_definition, csv_str, success, ignored, errors)
-    done = {}
+  def build_batch_feedback_task_rows(task_definition, csv_str, errors, zip: nil)
+    task_rows = []
 
     csv_str.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
     csv_str.tr!("\r", "\n")
@@ -2950,7 +2953,7 @@ class Unit < ApplicationRecord
         batch_feedback_csv_required_headers.each do |expect_header|
           unless task_entry.to_hash.keys.include?(expect_header)
             errors << { row: task_entry, message: "Missing header '#{expect_header}', ensure first row has header information." }
-            return false
+            return nil
           end
         end
         next
@@ -2970,80 +2973,59 @@ class Unit < ApplicationRecord
         next
       end
 
-      unless AuthorisationHelpers.authorise? user, task, :put
-        errors << { row: task_entry, error: 'You do not have permission to assess this task.' }
+      if task.group_task?
+        errors << { row: task_entry, message: 'Batch feedback upload does not support group tasks.' }
         next
       end
 
       status = task_entry['status'].to_s.strip
-      comment = task_entry['comment'].to_s.strip
-
       if status.blank?
         errors << { row: task_entry, message: 'Status cannot be blank.' }
         next
       end
 
-      begin
-        requested_status = TaskStatus.status_for_name(status)
-        raise "Unable to update task status to '#{status}'." if requested_status.nil?
+      if TaskStatus.status_for_name(status).nil?
+        errors << { row: task_entry, message: "Unable to update task status to '#{status}'." }
+        next
+      end
 
-        status_changed = false
-        comment_added = false
+      student_entries = zip.nil? ? [] : batch_feedback_entries_for_username(zip, project.user.username)
+      pdf_entries = zip.nil? ? [] : batch_feedback_named_pdf_entries_for_username(zip, project.user.username)
 
-        unless task.task_status == requested_status
-          updated = task.trigger_transition(
-            trigger: status,
-            by_user: user,
-            quality: task.quality_pts || task.task_definition.max_quality_pts
-          )
-          raise "Unable to update task status to '#{status}'." unless updated
-
-          status_changed = true
-        end
-
-        last_comment = task.comments.last&.comment.to_s.strip
-        if comment.present? && last_comment != comment
-          task.add_text_comment(user, comment)
-          comment_added = true
-        end
-
-        unless status_changed || comment_added
-          ignored << {
+      if zip.present?
+        if student_entries.any? && pdf_entries.empty?
+          errors << {
             row: task_entry,
-            message: "No changes required for #{task.task_definition.abbreviation} and #{project.user.name}"
+            message: "Expected a PDF named #{project.user.username}.pdf inside #{project.user.username}'s folder."
           }
           next
         end
 
-        message = []
-        message << "Updated task #{task.task_definition.abbreviation} for #{project.user.name}" if status_changed
-        message << "Added comment to #{task.task_definition.abbreviation} for #{project.user.name}" if comment_added
-        success << {
-          row: task_entry,
-          message: message.join(' and ')
-        }
-      rescue StandardError => e
-        errors << { row: task_entry, message: e.message }
-        next
-      end
-
-      done[project] = [] if done[project].nil?
-      done[project] << task unless done[project].include?(task)
-    end
-
-    begin
-      done.each do |project, tasks|
-        logger.info "Checking feedback email for project #{project.id}"
-        if project.student.receive_feedback_notifications
-          logger.info "Emailing feedback notification to #{project.student.name}"
-          PortfolioEvidenceMailer.task_feedback_ready(project, tasks).deliver
+        if pdf_entries.length > 1
+          errors << {
+            row: task_entry,
+            message: "Found multiple PDFs named #{project.user.username}.pdf inside #{project.user.username}'s folder."
+          }
+          next
         end
       end
-    rescue => e
-      logger.error "Failed to send emails from feedback submission. Rescued with error: #{e.message}"
+
+      task_rows << {
+        task: task,
+        project: project,
+        task_entry: task_entry,
+        pdf_entry: pdf_entries.first
+      }
     end
 
-    true
+    task_rows
+  end
+
+  def write_batch_feedback_csv_file(task_rows)
+    file = Tempfile.new(["batch_feedback_#{id}_", '.csv'])
+    file.write(build_batch_feedback_legacy_marks_csv(task_rows))
+    file.rewind
+    file
   end
 
   def upload_batch_feedback_csv(user, task_definition, file)
@@ -3063,47 +3045,27 @@ class Unit < ApplicationRecord
     end
 
     if type.start_with?('text/', 'text/plain', 'text/csv')
-      update_task_status_from_batch_feedback_csv(
-        user,
+      task_rows = build_batch_feedback_task_rows(
         task_definition,
         File.read(file["tempfile"].path),
-        success,
-        ignored,
         errors
       )
+
+      return {
+        success: success,
+        ignored: ignored,
+        errors: errors
+      } if task_rows.nil? || task_rows.empty?
+
+      converted_csv = write_batch_feedback_csv_file(task_rows)
+      result = upload_batch_task_zip_or_csv(user, { 'tempfile' => converted_csv })
+      result[:errors] = errors + result[:errors]
+      return result
     else
       return upload_batch_feedback_zip(user, task_definition, file)
     end
-
-    {
-      success: success,
-      ignored: ignored,
-      errors: errors
-    }
-  end
-
-  def batch_feedback_zip_requirement_candidates(requirement)
-    name = requirement['name'].to_s.strip
-    return [] if name.blank?
-
-    candidates = [name]
-    if File.extname(name).blank? && requirement['type'] == 'document'
-      candidates << "#{name}.pdf"
-    end
-    candidates.uniq
-  end
-
-  def find_batch_feedback_requirement_entry(zip, username, requirement)
-    candidates = batch_feedback_zip_requirement_candidates(requirement)
-
-    zip.find do |entry|
-      next false if entry.name_is_directory?
-
-      path_parts = entry.name.split('/').reject(&:blank?)
-      next false unless path_parts[0...-1].any? { |part| part.casecmp(username).zero? }
-
-      candidates.any? { |candidate| File.basename(entry.name).casecmp(candidate).zero? }
-    end
+  ensure
+    converted_csv.close! if defined?(converted_csv) && converted_csv.present?
   end
 
   def batch_feedback_entries_for_username(zip, username)
@@ -3116,6 +3078,15 @@ class Unit < ApplicationRecord
       else
         path_parts[0...-1].any? { |part| part.casecmp(username).zero? }
       end
+    end
+  end
+
+  def batch_feedback_named_pdf_entries_for_username(zip, username)
+    batch_feedback_entries_for_username(zip, username).select do |entry|
+      next false if entry.name_is_directory?
+      next false unless File.extname(entry.name).casecmp('.pdf').zero?
+
+      File.basename(entry.name, '.pdf').casecmp(username).zero?
     end
   end
 
@@ -3147,7 +3118,6 @@ class Unit < ApplicationRecord
     success = []
     errors = []
     ignored = []
-    task_rows = []
     repacked_zip = Tempfile.new(["batch_feedback_#{id}_", '.zip'])
 
     Zip::File.open(file["tempfile"].path) do |zip|
@@ -3164,78 +3134,9 @@ class Unit < ApplicationRecord
       csv_str = marking_file.get_input_stream.read
       csv_str.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') unless csv_str.nil?
 
-      parse_batch_feedback_csv(csv_str, return_headers: true).each do |task_entry|
-        if task_entry.header_row?
-          batch_feedback_csv_required_headers.each do |expect_header|
-            unless task_entry.to_hash.keys.include?(expect_header)
-              errors << { row: task_entry, message: "Missing header '#{expect_header}', ensure first row has header information." }
-              next
-            end
-          end
-          next
-        end
+      task_rows = build_batch_feedback_task_rows(task_definition, csv_str, errors, zip: zip)
 
-        next if task_entry.to_hash.values.all? { |value| value.to_s.strip.blank? }
-
-        project, project_error = find_project_for_batch_feedback_csv_entry(task_entry)
-        if project_error.present?
-          errors << { row: task_entry, message: project_error }
-          next
-        end
-
-        task = project.task_for_task_definition(task_definition)
-        if task.nil?
-          errors << { row: task_entry, message: "Unable to find task for #{task_definition.abbreviation}" }
-          next
-        end
-
-        unless AuthorisationHelpers.authorise? user, task, :put
-          errors << { row: task_entry, error: 'You do not have permission to assess this task.' }
-          next
-        end
-
-        if task.group_task?
-          errors << { row: task_entry, message: 'Batch feedback zip upload does not support group tasks.' }
-          next
-        end
-
-        if task.upload_requirements.length != 1 || task.upload_requirements.first['type'] != 'document'
-          errors << { row: task_entry, message: 'Batch feedback zip upload currently requires exactly one document upload requirement.' }
-          next
-        end
-
-        student_entries = batch_feedback_entries_for_username(zip, project.user.username)
-        requirement_entry = nil
-
-        if student_entries.any?
-          requirement = task.upload_requirements.first
-          expected_candidates = batch_feedback_zip_requirement_candidates(requirement)
-
-          requirement_entry = find_batch_feedback_requirement_entry(
-            zip,
-            project.user.username,
-            requirement
-          )
-
-          if requirement_entry.nil?
-            expected = expected_candidates.join(' or ')
-            errors << {
-              row: task_entry,
-              message: "Missing required file for #{project.user.username}. Expected #{expected} inside that student's folder."
-            }
-            next
-          end
-        end
-
-        task_rows << {
-          task: task,
-          project: project,
-          task_entry: task_entry,
-          requirement_entry: requirement_entry
-        }
-      end
-
-      if errors.any?
+      if task_rows.nil? || task_rows.empty?
         return {
           success: success,
           ignored: ignored,
@@ -3249,17 +3150,19 @@ class Unit < ApplicationRecord
         end
 
         task_rows.each do |task_row|
-          next if task_row[:requirement_entry].nil?
+          next if task_row[:pdf_entry].nil?
 
           output_name = "#{task_row[:task].task_definition.abbreviation}-#{task_row[:task].id}.pdf"
           output_zip.get_output_stream(output_name) do |f|
-            f.write(task_row[:requirement_entry].get_input_stream.read)
+            f.write(task_row[:pdf_entry].get_input_stream.read)
           end
         end
       end
     end
 
-    upload_batch_task_zip_or_csv(user, { 'tempfile' => repacked_zip })
+    result = upload_batch_task_zip_or_csv(user, { 'tempfile' => repacked_zip })
+    result[:errors] = errors + result[:errors]
+    result
   ensure
     repacked_zip.close! if defined?(repacked_zip) && repacked_zip.present?
   end
