@@ -17,6 +17,8 @@ module Doubtfire
   #
   class Application < Rails::Application
     config.load_defaults 7.0
+    config.credentials.content_path = Rails.root.join('config/credentials/credentials.yml.enc')
+    config.credentials.key_path = Rails.root.join('config/credentials/master.key')
 
     # Remove Action Mailbox and Active Storage routes - not used
     initializer(:remove_action_mailbox_and_activestorage_routes, after: :add_routing_paths) do |app|
@@ -64,6 +66,17 @@ module Doubtfire
       %w'true 1'.include?(ENV.fetch(name, 'false').downcase)
     end
 
+    def self.fetch_credential_or_env(*credential_path, env_key:, default: nil)
+      credential_value =
+        if credential_path.length == 1 && credentials.respond_to?(credential_path.first)
+          credentials.public_send(credential_path.first)
+        else
+          credentials.dig(*credential_path)
+        end
+
+      credential_value.nil? ? ENV.fetch(env_key, default) : credential_value
+    end
+
     # ==> Log to stdout
     config.log_to_stdout = Application.fetch_boolean_env('DF_LOG_TO_STDOUT')
 
@@ -83,19 +96,19 @@ module Doubtfire
     # Defaults to 10MB (10,000,000 bytes)
     config.max_file_size = ENV.fetch('DF_MAX_FILE_SIZE', 10_000_000)
 
-    # ==> Load credentials from env
-    credentials.secret_key_base = ENV.fetch('DF_SECRET_KEY_BASE', Rails.env.production? ? nil : '9e010ee2f52af762916406fd2ac488c5694a6cc784777136e657511f8bbc7a73f96d59c0a9a778a0d7cf6406f8ecbf77efe4701dfbd63d8248fc7cc7f32dea97')
-    credentials.secret_key_attr = ENV.fetch('DF_SECRET_KEY_ATTR', Rails.env.production? ? nil : 'e69fc5960ca0e8700844a3a25fe80373b41c0a265d342eba06950113f3766fd983bad9ec51bf36eb615d9711bfe1dd90b8e35f01841b323f604ffee857e32055')
-    credentials.secret_key_devise = ENV.fetch('DF_SECRET_KEY_DEVISE', Rails.env.production? ? nil : 'f4e23c4388dc600e503a09ad057b8271d8fcf4c2cd6723b44f33db638e49075fe96bc545eed9110ded0c5df505625d4e1c838b718349eecf1d39270d0829d5b9')
-    credentials.secret_key_aaf = ENV.fetch('DF_SECRET_KEY_AAF', Rails.env.production? ? nil : 'secretsecret12345')
-    credentials.secret_key_moss = ENV.fetch('DF_SECRET_KEY_MOSS', nil)
+    # Prefer encrypted Rails credentials, while keeping env vars as a safe fallback.
+    credentials.secret_key_base = Application.fetch_credential_or_env(:secret_key_base, env_key: 'DF_SECRET_KEY_BASE', default: Rails.env.production? ? nil : '9e010ee2f52af762916406fd2ac488c5694a6cc784777136e657511f8bbc7a73f96d59c0a9a778a0d7cf6406f8ecbf77efe4701dfbd63d8248fc7cc7f32dea97')
+    credentials.secret_key_attr = Application.fetch_credential_or_env(:secret_key_attr, env_key: 'DF_SECRET_KEY_ATTR', default: Rails.env.production? ? nil : 'e69fc5960ca0e8700844a3a25fe80373b41c0a265d342eba06950113f3766fd983bad9ec51bf36eb615d9711bfe1dd90b8e35f01841b323f604ffee857e32055')
+    credentials.secret_key_devise = Application.fetch_credential_or_env(:secret_key_devise, env_key: 'DF_SECRET_KEY_DEVISE', default: Rails.env.production? ? nil : 'f4e23c4388dc600e503a09ad057b8271d8fcf4c2cd6723b44f33db638e49075fe96bc545eed9110ded0c5df505625d4e1c838b718349eecf1d39270d0829d5b9')
+    credentials.secret_key_aaf = Application.fetch_credential_or_env(:aaf, :secret_key, env_key: 'DF_SECRET_KEY_AAF', default: Rails.env.production? ? nil : 'secretsecret12345')
+    credentials.secret_key_moss = Application.fetch_credential_or_env(:moss, :secret_key, env_key: 'DF_SECRET_KEY_MOSS')
 
     # ==> LTI settings
     # If enabled, mounts the LTI routes and enables LTI authentication.
     config.lti_enabled = ENV.fetch('LTI_ENABLED', false).to_s.downcase == "true"
     # Shared secret between Ruby on Rails API and the LTI.js API
     # LTI.js will send signed JWT tokens using this secret
-    config.lti_api_secret = ENV.fetch('LTI_SHARED_API_SECRET', nil)
+    config.lti_api_secret = Application.fetch_credential_or_env(:lti, :shared_api_secret, env_key: 'LTI_SHARED_API_SECRET')
 
     # ==> Moderation settings
     config.moderation_score_factor = Float(ENV.fetch('MODERATION_SCORE_FACTOR', 1.0))

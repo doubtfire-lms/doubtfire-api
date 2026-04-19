@@ -25,6 +25,10 @@ class UnitRolesApi < Grape::API
   end
 
   desc 'Delete a unit role'
+  params do
+    requires :id, type: Integer, desc: 'The id of the unit role to delete'
+    optional :reassign_to_unit_role_id, type: Integer, desc: 'The unit role to reassign tutorials to before deletion'
+  end
   delete '/unit_roles/:id' do
     unit_role = UnitRole.find(params[:id])
 
@@ -32,7 +36,28 @@ class UnitRolesApi < Grape::API
       error!({ error: "You do not have permission to perform this action" }, 403)
     end
 
-    unit_role.destroy!
+    tutorials = unit_role.unit.tutorials.where(unit_role_id: unit_role.id)
+
+    if tutorials.exists?
+      if params[:reassign_to_unit_role_id].blank?
+        error!({ error: 'Unable to delete this unit role while tutorials are assigned without providing a reassignment target' }, 400)
+      end
+
+      reassignment_role = unit_role.unit.staff.find_by(id: params[:reassign_to_unit_role_id])
+
+      if reassignment_role.nil? || reassignment_role.id == unit_role.id
+        error!({ error: 'Unable to delete this unit role with the provided reassignment target' }, 400)
+      end
+
+      ActiveRecord::Base.transaction do
+        tutorials.find_each do |tutorial|
+          tutorial.update!(unit_role: reassignment_role)
+        end
+        unit_role.destroy!
+      end
+    else
+      unit_role.destroy!
+    end
   end
 
   desc 'Employ a user as a teaching role in a unit'

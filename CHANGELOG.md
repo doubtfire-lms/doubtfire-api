@@ -2,6 +2,70 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-103](https://github.com/b0ink/doubtfire-api/compare/v10.0.0-102...v10.0.0-103) (2026-04-18)
+
+## [10.0.0-102](https://github.com/b0ink/doubtfire-api/compare/v10.0.0-101...v10.0.0-102) (2026-04-18)
+
+## [10.0.0-101](https://github.com/b0ink/doubtfire-api/compare/v10.0.0-100...v10.0.0-101) (2026-04-18)
+
+
+### Features
+
+* batch upload feedback csv ([#609](https://github.com/b0ink/doubtfire-api/issues/609)) ([5baa171](https://github.com/b0ink/doubtfire-api/commit/5baa171baff4343161e13e79613b81eb985acc29))
+* query pinned tasks in task explorer ([7a10685](https://github.com/b0ink/doubtfire-api/commit/7a10685138a99eac0719aa2a37f8f883167edc45))
+
+## [10.0.0-100](https://github.com/b0ink/doubtfire-api/compare/v10.0.0-99...v10.0.0-100) (2026-04-15)
+
+
+### Features
+
+* add enforce feedback unit setting ([4d1c6ee](https://github.com/b0ink/doubtfire-api/commit/4d1c6ee8d227b1d4b0ac57bbeea30f20f47e8b71))
+
+## [10.0.0-99](https://github.com/b0ink/doubtfire-api/compare/v10.0.0-98...v10.0.0-99) (2026-04-13)
+
+
+### Features
+
+* ensure tutorials are reassigned before deleting a unit role ([0bba827](https://github.com/b0ink/doubtfire-api/commit/0bba8279da40a8674f802b961302b84560855e76))
+
+## [10.0.0-98](https://github.com/b0ink/doubtfire-api/compare/v10.0.0-97...v10.0.0-98) (2026-03-27)
+
+
+### Features
+
+* move tii and active record secrets to rails credentials ([#601](https://github.com/b0ink/doubtfire-api/issues/601)) ([4357f5c](https://github.com/b0ink/doubtfire-api/commit/4357f5c17db2d937aa0ab573567d45f41cadcf5b))
+
+## [10.0.0-97](https://github.com/b0ink/doubtfire-api/compare/v10.0.0-96...v10.0.0-97) (2026-03-27)
+
+
+### Features
+
+* prefer encrypted rails credentials over env vars ([#600](https://github.com/b0ink/doubtfire-api/issues/600)) ([b1946bd](https://github.com/b0ink/doubtfire-api/commit/b1946bd8105e70e4baff1e0547b1b728d8a731c8))
+
+## [10.0.0-96](https://github.com/b0ink/doubtfire-api/compare/v10.0.0-95...v10.0.0-96) (2026-03-26)
+
+
+### Features
+
+* allow admin users to view any unit analytics ([#597](https://github.com/b0ink/doubtfire-api/issues/597)) ([eb2195a](https://github.com/b0ink/doubtfire-api/commit/eb2195a18d148264eb0570cdfc3ecfa6b577e1f9))
+* pause days awaiting feedback during breaks ([#599](https://github.com/b0ink/doubtfire-api/issues/599)) ([0aa2208](https://github.com/b0ink/doubtfire-api/commit/0aa220863329083b1fe7d53fc2a4f9ee9a3f9386))
+
+## [10.0.0-95](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-94...v10.0.0-95) (2026-03-24)
+
+
+### Bug Fixes
+
+* normalise test to ensure its consistent ([#594](https://github.com/b0ink/doubtfire-deploy/issues/594)) ([a607486](https://github.com/b0ink/doubtfire-deploy/commit/a607486e9953e28b2bd6b04e9a135a4190b87c6e))
+
+## [10.0.0-94](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-93...v10.0.0-94) (2026-03-23)
+
+
+### Features
+
+* require discussion before marking complete ([#587](https://github.com/b0ink/doubtfire-deploy/issues/587)) ([034a5bd](https://github.com/b0ink/doubtfire-deploy/commit/034a5bda2bb4b77d789168c21c923d7ffb07b284))
+* track when portfolio was submitted for compile ([5979655](https://github.com/b0ink/doubtfire-deploy/commit/5979655ed013cf3430730c0290e5fdb5c3920de2))
+* track when portfolio was submitted for compile ([#591](https://github.com/b0ink/doubtfire-deploy/issues/591)) ([1b9f1da](https://github.com/b0ink/doubtfire-deploy/commit/1b9f1da3803d799ea60cfc901c7434cdfb942278))
+
 ## [10.0.0-93](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-92...v10.0.0-93) (2026-03-13)
 
 

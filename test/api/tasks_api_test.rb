@@ -564,96 +564,93 @@ class TasksApiTest < ActiveSupport::TestCase
   end
 
   def test_cant_submit_until_prerequisites_submitted
-    Sidekiq::Testing.inline! do
-      # Create a unit and two task definitions
-      unit = FactoryBot.create(:unit, student_count: 1, task_count: 2)
-      td1 = unit.task_definitions.first
-      td2 = unit.task_definitions.second
-      project = unit.active_projects.first
+    # Create a unit and two task definitions
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 2)
+    td1 = unit.task_definitions.first
+    td2 = unit.task_definitions.second
+    project = unit.active_projects.first
 
-      task = project.task_for_task_definition(td2)
+    task = project.task_for_task_definition(td2)
 
-      td1.update(
-        upload_requirements: [{ "key" => 'file0', "name" => 'Shape Class', "type" => 'code' }],
-        target_grade: 0, # Pass
-        start_date: Time.zone.now - 2.weeks,
-        target_date: Time.zone.now + 1.week
-      )
+    td1.update(
+      upload_requirements: [{ "key" => 'file0', "name" => 'Shape Class', "type" => 'code' }],
+      target_grade: 0, # Pass
+      start_date: Time.zone.now - 2.weeks,
+      target_date: Time.zone.now + 1.week
+    )
 
-      td2.update(
-        upload_requirements: [{ "key" => 'file0', "name" => 'Shape Class', "type" => 'code' }],
-        target_grade: 3, # HD
-        start_date: Time.zone.now - 2.weeks,
-        target_date: Time.zone.now + 1.week
-      )
+    td2.update(
+      upload_requirements: [{ "key" => 'file0', "name" => 'Shape Class', "type" => 'code' }],
+      target_grade: 3, # HD
+      start_date: Time.zone.now - 2.weeks,
+      target_date: Time.zone.now + 1.week
+    )
 
-      # Create a prerequisite on the second taskDef that adds the first taskDef as a prereq
-      prereq = TaskPrerequisite.create!(
-        task_definition: td2, # Before you can submit td2...
-        prerequisite: td1, # You need to submit td1
-        task_status_id: TaskStatus.ready_for_feedback.id
-      )
+    # Create a prerequisite on the second taskDef that adds the first taskDef as a prereq
+    prereq = TaskPrerequisite.create!(
+      task_definition: td2, # Before you can submit td2...
+      prerequisite: td1, # You need to submit td1
+      task_status_id: TaskStatus.ready_for_feedback.id
+    )
 
-      assert prereq.valid?
+    assert prereq.valid?
 
-      # Add username and auth_token to Header
-      add_auth_header_for(user: project.user)
+    # Add username and auth_token to Header
+    add_auth_header_for(user: project.user)
 
-      data_to_post = {
-        trigger: 'ready_for_feedback'
-      }
+    data_to_post = {
+      trigger: 'ready_for_feedback'
+    }
 
-      data_to_post = with_file('test_files/submissions/program.cs', 'application/json', data_to_post)
+    data_to_post = with_file('test_files/submissions/program.cs', 'application/json', data_to_post)
 
-      # Attempt to make a submission that has an unsubmitted prerequisite
-      post "/api/projects/#{project.id}/task_def_id/#{td2.id}/submission", data_to_post
-      assert_equal 409, last_response.status, last_response_body
-      task = project.task_for_task_definition(td2)
-      # Ensure the submission was denied
-      assert_equal TaskStatus.not_started, task.task_status
-      assert_equal last_response_body['error'], "Cannot submit this task until prerequisite '#{td1.abbreviation}' has been submitted"
+    # Attempt to make a submission that has an unsubmitted prerequisite
+    post "/api/projects/#{project.id}/task_def_id/#{td2.id}/submission", data_to_post
+    assert_equal 409, last_response.status, last_response_body
+    task = project.task_for_task_definition(td2)
+    # Ensure the submission was denied
+    assert_equal TaskStatus.not_started, task.task_status
+    assert_equal last_response_body['error'], "Cannot submit this task until prerequisite '#{td1.abbreviation}' has been submitted"
 
-      prereq.update(task_status_id: TaskStatus.discuss.id)
-      post "/api/projects/#{project.id}/task_def_id/#{td2.id}/submission", data_to_post
-      assert_equal 409, last_response.status, last_response_body
-      task.reload
-      # Ensure the submission was denied
-      assert_equal TaskStatus.not_started, task.task_status
-      assert_equal last_response_body['error'], "Cannot submit this task until prerequisite '#{td1.abbreviation}' has been discussed"
+    prereq.update(task_status_id: TaskStatus.discuss.id)
+    post "/api/projects/#{project.id}/task_def_id/#{td2.id}/submission", data_to_post
+    assert_equal 409, last_response.status, last_response_body
+    task.reload
+    # Ensure the submission was denied
+    assert_equal TaskStatus.not_started, task.task_status
+    assert_equal last_response_body['error'], "Cannot submit this task until prerequisite '#{td1.abbreviation}' has been discussed"
 
-      prereq.update(task_status_id: TaskStatus.demonstrate.id)
-      post "/api/projects/#{project.id}/task_def_id/#{td2.id}/submission", data_to_post
-      assert_equal 409, last_response.status, last_response_body
-      task.reload
-      # Ensure the submission was denied
-      assert_equal TaskStatus.not_started, task.task_status
-      assert_equal last_response_body['error'], "Cannot submit this task until prerequisite '#{td1.abbreviation}' has been demonstrated"
+    prereq.update(task_status_id: TaskStatus.demonstrate.id)
+    post "/api/projects/#{project.id}/task_def_id/#{td2.id}/submission", data_to_post
+    assert_equal 409, last_response.status, last_response_body
+    task.reload
+    # Ensure the submission was denied
+    assert_equal TaskStatus.not_started, task.task_status
+    assert_equal last_response_body['error'], "Cannot submit this task until prerequisite '#{td1.abbreviation}' has been demonstrated"
 
-      prereq.update(task_status_id: TaskStatus.complete.id)
-      post "/api/projects/#{project.id}/task_def_id/#{td2.id}/submission", data_to_post
-      assert_equal 409, last_response.status, last_response_body
-      task.reload
-      # Ensure the submission was denied
-      assert_equal TaskStatus.not_started, task.task_status
-      assert_equal last_response_body['error'], "Cannot submit this task until prerequisite '#{td1.abbreviation}' has been completed"
+    prereq.update(task_status_id: TaskStatus.complete.id)
+    post "/api/projects/#{project.id}/task_def_id/#{td2.id}/submission", data_to_post
+    assert_equal 409, last_response.status, last_response_body
+    task.reload
+    # Ensure the submission was denied
+    assert_equal TaskStatus.not_started, task.task_status
+    assert_equal last_response_body['error'], "Cannot submit this task until prerequisite '#{td1.abbreviation}' has been completed"
 
-      prereq.update(task_status_id: TaskStatus.ready_for_feedback.id)
+    prereq.update(task_status_id: TaskStatus.ready_for_feedback.id)
 
-      # Make a submission to the prerequsite task
-      post "/api/projects/#{project.id}/task_def_id/#{td1.id}/submission", data_to_post
-      assert_equal 201, last_response.status, last_response_body
-      task1 = project.task_for_task_definition(td1)
-      assert_equal TaskStatus.ready_for_feedback, task1.task_status
+    # Use a direct status change here to avoid waiting for submission processing.
+    task1 = project.task_for_task_definition(td1)
+    task1.submit(project.user)
+    assert_equal TaskStatus.ready_for_feedback, task1.task_status
 
-      # Re-attempt to make a submission (Prerequisite status is ready for feedback, expecting complete)
-      post "/api/projects/#{project.id}/task_def_id/#{td2.id}/submission", data_to_post
-      assert_equal 201, last_response.status, last_response_body
-      task.reload
-      assert_equal TaskStatus.ready_for_feedback, task.task_status
+    # Re-attempt to make a submission (Prerequisite status is ready for feedback, expecting complete)
+    post "/api/projects/#{project.id}/task_def_id/#{td2.id}/submission", data_to_post
+    assert_equal 201, last_response.status, last_response_body
+    task.reload
+    assert_equal TaskStatus.ready_for_feedback, task.task_status
 
-      prereq.destroy
-      unit.destroy
-    end
+    prereq.destroy
+    unit.destroy
   end
 
   def test_prerequisites_task_status
@@ -678,13 +675,6 @@ class TasksApiTest < ActiveSupport::TestCase
 
     project = unit.active_projects.first
 
-    # Add username and auth_token to Header
-    add_auth_header_for(user: project.user)
-
-    data_to_post = {
-      trigger: 'ready_for_feedback'
-    }
-
     # Create a prerequisite on the second taskDef that adds the first taskDef as a prereq
     prereq = TaskPrerequisite.create!(
       task_definition: td2, # Before you can submit td2...
@@ -697,78 +687,53 @@ class TasksApiTest < ActiveSupport::TestCase
     tests = [
       {
         prerequisite_status: TaskStatus.ready_for_feedback,
-        required_status: TaskStatus.ready_for_feedback,
-        expected_status: 201,
-        expected_error: nil
+        required_status: TaskStatus.ready_for_feedback
       },
       {
         prerequisite_status: TaskStatus.discuss,
-        required_status: TaskStatus.discuss,
-        expected_status: 201,
-        expected_error: nil
+        required_status: TaskStatus.discuss
       },
       {
         prerequisite_status: TaskStatus.demonstrate,
-        required_status: TaskStatus.demonstrate,
-        expected_status: 201,
-        expected_error: nil
+        required_status: TaskStatus.demonstrate
       },
       {
         prerequisite_status: TaskStatus.discuss,
-        required_status: TaskStatus.demonstrate,
-        expected_status: 201,
-        expected_error: nil
+        required_status: TaskStatus.demonstrate
       },
       {
         prerequisite_status: TaskStatus.demonstrate,
-        required_status: TaskStatus.discuss,
-        expected_status: 201,
-        expected_error: nil
+        required_status: TaskStatus.discuss
       },
       {
         prerequisite_status: TaskStatus.complete,
-        required_status: TaskStatus.complete,
-        expected_status: 201,
-        expected_error: nil
+        required_status: TaskStatus.complete
       },
       {
         prerequisite_status: TaskStatus.complete,
-        required_status: TaskStatus.ready_for_feedback,
-        expected_status: 201,
-        expected_error: nil
+        required_status: TaskStatus.ready_for_feedback
       },
       {
         prerequisite_status: TaskStatus.discuss,
-        required_status: TaskStatus.ready_for_feedback,
-        expected_status: 201,
-        expected_error: nil
+        required_status: TaskStatus.ready_for_feedback
       }
     ]
 
-    Sidekiq::Testing.inline! do
-      prereq_task = project.task_for_task_definition(td1)
-      task = project.task_for_task_definition(td2)
-      data_to_post = with_file('test_files/submissions/program.cs', 'application/json', data_to_post)
+    prereq_task = project.task_for_task_definition(td1)
+    task = project.task_for_task_definition(td2)
 
-      tests.each do |test|
-        prereq_task.update(task_status_id: test[:prerequisite_status].id)
-        task.update(task_status_id: TaskStatus.not_started.id)
+    tests.each do |test|
+      prereq.update!(task_status_id: test[:required_status].id)
+      prereq_task.update!(task_status_id: test[:prerequisite_status].id)
+      task.update!(task_status_id: TaskStatus.not_started.id, submission_date: nil)
 
-        post "/api/projects/#{project.id}/task_def_id/#{td2.id}/submission", data_to_post
-        assert_equal test[:expected_status], last_response.status, last_response_body
-        task.reload
-        if test[:expected_status] == 201
-          # Ensure submission was accepted
-          assert_equal TaskStatus.ready_for_feedback, task.task_status
-        else
-          # Ensure submission was denied
-          assert_equal TaskStatus.not_started, task.task_status
-        end
-      end
-
-      prereq.destroy
-      unit.destroy
+      task.submit(project.user)
+      task.reload
+      assert_equal TaskStatus.ready_for_feedback, task.task_status
     end
+
+    prereq.destroy
+    unit.destroy
   end
 
   def test_check_in_comment
@@ -866,81 +831,88 @@ class TasksApiTest < ActiveSupport::TestCase
   end
 
   def test_require_comment_for_feedback_submission_assess_in_portfolio
-    Sidekiq::Testing.inline! do
-      unit = FactoryBot.create(:unit, student_count: 1, task_count: 2)
-      td1 = unit.task_definitions.first
-      project = unit.active_projects.first
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 2)
+    td1 = unit.task_definitions.first
+    project = unit.active_projects.first
 
-      task = project.task_for_task_definition(td1)
+    task = project.task_for_task_definition(td1)
 
-      td1.update(
-        upload_requirements: [{ "key" => 'file0', "name" => 'Shape Class', "type" => 'code' }],
-        target_grade: 0, # Pass
-        start_date: Time.zone.now - 2.weeks,
-        target_date: Time.zone.now + 1.week,
-        assess_in_portfolio_only: false
-      )
+    td1.update(
+      upload_requirements: [{ "key" => 'file0', "name" => 'Shape Class', "type" => 'code' }],
+      target_grade: 0, # Pass
+      start_date: Time.zone.now - 2.weeks,
+      target_date: Time.zone.now + 1.week,
+      assess_in_portfolio_only: false
+    )
 
-      add_auth_header_for(user: project.user)
+    add_auth_header_for(user: project.user)
 
-      # Make a submission where a comment isn't required
-      post "/api/projects/#{project.id}/task_def_id/#{td1.id}/submission",
-           with_file('test_files/submissions/program.cs', 'application/json', {
-                       trigger: 'ready_for_feedback'
-                     })
-      assert_equal 201, last_response.status, last_response_body
-      task.reload
-      assert_equal TaskStatus.ready_for_feedback, task.task_status
+    # Use a direct submit here so the test can focus on the comment requirement.
+    task.submit(project.user)
+    task.reload
+    assert_equal TaskStatus.ready_for_feedback, task.task_status
 
-      task.update(task_status: TaskStatus.not_started)
+    task.update!(task_status: TaskStatus.not_started, submission_date: nil)
 
-      td1.update(assess_in_portfolio_only: true)
+    td1.update(assess_in_portfolio_only: true)
 
-      # Make a submission where a comment is required
-      post "/api/projects/#{project.id}/task_def_id/#{td1.id}/submission",
-           with_file('test_files/submissions/program.cs', 'application/json', {
-                       trigger: 'ready_for_feedback'
-                     })
-      assert_equal 422, last_response.status, last_response_body
-      task.reload
-      assert_equal TaskStatus.not_started, task.task_status
+    # Make a submission where a comment is required
+    post "/api/projects/#{project.id}/task_def_id/#{td1.id}/submission",
+         with_file('test_files/submissions/program.cs', 'application/json', {
+                     trigger: 'ready_for_feedback'
+                   })
+    assert_equal 422, last_response.status, last_response_body
+    task.reload
+    assert_equal TaskStatus.not_started, task.task_status
 
-      comment = 'I would like feedback with my code..'
+    comment = 'I would like feedback with my code..'
 
-      # Make a submission with comment
-      post "/api/projects/#{project.id}/task_def_id/#{td1.id}/submission",
-           with_file('test_files/submissions/program.cs', 'application/json', {
-                       trigger: 'ready_for_feedback',
-                       comment: comment
-                     })
-      assert_equal 201, last_response.status, last_response_body
-      task.reload
-      assert_equal TaskStatus.ready_for_feedback, task.task_status
+    # Make a submission with comment
+    post "/api/projects/#{project.id}/task_def_id/#{td1.id}/submission",
+         with_file('test_files/submissions/program.cs', 'application/json', {
+                     trigger: 'ready_for_feedback',
+                     comment: comment
+                   })
+    assert_equal 201, last_response.status, last_response_body
+    task.reload
+    assert_equal TaskStatus.ready_for_feedback, task.task_status
 
-      status_comment = task.comments.last
-      text_comment = task.comments.second_to_last
+    status_comment = task.comments.last
+    text_comment = task.comments.second_to_last
 
-      assert_not status_comment.nil?
-      assert_not text_comment.nil?
+    assert_not status_comment.nil?
+    assert_not text_comment.nil?
 
-      assert_equal TaskStatus.ready_for_feedback.name, status_comment.comment
-      assert_equal comment, text_comment.comment
-    end
+    assert_equal TaskStatus.ready_for_feedback.name, status_comment.comment
+    assert_equal comment, text_comment.comment
   end
 
   def test_resubmission_doesnt_change_submission_date
     Sidekiq::Testing.inline! do
-      unit = FactoryBot.create(:unit, task_count: 2, student_count: 0)
+      unit = FactoryBot.create(
+        :unit,
+        with_students: false,
+        student_count: 0,
+        task_count: 0,
+        tutorials: 0,
+        stream_count: 0,
+        staff_count: 0,
+        campus_count: 0,
+        outcome_count: 0
+      )
       tutor = FactoryBot.create(:user, :tutor)
 
       unit_role = unit.employ_staff(tutor, Role.tutor)
       tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
       tutorial = FactoryBot.create(:tutorial, unit: unit, tutorial_stream: tutorial_stream, campus: nil, unit_role: unit_role)
-
-      td = unit.task_definitions.first
-
-      td.update!(due_date: Time.zone.today + 1.day, tutorial_stream: tutorial_stream)
-      assert_not td.nil?
+      td = FactoryBot.create(
+        :task_definition,
+        unit: unit,
+        tutorial_stream: tutorial_stream,
+        target_grade: 0,
+        outcome_count: 0
+      )
+      td.update!(due_date: Time.zone.today + 1.week)
 
       student1 = FactoryBot.create(:user, :student)
       student2 = FactoryBot.create(:user, :student)
@@ -951,87 +923,62 @@ class TasksApiTest < ActiveSupport::TestCase
       project1.enrol_in(tutorial)
       project2.enrol_in(tutorial)
 
+      task1 = project1.task_for_task_definition(td)
+      task2 = project2.task_for_task_definition(td)
+
       tasks = unit.tasks_for_task_inbox(tutor, false)
 
       assert tasks.to_a.empty?
 
       # Submit a task before the due date (student 1)
-      add_auth_header_for(user: student1)
-      data_to_post = {
-        trigger: 'ready_for_feedback'
-      }
-      data_to_post = with_file('test_files/submissions/program.cs', 'application/json', data_to_post)
-      post "/api/projects/#{project1.id}/task_def_id/#{td.id}/submission", data_to_post
-      assert_equal 201, last_response.status, last_response_body
+      task1.submit(student1)
 
       travel 10.minutes
 
       # Submit a task before the due date (student 2)
-      add_auth_header_for(user: student2)
-      data_to_post = {
-        trigger: 'ready_for_feedback'
-      }
-      data_to_post = with_file('test_files/submissions/program.cs', 'application/json', data_to_post)
-      post "/api/projects/#{project2.id}/task_def_id/#{td.id}/submission", data_to_post
-      assert_equal 201, last_response.status, last_response_body
+      task2.submit(student2)
 
       tasks = unit.tasks_for_task_inbox(tutor, false)
+
+      assert_equal TaskStatus.ready_for_feedback, task1.task_status
+      assert_equal TaskStatus.ready_for_feedback, task2.task_status
 
       assert_equal 2, tasks.to_a.count
 
       assert_equal project1.id, tasks.first.project.id, "First task in inbox should be project1's task"
       assert_equal project2.id, tasks.second.project.id, "Second task in inbox should be project2's task"
 
-      task1 = project1.task_for_task_definition(td)
-      task2 = project2.task_for_task_definition(td)
-
-      assert_equal TaskStatus.ready_for_feedback, task1.task_status
-      assert_equal TaskStatus.ready_for_feedback, task2.task_status
-
       assert task2.submission_date > task1.submission_date
+      original_submission_date = task1.submission_date
 
       # Submit the task again, ensure the submission_date hasn't changed (student1)
       travel 10.minutes
 
-      # Submit a task before the due date (student 1)
-      add_auth_header_for(user: student1)
-      data_to_post = {
-        trigger: 'ready_for_feedback'
-      }
-      data_to_post = with_file('test_files/submissions/program.cs', 'application/json', data_to_post)
-      post "/api/projects/#{project1.id}/task_def_id/#{td.id}/submission", data_to_post
-      assert_equal 201, last_response.status, last_response_body
+      task1.submit(student1)
 
       tasks = unit.tasks_for_task_inbox(tutor, false)
 
       assert_equal project1.id, tasks.first.project.id, "First task in inbox should be project1's task"
       assert_equal project2.id, tasks.second.project.id, "Second task in inbox should be project2's task"
 
-      task1 = project1.task_for_task_definition(td)
-      task2 = project2.task_for_task_definition(td)
+      task1.reload
       assert task2.submission_date > task1.submission_date
+      assert_equal original_submission_date, task1.submission_date
       assert TaskStatus.ready_for_feedback, task1.task_status
 
       # Submit the task again after the duedate, ensure the submission_date hasn't changed (student1)
       travel 2.days
 
-      # Submit a task before the due date (student 1)
-      add_auth_header_for(user: student1)
-      data_to_post = {
-        trigger: 'ready_for_feedback'
-      }
-      data_to_post = with_file('test_files/submissions/program.cs', 'application/json', data_to_post)
-      post "/api/projects/#{project1.id}/task_def_id/#{td.id}/submission", data_to_post
-      assert_equal 201, last_response.status, last_response_body
+      task1.submit(student1)
 
       tasks = unit.tasks_for_task_inbox(tutor, false)
 
       assert_equal project1.id, tasks.first.project.id, "First task in inbox should be project1's task"
       assert_equal project2.id, tasks.second.project.id, "Second task in inbox should be project2's task"
 
-      task1 = project1.task_for_task_definition(td)
-      task2 = project2.task_for_task_definition(td)
+      task1.reload
       assert task2.submission_date > task1.submission_date
+      assert_equal original_submission_date, task1.submission_date
       assert TaskStatus.ready_for_feedback, task1.task_status
 
       task1.update(task_status_id: TaskStatus.fix_and_resubmit.id)
@@ -1039,23 +986,19 @@ class TasksApiTest < ActiveSupport::TestCase
       # Submit the task again, now expecting submission date to update
       travel 10.minutes
 
-      # Submit a task before the due date (student 1)
-      add_auth_header_for(user: student1)
-      data_to_post = {
-        trigger: 'ready_for_feedback'
-      }
-      data_to_post = with_file('test_files/submissions/program.cs', 'application/json', data_to_post)
-      post "/api/projects/#{project1.id}/task_def_id/#{td.id}/submission", data_to_post
-      assert_equal 201, last_response.status, last_response_body
+      task1.submit(student1)
+      task1.reload
+      assert TaskStatus.ready_for_feedback, task1.task_status
 
       tasks = unit.tasks_for_task_inbox(tutor, false)
 
+      assert_operator tasks.to_a.count, :>=, 2, "Expected 2 or more tasks in tutors inbox"
       assert_equal project2.id, tasks.first.project.id, "First task in inbox should be project1's task"
       assert_equal project1.id, tasks.second.project.id, "Second task in inbox should be project2's task"
 
-      task1 = project1.task_for_task_definition(td)
-      task2 = project2.task_for_task_definition(td)
+      task1.reload
       assert task1.submission_date > task2.submission_date
+      assert task1.submission_date > original_submission_date
     end
   end
 

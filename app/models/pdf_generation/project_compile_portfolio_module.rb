@@ -42,6 +42,9 @@ module PdfGeneration
                     :base_path,
                     :image_path,
                     :learning_summary_report,
+                    :submission_date,
+                    :formatted_submission_date,
+                    :formatted_submission_time,
                     :ordered_tasks,
                     :portfolio_tasks,
                     :task_defs,
@@ -55,6 +58,8 @@ module PdfGeneration
         @student = project.student
         @project = project
         @learning_summary_report = project.learning_summary_report_path
+        @submission_date = project.portfolio_submission_date
+        @formatted_submission_date, @formatted_submission_time = format_submission_date(project)
         @files = project.portfolio_files(ensure_valid: true, force_ascii: is_retry)
         @base_path = project.portfolio_temp_path
         @image_path = Rails.root.join('public/assets/images')
@@ -72,6 +77,27 @@ module PdfGeneration
       def make_pdf
         logger.debug 'Running make_pdf: (portfolio)'
         generate_pdf(template: '/portfolio/portfolio_pdf')
+      end
+
+      private
+
+      def format_submission_date(project)
+        return [nil, nil] if @submission_date.blank?
+
+        campus_timezone = project.campus&.timezone.presence
+
+        submission_time =
+          if campus_timezone.present?
+            @submission_date.in_time_zone(campus_timezone)
+          else
+            @submission_date.to_time.getlocal
+          end
+
+        timezone_label = campus_timezone || ENV['TZ'].presence || submission_time.zone || Time.zone.name
+        [
+          submission_time.strftime('%d %b %Y'),
+          "#{submission_time.strftime('%I:%M %p')} #{timezone_label}"
+        ]
       end
     end
 

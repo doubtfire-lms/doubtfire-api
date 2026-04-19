@@ -408,6 +408,19 @@ class Task < ApplicationRecord
     return extension_date
   end
 
+  def days_awaiting_feedback(now_time = Time.zone.now)
+    return 0 if submission_date.blank?
+
+    submission_time = submission_date.to_f
+    current_time = now_time.to_f
+    return 0 if current_time <= submission_time
+
+    teaching_breaks = unit&.teaching_period&.breaks || []
+    paused_seconds = break_overlap_seconds(submission_time, current_time, teaching_breaks)
+
+    ([0, current_time - submission_time - paused_seconds].max / 1.day).floor
+  end
+
   def complete?
     status == :complete
   end
@@ -522,7 +535,7 @@ class Task < ApplicationRecord
     group.create_submission self, '', group.projects.map { |proj| { project: proj, pct: 100 / group.projects.count } }
   end
 
-  def trigger_transition(trigger: '', by_user: nil, bulk: false, group_transition: false, quality: 1)
+  def trigger_transition(trigger: '', by_user: nil, bulk: false, group_transition: false, quality: 1, recursive_fix: false)
     #
     # Ensure that assessor is allowed to update the task in the indicated way
     #
@@ -594,7 +607,7 @@ class Task < ApplicationRecord
         lc = comments.last
         # Prevent duplicate status comments during feedback
         unless lc && lc.user == by_user && lc.comment == status.name && (lc.content_type != 'status' || lc.task_status == status)
-          assess status, by_user
+          assess status, by_user, Time.zone.now, recursive_fix
 
           # Add a status comment for new assessments - only recorded on submitter's task in groups
           add_status_comment(by_user, status)
@@ -674,7 +687,7 @@ class Task < ApplicationRecord
     end
   end
 
-  def assess(task_status, assessor, assess_date = Time.zone.now)
+  def assess(task_status, assessor, assess_date = Time.zone.now, recursive_fix = false)
     # Set the task's status to the assessment outcome status
     # and flag it as no longer awaiting signoff
     self.task_status = task_status
@@ -725,7 +738,7 @@ class Task < ApplicationRecord
         end
       end
 
-      if task_status == TaskStatus.fix_and_resubmit
+      if task_status == TaskStatus.fix_and_resubmit && recursive_fix
         # Look for other submitted tasks from this student that has this task as a prerequisite
         # If they are ready for feedback, automatically assess them to fix and resubmit
         dependents = TaskPrerequisite.where(prerequisite_id: task_definition.id)
@@ -738,7 +751,7 @@ class Task < ApplicationRecord
 
           next unless task.task_status == TaskStatus.ready_for_feedback
           # Since we are calling this assess method again, we recursively check for more dependent tasks that need to be updated
-          task.assess(TaskStatus.fix_and_resubmit, assessor, assess_date)
+          task.assess(TaskStatus.fix_and_resubmit, assessor, assess_date, recursive_fix)
           task.add_status_comment(assessor, TaskStatus.fix_and_resubmit)
           task.add_text_comment(assessor, "**Automated comment**: A prerequisite task was updated to Fix and Resubmit, so this task was updated as well. You may need to review and update the prerequisite before resubmitting.")
         end
@@ -1694,6 +1707,21 @@ class Task < ApplicationRecord
   end
 
   private
+
+  def break_overlap_seconds(start_time, end_time, teaching_breaks)
+    teaching_breaks.sum do |teaching_break|
+      break_start = teaching_break.start_date.to_f
+      break_duration = teaching_break.number_of_weeks.to_i.weeks
+      break_end = break_start + break_duration
+
+      next 0 unless break_start.finite? && break_duration.positive?
+
+      overlap_start = [start_time, break_start].max
+      overlap_end = [end_time, break_end].min
+
+      [0, overlap_end - overlap_start].max
+    end
+  end
 
   def delete_associated_files
     if group_submission && group_submission.tasks.count <= 1
