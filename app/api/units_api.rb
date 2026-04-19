@@ -622,17 +622,9 @@ class UnitsApi < Grape::API
       error!({ error: "Not authorised to capture stats of student tasks in #{unit.code}" }, 403)
     end
 
-    begin
-      snapshot = unit.capture_task_complete_stats_snapshot!
-      present(
-        {
-          snapshot_date: snapshot.snapshot_date,
-          captured_at: snapshot.captured_at,
-          stats: snapshot.stats
-        },
-        with: Grape::Presenters::Presenter
-      )
-    end
+    job_id = AggregateTaskCompletionStatsJob.perform_async(unit.id)
+    job = setup_job(job_id)
+    present job, with: Entities::SidekiqJobEntity
   end
 
   desc 'Download stats related to the number of tasks assessed by each tutor'
