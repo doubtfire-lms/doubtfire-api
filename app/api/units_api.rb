@@ -622,6 +622,14 @@ class UnitsApi < Grape::API
       error!({ error: "Not authorised to capture stats of student tasks in #{unit.code}" }, 403)
     end
 
+    # Check if a snapshot was captured within the past 30 minutes
+    recent_snapshot = unit.task_completion_snapshots.where('captured_at > ?', 30.minutes.ago).order(captured_at: :desc).first
+    if recent_snapshot.present?
+      remaining_seconds = [(recent_snapshot.captured_at + 30.minutes - Time.zone.now).ceil, 0].max
+      remaining_minutes = [(remaining_seconds / 60.0).ceil, 1].max
+      error!({ error: "A snapshot was captured at #{recent_snapshot.captured_at.strftime('%H:%M')}. Please wait #{remaining_minutes} more minute(s) before capturing another snapshot." }, 429)
+    end
+
     job_id = AggregateTaskCompletionStatsJob.perform_async(unit.id)
     job = setup_job(job_id)
     present job, with: Entities::SidekiqJobEntity
