@@ -618,7 +618,7 @@ class UnitsApi < Grape::API
   desc 'Capture task completion snapshot immediately for this unit'
   post '/units/:id/stats/task_completion_snapshots/capture' do
     unit = Unit.find(params[:id])
-    unless authorise? current_user, unit, :download_stats
+    unless authorise? current_user, unit, :capture_task_completion_snapshot
       error!({ error: "Not authorised to capture stats of student tasks in #{unit.code}" }, 403)
     end
 
