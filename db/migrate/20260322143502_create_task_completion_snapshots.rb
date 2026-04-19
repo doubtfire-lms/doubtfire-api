@@ -3,7 +3,7 @@
 class CreateTaskCompletionSnapshots < ActiveRecord::Migration[8.0]
   def change
     create_table :task_completion_snapshots do |t|
-      t.references :unit, null: false, foreign_key: true
+      t.references :unit, null: false
       t.date :snapshot_date, null: false
       t.datetime :captured_at, null: false
       t.json :stats, null: false

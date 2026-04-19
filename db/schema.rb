@@ -846,7 +846,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_27_041457) do
   add_foreign_key "feedback_chips", "learning_outcomes"
   add_foreign_key "learning_outcome_links", "learning_outcomes", column: "source_id"
   add_foreign_key "learning_outcome_links", "learning_outcomes", column: "target_id"
-  add_foreign_key "task_completion_snapshots", "units"
   add_foreign_key "user_oauth_states", "users"
   add_foreign_key "user_oauth_tokens", "users"
 end
