@@ -3465,10 +3465,9 @@ class Unit < ApplicationRecord
         result[campus_name][tutorial_name] ||= {}
         result[campus_name][tutorial_name][td.abbreviation] ||= {}
 
-        task = project.task_for_task_definition(td)
-        next unless task
+        status_key = project.status_for_task_definition(td)
+        status = TaskStatus.status_for_name(status_key.to_s)&.id.to_s || TaskStatus.not_started.id.to_s
 
-        status = task.task_status.id.to_s
         result[campus_name][tutorial_name][td.abbreviation][status] ||= 0
         result[campus_name][tutorial_name][td.abbreviation][status] += 1
       end
