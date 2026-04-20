@@ -631,49 +631,53 @@ class UnitsApiTest < ActiveSupport::TestCase
 
     older_snapshot = TaskCompletionSnapshot.create!(
       unit: unit,
-      snapshot_date: Date.new(2026, 4, 1),
-      captured_at: Time.zone.parse('2026-04-01 10:00:00'),
-      stats: {
-        'Melbourne' => {
-          'LA011' => {
-            'Task 1' => {
-              status_id.to_s => 1
-            }
+      snapshot_timestamp: Time.zone.parse('2026-04-01 10:00:00').to_i.to_s
+    )
+
+    older_payload = {
+      'Melbourne' => {
+        'LA011' => {
+          'Task 1' => {
+            status_id.to_s => 1
           }
         }
       }
-    )
+    }
 
     mid_snapshot = TaskCompletionSnapshot.create!(
       unit: unit,
-      snapshot_date: Date.new(2026, 4, 2),
-      captured_at: Time.zone.parse('2026-04-02 10:00:00'),
-      stats: {
-        'Melbourne' => {
-          'LA011' => {
-            'Task 1' => {
-              status_id.to_s => 2
-            }
+      snapshot_timestamp: Time.zone.parse('2026-04-02 10:00:00').to_i.to_s
+    )
+
+    mid_payload = {
+      'Melbourne' => {
+        'LA011' => {
+          'Task 1' => {
+            status_id.to_s => 2
           }
         }
       }
-    )
+    }
 
     latest_snapshot = TaskCompletionSnapshot.create!(
       unit: unit,
-      snapshot_date: Date.new(2026, 4, 3),
-      captured_at: Time.zone.parse('2026-04-03 10:00:00'),
-      stats: {
-        'Melbourne' => {
-          'LA011' => {
-            'Task 1' => {
-              status_id.to_s => 2,
-              status_id => 3
-            }
+      snapshot_timestamp: Time.zone.parse('2026-04-03 10:00:00').to_i.to_s
+    )
+
+    latest_payload = {
+      'Melbourne' => {
+        'LA011' => {
+          'Task 1' => {
+            status_id.to_s => 2,
+            status_id => 3
           }
         }
       }
-    )
+    }
+
+    older_snapshot.store_stats!(older_payload)
+    mid_snapshot.store_stats!(mid_payload)
+    latest_snapshot.store_stats!(latest_payload)
 
     add_auth_header_for(user: unit.main_convenor_user)
     header 'Host', 'localhost'
@@ -696,24 +700,20 @@ class UnitsApiTest < ActiveSupport::TestCase
 
     TaskCompletionSnapshot.create!(
       unit: unit,
-      snapshot_date: Date.new(2026, 3, 30),
-      captured_at: Time.zone.parse('2026-03-30 10:00:00'),
-      stats: { 'snapshot' => {} }
+      snapshot_timestamp: Time.zone.parse('2026-03-30 10:00:00').to_i.to_s
     )
 
     included_snapshot = TaskCompletionSnapshot.create!(
       unit: unit,
-      snapshot_date: Date.new(2026, 4, 2),
-      captured_at: Time.zone.parse('2026-04-02 10:00:00'),
-      stats: { 'snapshot' => {} }
+      snapshot_timestamp: Time.zone.parse('2026-04-02 10:00:00').to_i.to_s
     )
 
     TaskCompletionSnapshot.create!(
       unit: unit,
-      snapshot_date: Date.new(2026, 4, 5),
-      captured_at: Time.zone.parse('2026-04-05 10:00:00'),
-      stats: { 'snapshot' => {} }
+      snapshot_timestamp: Time.zone.parse('2026-04-05 10:00:00').to_i.to_s
     )
+
+    unit.task_completion_snapshots.find_each { |snapshot| snapshot.store_stats!({ 'snapshot' => {} }) }
 
     add_auth_header_for(user: unit.main_convenor_user)
     header 'Host', 'localhost'
@@ -731,9 +731,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     unit = FactoryBot.create :unit, with_students: false, task_count: 0
     TaskCompletionSnapshot.create!(
       unit: unit,
-      snapshot_date: Date.current,
-      captured_at: Time.zone.now,
-      stats: { 'snapshot' => {} }
+      snapshot_timestamp: Time.zone.now.to_i.to_s
     )
 
     add_auth_header_for(user: User.where(role: Role.student).first)
@@ -744,23 +742,28 @@ class UnitsApiTest < ActiveSupport::TestCase
   end
 
   def test_post_capture_task_completion_snapshot
-    unit = FactoryBot.create :unit
+    Sidekiq::Testing.inline! do
+      unit = FactoryBot.create :unit
 
-    count_before = TaskCompletionSnapshot.where(unit: unit).count
+      count_before = TaskCompletionSnapshot.where(unit: unit).count
 
-    add_auth_header_for(user: unit.main_convenor_user)
-    header 'Host', 'localhost'
-    post "/api/units/#{unit.id}/stats/task_completion_snapshots/capture"
+      add_auth_header_for(user: unit.main_convenor_user)
+      header 'Host', 'localhost'
+      post "/api/units/#{unit.id}/stats/task_completion_snapshots/capture"
 
-    assert_equal 201, last_response.status, last_response_body
+      assert_equal 201, last_response.status, last_response_body
+      assert_not_nil last_response_body['id']
 
-    snapshot = TaskCompletionSnapshot.find_by(unit: unit, snapshot_date: Date.current)
-    assert_not_nil snapshot
-    assert_equal count_before + 1, TaskCompletionSnapshot.where(unit: unit).count
+      snapshot = TaskCompletionSnapshot.where(unit: unit).order(snapshot_timestamp: :desc).first
+      assert_not_nil snapshot
+      assert_equal count_before + 1, TaskCompletionSnapshot.where(unit: unit).count
 
-    assert_equal snapshot.snapshot_date.to_s, Date.current.to_s
-    assert_equal snapshot.stats, last_response_body['stats']
-    assert_not_nil last_response_body['captured_at']
+      assert_equal Date.current.to_s, snapshot.snapshot_date.to_s
+      assert_not_empty snapshot.load_stats
+      assert File.exist?(snapshot.snapshot_file_path)
+    ensure
+      Sidekiq::Testing.fake!
+    end
   end
 
   def test_post_capture_task_completion_snapshot_not_authorised

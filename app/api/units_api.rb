@@ -590,13 +590,20 @@ class UnitsApi < Grape::API
       error!({ error: "Not authorised to download stats of student tasks in #{unit.code}" }, 403)
     end
 
-    snapshots = unit.task_completion_snapshots.order(captured_at: :desc)
-    snapshots = snapshots.where('snapshot_date >= ?', params[:start_date]) if params[:start_date].present?
-    snapshots = snapshots.where('snapshot_date <= ?', params[:end_date]) if params[:end_date].present?
+    snapshots = unit.task_completion_snapshots.order(snapshot_timestamp: :desc)
+    if params[:start_date].present?
+      start_timestamp = params[:start_date].in_time_zone.beginning_of_day.to_i
+      snapshots = snapshots.where('CAST(snapshot_timestamp AS UNSIGNED) >= ?', start_timestamp)
+    end
+    if params[:end_date].present?
+      end_timestamp = params[:end_date].in_time_zone.end_of_day.to_i
+      snapshots = snapshots.where('CAST(snapshot_timestamp AS UNSIGNED) <= ?', end_timestamp)
+    end
     snapshots = snapshots.limit([params[:limit].to_i, 365].min)
 
     present snapshots.map { |snapshot|
-      converted_stats = snapshot.stats.transform_values do |tutorials|
+      raw_stats = snapshot.load_stats
+      converted_stats = raw_stats.transform_values do |tutorials|
         tutorials.transform_values do |task_defs|
           task_defs.transform_values do |status_counts|
             status_counts.each_with_object({}) do |(status_id, count), status_acc|
@@ -609,7 +616,7 @@ class UnitsApi < Grape::API
 
       {
         snapshot_date: snapshot.snapshot_date,
-        captured_at: snapshot.captured_at,
+        snapshot_timestamp: snapshot.snapshot_timestamp,
         stats: converted_stats
       }
     }, with: Grape::Presenters::Presenter
@@ -623,11 +630,12 @@ class UnitsApi < Grape::API
     end
 
     # Check if a snapshot was captured within the past 30 minutes
-    recent_snapshot = unit.task_completion_snapshots.where('captured_at > ?', 30.minutes.ago).order(captured_at: :desc).first
+    recent_snapshot = unit.task_completion_snapshots.where('CAST(snapshot_timestamp AS UNSIGNED) > ?', 30.minutes.ago.to_i).order(snapshot_timestamp: :desc).first
     if recent_snapshot.present?
-      remaining_seconds = [(recent_snapshot.captured_at + 30.minutes - Time.zone.now).ceil, 0].max
+      recent_snapshot_time = recent_snapshot.snapshot_time
+      remaining_seconds = [(recent_snapshot_time + 30.minutes - Time.zone.now).ceil, 0].max
       remaining_minutes = [(remaining_seconds / 60.0).ceil, 1].max
-      error!({ error: "A snapshot was captured at #{recent_snapshot.captured_at.strftime('%H:%M')}. Please wait #{remaining_minutes} more minute(s) before capturing another snapshot." }, 429)
+      error!({ error: "A snapshot was captured at #{recent_snapshot_time.strftime('%H:%M')}. Please wait #{remaining_minutes} more minute(s) before capturing another snapshot." }, 429)
     end
 
     job_id = AggregateTaskCompletionStatsJob.perform_async(unit.id)

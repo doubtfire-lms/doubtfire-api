@@ -1168,25 +1168,25 @@ class UnitModelTest < ActiveSupport::TestCase
   test 'capture-task-complete-stats-snapshot creates snapshot for date' do
     data = build_unit_with_controlled_task_statuses
     unit = data[:unit]
-    captured_at = Time.zone.local(2026, 4, 8, 23, 55, 0)
+    snapshot_time = Time.zone.local(2026, 4, 8, 23, 55, 0)
     expected_stats = unit.aggregate_task_complete_stats
 
     count_before = unit.task_completion_snapshots.count
-    snapshot = unit.capture_task_complete_stats_snapshot!(captured_at: captured_at)
+    snapshot = unit.capture_task_complete_stats_snapshot!(snapshot_time: snapshot_time)
 
     assert_equal count_before + 1, unit.task_completion_snapshots.count
-    assert_equal captured_at.to_date, snapshot.snapshot_date
-    assert_equal captured_at.to_i, snapshot.captured_at.to_i
-    assert_equal expected_stats, snapshot.stats
+    assert_equal snapshot_time.to_date, snapshot.snapshot_date
+    assert_equal snapshot_time.to_i.to_s, snapshot.snapshot_timestamp
+    assert_equal expected_stats, snapshot.load_stats
 
-    persisted_snapshot = unit.task_completion_snapshots.find_by(snapshot_date: captured_at.to_date)
+    persisted_snapshot = unit.task_completion_snapshots.find_by(snapshot_timestamp: snapshot_time.to_i.to_s)
     assert_not_nil persisted_snapshot
     assert_equal snapshot.id, persisted_snapshot.id
   ensure
     unit&.destroy
   end
 
-  test 'capture-task-complete-stats-snapshot updates existing snapshot for same date' do
+  test 'capture-task-complete-stats-snapshot creates a new snapshot for a new timestamp' do
     data = build_unit_with_controlled_task_statuses
     unit = data[:unit]
     task_definitions = data[:task_definitions]
@@ -1195,21 +1195,21 @@ class UnitModelTest < ActiveSupport::TestCase
     first_time = Time.zone.local(2026, 4, 8, 9, 0, 0)
     second_time = Time.zone.local(2026, 4, 8, 20, 0, 0)
 
-    first_snapshot = unit.capture_task_complete_stats_snapshot!(captured_at: first_time)
-    first_stats = first_snapshot.stats.deep_dup
+    first_snapshot = unit.capture_task_complete_stats_snapshot!(snapshot_time: first_time)
+    first_stats = first_snapshot.load_stats.deep_dup
     count_before = unit.task_completion_snapshots.count
 
     # Change one task status so the new capture has different stats.
     student2.task_for_task_definition(task_definitions[0]).update!(task_status: TaskStatus.fail)
     expected_updated_stats = unit.aggregate_task_complete_stats
 
-    updated_snapshot = unit.capture_task_complete_stats_snapshot!(captured_at: second_time)
+    updated_snapshot = unit.capture_task_complete_stats_snapshot!(snapshot_time: second_time)
 
-    assert_equal count_before, unit.task_completion_snapshots.count
-    assert_equal first_snapshot.id, updated_snapshot.id
-    assert_equal second_time.to_i, updated_snapshot.captured_at.to_i
-    assert_not_equal first_stats, updated_snapshot.stats
-    assert_equal expected_updated_stats, updated_snapshot.stats
+    assert_equal count_before + 1, unit.task_completion_snapshots.count
+    assert_not_equal first_snapshot.id, updated_snapshot.id
+    assert_equal second_time.to_i.to_s, updated_snapshot.snapshot_timestamp
+    assert_not_equal first_stats, updated_snapshot.load_stats
+    assert_equal expected_updated_stats, updated_snapshot.load_stats
   ensure
     unit&.destroy
   end

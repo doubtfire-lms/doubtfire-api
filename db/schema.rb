@@ -407,15 +407,11 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_27_041457) do
 
   create_table "task_completion_snapshots", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.bigint "unit_id", null: false
-    t.date "snapshot_date", null: false
-    t.datetime "captured_at", null: false
-    t.text "stats", size: :long, null: false, collation: "utf8mb4_bin"
+    t.string "snapshot_timestamp", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["captured_at"], name: "index_task_completion_snapshots_on_captured_at"
-    t.index ["unit_id", "snapshot_date"], name: "index_task_completion_snapshots_on_unit_id_and_snapshot_date", unique: true
+    t.index ["unit_id", "snapshot_timestamp"], name: "idx_on_unit_id_snapshot_timestamp_e923c3ae10", unique: true
     t.index ["unit_id"], name: "index_task_completion_snapshots_on_unit_id"
-    t.check_constraint "json_valid(`stats`)", name: "stats"
   end
 
   create_table "task_definition_grade_due_dates", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|

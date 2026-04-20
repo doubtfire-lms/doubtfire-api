@@ -276,6 +276,27 @@ module FileHelper
     dst
   end
 
+  def unit_analytics_dir(unit, create: true, archived: true)
+    dst = unit_work_root(unit, archived: archived)
+    dst << 'analytics/'
+
+    FileUtils.mkdir_p(dst) if create
+    dst
+  end
+
+  def unit_task_status_snapshots_dir(unit, create: true, archived: true)
+    dst = unit_analytics_dir(unit, create: create, archived: archived)
+    dst << 'task-statuses/'
+
+    FileUtils.mkdir_p(dst) if create
+    dst
+  end
+
+  def unit_task_status_snapshot_path(unit, snapshot_timestamp, create: true, archived: true)
+    snapshot_filename = "#{sanitized_filename(snapshot_timestamp.to_s)}.json"
+    File.join(unit_task_status_snapshots_dir(unit, create: create, archived: archived), snapshot_filename)
+  end
+
   #
   # Generates a path for storing student portfolios
   #
@@ -778,6 +799,9 @@ module FileHelper
   module_function :unit_dir
   module_function :root_portfolio_dir
   module_function :unit_portfolio_dir
+  module_function :unit_analytics_dir
+  module_function :unit_task_status_snapshots_dir
+  module_function :unit_task_status_snapshot_path
   module_function :unit_work_root
   module_function :project_work_root
   module_function :student_portfolio_dir

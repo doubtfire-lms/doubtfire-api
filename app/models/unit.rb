@@ -3477,13 +3477,15 @@ class Unit < ApplicationRecord
     result
   end
 
-  def capture_task_complete_stats_snapshot!(captured_at: Time.zone.now)
+  def capture_task_complete_stats_snapshot!(snapshot_time: Time.zone.now)
+    snapshot_payload = aggregate_task_complete_stats
+    timestamp = snapshot_time.to_i.to_s
+
     task_completion_snapshots
-      .find_or_initialize_by(snapshot_date: captured_at.to_date)
+      .find_or_initialize_by(snapshot_timestamp: timestamp)
       .tap do |snapshot|
-      snapshot.captured_at = captured_at
-      snapshot.stats = aggregate_task_complete_stats
       snapshot.save!
+      snapshot.store_stats!(snapshot_payload)
     end
   end
 
