@@ -912,7 +912,7 @@ class TasksApiTest < ActiveSupport::TestCase
         target_grade: 0,
         outcome_count: 0
       )
-      td.update!(due_date: Time.zone.today + 1.day)
+      td.update!(due_date: Time.zone.today + 1.week)
 
       student1 = FactoryBot.create(:user, :student)
       student2 = FactoryBot.create(:user, :student)
@@ -940,13 +940,13 @@ class TasksApiTest < ActiveSupport::TestCase
 
       tasks = unit.tasks_for_task_inbox(tutor, false)
 
+      assert_equal TaskStatus.ready_for_feedback, task1.task_status
+      assert_equal TaskStatus.ready_for_feedback, task2.task_status
+
       assert_equal 2, tasks.to_a.count
 
       assert_equal project1.id, tasks.first.project.id, "First task in inbox should be project1's task"
       assert_equal project2.id, tasks.second.project.id, "Second task in inbox should be project2's task"
-
-      assert_equal TaskStatus.ready_for_feedback, task1.task_status
-      assert_equal TaskStatus.ready_for_feedback, task2.task_status
 
       assert task2.submission_date > task1.submission_date
       original_submission_date = task1.submission_date
@@ -987,9 +987,12 @@ class TasksApiTest < ActiveSupport::TestCase
       travel 10.minutes
 
       task1.submit(student1)
+      task1.reload
+      assert TaskStatus.ready_for_feedback, task1.task_status
 
       tasks = unit.tasks_for_task_inbox(tutor, false)
 
+      assert_operator tasks.to_a.count, :>=, 2, "Expected 2 or more tasks in tutors inbox"
       assert_equal project2.id, tasks.first.project.id, "First task in inbox should be project1's task"
       assert_equal project1.id, tasks.second.project.id, "Second task in inbox should be project2's task"
 

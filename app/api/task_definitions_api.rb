@@ -559,6 +559,7 @@ class TaskDefinitionsApi < Grape::API
                  .joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment')")
                  .joins("LEFT OUTER JOIN (#{subquery}) as sq ON sq.project_id = projects.id")
                  .joins('LEFT OUTER JOIN task_similarities ON tasks.id = task_similarities.task_id')
+                 .joins("LEFT JOIN task_pins ON task_pins.task_id = tasks.id AND task_pins.user_id = #{current_user.id}")
                  .select(
                    'sq.tutorial_stream_id as tutorial_stream_id',
                    'sq.tutorial_id as tutorial_id',
@@ -572,7 +573,8 @@ class TaskDefinitionsApi < Grape::API
                    'grade',
                    'quality_pts',
                    "SUM(case when task_comments.date_extension_assessed IS NULL AND task_comments.type = 'ExtensionComment' AND NOT task_comments.id IS NULL THEN 1 ELSE 0 END) > 0 as has_extensions",
-                   'SUM(case when task_similarities.flagged then 1 else 0 end) as similar_to_count'
+                   'SUM(case when task_similarities.flagged then 1 else 0 end) as similar_to_count',
+                   'COUNT(distinct task_pins.task_id) != 0 as pinned'
                  )
                  .where('task_definition_id = :id', id: params[:task_def_id])
                  .group(
@@ -603,7 +605,8 @@ class TaskDefinitionsApi < Grape::API
         similarity_flag: t.similar_to_count > 0,
         grade: t.grade,
         quality_pts: t.quality_pts,
-        has_extensions: t.has_extensions
+        has_extensions: t.has_extensions,
+        pinned: t.pinned
       }
     end
 

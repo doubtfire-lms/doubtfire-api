@@ -145,6 +145,72 @@ class UnitRolesTest < ActiveSupport::TestCase
     refute UnitRole.where(id: initial_id).present?
   end
 
+  def test_delete_unit_role_with_assigned_tutorials_requires_reassignment
+    unit = FactoryBot.create :unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0, campus_count: 1
+    tutor_user = FactoryBot.create :user, :tutor
+    tutor_role = unit.employ_staff tutor_user, Role.tutor
+    tutorial = FactoryBot.create :tutorial, unit: unit, unit_role: tutor_role
+
+    add_auth_header_for(user: unit.main_convenor_user)
+
+    delete "/api/unit_roles/#{tutor_role.id}"
+
+    assert_equal 400, last_response.status
+    assert_equal tutor_role.id, tutorial.reload.unit_role_id
+    assert UnitRole.exists?(tutor_role.id)
+  end
+
+  def test_delete_unit_role_with_assigned_tutorials_reassigns_and_deletes
+    unit = FactoryBot.create :unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0, campus_count: 1
+    tutor_user = FactoryBot.create :user, :tutor
+    replacement_user = FactoryBot.create :user, :tutor
+    tutor_role = unit.employ_staff tutor_user, Role.tutor
+    replacement_role = unit.employ_staff replacement_user, Role.tutor
+    tutorial = FactoryBot.create :tutorial, unit: unit, unit_role: tutor_role
+
+    add_auth_header_for(user: unit.main_convenor_user)
+
+    delete "/api/unit_roles/#{tutor_role.id}", { reassign_to_unit_role_id: replacement_role.id }
+
+    assert_equal 200, last_response.status
+    assert_equal replacement_role.id, tutorial.reload.unit_role_id
+    refute UnitRole.exists?(tutor_role.id)
+  end
+
+  def test_delete_unit_role_with_assigned_tutorials_rejects_invalid_reassignment_target
+    unit = FactoryBot.create :unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0, campus_count: 1
+    other_unit = FactoryBot.create :unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0, campus_count: 1
+    tutor_user = FactoryBot.create :user, :tutor
+    tutor_role = unit.employ_staff tutor_user, Role.tutor
+    invalid_role = other_unit.staff.first
+    tutorial = FactoryBot.create :tutorial, unit: unit, unit_role: tutor_role
+
+    add_auth_header_for(user: unit.main_convenor_user)
+
+    delete "/api/unit_roles/#{tutor_role.id}", { reassign_to_unit_role_id: invalid_role.id }
+
+    assert_equal 400, last_response.status
+    assert_equal tutor_role.id, tutorial.reload.unit_role_id
+    assert UnitRole.exists?(tutor_role.id)
+  end
+
+  def test_delete_main_convenor_with_reassignment_rolls_back_tutorial_updates
+    unit = FactoryBot.create :unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0, campus_count: 1
+    replacement_user = FactoryBot.create :user, :convenor
+    replacement_role = unit.employ_staff replacement_user, Role.convenor
+    tutorial = FactoryBot.create :tutorial, unit: unit, unit_role: unit.main_convenor
+    initial_main_convenor_id = unit.main_convenor_id
+
+    add_auth_header_for(user: unit.main_convenor_user)
+
+    delete "/api/unit_roles/#{initial_main_convenor_id}", { reassign_to_unit_role_id: replacement_role.id }
+
+    assert_equal 400, last_response.status, last_response.inspect
+    assert_equal initial_main_convenor_id, tutorial.reload.unit_role_id
+    assert UnitRole.exists?(initial_main_convenor_id)
+    assert UnitRole.exists?(replacement_role.id)
+  end
+
   def test_observer_unit_role
     unit = FactoryBot.create(:unit, with_students: true, task_count: 2, tutorials: 1, outcome_count: 0, staff_count: 0, campus_count: 0)
 

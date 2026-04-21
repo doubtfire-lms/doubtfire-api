@@ -67,5 +67,7 @@ module Entities
 
     expose :feedback_warning_threshold_days, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
     expose :feedback_overflow_threshold_days, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
+
+    expose :enforce_feedback_before_discussed_in_class, if: lambda { |unit, options| is_staff?(options[:my_role]) }
   end
 end
