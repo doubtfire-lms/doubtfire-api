@@ -1150,17 +1150,17 @@ class UnitModelTest < ActiveSupport::TestCase
       tutorial.campus.name => {
         tutorial.abbreviation => {
           task_definitions[0].abbreviation => {
-            TaskStatus.complete.id.to_s => 2
+            'complete' => 2
           },
           task_definitions[1].abbreviation => {
-            TaskStatus.fail.id.to_s => 1,
-            TaskStatus.not_started.id.to_s => 1
+            'fail' => 1,
+            'not_started' => 1
           }
         }
       }
     }
 
-    assert_equal expected, stats
+    assert_equal expected, parse_task_completion_stats_csv(unit, stats)
   ensure
     unit&.destroy
   end
@@ -1169,7 +1169,7 @@ class UnitModelTest < ActiveSupport::TestCase
     data = build_unit_with_controlled_task_statuses
     unit = data[:unit]
     snapshot_time = Time.zone.local(2026, 4, 8, 23, 55, 0)
-    expected_stats = unit.aggregate_task_complete_stats
+    expected_stats = parse_task_completion_stats_csv(unit, unit.aggregate_task_complete_stats)
 
     count_before = unit.task_completion_snapshots.count
     snapshot = unit.capture_task_complete_stats_snapshot!(snapshot_time: snapshot_time)
@@ -1201,7 +1201,7 @@ class UnitModelTest < ActiveSupport::TestCase
 
     # Change one task status so the new capture has different stats.
     student2.task_for_task_definition(task_definitions[0]).update!(task_status: TaskStatus.fail)
-    expected_updated_stats = unit.aggregate_task_complete_stats
+    expected_updated_stats = parse_task_completion_stats_csv(unit, unit.aggregate_task_complete_stats)
 
     updated_snapshot = unit.capture_task_complete_stats_snapshot!(snapshot_time: second_time)
 
@@ -1215,6 +1215,35 @@ class UnitModelTest < ActiveSupport::TestCase
   end
 
   private
+
+  def parse_task_completion_stats_csv(unit, csv_text)
+    csv = CSV.parse(csv_text, headers: true)
+    streams = unit.tutorial_streams.pluck(:abbreviation)
+    streams = ['Tutorial'] if streams.empty?
+    task_definitions = unit.task_definitions_by_grade
+
+    csv.each_with_object(Hash.new { |hash, key| hash[key] = {} }) do |row, stats|
+      streams.each do |stream_name|
+        tutorial_name = row[stream_name].to_s.strip
+        next if tutorial_name.blank?
+
+        campus_name = if stream_name == 'Tutorial'
+                        unit.tutorials.find_by(abbreviation: tutorial_name)&.campus&.name || stream_name
+                      else
+                        stream_name
+                      end
+
+        stats[campus_name][tutorial_name] ||= {}
+
+        task_definitions.each do |task_definition|
+          status_name = row[task_definition.abbreviation].to_s.strip
+          status_key = TaskStatus.id_to_key(status_name.to_i) || :not_started
+          stats[campus_name][tutorial_name][task_definition.abbreviation] ||= Hash.new(0)
+          stats[campus_name][tutorial_name][task_definition.abbreviation][status_key.to_s] += 1
+        end
+      end
+    end
+  end
 
   def build_unit_with_controlled_task_statuses
     unit = FactoryBot.create(:unit, with_students: false, task_count: 2, stream_count: 0, tutorials: 1, campus_count: 1)

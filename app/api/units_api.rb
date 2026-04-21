@@ -602,22 +602,12 @@ class UnitsApi < Grape::API
     snapshots = snapshots.limit([params[:limit].to_i, 365].min)
 
     present snapshots.map { |snapshot|
-      raw_stats = snapshot.load_stats
-      converted_stats = raw_stats.transform_values do |tutorials|
-        tutorials.transform_values do |task_defs|
-          task_defs.transform_values do |status_counts|
-            status_counts.each_with_object({}) do |(status_id, count), status_acc|
-              status_key = TaskStatus.id_to_key(status_id.to_i).to_s
-              status_acc[status_key] = status_acc[status_key].to_i + count
-            end
-          end
-        end
-      end
+      stats = aggregate_task_completion_snapshot_stats(snapshot)
 
       {
         snapshot_date: snapshot.snapshot_date,
         snapshot_timestamp: snapshot.snapshot_timestamp,
-        stats: converted_stats
+        stats: stats
       }
     }, with: Grape::Presenters::Presenter
   end
@@ -641,6 +631,51 @@ class UnitsApi < Grape::API
     job_id = AggregateTaskCompletionStatsJob.perform_async(unit.id)
     job = setup_job(job_id)
     present job, with: Entities::SidekiqJobEntity
+  end
+
+  helpers do
+
+  def aggregate_task_completion_snapshot_stats(snapshot)
+    snapshot_contents = snapshot.snapshot_contents
+    return {} if snapshot_contents.blank?
+
+    aggregate_csv_snapshot_stats(snapshot.unit, snapshot_contents)
+  rescue CSV::MalformedCSVError
+    {}
+  end
+
+  def aggregate_csv_snapshot_stats(unit, csv_text)
+    csv = CSV.parse(csv_text, headers: true)
+    return {} if csv.empty?
+
+    stream_headers = unit.tutorial_streams.pluck(:abbreviation)
+    stream_headers = ['Tutorial'] if stream_headers.empty?
+    task_definitions = unit.task_definitions_by_grade
+
+    stats = Hash.new { |hash, key| hash[key] = Hash.new { |tutorial_hash, tutorial_key| tutorial_hash[tutorial_key] = Hash.new { |task_hash, task_key| task_hash[task_key] = Hash.new(0) } } }
+
+    csv.each do |row|
+      stream_headers.each do |stream_header|
+        tutorial_name = row[stream_header].to_s.strip
+        next if tutorial_name.blank?
+
+        campus_name = if stream_header == 'Tutorial'
+                        unit.tutorials.find_by(abbreviation: tutorial_name)&.campus&.name || stream_header
+                      else
+                        stream_header
+                      end
+
+        task_definitions.each do |task_definition|
+          status_value = row[task_definition.abbreviation].to_s.strip
+          status_key = TaskStatus.id_to_key(status_value.to_i) || :not_started
+          stats[campus_name][tutorial_name][task_definition.abbreviation][status_key.to_s] += 1
+        end
+      end
+    end
+
+    stats
+  end
+
   end
 
   desc 'Download stats related to the number of tasks assessed by each tutor'

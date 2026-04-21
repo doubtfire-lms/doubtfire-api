@@ -624,60 +624,28 @@ class UnitsApiTest < ActiveSupport::TestCase
   end
 
   def test_get_task_completion_snapshots
-    unit = FactoryBot.create :unit, with_students: false, task_count: 0
-
-    status_id = TaskStatus.complete.id
-    status_key = TaskStatus.id_to_key(status_id).to_s
+    unit = FactoryBot.create :unit, with_students: false, task_count: 1, stream_count: 0, tutorials: 1, campus_count: 1
+    tutorial = unit.tutorials.first
+    task_definition = unit.task_definitions_by_grade.first
 
     older_snapshot = TaskCompletionSnapshot.create!(
       unit: unit,
       snapshot_timestamp: Time.zone.parse('2026-04-01 10:00:00').to_i.to_s
     )
 
-    older_payload = {
-      'Melbourne' => {
-        'LA011' => {
-          'Task 1' => {
-            status_id.to_s => 1
-          }
-        }
-      }
-    }
-
     mid_snapshot = TaskCompletionSnapshot.create!(
       unit: unit,
       snapshot_timestamp: Time.zone.parse('2026-04-02 10:00:00').to_i.to_s
     )
-
-    mid_payload = {
-      'Melbourne' => {
-        'LA011' => {
-          'Task 1' => {
-            status_id.to_s => 2
-          }
-        }
-      }
-    }
 
     latest_snapshot = TaskCompletionSnapshot.create!(
       unit: unit,
       snapshot_timestamp: Time.zone.parse('2026-04-03 10:00:00').to_i.to_s
     )
 
-    latest_payload = {
-      'Melbourne' => {
-        'LA011' => {
-          'Task 1' => {
-            status_id.to_s => 2,
-            status_id => 3
-          }
-        }
-      }
-    }
-
-    older_snapshot.store_stats!(older_payload)
-    mid_snapshot.store_stats!(mid_payload)
-    latest_snapshot.store_stats!(latest_payload)
+    older_snapshot.store_stats!(build_task_completion_snapshot_csv(tutorial, task_definition, [TaskStatus.not_started.id]))
+    mid_snapshot.store_stats!(build_task_completion_snapshot_csv(tutorial, task_definition, [TaskStatus.complete.id, TaskStatus.complete.id]))
+    latest_snapshot.store_stats!(build_task_completion_snapshot_csv(tutorial, task_definition, [TaskStatus.complete.id, TaskStatus.complete.id, TaskStatus.complete.id]))
 
     add_auth_header_for(user: unit.main_convenor_user)
     header 'Host', 'localhost'
@@ -690,13 +658,15 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal mid_snapshot.snapshot_date.to_s, last_response_body[1]['snapshot_date'].to_date.to_s
 
     latest_stats = last_response_body[0]['stats']
-    assert_equal 3, latest_stats['Melbourne']['LA011']['Task 1'][status_key]
+    assert_equal 3, latest_stats[tutorial.campus.name][tutorial.abbreviation][task_definition.abbreviation]['complete']
 
     assert_not_equal older_snapshot.snapshot_date.to_s, last_response_body[1]['snapshot_date'].to_date.to_s
   end
 
   def test_get_task_completion_snapshots_filters_by_date
-    unit = FactoryBot.create :unit, with_students: false, task_count: 0
+    unit = FactoryBot.create :unit, with_students: false, task_count: 1, stream_count: 0, tutorials: 1, campus_count: 1
+    tutorial = unit.tutorials.first
+    task_definition = unit.task_definitions_by_grade.first
 
     TaskCompletionSnapshot.create!(
       unit: unit,
@@ -713,7 +683,9 @@ class UnitsApiTest < ActiveSupport::TestCase
       snapshot_timestamp: Time.zone.parse('2026-04-05 10:00:00').to_i.to_s
     )
 
-    unit.task_completion_snapshots.find_each { |snapshot| snapshot.store_stats!({ 'snapshot' => {} }) }
+    unit.task_completion_snapshots.find_each do |snapshot|
+      snapshot.store_stats!(build_task_completion_snapshot_csv(tutorial, task_definition, [TaskStatus.complete.id]))
+    end
 
     add_auth_header_for(user: unit.main_convenor_user)
     header 'Host', 'localhost'
@@ -774,5 +746,43 @@ class UnitsApiTest < ActiveSupport::TestCase
     post "/api/units/#{unit.id}/stats/task_completion_snapshots/capture"
 
     assert_equal 403, last_response.status
+  end
+
+  private
+
+  def build_task_completion_snapshot_csv(tutorial, task_definition, statuses)
+    headers = [
+      'Student ID',
+      'Username',
+      'Student Name',
+      'Target Grade',
+      'Email',
+      'Portfolio',
+      'Grade',
+      'Rationale',
+      'Assessor',
+      'Tutorial',
+      task_definition.abbreviation,
+    ]
+
+    CSV.generate do |csv|
+      csv << headers
+
+      statuses.each_with_index do |status, index|
+        csv << [
+          "#{index + 1}",
+          "student-#{index + 1}",
+          "Student #{index + 1}",
+          '0',
+          "student-#{index + 1}@example.com",
+          'false',
+          '',
+          '',
+          '',
+          tutorial.abbreviation,
+          status,
+        ]
+      end
+    end
   end
 end

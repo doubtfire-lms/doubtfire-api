@@ -293,7 +293,7 @@ module FileHelper
   end
 
   def unit_task_status_snapshot_path(unit, snapshot_timestamp, create: true, archived: true)
-    snapshot_filename = "#{sanitized_filename(snapshot_timestamp.to_s)}.json"
+    snapshot_filename = "#{sanitized_filename(snapshot_timestamp.to_s)}.csv"
     File.join(unit_task_status_snapshots_dir(unit, create: create, archived: archived), snapshot_filename)
   end
 

@@ -2,7 +2,7 @@ require 'test_helper'
 
 class TaskCompletionSnapshotTest < ActiveSupport::TestCase
   setup do
-    @unit = FactoryBot.create(:unit)
+    @unit = FactoryBot.create(:unit, with_students: false, task_count: 1, stream_count: 0, tutorials: 1, campus_count: 1)
     @snapshot = FactoryBot.create(:task_completion_snapshot, unit: @unit)
   end
 
@@ -43,12 +43,23 @@ class TaskCompletionSnapshotTest < ActiveSupport::TestCase
     assert snapshot.valid?
   end
 
-  test 'store_stats! writes a json file that can be loaded' do
-    payload = {
-      'Melbourne' => {
-        'LA011' => {
-          'Task 1' => {
-            TaskStatus.complete.id.to_s => 4
+  test 'store_stats! writes a csv file that can be loaded' do
+    tutorial = @unit.tutorials.first
+    task_definition = @unit.task_definitions_by_grade.first
+
+    payload = CSV.generate do |csv|
+      csv << ['Student ID', 'Username', 'Student Name', 'Target Grade', 'Email', 'Portfolio', 'Grade', 'Rationale', 'Assessor', 'Tutorial', task_definition.abbreviation]
+      csv << ['1', 'student-1', 'Student 1', '0', 'student-1@example.com', 'false', '', '', '', tutorial.abbreviation, TaskStatus.complete.id]
+      csv << ['2', 'student-2', 'Student 2', '0', 'student-2@example.com', 'false', '', '', '', tutorial.abbreviation, TaskStatus.complete.id]
+      csv << ['3', 'student-3', 'Student 3', '0', 'student-3@example.com', 'false', '', '', '', tutorial.abbreviation, TaskStatus.complete.id]
+      csv << ['4', 'student-4', 'Student 4', '0', 'student-4@example.com', 'false', '', '', '', tutorial.abbreviation, TaskStatus.complete.id]
+    end
+
+    expected = {
+      tutorial.campus.name => {
+        tutorial.abbreviation => {
+          task_definition.abbreviation => {
+            'complete' => 4
           }
         }
       }
@@ -57,7 +68,7 @@ class TaskCompletionSnapshotTest < ActiveSupport::TestCase
     @snapshot.store_stats!(payload)
 
     assert File.exist?(@snapshot.snapshot_file_path)
-    assert_equal payload, @snapshot.load_stats
+    assert_equal expected, @snapshot.load_stats
   end
 
   test 'load_stats returns empty hash if file missing' do
@@ -71,8 +82,15 @@ class TaskCompletionSnapshotTest < ActiveSupport::TestCase
     assert_equal({}, snapshot.load_stats)
   end
 
-  test 'deleting snapshot deletes associated json file' do
-    payload = { 'snapshot' => { 'x' => 1 } }
+  test 'deleting snapshot deletes associated csv file' do
+    tutorial = @unit.tutorials.first
+    task_definition = @unit.task_definitions_by_grade.first
+
+    payload = CSV.generate do |csv|
+      csv << ['Student ID', 'Username', 'Student Name', 'Target Grade', 'Email', 'Portfolio', 'Grade', 'Rationale', 'Assessor', 'Tutorial', task_definition.abbreviation]
+      csv << ['1', 'student-1', 'Student 1', '0', 'student-1@example.com', 'false', '', '', '', tutorial.abbreviation, TaskStatus.complete.id]
+    end
+
     @snapshot.store_stats!(payload)
 
     file_path = @snapshot.snapshot_file_path

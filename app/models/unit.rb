@@ -1805,7 +1805,7 @@ class Unit < ApplicationRecord
       # Get the details to fetch for each task definition...
       td_select = task_def_by_grade.map do |td|
         result = []
-        result << "MAX(CASE WHEN tasks.task_definition_id = #{td.id} THEN (CASE WHEN task_statuses.name IS NULL THEN 'Not Started' ELSE task_statuses.name END) ELSE NULL END) AS status_#{td.id}"
+        result << "MAX(CASE WHEN tasks.task_definition_id = #{td.id} THEN (CASE WHEN tasks.task_status_id IS NULL THEN #{TaskStatus.not_started.id} ELSE tasks.task_status_id END) ELSE NULL END) AS status_#{td.id}"
         result << "MAX(CASE WHEN tasks.task_definition_id = #{td.id} THEN tasks.grade ELSE NULL END) AS grade_#{td.id}" if td.is_graded?
         result << "MAX(CASE WHEN tasks.task_definition_id = #{td.id} THEN tasks.quality_pts ELSE NULL END) AS stars_#{td.id}" if td.has_stars?
         result << "MAX(CASE WHEN tasks.task_definition_id = #{td.id} THEN tasks.contribution_pts ELSE NULL END) AS people_#{td.id}" if td.is_group_task?
@@ -1856,7 +1856,7 @@ class Unit < ApplicationRecord
           end.flatten + grp_sets.map do |gs|
             row["grp_#{gs.id}"]
           end + task_def_by_grade.map do |td|
-            result = [row["status_#{td.id}"].nil? ? TaskStatus.not_started.name : row["status_#{td.id}"]]
+            result = [row["status_#{td.id}"].nil? ? TaskStatus.not_started.id : row["status_#{td.id}"].to_i]
             result << GradeHelper.short_grade_for(row["grade_#{td.id}"]) if td.is_graded?
             result << row["stars_#{td.id}"] if td.has_stars?
             result << row["people_#{td.id}"] if td.is_group_task?
@@ -3453,28 +3453,92 @@ class Unit < ApplicationRecord
   end
 
   def aggregate_task_complete_stats
-    result = {}
+    task_def_by_grade = task_definitions_by_grade
+    streams = tutorial_streams
+    grp_sets = group_sets
 
-    active_projects.each do |project|
-      campus_name = project.campus.name
-      result[campus_name] ||= {}
+    CSV.generate() do |csv|
+      # Add header row
+      csv << ([
+        'Student ID',
+        'Username',
+        'Target Grade',
+        'Portfolio',
+        'Grade',
+        'Rationale',
+        'Assessor',
+      ] +
+             (streams.count > 0 ? streams.map { |t| t.abbreviation } : ['Tutorial']) +
+             grp_sets.map(&:name) +
+             task_def_by_grade.map do |task_definition|
+               result = [task_definition.abbreviation]
+               result << "#{task_definition.abbreviation} grade" if task_definition.is_graded?
+               result << "#{task_definition.abbreviation} stars" if task_definition.has_stars?
+               result << "#{task_definition.abbreviation} contribution" if task_definition.is_group_task?
+               result
+             end.flatten)
 
-      task_definitions.each do |td|
-        tutorial = project.tutorial_for(td)
-        tutorial_name = tutorial&.abbreviation || 'Unassigned'
+      # Add projects data
+      # Get the details to fetch for each task definition...
+      td_select = task_def_by_grade.map do |td|
+        result = []
+        result << "MAX(CASE WHEN tasks.task_definition_id = #{td.id} THEN (CASE WHEN tasks.task_status_id IS NULL THEN #{TaskStatus.not_started.id} ELSE tasks.task_status_id END) ELSE NULL END) AS status_#{td.id}"
+        result << "MAX(CASE WHEN tasks.task_definition_id = #{td.id} THEN tasks.grade ELSE NULL END) AS grade_#{td.id}" if td.is_graded?
+        result << "MAX(CASE WHEN tasks.task_definition_id = #{td.id} THEN tasks.quality_pts ELSE NULL END) AS stars_#{td.id}" if td.has_stars?
+        result << "MAX(CASE WHEN tasks.task_definition_id = #{td.id} THEN tasks.contribution_pts ELSE NULL END) AS people_#{td.id}" if td.is_group_task?
+        result
+      end.flatten
 
-        result[campus_name][tutorial_name] ||= {}
-        result[campus_name][tutorial_name][td.abbreviation] ||= {}
-
-        status_key = project.status_for_task_definition(td)
-        status = TaskStatus.status_for_name(status_key.to_s)&.id.to_s || TaskStatus.not_started.id.to_s
-
-        result[campus_name][tutorial_name][td.abbreviation][status] ||= 0
-        result[campus_name][tutorial_name][td.abbreviation][status] += 1
-      end
+      # Query across all projects, joined to task's via definitions to ensure all definitions are covered
+      active_projects
+        .joins(
+          :unit,
+          'INNER JOIN users ON projects.user_id = users.id',
+          'INNER JOIN task_definitions ON task_definitions.unit_id = units.id',
+          'LEFT OUTER JOIN tutorial_streams ON tutorial_streams.unit_id = units.id',
+          'LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id',
+          'LEFT OUTER JOIN tutorials ON tutorials.id = tutorial_enrolments.tutorial_id AND (tutorials.tutorial_stream_id = tutorial_streams.id OR tutorials.tutorial_stream_id IS NULL)',
+          'LEFT OUTER JOIN tasks ON tasks.task_definition_id = task_definitions.id AND projects.id = tasks.project_id',
+          'LEFT OUTER JOIN task_statuses ON tasks.task_status_id = task_statuses.id',
+          'LEFT OUTER JOIN group_memberships ON group_memberships.project_id = projects.id AND group_memberships.active = TRUE',
+          'LEFT OUTER JOIN groups ON groups.id = group_memberships.group_id'
+        ).select(
+          'projects.id as project_id', 'users.student_id as student_id', 'users.username as username', 'users.first_name as first_name', 'projects.assessor_id as project_assessor',
+          'users.last_name as last_name', 'projects.target_grade', 'users.email as email', 'compile_portfolio', 'portfolio_production_date', 'grade', 'grade_rationale',
+          *td_select,
+          # Get tutorial for each stream in unit
+          *streams.map { |s| "MAX(CASE WHEN tutorials.tutorial_stream_id = #{s.id} OR tutorials.tutorial_stream_id IS NULL THEN tutorials.abbreviation ELSE NULL END) AS tutorial_#{s.id}" },
+          # Get tutorial for case when no stream
+          "MAX(CASE WHEN tutorial_streams.id IS NULL THEN tutorials.abbreviation ELSE NULL END) AS tutorial",
+          *grp_sets.map { |gs| "MAX(CASE WHEN groups.group_set_id = #{gs.id} THEN groups.name ELSE NULL END) AS grp_#{gs.id}" }
+        ).group(
+          'projects.id', 'student_id', 'username', 'first_name', 'last_name', 'target_grade', 'email', 'compile_portfolio', 'portfolio_production_date', 'grade', 'grade_rationale'
+        ).each do |row|
+          csv << ([
+            row['student_id'],
+            row['username'],
+            GradeHelper.grade_for(row['target_grade']),
+            row['portfolio_production_date'].present? && !row['compile_portfolio'] && File.exist?(FileHelper.student_portfolio_path(self, row['username'], create: true)),
+            row['grade'] > 0 ? row['grade'] : nil,
+            row['grade_rationale'],
+            row['project_assessor']
+          ] + [1].map do
+            if streams.empty?
+              [row['tutorial']]
+            else
+              streams.map { |ts| row["tutorial_#{ts.id}"] }
+            end
+          end.flatten + grp_sets.map do |gs|
+            row["grp_#{gs.id}"]
+          end + task_def_by_grade.map do |td|
+            result = [row["status_#{td.id}"].nil? ? nil : row["status_#{td.id}"].to_i]
+            result << GradeHelper.short_grade_for(row["grade_#{td.id}"]) if td.is_graded?
+            result << row["stars_#{td.id}"] if td.has_stars?
+            result << row["people_#{td.id}"] if td.is_group_task?
+            result
+          end.flatten)
+        end
     end
-
-    result
   end
 
   def capture_task_complete_stats_snapshot!(snapshot_time: Time.zone.now)
