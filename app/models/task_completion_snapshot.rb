@@ -67,15 +67,14 @@ class TaskCompletionSnapshot < ApplicationRecord
     stats = Hash.new { |hash, key| hash[key] = Hash.new { |tutorial_hash, tutorial_key| tutorial_hash[tutorial_key] = Hash.new { |task_hash, task_key| task_hash[task_key] = Hash.new(0) } } }
 
     csv.each do |row|
+      campus_abbreviation = row['Campus'].to_s.strip
+      next if campus_abbreviation.blank?
+
+      campus_name = Campus.find_by(abbreviation: campus_abbreviation)&.name || campus_abbreviation
+
       stream_headers.each do |stream_header|
         tutorial_name = row[stream_header].to_s.strip
         next if tutorial_name.blank?
-
-        campus_name = if stream_header == 'Tutorial'
-                        unit.tutorials.find_by(abbreviation: tutorial_name)&.campus&.name || stream_header
-                      else
-                        stream_header
-                      end
 
         task_definitions.each do |task_definition|
           status_value = row[task_definition.abbreviation].to_s.strip

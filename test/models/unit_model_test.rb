@@ -1171,7 +1171,7 @@ class UnitModelTest < ActiveSupport::TestCase
     data = build_unit_with_controlled_task_statuses
     unit = data[:unit]
     snapshot_time = Time.zone.local(2026, 4, 8, 23, 55, 0)
-    expected_stats = parse_task_completion_stats_csv(unit, unit.task_completion_csv_generator(task_status_uses_id: true))
+    expected_stats = parse_task_completion_stats_csv(unit, unit.task_completion_csv_generator(task_status_uses_id: true, includes_campus: true))
 
     count_before = unit.task_completion_snapshots.count
     snapshot = unit.capture_task_complete_stats_snapshot!(snapshot_time: snapshot_time)
@@ -1203,7 +1203,7 @@ class UnitModelTest < ActiveSupport::TestCase
 
     # Change one task status so the new capture has different stats.
     student2.task_for_task_definition(task_definitions[0]).update!(task_status: TaskStatus.fail)
-    expected_updated_stats = parse_task_completion_stats_csv(unit, unit.task_completion_csv_generator(task_status_uses_id: true))
+    expected_updated_stats = parse_task_completion_stats_csv(unit, unit.task_completion_csv_generator(task_status_uses_id: true, includes_campus: true))
 
     updated_snapshot = unit.capture_task_complete_stats_snapshot!(snapshot_time: second_time)
 
@@ -1223,13 +1223,25 @@ class UnitModelTest < ActiveSupport::TestCase
     streams = unit.tutorial_streams.pluck(:abbreviation)
     streams = ['Tutorial'] if streams.empty?
     task_definitions = unit.task_definitions_by_grade
+    campus_header = csv.headers.find { |header| header.to_s.casecmp('Campus').zero? }
+
+    campus_names_by_abbreviation = if campus_header.present?
+                                     abbreviations = csv.map { |row| row[campus_header].to_s.strip }.reject(&:blank?).uniq
+                                     Campus.where(abbreviation: abbreviations).pluck(:abbreviation, :name).to_h
+                                   else
+                                     {}
+                                   end
 
     csv.each_with_object(Hash.new { |hash, key| hash[key] = {} }) do |row, stats|
       streams.each do |stream_name|
         tutorial_name = row[stream_name].to_s.strip
         next if tutorial_name.blank?
 
-        campus_name = if stream_name == 'Tutorial'
+        campus_abbreviation = campus_header.present? ? row[campus_header].to_s.strip : nil
+
+        campus_name = if campus_abbreviation.present?
+                        campus_names_by_abbreviation[campus_abbreviation] || campus_abbreviation
+                      elsif stream_name == 'Tutorial'
                         unit.tutorials.find_by(abbreviation: tutorial_name)&.campus&.name || stream_name
                       else
                         stream_name

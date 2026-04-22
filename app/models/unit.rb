@@ -1787,14 +1787,14 @@ class Unit < ApplicationRecord
       'Student Name',
     ]
     base_headers << 'Campus' if includes_campus
-    base_headers.concat([
+    base_headers.push(
       'Target Grade',
       'Email',
       'Portfolio',
       'Grade',
       'Rationale',
       'Assessor',
-    ])
+    )
 
     CSV.generate() do |csv|
       # Add header row
