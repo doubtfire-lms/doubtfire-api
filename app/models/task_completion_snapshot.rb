@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'csv'
+require 'zip'
 
 class TaskCompletionSnapshot < ApplicationRecord
   include FileHelper
@@ -17,8 +18,11 @@ class TaskCompletionSnapshot < ApplicationRecord
   end
 
   def snapshot_contents
-    return File.read(snapshot_file_path) if File.exist?(snapshot_file_path)
-
+    if File.exist?(snapshot_file_path)
+      return read_csv_from_zip(snapshot_file_path)
+    end
+    nil
+  rescue Zip::Error
     nil
   end
 
@@ -48,7 +52,11 @@ class TaskCompletionSnapshot < ApplicationRecord
     FileUtils.mkdir_p(File.dirname(snapshot_file_path))
 
     tmp_path = "#{snapshot_file_path}.tmp"
-    File.write(tmp_path, payload.to_s)
+    Zip::OutputStream.open(tmp_path) do |zip|
+      zip.put_next_entry('snapshot.csv')
+      zip.write(payload.to_s)
+    end
+
     FileUtils.mv(tmp_path, snapshot_file_path)
   ensure
     FileUtils.rm_f(tmp_path) if defined?(tmp_path)
@@ -85,6 +93,15 @@ class TaskCompletionSnapshot < ApplicationRecord
     end
 
     stats
+  end
+
+  def read_csv_from_zip(zip_path)
+    Zip::File.open(zip_path) do |zip_file|
+      entry = zip_file.find_entry('snapshot.csv') || zip_file.entries.first
+      return nil if entry.nil?
+
+      entry.get_input_stream.read
+    end
   end
 
   def delete_snapshot_file

@@ -43,7 +43,7 @@ class TaskCompletionSnapshotTest < ActiveSupport::TestCase
     assert snapshot.valid?
   end
 
-  test 'store_stats! writes a csv file that can be loaded' do
+  test 'store_stats! writes a csv file contained in a zip that can be loaded' do
     tutorial = @unit.tutorials.first
     task_definition = @unit.task_definitions_by_grade.first
 
@@ -82,7 +82,7 @@ class TaskCompletionSnapshotTest < ActiveSupport::TestCase
     assert_equal({}, snapshot.load_stats)
   end
 
-  test 'deleting snapshot deletes associated csv file' do
+  test 'deleting snapshot deletes associated zip file' do
     tutorial = @unit.tutorials.first
     task_definition = @unit.task_definitions_by_grade.first
 
