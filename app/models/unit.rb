@@ -1805,7 +1805,7 @@ class Unit < ApplicationRecord
       # Get the details to fetch for each task definition...
       td_select = task_def_by_grade.map do |td|
         result = []
-        result << "MAX(CASE WHEN tasks.task_definition_id = #{td.id} THEN (CASE WHEN tasks.task_status_id IS NULL THEN #{TaskStatus.not_started.id} ELSE tasks.task_status_id END) ELSE NULL END) AS status_#{td.id}"
+        result << "MAX(CASE WHEN tasks.task_definition_id = #{td.id} THEN (CASE WHEN task_statuses.name IS NULL THEN 'Not Started' ELSE task_statuses.name END) ELSE NULL END) AS status_#{td.id}"
         result << "MAX(CASE WHEN tasks.task_definition_id = #{td.id} THEN tasks.grade ELSE NULL END) AS grade_#{td.id}" if td.is_graded?
         result << "MAX(CASE WHEN tasks.task_definition_id = #{td.id} THEN tasks.quality_pts ELSE NULL END) AS stars_#{td.id}" if td.has_stars?
         result << "MAX(CASE WHEN tasks.task_definition_id = #{td.id} THEN tasks.contribution_pts ELSE NULL END) AS people_#{td.id}" if td.is_group_task?
@@ -1856,7 +1856,7 @@ class Unit < ApplicationRecord
           end.flatten + grp_sets.map do |gs|
             row["grp_#{gs.id}"]
           end + task_def_by_grade.map do |td|
-            result = [row["status_#{td.id}"].nil? ? TaskStatus.not_started.id : row["status_#{td.id}"].to_i]
+            result = [row["status_#{td.id}"].nil? ? TaskStatus.not_started.name : row["status_#{td.id}"]]
             result << GradeHelper.short_grade_for(row["grade_#{td.id}"]) if td.is_graded?
             result << row["stars_#{td.id}"] if td.has_stars?
             result << row["people_#{td.id}"] if td.is_group_task?
