@@ -1138,38 +1138,12 @@ class UnitModelTest < ActiveSupport::TestCase
     assert_includes unit.errors[:mark_late_submissions_as_assess_in_portfolio], 'cannot be disabled while tasks are in the Assess in Portfolio state'
   end
 
-  test 'aggregate-task-complete-stats groups by campus tutorial task and status' do
-    data = build_unit_with_controlled_task_statuses
-    unit = data[:unit]
-    tutorial = data[:tutorial]
-    task_definitions = data[:task_definitions]
-
-    stats = unit.aggregate_task_complete_stats
-
-    expected = {
-      tutorial.campus.name => {
-        tutorial.abbreviation => {
-          task_definitions[0].abbreviation => {
-            'complete' => 2
-          },
-          task_definitions[1].abbreviation => {
-            'fail' => 1,
-            'not_started' => 1
-          }
-        }
-      }
-    }
-
-    assert_equal expected, parse_task_completion_stats_csv(unit, stats)
-  ensure
-    unit&.destroy
-  end
 
   test 'capture-task-complete-stats-snapshot creates snapshot for date' do
     data = build_unit_with_controlled_task_statuses
     unit = data[:unit]
     snapshot_time = Time.zone.local(2026, 4, 8, 23, 55, 0)
-    expected_stats = parse_task_completion_stats_csv(unit, unit.aggregate_task_complete_stats)
+    expected_stats = parse_task_completion_stats_csv(unit, unit.task_completion_csv_generator(task_status_uses_id: true))
 
     count_before = unit.task_completion_snapshots.count
     snapshot = unit.capture_task_complete_stats_snapshot!(snapshot_time: snapshot_time)
@@ -1201,7 +1175,7 @@ class UnitModelTest < ActiveSupport::TestCase
 
     # Change one task status so the new capture has different stats.
     student2.task_for_task_definition(task_definitions[0]).update!(task_status: TaskStatus.fail)
-    expected_updated_stats = parse_task_completion_stats_csv(unit, unit.aggregate_task_complete_stats)
+    expected_updated_stats = parse_task_completion_stats_csv(unit, unit.task_completion_csv_generator(task_status_uses_id: true))
 
     updated_snapshot = unit.capture_task_complete_stats_snapshot!(snapshot_time: second_time)
 
