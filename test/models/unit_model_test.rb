@@ -626,6 +626,34 @@ class UnitModelTest < ActiveSupport::TestCase
     check_task_completion_csv unit
   end
 
+  def test_task_completion_csv_generator_includes_campus_when_requested
+    unit = FactoryBot.create :unit, campus_count: 2, tutorials: 2, stream_count: 1, task_count: 1, student_count: 5, unenrolled_student_count: 0, part_enrolled_student_count: 0
+
+    csv_str = unit.task_completion_csv_generator(includes_campus: true)
+    CSV.parse(csv_str,
+              headers: true,
+              return_headers: false,
+              header_converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')&.downcase }],
+              converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]).each do |entry|
+      user = User.find_by(username: entry['username'])
+      assert user.present?, entry.inspect
+
+      project = unit.active_projects.find_by(user_id: user.id)
+      assert project.present?, entry.inspect
+
+      assert_equal project.campus&.abbreviation, entry['campus'], entry.inspect
+    end
+  end
+
+  def test_task_completion_csv_generator_excludes_campus_by_default
+    unit = FactoryBot.create :unit, campus_count: 2, tutorials: 1, stream_count: 1, task_count: 1, student_count: 2, unenrolled_student_count: 0, part_enrolled_student_count: 0
+
+    csv_str = unit.task_completion_csv_generator
+    parsed = CSV.parse(csv_str, headers: true)
+
+    assert_not_includes parsed.headers.map(&:downcase), 'campus'
+  end
+
   def test_export_users
     unit = FactoryBot.create :unit, campus_count: 2, tutorials:2, stream_count:0, task_count:3, student_count:8, unenrolled_student_count: 0, part_enrolled_student_count: 0, set_one_of_each_task: true
 

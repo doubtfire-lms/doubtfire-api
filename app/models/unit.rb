@@ -1777,24 +1777,28 @@ class Unit < ApplicationRecord
     task_completion_csv_generator()
   end
 
-  def task_completion_csv_generator(task_status_uses_id: false)
+  def task_completion_csv_generator(task_status_uses_id: false, includes_campus: false)
     task_def_by_grade = task_definitions_by_grade
     streams = tutorial_streams
     grp_sets = group_sets
+    base_headers = [
+      'Student ID',
+      'Username',
+      'Student Name',
+    ]
+    base_headers << 'Campus' if includes_campus
+    base_headers.concat([
+      'Target Grade',
+      'Email',
+      'Portfolio',
+      'Grade',
+      'Rationale',
+      'Assessor',
+    ])
 
     CSV.generate() do |csv|
       # Add header row
-      csv << ([
-        'Student ID',
-        'Username',
-        'Student Name',
-        'Target Grade',
-        'Email',
-        'Portfolio',
-        'Grade',
-        'Rationale',
-        'Assessor',
-      ] +
+      csv << (base_headers +
              (streams.count > 0 ? streams.map { |t| t.abbreviation } : ['Tutorial']) +
              grp_sets.map(&:name) +
              task_def_by_grade.map do |task_definition|
@@ -1825,6 +1829,7 @@ class Unit < ApplicationRecord
         .joins(
           :unit,
           'INNER JOIN users ON projects.user_id = users.id',
+          'LEFT OUTER JOIN campuses ON campuses.id = projects.campus_id',
           'INNER JOIN task_definitions ON task_definitions.unit_id = units.id',
           'LEFT OUTER JOIN tutorial_streams ON tutorial_streams.unit_id = units.id',
           'LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id',
@@ -1835,7 +1840,7 @@ class Unit < ApplicationRecord
           'LEFT OUTER JOIN groups ON groups.id = group_memberships.group_id'
         ).select(
           'projects.id as project_id', 'users.student_id as student_id', 'users.username as username', 'users.first_name as first_name', 'projects.assessor_id as project_assessor',
-          'users.last_name as last_name', 'projects.target_grade', 'users.email as email', 'compile_portfolio', 'portfolio_production_date', 'grade', 'grade_rationale',
+          'users.last_name as last_name', 'campuses.abbreviation as campus_abbreviation', 'projects.target_grade', 'users.email as email', 'compile_portfolio', 'portfolio_production_date', 'grade', 'grade_rationale',
           *td_select,
           # Get tutorial for each stream in unit
           *streams.map { |s| "MAX(CASE WHEN tutorials.tutorial_stream_id = #{s.id} OR tutorials.tutorial_stream_id IS NULL THEN tutorials.abbreviation ELSE NULL END) AS tutorial_#{s.id}" },
@@ -1843,12 +1848,16 @@ class Unit < ApplicationRecord
           "MAX(CASE WHEN tutorial_streams.id IS NULL THEN tutorials.abbreviation ELSE NULL END) AS tutorial",
           *grp_sets.map { |gs| "MAX(CASE WHEN groups.group_set_id = #{gs.id} THEN groups.name ELSE NULL END) AS grp_#{gs.id}" }
         ).group(
-          'projects.id', 'student_id', 'username', 'first_name', 'last_name', 'target_grade', 'email', 'compile_portfolio', 'portfolio_production_date', 'grade', 'grade_rationale'
+          'projects.id', 'student_id', 'username', 'first_name', 'last_name', 'campus_abbreviation', 'target_grade', 'email', 'compile_portfolio', 'portfolio_production_date', 'grade', 'grade_rationale'
         ).each do |row|
-          csv << ([
+          student_details = [
             row['student_id'],
             row['username'],
             "#{row['first_name']} #{row['last_name']}",
+          ]
+          student_details << row['campus_abbreviation'] if includes_campus
+
+          csv << (student_details + [
             GradeHelper.grade_for(row['target_grade']),
             row['email'],
             row['portfolio_production_date'].present? && !row['compile_portfolio'] && File.exist?(FileHelper.student_portfolio_path(self, row['username'], create: true)),
@@ -3465,7 +3474,7 @@ class Unit < ApplicationRecord
   end
 
   def capture_task_complete_stats_snapshot!(snapshot_time: Time.zone.now)
-    snapshot_payload = task_completion_csv_generator(task_status_uses_id: true)
+    snapshot_payload = task_completion_csv_generator(task_status_uses_id: true, includes_campus: true)
 
     timestamp = snapshot_time.to_i.to_s
 
