@@ -9,8 +9,7 @@ class AcceptOverseerJob
   include FileHelper
 
   sidekiq_options lock: :until_executed,
-                  # TODO: should students be allowed to submit a new task submission when the previous overseer job has not started/completed?
-                  lock_args_method: ->(args) { [args.first, 'overseer-assessment'] },
+                  lock_args_method: ->(args) { [args.first, args.last, 'overseer-assessment'] },
                   on_conflict: :reject,
                   retry: 1
 

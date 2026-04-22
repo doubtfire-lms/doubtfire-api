@@ -2,6 +2,11 @@ class AcceptSubmissionJob
   include Sidekiq::Job
   include LogHelper
 
+  sidekiq_options lock: :until_executed,
+                  lock_args_method: ->(args) { [args.first] },
+                  on_conflict: :reject,
+                  retry: false
+
   def perform(task_id, user_id, accepted_tii_eula, test_submission)
     begin
       # Ensure cwd is valid...
