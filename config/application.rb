@@ -282,14 +282,14 @@ module Doubtfire
     config.sm_instance = nil
     config.overseer_enabled = ENV['OVERSEER_ENABLED'].present? && ENV['OVERSEER_ENABLED'].to_s.downcase != "false" && ENV['OVERSEER_ENABLED'].to_i != 0
 
-    if (config.overseer_enabled)
-      config.docker_config = {
-        DOCKER_REGISTRY_URL: ENV.fetch('DOCKER_REGISTRY_URL', nil),
-        DOCKER_PROXY_URL: ENV.fetch('DOCKER_PROXY_URL', nil),
-        DOCKER_TOKEN: ENV.fetch('DOCKER_TOKEN', nil),
-        DOCKER_USER: ENV.fetch('DOCKER_USER', nil)
-      }
+    config.docker_config = {
+      DOCKER_REGISTRY_URL: ENV.fetch('DOCKER_REGISTRY_URL', nil),
+      DOCKER_PROXY_URL: ENV.fetch('DOCKER_PROXY_URL', nil),
+      DOCKER_TOKEN: ENV.fetch('DOCKER_TOKEN', nil),
+      DOCKER_USER: ENV.fetch('DOCKER_USER', nil)
+    }
 
+    if (config.overseer_enabled)
       # Path to a physical directory on the host used for mounting overseer task work directories.
       #
       # Example (macOS development):
