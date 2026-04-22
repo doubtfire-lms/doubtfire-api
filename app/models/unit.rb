@@ -1584,13 +1584,18 @@ class Unit < ApplicationRecord
           next
         end
 
+        existing_task_definition = task_definitions.find_by(abbreviation: row[:abbreviation]&.strip)
+        existing_task_definition ||= task_definitions.find_by(name: row[:name]&.strip)
+        existing_task_definition&.task_prerequisites&.destroy_all
+
         task_definition, new_task, message = TaskDefinition.task_def_for_csv_row(self, row)
-        prerequisites_by_task[task_definition.abbreviation] = JSON.parse(row[:task_prerequisites]) unless row[:task_prerequisites].nil?
 
         if task_definition.nil?
           errors << { row: row, message: message }
           next
         end
+
+        prerequisites_by_task[task_definition.abbreviation] = JSON.parse(row[:task_prerequisites]) unless row[:task_prerequisites].nil?
 
         success << { row: row, message: message }
       rescue Exception => e
