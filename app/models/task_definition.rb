@@ -226,6 +226,11 @@ class TaskDefinition < ApplicationRecord
     end
 
     new_td.save!
+    overseer_steps.find_each do |step|
+      new_td.overseer_steps.create!(
+        step.attributes.except('id', 'task_definition_id', 'created_at', 'updated_at')
+      )
+    end
 
     new_td
   end
