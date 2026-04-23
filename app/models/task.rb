@@ -1519,9 +1519,15 @@ class Task < ApplicationRecord
   # Checks to make sure that the files match what we expect
   #
   def accept_submission(current_user, files, ui, contributions, trigger, alignments, accepted_tii_eula: false, test_submission: false)
+    submission_lock_target.with_lock do
     # Ensure there is not a submission already in process
     if processing_pdf?
       ui.error!({ 'error' => 'A submission is already being processed. Please wait for the current submission process to complete.' }, 403)
+    end
+
+    if !test_submission && (overseer_enabled? || task_definition.assessment_enabled) &&
+       overseer_assessments.where(status: OverseerAssessment.statuses[:pre_queued]).exists?
+      ui.error!({ 'error' => 'A submission is already waiting for automated feedback. Please wait for the current Overseer job to complete before submitting again.' }, 403)
     end
 
     # Ensure all of the files are present
@@ -1618,6 +1624,11 @@ class Task < ApplicationRecord
 
     # Trigger processing of new submission - async
     AcceptSubmissionJob.perform_async(id, current_user.id, accepted_tii_eula, test_submission)
+    end
+  end
+
+  def submission_lock_target
+    group_task? ? group : self
   end
 
   # The name that should be used for the uploaded file (based on index of upload requirements)
