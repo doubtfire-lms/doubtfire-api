@@ -1578,19 +1578,24 @@ class Unit < ApplicationRecord
       next if row[0] =~ /^(Task Name)|(name)/ # Skip header
 
       begin
-        missing = missing_headers(row, TaskDefinition.csv_columns)
+        missing = missing_headers(row, TaskDefinition.required_csv_columns)
         if missing.count > 0
           errors << { row: row, message: "Missing headers: #{missing.join(', ')}" }
           next
         end
 
+        existing_task_definition = task_definitions.find_by(abbreviation: row[:abbreviation]&.strip)
+        existing_task_definition ||= task_definitions.find_by(name: row[:name]&.strip)
+        existing_task_definition&.task_prerequisites&.destroy_all
+
         task_definition, new_task, message = TaskDefinition.task_def_for_csv_row(self, row)
-        prerequisites_by_task[task_definition.abbreviation] = JSON.parse(row[:task_prerequisites]) unless row[:task_prerequisites].nil?
 
         if task_definition.nil?
           errors << { row: row, message: message }
           next
         end
+
+        prerequisites_by_task[task_definition.abbreviation] = JSON.parse(row[:task_prerequisites]) unless row[:task_prerequisites].nil?
 
         success << { row: row, message: message }
       rescue Exception => e

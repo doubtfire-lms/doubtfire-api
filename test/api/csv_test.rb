@@ -181,7 +181,7 @@ class CsvTest < ActiveSupport::TestCase
     # Ensure our test csv has unordered or duplicate file keys
     # This scenario can happen when moving upload requirements around from different tasks
     expected_upload_requirements_by_task = {
-      '1.1P' => '[{"key":"file1","name":"HelloWorld.pas","type":"code"},{"key":"file1","name":"Screenshot","type":"image"}]',
+      '1.1P' => '[{"key":"file1","name":"HelloWorld.cpp","type":"code"},{"key":"file1","name":"Screenshot","type":"image"}]',
       '1.2P' => '[{"key":"file0","name":"PictureDrawing.pas","type":"code"},{"key":"file5","name":"Screenshot","type":"image"}]',
       '1.3P' => '[{"key":"file0","name":"PictureDrawing.pas","type":"code"},{"key":"file3","name":"Screenshot","type":"image"},{"key":"file2","name":"Screenshot","type":"image"}]'
     }

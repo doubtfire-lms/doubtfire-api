@@ -353,6 +353,62 @@ class UnitModelTest < ActiveSupport::TestCase
     assert_equal new_prompt3.priority, 3
   end
 
+  def test_rollover_of_overseer_steps
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 2)
+    td = unit.task_definitions.first
+
+    td.overseer_steps.create!(
+      name: 'compile',
+      description: 'Compile the submission',
+      display_name: 'Compile',
+      display_description: 'Compile step',
+      run_command: 'make test',
+      timeout: 45,
+      sort_order: 0,
+      step_type: 'run',
+      partial_output_diff: true,
+      stdin_input_file: 'stdin.txt',
+      expected_output_file: 'expected.txt',
+      feedback_message: 'Compilation failed',
+      status_on_success_id: TaskStatus.complete.id,
+      status_on_failure_id: TaskStatus.fix_and_resubmit.id,
+      halt_on_success: false,
+      halt_on_failure: true,
+      show_expected_output: true,
+      show_stdin: false,
+      show_stdout: true,
+      enabled: true
+    )
+
+    unit2 = unit.rollover(TeachingPeriod.find(2), nil, nil, nil)
+    new_td = unit2.task_definitions.find_by!(abbreviation: td.abbreviation)
+    new_step = new_td.overseer_steps.first
+
+    assert_equal 1, new_td.overseer_steps.count
+    assert_not_nil new_step, 'Overseer step should be duplicated in rollover'
+    assert_equal new_td.id, new_step.task_definition_id
+    assert_equal 'compile', new_step.name
+    assert_equal 'Compile the submission', new_step.description
+    assert_equal 'Compile', new_step.display_name
+    assert_equal 'Compile step', new_step.display_description
+    assert_equal 'make test', new_step.run_command
+    assert_equal 45, new_step.timeout
+    assert_equal 0, new_step.sort_order
+    assert_equal 'run', new_step.step_type
+    assert_equal true, new_step.partial_output_diff
+    assert_equal 'stdin.txt', new_step.stdin_input_file
+    assert_equal 'expected.txt', new_step.expected_output_file
+    assert_equal 'Compilation failed', new_step.feedback_message
+    assert_equal TaskStatus.complete.id, new_step.status_on_success_id
+    assert_equal TaskStatus.fix_and_resubmit.id, new_step.status_on_failure_id
+    assert_equal false, new_step.halt_on_success
+    assert_equal true, new_step.halt_on_failure
+    assert_equal true, new_step.show_expected_output
+    assert_equal false, new_step.show_stdin
+    assert_equal true, new_step.show_stdout
+    assert_equal true, new_step.enabled
+  end
+
   def test_rollover_of_task_prerequisites
     unit = FactoryBot.create(:unit, with_students: false, task_count: 4)
     td1 = unit.task_definitions.first
