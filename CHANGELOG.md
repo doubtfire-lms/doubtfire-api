@@ -2,6 +2,8 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [10.0.0-105](https://github.com/b0ink/doubtfire-api/compare/v10.0.0-104...v10.0.0-105) (2026-04-27)
+
 ## [10.0.0-104](https://github.com/b0ink/doubtfire-api/compare/v10.0.0-103...v10.0.0-104) (2026-04-23)
 
 
