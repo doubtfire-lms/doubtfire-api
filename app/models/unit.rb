@@ -3011,22 +3011,24 @@ class Unit < ApplicationRecord
         next
       end
 
-      student_entries = zip.nil? ? [] : batch_feedback_entries_for_username(zip, project.user.username)
-      pdf_entries = zip.nil? ? [] : batch_feedback_named_pdf_entries_for_username(zip, project.user.username)
+      student_entries = zip.nil? ? [] : batch_feedback_entries_for_project(zip, project)
+      pdf_entries = zip.nil? ? [] : batch_feedback_named_pdf_entries_for_project(zip, project)
 
       if zip.present?
         if student_entries.any? && pdf_entries.empty?
+          expected_identifier = batch_feedback_primary_identifier_for_project(project)
           errors << {
             row: task_entry,
-            message: "Expected a PDF named #{project.user.username}.pdf inside #{project.user.username}'s folder."
+            message: "Expected a PDF named #{expected_identifier}.pdf inside #{expected_identifier}'s folder."
           }
           next
         end
 
         if pdf_entries.length > 1
+          expected_identifier = batch_feedback_primary_identifier_for_project(project)
           errors << {
             row: task_entry,
-            message: "Found multiple PDFs named #{project.user.username}.pdf inside #{project.user.username}'s folder."
+            message: "Found multiple PDFs named #{expected_identifier}.pdf inside #{expected_identifier}'s folder."
           }
           next
         end
@@ -3094,26 +3096,49 @@ class Unit < ApplicationRecord
     converted_csv.close! if defined?(converted_csv) && converted_csv.present?
   end
 
-  def batch_feedback_entries_for_username(zip, username)
+  def batch_feedback_primary_identifier_for_project(project)
+    project.user.student_id.to_s.strip.presence || project.user.username.to_s.strip
+  end
+
+  def batch_feedback_identifiers_for_project(project)
+    [
+      project.user.student_id.to_s.strip.presence,
+      project.user.username.to_s.strip.presence
+    ].compact.uniq
+  end
+
+  def batch_feedback_entries_for_identifier(zip, identifier)
     zip.select do |entry|
       path_parts = entry.name.split('/').reject(&:blank?)
       next false if path_parts.empty?
 
       if entry.name_is_directory?
-        path_parts.any? { |part| part.casecmp(username).zero? }
+        path_parts.any? { |part| part.casecmp(identifier).zero? }
       else
-        path_parts[0...-1].any? { |part| part.casecmp(username).zero? }
+        path_parts[0...-1].any? { |part| part.casecmp(identifier).zero? }
       end
     end
   end
 
-  def batch_feedback_named_pdf_entries_for_username(zip, username)
-    batch_feedback_entries_for_username(zip, username).select do |entry|
+  def batch_feedback_entries_for_project(zip, project)
+    batch_feedback_identifiers_for_project(project).flat_map do |identifier|
+      batch_feedback_entries_for_identifier(zip, identifier)
+    end.uniq
+  end
+
+  def batch_feedback_named_pdf_entries_for_identifier(zip, identifier)
+    batch_feedback_entries_for_identifier(zip, identifier).select do |entry|
       next false if entry.name_is_directory?
       next false unless File.extname(entry.name).casecmp('.pdf').zero?
 
-      File.basename(entry.name, '.pdf').casecmp(username).zero?
+      File.basename(entry.name, '.pdf').casecmp(identifier).zero?
     end
+  end
+
+  def batch_feedback_named_pdf_entries_for_project(zip, project)
+    batch_feedback_identifiers_for_project(project).flat_map do |identifier|
+      batch_feedback_named_pdf_entries_for_identifier(zip, identifier)
+    end.uniq
   end
 
   def build_batch_feedback_legacy_marks_csv(task_rows)
