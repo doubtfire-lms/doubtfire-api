@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_03_27_041457) do
+ActiveRecord::Schema[8.0].define(version: 2026_04_29_023835) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -224,6 +224,20 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_27_041457) do
     t.index ["task_definition_id"], name: "index_moderated_tasks_on_task_definition_id"
     t.index ["task_id", "moderation_type"], name: "uniq_mod_tasks_task_type", unique: true
     t.index ["task_id"], name: "index_moderated_tasks_on_task_id"
+  end
+
+  create_table "overflow_task_claim_logs", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "task_id", null: false
+    t.bigint "claimed_by_user_id", null: false
+    t.bigint "original_tutor_user_id"
+    t.bigint "student_user_id", null: false
+    t.datetime "claimed_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["claimed_by_user_id"], name: "index_overflow_task_claim_logs_on_claimed_by_user_id"
+    t.index ["original_tutor_user_id"], name: "index_overflow_task_claim_logs_on_original_tutor_user_id"
+    t.index ["student_user_id"], name: "index_overflow_task_claim_logs_on_student_user_id"
+    t.index ["task_id"], name: "index_overflow_task_claim_logs_on_task_id"
   end
 
   create_table "overflow_task_claims", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|

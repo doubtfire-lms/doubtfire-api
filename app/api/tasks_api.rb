@@ -519,6 +519,14 @@ class TasksApi < Grape::API
       error!({ error: "Failed to claim task" }, 400)
     end
 
+    OverflowTaskClaimLog.create!(
+      task_id: task.id,
+      claimed_by_user_id: current_user.id,
+      original_tutor_user_id: task.tutor&.id,
+      student_user_id: project.student.id,
+      claimed_at: Time.zone.now
+    )
+
     logger.info "Overflow task claim: {\"user_id\": #{current_user.id},\"task_id\": #{task.id}, \"timestamp\": \"#{Time.zone.now}\", \"original_tutor_user_id\": #{task.tutor ? task.tutor.id : -1}}"
 
     true

@@ -536,6 +536,18 @@ class UnitsApi < Grape::API
     present job, with: Entities::SidekiqJobEntity
   end
 
+  desc 'Download CSV of overflow task claims in this unit'
+  get '/csv/units/:id/overflow_task_claims' do
+    unit = Unit.find(params[:id])
+    unless authorise? current_user, unit, :download_stats
+      error!({ error: "Not authorised to download overflow task claim stats for #{unit.code}" }, 403)
+    end
+
+    job_id = DownloadOverflowTaskClaimsCsvJob.perform_async(unit.id)
+    job = setup_job(job_id)
+    present job, with: Entities::SidekiqJobEntity
+  end
+
   desc 'Download CSV of all student tasks in this unit'
   get '/csv/units/:id/task_completion' do
     unit = Unit.find(params[:id])
