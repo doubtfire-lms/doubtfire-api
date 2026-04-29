@@ -1,0 +1,10 @@
+development:
+  adapter: async
+
+test:
+  adapter: test
+
+production:
+  adapter: redis
+  url: <%= ENV.fetch("DF_REDIS_CABLE_URL", ENV.fetch("DF_REDIS_SIDEKIQ_URL", "redis://localhost:6379/1")) %>
+  channel_prefix: doubtfire_production

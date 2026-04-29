@@ -147,6 +147,7 @@ class Task < ApplicationRecord
   delegate :update_task_stats, to: :project
 
   after_update :update_task_stats, if: :saved_change_to_task_status_id? # TODO: consider moving to async task
+  after_commit :broadcast_status_change, on: :update, if: :saved_change_to_task_status_id?
 
   validates :task_definition_id, uniqueness: { scope: :project,
                                                message: 'must be unique within the project' }
@@ -895,6 +896,10 @@ class Task < ApplicationRecord
     comment.save!
 
     comment
+  end
+
+  def broadcast_status_change
+    TaskChannel.broadcast_to(self, event: 'status_changed')
   end
 
   def add_discussed_comment(current_user)
