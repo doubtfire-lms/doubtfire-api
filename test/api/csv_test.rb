@@ -994,7 +994,7 @@ class CsvTest < ActiveSupport::TestCase
     Sidekiq::Testing.inline! do
       unit = create(:unit, student_count: 1, task_count: 1, stream_count: 0, tutorials: 1)
       convenor = unit.main_convenor.user
-      tutor_user = create(:user, :tutor, first_name: 'Tutor', last_name: 'Tutor')
+      tutor_user = create(:user, :tutor, first_name: 'ATutor', last_name: 'Tutor')
       tutor_role = unit.employ_staff(tutor_user, Role.tutor)
       tutorial = unit.tutorials.first
       tutorial.update!(unit_role: tutor_role)
@@ -1025,8 +1025,8 @@ class CsvTest < ActiveSupport::TestCase
 
       rows = CSV.parse(last_response_body['result'], headers: true)
       assert_equal 1, rows.length
-      assert_equal 'Taylor Tutor', rows[0]['Tutor who claimed']
-      assert_equal 'Taylor Tutor', rows[0]['Original Tutor']
+      assert_equal 'ATutor Tutor', rows[0]['Tutor who claimed']
+      assert_equal 'ATutor Tutor', rows[0]['Original Tutor']
       assert_equal 'student-one', rows[0]['Student Username']
       assert_equal 's1234567', rows[0]['Student ID']
       assert_equal task.id.to_s, rows[0]['Task ID']
