@@ -535,7 +535,8 @@ class Task < ApplicationRecord
     group.create_submission self, '', group.projects.map { |proj| { project: proj, pct: 100 / group.projects.count } }
   end
 
-  def trigger_transition(trigger: '', by_user: nil, bulk: false, group_transition: false, quality: 1, recursive_fix: false)
+  def trigger_transition(trigger: '', by_user: nil, bulk: false, group_transition: false, quality: 1, recursive_fix: false,
+                         check_feedback: false)
     #
     # Ensure that assessor is allowed to update the task in the indicated way
     #
@@ -589,7 +590,8 @@ class Task < ApplicationRecord
           return nil
         end
 
-        if [TaskStatus.complete, TaskStatus.fix_and_resubmit, TaskStatus.redo].include?(status) && !has_manual_feedback_since_first_ready_for_feedback?
+        if check_feedback && [TaskStatus.complete, TaskStatus.fix_and_resubmit, TaskStatus.redo].include?(status) &&
+           !has_manual_feedback_since_first_ready_for_feedback?
           errors.add(:task_status, "cannot be moved to '#{status.name}' until feedback has been given")
           return nil
         end

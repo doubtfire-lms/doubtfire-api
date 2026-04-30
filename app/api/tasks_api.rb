@@ -204,7 +204,13 @@ class TasksApi < Grape::API
         end
 
         logger.info "#{current_user.username} assessing task #{task.id} to #{params[:trigger]}"
-        result = task.trigger_transition(trigger: params[:trigger], by_user: current_user, quality: params[:quality_pts], recursive_fix: params[:trigger_recursive_fix])
+        result = task.trigger_transition(
+          trigger: params[:trigger],
+          by_user: current_user,
+          quality: params[:quality_pts],
+          recursive_fix: params[:trigger_recursive_fix],
+          check_feedback: true
+        )
         if result.nil? && task.errors.any?
           error!({ error: task.errors.full_messages.to_sentence }, 403)
         end
