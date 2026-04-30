@@ -824,6 +824,8 @@ class TasksApiTest < ActiveSupport::TestCase
     assert_instance_of TaskDiscussedComment, discussed_comment
     assert_equal 'discussed_in_class', discussed_comment.content_type
 
+    task.add_text_comment(tutor, 'Manual tutor feedback')
+
     put "/api/projects/#{project.id}/task_def_id/#{td.id}", { trigger: 'complete' }
     assert_equal 200, last_response.status
     task.reload

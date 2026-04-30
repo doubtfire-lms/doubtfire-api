@@ -589,6 +589,11 @@ class Task < ApplicationRecord
           return nil
         end
 
+        if [TaskStatus.complete, TaskStatus.fix_and_resubmit, TaskStatus.redo].include?(status) && !has_manual_feedback_since_first_ready_for_feedback?
+          errors.add(:task_status, "cannot be moved to '#{status.name}' until feedback has been given")
+          return nil
+        end
+
         if task_definition.assess_in_portfolio_only
           # Block assess_in_portfolio_only tasks from being signed off as complete
           if status == TaskStatus.complete
@@ -631,6 +636,21 @@ class Task < ApplicationRecord
 
   def has_discussed_in_class_comment?
     comments.where(content_type: 'discussed_in_class').exists?
+  end
+
+  def has_manual_feedback_since_first_ready_for_feedback?
+    first_ready_for_feedback_at = comments
+                                  .where(content_type: 'status', task_status_id: TaskStatus.ready_for_feedback.id)
+                                  .order(:created_at)
+                                  .pick(:created_at)
+
+    feedback_comments = comments
+                        .where(content_type: %w[text audio image pdf discussion])
+                        .where(user_id: unit.staff.select(:user_id))
+
+    feedback_comments = feedback_comments.where('created_at >= ?', first_ready_for_feedback_at) if first_ready_for_feedback_at
+
+    feedback_comments.where.not("COALESCE(comment, '') LIKE ?", '**Automated Message:%').exists?
   end
 
   def grade_desc
