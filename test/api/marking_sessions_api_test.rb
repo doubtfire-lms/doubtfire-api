@@ -223,6 +223,8 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
     assert_equal project.id, last_activity.project.id
     assert_equal "delete-comment", last_activity.action
 
+    project.task_for_task_definition(td).add_text_comment(tutor, 'Manual tutor feedback')
+
     # Test asessment
     put "/api/projects/#{project.id}/task_def_id/#{td.id}", { trigger: 'complete' }
     assert_equal 200, last_response.status
