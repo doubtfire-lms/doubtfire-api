@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_03_27_041457) do
+ActiveRecord::Schema[8.0].define(version: 2026_05_05_022817) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -71,6 +71,64 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_27_041457) do
     t.index ["task_comment_id", "user_id"], name: "index_comments_read_receipts_on_task_comment_id_and_user_id", unique: true
     t.index ["task_comment_id"], name: "index_comments_read_receipts_on_task_comment_id"
     t.index ["user_id"], name: "index_comments_read_receipts_on_user_id"
+  end
+
+  create_table "communication_actions", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.string "type", null: false
+    t.bigint "communication_rule_id", null: false
+    t.string "subject"
+    t.text "body"
+    t.boolean "email_tutors", default: false, null: false
+    t.boolean "email_convenors", default: false, null: false
+    t.integer "target_grade"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["communication_rule_id"], name: "index_communication_actions_on_communication_rule_id"
+    t.index ["type"], name: "index_communication_actions_on_type"
+  end
+
+  create_table "communication_conditions", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.string "type", null: false
+    t.bigint "communication_id", null: false
+    t.integer "target_grade"
+    t.bigint "task_definition_id"
+    t.text "task_statuses", size: :long, collation: "utf8mb4_bin"
+    t.datetime "last_sign_in_at"
+    t.bigint "tutorial_id"
+    t.bigint "tutorial_stream_id"
+    t.bigint "campus_id"
+    t.integer "task_status_count"
+    t.integer "task_target_grade"
+    t.string "operator", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["campus_id"], name: "index_communication_conditions_on_campus_id"
+    t.index ["communication_id"], name: "index_communication_conditions_on_communication_id"
+    t.index ["task_definition_id"], name: "index_communication_conditions_on_task_definition_id"
+    t.index ["tutorial_id"], name: "index_communication_conditions_on_tutorial_id"
+    t.index ["tutorial_stream_id"], name: "index_communication_conditions_on_tutorial_stream_id"
+    t.index ["type"], name: "index_communication_conditions_on_type"
+    t.check_constraint "json_valid(`task_statuses`)", name: "task_statuses"
+  end
+
+  create_table "communication_rules", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "communication_set_id", null: false
+    t.integer "position", default: 0, null: false
+    t.string "name"
+    t.string "operator"
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["communication_set_id"], name: "index_communication_rules_on_communication_set_id"
+  end
+
+  create_table "communication_sets", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "unit_id", null: false
+    t.string "name"
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["unit_id"], name: "index_communication_sets_on_unit_id"
   end
 
   create_table "d2l_assessment_mappings", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|

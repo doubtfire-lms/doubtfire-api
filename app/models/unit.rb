@@ -157,6 +157,8 @@ class Unit < ApplicationRecord
   has_many :unit_roles, dependent: :destroy, inverse_of: :unit
   has_many :learning_outcomes, as: :context, dependent: :destroy # inverse_of: :unit
   has_many :marking_sessions, dependent: :destroy
+  has_many :communication_sets, class_name: 'CommunicationSet', dependent: :destroy
+  has_many :communication_rules, through: :communication_sets, class_name: 'CommunicationRule'
 
   has_many :comments, through: :projects
   has_many :tasks, through: :projects
