@@ -29,6 +29,58 @@ class CommunicationRulesApi < Grape::API
             with: Entities::CommunicationSetEntity
   end
 
+  desc 'Get a communication set for a unit with preview data'
+  params do
+    requires :unit_id, type: Integer
+    requires :id, type: Integer
+  end
+  get '/units/:unit_id/communication_sets/:id' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :get_students
+      error!({ error: 'Not authorised to get unit communications' }, 403)
+    end
+
+    communication_set = unit.communication_sets
+                            .includes(communication_rules: [:communication_conditions, :communication_actions])
+                            .find(params[:id])
+
+    previews = communication_set.preview_allocations_by_rule
+
+    present(
+      id: communication_set.id,
+      unit_id: communication_set.unit_id,
+      name: communication_set.name,
+      active: communication_set.active,
+      rules: Entities::CommunicationRuleEntity.represent(communication_set.communication_rules),
+      previews: communication_set.communication_rules.map do |rule|
+        {
+          target_rule_id: rule.id,
+          allocations: previews.fetch(rule.id, []).map do |allocation|
+            {
+              rule_id: allocation[:rule].id,
+              rule_name: allocation[:rule].name,
+              position: allocation[:rule].position,
+              students: allocation[:projects].map do |project|
+                {
+                  first_name: project.user&.first_name,
+                  last_name: project.user&.last_name,
+                  preferred_name: project.user&.nickname,
+                  username: project.user&.username,
+                  student_id: project.user&.student_id,
+                  full_name: [project.user&.first_name, project.user&.last_name].compact.join(' '),
+                  target_grade: project.target_grade,
+                  last_sign_in_at: project.user&.last_sign_in_at,
+                  campus: project.campus&.name
+                }
+              end
+            }
+          end
+        }
+      end
+    )
+  end
+
   desc 'Create a communication set for a unit'
   params do
     requires :unit_id, type: Integer
@@ -212,10 +264,15 @@ class CommunicationRulesApi < Grape::API
           position: allocation[:rule].position,
           students: allocation[:projects].map do |project|
             {
+              first_name: project.user&.first_name,
+              last_name: project.user&.last_name,
+              preferred_name: project.user&.nickname,
               username: project.user&.username,
               student_id: project.user&.student_id,
+              full_name: [project.user&.first_name, project.user&.last_name].compact.join(' '),
               target_grade: project.target_grade,
-              last_sign_in_at: project.user&.last_sign_in_at
+              last_sign_in_at: project.user&.last_sign_in_at,
+              campus: project.campus&.name
             }
           end
         }

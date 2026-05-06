@@ -21,6 +21,12 @@ class CommunicationSet < ApplicationRecord
       &.fetch(:projects, []) || []
   end
 
+  def preview_allocations_by_rule
+    communication_rules.each_with_object({}) do |rule, allocations_by_rule|
+      allocations_by_rule[rule.id] = preview_allocations_for_rule(rule)
+    end
+  end
+
   def preview_allocations_for_rule(target_rule)
     remaining_projects = eligible_projects
     allocations = []
