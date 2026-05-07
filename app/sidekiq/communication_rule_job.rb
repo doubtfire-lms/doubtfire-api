@@ -1,16 +1,3 @@
-# require_dependency Rails.root.join('app/models/communication/communication_condition').to_s
-# require_dependency Rails.root.join('app/models/communication/target_grade_condition').to_s
-# require_dependency Rails.root.join('app/models/communication/task_definition_status_condition').to_s
-# require_dependency Rails.root.join('app/models/communication/login_status_condition').to_s
-# require_dependency Rails.root.join('app/models/communication/tutorial_enrolment_condition').to_s
-# require_dependency Rails.root.join('app/models/communication/tutorial_stream_enrolment_condition').to_s
-# require_dependency Rails.root.join('app/models/communication/campus_condition').to_s
-# require_dependency Rails.root.join('app/models/communication/communication_action').to_s
-# require_dependency Rails.root.join('app/models/communication/email_student_action').to_s
-# require_dependency Rails.root.join('app/models/communication/email_staff_action').to_s
-# require_dependency Rails.root.join('app/models/communication/change_target_grade_action').to_s
-# require_dependency Rails.root.join('app/models/communication/communication_rule').to_s
-
 class CommunicationRuleJob
   include Sidekiq::Job
   include Sidekiq::Status::Worker
@@ -43,7 +30,7 @@ class CommunicationRuleJob
       end
     )
 
-    logger.info "Completed communiation job"
+    logger.info "Completed communication job"
   rescue StandardError => e
     logger.error e
     raise e

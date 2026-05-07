@@ -23,13 +23,16 @@ class CommunicationRule < ApplicationRecord
       matches = communication_conditions.map do |condition|
         case condition.type
         when 'TargetGradeCondition'
+          project_target_grade = project.target_grade
+          next false if project_target_grade.nil?
+
           case condition.operator
-          when 'greater_than' then project.target_grade > condition.target_grade
-          when 'greater_than_or_equal_to' then project.target_grade >= condition.target_grade
-          when 'less_than' then project.target_grade < condition.target_grade
-          when 'less_than_or_equal_to' then project.target_grade <= condition.target_grade
-          when 'equal_to' then project.target_grade == condition.target_grade
-          when 'not_equal_to' then project.target_grade != condition.target_grade
+          when 'greater_than' then project_target_grade > condition.target_grade
+          when 'greater_than_or_equal_to' then project_target_grade >= condition.target_grade
+          when 'less_than' then project_target_grade < condition.target_grade
+          when 'less_than_or_equal_to' then project_target_grade <= condition.target_grade
+          when 'equal_to' then project_target_grade == condition.target_grade
+          when 'not_equal_to' then project_target_grade != condition.target_grade
           else false
           end
         when 'TaskDefinitionStatusCondition'

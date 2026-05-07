@@ -145,6 +145,25 @@ class CommunicationRulesApi < Grape::API
     status 204
   end
 
+  desc 'Execute a communication set'
+  params do
+    requires :unit_id, type: Integer
+    requires :id, type: Integer
+  end
+  post '/units/:unit_id/communication_sets/:id/execute' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :update
+      error!({ error: 'Not authorised to execute unit communications' }, 403)
+    end
+
+    communication_set = unit.communication_sets.find(params[:id])
+    job_id = ExecuteCommunicationSetJob.perform_async(communication_set.id)
+    job = setup_job(job_id)
+
+    present job, with: Entities::SidekiqJobEntity
+  end
+
   desc 'Get communication rules for a unit'
   params do
     requires :unit_id, type: Integer
@@ -231,6 +250,25 @@ class CommunicationRulesApi < Grape::API
 
     rule.update!(rule_params)
     present rule, with: Entities::CommunicationRuleEntity
+  end
+
+  desc 'Execute a communication rule within its communication set'
+  params do
+    requires :unit_id, type: Integer
+    requires :id, type: Integer
+  end
+  post '/units/:unit_id/communication_rules/:id/execute' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :update
+      error!({ error: 'Not authorised to execute unit communications' }, 403)
+    end
+
+    rule = unit.communication_rules.find(params[:id])
+    job_id = ExecuteCommunicationSetJob.perform_async(rule.communication_set_id, rule.id)
+    job = setup_job(job_id)
+
+    present job, with: Entities::SidekiqJobEntity
   end
 
   desc 'Preview projects matched by a communication rule'
