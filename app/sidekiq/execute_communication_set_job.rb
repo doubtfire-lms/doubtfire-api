@@ -1,3 +1,5 @@
+require 'csv'
+
 class ExecuteCommunicationSetJob
   include Sidekiq::Job
   include Sidekiq::Status::Worker
@@ -44,8 +46,20 @@ class ExecuteCommunicationSetJob
       should_execute_actions = target_rule_id.present? ? rule.id == target_rule_id : true
 
       if should_execute_actions
-        rule.communication_actions.each do |action|
-          action_results.concat(execute_action(action, matched_projects, communication_set.unit, rule))
+        rule_action_results = rule.communication_actions.flat_map do |action|
+          execute_action(action, matched_projects, communication_set.unit, rule)
+        end
+
+        action_results.concat(rule_action_results)
+        if rule.send_log_to_convenors?
+          action_results.concat(
+            send_action_log_to_convenors(
+              matched_projects,
+              communication_set.unit,
+              rule,
+              rule_action_results
+            )
+          )
         end
       end
 
@@ -131,8 +145,8 @@ class ExecuteCommunicationSetJob
         }
       end
 
-      subject = render_template(action.subject, project, unit, rule)
-      body = render_template(action.body, project, unit, rule)
+      subject = render_template(action.subject, project, unit, rule, projects.length)
+      body = render_template(action.body, project, unit, rule, projects.length)
 
       CommunicationsMailer.communication_email(
         to: formatted_email(recipient),
@@ -172,8 +186,8 @@ class ExecuteCommunicationSetJob
       end
 
       staff_recipients_for(project, unit, action).map do |recipient|
-        subject = render_template(action.subject, project, unit, rule)
-        body = render_template(action.body, project, unit, rule)
+        subject = render_template(action.subject, project, unit, rule, projects.length)
+        body = render_template(action.body, project, unit, rule, projects.length)
 
         CommunicationsMailer.communication_email(
           to: formatted_email(recipient),
@@ -199,6 +213,61 @@ class ExecuteCommunicationSetJob
     end
   end
 
+  def send_action_log_to_convenors(projects, unit, rule, prior_action_results)
+    sender = sender_for(unit)
+
+    if sender.blank?
+      return [{
+        action_id: nil,
+        action_type: 'SendLogToConvenors',
+        status: 'skipped',
+        reason: 'sender email missing'
+      }]
+    end
+
+    recipients = unit.convenors.includes(:user).map(&:user).select { |user| user&.email.present? }.uniq(&:id)
+
+    if recipients.empty?
+      return [{
+        action_id: nil,
+        action_type: 'SendLogToConvenors',
+        status: 'skipped',
+        reason: 'convenor email missing'
+      }]
+    end
+
+    csv_content = build_action_log_csv(rule, projects, prior_action_results)
+    csv_filename = "communication-rule-#{rule.id}-action-log.csv"
+    body = action_log_email_body(rule, prior_action_results)
+    subject = action_log_email_subject(unit, rule)
+
+    recipients.map do |recipient|
+      CommunicationsMailer.action_log_email(
+        to: formatted_email(recipient),
+        from: sender,
+        subject: subject,
+        body: body,
+        recipient: recipient,
+        sender: sender_user_for(unit),
+        unit: unit,
+        rule: rule,
+        csv_content: csv_content,
+        csv_filename: csv_filename,
+        affected_students_count: projects.length
+      ).deliver_now
+
+      {
+        action_id: nil,
+        action_type: 'SendLogToConvenors',
+        status: 'sent',
+        recipient_email: recipient.email,
+        recipient_username: recipient.username,
+        attachment_filename: csv_filename,
+        affected_students_count: projects.length
+      }
+    end
+  end
+
   def staff_recipients_for(project, unit, action)
     recipients = []
 
@@ -217,10 +286,11 @@ class ExecuteCommunicationSetJob
     recipients.select { |recipient| recipient&.email.present? }.uniq(&:id)
   end
 
-  def render_template(template, project, unit, rule)
+  def render_template(template, project, unit, rule, affected_students_count, target_grade_override = nil, action_results = [])
     return '' if template.blank?
 
-    student = project.user
+    student = project&.user
+    target_grade_value = target_grade_override.nil? ? project&.target_grade : target_grade_override
 
     replacements = {
       '{{student.first_name}}' => student&.first_name.to_s,
@@ -229,10 +299,13 @@ class ExecuteCommunicationSetJob
       '{{student.full_name}}' => [student&.first_name, student&.last_name].compact.join(' '),
       '{{student.username}}' => student&.username.to_s,
       '{{student.student_id}}' => student&.student_id.to_s,
+      '{{affected_students_count}}' => affected_students_count.to_s,
       '{{unit.code}}' => unit.code.to_s,
       '{{unit.name}}' => unit.name.to_s,
       '{{rule.name}}' => rule.name.to_s,
-      '{{target_grade}}' => target_grade_name(project.target_grade)
+      '{{target_grade}}' => target_grade_name(target_grade_value),
+      '{{conditions_summary}}' => conditions_summary(rule),
+      '{{actions_summary}}' => actions_summary(rule, action_results)
     }
 
     replacements.reduce(template.dup) do |rendered, (token, value)|
@@ -256,5 +329,189 @@ class ExecuteCommunicationSetJob
 
   def sender_user_for(unit)
     unit.main_convenor_user || unit.convenors.includes(:user).first&.user
+  end
+
+  def conditions_summary(rule)
+    rule.communication_conditions.map do |condition|
+      "- #{human_condition_summary(condition)}"
+    end.join("\n")
+  end
+
+  def actions_summary(rule, action_results)
+    return rule.communication_actions.map { |action| "- #{human_action_summary(action)}" }.join("\n") if action_results.blank?
+
+    rule.communication_actions.map { |action| "- #{human_action_summary(action)}" }.join("\n")
+  end
+
+  def build_action_log_csv(rule, projects, action_results)
+    action_order = rule.communication_actions.each_with_index.to_h { |action, index| [action.id, index] }
+    ordered_results = action_results.sort_by do |result|
+      project = projects.find { |item| item.id == result[:project_id] }
+      student = project&.user
+
+      [
+        student&.username.to_s,
+        action_order.fetch(result[:action_id], Float::INFINITY),
+        result[:recipient_email].to_s
+      ]
+    end
+
+    CSV.generate(headers: true) do |csv|
+      csv << [
+        'student_username',
+        'student_id',
+        'student_name',
+        'rule_name',
+        'action_type',
+        'status',
+        'details',
+        # 'previous_target_grade',
+        # 'new_target_grade',
+        'recipient_email',
+        'executed_at'
+      ]
+
+      ordered_results.each do |result|
+        project = projects.find { |item| item.id == result[:project_id] }
+        student = project&.user
+        details = if result[:status] == 'updated'
+                    "Changed target grade from #{target_grade_name(result[:previous_target_grade])} to #{target_grade_name(result[:target_grade])}"
+                  elsif result[:recipient_email].present?
+                    "Sent email to #{result[:recipient_email]}"
+                  else
+                    result[:reason].to_s
+                  end
+
+        csv << [
+          student&.username,
+          student&.student_id,
+          student&.name,
+          rule.name,
+          result[:action_type],
+          result[:status],
+          details,
+          # target_grade_name(result[:previous_target_grade]),
+          # target_grade_name(result[:target_grade]),
+          result[:recipient_email],
+          Time.current.iso8601
+        ]
+      end
+    end
+  end
+
+  def action_log_email_subject(unit, rule)
+    "#{unit.code} #{rule.name} action log"
+  end
+
+  def action_log_email_body(rule, action_results)
+    [
+      action_log_conditions_intro(rule),
+      conditions_summary(rule),
+      'The following actions have been applied to these students:',
+      actions_summary(rule, action_results)
+    ].join("\n")
+  end
+
+  def action_log_conditions_intro(rule)
+    if rule.operator == 'or'
+      'A scheduled rule has been run for students that match any of the following conditions:'
+    else
+      'A scheduled rule has been run for students that match all of the following conditions:'
+    end
+  end
+
+  def human_condition_summary(condition)
+    case condition.type
+    when 'TaskDefinitionStatusCondition'
+      predicate = condition.operator == 'not_equal_to' ? 'Not In' : 'In'
+      task = TaskDefinition.find_by(id: condition.task_definition_id)
+      task_label = if task
+                     "Task #{task.abbreviation} #{task.name}"
+                   else
+                     "Task #{condition.task_definition_id}"
+                   end
+      "Students that have #{task_label} #{predicate} [#{Array(condition.task_statuses).map { |status| status.to_s.titleize }.join(', ')}]"
+    when 'TargetGradeCondition'
+      "Students with a Target Grade #{operator_label(condition.operator)} #{target_grade_name(condition.target_grade)}"
+    when 'TaskStatusCountCondition'
+      grade_label = target_grade_name(condition.task_target_grade)
+      statuses = Array(condition.task_statuses).map { |status| status.to_s.titleize }.join(', ')
+      "Students that have #{operator_label(condition.operator)} #{condition.task_status_count} #{grade_label} tasks in [#{statuses}]"
+    when 'LoginStatusCondition'
+      "Students whose last sign in is #{condition.operator.to_s.humanize.downcase} #{condition.last_sign_in_at}"
+    when 'TutorialEnrolmentCondition'
+      tutorial = Tutorial.find_by(id: condition.tutorial_id)
+      tutorial_label =
+        if tutorial
+          [tutorial.abbreviation, tutorial.name].compact.join(' ')
+        else
+          "Tutorial #{condition.tutorial_id}"
+        end
+      "Students #{enrolment_label(condition.operator).downcase} #{tutorial_label}"
+    when 'TutorialStreamEnrolmentCondition'
+      tutorial_stream = TutorialStream.find_by(id: condition.tutorial_stream_id)
+      stream_label =
+        if tutorial_stream
+          [tutorial_stream.abbreviation, tutorial_stream.name].compact.join(' ')
+        else
+          "Tutorial Stream #{condition.tutorial_stream_id}"
+        end
+      "Students #{enrolment_label(condition.operator).downcase} #{stream_label}"
+    when 'CampusCondition'
+      campus = Campus.find_by(id: condition.campus_id)
+      campus_label = campus&.name || "Campus #{condition.campus_id}"
+      "Students #{enrolment_label(condition.operator).downcase} #{campus_label}"
+    else
+      "#{condition.type.to_s.underscore.humanize} #{condition.operator.to_s.humanize}"
+    end
+  end
+
+  def human_action_summary(action)
+    case action.type
+    when 'EmailStudentAction'
+      'Send email'
+    when 'EmailStaffAction'
+      'Send staff email'
+    when 'ChangeTargetGradeAction'
+      "Change Target Grade to #{target_grade_name(action.target_grade)}"
+    else
+      human_action_type_name(action.type)
+    end
+  end
+
+  def human_action_type_name(type)
+    case type
+    when 'EmailStudentAction'
+      'Send email'
+    when 'EmailStaffAction'
+      'Send staff email'
+    when 'ChangeTargetGradeAction'
+      'Change target grade'
+    else
+      type.to_s.underscore.humanize
+    end
+  end
+
+  def operator_label(operator)
+    case operator.to_s
+    when 'greater_than'
+      'Greater Than'
+    when 'greater_than_or_equal_to'
+      'Greater Than Or Equal To'
+    when 'less_than'
+      'Less Than'
+    when 'less_than_or_equal_to'
+      'Less Than Or Equal To'
+    when 'equal_to'
+      'Equal To'
+    when 'not_equal_to'
+      'Not Equal To'
+    else
+      operator.to_s.humanize
+    end
+  end
+
+  def enrolment_label(operator)
+    operator.to_s == 'not_enrolled_in' ? 'Not Enrolled In' : 'Enrolled In'
   end
 end

@@ -58,7 +58,7 @@ class CommunicationRule < ApplicationRecord
 
   def task_definition_status_condition_match?(project, condition)
     task = project.tasks.find { |t| t.task_definition_id == condition.task_definition_id }
-    status = task&.task_status&.status_key&.to_s
+    status = task&.task_status&.status_key&.to_s || 'not_started'
     statuses = condition.task_statuses || []
 
     case condition.operator
@@ -70,9 +70,15 @@ class CommunicationRule < ApplicationRecord
 
   def task_status_count_condition_match?(project, condition)
     statuses = condition.task_statuses || []
-    count = project.tasks.count do |task|
-      task.task_definition&.target_grade == condition.task_target_grade &&
-        statuses.include?(task.task_status&.status_key&.to_s)
+    relevant_task_definitions = project.unit.task_definitions.select do |task_definition|
+      task_definition.target_grade == condition.task_target_grade
+    end
+
+    count = relevant_task_definitions.count do |task_definition|
+      task = project.tasks.find { |project_task| project_task.task_definition_id == task_definition.id }
+      task_status = task&.task_status&.status_key&.to_s || 'not_started'
+
+      statuses.include?(task_status)
     end
 
     compare_value(count, condition.task_status_count, condition.operator)

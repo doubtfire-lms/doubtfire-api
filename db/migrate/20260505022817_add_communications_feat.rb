@@ -15,6 +15,8 @@ class AddCommunicationsFeat < ActiveRecord::Migration[8.0]
       # AND | OR
       t.string :operator # AND | OR
 
+      t.boolean :send_log_to_convenors, null: false, default: false
+
       t.boolean :active, null: false, default: true
 
       t.timestamps

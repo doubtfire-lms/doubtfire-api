@@ -116,6 +116,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_05_05_022817) do
     t.integer "position", default: 0, null: false
     t.string "name"
     t.string "operator"
+    t.boolean "send_log_to_convenors", default: false, null: false
     t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false

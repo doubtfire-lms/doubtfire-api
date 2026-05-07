@@ -206,6 +206,7 @@ class CommunicationRulesApi < Grape::API
       requires :operator, type: String
       optional :position, type: Integer
       optional :active, type: Boolean
+      optional :send_log_to_convenors, type: Boolean
     end
   end
   post '/units/:unit_id/communication_sets/:communication_set_id/rules' do
@@ -218,7 +219,7 @@ class CommunicationRulesApi < Grape::API
     communication_set = unit.communication_sets.find(params[:communication_set_id])
     rule_params = ActionController::Parameters.new(params)
                                               .require(:communication_rule)
-                                              .permit(:name, :operator, :position, :active)
+                                              .permit(:name, :operator, :position, :active, :send_log_to_convenors)
 
     rule_params[:position] = communication_set.communication_rules.count if rule_params[:position].nil?
     rule = communication_set.communication_rules.create!(rule_params)
@@ -234,6 +235,7 @@ class CommunicationRulesApi < Grape::API
       optional :operator, type: String
       optional :position, type: Integer
       optional :active, type: Boolean
+      optional :send_log_to_convenors, type: Boolean
     end
   end
   put '/units/:unit_id/communication_rules/:id' do
@@ -246,7 +248,7 @@ class CommunicationRulesApi < Grape::API
     rule = unit.communication_rules.find(params[:id])
     rule_params = ActionController::Parameters.new(params)
                                               .require(:communication_rule)
-                                              .permit(:name, :operator, :position, :active)
+                                              .permit(:name, :operator, :position, :active, :send_log_to_convenors)
 
     rule.update!(rule_params)
     present rule, with: Entities::CommunicationRuleEntity
