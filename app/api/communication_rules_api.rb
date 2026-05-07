@@ -361,6 +361,55 @@ class CommunicationRulesApi < Grape::API
     present condition, with: Entities::CommunicationConditionEntity
   end
 
+  desc 'Update a communication condition'
+  params do
+    requires :unit_id, type: Integer
+    requires :communication_rule_id, type: Integer
+    requires :id, type: Integer
+    requires :communication_condition, type: Hash do
+      optional :type, type: String
+      optional :operator, type: String
+      optional :target_grade, type: Integer
+      optional :task_definition_id, type: Integer
+      optional :task_statuses, type: Array[String]
+      optional :task_status_count, type: Integer
+      optional :task_target_grade, type: Integer
+      optional :last_sign_in_at, type: DateTime
+      optional :tutorial_id, type: Integer
+      optional :tutorial_stream_id, type: Integer
+      optional :campus_id, type: Integer
+    end
+  end
+  put '/units/:unit_id/communication_rules/:communication_rule_id/conditions/:id' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :update
+      error!({ error: 'Not authorised to update unit communications' }, 403)
+    end
+
+    rule = unit.communication_rules.find(params[:communication_rule_id])
+    condition = rule.communication_conditions.find(params[:id])
+    raw_condition_params = params[:communication_condition]
+    condition_params = {
+      type: raw_condition_params[:type],
+      operator: raw_condition_params[:operator],
+      target_grade: raw_condition_params[:target_grade],
+      task_definition_id: raw_condition_params[:task_definition_id],
+      task_status_count: raw_condition_params[:task_status_count],
+      task_target_grade: raw_condition_params[:task_target_grade],
+      last_sign_in_at: raw_condition_params[:last_sign_in_at],
+      tutorial_id: raw_condition_params[:tutorial_id],
+      tutorial_stream_id: raw_condition_params[:tutorial_stream_id],
+      campus_id: raw_condition_params[:campus_id]
+    }.compact
+
+    task_statuses = raw_condition_params[:task_statuses]
+    condition_params[:task_statuses] = Array(task_statuses) unless task_statuses.nil?
+
+    condition.update!(condition_params)
+    present condition, with: Entities::CommunicationConditionEntity
+  end
+
   desc 'Get communication actions for a rule'
   params do
     requires :unit_id, type: Integer
@@ -429,6 +478,37 @@ class CommunicationRulesApi < Grape::API
                                                 )
 
     action = rule.communication_actions.create!(action_params)
+    present action, with: Entities::CommunicationActionEntity
+  end
+
+  desc 'Update a communication action'
+  params do
+    requires :unit_id, type: Integer
+    requires :communication_rule_id, type: Integer
+    requires :id, type: Integer
+    requires :communication_action, type: Hash do
+      optional :type, type: String
+      optional :subject, type: String
+      optional :body, type: String
+      optional :email_tutors, type: Boolean
+      optional :email_convenors, type: Boolean
+      optional :target_grade, type: Integer
+    end
+  end
+  put '/units/:unit_id/communication_rules/:communication_rule_id/actions/:id' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :update
+      error!({ error: 'Not authorised to update unit communications' }, 403)
+    end
+
+    rule = unit.communication_rules.find(params[:communication_rule_id])
+    action = rule.communication_actions.find(params[:id])
+    action_params = ActionController::Parameters.new(params)
+                                                .require(:communication_action)
+                                                .permit(:type, :subject, :body, :email_tutors, :email_convenors, :target_grade)
+
+    action.update!(action_params)
     present action, with: Entities::CommunicationActionEntity
   end
 
