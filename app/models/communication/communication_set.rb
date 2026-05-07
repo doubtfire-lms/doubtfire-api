@@ -4,6 +4,7 @@ class CommunicationSet < ApplicationRecord
   has_many :communication_rules,
            -> { order(:position) },
            class_name: 'CommunicationRule',
+           inverse_of: :communication_set,
            dependent: :destroy
 
   validates :name, presence: true

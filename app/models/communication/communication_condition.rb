@@ -40,7 +40,6 @@ class CommunicationCondition < ApplicationRecord
 
   belongs_to :communication,
              class_name: 'CommunicationRule',
-             foreign_key: :communication_id,
              inverse_of: :communication_conditions
 
   belongs_to :task_definition, optional: true

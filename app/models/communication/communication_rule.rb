@@ -20,75 +20,103 @@ class CommunicationRule < ApplicationRecord
     return projects if communication_conditions.empty?
 
     projects.select do |project|
-      matches = communication_conditions.map do |condition|
-        case condition.type
-        when 'TargetGradeCondition'
-          project_target_grade = project.target_grade
-          next false if project_target_grade.nil?
-
-          case condition.operator
-          when 'greater_than' then project_target_grade > condition.target_grade
-          when 'greater_than_or_equal_to' then project_target_grade >= condition.target_grade
-          when 'less_than' then project_target_grade < condition.target_grade
-          when 'less_than_or_equal_to' then project_target_grade <= condition.target_grade
-          when 'equal_to' then project_target_grade == condition.target_grade
-          when 'not_equal_to' then project_target_grade != condition.target_grade
-          else false
-          end
-        when 'TaskDefinitionStatusCondition'
-          task = project.tasks.find { |t| t.task_definition_id == condition.task_definition_id }
-          status = task&.task_status&.status_key&.to_s
-          statuses = condition.task_statuses || []
-
-          case condition.operator
-          when 'equal_to' then statuses.include?(status)
-          when 'not_equal_to' then !statuses.include?(status)
-          else false
-          end
-        when 'TaskStatusCountCondition'
-          statuses = condition.task_statuses || []
-          count = project.tasks.count do |task|
-            task.task_definition&.target_grade == condition.task_target_grade &&
-              statuses.include?(task.task_status&.status_key&.to_s)
-          end
-
-          case condition.operator
-          when 'greater_than' then count > condition.task_status_count
-          when 'greater_than_or_equal_to' then count >= condition.task_status_count
-          when 'less_than' then count < condition.task_status_count
-          when 'less_than_or_equal_to' then count <= condition.task_status_count
-          when 'equal_to' then count == condition.task_status_count
-          when 'not_equal_to' then count != condition.task_status_count
-          else false
-          end
-        when 'LoginStatusCondition'
-          last_sign_in_at = project.user&.last_sign_in_at
-
-          case condition.operator
-          when 'before' then last_sign_in_at.present? && last_sign_in_at < condition.last_sign_in_at
-          when 'after' then last_sign_in_at.present? && last_sign_in_at > condition.last_sign_in_at
-          else false
-          end
-        when 'TutorialEnrolmentCondition'
-          enrolled = project.tutorial_enrolments.any? { |enrolment| enrolment.tutorial_id == condition.tutorial_id }
-
-          condition.operator == 'not_enrolled_in' ? !enrolled : enrolled
-        when 'TutorialStreamEnrolmentCondition'
-          enrolled = project.tutorial_enrolments.any? do |enrolment|
-            enrolment.tutorial&.tutorial_stream_id == condition.tutorial_stream_id
-          end
-
-          condition.operator == 'not_enrolled_in' ? !enrolled : enrolled
-        when 'CampusCondition'
-          enrolled = project.campus_id == condition.campus_id
-
-          condition.operator == 'not_enrolled_in' ? !enrolled : enrolled
-        else
-          false
-        end
-      end
+      matches = communication_conditions.map { |condition| condition_match?(project, condition) }
 
       operator == 'or' ? matches.any? : matches.all?
+    end
+  end
+
+  private
+
+  def condition_match?(project, condition)
+    case condition.type
+    when 'TargetGradeCondition'
+      target_grade_condition_match?(project, condition)
+    when 'TaskDefinitionStatusCondition'
+      task_definition_status_condition_match?(project, condition)
+    when 'TaskStatusCountCondition'
+      task_status_count_condition_match?(project, condition)
+    when 'LoginStatusCondition'
+      login_status_condition_match?(project, condition)
+    when 'TutorialEnrolmentCondition'
+      tutorial_enrolment_condition_match?(project, condition)
+    when 'TutorialStreamEnrolmentCondition'
+      tutorial_stream_enrolment_condition_match?(project, condition)
+    when 'CampusCondition'
+      campus_condition_match?(project, condition)
+    else
+      false
+    end
+  end
+
+  def target_grade_condition_match?(project, condition)
+    project_target_grade = project.target_grade
+    return false if project_target_grade.nil?
+
+    compare_value(project_target_grade, condition.target_grade, condition.operator)
+  end
+
+  def task_definition_status_condition_match?(project, condition)
+    task = project.tasks.find { |t| t.task_definition_id == condition.task_definition_id }
+    status = task&.task_status&.status_key&.to_s
+    statuses = condition.task_statuses || []
+
+    case condition.operator
+    when 'equal_to' then statuses.include?(status)
+    when 'not_equal_to' then !statuses.include?(status)
+    else false
+    end
+  end
+
+  def task_status_count_condition_match?(project, condition)
+    statuses = condition.task_statuses || []
+    count = project.tasks.count do |task|
+      task.task_definition&.target_grade == condition.task_target_grade &&
+        statuses.include?(task.task_status&.status_key&.to_s)
+    end
+
+    compare_value(count, condition.task_status_count, condition.operator)
+  end
+
+  def login_status_condition_match?(project, condition)
+    last_sign_in_at = project.user&.last_sign_in_at
+
+    case condition.operator
+    when 'before' then last_sign_in_at.present? && last_sign_in_at < condition.last_sign_in_at
+    when 'after' then last_sign_in_at.present? && last_sign_in_at > condition.last_sign_in_at
+    else false
+    end
+  end
+
+  def tutorial_enrolment_condition_match?(project, condition)
+    enrolled = project.tutorial_enrolments.any? { |enrolment| enrolment.tutorial_id == condition.tutorial_id }
+
+    condition.operator == 'not_enrolled_in' ? !enrolled : enrolled
+  end
+
+  def tutorial_stream_enrolment_condition_match?(project, condition)
+    enrolled = project.tutorial_enrolments.any? do |enrolment|
+      enrolment.tutorial&.tutorial_stream_id == condition.tutorial_stream_id
+    end
+
+    condition.operator == 'not_enrolled_in' ? !enrolled : enrolled
+  end
+
+  def campus_condition_match?(project, condition)
+    enrolled = project.campus_id == condition.campus_id
+
+    condition.operator == 'not_enrolled_in' ? !enrolled : enrolled
+  end
+
+  def compare_value(left, right, operator)
+    case operator
+    when 'greater_than' then left > right
+    when 'greater_than_or_equal_to' then left >= right
+    when 'less_than' then left < right
+    when 'less_than_or_equal_to' then left <= right
+    when 'equal_to' then left == right
+    when 'not_equal_to' then left != right
+    else false
     end
   end
 end
