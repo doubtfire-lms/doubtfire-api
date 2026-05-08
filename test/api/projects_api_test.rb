@@ -112,6 +112,38 @@ class ProjectsApiTest < ActiveSupport::TestCase
     end
   end
 
+  def test_get_project_peer_progress_response_is_correct
+    unit = FactoryBot.create(:unit)
+    project = unit.active_projects.first
+
+    add_auth_header_for(user: project.student)
+
+    get "/api/projects/#{project.id}/peer_progress"
+    assert_equal 200, last_response.status, last_response_body
+    assert_equal unit.active_projects.count, last_response_body.count
+
+    current_student_entries = last_response_body.select { |entry| entry['is_current_student'] }
+    assert_equal 1, current_student_entries.count
+
+    last_response_body.each_with_index do |entry, index|
+      assert_json_limit_keys_to_exactly %w(alias progress band_label is_current_student), entry
+      assert_equal "Peer #{(index + 1).to_s.rjust(2, '0')}", entry['alias']
+      assert entry['progress'].between?(0, 100), entry.inspect
+      assert %w(Leading On\ Track Building Needs\ Support).include?(entry['band_label']), entry.inspect
+    end
+  end
+
+  def test_get_project_peer_progress_requires_project_access
+    unit = FactoryBot.create(:unit)
+    project = unit.active_projects.first
+    other_user = FactoryBot.create(:user, :student, enrol_in: 1)
+
+    add_auth_header_for(user: other_user)
+
+    get "/api/projects/#{project.id}/peer_progress"
+    assert_equal 403, last_response.status
+  end
+
   def test_submitted_grade_cant_change_after_submission
     user = FactoryBot.create(:user, :student, enrol_in: 1)
     project = user.projects.first

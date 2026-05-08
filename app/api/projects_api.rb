@@ -34,6 +34,46 @@ class ProjectsApi < Grape::API
     end
   end
 
+  desc 'Get anonymized peer progress for a project unit'
+  params do
+    requires :id, type: Integer, desc: 'The id of the project to get peer progress for'
+  end
+  get '/projects/:id/peer_progress' do
+    project = Project.eager_load(:unit, :user).find(params[:id])
+
+    unless authorise? current_user, project, :get
+      error!({ error: "Couldn't find Project with id=#{params[:id]}" }, 403)
+    end
+
+    peers = project.unit.active_projects.includes(:user).order('projects.id ASC').map.with_index(1) do |peer_project, index|
+      task_stats = begin
+        peer_project.task_stats.present? ? JSON.parse(peer_project.task_stats) : {}
+      rescue StandardError
+        {}
+      end
+      progress = task_stats['order_scale'].to_f.round
+      progress = 0 if progress.negative?
+      progress = 100 if progress > 100
+
+      {
+        alias: "Peer #{index.to_s.rjust(2, '0')}",
+        progress: progress,
+        band_label: if progress >= 85
+                      'Leading'
+                    elsif progress >= 75
+                      'On Track'
+                    elsif progress >= 65
+                      'Building'
+                    else
+                      'Needs Support'
+                    end,
+        is_current_student: peer_project.id == project.id
+      }
+    end
+
+    present peers, with: Grape::Presenters::Presenter
+  end
+
   desc 'Update a project'
   params do
     optional :trigger,            type: String,  desc: 'The update trigger'
