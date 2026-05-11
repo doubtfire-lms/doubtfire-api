@@ -250,6 +250,7 @@ module Doubtfire
         resource '*', headers: :any, methods: %i(get post put delete options)
       end
     end
+    config.middleware.use Rack::Attack
 
     config.active_support.to_time_preserves_timezone = :zone
 
