@@ -1565,7 +1565,7 @@ class Unit < ApplicationRecord
     else
       target_date = date.to_date
       unit_start_date = start_date.to_date
-      (((target_date - unit_start_date).to_i) / 7).floor + 1
+      ((target_date - unit_start_date).to_i / 7).floor + 1
     end
   end
 
