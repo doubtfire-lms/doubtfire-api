@@ -123,6 +123,30 @@ ActiveRecord::Schema[8.0].define(version: 2026_05_05_022817) do
     t.index ["communication_set_id"], name: "index_communication_rules_on_communication_set_id"
   end
 
+  create_table "communication_set_schedules", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "communication_set_id", null: false
+    t.string "name"
+    t.boolean "active", default: true, null: false
+    t.integer "anchor_week", null: false
+    t.string "anchor_day", null: false
+    t.integer "hour", default: 8, null: false
+    t.integer "minute", default: 0, null: false
+    t.string "timezone", default: "UTC", null: false
+    t.string "recurrence", default: "none", null: false
+    t.integer "interval", default: 1, null: false
+    t.integer "repeat_count"
+    t.datetime "until_at"
+    t.text "ice_cube_schedule", size: :long, collation: "utf8mb4_bin"
+    t.datetime "next_run_at"
+    t.datetime "last_run_at"
+    t.datetime "last_enqueued_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active", "next_run_at"], name: "index_communication_set_schedules_on_active_and_next_run_at"
+    t.index ["communication_set_id"], name: "index_communication_set_schedules_on_communication_set_id"
+    t.check_constraint "json_valid(`ice_cube_schedule`)", name: "ice_cube_schedule"
+  end
+
   create_table "communication_sets", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.bigint "unit_id", null: false
     t.string "name"
@@ -462,6 +486,15 @@ ActiveRecord::Schema[8.0].define(version: 2026_05_05_022817) do
     t.index ["task_id"], name: "index_task_comments_on_task_id"
     t.index ["task_status_id"], name: "index_task_comments_on_task_status_id"
     t.index ["user_id"], name: "index_task_comments_on_user_id"
+  end
+
+  create_table "task_completion_snapshots", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "unit_id", null: false
+    t.string "snapshot_timestamp", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["unit_id", "snapshot_timestamp"], name: "idx_on_unit_id_snapshot_timestamp_e923c3ae10", unique: true
+    t.index ["unit_id"], name: "index_task_completion_snapshots_on_unit_id"
   end
 
   create_table "task_definition_grade_due_dates", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|

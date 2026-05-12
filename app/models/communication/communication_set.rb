@@ -1,6 +1,11 @@
 class CommunicationSet < ApplicationRecord
   belongs_to :unit
 
+  has_many :communication_set_schedules,
+           class_name: 'CommunicationSetSchedule',
+           inverse_of: :communication_set,
+           dependent: :destroy
+
   has_many :communication_rules,
            -> { order(:position) },
            class_name: 'CommunicationRule',

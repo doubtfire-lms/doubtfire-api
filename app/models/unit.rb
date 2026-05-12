@@ -159,6 +159,7 @@ class Unit < ApplicationRecord
   has_many :marking_sessions, dependent: :destroy
   has_many :communication_sets, class_name: 'CommunicationSet', dependent: :destroy
   has_many :communication_rules, through: :communication_sets, class_name: 'CommunicationRule'
+  has_many :communication_set_schedules, through: :communication_sets, class_name: 'CommunicationSetSchedule'
 
   has_many :comments, through: :projects
   has_many :tasks, through: :projects
@@ -1552,15 +1553,19 @@ class Unit < ApplicationRecord
 
       start_day_num = start_date.wday
 
-      start_date + week.weeks + (day_num - start_day_num).days
+      start_date + (week - 1).weeks + (day_num - start_day_num).days
     end
   end
 
   def week_number(date)
+    return nil if date.nil? || start_date.nil?
+
     if teaching_period.present?
       teaching_period.week_number(date)
     else
-      ((date - start_date) / 1.week).floor + 1
+      target_date = date.to_date
+      unit_start_date = start_date.to_date
+      (((target_date - unit_start_date).to_i) / 7).floor + 1
     end
   end
 

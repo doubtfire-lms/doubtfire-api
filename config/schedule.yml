@@ -16,6 +16,10 @@ refresh_moderation_feedback_timestamps:
   cron: "every 60 minutes"
   class: "RefreshModerationFeedbackTimestampsJob"
 
+poll_communication_set_schedules:
+  cron: "every 5 minutes"
+  class: "PollCommunicationSetSchedulesJob"
+
 # archive_old_units:
 #   cron: "every 6 months"
 #   class: "ArchiveOldUnitsJob"

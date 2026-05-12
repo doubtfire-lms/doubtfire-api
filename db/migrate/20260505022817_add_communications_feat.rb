@@ -78,7 +78,40 @@ class AddCommunicationsFeat < ActiveRecord::Migration[8.0]
       t.timestamps
     end
 
+    create_table :communication_set_schedules do |t|
+      t.references :communication_set, null: false
+      t.string :name
+      t.boolean :active, null: false, default: true
+
+      # Anchor the schedule to the unit's teaching calendar. The actual start
+      # datetime is resolved through Unit#date_for_week_and_day.
+      t.integer :anchor_week, null: false
+      t.string :anchor_day, null: false
+      t.integer :hour, null: false, default: 8
+      t.integer :minute, null: false, default: 0
+      t.string :timezone, null: false, default: "UTC"
+
+      # Canonical recurrence settings to hydrate IceCube rules from.
+      t.string :recurrence, null: false, default: "none"
+      t.integer :interval, null: false, default: 1
+
+      # Optional limits for recurring schedules.
+      t.integer :repeat_count
+      t.datetime :until_at
+
+      # Serialized payload to rebuild an IceCube schedule without guessing.
+      t.json :ice_cube_schedule
+
+      # Derived state for the worker that enqueues due communication runs.
+      t.datetime :next_run_at
+      t.datetime :last_run_at
+      t.datetime :last_enqueued_at
+
+      t.timestamps
+    end
+
     add_index :communication_actions, :type
     add_index :communication_conditions, :type
+    add_index :communication_set_schedules, [:active, :next_run_at]
   end
 end

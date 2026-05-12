@@ -3,12 +3,56 @@ require 'entities/communication_set_entity'
 require 'entities/communication_rule_entity'
 require 'entities/communication_condition_entity'
 require 'entities/communication_action_entity'
+require 'entities/communication_set_schedule_entity'
 require 'entities/sidekiq_job_entity'
 
 class CommunicationRulesApi < Grape::API
   helpers AuthenticationHelpers
   helpers AuthorisationHelpers
   helpers SidekiqHelper
+  helpers do
+    def permitted_schedule_params(raw_schedule)
+      ActionController::Parameters.new(raw_schedule).permit(
+        :id,
+        :name,
+        :active,
+        :anchor_week,
+        :anchor_day,
+        :hour,
+        :minute,
+        :timezone,
+        :recurrence,
+        :interval,
+        :repeat_count,
+        :until_at
+      )
+    end
+
+    def schedule_params_from_request
+      communication_set_params = params[:communication_set] || params['communication_set'] || {}
+      communication_set_params[:schedules] || communication_set_params['schedules']
+    end
+
+    def sync_set_schedules!(communication_set, raw_schedules)
+      schedules = Array(raw_schedules).map { |schedule| permitted_schedule_params(schedule).to_h }
+
+      keep_ids = schedules.filter_map { |schedule| schedule['id'] || schedule[:id] }
+
+      communication_set.transaction do
+        communication_set.communication_set_schedules.where.not(id: keep_ids).destroy_all
+
+        schedules.each do |schedule_attrs|
+          schedule_id = schedule_attrs.delete('id') || schedule_attrs.delete(:id)
+
+          if schedule_id.present?
+            communication_set.communication_set_schedules.find(schedule_id).update!(schedule_attrs)
+          else
+            communication_set.communication_set_schedules.create!(schedule_attrs)
+          end
+        end
+      end
+    end
+  end
 
   before do
     authenticated?
@@ -25,7 +69,7 @@ class CommunicationRulesApi < Grape::API
       error!({ error: 'Not authorised to get unit communications' }, 403)
     end
 
-    present unit.communication_sets.includes(communication_rules: [:communication_conditions, :communication_actions]),
+    present unit.communication_sets.includes(:communication_set_schedules, communication_rules: [:communication_conditions, :communication_actions]),
             with: Entities::CommunicationSetEntity
   end
 
@@ -42,7 +86,7 @@ class CommunicationRulesApi < Grape::API
     end
 
     communication_set = unit.communication_sets
-                            .includes(communication_rules: [:communication_conditions, :communication_actions])
+                            .includes(:communication_set_schedules, communication_rules: [:communication_conditions, :communication_actions])
                             .find(params[:id])
 
     previews = communication_set.preview_allocations_by_rule
@@ -52,6 +96,7 @@ class CommunicationRulesApi < Grape::API
       unit_id: communication_set.unit_id,
       name: communication_set.name,
       active: communication_set.active,
+      schedules: Entities::CommunicationSetScheduleEntity.represent(communication_set.communication_set_schedules),
       rules: Entities::CommunicationRuleEntity.represent(communication_set.communication_rules),
       previews: communication_set.communication_rules.map do |rule|
         {
@@ -87,6 +132,19 @@ class CommunicationRulesApi < Grape::API
     requires :communication_set, type: Hash do
       requires :name, type: String
       optional :active, type: Boolean
+      optional :schedules, type: Array do
+        optional :name, type: String
+        optional :active, type: Boolean
+        optional :anchor_week, type: Integer
+        optional :anchor_day, type: String
+        optional :hour, type: Integer
+        optional :minute, type: Integer
+        optional :timezone, type: String
+        optional :recurrence, type: String
+        optional :interval, type: Integer
+        optional :repeat_count, type: Integer
+        optional :until_at, type: DateTime
+      end
     end
   end
   post '/units/:unit_id/communication_sets' do
@@ -101,6 +159,8 @@ class CommunicationRulesApi < Grape::API
                                              .permit(:name, :active)
 
     communication_set = unit.communication_sets.create!(set_params)
+    sync_set_schedules!(communication_set, schedule_params_from_request)
+    communication_set.reload
     present communication_set, with: Entities::CommunicationSetEntity
   end
 
@@ -111,6 +171,20 @@ class CommunicationRulesApi < Grape::API
     requires :communication_set, type: Hash do
       optional :name, type: String
       optional :active, type: Boolean
+      optional :schedules, type: Array do
+        optional :id, type: Integer
+        optional :name, type: String
+        optional :active, type: Boolean
+        optional :anchor_week, type: Integer
+        optional :anchor_day, type: String
+        optional :hour, type: Integer
+        optional :minute, type: Integer
+        optional :timezone, type: String
+        optional :recurrence, type: String
+        optional :interval, type: Integer
+        optional :repeat_count, type: Integer
+        optional :until_at, type: DateTime
+      end
     end
   end
   put '/units/:unit_id/communication_sets/:id' do
@@ -126,6 +200,8 @@ class CommunicationRulesApi < Grape::API
                                              .permit(:name, :active)
 
     communication_set.update!(set_params)
+    sync_set_schedules!(communication_set, schedule_params_from_request) if schedule_params_from_request.present? || (params[:communication_set] || params['communication_set'] || {}).key?(:schedules) || (params[:communication_set] || params['communication_set'] || {}).key?('schedules')
+    communication_set.reload
     present communication_set, with: Entities::CommunicationSetEntity
   end
 
@@ -162,6 +238,125 @@ class CommunicationRulesApi < Grape::API
     job = setup_job(job_id)
 
     present job, with: Entities::SidekiqJobEntity
+  end
+
+  desc 'Get schedules for a communication set'
+  params do
+    requires :unit_id, type: Integer
+    requires :communication_set_id, type: Integer
+  end
+  get '/units/:unit_id/communication_sets/:communication_set_id/schedules' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :get_unit
+      error!({ error: 'Not authorised to get communication schedules' }, 403)
+    end
+
+    communication_set = unit.communication_sets.find(params[:communication_set_id])
+    present communication_set.communication_set_schedules.order(:id),
+            with: Entities::CommunicationSetScheduleEntity
+  end
+
+  desc 'Get a communication schedule'
+  params do
+    requires :unit_id, type: Integer
+    requires :communication_set_id, type: Integer
+    requires :id, type: Integer
+  end
+  get '/units/:unit_id/communication_sets/:communication_set_id/schedules/:id' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :get_unit
+      error!({ error: 'Not authorised to get communication schedules' }, 403)
+    end
+
+    communication_set = unit.communication_sets.find(params[:communication_set_id])
+    schedule = communication_set.communication_set_schedules.find(params[:id])
+    present schedule, with: Entities::CommunicationSetScheduleEntity
+  end
+
+  desc 'Create a communication schedule'
+  params do
+    requires :unit_id, type: Integer
+    requires :communication_set_id, type: Integer
+    requires :communication_set_schedule, type: Hash do
+      requires :name, type: String
+      optional :active, type: Boolean
+      requires :anchor_week, type: Integer
+      requires :anchor_day, type: String
+      optional :hour, type: Integer
+      optional :minute, type: Integer
+      optional :timezone, type: String
+      optional :recurrence, type: String
+      optional :interval, type: Integer
+      optional :repeat_count, type: Integer
+      optional :until_at, type: DateTime
+    end
+  end
+  post '/units/:unit_id/communication_sets/:communication_set_id/schedules' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :update
+      error!({ error: 'Not authorised to update communication schedules' }, 403)
+    end
+
+    communication_set = unit.communication_sets.find(params[:communication_set_id])
+    schedule_params = permitted_schedule_params(params[:communication_set_schedule]).to_h
+    schedule = communication_set.communication_set_schedules.create!(schedule_params)
+    schedule.reload
+    present schedule, with: Entities::CommunicationSetScheduleEntity
+  end
+
+  desc 'Update a communication schedule'
+  params do
+    requires :unit_id, type: Integer
+    requires :communication_set_id, type: Integer
+    requires :id, type: Integer
+    requires :communication_set_schedule, type: Hash do
+      optional :name, type: String
+      optional :active, type: Boolean
+      optional :anchor_week, type: Integer
+      optional :anchor_day, type: String
+      optional :hour, type: Integer
+      optional :minute, type: Integer
+      optional :timezone, type: String
+      optional :recurrence, type: String
+      optional :interval, type: Integer
+      optional :repeat_count, type: Integer
+      optional :until_at, type: DateTime
+    end
+  end
+  put '/units/:unit_id/communication_sets/:communication_set_id/schedules/:id' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :update
+      error!({ error: 'Not authorised to update communication schedules' }, 403)
+    end
+
+    communication_set = unit.communication_sets.find(params[:communication_set_id])
+    schedule = communication_set.communication_set_schedules.find(params[:id])
+    schedule_params = permitted_schedule_params(params[:communication_set_schedule]).to_h
+    schedule.update!(schedule_params)
+    schedule.reload
+    present schedule, with: Entities::CommunicationSetScheduleEntity
+  end
+
+  desc 'Delete a communication schedule'
+  params do
+    requires :unit_id, type: Integer
+    requires :communication_set_id, type: Integer
+    requires :id, type: Integer
+  end
+  delete '/units/:unit_id/communication_sets/:communication_set_id/schedules/:id' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :update
+      error!({ error: 'Not authorised to update communication schedules' }, 403)
+    end
+
+    communication_set = unit.communication_sets.find(params[:communication_set_id])
+    communication_set.communication_set_schedules.find(params[:id]).destroy!
+    status 204
   end
 
   desc 'Get communication rules for a unit'
