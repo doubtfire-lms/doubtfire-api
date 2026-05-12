@@ -1777,7 +1777,7 @@ class Unit < ApplicationRecord
     task_completion_csv_generator()
   end
 
-  def task_completion_csv_generator(task_status_uses_id: false, includes_campus: false)
+  def task_completion_csv_generator(task_status_uses_id: false)
     task_def_by_grade = task_definitions_by_grade
     streams = tutorial_streams
     grp_sets = group_sets
@@ -1786,7 +1786,7 @@ class Unit < ApplicationRecord
       'Username',
       'Student Name',
     ]
-    base_headers << 'Campus' if includes_campus
+    base_headers << 'Campus'
     base_headers.push(
       'Target Grade',
       'Email',
@@ -1855,7 +1855,7 @@ class Unit < ApplicationRecord
             row['username'],
             "#{row['first_name']} #{row['last_name']}",
           ]
-          student_details << row['campus_abbreviation'] if includes_campus
+          student_details << row['campus_abbreviation']
 
           csv << (student_details + [
             GradeHelper.grade_for(row['target_grade']),
@@ -3474,7 +3474,7 @@ class Unit < ApplicationRecord
   end
 
   def capture_task_complete_stats_snapshot!(snapshot_time: Time.zone.now)
-    snapshot_payload = task_completion_csv_generator(task_status_uses_id: true, includes_campus: true)
+    snapshot_payload = task_completion_csv_generator(task_status_uses_id: true)
 
     timestamp = snapshot_time.to_i.to_s
 
