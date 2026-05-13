@@ -96,6 +96,35 @@ class TaskTest < ActiveSupport::TestCase
     assert_equal TaskStatus.complete, task.task_status
   end
 
+  def test_trigger_transition_requires_recent_manual_tutor_feedback_for_fix_and_redo_when_checking_feedback
+    travel_to Time.zone.parse('2026-05-13 10:00:00 UTC') do
+      project = FactoryBot.create(:project)
+      unit = project.unit
+      task_definition = unit.task_definitions.first
+      task = project.task_for_task_definition(task_definition)
+      tutor = unit.main_convenor_user
+
+      task.update!(task_status: TaskStatus.ready_for_feedback)
+      task.add_status_comment(project.student, TaskStatus.ready_for_feedback)
+      task.add_text_comment(tutor, 'Older manual tutor feedback').update!(created_at: 11.minutes.ago)
+
+      assert_nil task.trigger_transition(trigger: 'fix', by_user: tutor, check_feedback: true)
+      assert_equal TaskStatus.ready_for_feedback, task.task_status
+
+      task.reload
+      task.add_text_comment(tutor, 'Recent manual tutor feedback')
+
+      assert task.trigger_transition(trigger: 'fix', by_user: tutor, check_feedback: true)
+      assert_equal TaskStatus.fix_and_resubmit, task.task_status
+
+      task.update!(task_status: TaskStatus.ready_for_feedback)
+      task.add_text_comment(tutor, 'Recent manual tutor feedback for redo')
+
+      assert task.trigger_transition(trigger: 'redo', by_user: tutor, check_feedback: true)
+      assert_equal TaskStatus.redo, task.task_status
+    end
+  end
+
   def test_days_awaiting_feedback_pauses_during_break
     travel_to Time.zone.parse('2026-04-10 00:00:00 UTC') do
       teaching_period = FactoryBot.create(
