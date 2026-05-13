@@ -47,6 +47,7 @@ class ApiRoot < Grape::API
       message = "Sorry... something went wrong with your request."
       status = 500
     end
+    Sentry.capture_exception(e)
     Rack::Response.new({ error: message }.to_json, status, { 'Content-type' => 'text/error' })
   end
 
