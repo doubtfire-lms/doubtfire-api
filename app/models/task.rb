@@ -590,10 +590,17 @@ class Task < ApplicationRecord
           return nil
         end
 
-        if check_feedback && [TaskStatus.complete, TaskStatus.fix_and_resubmit, TaskStatus.redo].include?(status) &&
-           !has_manual_feedback_since_first_ready_for_feedback?
-          errors.add(:task_status, "cannot be moved to '#{status.name}' until feedback has been given")
-          return nil
+        if check_feedback
+          if status == TaskStatus.complete && !has_manual_feedback_since_first_ready_for_feedback?
+            errors.add(:task_status, "cannot be moved to '#{status.name}' until feedback has been given")
+            return nil
+          end
+
+          if [TaskStatus.fix_and_resubmit, TaskStatus.redo].include?(status) &&
+             !has_recent_manual_feedback_from_tutor?(by_user)
+            errors.add(:task_status, "cannot be moved to '#{status.name}' until feedback has been given")
+            return nil
+          end
         end
 
         if task_definition.assess_in_portfolio_only
@@ -653,6 +660,15 @@ class Task < ApplicationRecord
     feedback_comments = feedback_comments.where('created_at >= ?', first_ready_for_feedback_at) if first_ready_for_feedback_at
 
     feedback_comments.where.not("COALESCE(comment, '') LIKE ?", '**Automated Message:%').exists?
+  end
+
+  def has_recent_manual_feedback_from_tutor?(tutor)
+    comments
+      .where(content_type: %w[text audio image pdf discussion])
+      .where(user: tutor)
+      .where('created_at >= ?', 10.minutes.ago)
+      .where.not("COALESCE(comment, '') LIKE ?", '**Automated Message:%')
+      .exists?
   end
 
   def grade_desc
