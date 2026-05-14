@@ -603,7 +603,7 @@ class UnitModelTest < ActiveSupport::TestCase
     end
 
     # 18 = 9 general + 2 streams + 3 task defs + 1 group details + 1 stars + 1 grade + 1 contrib
-    check_task_completion_csv unit, 18
+    check_task_completion_csv unit, 19
   end
 
   def test_task_completion_csv_no_task_data
@@ -624,34 +624,6 @@ class UnitModelTest < ActiveSupport::TestCase
     assert_equal 2, unit.tutorial_streams.count
 
     check_task_completion_csv unit
-  end
-
-  def test_task_completion_csv_generator_includes_campus_when_requested
-    unit = FactoryBot.create :unit, campus_count: 2, tutorials: 2, stream_count: 1, task_count: 1, student_count: 5, unenrolled_student_count: 0, part_enrolled_student_count: 0
-
-    csv_str = unit.task_completion_csv_generator(includes_campus: true)
-    CSV.parse(csv_str,
-              headers: true,
-              return_headers: false,
-              header_converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')&.downcase }],
-              converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]).each do |entry|
-      user = User.find_by(username: entry['username'])
-      assert user.present?, entry.inspect
-
-      project = unit.active_projects.find_by(user_id: user.id)
-      assert project.present?, entry.inspect
-
-      assert_equal project.campus&.abbreviation, entry['campus'], entry.inspect
-    end
-  end
-
-  def test_task_completion_csv_generator_excludes_campus_by_default
-    unit = FactoryBot.create :unit, campus_count: 2, tutorials: 1, stream_count: 1, task_count: 1, student_count: 2, unenrolled_student_count: 0, part_enrolled_student_count: 0
-
-    csv_str = unit.task_completion_csv_generator
-    parsed = CSV.parse(csv_str, headers: true)
-
-    assert_not_includes parsed.headers.map(&:downcase), 'campus'
   end
 
   def test_export_users
@@ -1171,7 +1143,7 @@ class UnitModelTest < ActiveSupport::TestCase
     data = build_unit_with_controlled_task_statuses
     unit = data[:unit]
     snapshot_time = Time.zone.local(2026, 4, 8, 23, 55, 0)
-    expected_stats = parse_task_completion_stats_csv(unit, unit.task_completion_csv_generator(task_status_uses_id: true, includes_campus: true))
+    expected_stats = parse_task_completion_stats_csv(unit, unit.task_completion_csv_generator(task_status_uses_id: true))
 
     count_before = unit.task_completion_snapshots.count
     snapshot = unit.capture_task_complete_stats_snapshot!(snapshot_time: snapshot_time)
@@ -1203,7 +1175,7 @@ class UnitModelTest < ActiveSupport::TestCase
 
     # Change one task status so the new capture has different stats.
     student2.task_for_task_definition(task_definitions[0]).update!(task_status: TaskStatus.fail)
-    expected_updated_stats = parse_task_completion_stats_csv(unit, unit.task_completion_csv_generator(task_status_uses_id: true, includes_campus: true))
+    expected_updated_stats = parse_task_completion_stats_csv(unit, unit.task_completion_csv_generator(task_status_uses_id: true))
 
     updated_snapshot = unit.capture_task_complete_stats_snapshot!(snapshot_time: second_time)
 
