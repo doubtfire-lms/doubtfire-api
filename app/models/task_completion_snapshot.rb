@@ -134,7 +134,7 @@ class TaskCompletionSnapshot < ApplicationRecord
 
   def delete_snapshot_file
     return if snapshot_timestamp.blank?
-    
+
     file_path = snapshot_file_path
     return if file_path.blank? || !File.exist?(file_path)
 
