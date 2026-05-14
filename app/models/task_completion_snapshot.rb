@@ -14,12 +14,15 @@ class TaskCompletionSnapshot < ApplicationRecord
   after_destroy :delete_snapshot_file
 
   def snapshot_file_path
-    FileHelper.unit_task_status_snapshot_path(unit, snapshot_timestamp, create: true)
+    return nil if unit.blank?
+    FileHelper.unit_task_status_snapshot_path(unit, create: true)
   end
 
   def snapshot_contents
-    if File.exist?(snapshot_file_path)
-      return read_csv_from_zip(snapshot_file_path)
+    file_path = snapshot_file_path
+    return nil if file_path.blank?
+    if File.exist?(file_path)
+      return read_csv_from_zip(file_path, snapshot_timestamp)
     end
     nil
   rescue Zip::Error
@@ -49,17 +52,41 @@ class TaskCompletionSnapshot < ApplicationRecord
   end
 
   def store_stats!(payload)
-    FileUtils.mkdir_p(File.dirname(snapshot_file_path))
+    file_path = snapshot_file_path
+    raise 'Cannot store stats without a unit' if file_path.blank?
 
-    tmp_path = "#{snapshot_file_path}.tmp"
-    Zip::OutputStream.open(tmp_path) do |zip|
-      zip.put_next_entry('snapshot.csv')
-      zip.write(payload.to_s)
+    FileUtils.mkdir_p(File.dirname(file_path))
+
+    csv_filename = FileHelper.snapshot_csv_filename(snapshot_timestamp)
+    raise 'Cannot store stats without a valid snapshot timestamp' if csv_filename.blank?
+
+    tmp_path = "#{file_path}.tmp"
+
+    # Read existing zip entries (if file exists)
+    existing_entries = {}
+    if File.exist?(file_path)
+      Zip::File.open(file_path) do |zip_file|
+        zip_file.each do |entry|
+          next if entry.directory?
+          existing_entries[entry.name] = entry.get_input_stream.read
+        end
+      end
     end
 
-    FileUtils.mv(tmp_path, snapshot_file_path)
+    # Update or add the current snapshot entry
+    existing_entries[csv_filename] = payload.to_s
+
+    # Write the zip file with all entries
+    Zip::OutputStream.open(tmp_path) do |zip|
+      existing_entries.each do |filename, content|
+        zip.put_next_entry(filename)
+        zip.write(content)
+      end
+    end
+
+    FileUtils.mv(tmp_path, file_path)
   ensure
-    FileUtils.rm_f(tmp_path) if defined?(tmp_path)
+    FileUtils.rm_f(tmp_path) if defined?(tmp_path) && tmp_path
   end
 
   private
@@ -95,9 +122,10 @@ class TaskCompletionSnapshot < ApplicationRecord
     stats
   end
 
-  def read_csv_from_zip(zip_path)
+  def read_csv_from_zip(zip_path, snapshot_timestamp)
+    csv_filename = FileHelper.snapshot_csv_filename(snapshot_timestamp)
     Zip::File.open(zip_path) do |zip_file|
-      entry = zip_file.find_entry('snapshot.csv') || zip_file.entries.first
+      entry = zip_file.find_entry(csv_filename)
       return nil if entry.nil?
 
       entry.get_input_stream.read
@@ -105,6 +133,44 @@ class TaskCompletionSnapshot < ApplicationRecord
   end
 
   def delete_snapshot_file
-    FileUtils.rm_f(snapshot_file_path)
+    return if snapshot_timestamp.blank?
+    
+    file_path = snapshot_file_path
+    return if file_path.blank? || !File.exist?(file_path)
+
+    csv_filename = FileHelper.snapshot_csv_filename(snapshot_timestamp)
+    return if csv_filename.blank?
+
+    tmp_path = "#{file_path}.tmp"
+
+    begin
+      # Read existing zip entries excluding the one we want to delete
+      remaining_entries = {}
+      Zip::File.open(file_path) do |zip_file|
+        zip_file.each do |entry|
+          next if entry.directory?
+          next if entry.name == csv_filename
+          remaining_entries[entry.name] = entry.get_input_stream.read
+        end
+      end
+
+      if remaining_entries.empty?
+        # If no entries left, just delete the zip file
+        FileUtils.rm_f(file_path)
+      else
+        # Write the zip file with remaining entries
+        Zip::OutputStream.open(tmp_path) do |zip|
+          remaining_entries.each do |filename, content|
+            zip.put_next_entry(filename)
+            zip.write(content)
+          end
+        end
+        FileUtils.mv(tmp_path, file_path)
+      end
+    rescue StandardError => e
+      # If anything goes wrong with zip operations, just clean up and log
+      logger.error("Error managing snapshot zip file: #{e.message}")
+      FileUtils.rm_f(tmp_path)
+    end
   end
 end
