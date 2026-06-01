@@ -1,5 +1,6 @@
 require "test_helper"
 require "open3"
+require "zip"
 
 class FileHelperTest < ActiveSupport::TestCase
   def test_convert_use_with_gif
@@ -25,6 +26,87 @@ class FileHelperTest < ActiveSupport::TestCase
     assert_match %r{^#{FileHelper.archive_root}/portfolio/}, archive_portfolio_path
     assert_match %r{^#{FileHelper.student_work_root}/}, original_work_path
     assert_match %r{^#{FileHelper.student_work_root}/portfolio/}, original_portfolio_path
+  end
+
+  def test_accept_zip_upload
+    Tempfile.create(['submission', '.zip']) do |zip_file|
+      Zip::File.open(zip_file.path, Zip::File::CREATE) do |zip|
+        zip.get_output_stream('src/main.rb') { |io| io.write("puts 'hello'\n") }
+      end
+
+      result = FileHelper.accept_file(
+        {
+          filename: 'submission.zip',
+          'tempfile' => zip_file
+        },
+        'Zip',
+        'zip'
+      )
+
+      assert result[:accepted], result[:msg]
+    end
+  end
+
+  def test_zip_upload_rejects_unsafe_paths
+    Tempfile.create(['submission', '.zip']) do |zip_file|
+      Zip::File.open(zip_file.path, Zip::File::CREATE) do |zip|
+        zip.get_output_stream('../escape.rb') { |io| io.write("puts 'bad'\n") }
+      end
+
+      result = FileHelper.accept_file(
+        {
+          filename: 'submission.zip',
+          'tempfile' => zip_file
+        },
+        'Zip',
+        'zip'
+      )
+
+      refute result[:accepted]
+      assert_includes result[:msg], 'unsafe path'
+    end
+  end
+
+  def test_zip_upload_rejects_entries_larger_than_file_limit
+    original_max_file_size = Doubtfire::Application.config.max_file_size
+    Doubtfire::Application.config.max_file_size = 1_000
+
+    Tempfile.create(['submission', '.zip']) do |zip_file|
+      Zip::File.open(zip_file.path, Zip::File::CREATE) do |zip|
+        zip.get_output_stream('large.txt') { |io| io.write('a' * 1_001) }
+      end
+
+      result = FileHelper.accept_file(
+        {
+          filename: 'submission.zip',
+          'tempfile' => zip_file
+        },
+        'Zip',
+        'zip'
+      )
+
+      refute result[:accepted]
+      assert_includes result[:msg], 'larger than'
+    end
+  ensure
+    Doubtfire::Application.config.max_file_size = original_max_file_size
+  end
+
+  def test_zip_file_tree_lists_nested_paths
+    Tempfile.create(['submission', '.zip']) do |zip_file|
+      Zip::File.open(zip_file.path, Zip::File::CREATE) do |zip|
+        zip.get_output_stream('src/main.rb') { |io| io.write("puts 'hello'\n") }
+        zip.get_output_stream('README.md') { |io| io.write("# Read me\n") }
+      end
+
+      tree = FileHelper.zip_file_tree(zip_file.path, 'submission.zip')
+
+      assert_equal 2, tree[:entries]
+      assert_includes tree[:lines], '↳ src/'
+      assert_includes tree[:lines], '  ↳ main.rb'
+      assert_includes tree[:lines], '↳ README.md'
+      refute tree[:truncated]
+    end
   end
 
   def test_process_audio_converts_webm_audio

@@ -340,6 +340,8 @@ class TaskDefinition < ApplicationRecord
         return
       end
 
+      req['type'] = 'zip' if req['type'] == 'archive'
+
       # Check keys only contain key, type, name, tii_check, and tii_pct
       unless req.keys.excluding('key', 'type', 'name', 'tii_check', 'tii_pct').empty?
         errors.add(:upload_requirements, "has additional values for item #{i + 1} --> #{req.keys.join(' ')}.")
@@ -350,8 +352,8 @@ class TaskDefinition < ApplicationRecord
         errors.add(:upload_requirements, "the name for item #{i + 1} does not seem to be a valid filename --> #{req['name']}.")
       end
 
-      # Check the type is either document or image or code
-      unless %w(document image code).include? req['type']
+      # Check the type is either document, image, code, or zip
+      unless %w(document image code zip).include? req['type']
         errors.add(:upload_requirements, "the type for item #{i + 1} is not valid --> #{req['type']}.")
       end
 

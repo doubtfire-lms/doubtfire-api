@@ -96,6 +96,14 @@ module Doubtfire
     # Defaults to 10MB (10,000,000 bytes)
     config.max_file_size = ENV.fetch('DF_MAX_FILE_SIZE', 10_000_000)
 
+    # Max files inside an uploaded zip. If denied for "too many files",
+    # remove generated folders (e.g. node_modules/build) or raise this limit.
+    config.zip_entry_limit = ENV.fetch('DF_ZIP_ENTRY_LIMIT', 1_000)
+
+    # Max zip compression ratio. If denied for "compression ratio is too high",
+    # check for repetitive/generated data before raising this zip-bomb guard.
+    config.zip_compression_ratio_limit = ENV.fetch('DF_ZIP_COMPRESSION_RATIO_LIMIT', 100)
+
     # Prefer encrypted Rails credentials, while keeping env vars as a safe fallback.
     credentials.secret_key_base = Application.fetch_credential_or_env(:secret_key_base, env_key: 'DF_SECRET_KEY_BASE', default: Rails.env.production? ? nil : '9e010ee2f52af762916406fd2ac488c5694a6cc784777136e657511f8bbc7a73f96d59c0a9a778a0d7cf6406f8ecbf77efe4701dfbd63d8248fc7cc7f32dea97')
     credentials.secret_key_attr = Application.fetch_credential_or_env(:secret_key_attr, env_key: 'DF_SECRET_KEY_ATTR', default: Rails.env.production? ? nil : 'e69fc5960ca0e8700844a3a25fe80373b41c0a265d342eba06950113f3766fd983bad9ec51bf36eb615d9711bfe1dd90b8e35f01841b323f604ffee857e32055')
@@ -130,6 +138,7 @@ module Doubtfire
     config.institution[:plagiarism] = ENV['DF_INSTITUTION_PLAGIARISM'] if ENV['DF_INSTITUTION_PLAGIARISM']
     # Institution host becomes localhost in development
     config.institution[:host] ||= 'http://localhost:4200' if Rails.env.development?
+
     config.institution[:settings] = ENV['DF_INSTITUTION_SETTINGS_RB'] if ENV['DF_INSTITUTION_SETTINGS_RB']
     config.institution[:ffmpeg] = ENV['DF_FFMPEG_PATH'] || 'ffmpeg'
 
