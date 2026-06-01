@@ -438,6 +438,10 @@ class Unit < ApplicationRecord
       end
     end
 
+    communication_sets.each do |communication_set|
+      communication_set.copy_to(new_unit)
+    end
+
     # Now duplicate all feedback chips
     chip_mapping = {}
 
