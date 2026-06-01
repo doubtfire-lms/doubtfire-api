@@ -575,7 +575,10 @@ module FileHelper
     all_lines = zip_tree_walk(tree)
     lines = all_lines.first(display_limit)
     { lines: lines, entries: entries, tree_lines: all_lines.length, truncated: all_lines.length > display_limit }
-  rescue Zip::Error, Zlib::Error, Gem::Package::TarInvalidError, EOFError, StandardError => e
+  rescue Zip::Error, Zlib::Error, Gem::Package::TarInvalidError, EOFError => e
+    logger.debug "Could not read zip file tree for #{filename}: #{e.message}"
+    { lines: [], entries: 0, truncated: false, error: true }
+  rescue StandardError => e
     logger.debug "Could not read zip file tree for #{filename}: #{e.message}"
     { lines: [], entries: 0, truncated: false, error: true }
   end
