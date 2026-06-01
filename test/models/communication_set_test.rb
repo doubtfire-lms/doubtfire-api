@@ -2,7 +2,16 @@ require 'test_helper'
 
 class CommunicationSetTest < ActiveSupport::TestCase
   def test_preview_projects_for_rule_excludes_students_claimed_by_earlier_rules
-    unit = FactoryBot.create(:unit, student_count: 2, task_count: 1, stream_count: 0, tutorials: 0)
+    unit = FactoryBot.create(
+      :unit,
+      student_count: 2,
+      unenrolled_student_count: 0,
+      part_enrolled_student_count: 0,
+      inactive_student_count: 0,
+      task_count: 1,
+      stream_count: 0,
+      tutorials: 0
+    )
     communication_set = unit.communication_sets.create!(name: 'Test Set', active: true)
 
     first_rule = communication_set.communication_rules.create!(name: 'First Rule', operator: 'and', position: 0)
