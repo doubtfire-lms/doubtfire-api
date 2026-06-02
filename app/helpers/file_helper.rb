@@ -14,6 +14,10 @@ module FileHelper
   extend TimeoutHelper
   extend MimeCheckHelpers
 
+  ZIP_NESTED_ARCHIVE_EXTENSIONS = %w[
+    .7z .bz2 .ear .gz .jar .rar .tar .tar.bz2 .tar.gz .tar.xz .tbz .tbz2 .tgz .txz .war .xz .zip
+  ].freeze
+
   def known_extension?(extn)
     allow_extensions = %w(pdf ps csv xls xlsx pas cpp c cs csv h hpp java py js html coffee scss yaml yml xml json ts r rb rmd rnw rhtml rpres tex vb sql txt md jack hack asm hdl tst out cmp vm sh bat dat ipynb css png bmp tiff tif jpeg jpg gif zip gz tgz tar wav ogg mp3 mp4 webm aac pcm aiff flac wma alac pml vue)
 
@@ -427,14 +431,25 @@ module FileHelper
     limit.positive? ? limit : 100
   end
 
-  def validate_zip_upload_entry!(name, size, zip_stats, max_file_size, max_uncompressed_size)
+  def zip_uncompressed_size_multiplier
+    multiplier = Doubtfire::Application.config.zip_uncompressed_size_multiplier.to_i
+    multiplier.positive? ? multiplier : 10
+  end
+
+  def zip_nested_archive?(path)
+    clean_path = path.to_s.downcase
+    ZIP_NESTED_ARCHIVE_EXTENSIONS.any? { |extension| clean_path.end_with?(extension) }
+  end
+
+  def validate_zip_upload_entry!(name, size, zip_stats, _max_file_size, max_uncompressed_size)
     raise 'Zip contains a file with an unsafe path.' unless zip_path_safe?(name)
+    raise 'Zip contains another archive file. Nested archives are not allowed.' if zip_nested_archive?(name)
 
     zip_stats[:entries] += 1
     zip_stats[:total_uncompressed_size] += size.to_i
 
     raise "Zip contains too many files. Limit is #{zip_entry_limit} files." if zip_stats[:entries] > zip_entry_limit
-    raise "Zip contains a file larger than the #{max_file_size / 1_000_000}MB file limit." if size.to_i > max_file_size
+    # raise "Zip contains a file larger than the #{max_file_size / 1_000_000}MB file limit." if size.to_i > max_file_size
     if zip_stats[:total_uncompressed_size] > max_uncompressed_size
       raise "Zip expands beyond the #{max_uncompressed_size / 1_000_000}MB uncompressed size limit."
     end
@@ -474,7 +489,7 @@ module FileHelper
   def validate_zip_upload(path, filename)
     max_file_size = Doubtfire::Application.config.max_file_size.to_i
     max_file_size = 10_000_000 if max_file_size <= 0
-    max_uncompressed_size = max_file_size * 10
+    max_uncompressed_size = max_file_size * zip_uncompressed_size_multiplier
     return { valid: false, msg: "Zip exceeds the #{max_file_size / 1_000_000}MB file limit." } if File.size(path) > max_file_size
 
     begin
@@ -993,6 +1008,8 @@ module FileHelper
   module_function :zip_path_safe?
   module_function :zip_entry_limit
   module_function :zip_compression_ratio_limit
+  module_function :zip_uncompressed_size_multiplier
+  module_function :zip_nested_archive?
   module_function :validate_zip_upload_entry!
   module_function :validate_zip_file
   module_function :validate_tar_file

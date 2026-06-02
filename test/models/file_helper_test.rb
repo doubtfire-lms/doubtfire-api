@@ -67,6 +67,26 @@ class FileHelperTest < ActiveSupport::TestCase
     end
   end
 
+  def test_zip_upload_rejects_nested_archives
+    Tempfile.create(['submission', '.zip']) do |zip_file|
+      Zip::File.open(zip_file.path, Zip::File::CREATE) do |zip|
+        zip.get_output_stream('lib/vendor.zip') { |io| io.write('nested archive') }
+      end
+
+      result = FileHelper.accept_file(
+        {
+          filename: 'submission.zip',
+          'tempfile' => zip_file
+        },
+        'Zip',
+        'zip'
+      )
+
+      refute result[:accepted]
+      assert_includes result[:msg], 'Nested archives are not allowed'
+    end
+  end
+
   def test_zip_upload_rejects_entries_larger_than_file_limit
     original_max_file_size = Doubtfire::Application.config.max_file_size
     Doubtfire::Application.config.max_file_size = 1_000
@@ -90,6 +110,29 @@ class FileHelperTest < ActiveSupport::TestCase
     end
   ensure
     Doubtfire::Application.config.max_file_size = original_max_file_size
+  end
+
+  def test_zip_upload_rejects_total_uncompressed_size_over_multiplier_limit
+    original_max_file_size = Doubtfire::Application.config.max_file_size
+    original_multiplier = Doubtfire::Application.config.zip_uncompressed_size_multiplier
+    Doubtfire::Application.config.max_file_size = 1_000
+    Doubtfire::Application.config.zip_uncompressed_size_multiplier = 2
+
+    Tempfile.create(['submission', '.zip']) do |zip_file|
+      Zip::File.open(zip_file.path, Zip::File::CREATE) do |zip|
+        3.times do |index|
+          zip.get_output_stream("file-#{index}.txt") { |io| io.write('a' * 900) }
+        end
+      end
+
+      result = FileHelper.validate_zip_upload(zip_file.path, 'submission.zip')
+
+      refute result[:valid]
+      assert_includes result[:msg], 'uncompressed size limit'
+    end
+  ensure
+    Doubtfire::Application.config.max_file_size = original_max_file_size
+    Doubtfire::Application.config.zip_uncompressed_size_multiplier = original_multiplier
   end
 
   def test_zip_file_tree_lists_nested_paths
