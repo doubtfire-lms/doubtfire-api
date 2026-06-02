@@ -307,7 +307,6 @@ module UnitSimilarityModule
 
     max_shown_comparisons = Doubtfire::Application.config.jplag_max_shown_comparisons
     max_shown_comparisons = 2500 if max_shown_comparisons.nil?
-    max_shown_comparisons_string = "--shown-comparisons=#{max_shown_comparisons}"
 
     # Run JPLAG on the extracted files. JPlag container should already be in the /jplag/ workdir.
     docker_command = [
@@ -318,7 +317,7 @@ module UnitSimilarityModule
       base_code_string,
       "-l #{file_lang}",
       "--similarity-threshold=#{similarity_threshold}",
-      max_shown_comparisons_string,
+      "--shown-comparisons=#{max_shown_comparisons}",
       min_token_string,
       skip_cluster_string,
       "-M RUN",
