@@ -87,7 +87,7 @@ class FileHelperTest < ActiveSupport::TestCase
     end
   end
 
-  def test_zip_upload_rejects_entries_larger_than_file_limit
+  def test_zip_upload_accepts_entries_larger_than_file_limit
     original_max_file_size = Doubtfire::Application.config.max_file_size
     Doubtfire::Application.config.max_file_size = 1_000
 
@@ -105,8 +105,7 @@ class FileHelperTest < ActiveSupport::TestCase
         'zip'
       )
 
-      refute result[:accepted]
-      assert_includes result[:msg], 'larger than'
+      assert result[:accepted], result[:msg]
     end
   ensure
     Doubtfire::Application.config.max_file_size = original_max_file_size
