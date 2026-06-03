@@ -88,8 +88,18 @@ module Doubtfire
     # directory under root but is overridden using DF_JPLAG_REPORT_DIR environment
     # variable.
     config.jplag_report_dir = ENV['DF_JPLAG_REPORT_DIR'] || Rails.root.join('jplag/results').to_s
+
+    # Tunes the comparison sensitivity by adjusting the minimum token required to be
+    # counted as a matching section. A smaller value increases the sensitivity
+    # but might lead to more false-positives
     config.jplag_min_tokens = ENV.fetch('DF_JPLAG_MIN_TOKENS', -1)
+
+    # Skips the cluster calculation
     config.jplag_skip_cluster_check = ENV['DF_JPLAG_SKIP_CLUSTER_CHECK'].present? && (ENV['DF_JPLAG_SKIP_CLUSTER_CHECK'].to_s.downcase == "true" || ENV['DF_JPLAG_SKIP_CLUSTER_CHECK'].to_i == 1)
+
+    # The maximum number of comparisons that will be shown in the generated report
+    # if set to -1 all comparisons will be shown
+    config.jplag_max_shown_comparisons = ENV.fetch('DF_JPLAG_MAX_SHOWN_COMPARISONS', 2500)
 
     # ==> File size limits
     # Sets the global file size limit per upload requirement
