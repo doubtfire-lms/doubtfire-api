@@ -305,8 +305,26 @@ module UnitSimilarityModule
     skip_cluster_check = Doubtfire::Application.config.jplag_skip_cluster_check
     skip_cluster_string = skip_cluster_check ? '--cluster-skip' : ''
 
+    max_shown_comparisons = Doubtfire::Application.config.jplag_max_shown_comparisons
+    max_shown_comparisons = 2500 if max_shown_comparisons.nil?
+
     # Run JPLAG on the extracted files. JPlag container should already be in the /jplag/ workdir.
-    docker_command = "docker exec -i jplag java -jar jplag-jar-with-dependencies.jar --skip-version-check #{tasks_dir_split}/submissions #{base_code_string} -l #{file_lang} --similarity-threshold=#{similarity_threshold} #{min_token_string} #{skip_cluster_string} -M RUN -r #{results_dir}/#{task_definition.abbreviation}-result --overwrite"
+    docker_command = [
+      "docker exec -i jplag",
+      "java -jar jplag-jar-with-dependencies.jar",
+      "--skip-version-check",
+      "#{tasks_dir_split}/submissions",
+      base_code_string,
+      "-l #{file_lang}",
+      "--similarity-threshold=#{similarity_threshold}",
+      "--shown-comparisons=#{max_shown_comparisons}",
+      min_token_string,
+      skip_cluster_string,
+      "-M RUN",
+      "-r #{results_dir}/#{task_definition.abbreviation}-result",
+      "--overwrite"
+    ].join(" ")
+
     logger.debug "Executing command: #{docker_command}"
     system(docker_command)
 
