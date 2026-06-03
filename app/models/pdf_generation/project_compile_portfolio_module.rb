@@ -286,7 +286,7 @@ module PdfGeneration
       result = []
 
       Dir.chdir(portfolio_tmp_dir)
-      files = Dir.glob('*').select { |f| (f =~ /^\d{3}-(cover|document|code|image)/) == 0 }
+      files = Dir.glob('*').select { |f| (f =~ /^\d{3}-(cover|document|code|image|zip|archive)/) == 0 }
       files.each do |file|
         parts = file.split('-')
         idx = parts[0].to_i

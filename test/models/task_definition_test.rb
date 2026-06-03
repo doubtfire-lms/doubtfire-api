@@ -113,6 +113,34 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     td.destroy
   end
 
+  def test_upload_requirements_allow_zip
+    test_unit = Unit.first
+    td = TaskDefinition.new({
+      unit_id: test_unit.id,
+      tutorial_stream: test_unit.tutorial_streams.first,
+      name: 'Test zip requirement',
+      description: 'test def',
+      weighting: 4,
+      target_grade: 0,
+      start_date: test_unit.start_date + 1.week,
+      target_date: test_unit.start_date + 2.weeks,
+      abbreviation: 'TestZipReq',
+      restrict_status_updates: false,
+      upload_requirements: [
+        {
+          "key" => 'file0',
+          "name" => 'Source Zip',
+          "type" => 'zip'
+        }
+      ],
+      plagiarism_warn_pct: 0.8,
+      is_graded: false,
+      max_quality_pts: 5
+    })
+
+    assert td.valid?, td.errors.full_messages.join(', ')
+  end
+
   def test_group_tasks
     u = FactoryBot.create(:unit)
     activity_type = FactoryBot.create(:activity_type)
