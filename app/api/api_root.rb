@@ -160,7 +160,7 @@ class ApiRoot < Grape::API
 
   add_swagger_documentation \
     base_path: nil,
-    doc_version: 'v10.0.0',
+    doc_version: 'v11.0.0',
     hide_documentation_path: true,
     info: {
       title: 'Doubtfire API Documentation',
