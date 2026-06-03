@@ -146,6 +146,7 @@ class Unit < ApplicationRecord
   after_update :move_files_on_code_change, if: :saved_change_to_code?
   after_update :propogate_date_changes_to_tasks, if: :saved_change_to_start_date?
   after_update :update_overdue_tasks_aip, if: :saved_change_to_mark_late_submissions_as_assess_in_portfolio?
+  after_update :refresh_communication_schedule_caches, if: :saved_change_to_active?
 
   # Model associations.
   # When a Unit is destroyed, any TaskDefinitions, Tutorials, and ProjectConvenor instances will also be destroyed.
@@ -239,6 +240,10 @@ class Unit < ApplicationRecord
 
   def active_projects
     projects.where(enrolled: true)
+  end
+
+  def refresh_communication_schedule_caches
+    communication_set_schedules.find_each(&:refresh_next_run_at!)
   end
 
   def ordered_task_definitions

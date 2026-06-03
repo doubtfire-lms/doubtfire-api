@@ -9,6 +9,7 @@ class ExecuteCommunicationSetScheduleJob
   def perform(schedule_id)
     schedule = CommunicationSetSchedule.find(schedule_id)
     return unless schedule.active?
+    return unless schedule.unit.active?
 
     now = Time.zone.now
     return unless schedule.due?(now)

@@ -25,6 +25,7 @@ class CommunicationSetSchedule < ApplicationRecord
 
   scope :active, -> { where(active: true) }
   scope :due, ->(time = Time.zone.now) { where('next_run_at IS NOT NULL AND next_run_at <= ?', time) }
+  scope :with_active_unit, -> { joins(communication_set: :unit).where(units: { active: true }) }
 
   def resolved_anchor_date
     return nil if unit.blank? || anchor_week.blank? || anchor_day.blank?
@@ -63,11 +64,11 @@ class CommunicationSetSchedule < ApplicationRecord
   end
 
   def due?(time = Time.zone.now)
-    active? && next_run_at.present? && next_run_at <= time
+    active_for_scheduling? && next_run_at.present? && next_run_at <= time
   end
 
   def refresh_next_run_at!(from_time = Time.zone.now)
-    update!(next_run_at: next_occurrence_after(from_time))
+    update!(next_run_at: active_for_scheduling? ? next_occurrence_after(from_time) : nil)
   end
 
   def anchor_day_abbreviation
@@ -121,8 +122,12 @@ class CommunicationSetSchedule < ApplicationRecord
   def sync_schedule_cache
     schedule = build_ice_cube_schedule
     self.ice_cube_schedule = schedule.present? ? JSON.generate(schedule.to_hash) : nil
-    self.next_run_at = next_occurrence_after(Time.zone.now) if active? && should_refresh_next_run_at?
-    self.next_run_at = nil unless active?
+    self.next_run_at = next_occurrence_after(Time.zone.now) if active_for_scheduling? && should_refresh_next_run_at?
+    self.next_run_at = nil unless active_for_scheduling?
+  end
+
+  def active_for_scheduling?
+    active? && unit&.active?
   end
 
   def should_refresh_next_run_at?

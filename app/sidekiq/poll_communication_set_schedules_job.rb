@@ -10,6 +10,7 @@ class PollCommunicationSetSchedulesJob
     CommunicationSetSchedule
       .includes(:communication_set)
       .active
+      .with_active_unit
       .due(Time.zone.now)
       .find_each do |schedule|
         ExecuteCommunicationSetScheduleJob.perform_async(schedule.id)
