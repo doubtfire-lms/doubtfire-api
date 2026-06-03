@@ -55,12 +55,16 @@ class CommunicationSetSchedule < ApplicationRecord
     return nil if schedule.nil?
 
     time_for_schedule = time.in_time_zone(timezone_object)
-    if recurrence == 'none'
-      occurrence = schedule.start_time
-      occurrence >= time_for_schedule ? occurrence : nil
-    else
-      schedule.next_occurrence(time_for_schedule)
-    end
+    occurrence = if recurrence == 'none'
+                   occurrence = schedule.start_time
+                   occurrence >= time_for_schedule ? occurrence : nil
+                 else
+                   schedule.next_occurrence(time_for_schedule)
+                 end
+
+    return nil if occurrence.blank?
+
+    occurrence_within_unit_dates?(occurrence) ? occurrence : nil
   end
 
   def due?(time = Time.zone.now)
@@ -128,6 +132,12 @@ class CommunicationSetSchedule < ApplicationRecord
 
   def active_for_scheduling?
     active? && unit&.active?
+  end
+
+  def occurrence_within_unit_dates?(occurrence)
+    return true if unit&.end_date.blank?
+
+    occurrence.to_date <= unit.end_date
   end
 
   def should_refresh_next_run_at?
