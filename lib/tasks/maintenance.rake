@@ -25,10 +25,16 @@ namespace :maintenance do
       end
     end
 
-    exception = StandardError.new(message)
-    Sentry.capture_exception(exception, extra: { task_id: task.id, project_id: task.project_id }) if defined?(Sentry)
+    if defined?(Sentry)
+      Sentry.capture_message(
+        "Cleared abandoned in-process submission for task #{task.id}",
+        level: :info,
+        extra: { task_id: task.id, project_id: task.project_id, detail: message }
+      )
+    end
 
     begin
+      exception = StandardError.new(message)
       mail = ErrorLogMailer.error_message('Accept Submission Cleanup', message, exception)
       mail.deliver_now if mail.present?
     rescue StandardError => e
