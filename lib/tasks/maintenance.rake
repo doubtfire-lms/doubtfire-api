@@ -49,7 +49,8 @@ namespace :maintenance do
     in_process_path = FileHelper.student_work_dir(:in_process)
     return unless Dir.exist?(in_process_path)
 
-    stale_before = 10.minutes.ago
+    abandoned_submission_timeout = 10.minutes
+    stale_before = abandoned_submission_timeout.ago
 
     Dir.foreach(in_process_path) do |entry|
       next unless entry.match?(/^\d+$/)
@@ -66,7 +67,7 @@ namespace :maintenance do
         next
       end
 
-      message = "Abandoned in-process submission detected for task #{task.log_details}. The stale in-process folder was older than 5 minutes with no active AcceptSubmissionJob, has now been cleared, and the task requires resubmission."
+      message = "Abandoned in-process submission detected for task #{task.log_details}. The stale in-process folder was older than #{abandoned_submission_timeout / 1.minute} minutes with no active AcceptSubmissionJob, has now been cleared, and the task requires resubmission."
       Rails.logger.error message
 
       mark_task_for_resubmission(task, message)
