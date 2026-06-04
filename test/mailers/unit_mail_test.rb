@@ -63,7 +63,7 @@ class UnitMailTest < ActionMailer::TestCase
     unit.update main_convenor: ur
 
     project = unit.active_projects.first
-    task = project.tasks.first
+    task = project.task_for_task_definition(unit.task_definitions.first)
 
     mail = PortfolioEvidenceMailer.overseer_assessment_failed(project, [task])
 

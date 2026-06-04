@@ -54,7 +54,10 @@ class OverseerAssessmentTest < ActiveSupport::TestCase
 
   def create_assessment(status:, age:, task: nil, create_comment: false)
     unit = FactoryBot.create(:unit, task_count: 1) if task.nil?
-    task ||= unit.active_projects.first.tasks.first
+    task ||= begin
+      project = unit.active_projects.first
+      project.task_for_task_definition(unit.task_definitions.first)
+    end
 
     assessment = OverseerAssessment.create!(
       task: task,
