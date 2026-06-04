@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-5](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-4...v11.0.0-5) (2026-06-04)
+
+
+### Features
+
+* notify students when overseer tests fail ([#627](https://github.com/b0ink/doubtfire-deploy/issues/627)) ([4280df3](https://github.com/b0ink/doubtfire-deploy/commit/4280df3a6446920b4ae3c9108d28421ab9b3e6c5))
+
+
+### Bug Fixes
+
+* correctly get task ([1949b42](https://github.com/b0ink/doubtfire-deploy/commit/1949b42258355b843d7d0e5563be040d4d859164))
+
 ## [11.0.0-4](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-3...v11.0.0-4) (2026-06-04)
 
 
