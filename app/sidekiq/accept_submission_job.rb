@@ -89,6 +89,16 @@ class AcceptSubmissionJob
     end
   rescue StandardError => e # to raise error message to avoid unnecessary retry
     logger.error e
+    if defined?(Sentry)
+      Sentry.capture_exception(
+        e,
+        extra: {
+          task_id: task&.id,
+          task_definition_abbreviation: task&.task_definition&.abbreviation,
+          username: task&.project&.user&.username
+        }
+      )
+    end
     task.clear_in_process
   end
 end
