@@ -54,6 +54,22 @@ class PortfolioEvidenceMailer < ApplicationMailer
     mail(to: email_with_name, from: tutor_email, subject: subject)
   end
 
+  def overseer_assessment_failed(project, tasks)
+    return nil if project.nil? || tasks.nil? || tasks.empty?
+
+    add_general
+    @student = project.student
+    @project = project
+    @tasks = tasks.sort_by { |t| t.task_definition.abbreviation }
+    @tutor = project.main_convenor_user
+    return nil if @tutor.nil? || @student.nil?
+
+    email_with_name = %("#{@student.name}" <#{@student.email}>)
+    tutor_email = %("#{@tutor.name}" <#{@tutor.email}>)
+    subject = "#{project.unit.code} #{project.unit.name}: Automated feedback needs your attention"
+    mail(to: email_with_name, from: tutor_email, subject: subject)
+  end
+
   def portfolio_ready(project)
     return nil if project.nil?
 

@@ -1,0 +1,17 @@
+Hi <%= @student.first_name %>,
+
+Our automated assessment found issues and left feedback on the following tasks. If you have already reviewed the task in <%= @doubtfire_product_name %>, you can ignore this email.
+
+Please log in and review the latest automated feedback for:
+<% @tasks.each do |task| %>
+  * <%= task.task_definition.abbreviation %> - <%= task.task_definition.name %>
+<% end %>
+
+Cheers,
+The <%= @doubtfire_product_name %> Team on behalf of <%= @tutor.name %>
+
+---
+
+Visit <%= @unsubscribe_url %> to unsubscribe from these notifications.
+
+Generated with <%= @doubtfire_product_name %>

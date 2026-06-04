@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style type="text/css">
+    .main {
+      font-family: "Lucida Grande", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: #333;
+      font-size: 14px;
+      width: 100%;
+      max-width: 800px;
+      margin: 100px auto 0px auto;
+      background-image: url('<%= @doubtfire_host %>/assets/images/logo.png');
+      background-size: 3.5em;
+      background-repeat: no-repeat;
+      background-position: top 40px right 45px;
+      padding: 30px 40px;
+      border: solid 1px rgb(240, 240, 240);
+      line-height: 200%;
+      text-align: justify;
+    }
+    footer, .footer {
+      font-family: "Lucida Grande", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      text-align: center;
+      margin-top: 10px;
+      color: #aaa;
+      font-size: 0.7em;
+    }
+    a, a:visited {
+      color: #6a97d2;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    ul {
+      list-style: none;
+    }
+    h1 {
+      font-size: 1.1em;
+    }
+  </style>
+</head>
+<body>
+  <div class="main">
+    <h1> <%= @doubtfire_product_name %> Notification </h1>
+    <p>Hi <%= @student.first_name %>,</p>
+    <p>
+      Our automated assessment found issues and left feedback on the following tasks. If you have already reviewed the task in <%= @doubtfire_product_name %>, you can ignore this email.
+    </p>
+    <p>
+      Please log in and review the latest automated feedback for:
+      <ul>
+        <% @tasks.each do |task| %>
+          <li>
+            <strong><%= task.task_definition.abbreviation %> - </strong>
+            <a href="<%= @doubtfire_host %>/#/projects/<%= @project.id %>/dashboard/<%= task.task_definition.abbreviation %>">
+              <%= task.task_definition.name %>
+            </a>
+          </li>
+        <% end %>
+      </ul>
+    </p>
+    <p>
+      Cheers, <br />
+      The <%= @doubtfire_product_name %> Team on behalf of <%= @tutor.name %>
+    </p>
+  </div>
+  <footer class="footer">
+    <a href="<%= @unsubscribe_url %>">Unsubscribe</a> | Generated with <%= @doubtfire_product_name %>
+  </footer>
+</body>
+</html>

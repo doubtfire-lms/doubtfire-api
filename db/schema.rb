@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_03_27_041457) do
+ActiveRecord::Schema[8.0].define(version: 2026_06_04_031804) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -242,6 +242,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_27_041457) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "total_steps"
+    t.datetime "student_notified_at"
+    t.index ["status", "student_notified_at", "updated_at"], name: "index_overseer_assessments_on_status_notified_updated"
     t.index ["task_id", "submission_timestamp"], name: "index_overseer_assessments_on_task_id_and_submission_timestamp", unique: true
     t.index ["task_id"], name: "index_overseer_assessments_on_task_id"
   end
