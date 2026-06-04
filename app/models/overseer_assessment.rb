@@ -1,7 +1,5 @@
 # rubocop:disable Rails/Output
 class OverseerAssessment < ApplicationRecord
-  STUDENT_NOTIFICATION_GRACE_PERIOD = 30.minutes
-
   belongs_to :task, optional: false
 
   has_one :project, through: :task
@@ -20,7 +18,11 @@ class OverseerAssessment < ApplicationRecord
 
 
 
-  scope :awaiting_student_failure_notification, lambda { |grace_period: STUDENT_NOTIFICATION_GRACE_PERIOD|
+  def self.student_notification_grace_period
+    Doubtfire::Application.config.overseer_student_notification_grace_period
+  end
+
+  scope :awaiting_student_failure_notification, lambda { |grace_period: student_notification_grace_period|
     notification_cutoff = grace_period.ago
 
     joins(task: { project: :user })

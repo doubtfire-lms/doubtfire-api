@@ -54,6 +54,9 @@ module Doubtfire
     # Period for which to keep units
     config.unit_archive_after_period = ENV.fetch('DF_UNIT_ARCHIVE_PERIOD', 2).to_f * 1.year
 
+    # Minimum time to wait before notifying a student about an unread failed overseer assessment
+    config.overseer_student_notification_grace_period = ENV.fetch('OVERSEER_STUDENT_NOTIFICATION_GRACE_PERIOD_MINUTES', 30).to_i.minutes
+
     # Limit number of pdf generators to run at once
     config.pdfgen_max_processes = ENV['DF_MAX_PDF_GEN_PROCESSES'] || 2
 
