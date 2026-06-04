@@ -2,15 +2,20 @@ require_all 'lib/helpers'
 require 'sidekiq/api'
 
 namespace :maintenance do
+  def accept_submission_job_matches_task?(job_class, job_args, task_id)
+    job_class == 'AcceptSubmissionJob' && job_args.first.to_i == task_id
+  end
+
   def accept_submission_job_present?(task_id)
-    Sidekiq::Queue.new("default").each do |job|
-      return true if job.klass == 'AcceptSubmissionJob' && job.args[0] == task_id
+    Sidekiq::Workers.new.each do |_process_id, _thread_id, work|
+      payload = work['payload'].is_a?(String) ? JSON.parse(work['payload']) : work['payload']
+
+      return true if accept_submission_job_matches_task?(payload['class'], payload['args'], task_id)
     end
 
-    Sidekiq::Workers.new.each do |_process_id, _thread_id, work|
-      payload = JSON.parse(work['payload'])
-
-      return true if payload['class'] == 'AcceptSubmissionJob' && payload['args'][0] == task_id
+    # TODO: We may need to iterate through each queue when we implement parallel sidekiq jobs
+    Sidekiq::Queue.new("default").each do |job|
+      return true if accept_submission_job_matches_task?(job.klass, job.args, task_id)
     end
 
     false
@@ -74,11 +79,11 @@ namespace :maintenance do
       next if task.nil?
 
       if accept_submission_job_present?(task.id)
-        Rails.logger.info "Skipping abandoned submission cleanup for task #{task.id} because AcceptSubmissionJob is still active"
+        Rails.logger.info "Skipping abandoned submission cleanup for task #{task.id} because AcceptSubmissionJob is still running or queued"
         next
       end
 
-      message = "Abandoned in-process submission detected for task #{task.log_details}. The stale in-process folder was older than #{abandoned_submission_timeout / 1.minute} minutes with no active AcceptSubmissionJob, has now been cleared, and the task requires resubmission."
+      message = "Abandoned in-process submission detected for task #{task.log_details}. The stale in-process folder was older than #{abandoned_submission_timeout / 1.minute} minutes with no running or queued AcceptSubmissionJob, has now been cleared, and the task requires resubmission."
       Rails.logger.error message
 
       mark_task_for_resubmission(task, message)
