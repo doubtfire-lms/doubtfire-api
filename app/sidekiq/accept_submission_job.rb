@@ -41,6 +41,7 @@ class AcceptSubmissionJob
 
       begin
         # Notify system admin
+        Sentry.capture_exception(e) if defined?(Sentry)
         mail = ErrorLogMailer.error_message('Accept Submission', "Failed to convert submission to PDF for task #{task.log_details}", e)
         mail.deliver if mail.present?
       rescue StandardError => e
