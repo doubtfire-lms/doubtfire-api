@@ -12,7 +12,9 @@ namespace :overseer_notifications do
         next if mail.blank?
 
         mail.deliver_now
-        OverseerAssessment.where(id: project_assessments.map(&:id)).update_all(student_notified_at: Time.current)
+        project_assessments.each do |assessment|
+          assessment.update!(student_notified_at: Time.current)
+        end
       rescue StandardError => e
         Rails.logger.error "Failed to send overseer assessment email for project #{project.id}!\n#{e.message}"
       end
