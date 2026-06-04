@@ -2,23 +2,39 @@ require_all 'lib/helpers'
 require 'sidekiq/api'
 
 namespace :maintenance do
+  def sidekiq_job_present_in_workers_or_default_queue?(&matcher)
+    Sidekiq::Workers.new.each do |_process_id, _thread_id, work|
+      payload = work['payload'].is_a?(String) ? JSON.parse(work['payload']) : work['payload']
+
+      return true if matcher.call(payload['class'], payload['args'])
+    end
+
+    # TODO: We may need to iterate through each queue when we implement parallel sidekiq jobs
+    Sidekiq::Queue.new("default").each do |job|
+      return true if matcher.call(job.klass, job.args)
+    end
+
+    false
+  end
+
   def accept_submission_job_matches_task?(job_class, job_args, task_id)
     job_class == 'AcceptSubmissionJob' && job_args.first.to_i == task_id
   end
 
   def accept_submission_job_present?(task_id)
-    Sidekiq::Workers.new.each do |_process_id, _thread_id, work|
-      payload = work['payload'].is_a?(String) ? JSON.parse(work['payload']) : work['payload']
-
-      return true if accept_submission_job_matches_task?(payload['class'], payload['args'], task_id)
+    sidekiq_job_present_in_workers_or_default_queue? do |job_class, job_args|
+      accept_submission_job_matches_task?(job_class, job_args, task_id)
     end
+  end
 
-    # TODO: We may need to iterate through each queue when we implement parallel sidekiq jobs
-    Sidekiq::Queue.new("default").each do |job|
-      return true if accept_submission_job_matches_task?(job.klass, job.args, task_id)
+  def accept_overseer_job_matches_assessment?(job_class, job_args, overseer_assessment_id)
+    job_class == 'AcceptOverseerJob' && job_args.last.to_i == overseer_assessment_id
+  end
+
+  def accept_overseer_job_present?(overseer_assessment_id)
+    sidekiq_job_present_in_workers_or_default_queue? do |job_class, job_args|
+      accept_overseer_job_matches_assessment?(job_class, job_args, overseer_assessment_id)
     end
-
-    false
   end
 
   def notify_failed_submission(task, message)
@@ -61,6 +77,15 @@ namespace :maintenance do
     Rails.logger.error "Failed to move task #{task.id} to fix and add automated comment!\n#{e.message}"
   end
 
+  def mark_task_for_overseer_resubmission(task)
+    tutor = task.project.tutor_for(task.task_definition)
+
+    task.trigger_transition(trigger: 'fix', by_user: tutor)
+    task.add_text_comment(tutor, "**Automated Comment**: Something went wrong while running the automated tests for this submission. Please resubmit the task.")
+  rescue StandardError => e
+    Rails.logger.error "Failed to move task #{task.id} to fix and add Overseer automated comment!\n#{e.message}"
+  end
+
   def clear_abandoned_submissions!
     in_process_path = FileHelper.student_work_dir(:in_process)
     return unless Dir.exist?(in_process_path)
@@ -89,6 +114,43 @@ namespace :maintenance do
       mark_task_for_resubmission(task, message)
       task.clear_in_process
       notify_failed_submission(task, message)
+    end
+  end
+
+  def clear_abandoned_overseer_assessments!
+    abandoned_assessment_timeout = 10.minutes
+    stale_before = abandoned_assessment_timeout.ago
+
+    OverseerAssessment
+      .pre_queued
+      .includes(task: [project: :user])
+      .where('created_at < ?', stale_before)
+      .find_each do |assessment|
+      if accept_overseer_job_present?(assessment.id)
+        Rails.logger.info "Skipping abandoned OverseerAssessment cleanup for assessment #{assessment.id} because AcceptOverseerJob is still running or queued"
+        next
+      end
+
+      task = assessment.task
+      message = "Abandoned OverseerAssessment detected for task #{task.log_details}. Assessment #{assessment.id} remained pre_queued for more than #{abandoned_assessment_timeout / 1.minute} minutes with no running or queued AcceptOverseerJob and has been marked failed."
+      Rails.logger.error message
+
+      assessment.update!(status: :failed)
+      mark_task_for_overseer_resubmission(task)
+
+      if defined?(Sentry)
+        Sentry.capture_message(
+          "Marked stale OverseerAssessment failed for task #{task.id}",
+          level: :warning,
+          extra: {
+            task_id: task.id,
+            overseer_assessment_id: assessment.id,
+            task_definition: task.task_definition.abbreviation,
+            username: task.project.user.username,
+            detail: message
+          }
+        )
+      end
     end
   end
 
@@ -123,11 +185,17 @@ namespace :maintenance do
 
     AuthToken.destroy_old_tokens
     clear_abandoned_submissions!
+    clear_abandoned_overseer_assessments!
   end
 
   desc 'Clear abandoned in-process submission folders and notify affected users'
   task clear_abandoned_submissions: [:environment] do
     clear_abandoned_submissions!
+  end
+
+  desc 'Clear abandoned pre-queued Overseer assessments and request resubmission'
+  task clear_abandoned_overseer_assessments: [:environment] do
+    clear_abandoned_overseer_assessments!
   end
 
   desc 'Remove PDFs from old submissions and archive units'
