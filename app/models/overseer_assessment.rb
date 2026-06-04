@@ -1,5 +1,7 @@
 # rubocop:disable Rails/Output
 class OverseerAssessment < ApplicationRecord
+  STUDENT_NOTIFICATION_GRACE_PERIOD = 30.minutes
+
   belongs_to :task, optional: false
 
   has_one :project, through: :task
@@ -15,6 +17,54 @@ class OverseerAssessment < ApplicationRecord
   enum :status, { pre_queued: 0, passed: 1, failed: 2 }
 
   after_destroy :delete_associated_files
+
+
+
+  scope :awaiting_student_failure_notification, lambda { |grace_period: STUDENT_NOTIFICATION_GRACE_PERIOD|
+    notification_cutoff = grace_period.ago
+
+    joins(task: { project: :user })
+      .joins(<<~SQL.squish)
+        INNER JOIN task_comments assessment_comments
+          ON assessment_comments.commentable_type = 'OverseerAssessment'
+         AND assessment_comments.commentable_id = overseer_assessments.id
+         AND assessment_comments.type = 'AssessmentComment'
+      SQL
+      .joins(<<~SQL.squish)
+        LEFT JOIN comments_read_receipts student_read_receipts
+          ON student_read_receipts.task_comment_id = assessment_comments.id
+         AND student_read_receipts.user_id = projects.user_id
+      SQL
+      .where(status: statuses[:failed], student_notified_at: nil)
+      .where(users: { receive_task_notifications: true })
+      .where('overseer_assessments.updated_at <= ?', notification_cutoff)
+      .where('student_read_receipts.id IS NULL')
+      .where(<<~SQL.squish)
+        assessment_comments.id = (
+          SELECT latest_comment.id
+          FROM task_comments latest_comment
+          WHERE latest_comment.commentable_type = 'OverseerAssessment'
+            AND latest_comment.commentable_id = overseer_assessments.id
+            AND latest_comment.type = 'AssessmentComment'
+          ORDER BY latest_comment.created_at DESC, latest_comment.id DESC
+          LIMIT 1
+        )
+      SQL
+      .where(<<~SQL.squish)
+        NOT EXISTS (
+          SELECT 1
+          FROM overseer_assessments newer_assessments
+          WHERE newer_assessments.task_id = overseer_assessments.task_id
+            AND (
+              newer_assessments.created_at > overseer_assessments.created_at OR
+              (
+                newer_assessments.created_at = overseer_assessments.created_at AND
+                newer_assessments.id > overseer_assessments.id
+              )
+            )
+        )
+      SQL
+  }
 
   # TODO: track how many tests ran, and how many tests total at the time
   # TODO: we might not have an overseerStepResult because a new test was added later
@@ -84,6 +134,10 @@ class OverseerAssessment < ApplicationRecord
   # Path to where the submission and output are stored - includes the submission when it is to be processed
   def output_path
     FileHelper.task_submission_identifier_path_with_timestamp(:done, task, submission_timestamp)
+  end
+
+  def latest_assessment_comment
+    assessment_comments.order(created_at: :desc, id: :desc).first
   end
 
   def add_assessment_comment(text = 'Automated Assessment Started')
