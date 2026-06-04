@@ -17,7 +17,7 @@ class PortfolioEvidenceMailer < ApplicationMailer
 
     email_with_name = %("#{@student.name}" <#{@student.email}>)
     tutor_email = %("#{@tutor.name}" <#{@tutor.email}>)
-    subject = "#{project.unit.name}: Task PDFs ready to view"
+    subject = "#{project.unit.code} #{project.unit.name}: Task submission processing failed"
     mail(to: email_with_name, from: tutor_email, subject: subject)
   end
 
