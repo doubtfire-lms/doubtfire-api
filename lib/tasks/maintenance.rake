@@ -29,7 +29,12 @@ namespace :maintenance do
       Sentry.capture_message(
         "Cleared abandoned in-process submission for task #{task.id}",
         level: :info,
-        extra: { task_id: task.id, project_id: task.project_id, detail: message }
+        extra: {
+          task_id: task.id,
+          task_definition: task.task_definition.abbreviation,
+          username: task.project.user.username,
+          detail: message
+        }
       )
     end
 
