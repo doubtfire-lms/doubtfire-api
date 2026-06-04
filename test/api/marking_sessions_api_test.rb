@@ -366,7 +366,7 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
 
     # unit = Unit.first
     project = unit.projects.first
-    task = project.tasks.first
+    task = project.task_for_task_definition(unit.task_definitions.first)
 
     while current_time <= end_time
       travel_to current_time do
