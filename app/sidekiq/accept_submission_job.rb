@@ -81,6 +81,7 @@ class AcceptSubmissionJob
       if overseer_assessment.present?
         logger.info "Launching Overseer assessment for task_def_id: #{task.task_definition.id} task_id: #{task.id}"
 
+        overseer_assessment.update!(student_notified_at: Time.current) if test_submission
         overseer_assessment.send_to_overseer(test_submission: test_submission)
 
       else
