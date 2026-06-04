@@ -17,6 +17,7 @@ class ArchiveOldUnitsJob
   rescue StandardError => e
     begin
       # Notify system admin
+      Sentry.capture_exception(e) if defined?(Sentry)
       mail = ErrorLogMailer.error_message('Archive Units', "Failed to move old units to archive", e)
       mail.deliver if mail.present?
 

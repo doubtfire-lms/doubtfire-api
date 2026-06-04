@@ -54,4 +54,23 @@ class UnitMailTest < ActionMailer::TestCase
     unit.destroy!
   end
 
+  def test_send_overseer_assessment_failed_email
+    unit = FactoryBot.create :unit
+    convenor = FactoryBot.create :user, :convenor
+
+    ur = unit.employ_staff convenor, Role.convenor
+
+    unit.update main_convenor: ur
+
+    project = unit.active_projects.first
+    task = project.task_for_task_definition(unit.task_definitions.first)
+
+    mail = PortfolioEvidenceMailer.overseer_assessment_failed(project, [task])
+
+    assert_equal 1, mail.from.count
+    assert_equal convenor.email, mail.from.first
+    assert_equal project.student.email, mail.to.first
+    assert mail.html_part.body.include? "projects/#{project.id}/dashboard/#{task.task_definition.abbreviation}"
+  end
+
 end

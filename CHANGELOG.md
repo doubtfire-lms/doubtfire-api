@@ -2,6 +2,74 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-5](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-4...v11.0.0-5) (2026-06-04)
+
+
+### Features
+
+* notify students when overseer tests fail ([#627](https://github.com/b0ink/doubtfire-deploy/issues/627)) ([4280df3](https://github.com/b0ink/doubtfire-deploy/commit/4280df3a6446920b4ae3c9108d28421ab9b3e6c5))
+
+
+### Bug Fixes
+
+* correctly get task ([1949b42](https://github.com/b0ink/doubtfire-deploy/commit/1949b42258355b843d7d0e5563be040d4d859164))
+
+## [11.0.0-4](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-3...v11.0.0-4) (2026-06-04)
+
+
+### Features
+
+* suspend any stale overseer assessments ([678f386](https://github.com/b0ink/doubtfire-deploy/commit/678f3866632d174713ab46bc7876c43dd2df56cd))
+
+
+### Bug Fixes
+
+* ensure we check for queued jobs ([3790c9f](https://github.com/b0ink/doubtfire-deploy/commit/3790c9f3dc4899d9785f6996a77a5b550f1c5d87))
+
+## [11.0.0-3](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-2...v11.0.0-3) (2026-06-04)
+
+
+### Bug Fixes
+
+* allow error log emails with no backtrace ([f5b383f](https://github.com/b0ink/doubtfire-deploy/commit/f5b383fdeda016dd7d391325f04700356cc58da5))
+
+## [11.0.0-2](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-1...v11.0.0-2) (2026-06-04)
+
+
+### Features
+
+* clear submission in process with no active sidekiq job ([#626](https://github.com/b0ink/doubtfire-deploy/issues/626)) ([bb453ce](https://github.com/b0ink/doubtfire-deploy/commit/bb453ce00f540bcf1d64d70e18c6d97b6f8bdc5a))
+
+## [11.0.0-1](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-110...v11.0.0-1) (2026-06-03)
+
+
+### Features
+
+* support zip file submissions ([#624](https://github.com/b0ink/doubtfire-deploy/issues/624)) ([d5d8742](https://github.com/b0ink/doubtfire-deploy/commit/d5d874214fe31f494b5a30f67f7286e711ba45b2))
+
+## [10.0.0](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-110...v10.0.0) (2026-06-03)
+
+
+### Features
+
+* support zip file submissions ([#624](https://github.com/b0ink/doubtfire-deploy/issues/624)) ([d5d8742](https://github.com/b0ink/doubtfire-deploy/commit/d5d874214fe31f494b5a30f67f7286e711ba45b2))
+
+## [10.0.0-110](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-109...v10.0.0-110) (2026-06-03)
+
+## [10.0.0-109](https://github.com/b0ink/doubtfire-api/compare/v10.0.0-108...v10.0.0-109) (2026-05-13)
+
+
+### Bug Fixes
+
+* ensure recent feedback has been left for fix ([a824b1b](https://github.com/b0ink/doubtfire-api/commit/a824b1b5fc4f47a12be33d410962af31fe810c89))
+
+## [10.0.0-108](https://github.com/b0ink/doubtfire-api/compare/v10.0.0-107...v10.0.0-108) (2026-05-13)
+
+
+### Features
+
+* enable sentry error logging ([#620](https://github.com/b0ink/doubtfire-api/issues/620)) ([11cc264](https://github.com/b0ink/doubtfire-api/commit/11cc264b83d2c5e161b1926e12c496f2fd9add13))
+
 ## [10.0.0-107](https://github.com/b0ink/doubtfire-api/compare/v10.0.0-106...v10.0.0-107) (2026-05-05)
 
 ## [10.0.0-106](https://github.com/b0ink/doubtfire-api/compare/v10.0.0-105...v10.0.0-106) (2026-04-28)

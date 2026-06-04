@@ -47,6 +47,7 @@ class ApiRoot < Grape::API
       message = "Sorry... something went wrong with your request."
       status = 500
     end
+    Sentry.capture_exception(e)
     Rack::Response.new({ error: message }.to_json, status, { 'Content-type' => 'text/error' })
   end
 
@@ -161,7 +162,7 @@ class ApiRoot < Grape::API
 
   add_swagger_documentation \
     base_path: nil,
-    doc_version: 'v10.0.0',
+    doc_version: 'v11.0.0',
     hide_documentation_path: true,
     info: {
       title: 'Doubtfire API Documentation',

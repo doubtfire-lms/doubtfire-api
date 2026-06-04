@@ -590,10 +590,17 @@ class Task < ApplicationRecord
           return nil
         end
 
-        if check_feedback && [TaskStatus.complete, TaskStatus.fix_and_resubmit, TaskStatus.redo].include?(status) &&
-           !has_manual_feedback_since_first_ready_for_feedback?
-          errors.add(:task_status, "cannot be moved to '#{status.name}' until feedback has been given")
-          return nil
+        if check_feedback
+          if status == TaskStatus.complete && !has_manual_feedback_since_first_ready_for_feedback?
+            errors.add(:task_status, "cannot be moved to '#{status.name}' until feedback has been given")
+            return nil
+          end
+
+          if [TaskStatus.fix_and_resubmit, TaskStatus.redo].include?(status) &&
+             !has_recent_manual_feedback_from_tutor?(by_user)
+            errors.add(:task_status, "cannot be moved to '#{status.name}' until feedback has been given")
+            return nil
+          end
         end
 
         if task_definition.assess_in_portfolio_only
@@ -653,6 +660,15 @@ class Task < ApplicationRecord
     feedback_comments = feedback_comments.where('created_at >= ?', first_ready_for_feedback_at) if first_ready_for_feedback_at
 
     feedback_comments.where.not("COALESCE(comment, '') LIKE ?", '**Automated Message:%').exists?
+  end
+
+  def has_recent_manual_feedback_from_tutor?(tutor)
+    comments
+      .where(content_type: %w[text audio image pdf discussion])
+      .where(user: tutor)
+      .where('created_at >= ?', 10.minutes.ago)
+      .where.not("COALESCE(comment, '') LIKE ?", '**Automated Message:%')
+      .exists?
   end
 
   def grade_desc
@@ -1117,7 +1133,7 @@ class Task < ApplicationRecord
         FileUtils.rm("#{task_dir}#{img}") unless dest_file == "#{task_dir}#{img}"
       end
 
-      input_files = Dir.entries(task_dir).select { |f| (f =~ /^\d{3}.(cover|document|code|image)/) == 0 }
+      input_files = Dir.entries(task_dir).select { |f| (f =~ /^\d{3}.(cover|document|code|image|zip|archive)/) == 0 }
 
       if input_files.length != task_definition.number_of_uploaded_files
         logger.error "Error processing task #{log_details} - missing files expected #{task_definition.number_of_uploaded_files} got #{input_files.length}"
@@ -1305,6 +1321,7 @@ class Task < ApplicationRecord
     attr_accessor :base_path
     attr_accessor :image_path
     attr_accessor :include_pax
+    attr_accessor :submitted_files_url
 
     def init(task, is_retry)
       @task = task
@@ -1315,6 +1332,10 @@ class Task < ApplicationRecord
       @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
       @include_pax = !is_retry
       @work_id = "task-#{task.id}-#{Time.now.to_i}-#{Process.pid}-#{Thread.current.object_id}#{'-retry' if is_retry}"
+      host = Doubtfire::Application.config.institution[:host].to_s
+      host = "http://#{host}" unless host.match?(%r{\Ahttps?://})
+      host = host.sub(%r{/*\z}, '')
+      @submitted_files_url = "#{host}/projects/#{task.project.id}/task_def_id/#{task.task_definition.id}/submission_files/download"
     end
 
     def make_pdf
@@ -1465,7 +1486,7 @@ class Task < ApplicationRecord
             end
           end
 
-          raise LatexError.new(log_message), 'Failed to convert your submission to PDF. Check code files submitted for invalid characters, that documents are valid pdfs, and that images are valid.'
+          raise LatexError.new(log_message), 'Failed to convert your submission to PDF. Check code files submitted for invalid characters, that documents are valid pdfs, images are valid, and zip files are valid.'
         end
       end
 

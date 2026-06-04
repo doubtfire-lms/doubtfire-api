@@ -121,3 +121,6 @@ gem 'pdf-reader'
 gem 'oauth2'
 
 gem "sys-filesystem"
+
+gem "sentry-rails"
+gem "sentry-ruby"

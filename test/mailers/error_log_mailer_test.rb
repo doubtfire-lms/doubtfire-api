@@ -30,4 +30,16 @@ class ErrorLogMailerTest < ActionMailer::TestCase
     assert mail.attachments['log.txt'].present?
     assert mail.attachments['log.txt'].body.include? 'this is the content of the log'
   end
+
+  def test_can_send_error_log_mail_without_backtrace
+    Doubtfire::Application.config.email_errors_to = 'test <test@test.com>'
+    exception = StandardError.new('test')
+
+    mail = ErrorLogMailer.error_message('test', 'test message', exception)
+
+    assert mail.present?
+    assert mail.to.include? 'test@test.com'
+    assert mail.body.include? exception.message
+    assert mail.body.include? 'No backtrace available'
+  end
 end
