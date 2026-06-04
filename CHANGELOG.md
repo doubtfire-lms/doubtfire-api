@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-2](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-1...v11.0.0-2) (2026-06-04)
+
+
+### Features
+
+* clear submission in process with no active sidekiq job ([#626](https://github.com/b0ink/doubtfire-deploy/issues/626)) ([bb453ce](https://github.com/b0ink/doubtfire-deploy/commit/bb453ce00f540bcf1d64d70e18c6d97b6f8bdc5a))
+
 ## [11.0.0-1](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-110...v11.0.0-1) (2026-06-03)
 
 
