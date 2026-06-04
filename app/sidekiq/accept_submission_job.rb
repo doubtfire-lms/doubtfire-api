@@ -41,7 +41,17 @@ class AcceptSubmissionJob
 
       begin
         # Notify system admin
-        Sentry.capture_exception(e) if defined?(Sentry)
+        if defined?(Sentry)
+          Sentry.capture_exception(
+            e,
+            extra: {
+              task_id: task.id,
+              task_definition_abbreviation: task.task_definition.abbreviation,
+              username: task.project.user.username,
+              latex_log_message: e.respond_to?(:log_message) ? e.log_message.to_s.last(5000) : nil
+            }
+          )
+        end
         mail = ErrorLogMailer.error_message('Accept Submission', "Failed to convert submission to PDF for task #{task.log_details}", e)
         mail.deliver if mail.present?
       rescue StandardError => e
