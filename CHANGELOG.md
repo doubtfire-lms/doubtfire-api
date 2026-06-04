@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-4](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-3...v11.0.0-4) (2026-06-04)
+
+
+### Features
+
+* suspend any stale overseer assessments ([678f386](https://github.com/b0ink/doubtfire-deploy/commit/678f3866632d174713ab46bc7876c43dd2df56cd))
+
+
+### Bug Fixes
+
+* ensure we check for queued jobs ([3790c9f](https://github.com/b0ink/doubtfire-deploy/commit/3790c9f3dc4899d9785f6996a77a5b550f1c5d87))
+
 ## [11.0.0-3](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-2...v11.0.0-3) (2026-06-04)
 
 
