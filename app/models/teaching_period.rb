@@ -115,7 +115,10 @@ class TeachingPeriod < ApplicationRecord
 
     start_day_num = start_date.wday
 
-    result = week_start + (day_num - start_day_num).days
+    day_offset = day_num - start_day_num
+    day_offset += 7 if day_offset.negative?
+
+    result = week_start + day_offset.days
 
     for a_break in breaks do
       if result >= a_break.start_date && result < a_break.end_date

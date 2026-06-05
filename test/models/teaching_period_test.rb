@@ -119,7 +119,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     assert_equal tp.start_date + 3.day + 2.week, tp.date_for_week_and_day(3, 'Thu')
     assert_equal tp.start_date + 4.day + 2.week, tp.date_for_week_and_day(3, 'Fri')
     assert_equal tp.start_date + 5.day, tp.date_for_week_and_day(1, 'Sat')
-    assert_equal tp.start_date - 1.day, tp.date_for_week_and_day(1, 'Sun')
+    assert_equal tp.start_date + 6.days, tp.date_for_week_and_day(1, 'Sun')
   end
 
   test 'can map week and day to date after break' do
