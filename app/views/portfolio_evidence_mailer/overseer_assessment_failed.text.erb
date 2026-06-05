@@ -1,8 +1,8 @@
 Hi <%= @student.first_name %>,
 
-Our automated assessment found issues and left feedback on the following tasks. If you have already reviewed the task in <%= @doubtfire_product_name %>, you can ignore this email.
+Automated assessment did not pass for the tasks below. Please review the Overseer report in <%= @doubtfire_product_name %>, verify your output, and resubmit.
 
-Please log in and review the latest automated feedback for:
+Tasks to review:
 <% @tasks.each do |task| %>
   * <%= task.task_definition.abbreviation %> - <%= task.task_definition.name %>
 <% end %>

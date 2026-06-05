@@ -45,10 +45,10 @@
     <h1> <%= @doubtfire_product_name %> Notification </h1>
     <p>Hi <%= @student.first_name %>,</p>
     <p>
-      Our automated assessment found issues and left feedback on the following tasks. If you have already reviewed the task in <%= @doubtfire_product_name %>, you can ignore this email.
+      Automated assessment did not pass for the tasks below. Please review the Overseer report in <%= @doubtfire_product_name %>, verify your output, and resubmit.
     </p>
     <p>
-      Please log in and review the latest automated feedback for:
+      Tasks to review:
       <ul>
         <% @tasks.each do |task| %>
           <li>
