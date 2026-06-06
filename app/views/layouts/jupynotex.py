@@ -169,8 +169,8 @@ class Notebook:
         with open(path, 'rt', encoding='utf8') as fh:
             nb_data = json.load(fh)
 
-        # get the languaje, to highlight
-        lang = nb_data['metadata']['language_info']['name']
+        # get the language, when available, to highlight
+        lang = nb_data.get('metadata', {}).get('language_info', {}).get('name')
         self._highlight_delimiters = HIGHLIGHTERS.get(lang, HIGHLIGHTERS[None])
 
         # get all cells
