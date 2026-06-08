@@ -8,5 +8,6 @@ module Entities
     expose :email_tutors
     expose :email_convenors
     expose :target_grade
+    expose :task_definition_id
   end
 end

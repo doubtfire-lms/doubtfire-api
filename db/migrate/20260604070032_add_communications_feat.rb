@@ -78,6 +78,9 @@ class AddCommunicationsFeat < ActiveRecord::Migration[8.0]
       # ChangeTargetGradeAction
       t.integer :target_grade
 
+      # TaskCommentAction
+      t.references :task_definition, null: true
+
       t.timestamps
     end
 

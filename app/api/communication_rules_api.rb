@@ -696,6 +696,7 @@ class CommunicationRulesApi < Grape::API
       optional :email_tutors, type: Boolean
       optional :email_convenors, type: Boolean
       optional :target_grade, type: Integer
+      optional :task_definition_id, type: Integer
     end
   end
   post '/units/:unit_id/communication_rules/:communication_rule_id/actions' do
@@ -714,7 +715,8 @@ class CommunicationRulesApi < Grape::API
                                                   :body,
                                                   :email_tutors,
                                                   :email_convenors,
-                                                  :target_grade
+                                                  :target_grade,
+                                                  :task_definition_id
                                                 )
 
     action = rule.communication_actions.create!(action_params)
@@ -733,6 +735,7 @@ class CommunicationRulesApi < Grape::API
       optional :email_tutors, type: Boolean
       optional :email_convenors, type: Boolean
       optional :target_grade, type: Integer
+      optional :task_definition_id, type: Integer
     end
   end
   put '/units/:unit_id/communication_rules/:communication_rule_id/actions/:id' do
@@ -746,7 +749,7 @@ class CommunicationRulesApi < Grape::API
     action = rule.communication_actions.find(params[:id])
     action_params = ActionController::Parameters.new(params)
                                                 .require(:communication_action)
-                                                .permit(:type, :subject, :body, :email_tutors, :email_convenors, :target_grade)
+                                                .permit(:type, :subject, :body, :email_tutors, :email_convenors, :target_grade, :task_definition_id)
 
     action.update!(action_params)
     present action, with: Entities::CommunicationActionEntity

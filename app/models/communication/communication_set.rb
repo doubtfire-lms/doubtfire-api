@@ -80,6 +80,7 @@ class CommunicationSet < ApplicationRecord
       rule.communication_actions.each do |action|
         new_action = action.dup
         new_action.communication_rule = new_rule
+        new_action.task_definition = matching_task_definition(other_unit, action)
         new_action.save!
       end
     end

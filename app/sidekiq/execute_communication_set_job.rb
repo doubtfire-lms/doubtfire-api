@@ -92,6 +92,8 @@ class ExecuteCommunicationSetJob
       execute_email_student_action(action, projects, unit, rule)
     when 'EmailStaffAction'
       execute_email_staff_action(action, projects, unit, rule)
+    when 'TaskCommentAction'
+      execute_task_comment_action(action, projects, unit, rule)
     else
       [{
         action_id: action.id,
@@ -210,6 +212,74 @@ class ExecuteCommunicationSetJob
           recipient_username: recipient.username
         }
       end
+    end
+  end
+
+  def execute_task_comment_action(action, projects, unit, rule)
+    comment_author = sender_user_for(unit)
+
+    if comment_author.blank?
+      return [{
+        action_id: action.id,
+        action_type: action.type,
+        status: 'skipped',
+        reason: 'comment author missing'
+      }]
+    end
+
+    comment_text_template = action.body.to_s.strip
+
+    projects.map do |project|
+      task_definition = action.task_definition || unit.task_definitions.find_by(id: action.task_definition_id)
+      if task_definition.blank?
+        next {
+          action_id: action.id,
+          action_type: action.type,
+          status: 'skipped',
+          project_id: project.id,
+          username: project.user&.username,
+          reason: 'task definition missing'
+        }
+      end
+
+      task = project.task_for_task_definition(task_definition)
+      rendered_comment = render_template(comment_text_template, project, unit, rule, projects.length)
+      rendered_comment = "**Automated comment**: #{rendered_comment}" if rendered_comment.present?
+
+      if rendered_comment.blank?
+        next {
+          action_id: action.id,
+          action_type: action.type,
+          status: 'skipped',
+          project_id: project.id,
+          username: project.user&.username,
+          reason: 'comment text missing'
+        }
+      end
+
+      comment = task.add_text_comment(comment_author, rendered_comment)
+
+      if comment.nil?
+        next {
+          action_id: action.id,
+          action_type: action.type,
+          status: 'skipped',
+          project_id: project.id,
+          username: project.user&.username,
+          reason: 'duplicate comment'
+        }
+      end
+
+      {
+        action_id: action.id,
+        action_type: action.type,
+        status: 'commented',
+        project_id: project.id,
+        username: project.user&.username,
+        task_definition_id: task_definition.id,
+        task_definition_name: task_definition.name,
+        comment_id: comment.id
+      }
     end
   end
 
@@ -376,6 +446,9 @@ class ExecuteCommunicationSetJob
         student = project&.user
         details = if result[:status] == 'updated'
                     "Changed target grade from #{target_grade_name(result[:previous_target_grade])} to #{target_grade_name(result[:target_grade])}"
+                  elsif result[:status] == 'commented'
+                    task_definition = TaskDefinition.find_by(id: result[:task_definition_id])
+                    "Added comment to #{task_definition_label(task_definition)}"
                   elsif result[:recipient_email].present?
                     "Sent email to #{result[:recipient_email]}"
                   else
@@ -476,6 +549,8 @@ class ExecuteCommunicationSetJob
       'Send staff email'
     when 'ChangeTargetGradeAction'
       "Change Target Grade to #{target_grade_name(action.target_grade)}"
+    when 'TaskCommentAction'
+      "Add comment to #{task_definition_label(action.task_definition)}"
     else
       human_action_type_name(action.type)
     end
@@ -489,6 +564,8 @@ class ExecuteCommunicationSetJob
       'Send staff email'
     when 'ChangeTargetGradeAction'
       'Change target grade'
+    when 'TaskCommentAction'
+      'Add task comment'
     else
       type.to_s.underscore.humanize
     end
@@ -515,5 +592,11 @@ class ExecuteCommunicationSetJob
 
   def enrolment_label(operator)
     operator.to_s == 'not_enrolled_in' ? 'Not Enrolled In' : 'Enrolled In'
+  end
+
+  def task_definition_label(task_definition)
+    return 'Task' if task_definition.blank?
+
+    "Task #{task_definition.abbreviation} #{task_definition.name}"
   end
 end
