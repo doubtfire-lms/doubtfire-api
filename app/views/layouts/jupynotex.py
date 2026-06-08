@@ -60,6 +60,13 @@ def _validator_positive_int(value):
     return value
 
 
+def _as_lines(value):
+    """Return notebook text stored as either a string or list of strings."""
+    if isinstance(value, str):
+        return value.splitlines()
+    return value
+
+
 def _process_plain_text(lines, config_options=None):
     """Wrap a series of lines around a verbatim indication."""
     if config_options is None:
@@ -67,6 +74,7 @@ def _process_plain_text(lines, config_options=None):
 
     result = []
     result.extend(VERBATIM_BEGIN)
+    lines = _as_lines(lines)
     for line in lines:
         line = line.strip()
 
@@ -169,8 +177,8 @@ class Notebook:
         with open(path, 'rt', encoding='utf8') as fh:
             nb_data = json.load(fh)
 
-        # get the languaje, to highlight
-        lang = nb_data['metadata']['language_info']['name']
+        # get the language, when available, to highlight
+        lang = nb_data.get('metadata', {}).get('language_info', {}).get('name')
         self._highlight_delimiters = HIGHLIGHTERS.get(lang, HIGHLIGHTERS[None])
 
         # get all cells
@@ -186,7 +194,7 @@ class Notebook:
 
     def _proc_src(self, content):
         """Process the source of a cell."""
-        source = content['source']
+        source = _as_lines(content['source'])
         result = []
         if content['cell_type'] == 'code':
             begin, end = self._highlight_delimiters
