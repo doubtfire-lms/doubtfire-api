@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-7](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-6...v11.0.0-7) (2026-06-08)
+
+
+### Bug Fixes
+
+* ensure start and target dates set correctly if unit start date is a monday ([0717d90](https://github.com/b0ink/doubtfire-deploy/commit/0717d9051181811c7d58dd453abf076b87cb0444))
+* handle incomplete notebook metadata and markdown lists in pdfs ([a01e4d7](https://github.com/b0ink/doubtfire-deploy/commit/a01e4d7e7ca7ca255b2080f1f3e44da48db4c270))
+* normalize notebook source lines ([b950e55](https://github.com/b0ink/doubtfire-deploy/commit/b950e55ad801fbdd6f3dafb3732aefc0b6cc6987))
+
 ## [11.0.0-6](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-5...v11.0.0-6) (2026-06-04)
 
 ## [11.0.0-5](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-4...v11.0.0-5) (2026-06-04)
