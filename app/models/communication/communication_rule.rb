@@ -38,6 +38,8 @@ class CommunicationRule < ApplicationRecord
       task_status_count_condition_match?(project, condition)
     when 'LoginStatusCondition'
       login_status_condition_match?(project, condition)
+    when 'SpecConCondition'
+      spec_con_condition_match?(project, condition)
     when 'TutorialEnrolmentCondition'
       tutorial_enrolment_condition_match?(project, condition)
     when 'TutorialStreamEnrolmentCondition'
@@ -92,6 +94,10 @@ class CommunicationRule < ApplicationRecord
     when 'after' then last_sign_in_at.present? && last_sign_in_at > condition.last_sign_in_at
     else false
     end
+  end
+
+  def spec_con_condition_match?(project, condition)
+    compare_value(project.spec_con_days, condition.spec_con_days, condition.operator)
   end
 
   def tutorial_enrolment_condition_match?(project, condition)

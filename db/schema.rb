@@ -99,6 +99,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_04_070032) do
     t.bigint "campus_id"
     t.integer "task_status_count"
     t.integer "task_target_grade"
+    t.integer "spec_con_days"
     t.string "operator", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false

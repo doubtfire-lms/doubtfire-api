@@ -439,6 +439,8 @@ class ExecuteCommunicationSetJob
       "Students that have #{operator_label(condition.operator)} #{condition.task_status_count} #{grade_label} tasks in [#{statuses}]"
     when 'LoginStatusCondition'
       "Students whose last sign in is #{condition.operator.to_s.humanize.downcase} #{condition.last_sign_in_at}"
+    when 'SpecConCondition'
+      "Students with Special Consideration Days #{operator_label(condition.operator)} #{condition.spec_con_days}"
     when 'TutorialEnrolmentCondition'
       tutorial = Tutorial.find_by(id: condition.tutorial_id)
       tutorial_label =

@@ -55,6 +55,9 @@ class AddCommunicationsFeat < ActiveRecord::Migration[8.0]
       t.integer :task_status_count
       t.integer :task_target_grade
 
+      # SpecConDaysCondition
+      t.integer :spec_con_days
+
       t.string :operator, null: false
 
       t.timestamps

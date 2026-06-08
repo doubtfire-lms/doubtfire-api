@@ -19,4 +19,22 @@ class CommunicationConditionTest < ActiveSupport::TestCase
     condition.reload
     assert_equal %w[not_started working_on_it fix_and_resubmit], condition.task_statuses
   end
+
+  def test_spec_con_condition_accepts_integer_spec_con_days
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0)
+    communication_set = unit.communication_sets.create!(name: 'Test Set', active: true)
+    communication_rule = communication_set.communication_rules.create!(name: 'Test Rule', operator: 'and', position: 0)
+
+    condition = SpecConCondition.new(
+      communication: communication_rule,
+      operator: 'greater_than_or_equal_to',
+      spec_con_days: 4
+    )
+
+    assert condition.valid?, condition.errors.full_messages
+    condition.save!
+
+    condition.reload
+    assert_equal 4, condition.spec_con_days
+  end
 end

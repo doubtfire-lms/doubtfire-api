@@ -4,6 +4,7 @@ class CommunicationCondition < ApplicationRecord
     TaskDefinitionStatusCondition
     TaskStatusCountCondition
     LoginStatusCondition
+    SpecConCondition
     TutorialEnrolmentCondition
     TutorialStreamEnrolmentCondition
     CampusCondition
