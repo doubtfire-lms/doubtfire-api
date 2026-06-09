@@ -113,6 +113,7 @@ module PdfGeneration
 
     # Create the portfolio for this project
     def create_portfolio
+      logger.info "Creating portfolio for #{user.username} in #{unit.code}"
       begin
         pac = ProjectAppController.new
         pac.init(self, false)
