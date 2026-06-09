@@ -102,6 +102,7 @@ gem 'net-smtp', require: false
 gem 'tca_client'
 
 # Async jobs
+gem 'ice_cube'
 gem 'sidekiq'
 gem 'sidekiq-cron'
 gem 'sidekiq-status'

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_06_04_031804) do
+ActiveRecord::Schema[8.0].define(version: 2026_06_04_070032) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -71,6 +71,92 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_04_031804) do
     t.index ["task_comment_id", "user_id"], name: "index_comments_read_receipts_on_task_comment_id_and_user_id", unique: true
     t.index ["task_comment_id"], name: "index_comments_read_receipts_on_task_comment_id"
     t.index ["user_id"], name: "index_comments_read_receipts_on_user_id"
+  end
+
+  create_table "communication_actions", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.string "type", null: false
+    t.bigint "communication_rule_id", null: false
+    t.string "subject"
+    t.text "body"
+    t.boolean "email_tutors", default: false, null: false
+    t.boolean "email_convenors", default: false, null: false
+    t.integer "target_grade"
+    t.bigint "task_definition_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["communication_rule_id"], name: "index_communication_actions_on_communication_rule_id"
+    t.index ["task_definition_id"], name: "index_communication_actions_on_task_definition_id"
+    t.index ["type"], name: "index_communication_actions_on_type"
+  end
+
+  create_table "communication_conditions", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.string "type", null: false
+    t.bigint "communication_id", null: false
+    t.integer "target_grade"
+    t.bigint "task_definition_id"
+    t.text "task_statuses", size: :long, collation: "utf8mb4_bin"
+    t.datetime "last_sign_in_at"
+    t.bigint "tutorial_id"
+    t.bigint "tutorial_stream_id"
+    t.bigint "campus_id"
+    t.integer "task_status_count"
+    t.integer "task_target_grade"
+    t.integer "spec_con_days"
+    t.string "operator", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["campus_id"], name: "index_communication_conditions_on_campus_id"
+    t.index ["communication_id"], name: "index_communication_conditions_on_communication_id"
+    t.index ["task_definition_id"], name: "index_communication_conditions_on_task_definition_id"
+    t.index ["tutorial_id"], name: "index_communication_conditions_on_tutorial_id"
+    t.index ["tutorial_stream_id"], name: "index_communication_conditions_on_tutorial_stream_id"
+    t.index ["type"], name: "index_communication_conditions_on_type"
+    t.check_constraint "json_valid(`task_statuses`)", name: "task_statuses"
+  end
+
+  create_table "communication_rules", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "communication_set_id", null: false
+    t.integer "position", default: 0, null: false
+    t.string "name"
+    t.string "operator"
+    t.boolean "send_log_to_convenors", default: false, null: false
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["communication_set_id"], name: "index_communication_rules_on_communication_set_id"
+  end
+
+  create_table "communication_set_schedules", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "communication_set_id", null: false
+    t.string "name"
+    t.boolean "active", default: true, null: false
+    t.integer "anchor_week", null: false
+    t.string "anchor_day", null: false
+    t.integer "hour", default: 8, null: false
+    t.integer "minute", default: 0, null: false
+    t.string "timezone", default: "UTC", null: false
+    t.string "recurrence", default: "none", null: false
+    t.integer "interval", default: 1, null: false
+    t.integer "repeat_count"
+    t.datetime "until_at"
+    t.text "ice_cube_schedule", size: :long, collation: "utf8mb4_bin"
+    t.datetime "next_run_at"
+    t.datetime "last_run_at"
+    t.datetime "last_enqueued_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active", "next_run_at"], name: "index_communication_set_schedules_on_active_and_next_run_at"
+    t.index ["communication_set_id"], name: "index_communication_set_schedules_on_communication_set_id"
+    t.check_constraint "json_valid(`ice_cube_schedule`)", name: "ice_cube_schedule"
+  end
+
+  create_table "communication_sets", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "unit_id", null: false
+    t.string "name"
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["unit_id"], name: "index_communication_sets_on_unit_id"
   end
 
   create_table "d2l_assessment_mappings", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|

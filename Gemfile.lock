@@ -589,6 +589,7 @@ DEPENDENCIES
   grape-swagger-rails
   hirb
   icalendar
+  ice_cube
   json-jwt
   listen
   minitest
