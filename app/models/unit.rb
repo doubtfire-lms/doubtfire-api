@@ -67,7 +67,8 @@ class Unit < ApplicationRecord
       :get_tutor_times_summary,
       :get_marking_sessions,
       :upload_grades_csv,
-      :get_staff_notes
+      :get_staff_notes,
+      :mannage_communications
     ]
 
     # What can admin do with units?

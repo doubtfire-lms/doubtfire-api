@@ -56,6 +56,11 @@ class CommunicationRulesApi < Grape::API
 
   before do
     authenticated?
+
+    unit = Unit.find(params[:unit_id])
+    unless authorise? current_user, unit, :mannage_communications
+      error!({ error: 'Not authorised to manage unit communications' }, 403)
+    end
   end
 
   desc 'Get communication sets for a unit'
