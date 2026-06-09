@@ -244,7 +244,6 @@ class ExecuteCommunicationSetJob
 
       task = project.task_for_task_definition(task_definition)
       rendered_comment = render_template(comment_text_template, project, unit, rule, projects.length)
-      rendered_comment = "**Automated comment**: #{rendered_comment}" if rendered_comment.present?
 
       if rendered_comment.blank?
         next {
