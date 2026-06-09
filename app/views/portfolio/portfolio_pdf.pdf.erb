@@ -130,7 +130,7 @@ No Tutor
   \textbf{Task} & \textbf{Status} & \textbf{Times Assessed} \\
   \hline
 <% @task_defs.each do |td| %>
-  <%= lesc td.name %> &
+  <%= lesc "#{td.abbreviation} #{td.name}" %> &
   <% task = task_for_def(td)
     if task.nil?
   %>
