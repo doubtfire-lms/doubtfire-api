@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 class CreateTaskCompletionSnapshots < ActiveRecord::Migration[8.0]
   def change
     create_table :task_completion_snapshots do |t|
