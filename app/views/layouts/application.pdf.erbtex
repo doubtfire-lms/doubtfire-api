@@ -27,6 +27,12 @@
 }
 
 \usepackage[fencedCode,hashEnumerators,pipeTables,texMathDollars]{markdown}
+\markdownSetup{rendererPrototypes={
+  ulBeginTight={\begin{itemize}},
+  ulEndTight={\end{itemize}},
+  olBeginTight={\begin{enumerate}},
+  olEndTight={\end{enumerate}}
+}}
 
 \usepackage{luatextra}
 \defaultfontfeatures{Ligatures=TeX}

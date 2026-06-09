@@ -2,6 +2,11 @@ class AcceptSubmissionJob
   include Sidekiq::Job
   include LogHelper
 
+  sidekiq_options lock: :until_executed,
+                  lock_args_method: ->(args) { [args.first] },
+                  on_conflict: :reject,
+                  retry: false
+
   def perform(task_id, user_id, accepted_tii_eula, test_submission)
     begin
       # Ensure cwd is valid...
@@ -36,6 +41,17 @@ class AcceptSubmissionJob
 
       begin
         # Notify system admin
+        if defined?(Sentry)
+          Sentry.capture_exception(
+            e,
+            extra: {
+              task_id: task.id,
+              task_definition_abbreviation: task.task_definition.abbreviation,
+              username: task.project.user.username,
+              latex_log_message: e.respond_to?(:log_message) ? e.log_message.to_s.last(5000) : nil
+            }
+          )
+        end
         mail = ErrorLogMailer.error_message('Accept Submission', "Failed to convert submission to PDF for task #{task.log_details}", e)
         mail.deliver if mail.present?
       rescue StandardError => e
@@ -65,6 +81,7 @@ class AcceptSubmissionJob
       if overseer_assessment.present?
         logger.info "Launching Overseer assessment for task_def_id: #{task.task_definition.id} task_id: #{task.id}"
 
+        overseer_assessment.update!(student_notified_at: Time.current) if test_submission
         overseer_assessment.send_to_overseer(test_submission: test_submission)
 
       else
@@ -73,6 +90,16 @@ class AcceptSubmissionJob
     end
   rescue StandardError => e # to raise error message to avoid unnecessary retry
     logger.error e
+    if defined?(Sentry)
+      Sentry.capture_exception(
+        e,
+        extra: {
+          task_id: task&.id,
+          task_definition_abbreviation: task&.task_definition&.abbreviation,
+          username: task&.project&.user&.username
+        }
+      )
+    end
     task.clear_in_process
   end
 end

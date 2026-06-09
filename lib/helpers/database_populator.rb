@@ -64,6 +64,7 @@ class DatabasePopulator
     generate_global_learning_outcomes()
     generate_campuses
     generate_activity_types
+    generate_overseer_images
   end
 
   def generate_teaching_periods
@@ -164,6 +165,18 @@ class DatabasePopulator
       abbreviation: 'cls',
     }
     ActivityType.create! data
+  end
+
+  def generate_overseer_images
+    echo_line "--> Generating overseer images"
+
+    overseer_image = OverseerImage.create!(
+      name: 'Bash',
+      tag: 'bash:latest'
+    )
+
+    echo_line "---> Pulling overseer image #{overseer_image.tag}"
+    overseer_image.pull_from_docker
   end
 
   #

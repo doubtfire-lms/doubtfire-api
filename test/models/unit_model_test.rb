@@ -237,6 +237,83 @@ class UnitModelTest < ActiveSupport::TestCase
     unit2.destroy
   end
 
+  def test_rollover_of_communication_sets
+    task_definition = FactoryBot.create(:task_definition, unit: @unit, tutorial_stream: @unit.tutorial_streams.first)
+    communication_set = @unit.communication_sets.create!(name: 'At Risk Follow Up', active: true)
+    communication_set.communication_set_schedules.create!(
+      name: 'Weekly follow up',
+      active: true,
+      anchor_week: 1,
+      anchor_day: 'Monday',
+      hour: 9,
+      minute: 30,
+      timezone: 'UTC',
+      recurrence: 'weekly',
+      interval: 1,
+      last_run_at: Time.zone.now,
+      last_enqueued_at: Time.zone.now
+    )
+    communication_rule = communication_set.communication_rules.create!(
+      name: 'Not started',
+      operator: 'and',
+      position: 0,
+      send_log_to_convenors: true,
+      active: true
+    )
+    communication_rule.communication_conditions.create!(
+      type: 'TaskDefinitionStatusCondition',
+      operator: 'equal_to',
+      task_definition: task_definition,
+      task_statuses: ['not_started']
+    )
+    communication_rule.communication_conditions.create!(
+      type: 'TutorialStreamEnrolmentCondition',
+      operator: 'enrolled_in',
+      tutorial_stream: @unit.tutorial_streams.first
+    )
+    communication_rule.communication_actions.create!(
+      type: 'EmailStudentAction',
+      subject: 'Please start {{unit.code}}',
+      body: 'Hello {{student.first_name}}'
+    )
+
+    unit2 = @unit.rollover TeachingPeriod.find(2), nil, nil, nil
+
+    assert_equal 1, unit2.communication_sets.count
+    new_set = unit2.communication_sets.first
+    assert_not_equal communication_set.id, new_set.id
+    assert_equal 'At Risk Follow Up', new_set.name
+    assert_equal true, new_set.active
+
+    assert_equal 1, new_set.communication_set_schedules.count
+    new_schedule = new_set.communication_set_schedules.first
+    assert_not_equal communication_set.communication_set_schedules.first.id, new_schedule.id
+    assert_equal 'Weekly follow up', new_schedule.name
+    assert_equal 'weekly', new_schedule.recurrence
+    assert_nil new_schedule.last_run_at
+    assert_nil new_schedule.last_enqueued_at
+
+    assert_equal 1, new_set.communication_rules.count
+    new_rule = new_set.communication_rules.first
+    assert_not_equal communication_rule.id, new_rule.id
+    assert_equal 'Not started', new_rule.name
+    assert_equal true, new_rule.send_log_to_convenors
+
+    new_task_definition = unit2.task_definitions.find_by!(abbreviation: task_definition.abbreviation)
+    task_condition = new_rule.communication_conditions.find_by!(type: 'TaskDefinitionStatusCondition')
+    assert_equal new_task_definition, task_condition.task_definition
+    assert_equal ['not_started'], task_condition.task_statuses
+
+    new_tutorial_stream = unit2.tutorial_streams.find_by!(abbreviation: @unit.tutorial_streams.first.abbreviation)
+    stream_condition = new_rule.communication_conditions.find_by!(type: 'TutorialStreamEnrolmentCondition')
+    assert_equal new_tutorial_stream, stream_condition.tutorial_stream
+
+    assert_equal 1, new_rule.communication_actions.count
+    assert_equal 'Please start {{unit.code}}', new_rule.communication_actions.first.subject
+
+    unit2.destroy
+  end
+
   def test_rollover_of_tasks_have_same_start_week_and_day
     @unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Tasks.csv"))
 
@@ -351,6 +428,62 @@ class UnitModelTest < ActiveSupport::TestCase
     assert_equal new_prompt3.task_definition.id, new_td2.id
     assert_equal new_prompt3.content, 'Discuss use of AI'
     assert_equal new_prompt3.priority, 3
+  end
+
+  def test_rollover_of_overseer_steps
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 2)
+    td = unit.task_definitions.first
+
+    td.overseer_steps.create!(
+      name: 'compile',
+      description: 'Compile the submission',
+      display_name: 'Compile',
+      display_description: 'Compile step',
+      run_command: 'make test',
+      timeout: 45,
+      sort_order: 0,
+      step_type: 'run',
+      partial_output_diff: true,
+      stdin_input_file: 'stdin.txt',
+      expected_output_file: 'expected.txt',
+      feedback_message: 'Compilation failed',
+      status_on_success_id: TaskStatus.complete.id,
+      status_on_failure_id: TaskStatus.fix_and_resubmit.id,
+      halt_on_success: false,
+      halt_on_failure: true,
+      show_expected_output: true,
+      show_stdin: false,
+      show_stdout: true,
+      enabled: true
+    )
+
+    unit2 = unit.rollover(TeachingPeriod.find(2), nil, nil, nil)
+    new_td = unit2.task_definitions.find_by!(abbreviation: td.abbreviation)
+    new_step = new_td.overseer_steps.first
+
+    assert_equal 1, new_td.overseer_steps.count
+    assert_not_nil new_step, 'Overseer step should be duplicated in rollover'
+    assert_equal new_td.id, new_step.task_definition_id
+    assert_equal 'compile', new_step.name
+    assert_equal 'Compile the submission', new_step.description
+    assert_equal 'Compile', new_step.display_name
+    assert_equal 'Compile step', new_step.display_description
+    assert_equal 'make test', new_step.run_command
+    assert_equal 45, new_step.timeout
+    assert_equal 0, new_step.sort_order
+    assert_equal 'run', new_step.step_type
+    assert_equal true, new_step.partial_output_diff
+    assert_equal 'stdin.txt', new_step.stdin_input_file
+    assert_equal 'expected.txt', new_step.expected_output_file
+    assert_equal 'Compilation failed', new_step.feedback_message
+    assert_equal TaskStatus.complete.id, new_step.status_on_success_id
+    assert_equal TaskStatus.fix_and_resubmit.id, new_step.status_on_failure_id
+    assert_equal false, new_step.halt_on_success
+    assert_equal true, new_step.halt_on_failure
+    assert_equal true, new_step.show_expected_output
+    assert_equal false, new_step.show_stdin
+    assert_equal true, new_step.show_stdout
+    assert_equal true, new_step.enabled
   end
 
   def test_rollover_of_task_prerequisites

@@ -68,7 +68,8 @@ class Unit < ApplicationRecord
       :get_marking_sessions,
       :upload_grades_csv,
       :get_staff_notes,
-      :capture_task_completion_snapshot
+      :capture_task_completion_snapshot,
+      :mannage_communications
     ]
 
     # What can admin do with units?
@@ -147,6 +148,7 @@ class Unit < ApplicationRecord
   after_update :move_files_on_code_change, if: :saved_change_to_code?
   after_update :propogate_date_changes_to_tasks, if: :saved_change_to_start_date?
   after_update :update_overdue_tasks_aip, if: :saved_change_to_mark_late_submissions_as_assess_in_portfolio?
+  after_update :refresh_communication_schedule_caches, if: :saved_change_to_communication_schedule_inputs?
 
   # Model associations.
   # When a Unit is destroyed, any TaskDefinitions, Tutorials, and ProjectConvenor instances will also be destroyed.
@@ -159,6 +161,9 @@ class Unit < ApplicationRecord
   has_many :learning_outcomes, as: :context, dependent: :destroy # inverse_of: :unit
   has_many :marking_sessions, dependent: :destroy
   has_many :task_completion_snapshots, dependent: :destroy, inverse_of: :unit
+  has_many :communication_sets, class_name: 'CommunicationSet', dependent: :destroy
+  has_many :communication_rules, through: :communication_sets, class_name: 'CommunicationRule'
+  has_many :communication_set_schedules, through: :communication_sets, class_name: 'CommunicationSetSchedule'
 
   has_many :comments, through: :projects
   has_many :tasks, through: :projects
@@ -238,6 +243,14 @@ class Unit < ApplicationRecord
 
   def active_projects
     projects.where(enrolled: true)
+  end
+
+  def refresh_communication_schedule_caches
+    communication_set_schedules.find_each(&:refresh_next_run_at!)
+  end
+
+  def saved_change_to_communication_schedule_inputs?
+    saved_change_to_active? || saved_change_to_start_date? || saved_change_to_end_date?
   end
 
   def ordered_task_definitions
@@ -435,6 +448,10 @@ class Unit < ApplicationRecord
           LearningOutcomeLink.create!(source_id: new_outcome.id, target_id: new_target.id)
         end
       end
+    end
+
+    communication_sets.each do |communication_set|
+      communication_set.copy_to(new_unit)
     end
 
     # Now duplicate all feedback chips
@@ -1552,15 +1569,19 @@ class Unit < ApplicationRecord
 
       start_day_num = start_date.wday
 
-      start_date + week.weeks + (day_num - start_day_num).days
+      start_date + (week - 1).weeks + (day_num - start_day_num).days
     end
   end
 
   def week_number(date)
+    return nil if date.nil? || start_date.nil?
+
     if teaching_period.present?
       teaching_period.week_number(date)
     else
-      ((date - start_date) / 1.week).floor + 1
+      target_date = date.to_date
+      unit_start_date = start_date.to_date
+      ((target_date - unit_start_date).to_i / 7).floor + 1
     end
   end
 
@@ -1580,19 +1601,24 @@ class Unit < ApplicationRecord
       next if row[0] =~ /^(Task Name)|(name)/ # Skip header
 
       begin
-        missing = missing_headers(row, TaskDefinition.csv_columns)
+        missing = missing_headers(row, TaskDefinition.required_csv_columns)
         if missing.count > 0
           errors << { row: row, message: "Missing headers: #{missing.join(', ')}" }
           next
         end
 
+        existing_task_definition = task_definitions.find_by(abbreviation: row[:abbreviation]&.strip)
+        existing_task_definition ||= task_definitions.find_by(name: row[:name]&.strip)
+        existing_task_definition&.task_prerequisites&.destroy_all
+
         task_definition, new_task, message = TaskDefinition.task_def_for_csv_row(self, row)
-        prerequisites_by_task[task_definition.abbreviation] = JSON.parse(row[:task_prerequisites]) unless row[:task_prerequisites].nil?
 
         if task_definition.nil?
           errors << { row: row, message: message }
           next
         end
+
+        prerequisites_by_task[task_definition.abbreviation] = JSON.parse(row[:task_prerequisites]) unless row[:task_prerequisites].nil?
 
         success << { row: row, message: message }
       rescue Exception => e
@@ -3029,22 +3055,24 @@ class Unit < ApplicationRecord
         next
       end
 
-      student_entries = zip.nil? ? [] : batch_feedback_entries_for_username(zip, project.user.username)
-      pdf_entries = zip.nil? ? [] : batch_feedback_named_pdf_entries_for_username(zip, project.user.username)
+      student_entries = zip.nil? ? [] : batch_feedback_entries_for_project(zip, project)
+      pdf_entries = zip.nil? ? [] : batch_feedback_named_pdf_entries_for_project(zip, project)
 
       if zip.present?
         if student_entries.any? && pdf_entries.empty?
+          expected_identifier = batch_feedback_primary_identifier_for_project(project)
           errors << {
             row: task_entry,
-            message: "Expected a PDF named #{project.user.username}.pdf inside #{project.user.username}'s folder."
+            message: "Expected a PDF named #{expected_identifier}.pdf inside #{expected_identifier}'s folder."
           }
           next
         end
 
         if pdf_entries.length > 1
+          expected_identifier = batch_feedback_primary_identifier_for_project(project)
           errors << {
             row: task_entry,
-            message: "Found multiple PDFs named #{project.user.username}.pdf inside #{project.user.username}'s folder."
+            message: "Found multiple PDFs named #{expected_identifier}.pdf inside #{expected_identifier}'s folder."
           }
           next
         end
@@ -3112,26 +3140,49 @@ class Unit < ApplicationRecord
     converted_csv.close! if defined?(converted_csv) && converted_csv.present?
   end
 
-  def batch_feedback_entries_for_username(zip, username)
+  def batch_feedback_primary_identifier_for_project(project)
+    project.user.student_id.to_s.strip.presence || project.user.username.to_s.strip
+  end
+
+  def batch_feedback_identifiers_for_project(project)
+    [
+      project.user.student_id.to_s.strip.presence,
+      project.user.username.to_s.strip.presence
+    ].compact.uniq
+  end
+
+  def batch_feedback_entries_for_identifier(zip, identifier)
     zip.select do |entry|
       path_parts = entry.name.split('/').reject(&:blank?)
       next false if path_parts.empty?
 
       if entry.name_is_directory?
-        path_parts.any? { |part| part.casecmp(username).zero? }
+        path_parts.any? { |part| part.casecmp(identifier).zero? }
       else
-        path_parts[0...-1].any? { |part| part.casecmp(username).zero? }
+        path_parts[0...-1].any? { |part| part.casecmp(identifier).zero? }
       end
     end
   end
 
-  def batch_feedback_named_pdf_entries_for_username(zip, username)
-    batch_feedback_entries_for_username(zip, username).select do |entry|
+  def batch_feedback_entries_for_project(zip, project)
+    batch_feedback_identifiers_for_project(project).flat_map do |identifier|
+      batch_feedback_entries_for_identifier(zip, identifier)
+    end.uniq
+  end
+
+  def batch_feedback_named_pdf_entries_for_identifier(zip, identifier)
+    batch_feedback_entries_for_identifier(zip, identifier).select do |entry|
       next false if entry.name_is_directory?
       next false unless File.extname(entry.name).casecmp('.pdf').zero?
 
-      File.basename(entry.name, '.pdf').casecmp(username).zero?
+      File.basename(entry.name, '.pdf').casecmp(identifier).zero?
     end
+  end
+
+  def batch_feedback_named_pdf_entries_for_project(zip, project)
+    batch_feedback_identifiers_for_project(project).flat_map do |identifier|
+      batch_feedback_named_pdf_entries_for_identifier(zip, identifier)
+    end.uniq
   end
 
   def build_batch_feedback_legacy_marks_csv(task_rows)

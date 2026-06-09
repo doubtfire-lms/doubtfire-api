@@ -2,6 +2,7 @@ require 'test_helper'
 
 class CommentTest < ActiveSupport::TestCase
   include Rack::Test::Methods
+  include ActiveSupport::Testing::TimeHelpers
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
   include TestHelpers::TestFileHelper
@@ -219,6 +220,60 @@ class CommentTest < ActiveSupport::TestCase
 
     post_json "/api/projects/#{project_1.id}/task_def_id/#{task_definition_2.id}/comments", comment: 'Hello World', reply_to_id: id
     assert_equal 404, last_response.status
+  end
+
+  def test_student_can_edit_own_comment_within_10_minutes
+    project = Project.first
+    user = project.student
+    task_definition = project.unit.task_definitions.first
+
+    add_auth_header_for(user: user)
+    post_json "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", comment: 'Original comment'
+    assert_equal 201, last_response.status
+
+    comment_id = last_response_body['id']
+
+    travel_to 9.minutes.from_now do
+      put_json "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments/#{comment_id}", comment: 'Edited comment'
+      assert_equal 200, last_response.status, last_response.body
+    end
+
+    assert_equal 'Edited comment', TaskComment.find(comment_id).read_attribute(:comment)
+    assert_equal 'Edited comment', last_response_body['comment']
+  end
+
+  def test_student_cannot_edit_own_comment_after_10_minutes
+    project = Project.first
+    user = project.student
+    task_definition = project.unit.task_definitions.first
+
+    add_auth_header_for(user: user)
+    post_json "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", comment: 'Original comment'
+    assert_equal 201, last_response.status
+
+    comment_id = last_response_body['id']
+
+    travel_to 11.minutes.from_now do
+      put_json "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments/#{comment_id}", comment: 'Too late'
+      assert_equal 403, last_response.status, last_response.body
+    end
+
+    assert_equal 'Original comment', TaskComment.find(comment_id).read_attribute(:comment)
+  end
+
+  def test_student_cannot_edit_other_users_comment
+    project = Project.first
+    task_definition = project.unit.task_definitions.first
+    tutor = project.tutor_for(task_definition)
+    user = project.student
+    task = project.task_for_task_definition(task_definition)
+    comment = task.add_text_comment(tutor, 'Tutor comment')
+
+    add_auth_header_for(user: user)
+    put_json "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments/#{comment.id}", comment: 'Edited by student'
+
+    assert_equal 403, last_response.status, last_response.body
+    assert_equal 'Tutor comment', comment.reload.read_attribute(:comment)
   end
 
   def test_student_reply_to_other_student_in_same_group

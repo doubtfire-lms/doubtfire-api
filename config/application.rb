@@ -54,6 +54,9 @@ module Doubtfire
     # Period for which to keep units
     config.unit_archive_after_period = ENV.fetch('DF_UNIT_ARCHIVE_PERIOD', 2).to_f * 1.year
 
+    # Minimum time to wait before notifying a student about an unread failed overseer assessment
+    config.overseer_student_notification_grace_period = ENV.fetch('OVERSEER_STUDENT_NOTIFICATION_GRACE_PERIOD_MINUTES', 30).to_i.minutes
+
     # Limit number of pdf generators to run at once
     config.pdfgen_max_processes = ENV['DF_MAX_PDF_GEN_PROCESSES'] || 2
 
@@ -88,13 +91,35 @@ module Doubtfire
     # directory under root but is overridden using DF_JPLAG_REPORT_DIR environment
     # variable.
     config.jplag_report_dir = ENV['DF_JPLAG_REPORT_DIR'] || Rails.root.join('jplag/results').to_s
+
+    # Tunes the comparison sensitivity by adjusting the minimum token required to be
+    # counted as a matching section. A smaller value increases the sensitivity
+    # but might lead to more false-positives
     config.jplag_min_tokens = ENV.fetch('DF_JPLAG_MIN_TOKENS', -1)
+
+    # Skips the cluster calculation
     config.jplag_skip_cluster_check = ENV['DF_JPLAG_SKIP_CLUSTER_CHECK'].present? && (ENV['DF_JPLAG_SKIP_CLUSTER_CHECK'].to_s.downcase == "true" || ENV['DF_JPLAG_SKIP_CLUSTER_CHECK'].to_i == 1)
+
+    # The maximum number of comparisons that will be shown in the generated report
+    # if set to -1 all comparisons will be shown
+    config.jplag_max_shown_comparisons = ENV.fetch('DF_JPLAG_MAX_SHOWN_COMPARISONS', 2500)
 
     # ==> File size limits
     # Sets the global file size limit per upload requirement
     # Defaults to 10MB (10,000,000 bytes)
     config.max_file_size = ENV.fetch('DF_MAX_FILE_SIZE', 10_000_000)
+
+    # Max files inside an uploaded zip. If denied for "too many files",
+    # remove generated folders (e.g. node_modules/build) or raise this limit.
+    config.zip_entry_limit = ENV.fetch('DF_ZIP_ENTRY_LIMIT', 1_000)
+
+    # Max zip compression ratio. If denied for "compression ratio is too high",
+    # check for repetitive/generated data before raising this zip-bomb guard.
+    config.zip_compression_ratio_limit = ENV.fetch('DF_ZIP_COMPRESSION_RATIO_LIMIT', 100)
+
+    # Max expanded zip size as a multiple of DF_MAX_FILE_SIZE.
+    # Eg. If max file size is 10MB, the uncompressed size can be a maximum of 100MB
+    config.zip_uncompressed_size_multiplier = ENV.fetch('DF_ZIP_UNCOMPRESSED_SIZE_MULTIPLIER', 10)
 
     # Prefer encrypted Rails credentials, while keeping env vars as a safe fallback.
     credentials.secret_key_base = Application.fetch_credential_or_env(:secret_key_base, env_key: 'DF_SECRET_KEY_BASE', default: Rails.env.production? ? nil : '9e010ee2f52af762916406fd2ac488c5694a6cc784777136e657511f8bbc7a73f96d59c0a9a778a0d7cf6406f8ecbf77efe4701dfbd63d8248fc7cc7f32dea97')
@@ -130,6 +155,7 @@ module Doubtfire
     config.institution[:plagiarism] = ENV['DF_INSTITUTION_PLAGIARISM'] if ENV['DF_INSTITUTION_PLAGIARISM']
     # Institution host becomes localhost in development
     config.institution[:host] ||= 'http://localhost:4200' if Rails.env.development?
+
     config.institution[:settings] = ENV['DF_INSTITUTION_SETTINGS_RB'] if ENV['DF_INSTITUTION_SETTINGS_RB']
     config.institution[:ffmpeg] = ENV['DF_FFMPEG_PATH'] || 'ffmpeg'
 
@@ -245,6 +271,7 @@ module Doubtfire
     config.autoload_paths <<
       Rails.root.join('app') <<
       Rails.root.join('app/models/comments') <<
+      Rails.root.join('app/models/communication') <<
       Rails.root.join('app/models/turn_it_in') <<
       Rails.root.join('app/models/similarity') <<
       Rails.root.join('app/models/d2l')
@@ -252,6 +279,7 @@ module Doubtfire
     config.eager_load_paths <<
       Rails.root.join('app') <<
       Rails.root.join('app/models/comments') <<
+      Rails.root.join('app/models/communication') <<
       Rails.root.join('app/models/turn_it_in') <<
       Rails.root.join('app/models/similarity') <<
       Rails.root.join('app/models/d2l')
@@ -282,14 +310,14 @@ module Doubtfire
     config.sm_instance = nil
     config.overseer_enabled = ENV['OVERSEER_ENABLED'].present? && ENV['OVERSEER_ENABLED'].to_s.downcase != "false" && ENV['OVERSEER_ENABLED'].to_i != 0
 
-    if (config.overseer_enabled)
-      config.docker_config = {
-        DOCKER_REGISTRY_URL: ENV.fetch('DOCKER_REGISTRY_URL', nil),
-        DOCKER_PROXY_URL: ENV.fetch('DOCKER_PROXY_URL', nil),
-        DOCKER_TOKEN: ENV.fetch('DOCKER_TOKEN', nil),
-        DOCKER_USER: ENV.fetch('DOCKER_USER', nil)
-      }
+    config.docker_config = {
+      DOCKER_REGISTRY_URL: ENV.fetch('DOCKER_REGISTRY_URL', nil),
+      DOCKER_PROXY_URL: ENV.fetch('DOCKER_PROXY_URL', nil),
+      DOCKER_TOKEN: ENV.fetch('DOCKER_TOKEN', nil),
+      DOCKER_USER: ENV.fetch('DOCKER_USER', nil)
+    }
 
+    if (config.overseer_enabled)
       # Path to a physical directory on the host used for mounting overseer task work directories.
       #
       # Example (macOS development):

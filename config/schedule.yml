@@ -20,6 +20,10 @@ aggregate_task_completion_stats:
   cron: "every day at 11:55pm"
   class: "AggregateTaskCompletionStatsJob"
 
+poll_communication_set_schedules:
+  cron: "every 5 minutes"
+  class: "PollCommunicationSetSchedulesJob"
+
 # archive_old_units:
 #   cron: "every 6 months"
 #   class: "ArchiveOldUnitsJob"

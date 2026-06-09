@@ -26,7 +26,7 @@ class OverseerImageApiTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
     assert_equal expected_data.count, last_response_body.count, last_response_body
 
-    response_keys = %w[name tag pulled_image_text pulled_image_status last_pulled_date]
+    response_keys = %w[name tag pulled_image_text pulled_image_status]
 
     last_response_body.each do |data|
       expected_data = OverseerImage.find(data['id'])

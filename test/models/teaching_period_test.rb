@@ -119,7 +119,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     assert_equal tp.start_date + 3.day + 2.week, tp.date_for_week_and_day(3, 'Thu')
     assert_equal tp.start_date + 4.day + 2.week, tp.date_for_week_and_day(3, 'Fri')
     assert_equal tp.start_date + 5.day, tp.date_for_week_and_day(1, 'Sat')
-    assert_equal tp.start_date - 1.day, tp.date_for_week_and_day(1, 'Sun')
+    assert_equal tp.start_date + 6.days, tp.date_for_week_and_day(1, 'Sun')
   end
 
   test 'can map week and day to date after break' do
@@ -219,5 +219,41 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     assert tp.breaks.count > 0
     tp.destroy
     assert tp.destroyed?
+  end
+
+  test 'communication schedule next run refreshes when breaks change' do
+    travel_to Time.zone.local(2026, 1, 1, 9, 0, 0) do
+      tp = TeachingPeriod.create!(
+        year: 2026,
+        period: 'T1',
+        start_date: Date.parse('2026-02-02'),
+        end_date: Date.parse('2026-05-11'),
+        active_until: Date.parse('2026-05-18')
+      )
+      unit = FactoryBot.create(:unit, teaching_period: tp, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0, campus_count: 0)
+      communication_set = unit.communication_sets.create!(name: 'Weekly check in', active: true)
+      schedule = communication_set.communication_set_schedules.create!(
+        name: 'Week 3 Monday',
+        active: true,
+        anchor_week: 3,
+        anchor_day: 'Monday',
+        hour: 9,
+        minute: 30,
+        timezone: 'UTC',
+        recurrence: 'none',
+        interval: 1
+      )
+
+      assert_equal Time.zone.local(2026, 2, 16, 9, 30, 0), schedule.next_run_at
+
+      teaching_break = tp.add_break(Date.parse('2026-02-09'), 1)
+      assert_equal Time.zone.local(2026, 2, 23, 9, 30, 0), schedule.reload.next_run_at
+
+      tp.update_break(teaching_break.id, Date.parse('2026-02-23'), 1)
+      assert_equal Time.zone.local(2026, 2, 16, 9, 30, 0), schedule.reload.next_run_at
+
+      teaching_break.destroy
+      assert_equal Time.zone.local(2026, 2, 16, 9, 30, 0), schedule.reload.next_run_at
+    end
   end
 end

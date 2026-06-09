@@ -226,6 +226,11 @@ class TaskDefinition < ApplicationRecord
     end
 
     new_td.save!
+    overseer_steps.find_each do |step|
+      new_td.overseer_steps.create!(
+        step.attributes.except('id', 'task_definition_id', 'created_at', 'updated_at')
+      )
+    end
 
     new_td
   end
@@ -335,6 +340,8 @@ class TaskDefinition < ApplicationRecord
         return
       end
 
+      req['type'] = 'zip' if req['type'] == 'archive'
+
       # Check keys only contain key, type, name, tii_check, and tii_pct
       unless req.keys.excluding('key', 'type', 'name', 'tii_check', 'tii_pct').empty?
         errors.add(:upload_requirements, "has additional values for item #{i + 1} --> #{req.keys.join(' ')}.")
@@ -345,8 +352,8 @@ class TaskDefinition < ApplicationRecord
         errors.add(:upload_requirements, "the name for item #{i + 1} does not seem to be a valid filename --> #{req['name']}.")
       end
 
-      # Check the type is either document or image or code
-      unless %w(document image code).include? req['type']
+      # Check the type is either document, image, code, or zip
+      unless %w(document image code zip).include? req['type']
         errors.add(:upload_requirements, "the type for item #{i + 1} is not valid --> #{req['type']}.")
       end
 
@@ -510,7 +517,7 @@ class TaskDefinition < ApplicationRecord
 
   def to_csv_row
     TaskDefinition.csv_columns
-                  .reject { |col| [:start_week, :start_day, :target_week, :target_day, :due_week, :due_day, :upload_requirements, :group_set, :tutorial_stream, :assess_in_portfolio_only, :task_prerequisites, :discussion_prompts].include? col}
+                  .reject { |col| [:start_week, :start_day, :target_week, :target_day, :due_week, :due_day, :upload_requirements, :group_set, :tutorial_stream, :assess_in_portfolio_only, :task_prerequisites, :discussion_prompts, :overseer_steps].include? col}
                   .map { |column| attributes[column.to_s] } +
       [
         group_set.nil? ? "" : group_set.name,
@@ -535,6 +542,30 @@ class TaskDefinition < ApplicationRecord
           content: prompt.content,
           priority: prompt.priority
         }
+        end.to_json,
+        overseer_steps.map do |step|
+          {
+            name: step.name,
+            description: step.description,
+            display_name: step.display_name,
+            display_description: step.display_description,
+            run_command: step.run_command,
+            timeout: step.timeout,
+            sort_order: step.sort_order,
+            step_type: step.step_type,
+            partial_output_diff: step.partial_output_diff,
+            stdin_input_file: step.stdin_input_file,
+            expected_output_file: step.expected_output_file,
+            feedback_message: step.feedback_message,
+            status_on_success: TaskStatus.find_by(id: step.status_on_success_id)&.status_key,
+            status_on_failure: TaskStatus.find_by(id: step.status_on_failure_id)&.status_key,
+            halt_on_success: step.halt_on_success,
+            halt_on_failure: step.halt_on_failure,
+            show_expected_output: step.show_expected_output,
+            show_stdin: step.show_stdin,
+            show_stdout: step.show_stdout,
+            enabled: step.enabled
+          }
         end.to_json
       ]
     # [target_date.strftime('%d-%m-%Y')] +
@@ -545,7 +576,11 @@ class TaskDefinition < ApplicationRecord
     [:name, :abbreviation, :description, :weighting, :target_grade, :restrict_status_updates, :max_quality_pts,
      :is_graded, :plagiarism_warn_pct, :scorm_enabled, :scorm_allow_review, :scorm_bypass_test, :scorm_time_delay_enabled,
      :scorm_attempt_limit, :group_set, :upload_requirements, :start_week, :start_day, :target_week, :target_day,
-     :due_week, :due_day, :tutorial_stream, :assess_in_portfolio_only, :task_prerequisites, :discussion_prompts]
+     :due_week, :due_day, :tutorial_stream, :assess_in_portfolio_only, :task_prerequisites, :discussion_prompts, :overseer_steps]
+  end
+
+  def self.required_csv_columns
+    csv_columns - [:overseer_steps]
   end
 
   def self.task_def_for_csv_row(unit, row)
@@ -611,6 +646,7 @@ class TaskDefinition < ApplicationRecord
     end
 
     import_discussion_prompts_from_csv_row(result, row)
+    import_overseer_steps_from_csv_row(result, row)
 
     result.assess_in_portfolio_only = %w(Yes y Y yes true TRUE 1).include? "#{row[:assess_in_portfolio_only]}".strip
 
@@ -656,6 +692,43 @@ class TaskDefinition < ApplicationRecord
                                  priority: prompt['priority']
                                })
     end
+  end
+
+  def self.import_overseer_steps_from_csv_row(task_definition, row)
+    task_definition.overseer_steps.destroy_all
+    return if row[:overseer_steps].blank?
+
+    JSON.parse(row[:overseer_steps]).each do |step|
+      OverseerStep.create!(
+        task_definition: task_definition,
+        name: step['name'],
+        description: step['description'],
+        display_name: step['display_name'],
+        display_description: step['display_description'],
+        run_command: step['run_command'],
+        timeout: step['timeout'],
+        sort_order: step['sort_order'],
+        step_type: step['step_type'],
+        partial_output_diff: step['partial_output_diff'],
+        stdin_input_file: step['stdin_input_file'],
+        expected_output_file: step['expected_output_file'],
+        feedback_message: step['feedback_message'],
+        status_on_success_id: status_id_from_csv(step['status_on_success']),
+        status_on_failure_id: status_id_from_csv(step['status_on_failure']),
+        halt_on_success: step['halt_on_success'],
+        halt_on_failure: step['halt_on_failure'],
+        show_expected_output: step['show_expected_output'],
+        show_stdin: step['show_stdin'],
+        show_stdout: step['show_stdout'],
+        enabled: step.key?('enabled') ? step['enabled'] : true
+      )
+    end
+  end
+
+  def self.status_id_from_csv(value)
+    return nil if value.blank?
+
+    TaskStatus.status_for_name(value)&.id || TaskStatus.find_by(id: value.to_i)&.id
   end
 
   def is_group_task?
