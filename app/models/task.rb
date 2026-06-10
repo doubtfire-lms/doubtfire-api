@@ -1332,7 +1332,7 @@ class Task < ApplicationRecord
       @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
       @include_pax = !is_retry
       @work_id = FileHelper.sanitized_path(
-        "task-#{Time.current.strftime('%Y%m%d-%H%M')}-#{task.project.student.username}-#{task.task_definition.abbreviation}-#{task.id}-#{Process.pid}"
+        "task-#{Time.current.strftime('%Y%m%d-%H%M')}-#{task.project.student.username}-#{task.task_definition.abbreviation}-#{task.id}-#{Process.pid}#{'-retry' if is_retry}"
       )
       host = Doubtfire::Application.config.institution[:host].to_s
       host = "http://#{host}" unless host.match?(%r{\Ahttps?://})
