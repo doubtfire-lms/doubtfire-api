@@ -516,27 +516,30 @@ class TasksApi < Grape::API
       error!({ error: "This task has already been claimed by another tutor" }, 409)
     end
 
-    inactive_claim = task.overflow_task_claim
-    inactive_claim&.destroy!
+    claimed_at = Time.zone.now
+    original_tutor = task.tutor
 
-    task_claim = OverflowTaskClaim.create!({
-                                             task: task,
-                                             claimed_by_unit_role_id: my_unit_role.id
-                                           })
+    ActiveRecord::Base.transaction do
+      task.overflow_task_claim&.destroy!
 
-    unless task_claim.valid?
-      error!({ error: "Failed to claim task" }, 400)
+      OverflowTaskClaim.create!(
+        task: task,
+        claimed_by_unit_role: my_unit_role
+      )
+
+      OverflowTaskClaimLog.create!(
+        unit: unit,
+        task: task,
+        claimed_by_unit_role: my_unit_role,
+        claimed_by_user: current_user,
+        original_tutor_user: original_tutor,
+        student_user: project.student,
+        days_awaiting_feedback: task.days_awaiting_feedback(claimed_at),
+        claimed_at: claimed_at
+      )
     end
 
-    OverflowTaskClaimLog.create!(
-      task_id: task.id,
-      claimed_by_user_id: current_user.id,
-      original_tutor_user_id: task.tutor&.id,
-      student_user_id: project.student.id,
-      claimed_at: Time.zone.now
-    )
-
-    logger.info "Overflow task claim: {\"user_id\": #{current_user.id},\"task_id\": #{task.id}, \"timestamp\": \"#{Time.zone.now}\", \"original_tutor_user_id\": #{task.tutor ? task.tutor.id : -1}}"
+    logger.info "Overflow task claim: {\"user_id\": #{current_user.id},\"task_id\": #{task.id}, \"timestamp\": \"#{claimed_at}\", \"original_tutor_user_id\": #{original_tutor ? original_tutor.id : -1}}"
 
     true
   end

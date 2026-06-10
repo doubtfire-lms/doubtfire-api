@@ -2538,17 +2538,18 @@ class Unit < ApplicationRecord
     CSV.generate do |csv|
       csv << [
         'Tutor who claimed',
+        'Claiming Unit Role ID',
         'Original Tutor',
         'Student Username',
         'Student ID',
         'Task ID',
         'Task Definition',
+        'Days Awaiting Feedback',
         'Timestamp'
       ]
 
       OverflowTaskClaimLog
-        .joins(:task)
-        .where(tasks: { id: tasks.select(:id) })
+        .where(unit_id: id)
         .includes(:claimed_by_user, :original_tutor_user, :student_user, task: :task_definition)
         .order(:claimed_at)
         .each do |claim|
@@ -2557,12 +2558,14 @@ class Unit < ApplicationRecord
 
           csv << [
             claim.claimed_by_user&.name,
+            claim.claimed_by_unit_role_id,
             claim.original_tutor_user&.name,
             student&.username,
             student&.student_id,
             claim.task_id,
             task&.task_definition&.abbreviation,
-            claim.claimed_at
+            claim.days_awaiting_feedback,
+            claim.claimed_at.iso8601
           ]
         end
     end
