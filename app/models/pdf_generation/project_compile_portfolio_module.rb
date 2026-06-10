@@ -71,7 +71,9 @@ module PdfGeneration
         @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
         @is_retry = is_retry
         @include_pax = !is_retry
-        @work_id = "portfolio-#{project.id}-#{Time.now.to_i}-#{Process.pid}-#{Thread.current.object_id}#{'-retry' if is_retry}"
+        @work_id = FileHelper.sanitized_path(
+          "portfolio-#{Time.current.strftime('%Y%m%d-%H%M')}-#{project.student.username}-#{project.id}-#{Process.pid}#{'-retry' if is_retry}"
+        )
       end
 
       def make_pdf
@@ -113,9 +115,7 @@ module PdfGeneration
 
     # Create the portfolio for this project
     def create_portfolio
-      self.compile_portfolio = false
-      save!
-
+      logger.info "Creating portfolio for #{user.username} in #{unit.code}"
       begin
         pac = ProjectAppController.new
         pac.init(self, false)
@@ -142,8 +142,13 @@ module PdfGeneration
         logger.info "Created portfolio at #{portfolio_path} - #{log_details}"
 
         self.portfolio_production_date = Time.zone.now
-        save
+        self.compile_portfolio = false
+        save!
+        true
       rescue StandardError => e
+        self.compile_portfolio = false
+        save!
+
         logger.error "Failed to convert portfolio to PDF - #{log_details} -\nError: #{e.message}"
 
         log_file = e.message.scan(%r{/.*\.log}).first
