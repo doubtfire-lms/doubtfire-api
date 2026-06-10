@@ -71,7 +71,9 @@ module PdfGeneration
         @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
         @is_retry = is_retry
         @include_pax = !is_retry
-        @work_id = "portfolio-#{project.id}-#{Time.now.to_i}-#{Process.pid}-#{Thread.current.object_id}#{'-retry' if is_retry}"
+        @work_id = FileHelper.sanitized_path(
+          "portfolio-#{Time.current.strftime('%Y%m%d-%H%M')}-#{project.student.username}-#{project.id}-#{Process.pid}"
+        )
       end
 
       def make_pdf
