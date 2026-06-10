@@ -7,7 +7,6 @@ require 'yaml'
 require 'bunny-pub-sub/services_manager'
 require_relative '../app/middleware/request_smuggling_protection'
 
-
 # Precompile assets before deploying to production
 if defined?(Bundler)
   Bundler.require(*Rails.groups(assets: %w(development test)))

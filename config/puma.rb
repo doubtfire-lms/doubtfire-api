@@ -44,7 +44,7 @@ raise_exception_on_sigterm
 
 # SECURITY FIX: Reject malformed/early-hint requests
 # Forces Puma 6.x strict HTTP parsing mode
-lowlevel_error_handler do |err, env, status|
+lowlevel_error_handler do |_err, _env, _status|
   [400, { "Content-Type" => "text/plain" }, ["Bad Request"]]
 end
 
