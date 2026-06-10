@@ -351,7 +351,7 @@ module FileHelper
   def compress_image_to_dest(source, dest, delete_frames = false)
     exec = "convert -quiet \
             \"#{source}\" \
-            #{delete_frames ? '-delete 1--1' : ''} -strip -density 72 -quality 85% -resize 2048x2048\\> -resize 48x48\\< \
+            #{delete_frames ? '-delete 1--1' : ''} -auto-orient -strip -density 72 -quality 85% -resize 2048x2048\\> -resize 48x48\\< \
             \"#{dest}\" >>/dev/null 2>>/dev/null"
 
     system_try_within 40, 'compressing image using convert', exec
