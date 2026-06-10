@@ -16,6 +16,7 @@ class CreateEngagements < ActiveRecord::Migration[8.0]
     create_table :engagement_comments do |t|
       t.references :engagement, null: false, index: true
       t.references :user, null: false, index: true
+      t.references :reply_to, null: true, index: true
       t.text :comment, null: false
 
       t.timestamps
@@ -23,5 +24,4 @@ class CreateEngagements < ActiveRecord::Migration[8.0]
 
     add_index :engagements, [:project_id, :occurred_at]
   end
-
 end

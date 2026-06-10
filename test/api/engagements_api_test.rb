@@ -138,6 +138,103 @@ class EngagementsApiTest < ActiveSupport::TestCase
     )
   end
 
+  def test_comment_can_reply_to_comment_in_same_engagement
+    engagement = create_engagement
+
+    add_auth_header_for(user: @student)
+    post_json(
+      "/api/projects/#{@project.id}/engagements/#{engagement.id}/comments",
+      { comment: 'Original comment.' }
+    )
+    assert_equal 201, last_response.status
+    original_comment_id = last_response_body['id']
+
+    add_auth_header_for(user: @tutor)
+    post_json(
+      "/api/projects/#{@project.id}/engagements/#{engagement.id}/comments",
+      { comment: 'Reply comment.', reply_to_id: original_comment_id }
+    )
+    assert_equal 201, last_response.status
+    assert_equal original_comment_id, last_response_body['reply_to_id']
+
+    get "/api/projects/#{@project.id}/engagements/#{engagement.id}"
+    assert_equal original_comment_id, last_response_body['comments'].last['reply_to_id']
+  end
+
+  def test_comment_cannot_reply_to_comment_in_another_engagement
+    engagement = create_engagement
+    other_engagement = create_engagement(overrides: { note: 'Another engagement.' })
+    original_comment = engagement.engagement_comments.create!(
+      user: @student,
+      comment: 'Comment on the first engagement.'
+    )
+
+    add_auth_header_for(user: @tutor)
+    post_json(
+      "/api/projects/#{@project.id}/engagements/#{other_engagement.id}/comments",
+      { comment: 'Invalid reply.', reply_to_id: original_comment.id }
+    )
+    assert_equal 404, last_response.status
+  end
+
+  def test_comment_author_can_edit_within_ten_minutes
+    engagement = create_engagement
+    comment = engagement.engagement_comments.create!(user: @student, comment: 'Original comment.')
+
+    add_auth_header_for(user: @student)
+    put_json(
+      "/api/projects/#{@project.id}/engagements/#{engagement.id}/comments/#{comment.id}",
+      { comment: 'Updated comment.' }
+    )
+
+    assert_equal 200, last_response.status
+    assert_equal 'Updated comment.', comment.reload.comment
+  end
+
+  def test_comment_cannot_be_edited_after_ten_minutes_or_by_another_user
+    engagement = create_engagement
+    comment = engagement.engagement_comments.create!(user: @student, comment: 'Original comment.')
+
+    add_auth_header_for(user: @tutor)
+    put_json(
+      "/api/projects/#{@project.id}/engagements/#{engagement.id}/comments/#{comment.id}",
+      { comment: 'Tutor edit.' }
+    )
+    assert_equal 403, last_response.status
+
+    comment.update_column(:created_at, 11.minutes.ago)
+    add_auth_header_for(user: @student)
+    put_json(
+      "/api/projects/#{@project.id}/engagements/#{engagement.id}/comments/#{comment.id}",
+      { comment: 'Late edit.' }
+    )
+    assert_equal 403, last_response.status
+    assert_equal 'Original comment.', comment.reload.comment
+  end
+
+  def test_comment_author_and_convenor_can_delete
+    engagement = create_engagement
+    student_comment = engagement.engagement_comments.create!(
+      user: @student,
+      comment: 'Student comment.'
+    )
+
+    add_auth_header_for(user: @tutor)
+    delete "/api/projects/#{@project.id}/engagements/#{engagement.id}/comments/#{student_comment.id}"
+    assert_equal 403, last_response.status
+
+    add_auth_header_for(user: @student)
+    delete "/api/projects/#{@project.id}/engagements/#{engagement.id}/comments/#{student_comment.id}"
+    assert_equal 200, last_response.status
+    assert_not EngagementComment.exists?(student_comment.id)
+
+    tutor_comment = engagement.engagement_comments.create!(user: @tutor, comment: 'Tutor comment.')
+    add_auth_header_for(user: @convenor)
+    delete "/api/projects/#{@project.id}/engagements/#{engagement.id}/comments/#{tutor_comment.id}"
+    assert_equal 200, last_response.status
+    assert_not EngagementComment.exists?(tutor_comment.id)
+  end
+
   def test_rejects_file_and_url_together
     add_auth_header_for(user: @tutor)
     data = engagement_params(

@@ -188,10 +188,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_09_063614) do
   create_table "engagement_comments", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.bigint "engagement_id", null: false
     t.bigint "user_id", null: false
+    t.bigint "reply_to_id"
     t.text "comment", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["engagement_id"], name: "index_engagement_comments_on_engagement_id"
+    t.index ["reply_to_id"], name: "index_engagement_comments_on_reply_to_id"
     t.index ["user_id"], name: "index_engagement_comments_on_user_id"
   end
 

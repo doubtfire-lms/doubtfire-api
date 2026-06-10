@@ -171,13 +171,53 @@ class EngagementsApi < Grape::API
   desc 'Add a comment to an engagement'
   params do
     requires :comment, type: String
+    optional :reply_to_id, type: Integer
   end
   post '/projects/:project_id/engagements/:id/comments' do
     project = Project.find(params[:project_id])
     error!({ error: 'You do not have permission to comment on this engagement.' }, 403) unless authorise?(current_user, project, :comment_engagement)
 
     engagement = engagement_for(project)
-    comment = engagement.engagement_comments.create!(user: current_user, comment: params[:comment])
+    reply_to = engagement.engagement_comments.find(params[:reply_to_id]) if params[:reply_to_id].present?
+    comment = engagement.engagement_comments.create!(
+      user: current_user,
+      comment: params[:comment],
+      reply_to: reply_to
+    )
     present comment, with: Entities::EngagementCommentEntity
+  end
+
+  desc 'Update an engagement comment'
+  params do
+    requires :comment, type: String
+  end
+  put '/projects/:project_id/engagements/:id/comments/:comment_id' do
+    project = Project.find(params[:project_id])
+    error!({ error: 'You do not have permission to comment on this engagement.' }, 403) unless authorise?(current_user, project, :comment_engagement)
+
+    engagement = engagement_for(project)
+    comment = engagement.engagement_comments.find(params[:comment_id])
+    error!({ error: 'You can only edit your own comments.' }, 403) unless comment.user_id == current_user.id
+    if comment.created_at < 10.minutes.ago
+      error!({ error: 'Comments can only be edited within 10 minutes of being created.' }, 403)
+    end
+
+    comment.update!(comment: params[:comment])
+    present comment, with: Entities::EngagementCommentEntity
+  end
+
+  desc 'Delete an engagement comment'
+  delete '/projects/:project_id/engagements/:id/comments/:comment_id' do
+    project = Project.find(params[:project_id])
+    engagement = engagement_for(project)
+    comment = engagement.engagement_comments.find(params[:comment_id])
+
+    can_delete_own = comment.user_id == current_user.id &&
+                     authorise?(current_user, project, :comment_engagement)
+    can_delete_any = authorise?(current_user, project.unit, :delete_engagement)
+    error!({ error: 'You do not have permission to delete this comment.' }, 403) unless can_delete_own || can_delete_any
+
+    comment.destroy!
+    present comment.destroyed?, with: Grape::Presenters::Presenter
   end
 end

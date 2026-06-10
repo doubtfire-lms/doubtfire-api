@@ -71,6 +71,20 @@ class EngagementTest < ActiveSupport::TestCase
     assert_nil Engagement.find_by(id: engagement.id)
   end
 
+  def test_comment_reply_must_belong_to_same_engagement
+    engagement = FactoryBot.create(:engagement)
+    other_engagement = FactoryBot.create(:engagement)
+    original_comment = FactoryBot.create(:engagement_comment, engagement: engagement)
+    reply = FactoryBot.build(
+      :engagement_comment,
+      engagement: other_engagement,
+      reply_to: original_comment
+    )
+
+    assert_not reply.valid?
+    assert_includes reply.errors[:reply_to], 'must belong to the same engagement'
+  end
+
   def test_author_cannot_be_deleted_while_engagement_exists
     engagement = FactoryBot.create(:engagement)
 
