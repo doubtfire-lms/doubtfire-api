@@ -1007,13 +1007,14 @@ class CsvTest < ActiveSupport::TestCase
       task_definition.update!(abbreviation: 'T1')
 
       task = project.task_for_task_definition(task_definition)
+      claimed_at = Time.zone.parse('2026-04-01 10:30:00 UTC')
       create(
         :overflow_task_claim_log,
         task_id: task.id,
         claimed_by_user_id: tutor_user.id,
         original_tutor_user_id: tutor_user.id,
         student_user_id: student.id,
-        claimed_at: Time.zone.parse('2026-04-01 10:30:00 UTC')
+        claimed_at: claimed_at
       )
 
       add_auth_header_for(user: convenor)
@@ -1031,7 +1032,7 @@ class CsvTest < ActiveSupport::TestCase
       assert_equal 's1234567', rows[0]['Student ID']
       assert_equal task.id.to_s, rows[0]['Task ID']
       assert_equal 'T1', rows[0]['Task Definition']
-      assert_equal '2026-04-01T10:30:00Z', rows[0]['Timestamp']
+      assert_equal claimed_at, Time.zone.parse(rows[0]['Timestamp'])
       Sidekiq::Testing.fake!
     end
   end
