@@ -914,7 +914,10 @@ class TasksApiTest < ActiveSupport::TestCase
         target_grade: 0,
         outcome_count: 0
       )
-      td.update!(due_date: Time.zone.today + 1.week)
+      td.update!(
+        target_date: Time.zone.today + 1.week,
+        due_date: Time.zone.today + 1.week
+      )
 
       student1 = FactoryBot.create(:user, :student)
       student2 = FactoryBot.create(:user, :student)
@@ -966,9 +969,9 @@ class TasksApiTest < ActiveSupport::TestCase
       task1.reload
       assert task2.submission_date > task1.submission_date
       assert_equal original_submission_date, task1.submission_date
-      assert TaskStatus.ready_for_feedback, task1.task_status
+      assert_equal TaskStatus.ready_for_feedback, task1.task_status
 
-      # Submit the task again after the duedate, ensure the submission_date hasn't changed (student1)
+      # Submit the task again later, ensure the submission_date hasn't changed (student1)
       travel 2.days
 
       task1.submit(student1)
@@ -981,7 +984,7 @@ class TasksApiTest < ActiveSupport::TestCase
       task1.reload
       assert task2.submission_date > task1.submission_date
       assert_equal original_submission_date, task1.submission_date
-      assert TaskStatus.ready_for_feedback, task1.task_status
+      assert_equal TaskStatus.ready_for_feedback, task1.task_status
 
       task1.update(task_status_id: TaskStatus.fix_and_resubmit.id)
 
@@ -990,7 +993,7 @@ class TasksApiTest < ActiveSupport::TestCase
 
       task1.submit(student1)
       task1.reload
-      assert TaskStatus.ready_for_feedback, task1.task_status
+      assert_equal TaskStatus.ready_for_feedback, task1.task_status
 
       tasks = unit.tasks_for_task_inbox(tutor, false)
 
