@@ -33,6 +33,7 @@ class Project < ApplicationRecord
   has_many :session_activities,  dependent: :destroy
 
   has_many :staff_notes, dependent: :destroy
+  has_many :engagements, dependent: :destroy, inverse_of: :project
 
   # Callbacks - methods called are private
   before_destroy :can_destroy?
@@ -59,7 +60,9 @@ class Project < ApplicationRecord
       :make_submission,
       :get_submission,
       :change,
-      :reprocess_submission
+      :reprocess_submission,
+      :get_engagements,
+      :comment_engagement
     ]
     # What can tutors do with projects?
     tutor_role_permissions = [
@@ -74,7 +77,11 @@ class Project < ApplicationRecord
       :get_staff_note,
       :create_staff_note,
       :reprocess_submission,
-      :get_discussion_prompt
+      :get_discussion_prompt,
+      :get_engagements,
+      :create_engagement,
+      :edit_engagement,
+      :comment_engagement
     ]
 
     # What can admins do with projects?
@@ -82,7 +89,8 @@ class Project < ApplicationRecord
       :get,
       :get_submission,
       :reprocess_submission,
-      :get_discussion_prompt
+      :get_discussion_prompt,
+      :get_engagements
     ]
 
     # What can auditors do with projects?
@@ -91,7 +99,8 @@ class Project < ApplicationRecord
       :get_submission,
       :get_staff_note,
       :reprocess_submission,
-      :get_discussion_prompt
+      :get_discussion_prompt,
+      :get_engagements
     ]
 
     # What can nil users do with projects?

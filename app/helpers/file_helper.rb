@@ -334,6 +334,12 @@ module FileHelper
     "#{File.join(student_work_dir(:comment, task_comment.task), "#{task_comment.id.to_s}#{attachment_extension}")}"
   end
 
+  def engagement_attachment_path(engagement, attachment_extension)
+    dir = File.join(project_work_root(engagement.project), 'engagement')
+    FileUtils.mkdir_p(dir)
+    File.join(dir, "#{engagement.id}#{attachment_extension}")
+  end
+
   def comment_prompt_path(task_comment, attachment_extension, count)
     "#{File.join(student_work_dir(:discussion, task_comment.task), "#{task_comment.id.to_s}_#{count.to_s}#{attachment_extension}")}"
   end
@@ -998,6 +1004,7 @@ module FileHelper
   module_function :student_portfolio_dir
   module_function :student_portfolio_path
   module_function :comment_attachment_path
+  module_function :engagement_attachment_path
   module_function :comment_prompt_path
   module_function :comment_reply_prompt_path
   module_function :compress_image_to_dest
