@@ -1,6 +1,9 @@
 class Break < ApplicationRecord
   belongs_to :teaching_period, optional: false
 
+  after_save :refresh_teaching_period_communication_schedule_caches
+  after_destroy :refresh_teaching_period_communication_schedule_caches
+
   validates :start_date, presence: true
   validates :number_of_weeks, presence: true
   validates :teaching_period_id, presence: true
@@ -45,5 +48,11 @@ class Break < ApplicationRecord
 
   def end_date
     start_date + duration
+  end
+
+  private
+
+  def refresh_teaching_period_communication_schedule_caches
+    teaching_period.refresh_communication_schedule_caches
   end
 end

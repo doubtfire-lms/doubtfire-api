@@ -67,7 +67,8 @@ class Unit < ApplicationRecord
       :get_tutor_times_summary,
       :get_marking_sessions,
       :upload_grades_csv,
-      :get_staff_notes
+      :get_staff_notes,
+      :mannage_communications
     ]
 
     # What can admin do with units?
@@ -146,6 +147,7 @@ class Unit < ApplicationRecord
   after_update :move_files_on_code_change, if: :saved_change_to_code?
   after_update :propogate_date_changes_to_tasks, if: :saved_change_to_start_date?
   after_update :update_overdue_tasks_aip, if: :saved_change_to_mark_late_submissions_as_assess_in_portfolio?
+  after_update :refresh_communication_schedule_caches, if: :saved_change_to_communication_schedule_inputs?
 
   # Model associations.
   # When a Unit is destroyed, any TaskDefinitions, Tutorials, and ProjectConvenor instances will also be destroyed.
@@ -157,6 +159,9 @@ class Unit < ApplicationRecord
   has_many :unit_roles, dependent: :destroy, inverse_of: :unit
   has_many :learning_outcomes, as: :context, dependent: :destroy # inverse_of: :unit
   has_many :marking_sessions, dependent: :destroy
+  has_many :communication_sets, class_name: 'CommunicationSet', dependent: :destroy
+  has_many :communication_rules, through: :communication_sets, class_name: 'CommunicationRule'
+  has_many :communication_set_schedules, through: :communication_sets, class_name: 'CommunicationSetSchedule'
 
   has_many :comments, through: :projects
   has_many :tasks, through: :projects
@@ -236,6 +241,14 @@ class Unit < ApplicationRecord
 
   def active_projects
     projects.where(enrolled: true)
+  end
+
+  def refresh_communication_schedule_caches
+    communication_set_schedules.find_each(&:refresh_next_run_at!)
+  end
+
+  def saved_change_to_communication_schedule_inputs?
+    saved_change_to_active? || saved_change_to_start_date? || saved_change_to_end_date?
   end
 
   def ordered_task_definitions
@@ -433,6 +446,10 @@ class Unit < ApplicationRecord
           LearningOutcomeLink.create!(source_id: new_outcome.id, target_id: new_target.id)
         end
       end
+    end
+
+    communication_sets.each do |communication_set|
+      communication_set.copy_to(new_unit)
     end
 
     # Now duplicate all feedback chips
@@ -1550,15 +1567,19 @@ class Unit < ApplicationRecord
 
       start_day_num = start_date.wday
 
-      start_date + week.weeks + (day_num - start_day_num).days
+      start_date + (week - 1).weeks + (day_num - start_day_num).days
     end
   end
 
   def week_number(date)
+    return nil if date.nil? || start_date.nil?
+
     if teaching_period.present?
       teaching_period.week_number(date)
     else
-      ((date - start_date) / 1.week).floor + 1
+      target_date = date.to_date
+      unit_start_date = start_date.to_date
+      ((target_date - unit_start_date).to_i / 7).floor + 1
     end
   end
 

@@ -47,6 +47,7 @@ class ApiRoot < Grape::API
       message = "Sorry... something went wrong with your request."
       status = 500
     end
+    Sentry.capture_exception(e)
     Rack::Response.new({ error: message }.to_json, status, { 'Content-type' => 'text/error' })
   end
 
@@ -79,6 +80,7 @@ class ApiRoot < Grape::API
   mount SidekiqApi
   mount LtiApi if Doubtfire::Application.config.lti_enabled
   mount TaskPrerequisitesApi
+  mount CommunicationRulesApi
 
   mount Tii::TurnItInApi
   mount Tii::TurnItInHooksApi
@@ -134,6 +136,7 @@ class ApiRoot < Grape::API
   AuthenticationHelpers.add_auth_to SidekiqApi
   AuthenticationHelpers.add_auth_to LtiApi if Doubtfire::Application.config.lti_enabled
   AuthenticationHelpers.add_auth_to TaskPrerequisitesApi
+  AuthenticationHelpers.add_auth_to CommunicationRulesApi
 
   AuthenticationHelpers.add_auth_to Tii::TurnItInApi
   AuthenticationHelpers.add_auth_to Tii::TiiGroupAttachmentApi
@@ -159,7 +162,7 @@ class ApiRoot < Grape::API
 
   add_swagger_documentation \
     base_path: nil,
-    doc_version: 'v10.0.0',
+    doc_version: 'v11.0.0',
     hide_documentation_path: true,
     info: {
       title: 'Doubtfire API Documentation',

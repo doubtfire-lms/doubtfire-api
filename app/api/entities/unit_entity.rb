@@ -34,6 +34,10 @@ module Entities
       expose :portfolio_auto_generation_date, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }, expose_nil: false
     end
 
+    expose :current_unit_week do |unit|
+      unit.week_number(Time.current)
+    end
+
     expose :active
 
     expose :overseer_image_id, unless: :summary_only, if: lambda { |unit, options| can_read_unit_config?(options[:my_role]) }
