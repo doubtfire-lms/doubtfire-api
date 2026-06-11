@@ -1,6 +1,7 @@
 # rubocop:disable Rails/Output
 class OverseerAssessment < ApplicationRecord
   belongs_to :task, optional: false
+  belongs_to :submission_history, optional: false
 
   has_one :project, through: :task
   has_many :assessment_comments, as: :commentable, dependent: :destroy
@@ -11,12 +12,16 @@ class OverseerAssessment < ApplicationRecord
   validates :submission_timestamp,    presence: true
 
   validates :submission_timestamp, uniqueness: { scope: :task_id }
+  validates :submission_history_id, uniqueness: true
+  validate :submission_history_matches_task
 
   enum :status, { pre_queued: 0, passed: 1, failed: 2 }
 
-  after_destroy :delete_associated_files
+  def submission_history_matches_task
+    return if submission_history.nil? || task.nil? || submission_history.task_id == task_id
 
-
+    errors.add(:submission_history, 'must belong to the same task')
+  end
 
   def self.student_notification_grace_period
     Doubtfire::Application.config.overseer_student_notification_grace_period
@@ -72,13 +77,14 @@ class OverseerAssessment < ApplicationRecord
   # TODO: we might not have an overseerStepResult because a new test was added later
 
   # Creates an OverseerAssessment object for a new submission
-  def self.create_for(task, test_submission)
+  def self.create_for(submission_history, test_submission)
     # Create only if:
     # unit's assessment is enabled &&
     # task's assessment is enabled &&
     # task definition has an assessment resources zip file &&
     # task has a student submission
 
+    task = submission_history.task
     task_definition = task.task_definition
     unit = task_definition.unit
 
@@ -92,51 +98,18 @@ class OverseerAssessment < ApplicationRecord
 
     return nil if docker_image_name_tag.nil? || docker_image_name_tag.strip.empty?
 
-    result = OverseerAssessment.create!(
+    OverseerAssessment.create!(
       task: task,
+      submission_history: submission_history,
       status: :pre_queued,
-      submission_timestamp: Time.now.utc.to_i
+      submission_timestamp: submission_history.submission_timestamp
     )
-
-    # Create the submission folder and give access
-    FileUtils.mkdir_p result.output_path
-    result.grant_access_to_submission
-
-    result.copy_latest_files_to_submission
-
-    result
   end
 
-  def has_submission_files?
-    File.exist? submission_zip_file_name
-  end
-
-  def submission_zip_file_name
-    "#{output_path}/submission.zip"
-  end
-
-  def grant_access_to_submission
-    # TODO: Use FACL instead in future.
-    `chmod o+w #{output_path}`
-  end
-
-  def copy_latest_files_to_submission
-    zip_file_path = submission_zip_file_name
-
-    if task.has_new_files?
-      puts "Copying new files to submission at: #{zip_file_path}"
-      # Generate a zip file for this particular submission with timestamp value and put it here
-      task.compress_new_to_done zip_file_path: zip_file_path, rm_task_dir: false, rename_files: true
-    else
-      puts "Copying done file to submission at: #{zip_file_path}"
-      task.copy_done_to zip_file_path
-    end
-  end
-
-  # Path to where the submission and output are stored - includes the submission when it is to be processed
-  def output_path
-    FileHelper.task_submission_identifier_path_with_timestamp(:done, task, submission_timestamp)
-  end
+  delegate :has_submission_files?,
+           :submission_zip_file_name,
+           :output_path,
+           to: :submission_history
 
   def latest_assessment_comment
     assessment_comments.order(created_at: :desc, id: :desc).first
@@ -313,10 +286,6 @@ class OverseerAssessment < ApplicationRecord
     puts ERROR: e
   ensure
     self.save!
-  end
-
-  def delete_associated_files
-    FileUtils.rm_rf output_path
   end
 
   def base64?(value)
