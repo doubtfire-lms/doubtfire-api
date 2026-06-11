@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-9](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-8...v11.0.0-9) (2026-06-11)
+
+
+### Features
+
+* expose route to fetch tasks waiting for pdf gen ([5d3407e](https://github.com/b0ink/doubtfire-deploy/commit/5d3407e2c897fa05f6e5c6ee41d8e0379fb6a367))
+* overflow task claim logs ([#614](https://github.com/b0ink/doubtfire-deploy/issues/614)) ([065180f](https://github.com/b0ink/doubtfire-deploy/commit/065180f248db7e80dd86f0491822e2051a9fa220))
+
+
+### Bug Fixes
+
+* ensure more reliable test ([93599d2](https://github.com/b0ink/doubtfire-deploy/commit/93599d27d736ebfaf7b997dfd82d764a45195881))
+
 ## [11.0.0-8](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-7...v11.0.0-8) (2026-06-09)
 
 
