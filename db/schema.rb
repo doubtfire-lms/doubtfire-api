@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_06_10_065531) do
+ActiveRecord::Schema[8.0].define(version: 2026_06_11_040024) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -183,6 +183,34 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_10_065531) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["task_definition_id"], name: "index_discussion_prompts_on_task_definition_id"
+  end
+
+  create_table "engagement_comments", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "engagement_id", null: false
+    t.bigint "user_id", null: false
+    t.bigint "reply_to_id"
+    t.text "comment", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["engagement_id"], name: "index_engagement_comments_on_engagement_id"
+    t.index ["reply_to_id"], name: "index_engagement_comments_on_reply_to_id"
+    t.index ["user_id"], name: "index_engagement_comments_on_user_id"
+  end
+
+  create_table "engagements", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "project_id", null: false
+    t.bigint "user_id", null: false
+    t.string "engagement_type", null: false
+    t.text "note", null: false
+    t.datetime "occurred_at", null: false
+    t.text "evidence_url"
+    t.string "content_type"
+    t.string "attachment_extension"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id", "occurred_at"], name: "index_engagements_on_project_id_and_occurred_at"
+    t.index ["project_id"], name: "index_engagements_on_project_id"
+    t.index ["user_id"], name: "index_engagements_on_user_id"
   end
 
   create_table "feedback_chips", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
