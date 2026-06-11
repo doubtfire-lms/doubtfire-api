@@ -1037,7 +1037,7 @@ class CsvTest < ActiveSupport::TestCase
       assert_equal task.id.to_s, rows[0]['Task ID']
       assert_equal 'T1', rows[0]['Task Definition']
       assert_equal '12', rows[0]['Days Awaiting Feedback']
-      assert_equal claimed_at.iso8601, rows[0]['Timestamp']
+      assert_equal claimed_at.to_s, rows[0]['Timestamp']
       assert_equal claimed_at, Time.zone.parse(rows[0]['Timestamp'])
       Sidekiq::Testing.fake!
     end
