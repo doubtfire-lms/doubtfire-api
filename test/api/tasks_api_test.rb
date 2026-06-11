@@ -1070,7 +1070,16 @@ class TasksApiTest < ActiveSupport::TestCase
 
   def test_claim_overflow_task_creates_analytics_log
     travel_to Time.zone.parse('2026-04-15 10:30:00 UTC') do
-      unit = create(:unit, student_count: 1, task_count: 1, stream_count: 0, tutorials: 1)
+      unit = create(
+        :unit,
+        student_count: 1,
+        unenrolled_student_count: 0,
+        part_enrolled_student_count: 0,
+        inactive_student_count: 0,
+        task_count: 1,
+        stream_count: 0,
+        tutorials: 1
+      )
       original_tutor = create(:user, :tutor)
       original_tutor_role = unit.employ_staff(original_tutor, Role.tutor)
       unit.tutorials.first.update!(unit_role: original_tutor_role)
