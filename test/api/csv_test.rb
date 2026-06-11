@@ -989,6 +989,60 @@ class CsvTest < ActiveSupport::TestCase
     end
   end
 
+  # GET /api/csv/units/{id}/overflow_task_claims
+  def test_download_csv_overflow_task_claims
+    Sidekiq::Testing.inline! do
+      unit = create(:unit, student_count: 1, task_count: 1, stream_count: 0, tutorials: 1)
+      convenor = unit.main_convenor.user
+      tutor_user = create(:user, :tutor, first_name: 'ATutor', last_name: 'Tutor')
+      tutor_role = unit.employ_staff(tutor_user, Role.tutor)
+      tutorial = unit.tutorials.first
+      tutorial.update!(unit_role: tutor_role)
+
+      project = unit.active_projects.first
+      student = project.student
+      student.update!(username: 'student-one', student_id: 's1234567')
+
+      task_definition = unit.task_definitions.first
+      task_definition.update!(abbreviation: 'T1')
+
+      task = project.task_for_task_definition(task_definition)
+      claimed_at = Time.zone.parse('2026-04-01 10:30:00 UTC')
+      create(
+        :overflow_task_claim_log,
+        unit_id: unit.id,
+        task_id: task.id,
+        claimed_by_unit_role_id: tutor_role.id,
+        claimed_by_user_id: tutor_user.id,
+        original_tutor_user_id: tutor_user.id,
+        student_user_id: student.id,
+        days_awaiting_feedback: 12,
+        claimed_at: claimed_at
+      )
+
+      add_auth_header_for(user: convenor)
+
+      get "/api/csv/units/#{unit.id}/overflow_task_claims"
+
+      assert_equal 200, last_response.status
+      assert_equal unit.overflow_task_claims_csv, last_response_body['result']
+
+      rows = CSV.parse(last_response_body['result'], headers: true)
+      assert_equal 1, rows.length
+      assert_equal 'ATutor Tutor', rows[0]['Tutor who claimed']
+      assert_equal tutor_role.id.to_s, rows[0]['Claiming Unit Role ID']
+      assert_equal 'ATutor Tutor', rows[0]['Original Tutor']
+      assert_equal 'student-one', rows[0]['Student Username']
+      assert_equal 's1234567', rows[0]['Student ID']
+      assert_equal task.id.to_s, rows[0]['Task ID']
+      assert_equal 'T1', rows[0]['Task Definition']
+      assert_equal '12', rows[0]['Days Awaiting Feedback']
+      assert_equal claimed_at.to_s, rows[0]['Timestamp']
+      assert_equal claimed_at, Time.zone.parse(rows[0]['Timestamp'])
+      Sidekiq::Testing.fake!
+    end
+  end
+
   #47: Testing for unit ID error with empty user ID
   #GET /api/csv/units/{id}/tutor_assessments
   def test_download_csv_stats_tutor_assessed_with_empty_unit_id

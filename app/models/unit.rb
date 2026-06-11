@@ -2534,6 +2534,43 @@ class Unit < ApplicationRecord
     end
   end
 
+  def overflow_task_claims_csv
+    CSV.generate do |csv|
+      csv << [
+        'Tutor who claimed',
+        'Claiming Unit Role ID',
+        'Original Tutor',
+        'Student Username',
+        'Student ID',
+        'Task ID',
+        'Task Definition',
+        'Days Awaiting Feedback',
+        'Timestamp'
+      ]
+
+      OverflowTaskClaimLog
+        .where(unit_id: id)
+        .includes(:claimed_by_user, :original_tutor_user, :student_user, task: :task_definition)
+        .order(:claimed_at)
+        .each do |claim|
+          task = claim.task
+          student = claim.student_user
+
+          csv << [
+            claim.claimed_by_user&.name,
+            claim.claimed_by_unit_role_id,
+            claim.original_tutor_user&.name,
+            student&.username,
+            student&.student_id,
+            claim.task_id,
+            task&.task_definition&.abbreviation,
+            claim.days_awaiting_feedback,
+            claim.claimed_at,
+          ]
+        end
+    end
+  end
+
   #----------------------------------------------------------------------------
   # Task updates from offline download/upload
   #----------------------------------------------------------------------------
