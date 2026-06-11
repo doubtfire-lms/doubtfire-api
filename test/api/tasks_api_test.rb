@@ -1068,4 +1068,51 @@ class TasksApiTest < ActiveSupport::TestCase
     unit.update!(allow_flexible_dates: false)
   end
 
+  def test_claim_overflow_task_creates_analytics_log
+    travel_to Time.zone.parse('2026-04-15 10:30:00 UTC') do
+      unit = create(
+        :unit,
+        student_count: 1,
+        unenrolled_student_count: 0,
+        part_enrolled_student_count: 0,
+        inactive_student_count: 0,
+        task_count: 1,
+        stream_count: 0,
+        tutorials: 1
+      )
+      original_tutor = create(:user, :tutor)
+      original_tutor_role = unit.employ_staff(original_tutor, Role.tutor)
+      unit.tutorials.first.update!(unit_role: original_tutor_role)
+
+      claiming_tutor = create(:user, :tutor)
+      claiming_role = unit.employ_staff(claiming_tutor, Role.tutor)
+      claiming_role.update!(can_mark_overflow_tasks: true)
+
+      project = unit.active_projects.first
+      task_definition = unit.task_definitions.first
+      task = project.task_for_task_definition(task_definition)
+      task.update!(submission_date: 12.days.ago)
+
+      add_auth_header_for(user: claiming_tutor)
+
+      assert_difference('OverflowTaskClaim.count', 1) do
+        assert_difference('OverflowTaskClaimLog.count', 1) do
+          post "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/claim_overflow_task"
+        end
+      end
+
+      assert_equal 201, last_response.status
+
+      claim_log = OverflowTaskClaimLog.order(:id).last
+      assert_equal unit, claim_log.unit
+      assert_equal task, claim_log.task
+      assert_equal claiming_role, claim_log.claimed_by_unit_role
+      assert_equal claiming_tutor, claim_log.claimed_by_user
+      assert_equal original_tutor, claim_log.original_tutor_user
+      assert_equal project.student, claim_log.student_user
+      assert_equal 12, claim_log.days_awaiting_feedback
+      assert_equal Time.zone.now, claim_log.claimed_at
+    end
+  end
+
 end

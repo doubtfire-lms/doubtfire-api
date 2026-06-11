@@ -215,4 +215,17 @@ class ProjectsApi < Grape::API
     present portfolio_tasks.map(&:id)
   end
 
+  desc 'Get IDs of tasks that are still processing a PDF '
+  get '/projects/:id/tasks_processing' do
+    project = Project.find(params[:id])
+
+    unless authorise? current_user, project, :get
+      error!({ error: "Couldn't find Project with id=#{params[:id]}" }, 403)
+    end
+
+    portfolio_tasks = project.tasks_processing_pdf
+
+    present portfolio_tasks.map(&:id)
+  end
+
 end

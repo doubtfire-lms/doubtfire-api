@@ -340,6 +340,26 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_09_063614) do
     t.index ["task_id"], name: "index_moderated_tasks_on_task_id"
   end
 
+  create_table "overflow_task_claim_logs", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "unit_id", null: false
+    t.bigint "task_id", null: false
+    t.bigint "claimed_by_unit_role_id", null: false
+    t.bigint "claimed_by_user_id", null: false
+    t.bigint "original_tutor_user_id"
+    t.bigint "student_user_id", null: false
+    t.integer "days_awaiting_feedback", null: false
+    t.datetime "claimed_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["claimed_by_unit_role_id"], name: "index_overflow_task_claim_logs_on_claimed_by_unit_role_id"
+    t.index ["claimed_by_user_id"], name: "index_overflow_task_claim_logs_on_claimed_by_user_id"
+    t.index ["original_tutor_user_id"], name: "index_overflow_task_claim_logs_on_original_tutor_user_id"
+    t.index ["student_user_id"], name: "index_overflow_task_claim_logs_on_student_user_id"
+    t.index ["task_id"], name: "index_overflow_task_claim_logs_on_task_id"
+    t.index ["unit_id", "claimed_at"], name: "index_overflow_task_claim_logs_on_unit_id_and_claimed_at"
+    t.index ["unit_id"], name: "index_overflow_task_claim_logs_on_unit_id"
+  end
+
   create_table "overflow_task_claims", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.bigint "task_id", null: false
     t.bigint "claimed_by_unit_role_id", null: false
