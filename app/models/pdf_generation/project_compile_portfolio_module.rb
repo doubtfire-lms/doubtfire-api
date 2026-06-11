@@ -205,6 +205,19 @@ module PdfGeneration
       end
     end
 
+    # Return the tasks that are currently being processed
+    def tasks_processing_pdf
+      # Get assigned tasks that should be included in the portfolio
+      tasks = self.tasks.joins(:task_definition).order('task_definitions.target_date, task_definitions.abbreviation')
+
+      # Select tasks that should have a PDF submission, but is currently being processed
+      tasks.select do |task|
+        !task.has_pdf &&
+          task.processing_pdf? &&
+          task.task_definition.upload_requirements.present?
+      end
+    end
+
     #
     # Return the path to the student's learning summary report.
     # This returns nil if there is no learning summary report.
