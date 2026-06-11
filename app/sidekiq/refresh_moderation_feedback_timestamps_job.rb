@@ -6,6 +6,8 @@ class RefreshModerationFeedbackTimestampsJob
   def perform
     ModeratedTask
       .where(state: %i[open waiting_for_new_feedback])
+      .joins(task: { project: :unit })
+      .where(units: { active: true })
       .includes(task: :comments)
       .find_each do |moderated_task|
       task = moderated_task.task
