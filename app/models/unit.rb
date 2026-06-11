@@ -2565,7 +2565,7 @@ class Unit < ApplicationRecord
             claim.task_id,
             task&.task_definition&.abbreviation,
             claim.days_awaiting_feedback,
-            claim.claimed_at.iso8601
+            claim.claimed_at,
           ]
         end
     end
