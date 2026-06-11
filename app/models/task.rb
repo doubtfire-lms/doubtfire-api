@@ -421,6 +421,13 @@ class Task < ApplicationRecord
     ([0, current_time - submission_time - paused_seconds].max / 1.day).floor
   end
 
+  # Excludes any breaks that would otherwise "pause" feedback
+  def calendar_days_awaiting_feedback(now_time = Time.zone.now)
+    return 0 if submission_date.blank?
+
+    [0, (now_time.to_date - submission_date.to_date).to_i].max
+  end
+
   def complete?
     status == :complete
   end

@@ -1751,7 +1751,8 @@ class Unit < ApplicationRecord
         'Project ID',
         'Task Definition',
         'Task ID',
-        'Days Awaiting Feedback'
+        'Days Awaiting Feedback',
+        'Days Awaiting Feedback (Incl. Breaks)'
       ]
 
       # Add data
@@ -1791,7 +1792,8 @@ class Unit < ApplicationRecord
             row['project_id'],
             row['task_abbr'],
             row['task_id'],
-            row.days_awaiting_feedback
+            row.days_awaiting_feedback,
+            row.calendar_days_awaiting_feedback
           ]
       end
     end

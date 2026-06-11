@@ -140,6 +140,7 @@ class TaskTest < ActiveSupport::TestCase
       task.update!(submission_date: Time.zone.parse('2026-03-29 00:00:00 UTC'))
 
       assert_equal 3.0, task.days_awaiting_feedback
+      assert_equal 12.0, task.calendar_days_awaiting_feedback
     end
     travel_back
   end
