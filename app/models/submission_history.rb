@@ -29,11 +29,13 @@ class SubmissionHistory < ApplicationRecord
     history = new(task: task, submission_timestamp: submission_timestamp.to_s)
     FileUtils.mkdir_p(history.output_path)
 
-    temporary_submission = File.join(history.output_path, ".submission-#{SecureRandom.hex(8)}.zip")
     temporary_history = "#{history.archive_file_name}.tmp-#{SecureRandom.hex(8)}"
     copied_files = 0
+    archive_updated = false
     begin
-      Zip::File.open(temporary_submission, create: true) do |destination|
+      Zip::File.open(temporary_history, create: true) do |destination|
+        copy_archive_entries(history.archive_file_name, destination) if File.exist?(history.archive_file_name)
+
         Zip::File.open(source_path) do |source|
           source.each do |entry|
             next if entry.name_is_directory?
@@ -42,7 +44,7 @@ class SubmissionHistory < ApplicationRecord
             next unless file_name&.match?(/^\d{3}-(?:document|code|image|zip|archive)/)
             next unless enabled_indexes.include?(file_name.to_i)
 
-            destination.get_output_stream(entry.name) do |output|
+            destination.get_output_stream(File.join(history.entry_prefix, entry.name)) do |output|
               entry.get_input_stream { |input| IO.copy_stream(input, output) }
             end
             copied_files += 1
@@ -52,19 +54,14 @@ class SubmissionHistory < ApplicationRecord
 
       raise 'No selected submission files were found in the completed submission' if copied_files.zero?
 
-      Zip::File.open(temporary_history, create: true) do |destination|
-        copy_archive_entries(history.archive_file_name, destination) if File.exist?(history.archive_file_name)
-        destination.add(history.submission_zip_entry_name, temporary_submission)
-      end
-
       FileUtils.mv(temporary_history, history.archive_file_name)
+      archive_updated = true
       system('chmod', 'o+w', history.output_path)
       history.save!
       history
     ensure
-      FileUtils.rm_f(temporary_submission)
       FileUtils.rm_f(temporary_history)
-      history.delete_associated_files unless history.persisted?
+      history.delete_associated_files if archive_updated && !history.persisted?
       if !history.persisted? && Dir.exist?(history.output_path) && Dir.empty?(history.output_path)
         FileUtils.rm_rf(history.output_path)
       end
@@ -79,28 +76,36 @@ class SubmissionHistory < ApplicationRecord
     File.join(output_path, 'history.zip')
   end
 
-  def submission_zip_entry_name
-    File.join(FileHelper.sanitized_path(submission_timestamp.to_s), 'submission.zip')
+  def entry_prefix
+    "#{FileHelper.sanitized_path(submission_timestamp.to_s)}/"
   end
 
-  # Kept for Overseer compatibility; the selected submission is nested inside it.
+  def submission_entry_prefix
+    File.join(entry_prefix, task.id.to_s, '/')
+  end
+
+  # Kept for Overseer compatibility; submissions are entries within this archive.
   def submission_zip_file_name
     archive_file_name
   end
 
   def submission_zip_data
-    Zip::File.open(archive_file_name) do |archive|
-      entry = archive.find_entry(submission_zip_entry_name)
-      raise Errno::ENOENT, submission_zip_entry_name unless entry
-
-      return entry.get_input_stream.read
+    buffer = Zip::OutputStream.write_buffer do |output|
+      Zip::File.open(archive_file_name) do |archive|
+        submission_entries(archive).each do |entry|
+          output.put_next_entry(entry.name.delete_prefix(entry_prefix))
+          entry.get_input_stream { |input| IO.copy_stream(input, output) }
+        end
+      end
     end
+
+    buffer.string
   end
 
   def has_submission_files? # rubocop:disable Naming/PredicateName
     return false unless File.exist?(archive_file_name)
 
-    Zip::File.open(archive_file_name) { |archive| archive.find_entry(submission_zip_entry_name).present? }
+    Zip::File.open(archive_file_name) { |archive| submission_entries(archive).any? }
   rescue Zip::Error
     false
   end
@@ -109,10 +114,9 @@ class SubmissionHistory < ApplicationRecord
     return unless File.exist?(archive_file_name)
 
     temporary_history = "#{archive_file_name}.tmp-#{SecureRandom.hex(8)}"
-    prefix = "#{FileHelper.sanitized_path(submission_timestamp.to_s)}/"
 
     Zip::File.open(temporary_history, create: true) do |destination|
-      self.class.copy_archive_entries(archive_file_name, destination, excluding_prefix: prefix)
+      self.class.copy_archive_entries(archive_file_name, destination, excluding_prefix: entry_prefix)
     end
 
     if Zip::File.open(temporary_history) { |archive| archive.entries.empty? }
@@ -124,6 +128,12 @@ class SubmissionHistory < ApplicationRecord
     end
   ensure
     FileUtils.rm_f(temporary_history) if temporary_history
+  end
+
+  def submission_entries(archive)
+    archive.entries.reject(&:name_is_directory?).select do |entry|
+      entry.name.start_with?(submission_entry_prefix)
+    end
   end
 
   def self.copy_archive_entries(source_path, destination, excluding_prefix: nil)

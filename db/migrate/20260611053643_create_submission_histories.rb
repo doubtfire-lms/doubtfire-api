@@ -166,11 +166,31 @@ class CreateSubmissionHistories < ActiveRecord::Migration[8.0]
     archive_path = File.join(task_path, 'history.zip')
     return unless File.exist?(archive_path)
 
+    submission_entries = Hash.new { |entries, timestamp| entries[timestamp] = [] }
     Zip::File.open(archive_path) do |archive|
       archive.each do |entry|
-        destination = File.join(task_path, entry.name)
-        FileUtils.mkdir_p(entry.name_is_directory? ? destination : File.dirname(destination))
-        entry.extract(destination) { true } unless entry.name_is_directory?
+        next if entry.name_is_directory?
+
+        timestamp, relative_path = entry.name.split('/', 2)
+        next unless relative_path
+
+        if relative_path.start_with?("#{task.id}/")
+          submission_entries[timestamp] << [relative_path, entry.get_input_stream.read]
+        else
+          destination = File.join(task_path, timestamp, relative_path)
+          FileUtils.mkdir_p(File.dirname(destination))
+          entry.extract(destination) { true }
+        end
+      end
+    end
+
+    submission_entries.each do |timestamp, entries|
+      timestamp_path = File.join(task_path, timestamp)
+      FileUtils.mkdir_p(timestamp_path)
+      Zip::File.open(File.join(timestamp_path, 'submission.zip'), create: true) do |submission_zip|
+        entries.each do |relative_path, contents|
+          submission_zip.get_output_stream(relative_path) { |output| output.write(contents) }
+        end
       end
     end
 
@@ -186,8 +206,22 @@ class CreateSubmissionHistories < ActiveRecord::Migration[8.0]
       relative_path = File.join(root_name, source.delete_prefix("#{path}/"))
       if File.directory?(source)
         archive.mkdir("#{relative_path}/") unless archive.find_entry("#{relative_path}/")
+      elsif File.basename(source) == 'submission.zip'
+        add_submission_zip_to_history(archive, root_name, source)
       else
         archive.add(relative_path, source)
+      end
+    end
+  end
+
+  def add_submission_zip_to_history(archive, root_name, submission_path)
+    Zip::File.open(submission_path) do |submission_zip|
+      submission_zip.each do |entry|
+        next if entry.name_is_directory?
+
+        archive.get_output_stream(File.join(root_name, entry.name)) do |output|
+          entry.get_input_stream { |input| IO.copy_stream(input, output) }
+        end
       end
     end
   end

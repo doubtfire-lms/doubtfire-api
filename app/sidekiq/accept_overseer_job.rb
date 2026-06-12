@@ -1,6 +1,5 @@
 require 'yaml'
 require 'open3'
-require 'stringio'
 
 class AcceptOverseerJob
   include Sidekiq::Job
@@ -242,28 +241,23 @@ class AcceptOverseerJob
   end
 
   def extract_student_submission_files(task, submission, work_dir, timestamp)
-    # The task archive contains one submission ZIP under each timestamp.
+    # Submission files are stored directly under their timestamp in the task archive.
     Zip::File.open(submission) do |history_zip|
-      entry_name = File.join(FileHelper.sanitized_path(timestamp.to_s), 'submission.zip')
-      submission_entry = history_zip.find_entry(entry_name)
-      raise "Submission history entry not found: #{entry_name}" unless submission_entry
+      prefix = "#{FileHelper.sanitized_path(timestamp.to_s)}/"
+      entries = history_zip.entries.reject(&:name_is_directory?).select { |entry| entry.name.start_with?(prefix) }
+      raise "Submission history entries not found for timestamp: #{timestamp}" if entries.empty?
 
-      submission_data = submission_entry.get_input_stream.read
-      Zip::File.open_buffer(StringIO.new(submission_data)) do |zip_file|
-        extract_submission_entries(task, zip_file, work_dir)
-      end
+      extract_submission_entries(task, entries, work_dir, prefix)
     end
   end
 
-  def extract_submission_entries(task, zip_file, work_dir)
+  def extract_submission_entries(task, entries, work_dir, prefix)
     # Extract submission files, removing any parent folders.
-    zip_file.each do |entry|
-      next if entry.name_is_directory?
+    entries.each do |entry|
+      parts = entry.name.delete_prefix(prefix).split('/')
+      next unless parts.first == task.id.to_s && parts.length >= 2
 
-      parts = entry.name.split('/')[1..]
-      next unless parts.length >= 1
-
-      file_name = parts.first
+      file_name = parts.second
       index = file_name.to_i
 
       file = task.upload_requirements[index]
@@ -271,7 +265,7 @@ class AcceptOverseerJob
 
       dest_path = File.join(work_dir, final_name)
       FileUtils.mkdir_p(File.dirname(dest_path))
-      zip_file.extract(entry, dest_path) { true }
+      entry.extract(dest_path) { true }
     end
   end
 

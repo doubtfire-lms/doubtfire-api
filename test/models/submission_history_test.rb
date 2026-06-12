@@ -27,13 +27,13 @@ class SubmissionHistoryTest < ActiveSupport::TestCase
 
         assert history.persisted?
         Zip::File.open(history.archive_file_name) do |archive|
-          submission = archive.find_entry('12345/submission.zip')
-          assert submission
+          assert archive.find_entry("12345/#{task.id}/000-code.rb")
+          assert_nil archive.find_entry("12345/#{task.id}/001-document.pdf")
+        end
 
-          Zip::File.open_buffer(StringIO.new(submission.get_input_stream.read)) do |zip|
-            assert zip.find_entry("#{task.id}/000-code.rb")
-            assert_nil zip.find_entry("#{task.id}/001-document.pdf")
-          end
+        Zip::File.open_buffer(StringIO.new(history.submission_zip_data)) do |download|
+          assert download.find_entry("#{task.id}/000-code.rb")
+          assert_nil download.find_entry("#{task.id}/001-document.pdf")
         end
       end
     end
@@ -81,15 +81,15 @@ class SubmissionHistoryTest < ActiveSupport::TestCase
         SubmissionHistory.create_archive!(task, '67890')
 
         Zip::File.open(first.archive_file_name) do |archive|
-          assert archive.find_entry('12345/submission.zip')
-          assert archive.find_entry('67890/submission.zip')
+          assert archive.find_entry("12345/#{task.id}/000-code.rb")
+          assert archive.find_entry("67890/#{task.id}/000-code.rb")
         end
 
         first.destroy!
 
         Zip::File.open(File.join(output_path, 'history.zip')) do |archive|
-          assert_nil archive.find_entry('12345/submission.zip')
-          assert archive.find_entry('67890/submission.zip')
+          assert_nil archive.find_entry("12345/#{task.id}/000-code.rb")
+          assert archive.find_entry("67890/#{task.id}/000-code.rb")
         end
       end
     end
