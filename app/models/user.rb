@@ -106,7 +106,7 @@ class User < ApplicationRecord
     expiry ||= Time.zone.now + expiry_duration
     # Get a recent token, or create a new one
     token = self.auth_tokens.where(token_type: token_type).last unless force_new
-    if token.nil? || token.created_at <= Time.zone.now - 90.minutes
+    if token.nil? || token.auth_token_expiry <= Time.zone.now || token.created_at <= Time.zone.now - 90.minutes
       token = AuthToken.generate(self, remember, expiry, token_type)
     end
 
