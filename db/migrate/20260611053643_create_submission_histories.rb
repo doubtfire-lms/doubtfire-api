@@ -29,7 +29,7 @@ class CreateSubmissionHistories < ActiveRecord::Migration[8.0]
               unique: true,
               name: 'index_submission_histories_on_task_and_timestamp'
 
-    # Enable submission history for every existing upload requirement. Preserve
+    # Enable submission history for existing Overseer task definitions. Preserve
     # an explicit value if this key has already been added to a requirement.
     MigrationTaskDefinition.reset_column_information
     MigrationTaskDefinition.find_each do |task_definition|
@@ -40,7 +40,7 @@ class CreateSubmissionHistories < ActiveRecord::Migration[8.0]
         next unless requirement.is_a?(Hash)
         next if requirement.key?('submission_history')
 
-        requirement['submission_history'] = true
+        requirement['submission_history'] = task_definition.assessment_enabled?
       end
 
       task_definition.update_columns(upload_requirements: requirements.to_json)
