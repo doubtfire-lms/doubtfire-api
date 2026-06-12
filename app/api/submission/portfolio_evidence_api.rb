@@ -218,7 +218,10 @@ module Submission
 
       content_type 'application/octet-stream'
       header['Content-Disposition'] = "attachment; filename=#{filename}"
-      stream_file history.submission_zip_file_name
+      submission_zip_data = history.submission_zip_data
+      header['Content-Length'] = submission_zip_data.bytesize.to_s
+      env['api.format'] = :binary
+      body submission_zip_data
     end
 
     desc 'Trigger an overseer assessment to run again'
@@ -333,7 +336,10 @@ module Submission
       content_type 'application/octet-stream'
       header['Content-Disposition'] = "attachment; filename=#{filename}"
 
-      stream_file history.submission_zip_file_name
+      submission_zip_data = history.submission_zip_data
+      header['Content-Length'] = submission_zip_data.bytesize.to_s
+      env['api.format'] = :binary
+      body submission_zip_data
     end
 
     desc 'Get the result of the submission of a task made last'

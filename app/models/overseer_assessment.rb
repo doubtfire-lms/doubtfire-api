@@ -185,7 +185,7 @@ class OverseerAssessment < ApplicationRecord
       return { error: "This assessment is no longer setup for automated feedback. Automated feedback is turned off at either the unit or task level, or the task does not have the scripts needed to automate assessment." }
     end
 
-    unless File.exist? submission_zip_file_name
+    unless has_submission_files?
       puts "ERROR: Student submission history zip file doesn't exist #{submission_zip_file_name}. Unable to send - OverseerAssessment #{id}"
       return { error: "We no longer have the files associated with this submission. Please test a later submission, or upload your work again." }
     end

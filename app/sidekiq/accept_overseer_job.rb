@@ -1,5 +1,6 @@
 require 'yaml'
 require 'open3'
+require 'stringio'
 
 class AcceptOverseerJob
   include Sidekiq::Job
@@ -40,7 +41,7 @@ class AcceptOverseerJob
     work_dir = Rails.root.join("tmp", "overseer", work_dir_name)
     FileUtils.mkdir_p(work_dir)
 
-    extract_student_submission_files(task, submission, work_dir)
+    extract_student_submission_files(task, submission, work_dir, timestamp)
     extract_overseer_resource_files(assessment, work_dir)
 
     success_status = nil
@@ -240,25 +241,37 @@ class AcceptOverseerJob
     )
   end
 
-  def extract_student_submission_files(task, submission, work_dir)
-    # Extract submission files, removing any parent folders
-    Zip::File.open(submission) do |zip_file|
-      zip_file.each do |entry|
-        next if entry.name_is_directory?
+  def extract_student_submission_files(task, submission, work_dir, timestamp)
+    # The task archive contains one submission ZIP under each timestamp.
+    Zip::File.open(submission) do |history_zip|
+      entry_name = File.join(FileHelper.sanitized_path(timestamp.to_s), 'submission.zip')
+      submission_entry = history_zip.find_entry(entry_name)
+      raise "Submission history entry not found: #{entry_name}" unless submission_entry
 
-        parts = entry.name.split('/')[1..]
-        next unless parts.length >= 1
-
-        file_name = parts.first
-        index = file_name.to_i
-
-        file = task.upload_requirements[index]
-        final_name = file['name']
-
-        dest_path = File.join(work_dir, final_name)
-        FileUtils.mkdir_p(File.dirname(dest_path))
-        zip_file.extract(entry, dest_path) { true }
+      submission_data = submission_entry.get_input_stream.read
+      Zip::File.open_buffer(StringIO.new(submission_data)) do |zip_file|
+        extract_submission_entries(task, zip_file, work_dir)
       end
+    end
+  end
+
+  def extract_submission_entries(task, zip_file, work_dir)
+    # Extract submission files, removing any parent folders.
+    zip_file.each do |entry|
+      next if entry.name_is_directory?
+
+      parts = entry.name.split('/')[1..]
+      next unless parts.length >= 1
+
+      file_name = parts.first
+      index = file_name.to_i
+
+      file = task.upload_requirements[index]
+      final_name = file['name']
+
+      dest_path = File.join(work_dir, final_name)
+      FileUtils.mkdir_p(File.dirname(dest_path))
+      zip_file.extract(entry, dest_path) { true }
     end
   end
 

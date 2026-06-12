@@ -20,13 +20,18 @@ class SubmissionHistoryTest < ActiveSupport::TestCase
       create_source_archive(source_path, task.id)
 
       FileHelper.stub(:zip_file_path_for_done_task, source_path) do
-        FileHelper.stub(:task_submission_identifier_path_with_timestamp, output_path) do
+        FileHelper.stub(:task_submission_identifier_path, output_path) do
           history = SubmissionHistory.create_archive!(task, '12345')
 
           assert history.persisted?
-          Zip::File.open(history.submission_zip_file_name) do |zip|
-            assert zip.find_entry("#{task.id}/000-code.rb")
-            assert_nil zip.find_entry("#{task.id}/001-document.pdf")
+          Zip::File.open(history.archive_file_name) do |archive|
+            submission = archive.find_entry('12345/submission.zip')
+            assert submission
+
+            Zip::File.open_buffer(StringIO.new(submission.get_input_stream.read)) do |zip|
+              assert zip.find_entry("#{task.id}/000-code.rb")
+              assert_nil zip.find_entry("#{task.id}/001-document.pdf")
+            end
           end
         end
       end
@@ -47,6 +52,42 @@ class SubmissionHistoryTest < ActiveSupport::TestCase
       assert_raises(RuntimeError) do
         FileHelper.stub(:zip_file_path_for_done_task, '/missing/submission.zip') do
           SubmissionHistory.create_archive!(task, '12345')
+        end
+      end
+    end
+  end
+
+  def test_keeps_multiple_timestamps_in_one_task_archive
+    unit = FactoryBot.create(:unit, task_count: 1)
+    task = unit.active_projects.first.task_for_task_definition(unit.task_definitions.first)
+    task.task_definition.update!(
+      assessment_enabled: false,
+      upload_requirements: [
+        { 'key' => 'file0', 'name' => 'main.rb', 'type' => 'code', 'submission_history' => true }
+      ]
+    )
+
+    Dir.mktmpdir do |dir|
+      source_path = File.join(dir, 'done.zip')
+      output_path = File.join(dir, 'history')
+      create_source_archive(source_path, task.id)
+
+      FileHelper.stub(:zip_file_path_for_done_task, source_path) do
+        FileHelper.stub(:task_submission_identifier_path, output_path) do
+          first = SubmissionHistory.create_archive!(task, '12345')
+          SubmissionHistory.create_archive!(task, '67890')
+
+          Zip::File.open(first.archive_file_name) do |archive|
+            assert archive.find_entry('12345/submission.zip')
+            assert archive.find_entry('67890/submission.zip')
+          end
+
+          first.destroy!
+
+          Zip::File.open(File.join(output_path, 'history.zip')) do |archive|
+            assert_nil archive.find_entry('12345/submission.zip')
+            assert archive.find_entry('67890/submission.zip')
+          end
         end
       end
     end

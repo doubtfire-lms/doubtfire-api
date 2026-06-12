@@ -1,4 +1,5 @@
 require 'zip'
+require 'stringio'
 
 class SubmissionHistory < ApplicationRecord
   belongs_to :task, optional: false
@@ -28,10 +29,11 @@ class SubmissionHistory < ApplicationRecord
     history = new(task: task, submission_timestamp: submission_timestamp.to_s)
     FileUtils.mkdir_p(history.output_path)
 
-    temporary_path = "#{history.submission_zip_file_name}.tmp-#{SecureRandom.hex(8)}"
+    temporary_submission = File.join(history.output_path, ".submission-#{SecureRandom.hex(8)}.zip")
+    temporary_history = "#{history.archive_file_name}.tmp-#{SecureRandom.hex(8)}"
     copied_files = 0
     begin
-      Zip::File.open(temporary_path, create: true) do |destination|
+      Zip::File.open(temporary_submission, create: true) do |destination|
         Zip::File.open(source_path) do |source|
           source.each do |entry|
             next if entry.name_is_directory?
@@ -50,30 +52,94 @@ class SubmissionHistory < ApplicationRecord
 
       raise 'No selected submission files were found in the completed submission' if copied_files.zero?
 
-      FileUtils.mv(temporary_path, history.submission_zip_file_name)
+      Zip::File.open(temporary_history, create: true) do |destination|
+        copy_archive_entries(history.archive_file_name, destination) if File.exist?(history.archive_file_name)
+        destination.add(history.submission_zip_entry_name, temporary_submission)
+      end
+
+      FileUtils.mv(temporary_history, history.archive_file_name)
       system('chmod', 'o+w', history.output_path)
       history.save!
       history
     ensure
-      FileUtils.rm_f(temporary_path)
-      FileUtils.rm_rf(history.output_path) unless history.persisted?
+      FileUtils.rm_f(temporary_submission)
+      FileUtils.rm_f(temporary_history)
+      history.delete_associated_files unless history.persisted?
+      if !history.persisted? && Dir.exist?(history.output_path) && Dir.empty?(history.output_path)
+        FileUtils.rm_rf(history.output_path)
+      end
     end
   end
 
   def output_path
-    FileHelper.task_submission_identifier_path_with_timestamp(:done, task, submission_timestamp)
+    FileHelper.task_submission_identifier_path(:done, task)
   end
 
+  def archive_file_name
+    File.join(output_path, 'history.zip')
+  end
+
+  def submission_zip_entry_name
+    File.join(FileHelper.sanitized_path(submission_timestamp.to_s), 'submission.zip')
+  end
+
+  # Kept for Overseer compatibility; the selected submission is nested inside it.
   def submission_zip_file_name
-    File.join(output_path, 'submission.zip')
+    archive_file_name
+  end
+
+  def submission_zip_data
+    Zip::File.open(archive_file_name) do |archive|
+      entry = archive.find_entry(submission_zip_entry_name)
+      raise Errno::ENOENT, submission_zip_entry_name unless entry
+
+      return entry.get_input_stream.read
+    end
   end
 
   def has_submission_files? # rubocop:disable Naming/PredicateName
-    File.exist?(submission_zip_file_name)
+    return false unless File.exist?(archive_file_name)
+
+    Zip::File.open(archive_file_name) { |archive| archive.find_entry(submission_zip_entry_name).present? }
+  rescue Zip::Error
+    false
   end
 
   def delete_associated_files
-    FileUtils.rm_rf(output_path)
+    return unless File.exist?(archive_file_name)
+
+    temporary_history = "#{archive_file_name}.tmp-#{SecureRandom.hex(8)}"
+    prefix = "#{FileHelper.sanitized_path(submission_timestamp.to_s)}/"
+
+    Zip::File.open(temporary_history, create: true) do |destination|
+      self.class.copy_archive_entries(archive_file_name, destination, excluding_prefix: prefix)
+    end
+
+    if Zip::File.open(temporary_history) { |archive| archive.entries.empty? }
+      FileUtils.rm_f(archive_file_name)
+      FileUtils.rm_f(temporary_history)
+      FileUtils.rm_rf(output_path) if Dir.empty?(output_path)
+    else
+      FileUtils.mv(temporary_history, archive_file_name)
+    end
+  ensure
+    FileUtils.rm_f(temporary_history) if temporary_history
+  end
+
+  def self.copy_archive_entries(source_path, destination, excluding_prefix: nil)
+    Zip::File.open(source_path) do |source|
+      source.each do |entry|
+        next if excluding_prefix && entry.name.start_with?(excluding_prefix)
+
+        if entry.name_is_directory?
+          destination.mkdir(entry.name) unless destination.find_entry(entry.name)
+        else
+          destination.get_output_stream(entry.name) do |output|
+            entry.get_input_stream { |input| IO.copy_stream(input, output) }
+          end
+        end
+      end
+    end
   end
 
   def self.pending_marker_path(task)
