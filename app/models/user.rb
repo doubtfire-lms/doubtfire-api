@@ -94,9 +94,16 @@ class User < ApplicationRecord
   # Force-generates a new authentication token, regardless of whether or not
   # it is actually expired
   #
-  def generate_authentication_token!(remember: false, expiry: Time.zone.now + 2.hours, token_type: :general, force_new: true)
+  def generate_authentication_token!(remember: false, expiry: nil, token_type: :general, force_new: true)
     # Ensure this user is saved... so it has an id
     self.save unless self.persisted?
+    expiry_duration =
+      if token_type.to_sym == :refresh_token
+        Doubtfire::Application.config.refresh_token_expiry
+      else
+        Doubtfire::Application.config.access_token_expiry
+      end
+    expiry ||= Time.zone.now + expiry_duration
     # Get a recent token, or create a new one
     token = self.auth_tokens.where(token_type: token_type).last unless force_new
     if token.nil? || token.created_at <= Time.zone.now - 90.minutes
