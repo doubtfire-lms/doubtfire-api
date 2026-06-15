@@ -543,7 +543,7 @@ class Project < ApplicationRecord
                  .task_definitions
                  .select(*count_by_grade) # create columns for each grade
                  .map do |r| # map to array
-      unit.grade_values.to_h { |grade_id| [grade_id, r["count_#{grade_id}"].to_f || 0.0] }
+      unit.grade_values.index_with { |grade_id| r["count_#{grade_id}"].to_f || 0.0 }
     end
                  .first # there is only one row returned...
 
