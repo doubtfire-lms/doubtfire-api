@@ -339,6 +339,8 @@ class Unit < ApplicationRecord
   end
 
   def grade_definition(value)
+    return nil if value.nil?
+
     grade_definitions.find { |definition| definition['value'] == value.to_i }
   end
 
