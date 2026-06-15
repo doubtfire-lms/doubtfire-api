@@ -20,6 +20,7 @@ module Entities
       end
 
       expose :active
+      expose :grade_values
     end
   end
 end

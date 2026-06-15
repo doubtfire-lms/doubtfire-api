@@ -86,6 +86,10 @@ class TaskDefinitionsApi < Grape::API
     task_params[:unit_id] = unit.id
     task_params[:upload_requirements] = params[:task_def][:upload_requirements].present? ? JSON.parse(params[:task_def][:upload_requirements]) : []
 
+    unless unit.grade_value?(task_params[:target_grade])
+      error!({ error: 'Target grade is not enabled for this unit' }, 422)
+    end
+
     task_def = TaskDefinition.new(task_params)
 
     # Set the tutorial stream
@@ -210,6 +214,10 @@ class TaskDefinitionsApi < Grape::API
       if unit.draft_task_definition_id == params[:id] && (upload_reqs.length != 1 || upload_reqs[0]['type'] != 'document')
         error!({ error: 'Task is marked as the draft learning summary. A draft learning summary task can only contain a single document upload.' }, 403)
       end
+    end
+
+    if task_params.key?(:target_grade) && !unit.grade_value?(task_params[:target_grade])
+      error!({ error: 'Target grade is not enabled for this unit' }, 422)
     end
 
     # Bulk update task definition with permitted parameters

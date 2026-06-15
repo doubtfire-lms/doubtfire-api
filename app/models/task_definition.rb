@@ -94,6 +94,7 @@ class TaskDefinition < ApplicationRecord
   validates :abbreviation, uniqueness: { scope: :unit_id } # task definition names within a unit must be unique
 
   validates :target_grade, inclusion: { in: GradeHelper::RANGE, message: '%{value} is not a valid target grade' }
+  validate :target_grade_enabled_for_unit
   validates :max_quality_pts, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 100, message: 'must be between 0 and 100' }
 
   validate :upload_requirements, :check_upload_requirements_format
@@ -927,6 +928,12 @@ class TaskDefinition < ApplicationRecord
   end
 
   private
+
+  def target_grade_enabled_for_unit
+    return if unit.nil? || target_grade.nil? || unit.grade_value?(target_grade)
+
+    errors.add(:target_grade, 'is not enabled for this unit')
+  end
 
   def delete_associated_files()
     remove_task_sheet()

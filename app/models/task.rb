@@ -717,6 +717,9 @@ class Task < ApplicationRecord
         unless new_grade.is_a?(Integer) && grade_map.values.include?(new_grade.to_i)
           raise_error.call("New grade supplied to task is not a valid integer - expects one of {-1|0|1|2|3} (task id #{id})")
         end
+        unless unit.assessment_grade_value?(new_grade)
+          raise_error.call("Grade is not enabled for this unit (task id #{id})")
+        end
         # propagate new grade to all OTHER group members
         if group_task? && !grading_group
           logger.debug "Grading a group submission to grade #{new_grade}"

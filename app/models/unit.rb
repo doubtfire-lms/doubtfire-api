@@ -8,6 +8,10 @@ require 'csv_helper'
 require 'grade_helper'
 
 class Unit < ApplicationRecord
+  DEFAULT_GRADE_VALUES = GradeHelper::RANGE.to_a.freeze
+
+  serialize :grade_values, coder: JSON
+
   include ApplicationHelper
   include FileHelper
   include MimeCheckHelpers
@@ -212,6 +216,8 @@ class Unit < ApplicationRecord
   validate :autogen_date_within_unit_active_period, if: -> { start_date_changed? || end_date_changed? || teaching_period_id_changed? || portfolio_auto_generation_date_changed? }
 
   validate :cant_disable_aip_only_if_aip_tasks_exist
+  validate :grade_values_are_valid
+  validate :configured_grades_cover_existing_targets, if: :will_save_change_to_grade_values?
 
   scope :current,               -> { current_for_date(Time.zone.now) }
   scope :current_for_date,      ->(date) { where('start_date <= ? AND end_date >= ?', date, date) }
@@ -309,6 +315,24 @@ class Unit < ApplicationRecord
     self.teaching_period.present?
   end
 
+  def grade_values
+    values = self[:grade_values]
+    values = JSON.parse(values) if values.is_a?(String)
+    values.nil? ? DEFAULT_GRADE_VALUES : values.map(&:to_i).sort
+  end
+
+  def grade_value?(value)
+    grade_values.include?(value.to_i)
+  end
+
+  def assessment_grade_value?(value)
+    value.to_i == -1 || grade_value?(value)
+  end
+
+  def grade_values=(values)
+    self[:grade_values] = Array(values).map(&:to_i).uniq.sort
+  end
+
   def ensure_teaching_period_dates_match
     if self[:start_date] != teaching_period.start_date
       errors.add(:start_date, "should match teaching period date")
@@ -332,6 +356,32 @@ class Unit < ApplicationRecord
 
     if tasks.where(task_status_id: TaskStatus.assess_in_portfolio.id).exists?
       errors.add(:mark_late_submissions_as_assess_in_portfolio, "cannot be disabled while tasks are in the Assess in Portfolio state")
+    end
+  end
+
+  def grade_values_are_valid
+    unless grade_values.include?(GradeHelper::PASS_VALUE)
+      errors.add(:grade_values, 'must include Pass')
+    end
+
+    invalid_values = grade_values - DEFAULT_GRADE_VALUES
+    errors.add(:grade_values, "contains invalid grades: #{invalid_values.join(', ')}") if invalid_values.any?
+  end
+
+  def configured_grades_cover_existing_targets
+    used_values = task_definitions.distinct.pluck(:target_grade)
+    used_values |= projects.where(enrolled: true).distinct.pluck(:target_grade)
+    used_values |= communication_rules.joins(:communication_conditions)
+                                      .pluck('communication_conditions.target_grade', 'communication_conditions.task_target_grade')
+                                      .flatten
+                                      .compact
+    used_values |= communication_rules.joins(:communication_actions)
+                                      .pluck('communication_actions.target_grade')
+                                      .compact
+    removed_values = used_values - grade_values
+
+    if removed_values.any?
+      errors.add(:grade_values, "cannot remove grades currently used by tasks, enrolled students, or communications: #{removed_values.join(', ')}")
     end
   end
 

@@ -93,6 +93,7 @@ class UnitsApi < Grape::API
       optional :feedback_warning_threshold_days, type: Integer, desc: 'Number of days since a submission without feedback before its highlighted in the tutors inbox'
       optional :feedback_overflow_threshold_days, type: Integer, desc: 'Number of days since a submission without feedback before its added to overflow marking'
       optional :enforce_feedback_before_discussed_in_class, type: Boolean, desc: 'Require feedback to be completed before tasks can be marked discussed in class'
+      optional :grade_values, type: Array[Integer], desc: 'Enabled target grades for the unit'
 
       mutually_exclusive :teaching_period_id, :start_date
       mutually_exclusive :teaching_period_id, :end_date
@@ -128,7 +129,8 @@ class UnitsApi < Grape::API
                                                           :assessment_enabled,
                                                           :feedback_warning_threshold_days,
                                                           :feedback_overflow_threshold_days,
-                                                          :enforce_feedback_before_discussed_in_class
+                                                          :enforce_feedback_before_discussed_in_class,
+                                                          grade_values: []
                                                           )
 
     if unit.teaching_period_id.present? && (unit_parameters.key?(:start_date) || unit_parameters['teaching_period_id'] == -1)
@@ -177,6 +179,7 @@ class UnitsApi < Grape::API
       optional :feedback_warning_threshold_days, type: Integer, desc: 'Number of days since a submission without feedback before its highlighted in the tutors inbox'
       optional :feedback_overflow_threshold_days, type: Integer, desc: 'Number of days since a submission without feedback before its added to overflow marking'
       optional :enforce_feedback_before_discussed_in_class, type: Boolean, desc: 'Require feedback to be completed before tasks can be marked discussed in class', default: false
+      optional :grade_values, type: Array[Integer], desc: 'Enabled target grades for the unit', default: GradeHelper::RANGE.to_a
 
       mutually_exclusive :teaching_period_id, :start_date
       mutually_exclusive :teaching_period_id, :end_date
@@ -209,7 +212,8 @@ class UnitsApi < Grape::API
                                                     :allow_student_change_tutorial,
                                                     :feedback_warning_threshold_days,
                                                     :feedback_overflow_threshold_days,
-                                                    :enforce_feedback_before_discussed_in_class
+                                                    :enforce_feedback_before_discussed_in_class,
+                                                    grade_values: []
                                                   )
 
     # Ensure the user is authorised to convene units
