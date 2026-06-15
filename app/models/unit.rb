@@ -6,9 +6,16 @@ require 'json'
 require 'moss_ruby'
 require 'csv_helper'
 require 'grade_helper'
+require 'securerandom'
 
 class Unit < ApplicationRecord
-  DEFAULT_GRADE_VALUES = GradeHelper::RANGE.to_a.freeze
+  DEFAULT_GRADE_DEFINITIONS = [
+    { 'id' => 'fail', 'value' => -1, 'label' => 'Fail', 'abbreviation' => 'F' },
+    { 'id' => 'pass', 'value' => 0, 'label' => 'Pass', 'abbreviation' => 'P' },
+    { 'id' => 'credit', 'value' => 1, 'label' => 'Credit', 'abbreviation' => 'C' },
+    { 'id' => 'distinction', 'value' => 2, 'label' => 'Distinction', 'abbreviation' => 'D' },
+    { 'id' => 'high-distinction', 'value' => 3, 'label' => 'High Distinction', 'abbreviation' => 'HD' }
+  ].freeze
 
   serialize :grade_values, coder: JSON
 
@@ -216,8 +223,8 @@ class Unit < ApplicationRecord
   validate :autogen_date_within_unit_active_period, if: -> { start_date_changed? || end_date_changed? || teaching_period_id_changed? || portfolio_auto_generation_date_changed? }
 
   validate :cant_disable_aip_only_if_aip_tasks_exist
-  validate :grade_values_are_valid
-  validate :configured_grades_cover_existing_targets, if: :will_save_change_to_grade_values?
+  validate :grade_definitions_are_valid
+  validate :configured_grades_preserve_used_values, if: :will_save_change_to_grade_values?
 
   scope :current,               -> { current_for_date(Time.zone.now) }
   scope :current_for_date,      ->(date) { where('start_date <= ? AND end_date >= ?', date, date) }
@@ -316,9 +323,11 @@ class Unit < ApplicationRecord
   end
 
   def grade_values
-    values = self[:grade_values]
-    values = JSON.parse(values) if values.is_a?(String)
-    values.nil? ? DEFAULT_GRADE_VALUES : values.map(&:to_i).sort
+    grade_definitions.filter_map { |definition| definition['value'] unless definition['value'] == -1 }
+  end
+
+  def grade_definitions
+    normalize_grade_definitions(self[:grade_values])
   end
 
   def grade_value?(value)
@@ -326,11 +335,29 @@ class Unit < ApplicationRecord
   end
 
   def assessment_grade_value?(value)
-    value.to_i == -1 || grade_value?(value)
+    grade_definitions.any? { |definition| definition['value'] == value.to_i }
   end
 
-  def grade_values=(values)
-    self[:grade_values] = Array(values).map(&:to_i).uniq.sort
+  def grade_definition(value)
+    grade_definitions.find { |definition| definition['value'] == value.to_i }
+  end
+
+  def grade_label(value)
+    grade_definition(value)&.fetch('label', nil) || GradeHelper.grade_for(value)
+  end
+
+  def grade_abbreviation(value)
+    grade_definition(value)&.fetch('abbreviation', nil) || GradeHelper.short_grade_for(value)
+  end
+
+  def grade_definitions=(definitions)
+    normalized = normalize_grade_definitions(definitions, sort: false)
+    fail_definition = normalized.find { |definition| definition['value'] == -1 }
+    target_definitions = normalized.reject { |definition| definition['value'] == -1 }
+
+    fail_definition['value'] = -1
+    target_definitions.each_with_index { |definition, index| definition['value'] = index }
+    self[:grade_values] = [fail_definition, *target_definitions]
   end
 
   def ensure_teaching_period_dates_match
@@ -359,18 +386,28 @@ class Unit < ApplicationRecord
     end
   end
 
-  def grade_values_are_valid
-    unless grade_values.include?(GradeHelper::PASS_VALUE)
-      errors.add(:grade_values, 'must include Pass')
-    end
+  def grade_definitions_are_valid
+    definitions = grade_definitions
+    values = definitions.map { |definition| definition['value'] }
+    target_values = values.reject { |value| value == -1 }
 
-    invalid_values = grade_values - DEFAULT_GRADE_VALUES
-    errors.add(:grade_values, "contains invalid grades: #{invalid_values.join(', ')}") if invalid_values.any?
+    errors.add(:grade_definitions, 'must include a failure grade and at least one target grade') if definitions.length < 2
+    errors.add(:grade_definitions, 'must include index -1 exactly once') unless values.count(-1) == 1
+    errors.add(:grade_definitions, 'target grade indexes must be unique non-negative integers') unless target_values.all? { |value| value >= 0 } && target_values.uniq.length == target_values.length
+    errors.add(:grade_definitions, 'must use unique identifiers') unless definitions.map { |definition| definition['id'] }.uniq.length == definitions.length
+    errors.add(:grade_definitions, 'must use unique labels') unless definitions.map { |definition| definition['label'].downcase }.uniq.length == definitions.length
+    errors.add(:grade_definitions, 'must use unique abbreviations') unless definitions.map { |definition| definition['abbreviation'].downcase }.uniq.length == definitions.length
+
+    definitions.each do |definition|
+      errors.add(:grade_definitions, 'labels must be present and no longer than 50 characters') unless definition['label'].present? && definition['label'].length <= 50
+      errors.add(:grade_definitions, 'abbreviations must be present and no longer than 10 characters') unless definition['abbreviation'].present? && definition['abbreviation'].length <= 10
+    end
   end
 
-  def configured_grades_cover_existing_targets
+  def configured_grades_preserve_used_values
     used_values = task_definitions.distinct.pluck(:target_grade)
-    used_values |= projects.where(enrolled: true).distinct.pluck(:target_grade)
+    used_values |= projects.distinct.pluck(:target_grade, :submitted_grade).flatten.compact
+    used_values |= tasks.distinct.pluck(:grade).compact
     used_values |= communication_rules.joins(:communication_conditions)
                                       .pluck('communication_conditions.target_grade', 'communication_conditions.task_target_grade')
                                       .flatten
@@ -378,11 +415,49 @@ class Unit < ApplicationRecord
     used_values |= communication_rules.joins(:communication_actions)
                                       .pluck('communication_actions.target_grade')
                                       .compact
-    removed_values = used_values - grade_values
+    previous_definitions = normalize_grade_definitions(attribute_in_database('grade_values'))
+    current_by_id = grade_definitions.index_by { |definition| definition['id'] }
 
-    if removed_values.any?
-      errors.add(:grade_values, "cannot remove grades currently used by tasks, enrolled students, or communications: #{removed_values.join(', ')}")
+    changed_values = used_values.select do |value|
+      previous_definition = previous_definitions.find { |definition| definition['value'] == value }
+      current_definition = current_by_id[previous_definition&.fetch('id', nil)]
+      current_definition.nil? || current_definition['value'] != value
     end
+
+    errors.add(:grade_definitions, "cannot remove or reorder grades currently in use at indexes: #{changed_values.uniq.sort.join(', ')}") if changed_values.any?
+  end
+
+  def normalize_grade_definitions(raw_definitions, sort: true)
+    raw_definitions = JSON.parse(raw_definitions) if raw_definitions.is_a?(String)
+    raw_definitions = DEFAULT_GRADE_DEFINITIONS if raw_definitions.blank?
+
+    definitions = Array(raw_definitions).map do |definition|
+      definition = definition.to_h if definition.respond_to?(:to_h)
+      if definition.is_a?(Hash)
+        definition = definition.stringify_keys
+        {
+          'id' => definition['id'].presence || SecureRandom.uuid,
+          'value' => definition['value'].to_i,
+          'label' => definition['label'].to_s.strip,
+          'abbreviation' => definition['abbreviation'].to_s.strip.upcase
+        }
+      else
+        value = definition.to_i
+        default = DEFAULT_GRADE_DEFINITIONS.find { |item| item['value'] == value }
+        default&.dup || {
+          'id' => "grade-#{value}",
+          'value' => value,
+          'label' => "Grade #{value}",
+          'abbreviation' => "G#{value}"
+        }
+      end
+    end
+
+    unless definitions.any? { |definition| definition['value'] == -1 }
+      definitions.unshift(DEFAULT_GRADE_DEFINITIONS.first.dup)
+    end
+
+    sort ? definitions.sort_by { |definition| definition['value'] } : definitions
   end
 
 
@@ -1917,7 +1992,7 @@ class Unit < ApplicationRecord
             row['student_id'],
             row['username'],
             "#{row['first_name']} #{row['last_name']}",
-            GradeHelper.grade_for(row['target_grade']),
+            grade_label(row['target_grade']),
             row['email'],
             row['portfolio_production_date'].present? && !row['compile_portfolio'] && File.exist?(FileHelper.student_portfolio_path(self, row['username'], create: true)),
             row['grade'] > 0 ? row['grade'] : nil,
@@ -1933,7 +2008,7 @@ class Unit < ApplicationRecord
             row["grp_#{gs.id}"]
           end + task_def_by_grade.map do |td|
             result = [row["status_#{td.id}"].nil? ? TaskStatus.not_started.name : row["status_#{td.id}"]]
-            result << GradeHelper.short_grade_for(row["grade_#{td.id}"]) if td.is_graded?
+            result << grade_abbreviation(row["grade_#{td.id}"]) if td.is_graded?
             result << row["stars_#{td.id}"] if td.has_stars?
             result << row["people_#{td.id}"] if td.is_group_task?
             result
@@ -2551,7 +2626,7 @@ class Unit < ApplicationRecord
       result[:tutorial][t.id] = _calculate_task_completion_stats(data.select { |r| r[:tutorial_id] == t.id })
     end
 
-    for i in GradeHelper::RANGE do
+    for i in grade_values do
       result[:grade][i] = _calculate_task_completion_stats(data.select { |r| r[:grade] == i })
     end
 

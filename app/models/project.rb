@@ -261,16 +261,7 @@ class Project < ApplicationRecord
   # Get a string representation of the Target Grade
   #
   def target_grade_desc
-    case target_grade
-    when 1
-      'Credit'
-    when 2
-      'Distinction'
-    when 3
-      'High Distinction'
-    else
-      'Pass'
-    end
+    unit.grade_label(target_grade)
   end
 
   def reference_date
@@ -361,7 +352,7 @@ class Project < ApplicationRecord
     #
     overdue_tasks = task_states.select { |ts| to_target.call(ts) < Time.zone.today }
 
-    for i in GradeHelper::RANGE
+    for i in unit.grade_values
       graded_tasks = overdue_tasks.select { |ts| ts[:task_definition].target_grade == i  }
 
       graded_tasks.each do |ts|
@@ -377,7 +368,7 @@ class Project < ApplicationRecord
     #
     soon_tasks = task_states.select { |ts| to_target.call(ts) >= Time.zone.today && to_target.call(ts) < Time.zone.today + 7.days }
 
-    for i in GradeHelper::RANGE
+    for i in unit.grade_values
       graded_tasks = soon_tasks.select { |ts| ts[:task_definition].target_grade == i }
 
       graded_tasks.each do |ts|
@@ -392,7 +383,7 @@ class Project < ApplicationRecord
     #
     ahead_tasks = task_states.select { |ts| to_target.call(ts) >= Time.zone.today + 7.days }
 
-    for i in GradeHelper::RANGE
+    for i in unit.grade_values
       graded_tasks = ahead_tasks.select { |ts| ts[:task_definition].target_grade == i }
 
       graded_tasks.each do |ts|
@@ -545,19 +536,14 @@ class Project < ApplicationRecord
   # task_stats field
   def update_task_stats
     # generate SQL for columns that count the number of tasks per grade
-    count_by_grade = (GradeHelper::RANGE).map { |grade_id| "SUM(CASE WHEN target_grade <= #{grade_id} THEN 1 ELSE 0 END) AS count_#{grade_id}" }
+    count_by_grade = unit.grade_values.map { |grade_id| "SUM(CASE WHEN target_grade <= #{grade_id} THEN 1 ELSE 0 END) AS count_#{grade_id}" }
 
     # Get the count of the total number of tasks less than each target grade
     task_count = unit
                  .task_definitions
                  .select(*count_by_grade) # create columns for each grade
                  .map do |r| # map to array
-      [
-        r['count_0'].to_f || 0.0,
-        r['count_1'].to_f || 0.0,
-        r['count_2'].to_f || 0.0,
-        r['count_3'].to_f || 0.0
-      ]
+      unit.grade_values.to_h { |grade_id| [grade_id, r["count_#{grade_id}"].to_f || 0.0] }
     end
                  .first # there is only one row returned...
 

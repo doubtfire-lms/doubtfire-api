@@ -40,6 +40,7 @@ module Entities
 
     expose :active
     expose :grade_values
+    expose :grade_definitions
 
     expose :overseer_image_id, unless: :summary_only, if: lambda { |unit, options| can_read_unit_config?(options[:my_role]) }
     expose :assessment_enabled, unless: :summary_only

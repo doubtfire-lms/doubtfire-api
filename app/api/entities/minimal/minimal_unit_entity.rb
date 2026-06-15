@@ -21,6 +21,7 @@ module Entities
 
       expose :active
       expose :grade_values
+      expose :grade_definitions
     end
   end
 end

@@ -691,13 +691,9 @@ class Task < ApplicationRecord
       raise message
     end
 
-    grade_map = {
-      'f' => -1,
-      'p' => 0,
-      'c' => 1,
-      'd' => 2,
-      'hd' => 3
-    }
+    grade_map = unit.grade_definitions.to_h do |definition|
+      [definition['abbreviation'].downcase, definition['value']]
+    end
     if task_definition.is_graded
       if new_grade.nil?
         raise_error.call("No grade was supplied for a graded task (task id #{id})")
@@ -709,13 +705,13 @@ class Task < ApplicationRecord
         if new_grade.is_a?(String)
           if grade_map.keys.include?(new_grade.downcase)
             # convert string representation to integer representation
-            new_grade = grade_map[new_grade]
+            new_grade = grade_map[new_grade.downcase]
           else
-            raise_error.call("New grade supplied to task is not a valid string - expects one of {f|p|c|d|hd} (task id #{id})")
+            raise_error.call("New grade supplied to task is not a valid abbreviation (task id #{id})")
           end
         end
-        unless new_grade.is_a?(Integer) && grade_map.values.include?(new_grade.to_i)
-          raise_error.call("New grade supplied to task is not a valid integer - expects one of {-1|0|1|2|3} (task id #{id})")
+        unless new_grade.is_a?(Integer)
+          raise_error.call("New grade supplied to task is not a valid integer (task id #{id})")
         end
         unless unit.assessment_grade_value?(new_grade)
           raise_error.call("Grade is not enabled for this unit (task id #{id})")

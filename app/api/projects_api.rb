@@ -133,10 +133,6 @@ class ProjectsApi < Grape::API
       if params[:old_grade] != project.grade
         error!({ error: 'Existing project grade does not match current grade. Refresh project and try again.' }, 403)
       end
-      unless project.unit.assessment_grade_value?(params[:grade])
-        error!({ error: 'Grade is not enabled for this unit' }, 422)
-      end
-
       for_student = false
 
       project.grade = params[:grade]

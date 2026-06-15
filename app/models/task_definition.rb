@@ -93,7 +93,7 @@ class TaskDefinition < ApplicationRecord
   validates :name, uniqueness: { scope:  :unit_id } # task definition names within a unit must be unique
   validates :abbreviation, uniqueness: { scope: :unit_id } # task definition names within a unit must be unique
 
-  validates :target_grade, inclusion: { in: GradeHelper::RANGE, message: '%{value} is not a valid target grade' }
+  validates :target_grade, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validate :target_grade_enabled_for_unit
   validates :max_quality_pts, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 100, message: 'must be between 0 and 100' }
 
