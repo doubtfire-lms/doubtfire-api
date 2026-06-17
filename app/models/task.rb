@@ -134,6 +134,7 @@ class Task < ApplicationRecord
   has_many :reverse_moss_similarities, class_name: 'MossTaskSimilarity', dependent: :destroy, inverse_of: :other_task, foreign_key: 'other_task_id'
   has_many :task_engagements, dependent: :destroy
   has_many :task_submissions, dependent: :destroy
+  has_many :submission_histories, dependent: :destroy
   has_many :overseer_assessments, dependent: :destroy
   has_many :tii_submissions, dependent: :destroy
   has_many :test_attempts, dependent: :destroy
@@ -1575,6 +1576,10 @@ class Task < ApplicationRecord
     # Ensure there is not a submission already in process
     if processing_pdf?
       ui.error!({ 'error' => 'A submission is already being processed. Please wait for the current submission process to complete.' }, 403)
+    end
+
+    if SubmissionHistory.pending?(self)
+      ui.error!({ 'error' => 'Submission history is still being created. Please wait before submitting again.' }, 403)
     end
 
     if !test_submission && (overseer_enabled? || task_definition.assessment_enabled) &&

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_06_10_065531) do
+ActiveRecord::Schema[8.0].define(version: 2026_06_11_053643) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -349,7 +349,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_10_065531) do
     t.datetime "updated_at", null: false
     t.integer "total_steps"
     t.datetime "student_notified_at"
+    t.bigint "submission_history_id", null: false
     t.index ["status", "student_notified_at", "updated_at"], name: "index_overseer_assessments_on_status_notified_updated"
+    t.index ["submission_history_id"], name: "index_overseer_assessments_on_submission_history_id", unique: true
     t.index ["task_id", "submission_timestamp"], name: "index_overseer_assessments_on_task_id_and_submission_timestamp", unique: true
     t.index ["task_id"], name: "index_overseer_assessments_on_task_id"
   end
@@ -479,6 +481,15 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_10_065531) do
     t.index ["reply_to_id"], name: "index_staff_notes_on_reply_to_id"
     t.index ["staff_notes_id"], name: "index_staff_notes_on_staff_notes_id"
     t.index ["user_id"], name: "index_staff_notes_on_user_id"
+  end
+
+  create_table "submission_histories", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "task_id", null: false
+    t.string "submission_timestamp", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["task_id", "submission_timestamp"], name: "index_submission_histories_on_task_and_timestamp", unique: true
+    t.index ["task_id"], name: "index_submission_histories_on_task_id"
   end
 
   create_table "task_comments", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
