@@ -15,7 +15,9 @@ test:
   password:     <%= Rails.application.credentials.dig(:database, :test, :password) || ENV['DF_TEST_DB_PASSWORD'] %>
   host:         <%= Rails.application.credentials.dig(:database, :test, :host) || ENV['DF_TEST_DB_HOST'] %>
   min_messages: warning
-
+  encoding:     utf8mb4
+  collation:    utf8mb4_general_ci
+  
 staging:
   adapter:  <%= Rails.application.credentials.dig(:database, :staging, :adapter) || ENV['DF_STAGING_DB_ADAPTER'] %>
   host:     <%= Rails.application.credentials.dig(:database, :staging, :host) || ENV['DF_STAGING_DB_HOST'] %>
