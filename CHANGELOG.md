@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-10](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-9...v11.0.0-10) (2026-06-17)
+
+
+### Features
+
+* add column for days awaiting feedback including breaks ([f7b877c](https://github.com/b0ink/doubtfire-deploy/commit/f7b877c9759089ce1bb4c4e99490a039c0761181))
+* submission history ([#636](https://github.com/b0ink/doubtfire-deploy/issues/636)) ([4f95d61](https://github.com/b0ink/doubtfire-deploy/commit/4f95d61c8d897183ce83ca6d96b06570e51e4def))
+
 ## [11.0.0-9](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-8...v11.0.0-9) (2026-06-11)
 
 
