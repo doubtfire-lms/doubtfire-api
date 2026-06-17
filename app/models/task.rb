@@ -409,6 +409,38 @@ class Task < ApplicationRecord
     return extension_date
   end
 
+  def local_due_date
+    if unit.allow_flexible_dates
+      return target_due_date if target_due_date.present?
+
+      grade_target_date = case project.target_grade
+                          when 1 then task_definition.c_target_date
+                          when 2 then task_definition.d_target_date
+                          when 3 then task_definition.hd_target_date
+                          end
+      return grade_target_date if grade_target_date.present?
+    end
+
+    due_date
+  end
+
+  def local_start_date
+    if unit.allow_flexible_dates
+      return target_start_date if target_start_date.present?
+
+      grade_start_date = case project.target_grade
+                         when 1 then task_definition.c_start_date
+                         when 2 then task_definition.d_start_date
+                         when 3 then task_definition.hd_start_date
+                         end
+      return grade_start_date if grade_start_date.present?
+    end
+
+    return task_definition.start_date + extensions.weeks if extensions.negative?
+
+    task_definition.start_date
+  end
+
   def days_awaiting_feedback(now_time = Time.zone.now)
     return 0 if submission_date.blank?
 
