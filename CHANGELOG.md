@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-11](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-10...v11.0.0-11) (2026-06-18)
+
+
+### Features
+
+* engagement passport ([#631](https://github.com/b0ink/doubtfire-deploy/issues/631)) ([d32145e](https://github.com/b0ink/doubtfire-deploy/commit/d32145ef62c7ad014524e5e3610844b7bda20b76))
+
+
+### Bug Fixes
+
+* serve public web cal as raw text ([6836a20](https://github.com/b0ink/doubtfire-deploy/commit/6836a20e582473eff4edb41e2fd1f6c4a5a9751d))
+
 ## [11.0.0-10](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-9...v11.0.0-10) (2026-06-17)
 
 
