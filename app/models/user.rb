@@ -104,9 +104,13 @@ class User < ApplicationRecord
         Doubtfire::Application.config.access_token_expiry
       end
     expiry ||= Time.zone.now + expiry_duration
+
+    # Reuse tokens for up to 75% of their configured lifetime, then rotate early.
+    token_reuse_duration = expiry_duration * 0.75
+
     # Get a recent token, or create a new one
     token = self.auth_tokens.where(token_type: token_type).last unless force_new
-    if token.nil? || token.auth_token_expiry <= Time.zone.now || token.created_at <= Time.zone.now - 90.minutes
+    if token.nil? || token.auth_token_expiry <= Time.zone.now || token.created_at <= Time.zone.now - token_reuse_duration
       token = AuthToken.generate(self, remember, expiry, token_type)
     end
 
