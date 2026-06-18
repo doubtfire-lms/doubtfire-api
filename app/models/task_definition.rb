@@ -98,6 +98,7 @@ class TaskDefinition < ApplicationRecord
   validates :max_quality_pts, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 100, message: 'must be between 0 and 100' }
 
   validate :upload_requirements, :check_upload_requirements_format
+  validate :submission_history_required_for_overseer
 
   validates :description, length: { maximum: 4095, allow_blank: true }
 
@@ -343,8 +344,8 @@ class TaskDefinition < ApplicationRecord
 
       req['type'] = 'zip' if req['type'] == 'archive'
 
-      # Check keys only contain key, type, name, tii_check, and tii_pct
-      unless req.keys.excluding('key', 'type', 'name', 'tii_check', 'tii_pct').empty?
+      # Check keys only contain supported upload requirement settings
+      unless req.keys.excluding('key', 'type', 'name', 'tii_check', 'tii_pct', 'submission_history').empty?
         errors.add(:upload_requirements, "has additional values for item #{i + 1} --> #{req.keys.join(' ')}.")
       end
 
@@ -368,8 +369,19 @@ class TaskDefinition < ApplicationRecord
         errors.add(:upload_requirements, "the tii_pct for item #{i + 1} is not a non-negative number --> #{req['tii_pct']}.")
       end
 
+      unless req['submission_history'].blank? || [true, false].include?(req['submission_history'])
+        errors.add(:upload_requirements, "the submission_history for item #{i + 1} is not a boolean --> #{req['submission_history']}.")
+      end
+
       i += 1
     end
+  end
+
+  def submission_history_required_for_overseer
+    return unless assessment_enabled?
+    return if upload_requirements&.any? { |requirement| requirement['submission_history'] == true }
+
+    errors.add(:upload_requirements, 'must include at least one file in submission history when Overseer is enabled')
   end
 
   def number_of_uploaded_files

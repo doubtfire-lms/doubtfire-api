@@ -59,10 +59,15 @@ class OverseerAssessmentTest < ActiveSupport::TestCase
       project.task_for_task_definition(unit.task_definitions.first)
     end
 
+    submission_timestamp = "#{Time.current.to_i}-#{SecureRandom.hex(2)}"
     assessment = OverseerAssessment.create!(
       task: task,
+      submission_history: SubmissionHistory.create!(
+        task: task,
+        submission_timestamp: submission_timestamp
+      ),
       status: status,
-      submission_timestamp: "#{Time.current.to_i}-#{SecureRandom.hex(2)}"
+      submission_timestamp: submission_timestamp
     )
     assessment.update_columns(created_at: age.ago, updated_at: age.ago)
 

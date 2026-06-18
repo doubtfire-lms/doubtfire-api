@@ -8,6 +8,33 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     Rails.application
   end
 
+  def test_overseer_requires_a_submission_history_upload
+    task_definition = FactoryBot.build(
+      :task_definition,
+      assessment_enabled: true,
+      upload_requirements: [
+        { 'key' => 'file0', 'name' => 'main.rb', 'type' => 'code', 'submission_history' => false }
+      ]
+    )
+
+    assert_not task_definition.valid?
+    assert_includes task_definition.errors[:upload_requirements],
+                    'must include at least one file in submission history when Overseer is enabled'
+  end
+
+  def test_overseer_accepts_a_submission_history_upload
+    task_definition = FactoryBot.build(
+      :task_definition,
+      assessment_enabled: true,
+      upload_requirements: [
+        { 'key' => 'file0', 'name' => 'main.rb', 'type' => 'code', 'submission_history' => true }
+      ]
+    )
+
+    task_definition.validate
+    assert_empty task_definition.errors[:upload_requirements]
+  end
+
   def test_default_quality_points
     test_unit = Unit.first
     td = TaskDefinition.new({

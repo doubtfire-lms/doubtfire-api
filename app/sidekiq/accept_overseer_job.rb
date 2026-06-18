@@ -40,7 +40,7 @@ class AcceptOverseerJob
     work_dir = Rails.root.join("tmp", "overseer", work_dir_name)
     FileUtils.mkdir_p(work_dir)
 
-    extract_student_submission_files(task, submission, work_dir)
+    extract_student_submission_files(task, submission, work_dir, timestamp)
     extract_overseer_resource_files(assessment, work_dir)
 
     success_status = nil
@@ -240,25 +240,32 @@ class AcceptOverseerJob
     )
   end
 
-  def extract_student_submission_files(task, submission, work_dir)
-    # Extract submission files, removing any parent folders
-    Zip::File.open(submission) do |zip_file|
-      zip_file.each do |entry|
-        next if entry.name_is_directory?
+  def extract_student_submission_files(task, submission, work_dir, timestamp)
+    # Submission files are stored directly under their timestamp in the task archive.
+    Zip::File.open(submission) do |history_zip|
+      prefix = "#{FileHelper.sanitized_path(timestamp.to_s)}/"
+      entries = history_zip.entries.reject(&:name_is_directory?).select { |entry| entry.name.start_with?(prefix) }
+      raise "Submission history entries not found for timestamp: #{timestamp}" if entries.empty?
 
-        parts = entry.name.split('/')[1..]
-        next unless parts.length >= 1
+      extract_submission_entries(task, entries, work_dir, prefix)
+    end
+  end
 
-        file_name = parts.first
-        index = file_name.to_i
+  def extract_submission_entries(task, entries, work_dir, prefix)
+    # Extract submission files, removing any parent folders.
+    entries.each do |entry|
+      parts = entry.name.delete_prefix(prefix).split('/')
+      next unless parts.first == task.id.to_s && parts.length >= 2
 
-        file = task.upload_requirements[index]
-        final_name = file['name']
+      file_name = parts.second
+      index = file_name.to_i
 
-        dest_path = File.join(work_dir, final_name)
-        FileUtils.mkdir_p(File.dirname(dest_path))
-        zip_file.extract(entry, dest_path) { true }
-      end
+      file = task.upload_requirements[index]
+      final_name = file['name']
+
+      dest_path = File.join(work_dir, final_name)
+      FileUtils.mkdir_p(File.dirname(dest_path))
+      entry.extract(dest_path) { true }
     end
   end
 

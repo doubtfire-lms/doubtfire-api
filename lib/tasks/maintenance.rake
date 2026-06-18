@@ -1,6 +1,7 @@
 require_all 'lib/helpers'
 require 'sidekiq/api'
 
+# rubocop:disable Metrics/BlockLength
 namespace :maintenance do
   def sidekiq_job_present_in_workers_or_default_queue?(&matcher)
     Sidekiq::Workers.new.each do |_process_id, _thread_id, work|
@@ -34,6 +35,12 @@ namespace :maintenance do
   def accept_overseer_job_present?(overseer_assessment_id)
     sidekiq_job_present_in_workers_or_default_queue? do |job_class, job_args|
       accept_overseer_job_matches_assessment?(job_class, job_args, overseer_assessment_id)
+    end
+  end
+
+  def create_submission_history_job_present?(task_id)
+    sidekiq_job_present_in_workers_or_default_queue? do |job_class, job_args|
+      job_class == 'CreateSubmissionHistoryJob' && job_args.first.to_i == task_id
     end
   end
 
@@ -154,6 +161,21 @@ namespace :maintenance do
     end
   end
 
+  def clear_abandoned_submission_history_markers!
+    stale_before = 10.minutes.ago
+    marker_pattern = File.join(FileHelper.root_submission_history_dir, '**', 'pending', '*', 'submission-history')
+
+    Dir.glob(marker_pattern).each do |marker_path|
+      next unless File.mtime(marker_path) < stale_before
+
+      task_id = File.basename(File.dirname(marker_path)).to_i
+      next if create_submission_history_job_present?(task_id)
+
+      Rails.logger.error "Clearing abandoned submission history marker for task #{task_id}"
+      FileUtils.rm_f(marker_path)
+    end
+  end
+
   desc 'Cleanup temporary files'
   task cleanup: [:environment] do
     path = FileHelper.tmp_file_dir
@@ -185,6 +207,7 @@ namespace :maintenance do
 
     AuthToken.destroy_old_tokens
     clear_abandoned_submissions!
+    clear_abandoned_submission_history_markers!
     clear_abandoned_overseer_assessments!
   end
 
@@ -196,6 +219,11 @@ namespace :maintenance do
   desc 'Clear abandoned pre-queued Overseer assessments and request resubmission'
   task clear_abandoned_overseer_assessments: [:environment] do
     clear_abandoned_overseer_assessments!
+  end
+
+  desc 'Clear stale submission history markers with no queued or running job'
+  task clear_abandoned_submission_history_markers: [:environment] do
+    clear_abandoned_submission_history_markers!
   end
 
   desc 'Remove PDFs from old submissions and archive units'
@@ -239,3 +267,4 @@ namespace :maintenance do
     `find #{FileHelper.root_portfolio_dir} -name "*pdf.old" -exec rm {} \;`
   end
 end
+# rubocop:enable Metrics/BlockLength

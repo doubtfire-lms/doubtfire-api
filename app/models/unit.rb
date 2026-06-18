@@ -79,7 +79,8 @@ class Unit < ApplicationRecord
       :get_marking_sessions,
       :upload_grades_csv,
       :get_staff_notes,
-      :mannage_communications
+      :mannage_communications,
+      :delete_engagement
     ]
 
     # What can admin do with units?
