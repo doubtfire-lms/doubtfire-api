@@ -21,9 +21,7 @@ module Entities
       expose :start_date
     end
 
-    expose :grade_due_date_overrides, as: :grade_due_dates, expose_nil: false do |task_definition|
-      task_definition.grade_due_date_overrides
-    end
+    expose :grade_due_date_overrides, as: :grade_due_dates, expose_nil: false
 
     expose :upload_requirements, expose_nil: false do |task_definition, options|
       if staff?(options[:my_role])
