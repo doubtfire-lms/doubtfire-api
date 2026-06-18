@@ -81,6 +81,7 @@ class AuthenticationApi < Grape::API
       # Return user details
       present :user, user, with: Entities::UserEntity
       present :auth_token, token.authentication_token
+      present :auth_token_expiry, token.auth_token_expiry
       set_refresh_cookie_in_response(remember)
     end
   end
@@ -376,6 +377,7 @@ class AuthenticationApi < Grape::API
         # Respond user details with new auth token
         present :user, user, with: Entities::UserEntity
         present :auth_token, token.authentication_token
+        present :auth_token_expiry, token.auth_token_expiry
         set_refresh_cookie_in_response(params[:remember])
       end
     end
@@ -499,8 +501,10 @@ class AuthenticationApi < Grape::API
         end
       end
       # Return user details
+      token = current_user.generate_authentication_token!(token_type: :general, force_new: false)
       present :user, current_user, with: Entities::UserEntity
-      present :auth_token, current_user.generate_authentication_token!(token_type: :general, force_new: false).authentication_token
+      present :auth_token, token.authentication_token
+      present :auth_token_expiry, token.auth_token_expiry
     else
       present nil
     end
