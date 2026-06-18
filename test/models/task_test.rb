@@ -49,6 +49,21 @@ class TaskTest < ActiveSupport::TestCase
     end
   end
 
+  def test_add_text_comment_with_raw_utf8_emoji_bytes
+    project = FactoryBot.create(:project)
+    unit = project.unit
+    convenor = unit.main_convenor_user
+    task_definition = unit.task_definitions.first
+    task = project.task_for_task_definition(task_definition)
+    comment_text = "\xF0\x9F\x98\x82".force_encoding(Encoding::UTF_8)
+
+    comment = task.add_text_comment(convenor, comment_text)
+
+    assert comment.persisted?
+    assert_equal comment_text, comment.comment
+    assert_equal comment_text, TaskComment.find(comment.id).read_attribute(:comment)
+  end
+
   def test_trigger_transition_allows_assessment_outcomes_without_feedback_check_by_default
     project = FactoryBot.create(:project)
     unit = project.unit
@@ -140,6 +155,7 @@ class TaskTest < ActiveSupport::TestCase
       task.update!(submission_date: Time.zone.parse('2026-03-29 00:00:00 UTC'))
 
       assert_equal 3.0, task.days_awaiting_feedback
+      assert_equal 12.0, task.calendar_days_awaiting_feedback
     end
     travel_back
   end
