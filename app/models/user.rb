@@ -143,6 +143,8 @@ class User < ApplicationRecord
   belongs_to  :role, optional: false # Foreign Key
   has_many    :unit_roles, dependent: :destroy, inverse_of: :user
   has_many    :projects, dependent: :restrict_with_exception, inverse_of: :user
+  has_many    :engagements, dependent: :restrict_with_exception, inverse_of: :user
+  has_many    :engagement_comments, dependent: :restrict_with_exception, inverse_of: :user
   has_many    :auth_tokens, dependent: :destroy, inverse_of: :user
   has_many    :user_oauth_tokens, dependent: :destroy, inverse_of: :user
   has_many    :user_oauth_states, dependent: :destroy, inverse_of: :user
