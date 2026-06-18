@@ -143,13 +143,11 @@ class TaskDefinitionsApi < Grape::API
       optional :requires_discussion,      type: Boolean,  desc: 'Whether task must be discussed in class before it can be signed off as complete'
       optional :use_resources_for_jplag_base_code, type: Boolean, desc: 'Include the common base code from task resources for JPlag comparisons'
       optional :lock_assessments_to_tutorial_stream, type: Boolean, desc: 'Only allow tutors in this tutorial stream to assess this task'
-      # optional :p_target_date, type: Date, desc: 'Pass due date override'
-      optional :c_target_date,            type: Date,     desc: 'Credit due date override'
-      optional :d_target_date,            type: Date,     desc: 'Distinction due date override'
-      optional :hd_target_date,           type: Date,     desc: 'High Distinction due date override'
-      optional :c_start_date,             type: Date,     desc: 'Credit start date override'
-      optional :d_start_date,             type: Date,     desc: 'Distinction start date override'
-      optional :hd_start_date,            type: Date,     desc: 'High Distinction start date override'
+      optional :grade_due_dates, type: Array do
+        requires :target_grade, type: Integer
+        optional :target_due_date, type: Date
+        optional :start_date, type: Date
+      end
     end
   end
   put '/units/:unit_id/task_definitions/:id' do
@@ -161,14 +159,7 @@ class TaskDefinitionsApi < Grape::API
     end
 
     # strip these out so TaskDefinition#update! never sees them
-    grade_due_overrides = params[:task_def].slice(
-      'p_target_date', 'c_target_date', 'd_target_date', 'hd_target_date',
-      'p_start_date', 'c_start_date', 'd_start_date', 'hd_start_date'
-    )
-    params[:task_def].except!(
-      'p_target_date', 'c_target_date', 'd_target_date', 'hd_target_date',
-      'p_start_date', 'c_start_date', 'd_start_date', 'hd_start_date'
-    )
+    grade_due_date_rows = params[:task_def].delete('grade_due_dates')
 
     task_params = ActionController::Parameters.new(params)
                                               .require(:task_def)
@@ -247,29 +238,32 @@ class TaskDefinitionsApi < Grape::API
       end
     end
 
-    grade_number = { 'c' => 1, 'd' => 2, 'hd' => 3 }
-    field_map = { 'target_date' => :target_due_date, 'start_date' => :start_date }
-
-    grade_due_overrides.each do |key, date|
-      next if date.blank?
-
-      # if task_def.start_date > date
-      #   error!({ error: 'Target date cannot be earlier than start date' }, 400)
-      # end
-
+    if grade_due_date_rows.present?
       unless unit.allow_flexible_dates
         error!({ error: 'This unit must have Allow Flexible Dates enabled to modify target dates per grade' }, 403)
       end
 
-      grade_key, kind = key.to_s.split('_', 2) # e.g. "c", "target_date"
-      next unless grade_number.key?(grade_key)
-      next unless field_map.key?(kind)
+      grade_due_date_rows.each do |row_params|
+        target_grade = row_params[:target_grade] || row_params['target_grade']
+        next if target_grade.to_i.zero?
 
-      row = TaskDefinitionGradeDueDate.find_or_initialize_by(
-        task_definition: task_def,
-        target_grade: grade_number[grade_key]
-      )
-      row.update!(field_map[kind] => date)
+        unless unit.grade_value?(target_grade)
+          error!({ error: "Target grade #{target_grade} is not enabled for this unit" }, 422)
+        end
+
+        target_due_date = row_params[:target_due_date] || row_params['target_due_date']
+        start_date = row_params[:start_date] || row_params['start_date']
+        row = TaskDefinitionGradeDueDate.find_or_initialize_by(
+          task_definition: task_def,
+          target_grade: target_grade
+        )
+
+        if target_due_date.blank? && start_date.blank?
+          row.destroy if row.persisted?
+        else
+          row.update!(target_due_date: target_due_date, start_date: start_date)
+        end
+      end
     end
 
     present task_def, with: Entities::TaskDefinitionEntity, my_role: unit.role_for(current_user)

@@ -115,36 +115,22 @@ class TaskDefinition < ApplicationRecord
   include TaskDefinitionTiiModule
   include TaskDefinitionSimilarityModule
 
-  # def p_target_date
-  #   due_date
-  # end
-
-  # Per-grade target date overrides
-
-  def c_target_date
-    grade_due_dates.find { |g| g.target_grade == 1 }&.target_due_date
+  def grade_due_date_overrides
+    grade_due_dates.map do |override|
+      {
+        target_grade: override.target_grade,
+        target_due_date: override.target_due_date,
+        start_date: override.start_date
+      }
+    end
   end
 
-  def d_target_date
-    grade_due_dates.find { |g| g.target_grade == 2 }&.target_due_date
+  def grade_target_date(target_grade)
+    grade_due_dates.find { |g| g.target_grade == target_grade.to_i }&.target_due_date
   end
 
-  def hd_target_date
-    grade_due_dates.find { |g| g.target_grade == 3 }&.target_due_date
-  end
-
-  # Per-grade start date overrides
-
-  def c_start_date
-    grade_due_dates.find { |g| g.target_grade == 1 }&.start_date
-  end
-
-  def d_start_date
-    grade_due_dates.find { |g| g.target_grade == 2 }&.start_date
-  end
-
-  def hd_start_date
-    grade_due_dates.find { |g| g.target_grade == 3 }&.start_date
+  def grade_start_date(target_grade)
+    grade_due_dates.find { |g| g.target_grade == target_grade.to_i }&.start_date
   end
 
   def unit_must_be_same

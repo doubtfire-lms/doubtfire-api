@@ -413,11 +413,7 @@ class Task < ApplicationRecord
     if unit.allow_flexible_dates
       return target_due_date if target_due_date.present?
 
-      grade_target_date = case project.target_grade
-                          when 1 then task_definition.c_target_date
-                          when 2 then task_definition.d_target_date
-                          when 3 then task_definition.hd_target_date
-                          end
+      grade_target_date = task_definition.grade_target_date(project.target_grade)
       return grade_target_date if grade_target_date.present?
     end
 
@@ -428,11 +424,7 @@ class Task < ApplicationRecord
     if unit.allow_flexible_dates
       return target_start_date if target_start_date.present?
 
-      grade_start_date = case project.target_grade
-                         when 1 then task_definition.c_start_date
-                         when 2 then task_definition.d_start_date
-                         when 3 then task_definition.hd_start_date
-                         end
+      grade_start_date = task_definition.grade_start_date(project.target_grade)
       return grade_start_date if grade_start_date.present?
     end
 
