@@ -437,8 +437,8 @@ class Unit < ApplicationRecord
   end
 
   def normalize_grade_definitions(raw_definitions, sort: true)
-    raw_definitions = JSON.parse(raw_definitions) if raw_definitions.is_a?(String)
     raw_definitions = DEFAULT_GRADE_DEFINITIONS if raw_definitions.blank?
+    raw_definitions = JSON.parse(raw_definitions) if raw_definitions.is_a?(String)
 
     definitions = Array(raw_definitions).map do |definition|
       definition = definition.to_h if definition.respond_to?(:to_h)
@@ -468,7 +468,6 @@ class Unit < ApplicationRecord
 
     sort ? definitions.sort_by { |definition| definition['value'] } : definitions
   end
-
 
   def validate_end_date_after_start_date
     if end_date.present? && start_date.present? && end_date < start_date
