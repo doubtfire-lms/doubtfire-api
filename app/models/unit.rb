@@ -358,7 +358,15 @@ class Unit < ApplicationRecord
 
     fail_definition['value'] = -1
     target_definitions.each_with_index { |definition, index| definition['value'] = index }
-    self[:grade_values] = [fail_definition, *target_definitions]
+    self[:grade_values] = grade_values_for_column([fail_definition, *target_definitions])
+  end
+
+  def grade_values_for_column(definitions)
+    if self.class.type_for_attribute('grade_values').is_a?(ActiveRecord::Type::Json)
+      definitions
+    else
+      definitions.to_json
+    end
   end
 
   def ensure_teaching_period_dates_match
