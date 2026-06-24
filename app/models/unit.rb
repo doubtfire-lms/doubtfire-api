@@ -17,8 +17,6 @@ class Unit < ApplicationRecord
     { 'id' => 'high-distinction', 'value' => 3, 'label' => 'High Distinction', 'abbreviation' => 'HD' }
   ].freeze
 
-  serialize :grade_values, coder: JSON
-
   include ApplicationHelper
   include FileHelper
   include MimeCheckHelpers
