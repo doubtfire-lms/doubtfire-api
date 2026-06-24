@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-14](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-13...v11.0.0-14) (2026-06-24)
+
+
+### Bug Fixes
+
+* avoid serialisation ([1a47564](https://github.com/b0ink/doubtfire-deploy/commit/1a475640e211d3dec7e3b5034b3f0efddaa6e29d))
+* check grade value is valid json ([ea7c5db](https://github.com/b0ink/doubtfire-deploy/commit/ea7c5db44e3f1751cf6d93028a07f0f82cca3bec))
+
 ## [11.0.0-13](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-12...v11.0.0-13) (2026-06-24)
 
 
