@@ -178,14 +178,9 @@ class Webcal < ApplicationRecord
   def self.flexible_grade_date_for_task_definition(task_def, project, date_type)
     return nil unless project&.unit&.allow_flexible_dates
 
-    case [project.target_grade, date_type]
-    when [1, :target_date] then task_def.c_target_date
-    when [2, :target_date] then task_def.d_target_date
-    when [3, :target_date] then task_def.hd_target_date
-    when [1, :start_date] then task_def.c_start_date
-    when [2, :start_date] then task_def.d_start_date
-    when [3, :start_date] then task_def.hd_start_date
-    end
+    return task_def.grade_target_date(project.target_grade) if date_type == :target_date
+
+    task_def.grade_start_date(project.target_grade)
   end
 
   #

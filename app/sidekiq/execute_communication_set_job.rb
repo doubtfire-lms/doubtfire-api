@@ -372,7 +372,7 @@ class ExecuteCommunicationSetJob
       '{{unit.code}}' => unit.code.to_s,
       '{{unit.name}}' => unit.name.to_s,
       '{{rule.name}}' => rule.name.to_s,
-      '{{target_grade}}' => target_grade_name(target_grade_value),
+      '{{target_grade}}' => target_grade_name(target_grade_value, unit),
       '{{conditions_summary}}' => conditions_summary(rule),
       '{{actions_summary}}' => actions_summary(rule, action_results)
     }
@@ -382,8 +382,8 @@ class ExecuteCommunicationSetJob
     end
   end
 
-  def target_grade_name(value)
-    GradeHelper.grade_for(value).to_s
+  def target_grade_name(value, unit = nil)
+    (unit&.grade_label(value) || GradeHelper.grade_for(value)).to_s
   end
 
   def formatted_email(user)
@@ -444,7 +444,7 @@ class ExecuteCommunicationSetJob
         project = projects.find { |item| item.id == result[:project_id] }
         student = project&.user
         details = if result[:status] == 'updated'
-                    "Changed target grade from #{target_grade_name(result[:previous_target_grade])} to #{target_grade_name(result[:target_grade])}"
+                    "Changed target grade from #{target_grade_name(result[:previous_target_grade], rule.unit)} to #{target_grade_name(result[:target_grade], rule.unit)}"
                   elsif result[:status] == 'commented'
                     task_definition = TaskDefinition.find_by(id: result[:task_definition_id])
                     "Added comment to #{task_definition_label(task_definition)}"
@@ -504,9 +504,9 @@ class ExecuteCommunicationSetJob
                    end
       "Students that have #{task_label} #{predicate} [#{Array(condition.task_statuses).map { |status| status.to_s.titleize }.join(', ')}]"
     when 'TargetGradeCondition'
-      "Students with a Target Grade #{operator_label(condition.operator)} #{target_grade_name(condition.target_grade)}"
+      "Students with a Target Grade #{operator_label(condition.operator)} #{target_grade_name(condition.target_grade, condition.communication.unit)}"
     when 'TaskStatusCountCondition'
-      grade_label = target_grade_name(condition.task_target_grade)
+      grade_label = target_grade_name(condition.task_target_grade, condition.communication.unit)
       statuses = Array(condition.task_statuses).map { |status| status.to_s.titleize }.join(', ')
       "Students that have #{operator_label(condition.operator)} #{condition.task_status_count} #{grade_label} tasks in [#{statuses}]"
     when 'LoginStatusCondition'
@@ -547,7 +547,7 @@ class ExecuteCommunicationSetJob
     when 'EmailStaffAction'
       'Send staff email'
     when 'ChangeTargetGradeAction'
-      "Change Target Grade to #{target_grade_name(action.target_grade)}"
+      "Change Target Grade to #{target_grade_name(action.target_grade, action.communication_rule.unit)}"
     when 'TaskCommentAction'
       "Add comment to #{task_definition_label(action.task_definition)}"
     else

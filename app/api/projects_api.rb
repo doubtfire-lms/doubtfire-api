@@ -98,6 +98,10 @@ class ProjectsApi < Grape::API
         error!({ error: "You do not have permissions to change this student" }, 403)
       end
 
+      unless project.unit.grade_value?(params[:target_grade])
+        error!({ error: 'Target grade is not enabled for this unit' }, 422)
+      end
+
       project.target_grade = params[:target_grade]
       project.save
     elsif !params[:submitted_grade].nil?
@@ -106,6 +110,9 @@ class ProjectsApi < Grape::API
       end
       if project.portfolio_exists?
         error!({ error: "You cannot change your submitted grade after portfolio submission" }, 403)
+      end
+      unless project.unit.grade_value?(params[:submitted_grade])
+        error!({ error: 'Submitted grade is not enabled for this unit' }, 422)
       end
 
       project.submitted_grade = params[:submitted_grade]
@@ -126,7 +133,6 @@ class ProjectsApi < Grape::API
       if params[:old_grade] != project.grade
         error!({ error: 'Existing project grade does not match current grade. Refresh project and try again.' }, 403)
       end
-
       for_student = false
 
       project.grade = params[:grade]

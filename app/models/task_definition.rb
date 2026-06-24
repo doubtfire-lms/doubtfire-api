@@ -93,7 +93,8 @@ class TaskDefinition < ApplicationRecord
   validates :name, uniqueness: { scope:  :unit_id } # task definition names within a unit must be unique
   validates :abbreviation, uniqueness: { scope: :unit_id } # task definition names within a unit must be unique
 
-  validates :target_grade, inclusion: { in: GradeHelper::RANGE, message: '%{value} is not a valid target grade' }
+  validates :target_grade, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+  validate :target_grade_enabled_for_unit
   validates :max_quality_pts, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 100, message: 'must be between 0 and 100' }
 
   validate :upload_requirements, :check_upload_requirements_format
@@ -114,36 +115,22 @@ class TaskDefinition < ApplicationRecord
   include TaskDefinitionTiiModule
   include TaskDefinitionSimilarityModule
 
-  # def p_target_date
-  #   due_date
-  # end
-
-  # Per-grade target date overrides
-
-  def c_target_date
-    grade_due_dates.find { |g| g.target_grade == 1 }&.target_due_date
+  def grade_due_date_overrides
+    grade_due_dates.map do |override|
+      {
+        target_grade: override.target_grade,
+        target_due_date: override.target_due_date,
+        start_date: override.start_date
+      }
+    end
   end
 
-  def d_target_date
-    grade_due_dates.find { |g| g.target_grade == 2 }&.target_due_date
+  def grade_target_date(target_grade)
+    grade_due_dates.find { |g| g.target_grade == target_grade.to_i }&.target_due_date
   end
 
-  def hd_target_date
-    grade_due_dates.find { |g| g.target_grade == 3 }&.target_due_date
-  end
-
-  # Per-grade start date overrides
-
-  def c_start_date
-    grade_due_dates.find { |g| g.target_grade == 1 }&.start_date
-  end
-
-  def d_start_date
-    grade_due_dates.find { |g| g.target_grade == 2 }&.start_date
-  end
-
-  def hd_start_date
-    grade_due_dates.find { |g| g.target_grade == 3 }&.start_date
+  def grade_start_date(target_grade)
+    grade_due_dates.find { |g| g.target_grade == target_grade.to_i }&.start_date
   end
 
   def unit_must_be_same
@@ -939,6 +926,12 @@ class TaskDefinition < ApplicationRecord
   end
 
   private
+
+  def target_grade_enabled_for_unit
+    return if unit.nil? || target_grade.nil? || unit.grade_value?(target_grade)
+
+    errors.add(:target_grade, 'is not enabled for this unit')
+  end
 
   def delete_associated_files()
     remove_task_sheet()
