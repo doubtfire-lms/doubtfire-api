@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-12](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-11...v11.0.0-12) (2026-06-24)
+
+
+### Features
+
+* customisable grades ([#638](https://github.com/b0ink/doubtfire-deploy/issues/638)) ([57cb9e2](https://github.com/b0ink/doubtfire-deploy/commit/57cb9e250b7fbfe9eb477021c9077d86d4b696ab))
+
 ## [11.0.0-11](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-10...v11.0.0-11) (2026-06-18)
 
 
