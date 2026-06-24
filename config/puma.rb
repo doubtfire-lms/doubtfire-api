@@ -32,6 +32,22 @@ pidfile ENV.fetch("PIDFILE") { "tmp/pids/server.pid" }
 #
 # workers ENV.fetch("WEB_CONCURRENCY") { 2 }
 
+workers ENV.fetch("WEB_CONCURRENCY", 2)
+threads_count = ENV.fetch("RAILS_MAX_THREADS", 5)
+threads threads_count, threads_count
+preload_app!
+port        ENV.fetch("PORT", 3000)
+environment ENV.fetch("RAILS_ENV", "development")
+
+# SECURITY FIX: Raise on SIGTERM to prevent request queue poisoning
+raise_exception_on_sigterm
+
+# SECURITY FIX: Reject malformed/early-hint requests
+# Forces Puma 6.x strict HTTP parsing mode
+lowlevel_error_handler do |_err, _env, _status|
+  [400, { "Content-Type" => "text/plain" }, ["Bad Request"]]
+end
+
 # Use the `preload_app!` method when specifying a `workers` number.
 # This directive tells Puma to first boot the application and load code
 # before forking the application. This takes advantage of Copy On Write

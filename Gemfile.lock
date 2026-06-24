@@ -600,7 +600,7 @@ DEPENDENCIES
   net-smtp
   oauth2
   pdf-reader
-  puma
+  puma (>= 6.4.3)
   rack-cors
   rails (~> 8.0)
   rails-latex

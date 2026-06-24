@@ -5,6 +5,7 @@ require 'rails/all'
 require 'csv'
 require 'yaml'
 require 'bunny-pub-sub/services_manager'
+require_relative '../app/middleware/request_smuggling_protection'
 
 # Precompile assets before deploying to production
 if defined?(Bundler)
@@ -293,6 +294,7 @@ module Doubtfire
         resource '*', headers: :any, methods: %i(get post put delete options)
       end
     end
+    config.middleware.insert_before Rack::Cors, RequestSmugglingProtection
 
     config.active_support.to_time_preserves_timezone = :zone
 
