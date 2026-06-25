@@ -66,7 +66,6 @@ class ApiRoot < Grape::API
   mount GroupSetsApi
   mount LearningOutcomesApi
   mount ProjectsApi
-  mount SentryTunnelApi
   mount SettingsApi
   mount StudentsApi
   mount Submission::PortfolioApi
