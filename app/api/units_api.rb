@@ -604,6 +604,61 @@ class UnitsApi < Grape::API
     present unit.student_task_completion_stats, with: Grape::Presenters::Presenter
   end
 
+  desc 'Get historical task completion snapshots'
+  params do
+    optional :start_date, type: Date, desc: 'Include snapshots captured on or after this date'
+    optional :end_date, type: Date, desc: 'Include snapshots captured on or before this date'
+    optional :limit, type: Integer, desc: 'Maximum number of snapshots to return', default: 365
+  end
+  get '/units/:id/stats/task_completion_snapshots' do
+    unit = Unit.find(params[:id])
+    unless authorise? current_user, unit, :download_stats
+      error!({ error: "Not authorised to download stats of student tasks in #{unit.code}" }, 403)
+    end
+
+    snapshots = unit.task_completion_snapshots.order(snapshot_timestamp: :desc)
+    if params[:start_date].present?
+      start_timestamp = params[:start_date].in_time_zone.beginning_of_day.to_i
+      snapshots = snapshots.where('CAST(snapshot_timestamp AS UNSIGNED) >= ?', start_timestamp)
+    end
+    if params[:end_date].present?
+      end_timestamp = params[:end_date].in_time_zone.end_of_day.to_i
+      snapshots = snapshots.where('CAST(snapshot_timestamp AS UNSIGNED) <= ?', end_timestamp)
+    end
+    snapshots = snapshots.limit([params[:limit].to_i, 365].min)
+
+    present snapshots.map { |snapshot|
+      stats = snapshot.load_stats
+
+      {
+        snapshot_date: snapshot.snapshot_date,
+        snapshot_timestamp: snapshot.snapshot_timestamp,
+        stats: stats
+      }
+    }, with: Grape::Presenters::Presenter
+  end
+
+  desc 'Capture task completion snapshot immediately for this unit'
+  post '/units/:id/stats/task_completion_snapshots/capture' do
+    unit = Unit.find(params[:id])
+    unless authorise? current_user, unit, :capture_task_completion_snapshot
+      error!({ error: "Not authorised to capture stats of student tasks in #{unit.code}" }, 403)
+    end
+
+    # Check if a snapshot was captured within the past 30 minutes
+    recent_snapshot = unit.task_completion_snapshots.where('CAST(snapshot_timestamp AS UNSIGNED) > ?', 30.minutes.ago.to_i).order(snapshot_timestamp: :desc).first
+    if recent_snapshot.present?
+      recent_snapshot_time = recent_snapshot.snapshot_time
+      remaining_seconds = [(recent_snapshot_time + 30.minutes - Time.zone.now).ceil, 0].max
+      remaining_minutes = [(remaining_seconds / 60.0).ceil, 1].max
+      error!({ error: "A snapshot was captured at #{recent_snapshot_time.strftime('%H:%M')}. Please wait #{remaining_minutes} more minute(s) before capturing another snapshot." }, 429)
+    end
+
+    job_id = AggregateTaskCompletionStatsJob.perform_async(unit.id)
+    job = setup_job(job_id)
+    present job, with: Entities::SidekiqJobEntity
+  end
+
   desc 'Download stats related to the number of tasks assessed by each tutor'
   get '/csv/units/:id/tutor_assessments' do
     unit = Unit.find(params[:id])

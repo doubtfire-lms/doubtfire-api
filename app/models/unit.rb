@@ -77,6 +77,7 @@ class Unit < ApplicationRecord
       :get_marking_sessions,
       :upload_grades_csv,
       :get_staff_notes,
+      :capture_task_completion_snapshot,
       :mannage_communications,
       :delete_engagement
     ]
@@ -169,6 +170,7 @@ class Unit < ApplicationRecord
   has_many :unit_roles, dependent: :destroy, inverse_of: :unit
   has_many :learning_outcomes, as: :context, dependent: :destroy # inverse_of: :unit
   has_many :marking_sessions, dependent: :destroy
+  has_many :task_completion_snapshots, dependent: :destroy, inverse_of: :unit
   has_many :communication_sets, class_name: 'CommunicationSet', dependent: :destroy
   has_many :communication_rules, through: :communication_sets, class_name: 'CommunicationRule'
   has_many :communication_set_schedules, through: :communication_sets, class_name: 'CommunicationSetSchedule'
@@ -1933,23 +1935,31 @@ class Unit < ApplicationRecord
   end
 
   def task_completion_csv
+    task_completion_csv_generator()
+  end
+
+  def task_completion_csv_generator(task_status_uses_id: false)
     task_def_by_grade = task_definitions_by_grade
     streams = tutorial_streams
     grp_sets = group_sets
+    base_headers = [
+      'Student ID',
+      'Username',
+      'Student Name',
+    ]
+    base_headers << 'Campus'
+    base_headers.push(
+      'Target Grade',
+      'Email',
+      'Portfolio',
+      'Grade',
+      'Rationale',
+      'Assessor',
+    )
 
     CSV.generate() do |csv|
       # Add header row
-      csv << ([
-        'Student ID',
-        'Username',
-        'Student Name',
-        'Target Grade',
-        'Email',
-        'Portfolio',
-        'Grade',
-        'Rationale',
-        'Assessor',
-      ] +
+      csv << (base_headers +
              (streams.count > 0 ? streams.map { |t| t.abbreviation } : ['Tutorial']) +
              grp_sets.map(&:name) +
              task_def_by_grade.map do |task_definition|
@@ -1964,7 +1974,11 @@ class Unit < ApplicationRecord
       # Get the details to fetch for each task definition...
       td_select = task_def_by_grade.map do |td|
         result = []
-        result << "MAX(CASE WHEN tasks.task_definition_id = #{td.id} THEN (CASE WHEN task_statuses.name IS NULL THEN 'Not Started' ELSE task_statuses.name END) ELSE NULL END) AS status_#{td.id}"
+        if task_status_uses_id
+          result << "MAX(CASE WHEN tasks.task_definition_id = #{td.id} THEN (CASE WHEN tasks.task_status_id IS NULL THEN #{TaskStatus.not_started.id} ELSE tasks.task_status_id END) ELSE NULL END) AS status_#{td.id}"
+        else
+          result << "MAX(CASE WHEN tasks.task_definition_id = #{td.id} THEN (CASE WHEN task_statuses.name IS NULL THEN 'Not Started' ELSE task_statuses.name END) ELSE NULL END) AS status_#{td.id}"
+        end
         result << "MAX(CASE WHEN tasks.task_definition_id = #{td.id} THEN tasks.grade ELSE NULL END) AS grade_#{td.id}" if td.is_graded?
         result << "MAX(CASE WHEN tasks.task_definition_id = #{td.id} THEN tasks.quality_pts ELSE NULL END) AS stars_#{td.id}" if td.has_stars?
         result << "MAX(CASE WHEN tasks.task_definition_id = #{td.id} THEN tasks.contribution_pts ELSE NULL END) AS people_#{td.id}" if td.is_group_task?
@@ -1976,6 +1990,7 @@ class Unit < ApplicationRecord
         .joins(
           :unit,
           'INNER JOIN users ON projects.user_id = users.id',
+          'LEFT OUTER JOIN campuses ON campuses.id = projects.campus_id',
           'INNER JOIN task_definitions ON task_definitions.unit_id = units.id',
           'LEFT OUTER JOIN tutorial_streams ON tutorial_streams.unit_id = units.id',
           'LEFT OUTER JOIN tutorial_enrolments ON tutorial_enrolments.project_id = projects.id',
@@ -1986,7 +2001,7 @@ class Unit < ApplicationRecord
           'LEFT OUTER JOIN groups ON groups.id = group_memberships.group_id'
         ).select(
           'projects.id as project_id', 'users.student_id as student_id', 'users.username as username', 'users.first_name as first_name', 'projects.assessor_id as project_assessor',
-          'users.last_name as last_name', 'projects.target_grade', 'users.email as email', 'compile_portfolio', 'portfolio_production_date', 'grade', 'grade_rationale',
+          'users.last_name as last_name', 'campuses.abbreviation as campus_abbreviation', 'projects.target_grade', 'users.email as email', 'compile_portfolio', 'portfolio_production_date', 'grade', 'grade_rationale',
           *td_select,
           # Get tutorial for each stream in unit
           *streams.map { |s| "MAX(CASE WHEN tutorials.tutorial_stream_id = #{s.id} OR tutorials.tutorial_stream_id IS NULL THEN tutorials.abbreviation ELSE NULL END) AS tutorial_#{s.id}" },
@@ -1994,12 +2009,16 @@ class Unit < ApplicationRecord
           "MAX(CASE WHEN tutorial_streams.id IS NULL THEN tutorials.abbreviation ELSE NULL END) AS tutorial",
           *grp_sets.map { |gs| "MAX(CASE WHEN groups.group_set_id = #{gs.id} THEN groups.name ELSE NULL END) AS grp_#{gs.id}" }
         ).group(
-          'projects.id', 'student_id', 'username', 'first_name', 'last_name', 'target_grade', 'email', 'compile_portfolio', 'portfolio_production_date', 'grade', 'grade_rationale'
+          'projects.id', 'student_id', 'username', 'first_name', 'last_name', 'campus_abbreviation', 'target_grade', 'email', 'compile_portfolio', 'portfolio_production_date', 'grade', 'grade_rationale'
         ).each do |row|
-          csv << ([
+          student_details = [
             row['student_id'],
             row['username'],
             "#{row['first_name']} #{row['last_name']}",
+          ]
+          student_details << row['campus_abbreviation']
+
+          csv << (student_details + [
             grade_label(row['target_grade']),
             row['email'],
             row['portfolio_production_date'].present? && !row['compile_portfolio'] && File.exist?(FileHelper.student_portfolio_path(self, row['username'], create: true)),
@@ -2015,7 +2034,11 @@ class Unit < ApplicationRecord
           end.flatten + grp_sets.map do |gs|
             row["grp_#{gs.id}"]
           end + task_def_by_grade.map do |td|
-            result = [row["status_#{td.id}"].nil? ? TaskStatus.not_started.name : row["status_#{td.id}"]]
+            if task_status_uses_id
+              result = [row["status_#{td.id}"].nil? ? TaskStatus.not_started.id : row["status_#{td.id}"].to_i]
+            else
+              result = [row["status_#{td.id}"].nil? ? TaskStatus.not_started.name : row["status_#{td.id}"]]
+            end
             result << grade_abbreviation(row["grade_#{td.id}"]) if td.is_graded?
             result << row["stars_#{td.id}"] if td.has_stars?
             result << row["people_#{td.id}"] if td.is_group_task?
@@ -3670,6 +3693,19 @@ class Unit < ApplicationRecord
           row[:comments_made].to_s,
         ]
       end
+    end
+  end
+
+  def capture_task_complete_stats_snapshot!(snapshot_time: Time.zone.now)
+    snapshot_payload = task_completion_csv_generator(task_status_uses_id: true)
+
+    timestamp = snapshot_time.to_i.to_s
+
+    task_completion_snapshots
+      .find_or_initialize_by(snapshot_timestamp: timestamp)
+      .tap do |snapshot|
+      snapshot.save!
+      snapshot.store_stats!(snapshot_payload)
     end
   end
 

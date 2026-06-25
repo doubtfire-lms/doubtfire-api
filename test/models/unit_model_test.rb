@@ -736,7 +736,7 @@ class UnitModelTest < ActiveSupport::TestCase
     end
 
     # 18 = 9 general + 2 streams + 3 task defs + 1 group details + 1 stars + 1 grade + 1 contrib
-    check_task_completion_csv unit, 18
+    check_task_completion_csv unit, 19
   end
 
   def test_task_completion_csv_no_task_data
@@ -1269,6 +1269,124 @@ class UnitModelTest < ActiveSupport::TestCase
 
     assert_not unit.valid?, '"mark_late_submissions_as_assess_in_portfolio" cannot be disabled while tasks are in the Assess in Portfolio state'
     assert_includes unit.errors[:mark_late_submissions_as_assess_in_portfolio], 'cannot be disabled while tasks are in the Assess in Portfolio state'
+  end
+
+
+  test 'capture-task-complete-stats-snapshot creates snapshot for date' do
+    data = build_unit_with_controlled_task_statuses
+    unit = data[:unit]
+    snapshot_time = Time.zone.local(2026, 4, 8, 23, 55, 0)
+    expected_stats = parse_task_completion_stats_csv(unit, unit.task_completion_csv_generator(task_status_uses_id: true))
+
+    count_before = unit.task_completion_snapshots.count
+    snapshot = unit.capture_task_complete_stats_snapshot!(snapshot_time: snapshot_time)
+
+    assert_equal count_before + 1, unit.task_completion_snapshots.count
+    assert_equal snapshot_time.to_date, snapshot.snapshot_date
+    assert_equal snapshot_time.to_i.to_s, snapshot.snapshot_timestamp
+    assert_equal expected_stats, snapshot.load_stats
+
+    persisted_snapshot = unit.task_completion_snapshots.find_by(snapshot_timestamp: snapshot_time.to_i.to_s)
+    assert_not_nil persisted_snapshot
+    assert_equal snapshot.id, persisted_snapshot.id
+  ensure
+    unit&.destroy
+  end
+
+  test 'capture-task-complete-stats-snapshot creates a new snapshot for a new timestamp' do
+    data = build_unit_with_controlled_task_statuses
+    unit = data[:unit]
+    task_definitions = data[:task_definitions]
+    student2 = data[:student2]
+
+    first_time = Time.zone.local(2026, 4, 8, 9, 0, 0)
+    second_time = Time.zone.local(2026, 4, 8, 20, 0, 0)
+
+    first_snapshot = unit.capture_task_complete_stats_snapshot!(snapshot_time: first_time)
+    first_stats = first_snapshot.load_stats.deep_dup
+    count_before = unit.task_completion_snapshots.count
+
+    # Change one task status so the new capture has different stats.
+    student2.task_for_task_definition(task_definitions[0]).update!(task_status: TaskStatus.fail)
+    expected_updated_stats = parse_task_completion_stats_csv(unit, unit.task_completion_csv_generator(task_status_uses_id: true))
+
+    updated_snapshot = unit.capture_task_complete_stats_snapshot!(snapshot_time: second_time)
+
+    assert_equal count_before + 1, unit.task_completion_snapshots.count
+    assert_not_equal first_snapshot.id, updated_snapshot.id
+    assert_equal second_time.to_i.to_s, updated_snapshot.snapshot_timestamp
+    assert_not_equal first_stats, updated_snapshot.load_stats
+    assert_equal expected_updated_stats, updated_snapshot.load_stats
+  ensure
+    unit&.destroy
+  end
+
+  private
+
+  def parse_task_completion_stats_csv(unit, csv_text)
+    csv = CSV.parse(csv_text, headers: true)
+    streams = unit.tutorial_streams.pluck(:abbreviation)
+    streams = ['Tutorial'] if streams.empty?
+    task_definitions = unit.task_definitions_by_grade
+    campus_header = csv.headers.find { |header| header.to_s.casecmp('Campus').zero? }
+
+    campus_names_by_abbreviation = if campus_header.present?
+                                     abbreviations = csv.map { |row| row[campus_header].to_s.strip }.reject(&:blank?).uniq
+                                     Campus.where(abbreviation: abbreviations).pluck(:abbreviation, :name).to_h
+                                   else
+                                     {}
+                                   end
+
+    csv.each_with_object(Hash.new { |hash, key| hash[key] = {} }) do |row, stats|
+      streams.each do |stream_name|
+        tutorial_name = row[stream_name].to_s.strip
+        next if tutorial_name.blank?
+
+        campus_abbreviation = campus_header.present? ? row[campus_header].to_s.strip : nil
+
+        campus_name = if campus_abbreviation.present?
+                        campus_names_by_abbreviation[campus_abbreviation] || campus_abbreviation
+                      elsif stream_name == 'Tutorial'
+                        unit.tutorials.find_by(abbreviation: tutorial_name)&.campus&.name || stream_name
+                      else
+                        stream_name
+                      end
+
+        stats[campus_name][tutorial_name] ||= {}
+
+        task_definitions.each do |task_definition|
+          status_name = row[task_definition.abbreviation].to_s.strip
+          status_key = TaskStatus.id_to_key(status_name.to_i) || :not_started
+          stats[campus_name][tutorial_name][task_definition.abbreviation] ||= Hash.new(0)
+          stats[campus_name][tutorial_name][task_definition.abbreviation][status_key.to_s] += 1
+        end
+      end
+    end
+  end
+
+  def build_unit_with_controlled_task_statuses
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 2, stream_count: 0, tutorials: 1, campus_count: 1)
+    tutorial = unit.tutorials.first
+    campus = tutorial.campus
+    task_definitions = unit.task_definitions.order(:id).to_a
+
+    student1 = unit.enrol_student(FactoryBot.create(:user, :student), campus)
+    student2 = unit.enrol_student(FactoryBot.create(:user, :student), campus)
+    student1.enrol_in(tutorial)
+    student2.enrol_in(tutorial)
+
+    student1.task_for_task_definition(task_definitions[0]).update!(task_status: TaskStatus.complete)
+    student2.task_for_task_definition(task_definitions[0]).update!(task_status: TaskStatus.complete)
+    student1.task_for_task_definition(task_definitions[1]).update!(task_status: TaskStatus.fail)
+    student2.task_for_task_definition(task_definitions[1]).update!(task_status: TaskStatus.not_started)
+
+    {
+      unit: unit,
+      tutorial: tutorial,
+      task_definitions: task_definitions,
+      student1: student1,
+      student2: student2
+    }
   end
 
 end
