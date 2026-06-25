@@ -56,6 +56,11 @@ class AcceptOverseerJob
 
     assessment_pass = true
 
+    overseer_image = task_definition.overseer_image ||
+                     task.unit.overseer_image ||
+                     OverseerImage.find_by(tag: docker_image_name_tag)
+    ensure_docker_image_present(docker_image_name_tag, overseer_image)
+
     active_overseer_steps.each do |step|
       result = run_overseer_step(
         step: step,
@@ -114,6 +119,18 @@ class AcceptOverseerJob
     raise e
   end
 
+  def ensure_docker_image_present(docker_image_name_tag, overseer_image)
+    _, _, inspect_status = Open3.capture3('docker', 'image', 'inspect', docker_image_name_tag)
+    return if inspect_status.success?
+
+    raise "Docker image #{docker_image_name_tag} is not configured" if overseer_image.nil?
+
+    overseer_image.pull_from_docker
+    return if overseer_image.success?
+
+    raise "Unable to pull Docker image #{docker_image_name_tag}: #{overseer_image.pulled_image_text}"
+  end
+
   def run_overseer_step(step:, work_dir:, work_dir_name:, task_id:, timestamp:, docker_image_name_tag:, overseer_assessment_id:)
     script_contents = step.run_command
     raise "Execution script is empty" if script_contents.blank?
@@ -156,6 +173,7 @@ class AcceptOverseerJob
 
     command = %(
       timeout #{timeout} docker run --rm -i \
+      --pull never \
       --cpus 1 \
       --network none \
       #{volume_mount} \
