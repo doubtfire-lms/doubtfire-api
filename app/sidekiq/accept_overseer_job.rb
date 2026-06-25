@@ -100,9 +100,9 @@ class AcceptOverseerJob
       end
     else
       oa.update!(status: :failed)
-      preserve_status_on_failure = [TaskStatus.time_exceeded.id, TaskStatus.assess_in_portfolio.id].include?(task.task_status_id)
+      # preserve_status_on_failure = [TaskStatus.time_exceeded.id, TaskStatus.assess_in_portfolio.id].include?(task.task_status_id)
 
-      unless failure_status.nil? || preserve_status_on_failure
+      unless failure_status.nil? # || preserve_status_on_failure
         # TODO: have an override status setting for the step? eg. if the task is overdue, let it remain overdue, otherwise use this task status
         task.update!(task_status: failure_status)
         task.add_status_comment(task.project.tutor_for(task.task_definition), failure_status)
