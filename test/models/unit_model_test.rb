@@ -1130,11 +1130,16 @@ class UnitModelTest < ActiveSupport::TestCase
     FileUtils.mkdir_p(old_submission_history_path)
     FileUtils.touch(File.join(old_submission_history_path, 'output.txt'))
 
+    old_jplag_report_path = FileHelper.task_jplag_report_path(unit, td)
+    FileUtils.mkdir_p(File.dirname(old_jplag_report_path))
+    FileUtils.touch(old_jplag_report_path)
+
     assert File.exist?(old_path)
     assert File.exist?(task_pdf)
     assert File.exist?(old_portfolio_path)
     assert File.exist?(old_submission_history_path)
     assert File.exist?(File.join(old_submission_history_path, 'output.txt'))
+    assert File.exist?(old_jplag_report_path)
 
     unit.move_files_to_archive
     unit.archived = true
@@ -1152,6 +1157,8 @@ class UnitModelTest < ActiveSupport::TestCase
     assert_not File.exist?(old_submission_history_path), "Old submission history still exists - #{old_submission_history_path}"
     assert File.exist?(FileHelper.task_submission_identifier_path(:done, task))
     assert File.exist?(File.join(FileHelper.task_submission_identifier_path_with_timestamp(:done, task, '123_45'), 'output.txt'))
+    assert_not File.exist?(old_jplag_report_path), "Old JPlag report still exists - #{old_jplag_report_path}"
+    assert File.exist?(FileHelper.task_jplag_report_path(unit, td)), "New JPlag report does not exist"
 
     assert File.exist?(task.final_pdf_path), "Portfolio evidence file does not exist - #{task.final_pdf_path}"
 

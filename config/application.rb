@@ -89,12 +89,6 @@ module Doubtfire
     # Have rails report errors and log messages to the following email address where present
     config.email_errors_to = ENV.fetch('DF_EMAIL_ERRORS_TO', nil)
 
-    # ==> JPLAG report directory
-    # File server location for storing JPLAG reports. Defaults to `jplag/results`
-    # directory under root but is overridden using DF_JPLAG_REPORT_DIR environment
-    # variable.
-    config.jplag_report_dir = ENV['DF_JPLAG_REPORT_DIR'] || Rails.root.join('jplag/results').to_s
-
     # Tunes the comparison sensitivity by adjusting the minimum token required to be
     # counted as a matching section. A smaller value increases the sensitivity
     # but might lead to more false-positives
