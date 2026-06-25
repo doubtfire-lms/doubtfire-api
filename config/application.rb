@@ -5,6 +5,7 @@ require 'rails/all'
 require 'csv'
 require 'yaml'
 require 'bunny-pub-sub/services_manager'
+require_relative '../app/middleware/sentry_tunnel_middleware'
 
 # Precompile assets before deploying to production
 if defined?(Bundler)
@@ -287,6 +288,8 @@ module Doubtfire
       Rails.root.join('app/models/d2l')
 
     # CORS config
+    config.middleware.insert_before Rack::MethodOverride, SentryTunnelMiddleware
+
     config.middleware.insert_before Warden::Manager, Rack::Cors do
       allow do
         origins '*'
