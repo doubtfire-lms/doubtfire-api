@@ -93,6 +93,12 @@ class UnitsApi < Grape::API
       optional :feedback_warning_threshold_days, type: Integer, desc: 'Number of days since a submission without feedback before its highlighted in the tutors inbox'
       optional :feedback_overflow_threshold_days, type: Integer, desc: 'Number of days since a submission without feedback before its added to overflow marking'
       optional :enforce_feedback_before_discussed_in_class, type: Boolean, desc: 'Require feedback to be completed before tasks can be marked discussed in class'
+      optional :grade_definitions, type: Array do
+        requires :id, type: String
+        requires :value, type: Integer
+        requires :label, type: String
+        requires :abbreviation, type: String
+      end
 
       mutually_exclusive :teaching_period_id, :start_date
       mutually_exclusive :teaching_period_id, :end_date
@@ -128,7 +134,8 @@ class UnitsApi < Grape::API
                                                           :assessment_enabled,
                                                           :feedback_warning_threshold_days,
                                                           :feedback_overflow_threshold_days,
-                                                          :enforce_feedback_before_discussed_in_class
+                                                          :enforce_feedback_before_discussed_in_class,
+                                                          grade_definitions: [:id, :value, :label, :abbreviation]
                                                           )
 
     if unit.teaching_period_id.present? && (unit_parameters.key?(:start_date) || unit_parameters['teaching_period_id'] == -1)
@@ -177,6 +184,12 @@ class UnitsApi < Grape::API
       optional :feedback_warning_threshold_days, type: Integer, desc: 'Number of days since a submission without feedback before its highlighted in the tutors inbox'
       optional :feedback_overflow_threshold_days, type: Integer, desc: 'Number of days since a submission without feedback before its added to overflow marking'
       optional :enforce_feedback_before_discussed_in_class, type: Boolean, desc: 'Require feedback to be completed before tasks can be marked discussed in class', default: false
+      optional :grade_definitions, type: Array do
+        requires :id, type: String
+        requires :value, type: Integer
+        requires :label, type: String
+        requires :abbreviation, type: String
+      end
 
       mutually_exclusive :teaching_period_id, :start_date
       mutually_exclusive :teaching_period_id, :end_date
@@ -209,7 +222,8 @@ class UnitsApi < Grape::API
                                                     :allow_student_change_tutorial,
                                                     :feedback_warning_threshold_days,
                                                     :feedback_overflow_threshold_days,
-                                                    :enforce_feedback_before_discussed_in_class
+                                                    :enforce_feedback_before_discussed_in_class,
+                                                    grade_definitions: [:id, :value, :label, :abbreviation]
                                                   )
 
     # Ensure the user is authorised to convene units
@@ -532,6 +546,18 @@ class UnitsApi < Grape::API
     end
 
     job_id = DownloadTasksAwaitingFeedbackCsvJob.perform_async(unit.id)
+    job = setup_job(job_id)
+    present job, with: Entities::SidekiqJobEntity
+  end
+
+  desc 'Download CSV of overflow task claims in this unit'
+  get '/csv/units/:id/overflow_task_claims' do
+    unit = Unit.find(params[:id])
+    unless authorise? current_user, unit, :download_stats
+      error!({ error: "Not authorised to download overflow task claim stats for #{unit.code}" }, 403)
+    end
+
+    job_id = DownloadOverflowTaskClaimsCsvJob.perform_async(unit.id)
     job = setup_job(job_id)
     present job, with: Entities::SidekiqJobEntity
   end

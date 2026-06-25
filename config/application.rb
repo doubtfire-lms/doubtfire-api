@@ -5,6 +5,7 @@ require 'rails/all'
 require 'csv'
 require 'yaml'
 require 'bunny-pub-sub/services_manager'
+require_relative '../app/middleware/sentry_tunnel_middleware'
 
 # Precompile assets before deploying to production
 if defined?(Bundler)
@@ -36,6 +37,8 @@ module Doubtfire
     # are: database, ldap, aaf, or saml. It can be overridden using the DF_AUTH_METHOD
     # environment variable.
     config.auth_method = (ENV['DF_AUTH_METHOD'] || :database).to_sym
+    config.access_token_expiry = ENV.fetch('DF_ACCESS_TOKEN_EXPIRY_SECONDS', 2.hours.to_i).to_i.seconds
+    config.refresh_token_expiry = ENV.fetch('DF_REFRESH_TOKEN_EXPIRY_SECONDS', 1.week.to_i).to_i.seconds
 
     # ==> Student work directory
     # File server location for storing student's work. Defaults to `student_work`
@@ -285,6 +288,8 @@ module Doubtfire
       Rails.root.join('app/models/d2l')
 
     # CORS config
+    config.middleware.insert_before Rack::MethodOverride, SentryTunnelMiddleware
+
     config.middleware.insert_before Warden::Manager, Rack::Cors do
       allow do
         origins '*'

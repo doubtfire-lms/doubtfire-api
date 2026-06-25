@@ -76,17 +76,12 @@ class AcceptSubmissionJob
       task.send_documents_to_tii(user, accepted_tii_eula: accepted_tii_eula)
     end
 
-    if task.overseer_enabled? || test_submission
-      overseer_assessment = OverseerAssessment.create_for(task, test_submission)
-      if overseer_assessment.present?
-        logger.info "Launching Overseer assessment for task_def_id: #{task.task_definition.id} task_id: #{task.id}"
-
-        overseer_assessment.update!(student_notified_at: Time.current) if test_submission
-        overseer_assessment.send_to_overseer(test_submission: test_submission)
-
-      else
-        logger.info "Overseer assessment for task_def_id: #{task.task_definition.id} task_id: #{task.id} was not performed #{overseer_assessment.inspect}"
-      end
+    if SubmissionHistory.enabled_requirements(task).any?
+      submission_timestamp = Time.now.utc.to_i
+      SubmissionHistory.mark_pending(task)
+      CreateSubmissionHistoryJob.perform_async(task.id, submission_timestamp, test_submission)
+    elsif task.overseer_enabled? || test_submission
+      logger.error "Overseer assessment was not performed because task definition #{task.task_definition.id} has no submission history files configured"
     end
   rescue StandardError => e # to raise error message to avoid unnecessary retry
     logger.error e

@@ -77,7 +77,7 @@ class WebcalApiTest < ActiveSupport::TestCase
     assert_equal current_guid, last_response_body['guid']
   end
 
-  test 'Ical endpoint is public and serves webcal with corect content type' do
+  test 'Ical endpoint is public and serves webcal with correct content type' do
     add_auth_header_for user: @student
     # Enable webcal, get GUID
     put_json '/api/webcal', { webcal: { enabled: true } }
@@ -89,6 +89,9 @@ class WebcalApiTest < ActiveSupport::TestCase
     # Ensure correct content type
     assert_equal 200, last_response.status
     assert_equal 'text/calendar', last_response['Content-Type']
+    assert last_response.body.start_with?("BEGIN:VCALENDAR\r\n")
+    assert_includes last_response.body, "\r\nEND:VCALENDAR\r\n"
+    assert_not last_response.body.start_with?('"')
   end
 
   test 'Reminder must be specified with both time & unit' do

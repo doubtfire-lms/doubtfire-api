@@ -2,6 +2,87 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-19](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-18...v11.0.0-19) (2026-06-25)
+
+## [11.0.0-18](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-17...v11.0.0-18) (2026-06-25)
+
+
+### Bug Fixes
+
+* rename tunnel route to avoid ad blockers ([baf4f69](https://github.com/b0ink/doubtfire-deploy/commit/baf4f692be7558bca51fab8daa89b16f3daf2088))
+
+## [11.0.0-17](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-16...v11.0.0-17) (2026-06-25)
+
+## [11.0.0-16](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-15...v11.0.0-16) (2026-06-25)
+
+
+### Features
+
+* add sentry tunnel support ([3eecd2f](https://github.com/b0ink/doubtfire-deploy/commit/3eecd2f8e7733e79307830e173e6687fc4d2632f))
+
+## [11.0.0-15](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-14...v11.0.0-15) (2026-06-24)
+
+
+### Bug Fixes
+
+* check grade value is valid json ([3dd6106](https://github.com/b0ink/doubtfire-deploy/commit/3dd6106bb65eb739c81f8eab5332684a915d0c9f))
+
+## [11.0.0-14](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-13...v11.0.0-14) (2026-06-24)
+
+
+### Bug Fixes
+
+* avoid serialisation ([1a47564](https://github.com/b0ink/doubtfire-deploy/commit/1a475640e211d3dec7e3b5034b3f0efddaa6e29d))
+* check grade value is valid json ([ea7c5db](https://github.com/b0ink/doubtfire-deploy/commit/ea7c5db44e3f1751cf6d93028a07f0f82cca3bec))
+
+## [11.0.0-13](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-12...v11.0.0-13) (2026-06-24)
+
+
+### Bug Fixes
+
+* allow nullable grade values ([8b586f9](https://github.com/b0ink/doubtfire-deploy/commit/8b586f9b76c9cc82f71a33bcace5532e4ad9c4ec))
+* avoid json default ([3a0c879](https://github.com/b0ink/doubtfire-deploy/commit/3a0c879398a62469524f6e49410cccf5da0a2a33))
+
+## [11.0.0-12](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-11...v11.0.0-12) (2026-06-24)
+
+
+### Features
+
+* customisable grades ([#638](https://github.com/b0ink/doubtfire-deploy/issues/638)) ([57cb9e2](https://github.com/b0ink/doubtfire-deploy/commit/57cb9e250b7fbfe9eb477021c9077d86d4b696ab))
+
+## [11.0.0-11](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-10...v11.0.0-11) (2026-06-18)
+
+
+### Features
+
+* engagement passport ([#631](https://github.com/b0ink/doubtfire-deploy/issues/631)) ([d32145e](https://github.com/b0ink/doubtfire-deploy/commit/d32145ef62c7ad014524e5e3610844b7bda20b76))
+
+
+### Bug Fixes
+
+* serve public web cal as raw text ([6836a20](https://github.com/b0ink/doubtfire-deploy/commit/6836a20e582473eff4edb41e2fd1f6c4a5a9751d))
+
+## [11.0.0-10](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-9...v11.0.0-10) (2026-06-17)
+
+
+### Features
+
+* add column for days awaiting feedback including breaks ([f7b877c](https://github.com/b0ink/doubtfire-deploy/commit/f7b877c9759089ce1bb4c4e99490a039c0761181))
+* submission history ([#636](https://github.com/b0ink/doubtfire-deploy/issues/636)) ([4f95d61](https://github.com/b0ink/doubtfire-deploy/commit/4f95d61c8d897183ce83ca6d96b06570e51e4def))
+
+## [11.0.0-9](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-8...v11.0.0-9) (2026-06-11)
+
+
+### Features
+
+* expose route to fetch tasks waiting for pdf gen ([5d3407e](https://github.com/b0ink/doubtfire-deploy/commit/5d3407e2c897fa05f6e5c6ee41d8e0379fb6a367))
+* overflow task claim logs ([#614](https://github.com/b0ink/doubtfire-deploy/issues/614)) ([065180f](https://github.com/b0ink/doubtfire-deploy/commit/065180f248db7e80dd86f0491822e2051a9fa220))
+
+
+### Bug Fixes
+
+* ensure more reliable test ([93599d2](https://github.com/b0ink/doubtfire-deploy/commit/93599d27d736ebfaf7b997dfd82d764a45195881))
+
 ## [11.0.0-8](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-7...v11.0.0-8) (2026-06-09)
 
 

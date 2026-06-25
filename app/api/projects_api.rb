@@ -98,6 +98,10 @@ class ProjectsApi < Grape::API
         error!({ error: "You do not have permissions to change this student" }, 403)
       end
 
+      unless project.unit.grade_value?(params[:target_grade])
+        error!({ error: 'Target grade is not enabled for this unit' }, 422)
+      end
+
       project.target_grade = params[:target_grade]
       project.save
     elsif !params[:submitted_grade].nil?
@@ -106,6 +110,9 @@ class ProjectsApi < Grape::API
       end
       if project.portfolio_exists?
         error!({ error: "You cannot change your submitted grade after portfolio submission" }, 403)
+      end
+      unless project.unit.grade_value?(params[:submitted_grade])
+        error!({ error: 'Submitted grade is not enabled for this unit' }, 422)
       end
 
       project.submitted_grade = params[:submitted_grade]
@@ -126,7 +133,6 @@ class ProjectsApi < Grape::API
       if params[:old_grade] != project.grade
         error!({ error: 'Existing project grade does not match current grade. Refresh project and try again.' }, 403)
       end
-
       for_student = false
 
       project.grade = params[:grade]
@@ -211,6 +217,19 @@ class ProjectsApi < Grape::API
     end
 
     portfolio_tasks = project.portfolio_tasks
+
+    present portfolio_tasks.map(&:id)
+  end
+
+  desc 'Get IDs of tasks that are still processing a PDF '
+  get '/projects/:id/tasks_processing' do
+    project = Project.find(params[:id])
+
+    unless authorise? current_user, project, :get
+      error!({ error: "Couldn't find Project with id=#{params[:id]}" }, 403)
+    end
+
+    portfolio_tasks = project.tasks_processing_pdf
 
     present portfolio_tasks.map(&:id)
   end

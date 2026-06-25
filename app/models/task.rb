@@ -134,6 +134,7 @@ class Task < ApplicationRecord
   has_many :reverse_moss_similarities, class_name: 'MossTaskSimilarity', dependent: :destroy, inverse_of: :other_task, foreign_key: 'other_task_id'
   has_many :task_engagements, dependent: :destroy
   has_many :task_submissions, dependent: :destroy
+  has_many :submission_histories, dependent: :destroy
   has_many :overseer_assessments, dependent: :destroy
   has_many :tii_submissions, dependent: :destroy
   has_many :test_attempts, dependent: :destroy
@@ -408,6 +409,30 @@ class Task < ApplicationRecord
     return extension_date
   end
 
+  def local_due_date
+    if unit.allow_flexible_dates
+      return target_due_date if target_due_date.present?
+
+      grade_target_date = task_definition.grade_target_date(project.target_grade)
+      return grade_target_date if grade_target_date.present?
+    end
+
+    due_date
+  end
+
+  def local_start_date
+    if unit.allow_flexible_dates
+      return target_start_date if target_start_date.present?
+
+      grade_start_date = task_definition.grade_start_date(project.target_grade)
+      return grade_start_date if grade_start_date.present?
+    end
+
+    return task_definition.start_date + extensions.weeks if extensions.negative?
+
+    task_definition.start_date
+  end
+
   def days_awaiting_feedback(now_time = Time.zone.now)
     return 0 if submission_date.blank?
 
@@ -419,6 +444,13 @@ class Task < ApplicationRecord
     paused_seconds = break_overlap_seconds(submission_time, current_time, teaching_breaks)
 
     ([0, current_time - submission_time - paused_seconds].max / 1.day).floor
+  end
+
+  # Excludes any breaks that would otherwise "pause" feedback
+  def calendar_days_awaiting_feedback(now_time = Time.zone.now)
+    return 0 if submission_date.blank?
+
+    [0, (now_time.to_date - submission_date.to_date).to_i].max
   end
 
   def complete?
@@ -684,13 +716,9 @@ class Task < ApplicationRecord
       raise message
     end
 
-    grade_map = {
-      'f' => -1,
-      'p' => 0,
-      'c' => 1,
-      'd' => 2,
-      'hd' => 3
-    }
+    grade_map = unit.grade_definitions.to_h do |definition|
+      [definition['abbreviation'].downcase, definition['value']]
+    end
     if task_definition.is_graded
       if new_grade.nil?
         raise_error.call("No grade was supplied for a graded task (task id #{id})")
@@ -702,13 +730,16 @@ class Task < ApplicationRecord
         if new_grade.is_a?(String)
           if grade_map.keys.include?(new_grade.downcase)
             # convert string representation to integer representation
-            new_grade = grade_map[new_grade]
+            new_grade = grade_map[new_grade.downcase]
           else
-            raise_error.call("New grade supplied to task is not a valid string - expects one of {f|p|c|d|hd} (task id #{id})")
+            raise_error.call("New grade supplied to task is not a valid abbreviation (task id #{id})")
           end
         end
-        unless new_grade.is_a?(Integer) && grade_map.values.include?(new_grade.to_i)
-          raise_error.call("New grade supplied to task is not a valid integer - expects one of {-1|0|1|2|3} (task id #{id})")
+        unless new_grade.is_a?(Integer)
+          raise_error.call("New grade supplied to task is not a valid integer (task id #{id})")
+        end
+        unless unit.assessment_grade_value?(new_grade)
+          raise_error.call("Grade is not enabled for this unit (task id #{id})")
         end
         # propagate new grade to all OTHER group members
         if group_task? && !grading_group
@@ -1331,7 +1362,9 @@ class Task < ApplicationRecord
       @institution_name = Doubtfire::Application.config.institution[:name]
       @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
       @include_pax = !is_retry
-      @work_id = "task-#{task.id}-#{Time.now.to_i}-#{Process.pid}-#{Thread.current.object_id}#{'-retry' if is_retry}"
+      @work_id = FileHelper.sanitized_path(
+        "task-#{Time.current.strftime('%Y%m%d-%H%M')}-#{task.project.student.username}-#{task.task_definition.abbreviation}-#{task.id}-#{Process.pid}#{'-retry' if is_retry}"
+      )
       host = Doubtfire::Application.config.institution[:host].to_s
       host = "http://#{host}" unless host.match?(%r{\Ahttps?://})
       host = host.sub(%r{/*\z}, '')
@@ -1566,6 +1599,10 @@ class Task < ApplicationRecord
     # Ensure there is not a submission already in process
     if processing_pdf?
       ui.error!({ 'error' => 'A submission is already being processed. Please wait for the current submission process to complete.' }, 403)
+    end
+
+    if SubmissionHistory.pending?(self)
+      ui.error!({ 'error' => 'Submission history is still being created. Please wait before submitting again.' }, 403)
     end
 
     if !test_submission && (overseer_enabled? || task_definition.assessment_enabled) &&

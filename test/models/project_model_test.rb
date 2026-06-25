@@ -131,6 +131,49 @@ class ProjectModelTest < ActiveSupport::TestCase
     unit.destroy!
   end
 
+  def test_portfolio_tasks_excludes_tasks_until_pdf_processing_finishes
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0)
+    project = FactoryBot.create(:project, unit: unit)
+    no_upload_task_definition = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [])
+    finished_task_definition = FactoryBot.create(:task_definition, unit: unit)
+    processing_task_definition = FactoryBot.create(:task_definition, unit: unit)
+
+    no_upload_task = FactoryBot.create(
+      :task,
+      project: project,
+      task_definition: no_upload_task_definition,
+      task_status: TaskStatus.ready_for_feedback
+    )
+    finished_task = FactoryBot.create(
+      :task,
+      project: project,
+      task_definition: finished_task_definition,
+      task_status: TaskStatus.ready_for_feedback
+    )
+    processing_task = FactoryBot.create(
+      :task,
+      project: project,
+      task_definition: processing_task_definition,
+      task_status: TaskStatus.ready_for_feedback
+    )
+
+    FileUtils.touch(finished_task.final_pdf_path)
+    FileUtils.touch(processing_task.final_pdf_path)
+    processing_dir = FileHelper.student_work_dir(:new, processing_task, true)
+
+    assert_includes project.portfolio_tasks, no_upload_task
+    assert_includes project.portfolio_tasks, finished_task
+    assert_not_includes project.portfolio_tasks, processing_task
+    assert_includes project.tasks_processing_pdf, processing_task
+
+    FileUtils.rm_r(processing_dir)
+
+    assert_includes project.portfolio_tasks, processing_task
+    assert_not_includes project.tasks_processing_pdf, processing_task
+
+    unit.destroy!
+  end
+
   def test_create_portfolio_with_lsr
     project = FactoryBot.create(:project)
     unit = project.unit

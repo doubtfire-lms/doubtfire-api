@@ -93,10 +93,12 @@ class TaskDefinition < ApplicationRecord
   validates :name, uniqueness: { scope:  :unit_id } # task definition names within a unit must be unique
   validates :abbreviation, uniqueness: { scope: :unit_id } # task definition names within a unit must be unique
 
-  validates :target_grade, inclusion: { in: GradeHelper::RANGE, message: '%{value} is not a valid target grade' }
+  validates :target_grade, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+  validate :target_grade_enabled_for_unit
   validates :max_quality_pts, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 100, message: 'must be between 0 and 100' }
 
   validate :upload_requirements, :check_upload_requirements_format
+  validate :submission_history_required_for_overseer
 
   validates :description, length: { maximum: 4095, allow_blank: true }
 
@@ -113,36 +115,22 @@ class TaskDefinition < ApplicationRecord
   include TaskDefinitionTiiModule
   include TaskDefinitionSimilarityModule
 
-  # def p_target_date
-  #   due_date
-  # end
-
-  # Per-grade target date overrides
-
-  def c_target_date
-    grade_due_dates.find { |g| g.target_grade == 1 }&.target_due_date
+  def grade_due_date_overrides
+    grade_due_dates.map do |override|
+      {
+        target_grade: override.target_grade,
+        target_due_date: override.target_due_date,
+        start_date: override.start_date
+      }
+    end
   end
 
-  def d_target_date
-    grade_due_dates.find { |g| g.target_grade == 2 }&.target_due_date
+  def grade_target_date(target_grade)
+    grade_due_dates.find { |g| g.target_grade == target_grade.to_i }&.target_due_date
   end
 
-  def hd_target_date
-    grade_due_dates.find { |g| g.target_grade == 3 }&.target_due_date
-  end
-
-  # Per-grade start date overrides
-
-  def c_start_date
-    grade_due_dates.find { |g| g.target_grade == 1 }&.start_date
-  end
-
-  def d_start_date
-    grade_due_dates.find { |g| g.target_grade == 2 }&.start_date
-  end
-
-  def hd_start_date
-    grade_due_dates.find { |g| g.target_grade == 3 }&.start_date
+  def grade_start_date(target_grade)
+    grade_due_dates.find { |g| g.target_grade == target_grade.to_i }&.start_date
   end
 
   def unit_must_be_same
@@ -342,8 +330,8 @@ class TaskDefinition < ApplicationRecord
 
       req['type'] = 'zip' if req['type'] == 'archive'
 
-      # Check keys only contain key, type, name, tii_check, and tii_pct
-      unless req.keys.excluding('key', 'type', 'name', 'tii_check', 'tii_pct').empty?
+      # Check keys only contain supported upload requirement settings
+      unless req.keys.excluding('key', 'type', 'name', 'tii_check', 'tii_pct', 'submission_history').empty?
         errors.add(:upload_requirements, "has additional values for item #{i + 1} --> #{req.keys.join(' ')}.")
       end
 
@@ -367,8 +355,19 @@ class TaskDefinition < ApplicationRecord
         errors.add(:upload_requirements, "the tii_pct for item #{i + 1} is not a non-negative number --> #{req['tii_pct']}.")
       end
 
+      unless req['submission_history'].blank? || [true, false].include?(req['submission_history'])
+        errors.add(:upload_requirements, "the submission_history for item #{i + 1} is not a boolean --> #{req['submission_history']}.")
+      end
+
       i += 1
     end
+  end
+
+  def submission_history_required_for_overseer
+    return unless assessment_enabled?
+    return if upload_requirements&.any? { |requirement| requirement['submission_history'] == true }
+
+    errors.add(:upload_requirements, 'must include at least one file in submission history when Overseer is enabled')
   end
 
   def number_of_uploaded_files
@@ -927,6 +926,12 @@ class TaskDefinition < ApplicationRecord
   end
 
   private
+
+  def target_grade_enabled_for_unit
+    return if unit.nil? || target_grade.nil? || unit.grade_value?(target_grade)
+
+    errors.add(:target_grade, 'is not enabled for this unit')
+  end
 
   def delete_associated_files()
     remove_task_sheet()

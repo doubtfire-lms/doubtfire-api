@@ -182,6 +182,48 @@ module Submission
       present result, with: Entities::OverseerAssessmentEntity
     end
 
+    desc 'Get all retained submission histories for a task'
+    get '/projects/:id/task_def_id/:task_definition_id/submission_histories' do
+      project = Project.find(params[:id])
+      task_definition = project.unit.task_definitions.find(params[:task_definition_id])
+
+      unless authorise? current_user, project.unit, :provide_feedback
+        error!({ error: "Not authorised to get submission history for task '#{task_definition.name}'" }, 401)
+      end
+
+      task = project.task_for_task_definition(task_definition)
+      unless task
+        error!({ error: 'A submission for this task definition has never been created' }, 404)
+      end
+
+      present task.submission_histories.order(submission_timestamp: :desc),
+              with: Entities::SubmissionHistoryEntity
+    end
+
+    desc 'Download a retained submission history archive'
+    get '/projects/:id/task_def_id/:task_definition_id/submission_histories/:history_id/files' do
+      project = Project.find(params[:id])
+      task_definition = project.unit.task_definitions.find(params[:task_definition_id])
+
+      unless authorise? current_user, project.unit, :provide_feedback
+        error!({ error: "Not authorised to get submission history for task '#{task_definition.name}'" }, 401)
+      end
+
+      task = project.task_for_task_definition(task_definition)
+      history = task&.submission_histories&.find_by(id: params[:history_id])
+      error!({ error: 'Submission history was not found' }, 404) unless history
+      error!({ error: 'Submission history files are not available' }, 404) unless history.has_submission_files?
+
+      filename = "#{project.student.username}-#{task_definition.abbreviation}-#{history.submission_timestamp}.zip"
+
+      content_type 'application/octet-stream'
+      header['Content-Disposition'] = "attachment; filename=#{filename}"
+      submission_zip_data = history.submission_zip_data
+      header['Content-Length'] = submission_zip_data.bytesize.to_s
+      env['api.format'] = :binary
+      body submission_zip_data
+    end
+
     desc 'Trigger an overseer assessment to run again'
     put '/projects/:id/task_def_id/:task_definition_id/overseer_assessment/:oa_id/trigger' do
       project = Project.find(params[:id])
@@ -280,12 +322,12 @@ module Submission
         error!({ error: 'A submission for this task definition have never been created' }, 401)
       end
 
-      oa = task.overseer_assessments.find_by(submission_timestamp: params[:timestamp])
-      unless oa
-        error!({ error: "No overseer assessment found for timestamp '#{params[:timestamp]}'" }, 404)
+      history = task.submission_histories.find_by(submission_timestamp: params[:timestamp])
+      unless history
+        error!({ error: "No submission history found for timestamp '#{params[:timestamp]}'" }, 404)
       end
 
-      unless oa.has_submission_files?
+      unless history.has_submission_files?
         error!({ error: "No submission files are available for timestamp '#{params[:timestamp]}'" }, 404)
       end
 
@@ -294,7 +336,10 @@ module Submission
       content_type 'application/octet-stream'
       header['Content-Disposition'] = "attachment; filename=#{filename}"
 
-      stream_file oa.submission_zip_file_name
+      submission_zip_data = history.submission_zip_data
+      header['Content-Length'] = submission_zip_data.bytesize.to_s
+      env['api.format'] = :binary
+      body submission_zip_data
     end
 
     desc 'Get the result of the submission of a task made last'

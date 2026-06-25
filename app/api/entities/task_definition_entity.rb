@@ -19,15 +19,9 @@ module Entities
       expose :target_date
       expose :due_date
       expose :start_date
-      # expose :p_target_date, expose_nil: false
-      expose :c_target_date, expose_nil: false
-      expose :d_target_date, expose_nil: false
-      expose :hd_target_date, expose_nil: false
-
-      expose :c_start_date, expose_nil: false
-      expose :d_start_date, expose_nil: false
-      expose :hd_start_date, expose_nil: false
     end
+
+    expose :grade_due_date_overrides, as: :grade_due_dates, expose_nil: false
 
     expose :upload_requirements, expose_nil: false do |task_definition, options|
       if staff?(options[:my_role])
