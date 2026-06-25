@@ -1018,6 +1018,11 @@ class UnitModelTest < ActiveSupport::TestCase
     FileUtils.touch(File.join(old_submission_history_path, submission_history_file))
     assert File.exist?(File.join(old_submission_history_path, submission_history_file))
 
+    old_jplag_report_path = FileHelper.task_jplag_report_path(unit, td)
+    FileUtils.mkdir_p(File.dirname(old_jplag_report_path))
+    FileUtils.touch(old_jplag_report_path)
+    assert File.exist?(old_jplag_report_path)
+
     unit.code = "New-#{unit.code}"
     unit.save!
 
@@ -1040,6 +1045,9 @@ class UnitModelTest < ActiveSupport::TestCase
                "Old submission history still exists - #{old_submission_history_path}"
     assert File.exist?(File.join(new_submission_history_path, submission_history_file)),
            "New submission history file does not exist - #{new_submission_history_path}"
+
+    assert_not File.exist?(old_jplag_report_path), "Old JPlag report still exists - #{old_jplag_report_path}"
+    assert File.exist?(FileHelper.task_jplag_report_path(unit, td)), "New JPlag report does not exist"
 
     unit.destroy!
   end
