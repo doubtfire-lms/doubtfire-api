@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-20](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-19...v11.0.0-20) (2026-06-25)
+
+
+### Features
+
+* capture daily snapshots of aggregated task completion data ([#607](https://github.com/b0ink/doubtfire-deploy/issues/607)) ([86b2040](https://github.com/b0ink/doubtfire-deploy/commit/86b2040bf48f494b1e06919fcce50243fe5a0240))
+
+
+### Bug Fixes
+
+* ensure overseer image is pulled before running test ([0e0ce34](https://github.com/b0ink/doubtfire-deploy/commit/0e0ce34160dce4e23fc9deea2f035119c5d378dd))
+* relocate submission history on unit code change ([d9085b5](https://github.com/b0ink/doubtfire-deploy/commit/d9085b509b7995ae9d41e8e3973dd57b011a166d))
+
 ## [11.0.0-19](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-18...v11.0.0-19) (2026-06-25)
 
 ## [11.0.0-18](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-17...v11.0.0-18) (2026-06-25)
