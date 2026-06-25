@@ -1012,6 +1012,12 @@ class UnitModelTest < ActiveSupport::TestCase
     assert task_pdf.include?(unit.code)
     assert task_pdf.include?(unit.id.to_s)
 
+    old_submission_history_path = FileHelper.unit_submission_history_dir(unit, archived: false)
+    FileUtils.mkdir_p(old_submission_history_path)
+    submission_history_file = 'output.txt'
+    FileUtils.touch(File.join(old_submission_history_path, submission_history_file))
+    assert File.exist?(File.join(old_submission_history_path, submission_history_file))
+
     unit.code = "New-#{unit.code}"
     unit.save!
 
@@ -1028,6 +1034,12 @@ class UnitModelTest < ActiveSupport::TestCase
 
     assert File.exist?(task.final_pdf_path), "Portfolio evidence file does not exist = #{task.final_pdf_path}"
     assert task.has_pdf
+
+    new_submission_history_path = FileHelper.unit_submission_history_dir(unit, archived: false)
+    assert_not File.exist?(old_submission_history_path),
+               "Old submission history still exists - #{old_submission_history_path}"
+    assert File.exist?(File.join(new_submission_history_path, submission_history_file)),
+           "New submission history file does not exist - #{new_submission_history_path}"
 
     unit.destroy!
   end

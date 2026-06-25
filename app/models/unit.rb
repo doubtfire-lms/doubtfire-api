@@ -3757,6 +3757,16 @@ class Unit < ApplicationRecord
       FileUtils.mv(old_dir, new_dir) unless File.exist?(new_dir)
     end
 
+    old_submission_history_dir = File.join(
+      FileHelper.root_submission_history_dir(archived: archived),
+      FileHelper.sanitized_path("#{saved_change_to_code[0]}-#{id}")
+    )
+
+    if File.exist? old_submission_history_dir
+      new_submission_history_dir = FileHelper.unit_submission_history_dir(self)
+      FileUtils.mv(old_submission_history_dir, new_submission_history_dir) unless File.exist? new_submission_history_dir
+    end
+
     # rubocop:disable Rails/SkipsModelValidations
     tasks.where('portfolio_evidence IS NOT NULL').update_all("portfolio_evidence = REPLACE(portfolio_evidence, '#{saved_change_to_code[0]}-#{id}', '#{code}-#{id}')")
     # rubocop:enable Rails/SkipsModelValidations
