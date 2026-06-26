@@ -276,6 +276,46 @@ class CommentTest < ActiveSupport::TestCase
     assert_equal 'Tutor comment', comment.reload.read_attribute(:comment)
   end
 
+  def test_special_task_comments_cannot_be_deleted
+    project = FactoryBot.create(:project)
+    task_definition = project.unit.task_definitions.first
+    task = project.task_for_task_definition(task_definition)
+    tutor = project.tutor_for(task_definition)
+    student = project.student
+
+    submission_history = FactoryBot.create(:submission_history, task: task)
+    overseer_assessment = FactoryBot.create(
+      :overseer_assessment,
+      task: task,
+      submission_history: submission_history,
+      submission_timestamp: submission_history.submission_timestamp,
+      status: :failed
+    )
+
+    protected_comments = [
+      task.add_status_comment(student, TaskStatus.ready_for_feedback),
+      task.add_discussed_comment(tutor),
+      task.add_feedback_review_request_comment(student),
+      AssessmentComment.create!(
+        task: task,
+        user: tutor,
+        recipient: student,
+        comment: 'Automated tests failed',
+        commentable: overseer_assessment
+      )
+    ]
+
+    protected_comments.each do |comment|
+      add_auth_header_for(user: comment.user)
+      delete_json "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments/#{comment.id}"
+      assert_equal 403, last_response.status, "Expected #{comment.class.name} delete to be rejected"
+    end
+
+    deleted_comment_types = protected_comments.reject { |comment| TaskComment.exists?(comment.id) }.map(&:content_type)
+
+    assert_empty deleted_comment_types, "Expected protected comment types to remain after delete attempt: #{deleted_comment_types.join(', ')}"
+  end
+
   def test_student_reply_to_other_student_in_same_group
     unit = FactoryBot.create :unit
 
