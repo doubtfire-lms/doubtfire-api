@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-21](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-20...v11.0.0-21) (2026-06-26)
+
+
+### Bug Fixes
+
+* support mysql 8 reserved keyword in task completion stats query ([87fe813](https://github.com/b0ink/doubtfire-deploy/commit/87fe8136ea5e9f7011cee3b304bbe5c8a68c7d6d))
+
 ## [11.0.0-20](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-19...v11.0.0-20) (2026-06-25)
 
 
