@@ -340,13 +340,33 @@ module FileHelper
     File.join(student_portfolio_dir(unit, username, create: create, archived: archived), FileHelper.sanitized_filename("#{username}-portfolio.pdf"))
   end
 
-  def task_jplag_report_dir(unit)
-    file_server = Doubtfire::Application.config.jplag_report_dir
-    "#{file_server}/#{unit.code}-#{unit.id}/" # trust the server config and passed in type for paths
+  def root_jplag_report_dir(archived: false)
+    file_server = if archived
+                    archive_root
+                  else
+                    student_work_root
+                  end
+
+    "#{file_server}/jplag/results/"
+  end
+
+  def unit_jplag_report_dir(unit, create: false, archived: true)
+    dst = if (unit.archived && archived) || (archived == :force)
+            File.join(root_jplag_report_dir(archived: true), sanitized_path("#{unit.code}-#{unit.id}"))
+          else
+            File.join(root_jplag_report_dir(archived: false), sanitized_path("#{unit.code}-#{unit.id}"))
+          end
+
+    FileUtils.mkdir_p dst if create
+    "#{dst}/"
+  end
+
+  def task_jplag_report_dir(unit, create: false, archived: true)
+    unit_jplag_report_dir(unit, create: create, archived: archived)
   end
 
   def task_jplag_report_path(unit, task)
-    File.join(task_jplag_report_dir(unit), FileHelper.sanitized_filename("#{task.abbreviation}-result.jplag"))
+    File.join(unit_jplag_report_dir(unit), FileHelper.sanitized_filename("#{task.abbreviation}-result.jplag"))
   end
 
   def comment_attachment_path(task_comment, attachment_extension)
@@ -1071,6 +1091,8 @@ module FileHelper
   module_function :known_extension?
   module_function :pages_in_pdf
   module_function :line_wrap
+  module_function :root_jplag_report_dir
+  module_function :unit_jplag_report_dir
   module_function :task_jplag_report_dir
   module_function :task_jplag_report_path
 end

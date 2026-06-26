@@ -108,7 +108,6 @@ module UnitSimilarityModule
 
     # making temp directory for unit - jplag
     root_work_dir = Rails.root.join("tmp", "jplag", "#{code}-#{id}")
-    unit_code = "#{code}-#{id}"
 
     begin
       logger.info "Checking plagiarsm for unit #{code} - #{name} (id=#{id})"
@@ -138,8 +137,8 @@ module UnitSimilarityModule
         FileUtils.mkdir_p(tasks_dir)
 
         # There are new tasks, check these with JPLAG
-        run_jplag_on_done_files(td, tasks_dir, tasks_with_files, unit_code)
-        report_path = "#{Doubtfire::Application.config.jplag_report_dir}/#{unit_code}/#{td.abbreviation}-result.jplag"
+        report_path = FileHelper.task_jplag_report_path(self, td)
+        run_jplag_on_done_files(td, tasks_dir, tasks_with_files, report_path)
         warn_pct = td.plagiarism_warn_pct || 50
         logger.debug "Warn PCT: #{warn_pct}"
 
@@ -230,17 +229,16 @@ module UnitSimilarityModule
   # end
 
   # JPLAG Function - extracts "done" files for each task and packages them into a directory for JPLAG to run on
-  def run_jplag_on_done_files(task_definition, tasks_dir, tasks_with_files, unit_code)
+  def run_jplag_on_done_files(task_definition, tasks_dir, tasks_with_files, report_path)
     similarity_pct = task_definition.plagiarism_warn_pct
     return if similarity_pct.nil?
 
     # Check if the directory exists and create it if it doesn't
-    results_dir = "/jplag/results/#{unit_code}"
+    results_dir = File.dirname(report_path)
     system("docker exec -i jplag sh -c 'if [ ! -d \"#{results_dir}\" ]; then mkdir -p \"#{results_dir}\"; fi'") || raise('Failed to create JPlag results directory')
 
     # Remove existing result file if it exists
-    result_file = "#{results_dir}/#{task_definition.abbreviation}-result.jplag"
-    system("docker exec -i jplag sh -c 'if [ -f \"#{result_file}\" ]; then rm \"#{result_file}\"; fi'") || raise('Failed to remove previous JPlag report')
+    system("docker exec -i jplag sh -c 'if [ -f \"#{report_path}\" ]; then rm \"#{report_path}\"; fi'") || raise('Failed to remove previous JPlag report')
 
     # Extract task resources for base code
     use_base_code = false
@@ -321,7 +319,7 @@ module UnitSimilarityModule
       min_token_string,
       skip_cluster_string,
       "-M RUN",
-      "-r #{results_dir}/#{task_definition.abbreviation}-result",
+      "-r #{report_path.delete_suffix('.jplag')}",
       "--overwrite"
     ].join(" ")
 

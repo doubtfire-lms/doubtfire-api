@@ -29,7 +29,6 @@ env:
   DF_REDIS_SIDEKIQ_URL: "redis://redis:6379/0"
   LATEX_CONTAINER_NAME: doubtfire-texlive
   LATEX_BUILD_PATH: /texlive/shell/latex_build.sh
-  DF_JPLAG_REPORT_DIR: /jplag/results
   LTI_SHARED_API_SECRET: "abc123"
   LTI_ENABLED: true
 
@@ -111,7 +110,6 @@ jobs:
           options: >
             --name jplag
             -v ${{ github.workspace }}/student-work:/student-work
-            -v ${{ github.workspace }}/jplag/results:${{ env.DF_JPLAG_REPORT_DIR }}
             -v ${{ github.workspace }}/tmp/jplag:/tmp/jplag
             -v ${{ github.workspace }}/test_files/submissions/jplag:/test_files
             --detach
@@ -152,7 +150,6 @@ jobs:
             -e DF_REDIS_SIDEKIQ_URL
             -e LATEX_CONTAINER_NAME
             -e LATEX_BUILD_PATH
-            -e DF_JPLAG_REPORT_DIR
             -e LTI_SHARED_API_SECRET
             -e LTI_ENABLED
           run: bundle exec rake db:populate
@@ -164,7 +161,6 @@ jobs:
             -v ${{ github.workspace }}:/doubtfire
             -v ${{ github.workspace }}/student-work:/student-work
             -v /var/run/docker.sock:/var/run/docker.sock
-            -v ${{ github.workspace }}/jplag/results:${{ env.DF_JPLAG_REPORT_DIR }}
             -v ${{ github.workspace }}/tmp/jplag:/tmp/jplag
             -e RAILS_ENV
             -e DF_STUDENT_WORK_DIR
@@ -185,7 +181,6 @@ jobs:
             -e DF_REDIS_SIDEKIQ_URL
             -e LATEX_CONTAINER_NAME
             -e LATEX_BUILD_PATH
-            -e DF_JPLAG_REPORT_DIR
             -e LTI_SHARED_API_SECRET
             -e LTI_ENABLED
           run: TERM=xterm bundle exec rails test

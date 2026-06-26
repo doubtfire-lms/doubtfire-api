@@ -22,10 +22,15 @@ class FileHelperTest < ActiveSupport::TestCase
     archive_portfolio_path = FileHelper.unit_portfolio_dir(unit, create: false, archived: :force)
     original_portfolio_path = FileHelper.unit_portfolio_dir(unit, create: false, archived: false)
 
+    archive_jplag_path = FileHelper.unit_jplag_report_dir(unit, archived: :force)
+    original_jplag_path = FileHelper.unit_jplag_report_dir(unit, archived: false)
+
     assert_match %r{^#{FileHelper.archive_root}/}, archive_work_path
     assert_match %r{^#{FileHelper.archive_root}/portfolio/}, archive_portfolio_path
+    assert_match %r{^#{FileHelper.archive_root}/jplag/results/}, archive_jplag_path
     assert_match %r{^#{FileHelper.student_work_root}/}, original_work_path
     assert_match %r{^#{FileHelper.student_work_root}/portfolio/}, original_portfolio_path
+    assert_match %r{^#{FileHelper.student_work_root}/jplag/results/}, original_jplag_path
   end
 
   def test_accept_zip_upload

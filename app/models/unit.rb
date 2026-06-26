@@ -3594,6 +3594,15 @@ class Unit < ApplicationRecord
       FileUtils.mkdir_p(FileHelper.root_submission_history_dir(archived: true))
       FileUtils.mv(original_submission_history_path, archive_submission_history_path)
     end
+
+    # Move JPlag reports
+    archive_jplag_report_path = FileHelper.unit_jplag_report_dir(self, create: false, archived: :force)
+    original_jplag_report_path = FileHelper.unit_jplag_report_dir(self, create: false, archived: false)
+
+    if File.exist?(original_jplag_report_path) && ! File.exist?(archive_jplag_report_path)
+      FileUtils.mkdir_p(FileHelper.root_jplag_report_dir(archived: true))
+      FileUtils.mv(original_jplag_report_path, archive_jplag_report_path)
+    end
   end
 
   def get_tutor_times(start_date: nil, end_date: nil, timezone: nil, ignore_sessions_during_tutorials: false)
@@ -3717,10 +3726,12 @@ class Unit < ApplicationRecord
     unit_path = FileHelper.unit_dir(self, create: false)
     unit_portfolio_path = FileHelper.unit_portfolio_dir(self, create: false)
     submission_history_path = FileHelper.unit_submission_history_dir(self)
+    jplag_report_path = FileHelper.unit_jplag_report_dir(self, create: false)
 
     FileUtils.rm_rf unit_path
     FileUtils.rm_rf unit_portfolio_path
     FileUtils.rm_rf submission_history_path
+    FileUtils.rm_rf jplag_report_path
 
     FileUtils.cd FileHelper.student_work_dir
   end
@@ -3767,6 +3778,16 @@ class Unit < ApplicationRecord
     if File.exist? old_submission_history_dir
       new_submission_history_dir = FileHelper.unit_submission_history_dir(self)
       FileUtils.mv(old_submission_history_dir, new_submission_history_dir) unless File.exist? new_submission_history_dir
+    end
+
+    old_jplag_report_dir = File.join(
+      FileHelper.root_jplag_report_dir(archived: archived),
+      FileHelper.sanitized_path("#{saved_change_to_code[0]}-#{id}")
+    )
+
+    if File.exist? old_jplag_report_dir
+      new_jplag_report_dir = FileHelper.unit_jplag_report_dir(self, create: false)
+      FileUtils.mv(old_jplag_report_dir, new_jplag_report_dir) unless File.exist? new_jplag_report_dir
     end
 
     # rubocop:disable Rails/SkipsModelValidations
