@@ -1985,6 +1985,8 @@ class Unit < ApplicationRecord
         result
       end.flatten
 
+      group_table_alias = 'task_completion_groups'
+
       # Query across all projects, joined to task's via definitions to ensure all definitions are covered
       active_projects
         .joins(
@@ -1998,7 +2000,7 @@ class Unit < ApplicationRecord
           'LEFT OUTER JOIN tasks ON tasks.task_definition_id = task_definitions.id AND projects.id = tasks.project_id',
           'LEFT OUTER JOIN task_statuses ON tasks.task_status_id = task_statuses.id',
           'LEFT OUTER JOIN group_memberships ON group_memberships.project_id = projects.id AND group_memberships.active = TRUE',
-          'LEFT OUTER JOIN groups ON groups.id = group_memberships.group_id'
+          "LEFT OUTER JOIN #{Group.quoted_table_name} #{group_table_alias} ON #{group_table_alias}.id = group_memberships.group_id"
         ).select(
           'projects.id as project_id', 'users.student_id as student_id', 'users.username as username', 'users.first_name as first_name', 'projects.assessor_id as project_assessor',
           'users.last_name as last_name', 'campuses.abbreviation as campus_abbreviation', 'projects.target_grade', 'users.email as email', 'compile_portfolio', 'portfolio_production_date', 'grade', 'grade_rationale',
@@ -2007,7 +2009,7 @@ class Unit < ApplicationRecord
           *streams.map { |s| "MAX(CASE WHEN tutorials.tutorial_stream_id = #{s.id} OR tutorials.tutorial_stream_id IS NULL THEN tutorials.abbreviation ELSE NULL END) AS tutorial_#{s.id}" },
           # Get tutorial for case when no stream
           "MAX(CASE WHEN tutorial_streams.id IS NULL THEN tutorials.abbreviation ELSE NULL END) AS tutorial",
-          *grp_sets.map { |gs| "MAX(CASE WHEN groups.group_set_id = #{gs.id} THEN groups.name ELSE NULL END) AS grp_#{gs.id}" }
+          *grp_sets.map { |gs| "MAX(CASE WHEN #{group_table_alias}.group_set_id = #{gs.id} THEN #{group_table_alias}.name ELSE NULL END) AS grp_#{gs.id}" }
         ).group(
           'projects.id', 'student_id', 'username', 'first_name', 'last_name', 'campus_abbreviation', 'target_grade', 'email', 'compile_portfolio', 'portfolio_production_date', 'grade', 'grade_rationale'
         ).each do |row|
