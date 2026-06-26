@@ -105,6 +105,7 @@ module UnitSimilarityModule
 
     # need pwd to restore after cding into submission folder (so the files do not have full path)
     pwd = FileUtils.pwd
+    completed_all_checks = true
 
     # making temp directory for unit - jplag
     root_work_dir = Rails.root.join("tmp", "jplag", "#{code}-#{id}")
@@ -138,19 +139,26 @@ module UnitSimilarityModule
 
         # There are new tasks, check these with JPLAG
         report_path = FileHelper.task_jplag_report_path(self, td)
-        run_jplag_on_done_files(td, tasks_dir, tasks_with_files, report_path)
-        warn_pct = td.plagiarism_warn_pct || 50
-        logger.debug "Warn PCT: #{warn_pct}"
+        begin
+          run_jplag_on_done_files(td, tasks_dir, tasks_with_files, report_path)
+          warn_pct = td.plagiarism_warn_pct || 50
+          logger.debug "Warn PCT: #{warn_pct}"
 
-        # Remove any existing plagiarism links that are below the threshold, in case it has been updated since the last analysis
-        JplagTaskSimilarity.joins(:task)
-                           .where("pct < ? AND tasks.task_definition_id = ?", warn_pct, td.id)
-                           .delete_all
+          # Remove any existing plagiarism links that are below the threshold, in case it has been updated since the last analysis
+          JplagTaskSimilarity.joins(:task)
+                             .where("pct < ? AND tasks.task_definition_id = ?", warn_pct, td.id)
+                             .delete_all
 
-        process_jplag_plagiarism_report(report_path, warn_pct, td.group_set)
+          process_jplag_plagiarism_report(report_path, warn_pct, td.group_set)
+        rescue StandardError => e
+          completed_all_checks = false
+          logger.error "Failed to check JPlag similarity for task #{td.name} (id=#{td.id}). Error: #{e.message}"
+        end
       end
-      self.last_plagarism_scan = Time.zone.now
-      save!
+      if completed_all_checks
+        self.last_plagarism_scan = Time.zone.now
+        save!
+      end
     ensure
       FileUtils.chdir(pwd) if FileUtils.pwd != pwd
     end
