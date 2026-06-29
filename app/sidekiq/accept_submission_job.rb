@@ -47,7 +47,6 @@ class AcceptSubmissionJob
             extra: {
               task_id: task.id,
               task_definition_abbreviation: task.task_definition.abbreviation,
-              username: task.project.user.username,
               latex_log_message: e.respond_to?(:log_message) ? e.log_message.to_s.last(5000) : nil
             }
           )
@@ -90,8 +89,7 @@ class AcceptSubmissionJob
         e,
         extra: {
           task_id: task&.id,
-          task_definition_abbreviation: task&.task_definition&.abbreviation,
-          username: task&.project&.user&.username
+          task_definition_abbreviation: task&.task_definition&.abbreviation
         }
       )
     end
