@@ -316,6 +316,58 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert imported_step.enabled
   end
 
+  def test_import_does_not_skip_task_name_containing_name
+    target_unit = Unit.create!(
+      code: 'CSVNAME1',
+      name: 'CSV Import With Name Substring',
+      description: 'Import target',
+      teaching_period: TeachingPeriod.find(3)
+    )
+
+    csv = CSV.generate do |rows|
+      rows << TaskDefinition.required_csv_columns
+      rows << [
+        'Coin Clash (Tournament Mini-Project)',
+        'D4',
+        'Build an adversarial game agent.',
+        1,
+        0,
+        false,
+        0,
+        false,
+        90,
+        false,
+        false,
+        false,
+        false,
+        0,
+        nil,
+        [{ key: 'file0', name: 'coin_clash.rb', type: 'code' }].to_json,
+        1,
+        'Tue',
+        1,
+        'Tue',
+        1,
+        'Tue',
+        nil,
+        false,
+        [].to_json,
+        [].to_json
+      ]
+    end
+
+    file = Tempfile.new(['task-definitions', '.csv'])
+    file.write(csv)
+    file.close
+
+    result = target_unit.import_tasks_from_csv(file.path)
+
+    assert_empty result[:errors], result
+    assert target_unit.task_definitions.exists?(abbreviation: 'D4')
+  ensure
+    file&.unlink
+  end
+
   def test_export_without_tutorial_stream
     data = {
       code: 'COS10001',
