@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-24](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-23...v11.0.0-24) (2026-06-29)
+
+
+### Bug Fixes
+
+* ensure non text comments cant be deleted ([964e957](https://github.com/b0ink/doubtfire-deploy/commit/964e957c4a00f1dadb2d992583d3f2bb717aa58b))
+
 ## [11.0.0-23](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-22...v11.0.0-23) (2026-06-26)
 
 
