@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-25](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-24...v11.0.0-25) (2026-06-29)
+
+
+### Bug Fixes
+
+* ensure pii is not submitted to sentry ([d98d318](https://github.com/b0ink/doubtfire-deploy/commit/d98d318adc1c5153af9a844d95fdbbe2fde3903b))
+
 ## [11.0.0-24](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-23...v11.0.0-24) (2026-06-29)
 
 
