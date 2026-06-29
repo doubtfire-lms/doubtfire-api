@@ -385,6 +385,7 @@ class Unit < ApplicationRecord
 
     errors.add(:main_convenor, "must be a staff member from unit") unless id == main_convenor.unit_id
     errors.add(:main_convenor, "must be configured to administer unit") unless main_convenor.is_convenor?
+    errors.add(:main_convenor, "cannot be observer only") if main_convenor.observer_only?
     errors.add(:main_convenor, "must be capable of administering units - ensure user has appropriate permissions (contact admin staff to update)") unless main_convenor_user.has_convenor_capability?
   end
 

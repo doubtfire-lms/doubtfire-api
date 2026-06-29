@@ -912,6 +912,20 @@ class UnitModelTest < ActiveSupport::TestCase
     assert unit.valid?, 'It should be ok to change to the convenor user'
   end
 
+  def test_change_main_convenor_does_not_allow_observer_only_roles
+    unit = FactoryBot.create :unit, campus_count: 1, tutorials: 0, stream_count: 0, task_count: 0, with_students: false
+
+    convenor_user = FactoryBot.create :user, :convenor
+    convenor_user_role = unit.employ_staff convenor_user, Role.convenor
+    convenor_user_role.update!(observer_only: true)
+
+    unit.main_convenor_id = convenor_user_role.id
+    assert_not unit.valid?, 'It should not be ok to change to an observer-only convenor user'
+
+    convenor_user_role.update!(observer_only: false)
+    assert unit.valid?, 'It should be ok once the convenor user is no longer observer only'
+  end
+
   def test_change_main_convenor_does_not_allow_roles_from_other_units
     unit = FactoryBot.create :unit, campus_count: 1, tutorials:0, stream_count:0, task_count:0, with_students:false
     other_unit = FactoryBot.create :unit, campus_count: 1, tutorials:0, stream_count:0, task_count:0, with_students:false
