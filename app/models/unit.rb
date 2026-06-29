@@ -1774,6 +1774,14 @@ class Unit < ApplicationRecord
           prerequisite_td = task_definitions.find_by(abbreviation: abbreviation)
           task_status_id = prerequisite['task_status_id'].to_i
 
+          if prerequisite_td.nil?
+            errors << {
+              row: "TaskDef '#{task_abbreviation}' prerequisites: #{prerequisites_list}",
+              message: "Unable to find prerequisite task definition with abbreviation #{abbreviation}."
+            }
+            next
+          end
+
           TaskPrerequisite.create!({
             task_definition_id: td.id,
             prerequisite: prerequisite_td,
