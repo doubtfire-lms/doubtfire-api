@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-26](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-25...v11.0.0-26) (2026-06-29)
+
+
+### Bug Fixes
+
+* avoid skipping task names containing 'name' during import ([4c2e194](https://github.com/b0ink/doubtfire-deploy/commit/4c2e19472f73deeaee271ed5b7d5dc66b01f7836))
+* improve error when adding prerequisite to non existing task def ([f217c61](https://github.com/b0ink/doubtfire-deploy/commit/f217c61cf666dae7c781a393fbd9b544dcb32f24))
+
 ## [11.0.0-25](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-24...v11.0.0-25) (2026-06-29)
 
 
