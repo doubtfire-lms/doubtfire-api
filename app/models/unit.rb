@@ -1731,7 +1731,7 @@ class Unit < ApplicationRecord
               headers: true,
               header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip.tr(' ', '_').to_sym unless hdr.nil? }],
               converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]).each do |row|
-      next if row[0] =~ /^(Task Name)|(name)/ # Skip header
+      next if ['Task Name', 'name'].include?(row[0].to_s.strip) # Skip header rows
 
       begin
         missing = missing_headers(row, TaskDefinition.required_csv_columns)
