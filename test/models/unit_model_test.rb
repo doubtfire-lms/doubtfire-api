@@ -923,6 +923,7 @@ class UnitModelTest < ActiveSupport::TestCase
     assert_not unit.valid?, 'It should not be ok to change to an observer-only convenor user'
 
     convenor_user_role.update!(observer_only: false)
+    unit.main_convenor.reload
     assert unit.valid?, 'It should be ok once the convenor user is no longer observer only'
   end
 
