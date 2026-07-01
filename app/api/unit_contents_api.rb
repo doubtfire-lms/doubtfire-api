@@ -128,7 +128,11 @@ class UnitContentsApi < Grape::API
       error!({ error: 'Root directory is not available in this content site archive' }, 422)
     end
 
-    unit.unit_content_sites.where.not(id: site.id).update_all(is_main: false) if update_params[:is_main]
+    if update_params[:is_main]
+      unit.unit_content_sites.where.not(id: site.id).find_each do |content_site|
+        content_site.update!(is_main: false)
+      end
+    end
 
     site.update!(update_params)
     present site, with: Entities::UnitContentSiteEntity
