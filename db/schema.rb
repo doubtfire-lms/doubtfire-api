@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_06_25_055323) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_01_013014) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -850,6 +850,31 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_25_055323) do
     t.index ["tutorial_stream_id"], name: "index_tutorials_on_tutorial_stream_id"
     t.index ["unit_id"], name: "index_tutorials_on_unit_id"
     t.index ["unit_role_id"], name: "index_tutorials_on_unit_role_id"
+  end
+
+  create_table "unit_content_links", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "unit_id", null: false
+    t.bigint "unit_content_site_id", null: false
+    t.string "context_type", null: false
+    t.string "context_key", null: false
+    t.string "route", default: "/", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["unit_content_site_id"], name: "index_unit_content_links_on_unit_content_site_id"
+    t.index ["unit_id", "context_type", "context_key"], name: "index_unit_content_links_on_context", unique: true
+    t.index ["unit_id"], name: "index_unit_content_links_on_unit_id"
+  end
+
+  create_table "unit_content_sites", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "unit_id", null: false
+    t.string "name", null: false
+    t.string "original_filename", null: false
+    t.string "archive_path", null: false
+    t.string "root_dir", default: "/", null: false
+    t.boolean "is_main", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["unit_id"], name: "index_unit_content_sites_on_unit_id"
   end
 
   create_table "unit_roles", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|

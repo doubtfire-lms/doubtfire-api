@@ -1,3 +1,5 @@
+require 'entities/unit_content_link_entity'
+
 module Entities
   class UnitEntity < Grape::Entity
     format_with(:date_only) do |date|
@@ -41,6 +43,10 @@ module Entities
     expose :active
     expose :grade_values
     expose :grade_definitions
+    expose :unit_content_links,
+           as: :content_links,
+           using: UnitContentLinkEntity,
+           unless: :summary_only
 
     expose :overseer_image_id, unless: :summary_only, if: lambda { |unit, options| can_read_unit_config?(options[:my_role]) }
     expose :assessment_enabled, unless: :summary_only

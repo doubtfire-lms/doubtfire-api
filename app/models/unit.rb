@@ -78,6 +78,7 @@ class Unit < ApplicationRecord
       :upload_grades_csv,
       :get_staff_notes,
       :capture_task_completion_snapshot,
+      :manage_unit_content,
       :mannage_communications,
       :delete_engagement
     ]
@@ -105,7 +106,8 @@ class Unit < ApplicationRecord
       :download_jplag_report,
       :get_marking_sessions,
       :get_staff_notes,
-      :get_tutor_times
+      :get_tutor_times,
+      :manage_unit_content
     ]
 
     # What can auditors do with units?
@@ -174,6 +176,8 @@ class Unit < ApplicationRecord
   has_many :communication_sets, class_name: 'CommunicationSet', dependent: :destroy
   has_many :communication_rules, through: :communication_sets, class_name: 'CommunicationRule'
   has_many :communication_set_schedules, through: :communication_sets, class_name: 'CommunicationSetSchedule'
+  has_many :unit_content_sites, dependent: :destroy
+  has_many :unit_content_links, dependent: :destroy
 
   has_many :comments, through: :projects
   has_many :tasks, through: :projects
