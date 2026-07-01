@@ -553,7 +553,7 @@ class UnitsApi < Grape::API
   desc 'Download CSV of overflow task claims in this unit'
   get '/csv/units/:id/overflow_task_claims' do
     unit = Unit.find(params[:id])
-    unless authorise? current_user, unit, :download_stats
+    unless authorise? current_user, unit, :download_overflow_stats
       error!({ error: "Not authorised to download overflow task claim stats for #{unit.code}" }, 403)
     end
 
