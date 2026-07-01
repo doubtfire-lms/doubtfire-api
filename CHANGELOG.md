@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-28](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-27...v11.0.0-28) (2026-07-01)
+
+
+### Bug Fixes
+
+* only allow convenors to pull overflow stats ([d5ca748](https://github.com/b0ink/doubtfire-deploy/commit/d5ca74843fa16040dec81fa9bd66d315736059a0))
+
 ## [11.0.0-27](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-26...v11.0.0-27) (2026-07-01)
 
 
