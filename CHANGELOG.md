@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-27](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-26...v11.0.0-27) (2026-07-01)
+
+
+### Bug Fixes
+
+* prevent convenors with observer only perms to be made main convenor ([19a459c](https://github.com/b0ink/doubtfire-deploy/commit/19a459c544a14d3c155d665ba90ead11c3c50288))
+
 ## [11.0.0-26](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-25...v11.0.0-26) (2026-06-29)
 
 
