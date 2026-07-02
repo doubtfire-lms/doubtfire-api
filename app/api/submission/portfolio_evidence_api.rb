@@ -187,7 +187,7 @@ module Submission
       project = Project.find(params[:id])
       task_definition = project.unit.task_definitions.find(params[:task_definition_id])
 
-      unless authorise? current_user, project.unit, :provide_feedback
+      unless authorise? current_user, project, :get_submission
         error!({ error: "Not authorised to get submission history for task '#{task_definition.name}'" }, 401)
       end
 
