@@ -285,7 +285,7 @@ class TaskDefinition < ApplicationRecord
     old_abbr = saved_change_to_abbreviation[0] # 0 is original abbreviation
     unit.unit_content_links
         .where(context_type: 'task_definition', context_key: old_abbr)
-        .update_all(context_key: abbreviation, updated_at: Time.current)
+        .find_each { |link| link.update!(context_key: abbreviation) }
 
     if File.exist? task_sheet_with_abbreviation(old_abbr, false)
       FileUtils.mv(task_sheet_with_abbreviation(old_abbr), task_sheet())
