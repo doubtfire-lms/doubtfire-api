@@ -1,5 +1,6 @@
 require 'grape'
 require 'grape-swagger'
+require 'grape-swagger/entity'
 
 class ApiRoot < Grape::API
   helpers AuthorisationHelpers
@@ -165,7 +166,7 @@ class ApiRoot < Grape::API
   add_swagger_documentation \
     base_path: nil,
     doc_version: 'v11.0.0',
-    hide_documentation_path: true,
+    hide_documentation_path: false,
     info: {
       title: 'Doubtfire API Documentation',
       description: 'Doubtfire is a modern, lightweight learning management system.',

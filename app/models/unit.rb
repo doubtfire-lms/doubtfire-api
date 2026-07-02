@@ -2305,7 +2305,12 @@ class Unit < ApplicationRecord
         num_new_comments: t.number_unread,
         similarity_flag: t.similar_to_count > 0,
         pinned: t.pinned,
-        has_extensions: t.has_extensions
+        has_extensions: t.has_extensions,
+        unit: {
+          id: id,
+          code: code,
+          name: name
+        }
       }
     end
   end

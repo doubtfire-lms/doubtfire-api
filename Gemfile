@@ -78,6 +78,7 @@ gem 'rails-latex'
 gem 'grape'
 gem 'grape-entity'
 gem 'grape-swagger'
+gem 'grape-swagger-entity'
 gem 'grape-swagger-rails'
 
 # Miscellaneous
