@@ -125,6 +125,18 @@ class TaskDefinition < ApplicationRecord
     end
   end
 
+  def content_link
+    return @content_link if defined?(@content_link)
+
+    @content_link = unit.unit_content_links.find do |link|
+      link.context_type == 'task_definition' && link.context_key == abbreviation
+    end || unit.unit_content_links.find_by(context_type: 'task_definition', context_key: abbreviation)
+  end
+
+  def has_content_link?
+    content_link.present?
+  end
+
   def grade_target_date(target_grade)
     grade_due_dates.find { |g| g.target_grade == target_grade.to_i }&.target_due_date
   end
@@ -271,6 +283,10 @@ class TaskDefinition < ApplicationRecord
 
   def move_files_on_abbreviation_change
     old_abbr = saved_change_to_abbreviation[0] # 0 is original abbreviation
+    unit.unit_content_links
+        .where(context_type: 'task_definition', context_key: old_abbr)
+        .update_all(context_key: abbreviation, updated_at: Time.current)
+
     if File.exist? task_sheet_with_abbreviation(old_abbr, false)
       FileUtils.mv(task_sheet_with_abbreviation(old_abbr), task_sheet())
     end

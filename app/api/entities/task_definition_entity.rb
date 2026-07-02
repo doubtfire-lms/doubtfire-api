@@ -1,3 +1,5 @@
+require 'entities/unit_content_link_entity'
+
 module Entities
   class TaskDefinitionEntity < Grape::Entity
     format_with(:date_only) do |date|
@@ -43,6 +45,8 @@ module Entities
     expose :has_task_assessment_resources?, as: :has_task_assessment_resources, if: ->(unit, options) { staff?(options[:my_role]) }
     expose :has_task_assessment_script?, as: :has_task_assessment_script, if: ->(unit, options) { staff?(options[:my_role]) }
     expose :has_scorm_data?, as: :has_scorm_data
+    expose :has_content_link?, as: :has_content_link
+    expose :content_link, using: UnitContentLinkEntity, expose_nil: false
     expose :scorm_enabled
     expose :scorm_allow_review
     expose :scorm_bypass_test

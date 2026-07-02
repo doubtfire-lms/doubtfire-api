@@ -167,7 +167,7 @@ class UnitContentsApi < Grape::API
       [link_params[:context_type], link_params[:context_key]]
     end
 
-    unit.unit_content_links.where(context_type: %w[grade grade_overview]).find_each do |link|
+    unit.unit_content_links.where(context_type: %w[grade grade_overview task_definition]).find_each do |link|
       link.destroy! unless submitted_contexts.include?([link.context_type, link.context_key])
     end
 
