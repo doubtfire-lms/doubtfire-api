@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-30](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-29...v11.0.0-30) (2026-07-04)
+
+
+### Bug Fixes
+
+* ensure admins can manage communications ([25bcafc](https://github.com/b0ink/doubtfire-deploy/commit/25bcafcdc00d76523080f6a198170b452f646923))
+
 ## [11.0.0-29](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-28...v11.0.0-29) (2026-07-02)
 
 
