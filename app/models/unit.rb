@@ -107,7 +107,8 @@ class Unit < ApplicationRecord
       :download_jplag_report,
       :get_marking_sessions,
       :get_staff_notes,
-      :get_tutor_times
+      :get_tutor_times,
+      :mannage_communications,
     ]
 
     # What can auditors do with units?
