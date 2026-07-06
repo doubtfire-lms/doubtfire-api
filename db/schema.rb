@@ -874,6 +874,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_01_013014) do
     t.boolean "is_main", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["unit_id", "name"], name: "index_unit_content_sites_on_unit_id_and_name", unique: true
     t.index ["unit_id"], name: "index_unit_content_sites_on_unit_id"
   end
 

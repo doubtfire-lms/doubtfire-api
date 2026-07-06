@@ -10,6 +10,7 @@ class UnitContentSite < ApplicationRecord
   has_many :unit_content_links, dependent: :destroy
 
   validates :name, :original_filename, :archive_path, presence: true
+  validates :name, uniqueness: { scope: :unit_id, case_sensitive: false }
   validates :root_dir, presence: true
 
   after_destroy :delete_archive

@@ -11,6 +11,8 @@ class AddUnitContentManagement < ActiveRecord::Migration[8.0]
       t.timestamps
     end
 
+    add_index :unit_content_sites, [:unit_id, :name], unique: true
+
     create_table :unit_content_links do |t|
       t.references :unit, null: false
       t.references :unit_content_site, null: false
