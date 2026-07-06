@@ -243,6 +243,61 @@ class TaskTest < ActiveSupport::TestCase
     assert_not File.exist? path
   end
 
+  def test_pdf_creation_with_code_csv_and_gif_has_stable_last_page_footer
+    unit = Unit.first
+    td = TaskDefinition.new({
+                              unit_id: unit.id,
+                              tutorial_stream: unit.tutorial_streams.first,
+                              name: 'Task with code and image',
+                              description: 'Code and image task',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: unit.start_date + 1.week,
+                              target_date: unit.start_date + 2.weeks,
+                              abbreviation: 'TaskPdfWithCodeCsvAndGif',
+                              restrict_status_updates: false,
+                              upload_requirements: [
+                                { "key" => 'file0', "name" => 'Code file', "type" => 'code' },
+                                { "key" => 'file1', "name" => 'An Image', "type" => 'image' }
+                              ],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0
+                            })
+    td.save!
+
+    data_to_post = with_files(
+      [
+        { path: 'test_files/COS10001-ImportTasksWithTutorialStream.csv', type: 'text/csv' },
+        { path: 'test_files/submissions/unbelievable.gif', type: 'image/gif' }
+      ],
+      { trigger: 'ready_for_feedback' }
+    )
+
+    project = unit.active_projects.first
+
+    add_auth_header_for user: unit.main_convenor_user
+
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
+
+    assert_equal 201, last_response.status, last_response_body
+
+    task = project.task_for_task_definition(td)
+    assert task.convert_submission_to_pdf(log_to_stdout: true)
+    path = task.zip_file_path_for_done_task
+    assert path
+    assert File.exist? path
+    assert File.exist? task.final_pdf_path
+
+    reader = PDF::Reader.new(task.final_pdf_path)
+
+    assert_equal 6, reader.pages.count # 1 cover page + 5 pages
+    assert_includes reader.pages.last.text.gsub(/\s+/, ' '), 'Page 5 of 5'
+
+    td.destroy
+    assert_not File.exist? path
+  end
+
   def test_image_upload
     unit = Unit.first
     td = TaskDefinition.new({
