@@ -112,6 +112,7 @@ class UnitContentsApi < Grape::API
 
   desc 'Update a unit content site'
   params do
+    optional :file, type: File, desc: 'Replacement static content site zip'
     optional :name, type: String, desc: 'Display name for the uploaded site'
     optional :root_dir, type: String, desc: 'Folder within the zip to serve as the site root'
     optional :is_main, type: Boolean, desc: 'Use this as the default site for unit content'
@@ -122,9 +123,23 @@ class UnitContentsApi < Grape::API
 
     site = unit.unit_content_sites.find(params[:site_id])
     update_params = declared(params, include_missing: false).slice(:name, :root_dir, :is_main)
+    file = params[:file]
     root_dir = update_params[:root_dir]
 
-    if root_dir.present? && !site.root_dir_options.include?(root_dir)
+    if file.present?
+      check_mime_against_list! file[:tempfile].path,
+                               'zip',
+                               ['application/zip',
+                                'multipart/x-gzip',
+                                'multipart/x-zip',
+                                'application/x-gzip',
+                                'application/octet-stream']
+    end
+
+    root_dir_options =
+      file.present? ? UnitContentSite.root_dir_options_for(file[:tempfile].path) : site.root_dir_options
+
+    if root_dir.present? && !root_dir_options.include?(root_dir)
       error!({ error: 'Root directory is not available in this content site archive' }, 422)
     end
 
@@ -132,6 +147,11 @@ class UnitContentsApi < Grape::API
       unit.unit_content_sites.where.not(id: site.id).find_each do |content_site|
         content_site.update!(is_main: false)
       end
+    end
+
+    if file.present?
+      site.replace_upload!(file, root_dir: root_dir)
+      update_params.except!(:root_dir)
     end
 
     site.update!(update_params)

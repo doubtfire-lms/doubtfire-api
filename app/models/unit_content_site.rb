@@ -39,6 +39,32 @@ class UnitContentSite < ApplicationRecord
     site
   end
 
+  def replace_upload!(file, root_dir: nil)
+    original_archive_path = archive_path
+    replacement_original_filename = file[:filename] || file[:name] || original_filename
+    replacement_archive_path = File.join(
+      self.class.archive_dir_for(unit),
+      "#{SecureRandom.hex(8)}-#{FileHelper.sanitized_filename(replacement_original_filename)}"
+    )
+
+    FileUtils.cp file[:tempfile].path, replacement_archive_path
+    replacement_root_options = self.class.root_dir_options_for(replacement_archive_path)
+    replacement_root_dir =
+      root_dir.presence ||
+      (replacement_root_options.include?(self.root_dir) ? self.root_dir : '/')
+
+    update!(
+      original_filename: replacement_original_filename,
+      archive_path: replacement_archive_path,
+      root_dir: replacement_root_dir
+    )
+    FileUtils.rm_f original_archive_path if original_archive_path.present?
+    self
+  rescue StandardError
+    FileUtils.rm_f replacement_archive_path if replacement_archive_path.present?
+    raise
+  end
+
   def self.root_dir_options_for(archive_path)
     root_dir_options_from_entries(archive_entries_for(archive_path))
   rescue Zip::Error
