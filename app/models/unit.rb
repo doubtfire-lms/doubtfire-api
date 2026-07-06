@@ -109,7 +109,8 @@ class Unit < ApplicationRecord
       :get_marking_sessions,
       :get_staff_notes,
       :get_tutor_times,
-      :manage_unit_content
+      :manage_unit_content,
+      :mannage_communications,
     ]
 
     # What can auditors do with units?

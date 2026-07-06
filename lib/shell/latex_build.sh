@@ -15,7 +15,12 @@ cd work
 lualatex -shell-escape -interaction=batchmode -halt-on-error input.tex
 RESULT=$?
 if [ $RESULT -eq 0 ]; then
-  echo "Running lualatex a second time to remove temporary last page..."
+  echo "Running lualatex a second time to remove temporary last page and update references..."
+  lualatex -shell-escape -interaction=batchmode -halt-on-error input.tex
+  RESULT=$?
+fi
+if [ $RESULT -eq 0 ]; then
+  echo "Running lualatex a third time to stabilise page references..."
   lualatex -shell-escape -interaction=batchmode -halt-on-error input.tex
   RESULT=$?
 fi
