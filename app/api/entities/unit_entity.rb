@@ -43,6 +43,7 @@ module Entities
     expose :active
     expose :grade_values
     expose :grade_definitions
+    expose :has_main_content_site?, as: :has_main_content_site, unless: :summary_only
     expose :unit_content_links,
            as: :content_links,
            using: UnitContentLinkEntity,

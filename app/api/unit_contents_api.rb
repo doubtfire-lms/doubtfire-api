@@ -47,8 +47,7 @@ class UnitContentsApi < Grape::API
            else
              link = unit_content_link_for_route(unit, params[:content_route])
              link&.unit_content_site ||
-               unit.unit_content_sites.find_by(is_main: true) ||
-               unit.unit_content_sites.order(created_at: :desc).first
+               unit.unit_content_sites.find_by(is_main: true)
            end
 
     error!({ error: 'Unit content archive is not configured' }, 404) unless site

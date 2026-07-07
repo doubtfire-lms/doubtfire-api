@@ -330,6 +330,10 @@ class Unit < ApplicationRecord
     self.teaching_period.present?
   end
 
+  def has_main_content_site?
+    unit_content_sites.exists?(is_main: true)
+  end
+
   def grade_values
     grade_definitions.filter_map { |definition| definition['value'] unless definition['value'] == -1 }
   end
