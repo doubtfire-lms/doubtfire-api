@@ -92,6 +92,9 @@ class UnitsApi < Grape::API
       optional :assessment_enabled, type: Boolean
       optional :feedback_warning_threshold_days, type: Integer, desc: 'Number of days since a submission without feedback before its highlighted in the tutors inbox'
       optional :feedback_overflow_threshold_days, type: Integer, desc: 'Number of days since a submission without feedback before its added to overflow marking'
+      optional :discuss_timeout_enabled, type: Boolean, desc: 'Move stale Discuss tasks back to Fix and Resubmit after a warning period'
+      optional :discuss_timeout_warning_days, type: Integer, desc: 'Number of days in Discuss before warning the student'
+      optional :discuss_timeout_expire_days, type: Integer, desc: 'Number of days in Discuss before moving the task to Fix and Resubmit'
       optional :enforce_feedback_before_discussed_in_class, type: Boolean, desc: 'Require feedback to be completed before tasks can be marked discussed in class'
       optional :grade_definitions, type: Array do
         requires :id, type: String
@@ -134,6 +137,9 @@ class UnitsApi < Grape::API
                                                           :assessment_enabled,
                                                           :feedback_warning_threshold_days,
                                                           :feedback_overflow_threshold_days,
+                                                          :discuss_timeout_enabled,
+                                                          :discuss_timeout_warning_days,
+                                                          :discuss_timeout_expire_days,
                                                           :enforce_feedback_before_discussed_in_class,
                                                           grade_definitions: [:id, :value, :label, :abbreviation]
                                                           )
@@ -183,6 +189,9 @@ class UnitsApi < Grape::API
       optional :allow_student_change_tutorial, type: Boolean, desc: 'Can turn on/off student ability to change tutorials', default: true
       optional :feedback_warning_threshold_days, type: Integer, desc: 'Number of days since a submission without feedback before its highlighted in the tutors inbox'
       optional :feedback_overflow_threshold_days, type: Integer, desc: 'Number of days since a submission without feedback before its added to overflow marking'
+      optional :discuss_timeout_enabled, type: Boolean, desc: 'Move stale Discuss tasks back to Fix and Resubmit after a warning period', default: false
+      optional :discuss_timeout_warning_days, type: Integer, desc: 'Number of days in Discuss before warning the student', default: 7
+      optional :discuss_timeout_expire_days, type: Integer, desc: 'Number of days in Discuss before moving the task to Fix and Resubmit', default: 14
       optional :enforce_feedback_before_discussed_in_class, type: Boolean, desc: 'Require feedback to be completed before tasks can be marked discussed in class', default: false
       optional :grade_definitions, type: Array do
         requires :id, type: String
@@ -222,6 +231,9 @@ class UnitsApi < Grape::API
                                                     :allow_student_change_tutorial,
                                                     :feedback_warning_threshold_days,
                                                     :feedback_overflow_threshold_days,
+                                                    :discuss_timeout_enabled,
+                                                    :discuss_timeout_warning_days,
+                                                    :discuss_timeout_expire_days,
                                                     :enforce_feedback_before_discussed_in_class,
                                                     grade_definitions: [:id, :value, :label, :abbreviation]
                                                   )

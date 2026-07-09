@@ -216,7 +216,13 @@ class Unit < ApplicationRecord
   validates :feedback_overflow_threshold_days,
             numericality: { greater_than_or_equal_to: 0 }
 
+  validates :discuss_timeout_warning_days,
+            numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+  validates :discuss_timeout_expire_days,
+            numericality: { only_integer: true, greater_than_or_equal_to: 1 }
+
   validate :warning_not_greater_than_overflow
+  validate :discuss_timeout_warning_before_expiry
 
   validate :validate_end_date_after_start_date
   validate :ensure_teaching_period_dates_match, if: :has_teaching_period?
@@ -250,6 +256,87 @@ class Unit < ApplicationRecord
       :feedback_warning_threshold_days,
       'must be less than or equal to the overflow threshold'
     )
+  end
+
+  def discuss_timeout_warning_before_expiry
+    return unless discuss_timeout_enabled
+    return if discuss_timeout_warning_days < discuss_timeout_expire_days
+
+    errors.add(:discuss_timeout_warning_days, 'must be less than the expiry days')
+  end
+
+  def self.notify_discuss_timeouts!
+    set_active.find_each(&:notify_discuss_timeouts!)
+  end
+
+  def notify_discuss_timeouts!
+    return 0 unless discuss_timeout_enabled
+
+    discuss_timeout_tasks.find_each.sum { |task| notify_discuss_timeout_for(task) }
+  end
+
+  def discuss_timeout_tasks
+    tasks
+      .includes(:project, :task_definition)
+      .where(task_status_id: TaskStatus.discuss.id)
+      .where.not(moved_to_discuss_at: nil)
+      .where('moved_to_discuss_at <= ?', discuss_timeout_warning_days.days.ago)
+  end
+
+  def notify_discuss_timeout_for(task)
+    return 0 if task.moved_to_discuss_at.blank?
+
+    actor = task.project.tutor_for(task.task_definition) || main_convenor&.user
+    return 0 if actor.blank?
+
+    if task.moved_to_discuss_at <= discuss_timeout_expire_days.days.ago
+      expire_discuss_timeout_task(task, actor)
+    else
+      warn_discuss_timeout_task(task, actor)
+    end
+  end
+
+  def warn_discuss_timeout_task(task, actor)
+    return 0 if discuss_timeout_comment_exists?(task, DiscussTimeoutComment.warning)
+
+    expiry_date = discuss_timeout_expiry_date(task)
+    task.add_discuss_timeout_comment(
+      actor,
+      DiscussTimeoutComment.warning,
+      "This task has been in Discuss for #{discuss_timeout_warning_days} days. You need to discuss this task before #{formatted_discuss_timeout_date(expiry_date)}. After this date it will be moved to Fix and Resubmit."
+    )
+    1
+  end
+
+  def expire_discuss_timeout_task(task, actor)
+    return 0 if discuss_timeout_comment_exists?(task, DiscussTimeoutComment.expired)
+
+    return 0 unless task.trigger_transition(trigger: 'fix', by_user: actor)
+
+    task.add_discuss_timeout_comment(
+      actor,
+      DiscussTimeoutComment.expired,
+      "This task was moved to Fix and Resubmit because it remained in Discuss for #{discuss_timeout_expire_days} days. Please resubmit your work so it can be reassessed."
+    )
+    1
+  end
+
+  def discuss_timeout_comment_exists?(task, content_type)
+    task.comments
+        .where(type: 'DiscussTimeoutComment', content_type: content_type)
+        .where('created_at >= ?', task.moved_to_discuss_at)
+        .exists?
+  end
+
+  def discuss_timeout_expiry_date(task)
+    task.moved_to_discuss_at.to_date + discuss_timeout_expire_days
+  end
+
+  def formatted_discuss_timeout_date(date)
+    result = "the #{date.day.ordinalize} of #{Date::MONTHNAMES[date.month]}"
+    return result if date.year == Time.zone.today.year
+
+    "#{result} #{date.year}"
   end
 
   def detailed_name

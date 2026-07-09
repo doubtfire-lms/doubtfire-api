@@ -147,6 +147,7 @@ class Task < ApplicationRecord
   delegate :target_date, to: :task_definition
   delegate :update_task_stats, to: :project
 
+  before_save :set_moved_to_discuss_at, if: :will_save_change_to_task_status_id?
   after_update :update_task_stats, if: :saved_change_to_task_status_id? # TODO: consider moving to async task
 
   validates :task_definition_id, uniqueness: { scope: :project,
@@ -258,6 +259,10 @@ class Task < ApplicationRecord
         'recipients.email AS recipient_email',
         'task_comments.reply_to_id AS reply_to_id'
       )
+  end
+
+  def set_moved_to_discuss_at
+    self.moved_to_discuss_at = task_status_id == TaskStatus.discuss.id ? Time.zone.now : nil
   end
 
   def current_task_similarities
@@ -981,6 +986,20 @@ class Task < ApplicationRecord
     discussed.recipient = current_user == project.student ? project.tutor_for(task_definition) : project.student
     discussed.save!
     discussed
+  end
+
+  def add_discuss_timeout_comment(current_user, content_type, text)
+    return nil unless individual_task_or_submitter_of_group_task?
+
+    comment = DiscussTimeoutComment.create
+    comment.task = self
+    comment.user = current_user
+    comment.comment = text
+    comment.content_type = content_type
+    comment.recipient = project.student
+    comment.save!
+
+    comment
   end
 
   def add_checked_in_comment(current_user)
