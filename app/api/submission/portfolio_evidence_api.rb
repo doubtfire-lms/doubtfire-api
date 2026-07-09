@@ -22,6 +22,7 @@ module Submission
       ready_for_feedback: 1,
       assess_in_portfolio: 1,
       discuss: 2,
+      rediscuss: 2,
       attention_required: 0,
       demonstrate: 2,
       complete: 3
@@ -67,6 +68,8 @@ module Submission
             'completed'
           when TaskStatus.discuss
             'discussed'
+          when TaskStatus.rediscuss
+            'rediscussed'
           when TaskStatus.demonstrate
             'demonstrated'
           when TaskStatus.ready_for_feedback
