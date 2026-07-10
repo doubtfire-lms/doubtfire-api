@@ -67,8 +67,16 @@ class FileHelperTest < ActiveSupport::TestCase
       destination_path = File.join(dir, 'submission.pdf')
       FileUtils.cp(Rails.root.join('test_files/TestWordDoc.docx'), source_path)
 
-      result = FileHelper.stub(:run_word_document_conversion, runner) do
-        FileHelper.convert_word_document_to_pdf(source_path, destination_path, work_id: 'test-work-id')
+      original_runner = FileHelper.method(:run_word_document_conversion)
+      FileHelper.define_singleton_method(:run_word_document_conversion, runner)
+      begin
+        result = FileHelper.convert_word_document_to_pdf(
+          source_path,
+          destination_path,
+          work_id: 'test-work-id'
+        )
+      ensure
+        FileHelper.define_singleton_method(:run_word_document_conversion, original_runner)
       end
 
       assert_equal destination_path, result

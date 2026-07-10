@@ -959,16 +959,22 @@ class TaskTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status, last_response_body
 
     task = project.task_for_task_definition(task_definition)
+    conversion_work_id = nil
     converter = lambda do |_source_path, destination_path, work_id:|
-      assert_match(/\Atask-#{task.id}-/, work_id)
+      conversion_work_id = work_id
       FileUtils.cp(Rails.root.join('test_files/submissions/valid.pdf'), destination_path)
       destination_path
     end
-    converted = FileHelper.stub(:convert_word_document_to_pdf, converter) do
-      task.convert_submission_to_pdf(log_to_stdout: true)
+    original_converter = FileHelper.method(:convert_word_document_to_pdf)
+    FileHelper.define_singleton_method(:convert_word_document_to_pdf, converter)
+    begin
+      converted = task.convert_submission_to_pdf(log_to_stdout: true)
+    ensure
+      FileHelper.define_singleton_method(:convert_word_document_to_pdf, original_converter)
     end
 
     assert converted
+    assert_match(/\Atask-#{task.id}-/, conversion_work_id)
     assert FileHelper.validate_pdf(task.final_pdf_path)[:valid]
 
     Zip::File.open(task.zip_file_path_for_done_task) do |archive|
