@@ -1482,6 +1482,8 @@ class Task < ApplicationRecord
     end
 
     begin
+      converted_word_documents = convert_word_documents_to_pdf
+
       tac = TaskAppController.new
       tac.init(self, false)
 
@@ -1519,7 +1521,7 @@ class Task < ApplicationRecord
             end
           end
 
-          raise LatexError.new(log_message), 'Failed to convert your submission to PDF. Check code files submitted for invalid characters, that documents are valid pdfs, images are valid, and zip files are valid.'
+          raise LatexError.new(log_message), 'Failed to convert your submission to PDF. Check code files submitted for invalid characters, that documents are valid PDFs or DOCX files, images are valid, and zip files are valid.'
         end
       end
 
@@ -1540,9 +1542,11 @@ class Task < ApplicationRecord
         end
       end
 
+      stage_word_document_previews(converted_word_documents)
       save
       return true
     rescue => e
+      SubmissionHistory.clear_document_previews(self)
       trigger_transition trigger: 'fix', by_user: project.tutor_for(task_definition)
       add_text_comment project.tutor_for(task_definition), "**Automated Comment**: Something went wrong with your submission. Check the files and resubmit this task. #{e.message}"
       raise e
@@ -1551,6 +1555,38 @@ class Task < ApplicationRecord
       # Dir.glob(Rails.root.join('tmp/rails-latex/**/input.aux')).each { |f| File.delete(f) }
 
       clear_in_process
+    end
+  end
+
+  def convert_word_documents_to_pdf
+    in_process_dir = student_work_dir(:in_process, false)
+    return [] unless Dir.exist?(in_process_dir)
+
+    converted_documents = []
+
+    Dir.glob(File.join(in_process_dir, '*-document.*')).each do |source_path|
+      next unless FileHelper.word_document?(source_path)
+
+      upload_index = File.basename(source_path).to_i
+      destination_path = source_path.sub(/\.docx\z/i, '.pdf')
+      FileHelper.convert_word_document_to_pdf(
+        source_path,
+        destination_path,
+        work_id: "task-#{id}-#{SecureRandom.uuid}"
+      )
+      FileUtils.rm_f(source_path)
+      converted_documents << { upload_index: upload_index, path: destination_path }
+    end
+
+    converted_documents
+  end
+
+  def stage_word_document_previews(converted_documents)
+    converted_documents.each do |document|
+      requirement = upload_requirements[document[:upload_index]]
+      next unless requirement&.dig('submission_history') == true
+
+      SubmissionHistory.stage_document_preview!(self, document[:upload_index], document[:path])
     end
   end
 
@@ -1642,7 +1678,7 @@ class Task < ApplicationRecord
     #
     files.each_with_index do |file, index|
       logger.debug "Accepting submission (file #{index + 1} of #{files.length}) - checking file type for #{file["tempfile"].path}"
-      file_result = FileHelper.accept_file(file, file[:name], file[:type])
+      file_result = FileHelper.accept_file(file, file[:name], file[:type], allow_word_documents: true)
       unless file_result[:accepted]
         ui.error!({ 'error' => "'#{file[:name]}' is invalid: #{file_result[:msg]}" }, 403)
       end

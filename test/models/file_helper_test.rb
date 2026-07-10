@@ -13,6 +13,101 @@ class FileHelperTest < ActiveSupport::TestCase
     end
   end
 
+  def test_accepts_docx_as_a_task_document
+    Tempfile.create(['submission', '.docx']) do |docx_file|
+      FileUtils.cp(Rails.root.join('test_files/TestWordDoc.docx'), docx_file.path)
+
+      result = FileHelper.accept_file(
+        {
+          filename: 'submission.docx',
+          'tempfile' => docx_file
+        },
+        'Report',
+        'document',
+        allow_word_documents: true
+      )
+
+      assert result[:accepted], result[:msg]
+    end
+  end
+
+  def test_rejects_docx_where_word_documents_are_not_enabled
+    Tempfile.create(['submission', '.docx']) do |docx_file|
+      FileUtils.cp(Rails.root.join('test_files/TestWordDoc.docx'), docx_file.path)
+
+      result = FileHelper.accept_file(
+        {
+          filename: 'submission.docx',
+          'tempfile' => docx_file
+        },
+        'Report',
+        'document'
+      )
+
+      assert_not result[:accepted]
+    end
+  end
+
+  def test_converts_docx_to_pdf_with_gotenberg
+    successful_status = Struct.new(:exitstatus) do
+      def success?
+        true
+      end
+    end.new(0)
+    runner = lambda do |work_id|
+      FileUtils.cp(
+        Rails.root.join('test_files/submissions/valid.pdf'),
+        Rails.root.join('tmp/gotenberg', work_id, 'output.pdf')
+      )
+      ['', '', successful_status]
+    end
+
+    Dir.mktmpdir do |dir|
+      source_path = File.join(dir, 'submission.docx')
+      destination_path = File.join(dir, 'submission.pdf')
+      FileUtils.cp(Rails.root.join('test_files/TestWordDoc.docx'), source_path)
+
+      result = FileHelper.stub(:run_word_document_conversion, runner) do
+        FileHelper.convert_word_document_to_pdf(source_path, destination_path, work_id: 'test-work-id')
+      end
+
+      assert_equal destination_path, result
+      assert FileHelper.validate_pdf(destination_path)[:valid]
+    end
+  end
+
+  def test_gotenberg_uses_an_isolated_host_work_directory_mount_when_configured
+    config = Doubtfire::Application.config
+    original_mount = config.gotenberg_workdir_volume_mount
+    original_fallback = config.gotenberg_fallback_volume_container
+    config.gotenberg_workdir_volume_mount = '/host/gotenberg'
+    config.gotenberg_fallback_volume_container = 'fallback-container'
+
+    assert_equal(
+      ['--volume', '/host/gotenberg/test-work-id:/workdir/gotenberg/test-work-id'],
+      FileHelper.gotenberg_volume_arguments('test-work-id')
+    )
+  ensure
+    config.gotenberg_workdir_volume_mount = original_mount
+    config.gotenberg_fallback_volume_container = original_fallback
+  end
+
+  def test_gotenberg_uses_the_development_volume_container_fallback
+    config = Doubtfire::Application.config
+    original_mount = config.gotenberg_workdir_volume_mount
+    original_fallback = config.gotenberg_fallback_volume_container
+    config.gotenberg_workdir_volume_mount = nil
+    config.gotenberg_fallback_volume_container = 'fallback-container'
+
+    assert_equal(
+      ['--volumes-from', 'fallback-container'],
+      FileHelper.gotenberg_volume_arguments('test-work-id')
+    )
+  ensure
+    config.gotenberg_workdir_volume_mount = original_mount
+    config.gotenberg_fallback_volume_container = original_fallback
+  end
+
   def test_archive_paths
     unit = FactoryBot.create(:unit, with_students: false)
 
