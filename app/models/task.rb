@@ -147,7 +147,7 @@ class Task < ApplicationRecord
   delegate :target_date, to: :task_definition
   delegate :update_task_stats, to: :project
 
-  before_save :set_moved_to_discuss_at, if: :will_save_change_to_task_status_id?
+  before_save :set_discuss_timeout_tracking, if: :will_save_change_to_task_status_id?
   after_update :update_task_stats, if: :saved_change_to_task_status_id? # TODO: consider moving to async task
 
   validates :task_definition_id, uniqueness: { scope: :project,
@@ -261,8 +261,10 @@ class Task < ApplicationRecord
       )
   end
 
-  def set_moved_to_discuss_at
+  def set_discuss_timeout_tracking
     self.moved_to_discuss_at = task_status_id == TaskStatus.discuss.id ? Time.zone.now : nil
+    self.notified_discuss_warning_at = nil
+    self.notified_discuss_expiry_at = nil
   end
 
   def current_task_similarities

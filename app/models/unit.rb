@@ -297,35 +297,43 @@ class Unit < ApplicationRecord
   end
 
   def warn_discuss_timeout_task(task, actor)
-    return 0 if discuss_timeout_comment_exists?(task, DiscussTimeoutComment.warning)
+    return 0 if task.notified_discuss_warning_at.present?
 
     expiry_date = discuss_timeout_expiry_date(task)
-    task.add_discuss_timeout_comment(
+    comment = task.add_discuss_timeout_comment(
       actor,
       DiscussTimeoutComment.warning,
       "This task has been in Discuss for #{discuss_timeout_warning_days} days. You need to discuss this task before #{formatted_discuss_timeout_date(expiry_date)}. After this date it will be moved to Fix and Resubmit."
     )
+    return 0 if comment.blank?
+
+    task.update!(notified_discuss_warning_at: Time.zone.now)
     1
   end
 
   def expire_discuss_timeout_task(task, actor)
-    return 0 if discuss_timeout_comment_exists?(task, DiscussTimeoutComment.expired)
+    return 0 if task.notified_discuss_expiry_at.present?
 
-    return 0 unless task.trigger_transition(trigger: 'fix', by_user: actor)
+    created_comment = false
+    Task.transaction do
+      task.update!(notified_discuss_expiry_at: Time.zone.now)
+      unless task.trigger_transition(trigger: 'fix', by_user: actor)
+        raise ActiveRecord::Rollback
+      end
 
-    task.add_discuss_timeout_comment(
-      actor,
-      DiscussTimeoutComment.expired,
-      "This task was moved to Fix and Resubmit because it remained in Discuss for #{discuss_timeout_expire_days} days. Please resubmit your work so it can be reassessed."
-    )
-    1
-  end
+      comment = task.add_discuss_timeout_comment(
+        actor,
+        DiscussTimeoutComment.expired,
+        "This task was moved to Fix and Resubmit because it remained in Discuss for #{discuss_timeout_expire_days} days. Please resubmit your work so it can be reassessed."
+      )
+      unless comment
+        raise ActiveRecord::Rollback
+      end
 
-  def discuss_timeout_comment_exists?(task, content_type)
-    task.comments
-        .where(type: 'DiscussTimeoutComment', content_type: content_type)
-        .where('created_at >= ?', task.moved_to_discuss_at)
-        .exists?
+      created_comment = true
+    end
+
+    created_comment ? 1 : 0
   end
 
   def discuss_timeout_expiry_date(task)

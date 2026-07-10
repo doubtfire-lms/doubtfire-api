@@ -703,11 +703,15 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_09_053123) do
     t.datetime "target_due_date"
     t.datetime "last_tutor_feedback_at"
     t.datetime "moved_to_discuss_at"
+    t.datetime "notified_discuss_warning_at"
+    t.datetime "notified_discuss_expiry_at"
     t.index ["group_submission_id"], name: "index_tasks_on_group_submission_id"
     t.index ["project_id", "task_definition_id"], name: "tasks_uniq_proj_task_def", unique: true
     t.index ["project_id"], name: "index_tasks_on_project_id"
     t.index ["task_definition_id"], name: "index_tasks_on_task_definition_id"
     t.index ["task_status_id", "moved_to_discuss_at"], name: "index_tasks_on_task_status_id_and_moved_to_discuss_at"
+    t.index ["task_status_id", "notified_discuss_expiry_at"], name: "index_tasks_on_task_status_id_and_notified_discuss_expiry_at"
+    t.index ["task_status_id", "notified_discuss_warning_at"], name: "index_tasks_on_task_status_id_and_notified_discuss_warning_at"
     t.index ["task_status_id"], name: "index_tasks_on_task_status_id"
   end
 
