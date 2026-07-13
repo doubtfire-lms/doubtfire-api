@@ -2385,7 +2385,7 @@ class Unit < ApplicationRecord
   #
   def tasks_awaiting_feedback(user)
     get_all_tasks_for(user)
-      .where('task_statuses.id IN (:ids)', ids: [TaskStatus.discuss, TaskStatus.attention_required, TaskStatus.redo, TaskStatus.demonstrate, TaskStatus.fix_and_resubmit])
+      .where('task_statuses.id IN (:ids)', ids: [TaskStatus.discuss, TaskStatus.rediscuss, TaskStatus.attention_required, TaskStatus.redo, TaskStatus.demonstrate, TaskStatus.fix_and_resubmit])
       .order('task_definition_id')
   end
 
