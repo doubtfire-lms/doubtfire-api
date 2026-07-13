@@ -465,11 +465,11 @@ class Task < ApplicationRecord
   end
 
   def discuss_or_demonstrate?
-    [:discuss, :demonstrate].include?(status)
+    [:discuss, :rediscuss, :demonstrate].include?(status)
   end
 
   def discuss?
-    status == :discuss
+    [:discuss, :rediscuss].include?(status)
   end
 
   def demonstrate?
@@ -489,7 +489,7 @@ class Task < ApplicationRecord
   end
 
   def ready_or_complete?
-    [:complete, :discuss, :demonstrate, :ready_for_feedback, :assess_in_portfolio].include? status
+    [:complete, :discuss, :rediscuss, :demonstrate, :ready_for_feedback, :assess_in_portfolio].include? status
   end
 
   def submitted_status?
@@ -629,6 +629,10 @@ class Task < ApplicationRecord
           return nil
         end
 
+        if status == TaskStatus.rediscuss && task_status != TaskStatus.discuss
+          return nil
+        end
+
         if check_feedback
           if status == TaskStatus.complete && !has_manual_feedback_since_first_ready_for_feedback?
             errors.add(:task_status, "cannot be moved to '#{status.name}' until feedback has been given")
@@ -651,7 +655,7 @@ class Task < ApplicationRecord
           # Can only be graded if task_def is not assess_in_portfolio_only
           if task_definition.max_quality_pts > 0
             case status
-            when TaskStatus.complete, TaskStatus.discuss, TaskStatus.demonstrate, TaskStatus.attention_required
+            when TaskStatus.complete, TaskStatus.discuss, TaskStatus.rediscuss, TaskStatus.demonstrate, TaskStatus.attention_required
               update(quality_pts: quality)
             end
           end
@@ -786,7 +790,7 @@ class Task < ApplicationRecord
 
       # Grant an extension on fix if due date is within 1 week
       case task_status
-      when TaskStatus.fix_and_resubmit, TaskStatus.discuss, TaskStatus.demonstrate
+      when TaskStatus.fix_and_resubmit, TaskStatus.discuss, TaskStatus.rediscuss, TaskStatus.demonstrate
         if to_same_day_anywhere_on_earth(due_date) < Time.zone.now + 7.days && can_apply_for_extension? && unit.extension_weeks_on_resubmit_request > 0
           grant_extension(assessor, unit.extension_weeks_on_resubmit_request)
         end
