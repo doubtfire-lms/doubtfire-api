@@ -37,6 +37,7 @@ class CommunicationCondition < ApplicationRecord
     time_exceeded
     assess_in_portfolio
     attention_required
+    rediscuss
   ].freeze
 
   belongs_to :communication,
