@@ -85,6 +85,7 @@ gem 'bunny-pub-sub', '0.5.2'
 gem 'ci_reporter'
 gem 'dotenv'
 gem 'rack-cors', require: 'rack/cors'
+gem 'rack-attack'
 gem 'require_all', '>=1.3.3'
 
 # Excel support
