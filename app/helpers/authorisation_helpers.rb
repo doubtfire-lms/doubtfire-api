@@ -26,7 +26,9 @@ module AuthorisationHelpers
     :get_staff_note,
     :get_members,
     :get_groups,
-    :get_discussion_prompt
+    :get_discussion_prompt,
+    :get_engagements,
+    :get_tutor_times
   ].freeze
 
   #
