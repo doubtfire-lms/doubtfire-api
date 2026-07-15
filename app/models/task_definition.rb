@@ -137,6 +137,21 @@ class TaskDefinition < ApplicationRecord
     content_link.present?
   end
 
+  def task_resource_link
+    return @task_resource_link if defined?(@task_resource_link)
+
+    @task_resource_link = unit.unit_content_links.find do |link|
+      link.context_type == 'task_definition_resource' && link.context_key == abbreviation
+    end || unit.unit_content_links.find_by(
+      context_type: 'task_definition_resource',
+      context_key: abbreviation
+    )
+  end
+
+  def has_task_resource_link?
+    task_resource_link.present? && task_resource_link.unit_content_site.file?(task_resource_link.route)
+  end
+
   def grade_target_date(target_grade)
     grade_due_dates.find { |g| g.target_grade == target_grade.to_i }&.target_due_date
   end
@@ -216,7 +231,7 @@ class TaskDefinition < ApplicationRecord
       FileUtils.cp(task_sheet, new_td.task_sheet())
     end
 
-    if has_task_resources?
+    if has_uploaded_task_resources?
       # Copy the task resources, and trigger tii integration if needed
       new_td.add_task_resources(task_resources, copy: true)
     end
@@ -284,7 +299,7 @@ class TaskDefinition < ApplicationRecord
   def move_files_on_abbreviation_change
     old_abbr = saved_change_to_abbreviation[0] # 0 is original abbreviation
     unit.unit_content_links
-        .where(context_type: 'task_definition', context_key: old_abbr)
+        .where(context_type: %w[task_definition task_definition_resource], context_key: old_abbr)
         .find_each { |link| link.update!(context_key: abbreviation) }
 
     if File.exist? task_sheet_with_abbreviation(old_abbr, false)
@@ -751,6 +766,10 @@ class TaskDefinition < ApplicationRecord
   end
 
   def has_task_resources?
+    has_task_resource_link? || has_uploaded_task_resources?
+  end
+
+  def has_uploaded_task_resources?
     File.exist? task_resources(false)
   end
 
@@ -827,10 +846,10 @@ class TaskDefinition < ApplicationRecord
   end
 
   def remove_task_resources()
-    if has_task_resources?
+    if has_uploaded_task_resources?
       FileUtils.rm task_resources
 
-      tii_group_attachments.destroy_all if tii_checks?
+      tii_group_attachments.destroy_all if tii_checks? && !has_task_resource_link?
     end
   end
 
@@ -928,17 +947,33 @@ class TaskDefinition < ApplicationRecord
 
   # Read a file from the task definition resources.
   #
-  # @param filename [String] The name of the file to read from the zipfile.
+  # @param filename [String] The linked filename or path within the resource zip.
   # @return [String] The contents of the file, or nil if the file does not exist.
   def read_file_from_resources(filename)
-    return nil unless has_task_resources?
+    linked_resource = linked_task_resource
+    return nil unless linked_resource || has_uploaded_task_resources?
 
-    Zip::File.open(task_resources) do |zip_file|
+    if linked_resource && !task_resource_zip?(linked_resource)
+      return filename == linked_resource[:filename] ? File.binread(linked_resource[:path]) : nil
+    end
+
+    resource_path = linked_resource ? linked_resource[:path] : task_resources
+    Zip::File.open(resource_path) do |zip_file|
       entry = zip_file.glob(filename).first
       return entry.get_input_stream.read if entry
     end
 
     nil
+  end
+
+  def linked_task_resource
+    return unless has_task_resource_link?
+
+    task_resource_link.unit_content_site.extract_file(task_resource_link.route)
+  end
+
+  def task_resource_zip?(resource)
+    resource.present? && File.extname(resource[:filename]).casecmp('.zip').zero?
   end
 
   private

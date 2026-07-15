@@ -47,6 +47,8 @@ module Entities
     expose :has_scorm_data?, as: :has_scorm_data
     expose :has_content_link?, as: :has_content_link
     expose :content_link, using: UnitContentLinkEntity, expose_nil: false
+    expose :has_task_resource_link?, as: :has_task_resource_link
+    expose :task_resource_link, using: UnitContentLinkEntity, expose_nil: false
     expose :scorm_enabled
     expose :scorm_allow_review
     expose :scorm_bypass_test

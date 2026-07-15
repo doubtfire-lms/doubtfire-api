@@ -13,7 +13,9 @@ class UnitContentsApi < Grape::API
       normalized_route = "/#{content_route.to_s.gsub(%r{\A/+|/+\z}, '')}"
       normalized_route = '/' if normalized_route.blank?
 
-      unit.unit_content_links.find_by(route: normalized_route)
+      unit.unit_content_links
+          .where.not(context_type: 'task_definition_resource')
+          .find_by(route: normalized_route)
     end
 
     def authorise_unit_content_management!(unit)
@@ -75,7 +77,8 @@ class UnitContentsApi < Grape::API
     authorise_unit_content_management!(unit)
 
     present unit.unit_content_sites.order(created_at: :desc),
-            with: Entities::UnitContentSiteEntity
+            with: Entities::UnitContentSiteEntity,
+            include_file_paths: true
   end
 
   desc 'Upload a unit content site archive'
@@ -97,7 +100,7 @@ class UnitContentsApi < Grape::API
                               'application/octet-stream']
 
     site = UnitContentSite.store_upload!(unit, file, name: params[:name])
-    present site, with: Entities::UnitContentSiteEntity
+    present site, with: Entities::UnitContentSiteEntity, include_file_paths: true
   end
 
   desc 'Delete a unit content site'
@@ -154,7 +157,7 @@ class UnitContentsApi < Grape::API
     end
 
     site.update!(update_params)
-    present site, with: Entities::UnitContentSiteEntity
+    present site, with: Entities::UnitContentSiteEntity, include_file_paths: true
   end
 
   desc 'List unit content links'
@@ -186,7 +189,9 @@ class UnitContentsApi < Grape::API
       [link_params[:context_type], link_params[:context_key]]
     end
 
-    unit.unit_content_links.where(context_type: %w[grade grade_overview task_definition]).find_each do |link|
+    unit.unit_content_links
+        .where(context_type: %w[grade grade_overview task_definition task_definition_resource])
+        .find_each do |link|
       link.destroy! unless submitted_contexts.include?([link.context_type, link.context_key])
     end
 

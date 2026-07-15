@@ -2156,8 +2156,19 @@ class Unit < ApplicationRecord
         end
 
         if td.has_task_resources?
-          dst_path = FileHelper.sanitized_filename(td.abbreviation.to_s) + '.zip'
-          zip.add(dst_path, td.task_resources)
+          linked_resource = td.linked_task_resource
+
+          if linked_resource && !td.task_resource_zip?(linked_resource)
+            dst_path = File.join(
+              FileHelper.sanitized_filename(td.abbreviation.to_s),
+              FileHelper.sanitized_filename(linked_resource[:filename])
+            )
+            zip.add(dst_path, linked_resource[:path])
+          else
+            dst_path = FileHelper.sanitized_filename(td.abbreviation.to_s) + '.zip'
+            resource_path = linked_resource ? linked_resource[:path] : td.task_resources
+            zip.add(dst_path, resource_path)
+          end
         end
       end
     end # zip
