@@ -37,7 +37,7 @@ module FileHelper
   # Test if a file should be accepted based on an expected kind
   # - file is passed the file uploaded to Doubtfire (a hash with all relevant data about the file)
   #
-  def accept_file(file, name, kind, allow_word_documents: false)
+  def accept_file(file, name, kind)
     word_document = kind == 'document' && word_document?(file[:filename] || file['tempfile'].path)
 
     case kind
@@ -49,7 +49,7 @@ module FileHelper
                 'text/x-yaml', 'application/xml', 'text/x-typescript', 'text/x-vhdl', 'text/x-asm', 'text/x-jack', 'application/x-httpd-php',
                 'application/tst', 'text/x-cmp', 'text/x-vm', 'application/x-sh', 'application/x-bat', 'application/dat', 'application/x-wine-extension-ini']
     when 'document'
-      mime_allow_list = if word_document && allow_word_documents
+      mime_allow_list = if word_document
                           [WORD_DOCUMENT_MIME_TYPE]
                         else
                           ['application/pdf']
@@ -84,7 +84,7 @@ module FileHelper
       }
     end
 
-    if word_document && allow_word_documents && !word_document_conversion_configured?
+    if word_document && !word_document_conversion_configured?
       msg = 'Word documents are currently not supported. Please export your document to PDF.'
       logger.error 'Word document upload rejected because conversion is not configured'
       return {
@@ -93,7 +93,7 @@ module FileHelper
       }
     end
 
-    if word_document && allow_word_documents && encrypted_word_document?(file['tempfile'].path)
+    if word_document && encrypted_word_document?(file['tempfile'].path)
       msg = 'Word document is encrypted or password protected. Remove the password protection and upload it again.'
       logger.debug 'Word document is encrypted or password protected'
       return {

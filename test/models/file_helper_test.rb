@@ -28,7 +28,7 @@ class FileHelperTest < ActiveSupport::TestCase
     end
   end
 
-  def test_accepts_docx_as_a_task_document
+  def test_accepts_docx_as_a_document
     with_word_document_conversion_configured do
       Tempfile.create(['submission', '.docx']) do |docx_file|
         FileUtils.cp(Rails.root.join('test_files/TestWordDoc.docx'), docx_file.path)
@@ -39,8 +39,7 @@ class FileHelperTest < ActiveSupport::TestCase
             'tempfile' => docx_file
           },
           'Report',
-          'document',
-          allow_word_documents: true
+          'document'
         )
 
         assert result[:accepted], result[:msg]
@@ -64,13 +63,12 @@ class FileHelperTest < ActiveSupport::TestCase
           'tempfile' => docx_file
         },
         'Report',
-        'document',
-        allow_word_documents: true
+        'document'
       )
 
       assert_not result[:accepted]
       assert_equal(
-        'Word documents are currently not supported.',
+        'Word documents are currently not supported. Please export your document to PDF.',
         result[:msg]
       )
     end
@@ -78,23 +76,6 @@ class FileHelperTest < ActiveSupport::TestCase
     config.gotenberg_image = original_image
     config.gotenberg_workdir_volume_mount = original_mount
     config.gotenberg_fallback_volume_container = original_fallback
-  end
-
-  def test_rejects_docx_where_word_documents_are_not_enabled
-    Tempfile.create(['submission', '.docx']) do |docx_file|
-      FileUtils.cp(Rails.root.join('test_files/TestWordDoc.docx'), docx_file.path)
-
-      result = FileHelper.accept_file(
-        {
-          filename: 'submission.docx',
-          'tempfile' => docx_file
-        },
-        'Report',
-        'document'
-      )
-
-      assert_not result[:accepted]
-    end
   end
 
   def test_rejects_encrypted_docx_with_an_explicit_error
@@ -106,8 +87,7 @@ class FileHelperTest < ActiveSupport::TestCase
             'tempfile' => docx_file
           },
           'Submission',
-          'document',
-          allow_word_documents: true
+          'document'
         )
 
         assert_not result[:accepted]

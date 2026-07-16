@@ -1682,7 +1682,7 @@ class Task < ApplicationRecord
     #
     files.each_with_index do |file, index|
       logger.debug "Accepting submission (file #{index + 1} of #{files.length}) - checking file type for #{file["tempfile"].path}"
-      file_result = FileHelper.accept_file(file, file[:name], file[:type], allow_word_documents: true)
+      file_result = FileHelper.accept_file(file, file[:name], file[:type])
       unless file_result[:accepted]
         ui.error!({ 'error' => "'#{file[:name]}' is invalid: #{file_result[:msg]}" }, 403)
       end
