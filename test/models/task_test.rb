@@ -938,6 +938,126 @@ class TaskTest < ActiveSupport::TestCase
     unit.destroy!
   end
 
+  def test_docx_submission_preserves_original_and_stores_pdf_history_preview
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
+    task_definition = TaskDefinition.create!(
+      unit_id: unit.id,
+      tutorial_stream: unit.tutorial_streams.first,
+      name: 'Word Document Test Task',
+      description: 'Test task',
+      weighting: 4,
+      target_grade: 0,
+      start_date: unit.start_date + 1.week,
+      target_date: unit.start_date + 2.weeks,
+      abbreviation: 'WordDocTestTask',
+      restrict_status_updates: false,
+      upload_requirements: [
+        {
+          'key' => 'file0',
+          'name' => 'A Word document',
+          'type' => 'document',
+          'submission_history' => true
+        }
+      ],
+      plagiarism_warn_pct: 0.8,
+      is_graded: false,
+      max_quality_pts: 0
+    )
+
+    data_to_post = with_file(
+      'test_files/TestWordDoc.docx',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      { trigger: 'ready_for_feedback' }
+    )
+    project = unit.active_projects.first
+    add_auth_header_for user: unit.main_convenor_user
+
+    post "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/submission", data_to_post
+
+    assert_equal 201, last_response.status, last_response_body
+
+    task = project.task_for_task_definition(task_definition)
+    conversion_work_id = nil
+    converter = lambda do |_source_path, destination_path, work_id:|
+      conversion_work_id = work_id
+      FileUtils.cp(Rails.root.join('test_files/submissions/valid.pdf'), destination_path)
+      destination_path
+    end
+    original_converter = FileHelper.method(:convert_word_document_to_pdf)
+    FileHelper.define_singleton_method(:convert_word_document_to_pdf, converter)
+    begin
+      converted = task.convert_submission_to_pdf(log_to_stdout: true)
+    ensure
+      FileHelper.define_singleton_method(:convert_word_document_to_pdf, original_converter)
+    end
+
+    assert converted
+    assert_match(/\Atask-#{task.id}-/, conversion_work_id)
+    assert FileHelper.validate_pdf(task.final_pdf_path)[:valid]
+
+    Zip::File.open(task.zip_file_path_for_done_task) do |archive|
+      assert archive.find_entry("#{task.id}/000-document.docx")
+      assert_nil archive.find_entry("#{task.id}/000-document.pdf")
+    end
+
+    history = SubmissionHistory.create_archive!(task, '12345')
+    Zip::File.open(history.archive_file_name) do |archive|
+      assert archive.find_entry("12345/#{task.id}/000-document.pdf")
+      assert_nil archive.find_entry("12345/#{task.id}/000-document.docx")
+    end
+  ensure
+    task_definition&.destroy!
+    unit&.destroy!
+  end
+
+  def test_docx_submission_text_is_included_in_final_pdf
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
+    task_definition = TaskDefinition.create!(
+      unit_id: unit.id,
+      tutorial_stream: unit.tutorial_streams.first,
+      name: 'Word Document PDF Text Test Task',
+      description: 'Test task',
+      weighting: 4,
+      target_grade: 0,
+      start_date: unit.start_date + 1.week,
+      target_date: unit.start_date + 2.weeks,
+      abbreviation: 'WordDocPdfText',
+      restrict_status_updates: false,
+      upload_requirements: [
+        {
+          'key' => 'file0',
+          'name' => 'A Word document',
+          'type' => 'document'
+        }
+      ],
+      plagiarism_warn_pct: 0.8,
+      is_graded: false,
+      max_quality_pts: 0
+    )
+
+    data_to_post = with_file(
+      'test_files/TestWordDoc.docx',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      { trigger: 'ready_for_feedback' }
+    )
+    project = unit.active_projects.first
+    add_auth_header_for user: unit.main_convenor_user
+
+    post "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/submission", data_to_post
+
+    assert_equal 201, last_response.status, last_response_body
+
+    task = project.task_for_task_definition(task_definition)
+    assert task.convert_submission_to_pdf(log_to_stdout: true)
+    assert File.exist?(task.final_pdf_path)
+
+    pdf_text = PDF::Reader.new(task.final_pdf_path).pages.map(&:text).join(' ').gsub(/\s+/, ' ')
+    assert_includes pdf_text, 'This is a test word document, with at least six words.'
+  ensure
+    task_definition&.destroy!
+    unit&.destroy!
+  end
+
   def test_pdf_creation_fails_on_invalid_pdf
     unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
     td = TaskDefinition.new({

@@ -29,6 +29,8 @@ env:
   DF_REDIS_SIDEKIQ_URL: "redis://redis:6379/0"
   LATEX_CONTAINER_NAME: doubtfire-texlive
   LATEX_BUILD_PATH: /texlive/shell/latex_build.sh
+  GOTENBERG_IMAGE: doubtfire-gotenberg-development:local
+  GOTENBERG_FALLBACK_VOLUME_CONTAINER: doubtfire-gotenberg-volumes
   LTI_SHARED_API_SECRET: "abc123"
   LTI_ENABLED: true
   DF_INITIAL_ADMIN_PASSWORD: "password"
@@ -64,6 +66,16 @@ jobs:
           tags: doubtfire-texlive-development:local
           cache-from: type=gha,scope=texlive
           cache-to: type=gha,mode=max,scope=texlive
+      - name: Build Gotenberg image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: gotenberg.Dockerfile
+          push: false
+          load: true
+          tags: doubtfire-gotenberg-development:local
+          cache-from: type=gha,scope=gotenberg
+          cache-to: type=gha,mode=max,scope=gotenberg
       - name: Build JPlag image
         uses: docker/build-push-action@v5
         with:
@@ -104,6 +116,13 @@ jobs:
             -v ${{ github.workspace }}:/doubtfire
             -v /var/run/docker.sock:/var/run/docker.sock
           run: docker exec -t ${{ env.LATEX_CONTAINER_NAME }} lualatex -v
+      - name: Start Gotenberg volume container
+        run: >
+          docker run --detach
+          --name ${{ env.GOTENBERG_FALLBACK_VOLUME_CONTAINER }}
+          --network none
+          --volume ${{ github.workspace }}/tmp/gotenberg:/workdir/gotenberg
+          alpine sleep infinity
       - name: Start JPlag service
         uses: maus007/docker-run-action-fork@207a4e2a8ebf7e4b985656ba990b1e53715dce2a
         with:
@@ -151,6 +170,8 @@ jobs:
             -e DF_REDIS_SIDEKIQ_URL
             -e LATEX_CONTAINER_NAME
             -e LATEX_BUILD_PATH
+            -e GOTENBERG_IMAGE
+            -e GOTENBERG_FALLBACK_VOLUME_CONTAINER
             -e LTI_SHARED_API_SECRET
             -e LTI_ENABLED
             -e DF_INITIAL_ADMIN_PASSWORD
@@ -183,6 +204,8 @@ jobs:
             -e DF_REDIS_SIDEKIQ_URL
             -e LATEX_CONTAINER_NAME
             -e LATEX_BUILD_PATH
+            -e GOTENBERG_IMAGE
+            -e GOTENBERG_FALLBACK_VOLUME_CONTAINER
             -e LTI_SHARED_API_SECRET
             -e LTI_ENABLED
           run: TERM=xterm bundle exec rails test
@@ -190,3 +213,6 @@ jobs:
         run: docker rm -f ${{ env.LATEX_CONTAINER_NAME }}
       - name: Stop JPlag service
         run: docker rm -f jplag
+      - name: Stop Gotenberg volume container
+        if: always()
+        run: docker rm -f ${{ env.GOTENBERG_FALLBACK_VOLUME_CONTAINER }}

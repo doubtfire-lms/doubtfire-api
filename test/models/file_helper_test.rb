@@ -3,6 +3,21 @@ require "open3"
 require "zip"
 
 class FileHelperTest < ActiveSupport::TestCase
+  def with_word_document_conversion_configured
+    config = Doubtfire::Application.config
+    original_image = config.gotenberg_image
+    original_mount = config.gotenberg_workdir_volume_mount
+    original_fallback = config.gotenberg_fallback_volume_container
+    config.gotenberg_image = 'doubtfire-gotenberg:test'
+    config.gotenberg_workdir_volume_mount = nil
+    config.gotenberg_fallback_volume_container = 'fallback-container'
+    yield
+  ensure
+    config.gotenberg_image = original_image
+    config.gotenberg_workdir_volume_mount = original_mount
+    config.gotenberg_fallback_volume_container = original_fallback
+  end
+
   def test_convert_use_with_gif
     in_file = "#{Rails.root}/test_files/submissions/unbelievable.gif"
 
@@ -11,6 +26,190 @@ class FileHelperTest < ActiveSupport::TestCase
       assert FileHelper.compress_image_to_dest(in_file, dest_file, true)
       assert File.exist? dest_file
     end
+  end
+
+  def test_accepts_docx_as_a_document
+    with_word_document_conversion_configured do
+      Tempfile.create(['submission', '.docx']) do |docx_file|
+        FileUtils.cp(Rails.root.join('test_files/TestWordDoc.docx'), docx_file.path)
+
+        result = FileHelper.accept_file(
+          {
+            filename: 'submission.docx',
+            'tempfile' => docx_file
+          },
+          'Report',
+          'document'
+        )
+
+        assert result[:accepted], result[:msg]
+      end
+    end
+  end
+
+  def test_rejects_docx_when_word_document_conversion_is_not_configured
+    config = Doubtfire::Application.config
+    original_image = config.gotenberg_image
+    original_mount = config.gotenberg_workdir_volume_mount
+    original_fallback = config.gotenberg_fallback_volume_container
+    config.gotenberg_image = nil
+    config.gotenberg_workdir_volume_mount = nil
+    config.gotenberg_fallback_volume_container = nil
+
+    File.open(Rails.root.join('test_files/TestWordDoc.docx')) do |docx_file|
+      result = FileHelper.accept_file(
+        {
+          filename: 'submission.docx',
+          'tempfile' => docx_file
+        },
+        'Report',
+        'document'
+      )
+
+      assert_not result[:accepted]
+      assert_equal(
+        'Word documents are currently not supported. Please export your document to PDF.',
+        result[:msg]
+      )
+    end
+  ensure
+    config.gotenberg_image = original_image
+    config.gotenberg_workdir_volume_mount = original_mount
+    config.gotenberg_fallback_volume_container = original_fallback
+  end
+
+  def test_rejects_encrypted_docx_with_an_explicit_error
+    with_word_document_conversion_configured do
+      File.open(Rails.root.join('test_files/submissions/encrypted.docx')) do |docx_file|
+        result = FileHelper.accept_file(
+          {
+            filename: 'submission.docx',
+            'tempfile' => docx_file
+          },
+          'Submission',
+          'document'
+        )
+
+        assert_not result[:accepted]
+        assert_equal(
+          'Word document is encrypted or password protected. Remove the password protection and upload it again.',
+          result[:msg]
+        )
+      end
+    end
+  end
+
+  def test_word_document_conversion_requires_an_image_and_work_directory_source
+    config = Doubtfire::Application.config
+    original_image = config.gotenberg_image
+    original_mount = config.gotenberg_workdir_volume_mount
+    original_fallback = config.gotenberg_fallback_volume_container
+
+    config.gotenberg_image = nil
+    config.gotenberg_workdir_volume_mount = '/host/gotenberg'
+    assert_not FileHelper.word_document_conversion_configured?
+
+    config.gotenberg_image = 'doubtfire-gotenberg:test'
+    config.gotenberg_workdir_volume_mount = nil
+    config.gotenberg_fallback_volume_container = nil
+    assert_not FileHelper.word_document_conversion_configured?
+
+    config.gotenberg_workdir_volume_mount = '/host/gotenberg'
+    assert FileHelper.word_document_conversion_configured?
+
+    config.gotenberg_workdir_volume_mount = nil
+    config.gotenberg_fallback_volume_container = 'fallback-container'
+    assert FileHelper.word_document_conversion_configured?
+  ensure
+    config.gotenberg_image = original_image
+    config.gotenberg_workdir_volume_mount = original_mount
+    config.gotenberg_fallback_volume_container = original_fallback
+  end
+
+  def test_converts_docx_to_pdf_with_gotenberg
+    successful_status = Struct.new(:exitstatus) do
+      def success?
+        true
+      end
+    end.new(0)
+    runner = lambda do |work_id|
+      FileUtils.cp(
+        Rails.root.join('test_files/submissions/valid.pdf'),
+        Rails.root.join('tmp/gotenberg', work_id, 'output.pdf')
+      )
+      ['', '', successful_status]
+    end
+
+    Dir.mktmpdir do |dir|
+      source_path = File.join(dir, 'submission.docx')
+      destination_path = File.join(dir, 'submission.pdf')
+      FileUtils.cp(Rails.root.join('test_files/TestWordDoc.docx'), source_path)
+
+      original_runner = FileHelper.method(:run_word_document_conversion)
+      FileHelper.define_singleton_method(:run_word_document_conversion, runner)
+      begin
+        result = FileHelper.convert_word_document_to_pdf(
+          source_path,
+          destination_path,
+          work_id: 'test-work-id'
+        )
+      ensure
+        FileHelper.define_singleton_method(:run_word_document_conversion, original_runner)
+      end
+
+      assert_equal destination_path, result
+      assert FileHelper.validate_pdf(destination_path)[:valid]
+    end
+  end
+
+  def test_gotenberg_uses_an_isolated_host_work_directory_mount_when_configured
+    config = Doubtfire::Application.config
+    original_mount = config.gotenberg_workdir_volume_mount
+    original_fallback = config.gotenberg_fallback_volume_container
+    config.gotenberg_workdir_volume_mount = '/host/gotenberg'
+    config.gotenberg_fallback_volume_container = 'fallback-container'
+
+    assert_equal(
+      ['--volume', '/host/gotenberg/test-work-id:/workdir/gotenberg/test-work-id'],
+      FileHelper.gotenberg_volume_arguments('test-work-id')
+    )
+  ensure
+    config.gotenberg_workdir_volume_mount = original_mount
+    config.gotenberg_fallback_volume_container = original_fallback
+  end
+
+  def test_gotenberg_uses_the_development_volume_container_fallback
+    config = Doubtfire::Application.config
+    original_mount = config.gotenberg_workdir_volume_mount
+    original_fallback = config.gotenberg_fallback_volume_container
+    config.gotenberg_workdir_volume_mount = nil
+    config.gotenberg_fallback_volume_container = 'fallback-container'
+
+    assert_equal(
+      ['--volumes-from', 'fallback-container'],
+      FileHelper.gotenberg_volume_arguments('test-work-id')
+    )
+  ensure
+    config.gotenberg_workdir_volume_mount = original_mount
+    config.gotenberg_fallback_volume_container = original_fallback
+  end
+
+  def test_gotenberg_worker_runs_in_its_own_network_namespace
+    config = Doubtfire::Application.config
+    original_image = config.gotenberg_image
+    original_mount = config.gotenberg_workdir_volume_mount
+    config.gotenberg_image = 'doubtfire-gotenberg:test'
+    config.gotenberg_workdir_volume_mount = '/host/gotenberg'
+
+    command = FileHelper.word_document_conversion_command('test-work-id')
+    network_index = command.index('--network')
+
+    assert_equal 'none', command[network_index + 1]
+    assert_not(command.any? { |argument| argument.start_with?('container:') })
+    assert_equal 'doubtfire-gotenberg:test', command[-2]
+  ensure
+    config.gotenberg_image = original_image
+    config.gotenberg_workdir_volume_mount = original_mount
   end
 
   def test_archive_paths
