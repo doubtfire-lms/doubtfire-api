@@ -78,6 +78,24 @@ class TaskTest < ActiveSupport::TestCase
     assert_equal TaskStatus.complete, task.task_status
   end
 
+  def test_trigger_transition_only_allows_rediscuss_from_discuss
+    project = FactoryBot.create(:project)
+    unit = project.unit
+    task_definition = unit.task_definitions.first
+    task = project.task_for_task_definition(task_definition)
+    tutor = unit.main_convenor_user
+
+    task.update!(task_status: TaskStatus.ready_for_feedback)
+
+    assert_nil task.trigger_transition(trigger: 'rediscuss', by_user: tutor)
+    assert_equal TaskStatus.ready_for_feedback, task.task_status
+
+    task.update!(task_status: TaskStatus.discuss)
+
+    assert task.trigger_transition(trigger: 'rediscuss', by_user: tutor)
+    assert_equal TaskStatus.rediscuss, task.task_status
+  end
+
   def test_trigger_transition_requires_manual_feedback_before_assessment_outcomes_when_checking_feedback
     project = FactoryBot.create(:project)
     unit = project.unit
