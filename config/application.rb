@@ -65,7 +65,7 @@ module Doubtfire
 
     # Each Word document conversion runs a short-lived, network-isolated
     # Gotenberg container. The image includes the conversion entrypoint.
-    config.gotenberg_image = ENV.fetch('GOTENBERG_IMAGE', 'doubtfire-gotenberg:local')
+    config.gotenberg_image = ENV.fetch('GOTENBERG_IMAGE', nil)
 
     # Absolute host path to tmp/gotenberg. Production uses this to mount only
     # the current conversion's work directory into its one-shot container.
