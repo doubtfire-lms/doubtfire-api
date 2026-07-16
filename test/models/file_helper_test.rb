@@ -48,6 +48,26 @@ class FileHelperTest < ActiveSupport::TestCase
     end
   end
 
+  def test_rejects_encrypted_docx_with_an_explicit_error
+    File.open(Rails.root.join('test_files/submissions/encrypted.docx')) do |docx_file|
+      result = FileHelper.accept_file(
+        {
+          filename: 'submission.docx',
+          'tempfile' => docx_file
+        },
+        'Submission',
+        'document',
+        allow_word_documents: true
+      )
+
+      assert_not result[:accepted]
+      assert_equal(
+        'Word document is encrypted or password protected. Remove the password protection and upload it again.',
+        result[:msg]
+      )
+    end
+  end
+
   def test_converts_docx_to_pdf_with_gotenberg
     successful_status = Struct.new(:exitstatus) do
       def success?

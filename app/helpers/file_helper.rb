@@ -19,6 +19,10 @@ module FileHelper
   ].freeze
   WORD_DOCUMENT_EXTENSION = '.docx'
   WORD_DOCUMENT_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  COMPOUND_FILE_SIGNATURE = "\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1".b.freeze
+  WORD_DOCUMENT_ENCRYPTION_STREAM_NAMES = %w[EncryptedPackage EncryptionInfo].map do |name|
+    name.encode(Encoding::UTF_16LE).b.freeze
+  end.freeze
 
   class DocumentConversionError < StandardError; end
 
@@ -74,6 +78,15 @@ module FileHelper
     unless extension_check
       msg = 'invalid file extension.'
       logger.debug 'File extension check failed'
+      return {
+        accepted: false,
+        msg: msg
+      }
+    end
+
+    if word_document && allow_word_documents && encrypted_word_document?(file['tempfile'].path)
+      msg = 'Word document is encrypted or password protected. Remove the password protection and upload it again.'
+      logger.debug 'Word document is encrypted or password protected'
       return {
         accepted: false,
         msg: msg
@@ -137,6 +150,34 @@ module FileHelper
 
   def word_document?(path)
     File.extname(path.to_s).casecmp(WORD_DOCUMENT_EXTENSION).zero?
+  end
+
+  # Password-protected OOXML files are stored in an OLE compound file rather
+  # than the ZIP container used by normal DOCX files. Confirm the compound-file
+  # signature and both encryption stream names to avoid treating any malformed
+  # or incorrectly named DOCX as encrypted.
+  def encrypted_word_document?(path)
+    longest_stream_name = WORD_DOCUMENT_ENCRYPTION_STREAM_NAMES.map(&:bytesize).max
+    matched_stream_names = Array.new(WORD_DOCUMENT_ENCRYPTION_STREAM_NAMES.length, false)
+
+    File.open(path, 'rb') do |file|
+      return false unless file.read(COMPOUND_FILE_SIGNATURE.bytesize) == COMPOUND_FILE_SIGNATURE
+
+      buffer = ''.b
+      while (chunk = file.read(16 * 1024))
+        buffer << chunk
+        WORD_DOCUMENT_ENCRYPTION_STREAM_NAMES.each_with_index do |stream_name, index|
+          matched_stream_names[index] ||= buffer.include?(stream_name)
+        end
+        return true if matched_stream_names.all?
+
+        buffer = buffer.byteslice(-(longest_stream_name - 1), longest_stream_name - 1) || ''.b
+      end
+    end
+
+    false
+  rescue Errno::ENOENT, Errno::EACCES, IOError
+    false
   end
 
   def convert_word_document_to_pdf(source_path, destination_path, work_id: SecureRandom.uuid)
@@ -1130,6 +1171,7 @@ module FileHelper
   # Export functions as module functions
   module_function :accept_file
   module_function :word_document?
+  module_function :encrypted_word_document?
   module_function :convert_word_document_to_pdf
   module_function :run_word_document_conversion
   module_function :gotenberg_worker_image
