@@ -109,7 +109,7 @@ namespace :db do
       profile[:login_id]  ||= username
 
       if AuthenticationHelpers.db_auth?
-        password = prompt_for_admin_password
+        password = Rails.env.production? ? prompt_for_admin_password : 'password'
         profile[:password] = password
         profile[:password_confirmation] = password
       end
