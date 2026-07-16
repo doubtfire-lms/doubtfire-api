@@ -216,21 +216,21 @@ module FileHelper
   end
 
   def run_word_document_conversion(work_id)
-    config = Doubtfire::Application.config
-    container_name = config.gotenberg_container_name
-    if container_name.blank?
-      raise DocumentConversionError, 'GOTENBERG_CONTAINER_NAME is not configured.'
-    end
+    Open3.capture3(*word_document_conversion_command(work_id))
+  end
 
-    image = gotenberg_worker_image(container_name)
+  def word_document_conversion_command(work_id)
+    config = Doubtfire::Application.config
+    image = config.gotenberg_image
+    raise DocumentConversionError, 'GOTENBERG_IMAGE is not configured.' if image.blank?
+
     timeout_seconds = config.word_document_conversion_timeout_seconds.to_i
     timeout_seconds = 120 unless timeout_seconds.positive?
 
-    command = [
+    [
       'docker', 'run', '--rm',
-      '--pull', 'never',
       '--cpus', '1',
-      '--network', "container:#{container_name}",
+      '--network', 'none',
       *gotenberg_volume_arguments(work_id),
       '--name', "gotenberg-word-#{work_id}",
       '--env', "WORD_DOCUMENT_CONVERSION_TIMEOUT_SECONDS=#{timeout_seconds}",
@@ -238,19 +238,6 @@ module FileHelper
       image,
       work_id
     ]
-
-    Open3.capture3(*command)
-  end
-
-  def gotenberg_worker_image(container_name)
-    stdout, stderr, status = Open3.capture3('docker', 'inspect', '--format', '{{.Image}}', container_name)
-    image = stdout.strip
-    return image if status.success? && image.present?
-
-    details = stderr.to_s.strip.first(1_000)
-    message = "Unable to determine the Gotenberg image from container '#{container_name}'."
-    message = "#{message} #{details}" if details.present?
-    raise DocumentConversionError, message
   end
 
   def gotenberg_volume_arguments(work_id)
@@ -1174,7 +1161,7 @@ module FileHelper
   module_function :encrypted_word_document?
   module_function :convert_word_document_to_pdf
   module_function :run_word_document_conversion
-  module_function :gotenberg_worker_image
+  module_function :word_document_conversion_command
   module_function :gotenberg_volume_arguments
   module_function :sanitized_path
   module_function :sanitized_filename

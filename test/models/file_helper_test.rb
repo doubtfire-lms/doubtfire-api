@@ -136,6 +136,24 @@ class FileHelperTest < ActiveSupport::TestCase
     config.gotenberg_fallback_volume_container = original_fallback
   end
 
+  def test_gotenberg_worker_runs_in_its_own_network_namespace
+    config = Doubtfire::Application.config
+    original_image = config.gotenberg_image
+    original_mount = config.gotenberg_workdir_volume_mount
+    config.gotenberg_image = 'doubtfire-gotenberg:test'
+    config.gotenberg_workdir_volume_mount = '/host/gotenberg'
+
+    command = FileHelper.word_document_conversion_command('test-work-id')
+    network_index = command.index('--network')
+
+    assert_equal 'none', command[network_index + 1]
+    assert_not(command.any? { |argument| argument.start_with?('container:') })
+    assert_equal 'doubtfire-gotenberg:test', command[-2]
+  ensure
+    config.gotenberg_image = original_image
+    config.gotenberg_workdir_volume_mount = original_mount
+  end
+
   def test_archive_paths
     unit = FactoryBot.create(:unit, with_students: false)
 

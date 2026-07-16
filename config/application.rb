@@ -63,8 +63,9 @@ module Doubtfire
     # Limit number of pdf generators to run at once
     config.pdfgen_max_processes = ENV['DF_MAX_PDF_GEN_PROCESSES'] || 2
 
-    # Gotenberg converts Word documents to PDF before task PDF compilation.
-    config.gotenberg_container_name = ENV.fetch('GOTENBERG_CONTAINER_NAME', nil)
+    # Each Word document conversion runs a short-lived, network-isolated
+    # Gotenberg container. The image includes the conversion entrypoint.
+    config.gotenberg_image = ENV.fetch('GOTENBERG_IMAGE', 'doubtfire-gotenberg:local')
 
     # Absolute host path to tmp/gotenberg. Production uses this to mount only
     # the current conversion's work directory into its one-shot container.
