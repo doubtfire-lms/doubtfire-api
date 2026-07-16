@@ -2,8 +2,20 @@ require 'io/console'
 
 namespace :db do
   def prompt_for_admin_password
+    password = ENV['DF_INITIAL_ADMIN_PASSWORD']
+    if password.present?
+      unless Devise.password_length.cover?(password.length)
+        raise "DF_INITIAL_ADMIN_PASSWORD must be #{Devise.password_length} characters long"
+      end
+
+      return password
+    end
+
     console = IO.console
-    raise 'An interactive terminal is required to set the initial admin password' if console.nil?
+    if console.nil?
+      raise 'An interactive terminal is required to set the initial admin password. ' \
+            'Set DF_INITIAL_ADMIN_PASSWORD for non-interactive setup.'
+    end
 
     loop do
       password = console.getpass('Enter password for the initial admin account: ')
