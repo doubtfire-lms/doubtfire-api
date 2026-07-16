@@ -1,4 +1,27 @@
+require 'io/console'
+
 namespace :db do
+  def prompt_for_admin_password
+    console = IO.console
+    raise 'An interactive terminal is required to set the initial admin password' if console.nil?
+
+    loop do
+      password = console.getpass('Enter password for the initial admin account: ')
+      confirmation = console.getpass('Confirm password: ')
+
+      raise 'Password entry was cancelled' if password.nil? || confirmation.nil?
+
+      unless Devise.password_length.cover?(password.length)
+        puts "Password must be #{Devise.password_length} characters long."
+        next
+      end
+
+      return password if password == confirmation
+
+      puts 'Passwords do not match. Try again.'
+    end
+  end
+
   #
   # Generate roles
   #
@@ -74,8 +97,9 @@ namespace :db do
       profile[:login_id]  ||= username
 
       if AuthenticationHelpers.db_auth?
-        profile[:password] = 'password'
-        profile[:password_confirmation] = 'password'
+        password = prompt_for_admin_password
+        profile[:password] = password
+        profile[:password_confirmation] = password
       end
 
       user = User.create!(profile)
