@@ -3,6 +3,21 @@ require "open3"
 require "zip"
 
 class FileHelperTest < ActiveSupport::TestCase
+  def with_word_document_conversion_configured
+    config = Doubtfire::Application.config
+    original_image = config.gotenberg_image
+    original_mount = config.gotenberg_workdir_volume_mount
+    original_fallback = config.gotenberg_fallback_volume_container
+    config.gotenberg_image = 'doubtfire-gotenberg:test'
+    config.gotenberg_workdir_volume_mount = nil
+    config.gotenberg_fallback_volume_container = 'fallback-container'
+    yield
+  ensure
+    config.gotenberg_image = original_image
+    config.gotenberg_workdir_volume_mount = original_mount
+    config.gotenberg_fallback_volume_container = original_fallback
+  end
+
   def test_convert_use_with_gif
     in_file = "#{Rails.root}/test_files/submissions/unbelievable.gif"
 
@@ -14,9 +29,35 @@ class FileHelperTest < ActiveSupport::TestCase
   end
 
   def test_accepts_docx_as_a_task_document
-    Tempfile.create(['submission', '.docx']) do |docx_file|
-      FileUtils.cp(Rails.root.join('test_files/TestWordDoc.docx'), docx_file.path)
+    with_word_document_conversion_configured do
+      Tempfile.create(['submission', '.docx']) do |docx_file|
+        FileUtils.cp(Rails.root.join('test_files/TestWordDoc.docx'), docx_file.path)
 
+        result = FileHelper.accept_file(
+          {
+            filename: 'submission.docx',
+            'tempfile' => docx_file
+          },
+          'Report',
+          'document',
+          allow_word_documents: true
+        )
+
+        assert result[:accepted], result[:msg]
+      end
+    end
+  end
+
+  def test_rejects_docx_when_word_document_conversion_is_not_configured
+    config = Doubtfire::Application.config
+    original_image = config.gotenberg_image
+    original_mount = config.gotenberg_workdir_volume_mount
+    original_fallback = config.gotenberg_fallback_volume_container
+    config.gotenberg_image = nil
+    config.gotenberg_workdir_volume_mount = nil
+    config.gotenberg_fallback_volume_container = nil
+
+    File.open(Rails.root.join('test_files/TestWordDoc.docx')) do |docx_file|
       result = FileHelper.accept_file(
         {
           filename: 'submission.docx',
@@ -27,8 +68,16 @@ class FileHelperTest < ActiveSupport::TestCase
         allow_word_documents: true
       )
 
-      assert result[:accepted], result[:msg]
+      assert_not result[:accepted]
+      assert_equal(
+        'Word documents are currently not supported.',
+        result[:msg]
+      )
     end
+  ensure
+    config.gotenberg_image = original_image
+    config.gotenberg_workdir_volume_mount = original_mount
+    config.gotenberg_fallback_volume_container = original_fallback
   end
 
   def test_rejects_docx_where_word_documents_are_not_enabled
@@ -49,23 +98,52 @@ class FileHelperTest < ActiveSupport::TestCase
   end
 
   def test_rejects_encrypted_docx_with_an_explicit_error
-    File.open(Rails.root.join('test_files/submissions/encrypted.docx')) do |docx_file|
-      result = FileHelper.accept_file(
-        {
-          filename: 'submission.docx',
-          'tempfile' => docx_file
-        },
-        'Submission',
-        'document',
-        allow_word_documents: true
-      )
+    with_word_document_conversion_configured do
+      File.open(Rails.root.join('test_files/submissions/encrypted.docx')) do |docx_file|
+        result = FileHelper.accept_file(
+          {
+            filename: 'submission.docx',
+            'tempfile' => docx_file
+          },
+          'Submission',
+          'document',
+          allow_word_documents: true
+        )
 
-      assert_not result[:accepted]
-      assert_equal(
-        'Word document is encrypted or password protected. Remove the password protection and upload it again.',
-        result[:msg]
-      )
+        assert_not result[:accepted]
+        assert_equal(
+          'Word document is encrypted or password protected. Remove the password protection and upload it again.',
+          result[:msg]
+        )
+      end
     end
+  end
+
+  def test_word_document_conversion_requires_an_image_and_work_directory_source
+    config = Doubtfire::Application.config
+    original_image = config.gotenberg_image
+    original_mount = config.gotenberg_workdir_volume_mount
+    original_fallback = config.gotenberg_fallback_volume_container
+
+    config.gotenberg_image = nil
+    config.gotenberg_workdir_volume_mount = '/host/gotenberg'
+    assert_not FileHelper.word_document_conversion_configured?
+
+    config.gotenberg_image = 'doubtfire-gotenberg:test'
+    config.gotenberg_workdir_volume_mount = nil
+    config.gotenberg_fallback_volume_container = nil
+    assert_not FileHelper.word_document_conversion_configured?
+
+    config.gotenberg_workdir_volume_mount = '/host/gotenberg'
+    assert FileHelper.word_document_conversion_configured?
+
+    config.gotenberg_workdir_volume_mount = nil
+    config.gotenberg_fallback_volume_container = 'fallback-container'
+    assert FileHelper.word_document_conversion_configured?
+  ensure
+    config.gotenberg_image = original_image
+    config.gotenberg_workdir_volume_mount = original_mount
+    config.gotenberg_fallback_volume_container = original_fallback
   end
 
   def test_converts_docx_to_pdf_with_gotenberg

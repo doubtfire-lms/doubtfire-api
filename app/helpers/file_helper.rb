@@ -84,6 +84,15 @@ module FileHelper
       }
     end
 
+    if word_document && allow_word_documents && !word_document_conversion_configured?
+      msg = 'Word documents are currently not supported. Please export your document to PDF.'
+      logger.error 'Word document upload rejected because conversion is not configured'
+      return {
+        accepted: false,
+        msg: msg
+      }
+    end
+
     if word_document && allow_word_documents && encrypted_word_document?(file['tempfile'].path)
       msg = 'Word document is encrypted or password protected. Remove the password protection and upload it again.'
       logger.debug 'Word document is encrypted or password protected'
@@ -150,6 +159,12 @@ module FileHelper
 
   def word_document?(path)
     File.extname(path.to_s).casecmp(WORD_DOCUMENT_EXTENSION).zero?
+  end
+
+  def word_document_conversion_configured?
+    config = Doubtfire::Application.config
+    config.gotenberg_image.present? &&
+      (config.gotenberg_workdir_volume_mount.present? || config.gotenberg_fallback_volume_container.present?)
   end
 
   # Password-protected OOXML files are stored in an OLE compound file rather
@@ -221,8 +236,7 @@ module FileHelper
 
   def word_document_conversion_command(work_id)
     config = Doubtfire::Application.config
-    image = config.gotenberg_image
-    raise DocumentConversionError, 'GOTENBERG_IMAGE is not configured.' if image.blank?
+    raise DocumentConversionError, 'GOTENBERG_IMAGE is not configured.' if config.gotenberg_image.blank?
 
     timeout_seconds = config.word_document_conversion_timeout_seconds.to_i
     timeout_seconds = 120 unless timeout_seconds.positive?
@@ -235,7 +249,7 @@ module FileHelper
       '--name', "gotenberg-word-#{work_id}",
       '--env', "WORD_DOCUMENT_CONVERSION_TIMEOUT_SECONDS=#{timeout_seconds}",
       '--entrypoint', config.word_document_build_path,
-      image,
+      config.gotenberg_image,
       work_id
     ]
   end
@@ -1158,6 +1172,7 @@ module FileHelper
   # Export functions as module functions
   module_function :accept_file
   module_function :word_document?
+  module_function :word_document_conversion_configured?
   module_function :encrypted_word_document?
   module_function :convert_word_document_to_pdf
   module_function :run_word_document_conversion
