@@ -2,7 +2,7 @@ require 'io/console'
 
 namespace :db do
   def prompt_for_admin_password
-    password = ENV['DF_INITIAL_ADMIN_PASSWORD']
+    password = ENV.fetch('DF_INITIAL_ADMIN_PASSWORD', nil)
     if password.present?
       unless Devise.password_length.cover?(password.length)
         raise "DF_INITIAL_ADMIN_PASSWORD must be #{Devise.password_length} characters long"
