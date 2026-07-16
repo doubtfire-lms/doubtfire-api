@@ -17,11 +17,10 @@ case "$WORK_ID" in
 esac
 
 WORK_DIR="/workdir/gotenberg/$WORK_ID"
-BUILD_DIR="$WORK_DIR/work"
 INPUT_FILE="$WORK_DIR/input.docx"
 OUTPUT_FILE="$WORK_DIR/output.pdf"
-BUILD_INPUT="$BUILD_DIR/input.docx"
-BUILD_OUTPUT="$BUILD_DIR/output.pdf"
+TEMP_OUTPUT="$WORK_DIR/output.pdf.tmp"
+GOTENBERG_URL="http://localhost:3000"
 GOTENBERG_PID=
 
 if [ ! -f "$INPUT_FILE" ]; then
@@ -38,52 +37,50 @@ cleanup() {
     wait "$GOTENBERG_PID" 2>/dev/null || true
   fi
 
-  rm -rf "$BUILD_DIR"
+  rm -f "$TEMP_OUTPUT"
   exit "$exit_status"
 }
+
+start_gotenberg() {
+  # Docker replaces the image's normal command with this script, so start the
+  # bundled API before making the local conversion request.
+  gotenberg --gotenberg-graceful-shutdown-duration=0s &
+  GOTENBERG_PID=$!
+
+  curl \
+    --fail \
+    --silent \
+    --show-error \
+    --retry 30 \
+    --retry-connrefused \
+    --retry-delay 1 \
+    --connect-timeout 1 \
+    --max-time 30 \
+    "$GOTENBERG_URL/health" \
+    >/dev/null
+}
+
+convert_document() {
+  curl \
+    --fail-with-body \
+    --silent \
+    --show-error \
+    --connect-timeout 5 \
+    --max-time "${WORD_DOCUMENT_CONVERSION_TIMEOUT_SECONDS:-120}" \
+    --request POST \
+    --form "files=@$INPUT_FILE" \
+    --output "$TEMP_OUTPUT" \
+    "$GOTENBERG_URL/forms/libreoffice/convert"
+
+  if [ ! -s "$TEMP_OUTPUT" ]; then
+    echo "Gotenberg did not produce a PDF" >&2
+    exit 1
+  fi
+
+  mv "$TEMP_OUTPUT" "$OUTPUT_FILE"
+}
+
 trap cleanup EXIT INT TERM
 
-rm -rf "$BUILD_DIR"
-mkdir -p "$BUILD_DIR"
-chmod 0777 "$BUILD_DIR"
-cp "$INPUT_FILE" "$BUILD_INPUT"
-
-# The worker has no network interfaces other than loopback. Run the API in the
-# same container so this request cannot leave the worker.
-gotenberg --gotenberg-graceful-shutdown-duration=0s &
-GOTENBERG_PID=$!
-
-attempt=0
-until curl --fail --silent --head --max-time 1 http://localhost:3000/health >/dev/null 2>&1; do
-  if ! kill -0 "$GOTENBERG_PID" 2>/dev/null; then
-    wait "$GOTENBERG_PID" 2>/dev/null || true
-    echo "Gotenberg stopped before becoming ready" >&2
-    exit 1
-  fi
-
-  attempt=$((attempt + 1))
-  if [ "$attempt" -ge 30 ]; then
-    echo "Gotenberg did not become ready within 30 seconds" >&2
-    exit 1
-  fi
-
-  sleep 1
-done
-
-curl \
-  --fail-with-body \
-  --silent \
-  --show-error \
-  --connect-timeout 5 \
-  --max-time "${WORD_DOCUMENT_CONVERSION_TIMEOUT_SECONDS:-120}" \
-  --request POST \
-  --form "files=@$BUILD_INPUT" \
-  --output "$BUILD_OUTPUT" \
-  http://localhost:3000/forms/libreoffice/convert
-
-if [ ! -s "$BUILD_OUTPUT" ]; then
-  echo "Gotenberg did not produce a PDF" >&2
-  exit 1
-fi
-
-mv "$BUILD_OUTPUT" "$OUTPUT_FILE"
+start_gotenberg
+convert_document
