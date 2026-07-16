@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-32](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-31...v11.0.0-32) (2026-07-16)
+
+
+### Features
+
+* add rediscuss status ([05a44fa](https://github.com/b0ink/doubtfire-deploy/commit/05a44fa8e9954ed82ea149072288ebc546d5f9e9))
+* prompt for admin password when creating initial account ([7640a36](https://github.com/b0ink/doubtfire-deploy/commit/7640a36f682f6dd7240cb764dea6e46b7d01df35))
+* support word document submission ([#647](https://github.com/b0ink/doubtfire-deploy/issues/647)) ([a21daf8](https://github.com/b0ink/doubtfire-deploy/commit/a21daf846a46557331c3235f86f28a5c8a020786))
+
 ## [11.0.0-31](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-30...v11.0.0-31) (2026-07-08)
 
 
