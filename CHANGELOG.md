@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-33](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-32...v11.0.0-33) (2026-07-19)
+
+
+### Features
+
+* content management system ([#642](https://github.com/b0ink/doubtfire-deploy/issues/642)) ([a87b250](https://github.com/b0ink/doubtfire-deploy/commit/a87b250303b0aff8a431334e8b19a40f790cbd35))
+
 ## [11.0.0-32](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-31...v11.0.0-32) (2026-07-16)
 
 
