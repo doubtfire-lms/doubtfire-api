@@ -79,6 +79,7 @@ class Unit < ApplicationRecord
       :upload_grades_csv,
       :get_staff_notes,
       :capture_task_completion_snapshot,
+      :manage_unit_content,
       :mannage_communications,
       :delete_engagement
     ]
@@ -108,6 +109,7 @@ class Unit < ApplicationRecord
       :get_marking_sessions,
       :get_staff_notes,
       :get_tutor_times,
+      :manage_unit_content,
       :mannage_communications,
     ]
 
@@ -177,6 +179,8 @@ class Unit < ApplicationRecord
   has_many :communication_sets, class_name: 'CommunicationSet', dependent: :destroy
   has_many :communication_rules, through: :communication_sets, class_name: 'CommunicationRule'
   has_many :communication_set_schedules, through: :communication_sets, class_name: 'CommunicationSetSchedule'
+  has_many :unit_content_sites, dependent: :destroy
+  has_many :unit_content_links, dependent: :destroy
 
   has_many :comments, through: :projects
   has_many :tasks, through: :projects
@@ -324,6 +328,10 @@ class Unit < ApplicationRecord
 
   def has_teaching_period?
     self.teaching_period.present?
+  end
+
+  def has_main_content_site?
+    unit_content_sites.exists?(is_main: true)
   end
 
   def grade_values
@@ -2148,8 +2156,19 @@ class Unit < ApplicationRecord
         end
 
         if td.has_task_resources?
-          dst_path = FileHelper.sanitized_filename(td.abbreviation.to_s) + '.zip'
-          zip.add(dst_path, td.task_resources)
+          linked_resource = td.linked_task_resource
+
+          if linked_resource && !td.task_resource_zip?(linked_resource)
+            dst_path = File.join(
+              FileHelper.sanitized_filename(td.abbreviation.to_s),
+              FileHelper.sanitized_filename(linked_resource[:filename])
+            )
+            zip.add(dst_path, linked_resource[:path])
+          else
+            dst_path = FileHelper.sanitized_filename(td.abbreviation.to_s) + '.zip'
+            resource_path = linked_resource ? linked_resource[:path] : td.task_resources
+            zip.add(dst_path, resource_path)
+          end
         end
       end
     end # zip
