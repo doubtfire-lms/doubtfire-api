@@ -17,9 +17,17 @@ module FileHelper
   ZIP_NESTED_ARCHIVE_EXTENSIONS = %w[
     .7z .bz2 .ear .gz .jar .rar .tar .tar.bz2 .tar.gz .tar.xz .tbz .tbz2 .tgz .txz .war .xz .zip
   ].freeze
+  WORD_DOCUMENT_EXTENSION = '.docx'
+  WORD_DOCUMENT_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  COMPOUND_FILE_SIGNATURE = "\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1".b.freeze
+  WORD_DOCUMENT_ENCRYPTION_STREAM_NAMES = %w[EncryptedPackage EncryptionInfo].map do |name|
+    name.encode(Encoding::UTF_16LE).b.freeze
+  end.freeze
+
+  class DocumentConversionError < StandardError; end
 
   def known_extension?(extn)
-    allow_extensions = %w(pdf ps csv xls xlsx pas cpp c cs csv h hpp java py js html coffee scss yaml yml xml json ts r rb rmd rnw rhtml rpres tex vb sql txt md jack hack asm hdl tst out cmp vm sh bat dat ipynb css png bmp tiff tif jpeg jpg gif zip gz tgz tar wav ogg mp3 mp4 webm aac pcm aiff flac wma alac pml vue)
+    allow_extensions = %w(pdf ps docx csv xls xlsx pas cpp c cs csv h hpp java py js html coffee scss yaml yml xml json ts r rb rmd rnw rhtml rpres tex vb sql txt md jack hack asm hdl tst out cmp vm sh bat dat ipynb css png bmp tiff tif jpeg jpg gif zip gz tgz tar wav ogg mp3 mp4 webm aac pcm aiff flac wma alac pml vue)
 
     # Allow empty or nil extensions for blobs otherwise check that it matches the allowed list
     extn.blank? || allow_extensions.include?(extn)
@@ -30,6 +38,8 @@ module FileHelper
   # - file is passed the file uploaded to Doubtfire (a hash with all relevant data about the file)
   #
   def accept_file(file, name, kind)
+    word_document = kind == 'document' && word_document?(file[:filename] || file['tempfile'].path)
+
     case kind
     when 'image'
       mime_allow_list = ['image/png', 'image/gif', 'image/bmp', 'image/tiff', 'image/jpeg', 'image/x-ms-bmp']
@@ -39,7 +49,11 @@ module FileHelper
                 'text/x-yaml', 'application/xml', 'text/x-typescript', 'text/x-vhdl', 'text/x-asm', 'text/x-jack', 'application/x-httpd-php',
                 'application/tst', 'text/x-cmp', 'text/x-vm', 'application/x-sh', 'application/x-bat', 'application/dat', 'application/x-wine-extension-ini']
     when 'document'
-      mime_allow_list = [ 'application/pdf' ]
+      mime_allow_list = if word_document
+                          [WORD_DOCUMENT_MIME_TYPE]
+                        else
+                          ['application/pdf']
+                        end
     when 'zip', 'archive'
       mime_allow_list = [
         'application/zip',
@@ -70,6 +84,24 @@ module FileHelper
       }
     end
 
+    if word_document && !word_document_conversion_configured?
+      msg = 'Word documents are currently not supported. Please export your document to PDF.'
+      logger.error 'Word document upload rejected because conversion is not configured'
+      return {
+        accepted: false,
+        msg: msg
+      }
+    end
+
+    if word_document && encrypted_word_document?(file['tempfile'].path)
+      msg = 'Word document is encrypted or password protected. Remove the password protection and upload it again.'
+      logger.debug 'Word document is encrypted or password protected'
+      return {
+        accepted: false,
+        msg: msg
+      }
+    end
+
     mime_check = mime_in_list?(file['tempfile'].path, mime_allow_list)
     unless mime_check
       msg = 'invalid file MIME type, file is likely corrupted.'
@@ -80,8 +112,9 @@ module FileHelper
       }
     end
 
-    # Extra checks for PDF documents
-    if kind == 'document'
+    # Extra checks for PDF documents. DOCX files are converted and validated as
+    # PDFs when the submission is processed asynchronously.
+    if kind == 'document' && !word_document
       pdf_validation_result = validate_pdf(file['tempfile'].path)
 
       if pdf_validation_result[:encrypted]
@@ -122,6 +155,119 @@ module FileHelper
       accepted: true,
       msg: 'success'
     }
+  end
+
+  def word_document?(path)
+    File.extname(path.to_s).casecmp(WORD_DOCUMENT_EXTENSION).zero?
+  end
+
+  def word_document_conversion_configured?
+    config = Doubtfire::Application.config
+    config.gotenberg_image.present? &&
+      (config.gotenberg_workdir_volume_mount.present? || config.gotenberg_fallback_volume_container.present?)
+  end
+
+  # Password-protected OOXML files are stored in an OLE compound file rather
+  # than the ZIP container used by normal DOCX files. Confirm the compound-file
+  # signature and both encryption stream names to avoid treating any malformed
+  # or incorrectly named DOCX as encrypted.
+  def encrypted_word_document?(path)
+    longest_stream_name = WORD_DOCUMENT_ENCRYPTION_STREAM_NAMES.map(&:bytesize).max
+    matched_stream_names = Array.new(WORD_DOCUMENT_ENCRYPTION_STREAM_NAMES.length, false)
+
+    File.open(path, 'rb') do |file|
+      return false unless file.read(COMPOUND_FILE_SIGNATURE.bytesize) == COMPOUND_FILE_SIGNATURE
+
+      buffer = ''.b
+      while (chunk = file.read(16 * 1024))
+        buffer << chunk
+        WORD_DOCUMENT_ENCRYPTION_STREAM_NAMES.each_with_index do |stream_name, index|
+          matched_stream_names[index] ||= buffer.include?(stream_name)
+        end
+        return true if matched_stream_names.all?
+
+        buffer = buffer.byteslice(-(longest_stream_name - 1), longest_stream_name - 1) || ''.b
+      end
+    end
+
+    false
+  rescue Errno::ENOENT, Errno::EACCES, IOError
+    false
+  end
+
+  def convert_word_document_to_pdf(source_path, destination_path, work_id: SecureRandom.uuid)
+    work_id = work_id.to_s
+    unless work_id.match?(/\A[A-Za-z0-9_-]+\z/)
+      raise DocumentConversionError, 'Invalid Gotenberg work id.'
+    end
+
+    work_root = Rails.root.join("tmp/gotenberg")
+    work_dir = work_root.join(work_id)
+    input_path = work_dir.join('input.docx')
+    output_path = work_dir.join('output.pdf')
+
+    FileUtils.mkdir_p(work_dir)
+    FileUtils.chmod(0o777, work_dir)
+    FileUtils.cp(source_path, input_path)
+
+    stdout, stderr, status = run_word_document_conversion(work_id)
+    unless status.success?
+      details = [stdout, stderr].compact.join("\n").strip.first(1_000)
+      message = "Word document conversion failed with exit status #{status.exitstatus}."
+      message = "#{message} #{details}" if details.present?
+      raise DocumentConversionError, message
+    end
+
+    unless File.exist?(output_path) && validate_pdf(output_path)[:valid]
+      raise DocumentConversionError, 'Gotenberg did not produce a valid PDF for the Word document.'
+    end
+
+    FileUtils.mv(output_path, destination_path)
+    destination_path
+  rescue SystemCallError => e
+    raise DocumentConversionError, "Word document conversion failed: #{e.message}"
+  ensure
+    FileUtils.rm_rf(work_dir) if defined?(work_dir) && work_dir
+  end
+
+  def run_word_document_conversion(work_id)
+    Open3.capture3(*word_document_conversion_command(work_id))
+  end
+
+  def word_document_conversion_command(work_id)
+    config = Doubtfire::Application.config
+    raise DocumentConversionError, 'GOTENBERG_IMAGE is not configured.' if config.gotenberg_image.blank?
+
+    timeout_seconds = config.word_document_conversion_timeout_seconds.to_i
+    timeout_seconds = 120 unless timeout_seconds.positive?
+
+    [
+      'docker', 'run', '--rm',
+      '--cpus', '1',
+      '--network', 'none',
+      *gotenberg_volume_arguments(work_id),
+      '--name', "gotenberg-word-#{work_id}",
+      '--env', "WORD_DOCUMENT_CONVERSION_TIMEOUT_SECONDS=#{timeout_seconds}",
+      '--entrypoint', config.word_document_build_path,
+      config.gotenberg_image,
+      work_id
+    ]
+  end
+
+  def gotenberg_volume_arguments(work_id)
+    config = Doubtfire::Application.config
+    mount = config.gotenberg_workdir_volume_mount
+
+    if mount.present?
+      host_work_dir = File.join(mount, work_id)
+      container_work_dir = "/workdir/gotenberg/#{work_id}"
+      ['--volume', "#{host_work_dir}:#{container_work_dir}"]
+    elsif config.gotenberg_fallback_volume_container.present?
+      ['--volumes-from', config.gotenberg_fallback_volume_container]
+    else
+      raise DocumentConversionError,
+            'Set GOTENBERG_WORKDIR_VOLUME_MOUNT or GOTENBERG_FALLBACK_VOLUME_CONTAINER.'
+    end
   end
 
   #
@@ -1025,6 +1171,13 @@ module FileHelper
   end
   # Export functions as module functions
   module_function :accept_file
+  module_function :word_document?
+  module_function :word_document_conversion_configured?
+  module_function :encrypted_word_document?
+  module_function :convert_word_document_to_pdf
+  module_function :run_word_document_conversion
+  module_function :word_document_conversion_command
+  module_function :gotenberg_volume_arguments
   module_function :sanitized_path
   module_function :sanitized_filename
   module_function :task_file_dir_for_unit

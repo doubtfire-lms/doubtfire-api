@@ -1,4 +1,5 @@
 require 'grape'
+require 'mime/types'
 
 class TaskDefinitionsApi < Grape::API
   helpers AuthenticationHelpers
@@ -658,7 +659,14 @@ class TaskDefinitionsApi < Grape::API
       error!({ error: 'Not authorised to download task details of unit' }, 403)
     end
 
-    if task_def.has_task_resources?
+    resource = task_def.linked_task_resource
+
+    if resource
+      path = resource[:path]
+      filename = File.basename(resource[:filename]).gsub(/[\r\n"]/, '_')
+      content_type MIME::Types.type_for(filename).first&.content_type || 'application/octet-stream'
+      header['Content-Disposition'] = "attachment; filename=\"#{filename}\""
+    elsif task_def.has_uploaded_task_resources?
       path = task_def.task_resources
       content_type 'application/octet-stream'
       header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}-resources.zip"

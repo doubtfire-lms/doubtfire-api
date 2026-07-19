@@ -96,6 +96,7 @@ class ApiRoot < Grape::API
   mount TutorialStreamsApi
   mount TutorialEnrolmentsApi
   mount UnitRolesApi
+  mount UnitContentsApi
   mount UnitsApi
   mount TutorNotesApi
 

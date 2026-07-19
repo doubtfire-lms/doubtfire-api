@@ -63,6 +63,20 @@ module Doubtfire
     # Limit number of pdf generators to run at once
     config.pdfgen_max_processes = ENV['DF_MAX_PDF_GEN_PROCESSES'] || 2
 
+    # Each Word document conversion runs a short-lived, network-isolated
+    # Gotenberg container. The image includes the conversion entrypoint.
+    config.gotenberg_image = ENV.fetch('GOTENBERG_IMAGE', nil)
+
+    # Absolute host path to tmp/gotenberg. Production uses this to mount only
+    # the current conversion's work directory into its one-shot container.
+    config.gotenberg_workdir_volume_mount = ENV.fetch('GOTENBERG_WORKDIR_VOLUME_MOUNT', nil)
+
+    # Development fallback matching Overseer. This exposes the fallback
+    # container's entire tmp/gotenberg mount to each conversion container.
+    config.gotenberg_fallback_volume_container = ENV.fetch('GOTENBERG_FALLBACK_VOLUME_CONTAINER', nil)
+    config.word_document_build_path = ENV.fetch('WORD_DOCUMENT_BUILD_PATH', '/gotenberg/word_document_build.sh')
+    config.word_document_conversion_timeout_seconds = ENV.fetch('WORD_DOCUMENT_CONVERSION_TIMEOUT_SECONDS', 120)
+
     # Date range for auditors to view
     config.auditor_unit_access_years = ENV.fetch('DF_AUDITOR_UNIT_ACCESS_YEARS', 2).to_f * 1.year
 

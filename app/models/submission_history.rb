@@ -42,10 +42,19 @@ class SubmissionHistory < ApplicationRecord
 
             file_name = entry.name.split('/').last
             next unless file_name&.match?(/^\d{3}-(?:document|code|image|zip|archive)/)
-            next unless enabled_indexes.include?(file_name.to_i)
+            upload_index = file_name.to_i
+            next unless enabled_indexes.include?(upload_index)
 
-            destination.get_output_stream(File.join(history.entry_prefix, entry.name)) do |output|
-              entry.get_input_stream { |input| IO.copy_stream(input, output) }
+            preview_path = document_preview_path(task, upload_index)
+            if file_name.match?(/^\d{3}-document.*\.docx\z/i) && File.exist?(preview_path)
+              preview_entry_name = File.join(history.entry_prefix, entry.name.sub(/\.docx\z/i, '.pdf'))
+              destination.get_output_stream(preview_entry_name) do |output|
+                File.open(preview_path, 'rb') { |input| IO.copy_stream(input, output) }
+              end
+            else
+              destination.get_output_stream(File.join(history.entry_prefix, entry.name)) do |output|
+                entry.get_input_stream { |input| IO.copy_stream(input, output) }
+              end
             end
             copied_files += 1
           end
@@ -156,6 +165,25 @@ class SubmissionHistory < ApplicationRecord
     File.join(FileHelper.task_submission_identifier_path(:pending, task), 'submission-history')
   end
 
+  def self.document_preview_dir(task)
+    File.join(FileHelper.task_submission_identifier_path(:pending, task), 'document-previews')
+  end
+
+  def self.document_preview_path(task, upload_index)
+    File.join(document_preview_dir(task), "#{upload_index.to_s.rjust(3, '0')}-document.pdf")
+  end
+
+  def self.stage_document_preview!(task, upload_index, source_path)
+    raise "Converted document preview was not found: #{source_path}" unless File.exist?(source_path)
+
+    FileUtils.mkdir_p(document_preview_dir(task))
+    FileUtils.cp(source_path, document_preview_path(task, upload_index))
+  end
+
+  def self.clear_document_previews(task)
+    FileUtils.rm_rf(document_preview_dir(task))
+  end
+
   def self.mark_pending(task)
     marker_path = pending_marker_path(task)
     FileUtils.mkdir_p(File.dirname(marker_path))
@@ -164,6 +192,10 @@ class SubmissionHistory < ApplicationRecord
 
   def self.clear_pending(task)
     FileUtils.rm_f(pending_marker_path(task))
+    clear_document_previews(task)
+
+    pending_dir = FileHelper.task_submission_identifier_path(:pending, task)
+    FileUtils.rm_rf(pending_dir) if Dir.exist?(pending_dir) && Dir.empty?(pending_dir)
   end
 
   def self.pending?(task)

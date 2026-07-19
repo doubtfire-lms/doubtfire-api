@@ -46,6 +46,7 @@ class UnitsApi < Grape::API
       { unit_roles: [:role, :user] },
       { task_definitions: :tutorial_stream },
       :learning_outcomes,
+      { unit_content_links: :unit_content_site },
       { tutorial_streams: :activity_type },
       { tutorials: [:tutor, :tutorial_stream] },
       :tutorial_enrolments,
