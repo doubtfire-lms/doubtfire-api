@@ -307,7 +307,7 @@ class Unit < ApplicationRecord
     comment = task.add_discuss_timeout_comment(
       actor,
       DiscussTimeoutComment.warning,
-      "This task has been in Discuss for #{discuss_timeout_warning_days} days. You need to discuss this task before #{formatted_discuss_timeout_date(expiry_date)}. After this date it will be moved to Fix and Resubmit."
+      "Please discuss this task with your tutor before #{formatted_discuss_timeout_date(expiry_date)}. If it has not been discussed by then, it will move to Fix and Resubmit, and you will need to resubmit your work."
     )
     return 0 if comment.blank?
 
@@ -328,7 +328,7 @@ class Unit < ApplicationRecord
       comment = task.add_discuss_timeout_comment(
         actor,
         DiscussTimeoutComment.expired,
-        "This task was moved to Fix and Resubmit because it remained in Discuss for #{discuss_timeout_expire_days} days. Please resubmit your work so it can be reassessed."
+        "This task moved to Fix and Resubmit because it was not discussed by the deadline. Review any feedback and resubmit it when you are ready. Contact your teaching team if you think this is a mistake."
       )
       unless comment
         raise ActiveRecord::Rollback
