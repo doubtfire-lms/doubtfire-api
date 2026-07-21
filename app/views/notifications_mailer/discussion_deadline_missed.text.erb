@@ -1,0 +1,14 @@
+Hi <%= @student.first_name %>,
+
+<%= @task.task_definition.abbreviation %> - <%= @task.task_definition.name %> moved to Fix and Resubmit because it was not discussed by the deadline.
+
+Review any feedback and resubmit it when you are ready. Contact your teaching team if you think this is a mistake.
+
+View this task in <%= @doubtfire_product_name %>: <%= @task_url %>
+
+Cheers,
+The <%= @doubtfire_product_name %> Team on behalf of <%= @sender.name %>
+
+---
+
+Visit <%= @unsubscribe_url %> to unsubscribe from these notifications.

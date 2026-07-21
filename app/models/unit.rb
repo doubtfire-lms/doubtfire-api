@@ -304,15 +304,21 @@ class Unit < ApplicationRecord
     return 0 if task.notified_discuss_warning_at.present?
 
     expiry_date = discuss_timeout_expiry_date(task)
-    comment = task.add_discuss_timeout_comment(
-      actor,
-      DiscussTimeoutComment.warning,
-      "Please discuss this task with your tutor before #{formatted_discuss_timeout_date(expiry_date)}. If it has not been discussed by then, it will move to Fix and Resubmit, and you will need to resubmit your work."
-    )
-    return 0 if comment.blank?
+    created_comment = false
+    Task.transaction do
+      comment = task.add_discuss_timeout_comment(
+        actor,
+        DiscussTimeoutComment.warning,
+        "You must discuss this task with your tutor before #{formatted_discuss_timeout_date(expiry_date)}. If it has not been discussed by then, it will move to Fix and Resubmit, and you will need to resubmit your work."
+      )
+      raise ActiveRecord::Rollback if comment.blank?
 
-    task.update!(notified_discuss_warning_at: Time.zone.now)
-    1
+      task.update!(notified_discuss_warning_at: Time.zone.now)
+      queue_discuss_timeout_email(task, actor, :approaching, expiry_date)
+      created_comment = true
+    end
+
+    created_comment ? 1 : 0
   end
 
   def expire_discuss_timeout_task(task, actor)
@@ -334,6 +340,7 @@ class Unit < ApplicationRecord
         raise ActiveRecord::Rollback
       end
 
+      queue_discuss_timeout_email(task, actor, :missed)
       created_comment = true
     end
 
@@ -349,6 +356,13 @@ class Unit < ApplicationRecord
     return result if date.year == Time.zone.today.year
 
     "#{result} #{date.year}"
+  end
+
+  def queue_discuss_timeout_email(task, actor, type, expiry_date = nil)
+    return unless send_notifications
+    return unless task.project.student.receive_feedback_notifications
+
+    SendDiscussTimeoutEmailJob.perform_async(task.id, actor.id, type.to_s, expiry_date&.iso8601)
   end
 
   def detailed_name

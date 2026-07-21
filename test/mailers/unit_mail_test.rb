@@ -73,4 +73,56 @@ class UnitMailTest < ActionMailer::TestCase
     assert mail.html_part.body.include? "projects/#{project.id}/dashboard/#{task.task_definition.abbreviation}"
   end
 
+  def test_send_discussion_deadline_emails
+    unit = FactoryBot.create(:unit)
+    project = unit.active_projects.first
+    task = project.task_for_task_definition(unit.task_definitions.first)
+    sender = unit.main_convenor_user
+    deadline = 7.days.from_now.to_date
+
+    approaching = NotificationsMailer.discussion_deadline_approaching(task, sender, deadline)
+    missed = NotificationsMailer.discussion_deadline_missed(task, sender)
+
+    assert_equal project.student.email, approaching.to.first
+    assert_includes approaching.subject, 'Discussion deadline approaching'
+    assert_includes approaching.text_part.body.to_s, unit.formatted_discuss_timeout_date(deadline)
+    assert_includes approaching.text_part.body.to_s, "projects/#{project.id}/dashboard/#{task.task_definition.abbreviation}"
+
+    assert_equal project.student.email, missed.to.first
+    assert_includes missed.subject, 'Discussion deadline missed'
+    assert_includes missed.text_part.body.to_s, 'moved to Fix and Resubmit'
+  end
+
+  def test_discuss_timeout_notifications_send_emails
+    unit = FactoryBot.create(
+      :unit,
+      discuss_timeout_enabled: true,
+      discuss_timeout_warning_days: 7,
+      discuss_timeout_expire_days: 14
+    )
+    task = unit.active_projects.first.tasks.first
+    task.update!(task_status: TaskStatus.discuss)
+    task.update!(moved_to_discuss_at: 8.days.ago)
+
+    assert_equal 1, unit.notify_discuss_timeouts!
+    assert_equal 1, SendDiscussTimeoutEmailJob.jobs.count
+
+    approaching_job = SendDiscussTimeoutEmailJob.jobs.shift
+    assert_emails 1 do
+      SendDiscussTimeoutEmailJob.new.perform(*approaching_job['args'])
+    end
+    assert_includes ActionMailer::Base.deliveries.last.subject, 'Discussion deadline approaching'
+
+    task.update!(moved_to_discuss_at: 15.days.ago)
+
+    assert_equal 1, unit.notify_discuss_timeouts!
+    assert_equal 1, SendDiscussTimeoutEmailJob.jobs.count
+
+    missed_job = SendDiscussTimeoutEmailJob.jobs.shift
+    assert_emails 1 do
+      SendDiscussTimeoutEmailJob.new.perform(*missed_job['args'])
+    end
+    assert_includes ActionMailer::Base.deliveries.last.subject, 'Discussion deadline missed'
+  end
+
 end
