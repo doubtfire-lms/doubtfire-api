@@ -267,14 +267,6 @@ class Task < ApplicationRecord
     self.notified_discuss_expiry_at = nil
   end
 
-  def discuss_timeout_expiry_date
-    return unless unit.discuss_timeout_enabled
-    return unless task_status_id == TaskStatus.discuss.id
-    return if moved_to_discuss_at.blank?
-
-    unit.discuss_timeout_expiry_date(self)
-  end
-
   def current_task_similarities
     task_similarities.where(dismissed: false)
   end
