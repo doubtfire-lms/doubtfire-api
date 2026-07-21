@@ -309,6 +309,7 @@ class Project < ApplicationRecord
           extensions: t.extensions,
           scorm_extensions: t.scorm_extensions,
           due_date: t.due_date,
+          discuss_timeout_expiry_date: t.discuss_timeout_expiry_date,
           submission_date: t.submission_date,
           completion_date: t.completion_date,
           target_start_date: t.target_start_date,
