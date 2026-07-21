@@ -599,6 +599,7 @@ class Task < ApplicationRecord
     # Ensure that assessor is allowed to update the task in the indicated way
     #
     role = role_for(by_user)
+    role = :tutor if system_transition && by_user.present?
 
     return nil if role.nil?
 

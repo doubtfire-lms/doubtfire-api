@@ -132,13 +132,12 @@ class TaskTest < ActiveSupport::TestCase
   def test_system_transition_bypasses_manual_feedback_requirement
     project = FactoryBot.create(:project)
     task = project.task_for_task_definition(project.unit.task_definitions.first)
-    tutor = project.unit.main_convenor_user
 
     task.update!(task_status: TaskStatus.ready_for_feedback)
 
     assert task.trigger_transition(
       trigger: 'fix',
-      by_user: tutor,
+      by_user: project.student,
       check_feedback: true,
       system_transition: true
     )
