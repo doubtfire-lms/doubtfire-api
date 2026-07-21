@@ -334,7 +334,7 @@ class Unit < ApplicationRecord
       comment = task.add_discuss_timeout_comment(
         actor,
         DiscussTimeoutComment.expired,
-        "This task moved to Fix and Resubmit because it was not discussed by the deadline. Review any feedback and resubmit it when you are ready. Contact your teaching team if you think this is a mistake."
+        "This task moved to Fix and Resubmit because it was not discussed by the deadline. Review any feedback and resubmit it when you are ready."
       )
       unless comment
         raise ActiveRecord::Rollback
