@@ -327,7 +327,7 @@ class Unit < ApplicationRecord
     created_comment = false
     Task.transaction do
       task.update!(notified_discuss_expiry_at: Time.zone.now)
-      unless task.trigger_transition(trigger: 'fix', by_user: actor)
+      unless task.trigger_transition(trigger: 'fix', by_user: actor, system_transition: true)
         raise ActiveRecord::Rollback
       end
 

@@ -559,6 +559,25 @@ class Task < ApplicationRecord
     claim
   end
 
+  def transition_assignment_allowed?(by_user, system_transition)
+    return true if system_transition
+
+    if task_definition.lock_assessments_to_tutorial_stream
+      unit_role = unit.unit_role_for(by_user)
+      return false unless task_definition.tutorial_stream.tutorials.any? { |tutorial| tutorial.unit_role == unit_role }
+    end
+
+    claim = active_overflow_task_claim
+    return true if claim.blank?
+
+    unit_role = unit.unit_role_for(by_user)
+    unit_role.nil? || unit_role.id == claim.claimed_by_unit_role_id
+  end
+
+  def transition_feedback_check_required?(check_feedback, system_transition)
+    check_feedback && !system_transition
+  end
+
   def group
     return nil unless group_task?
 
@@ -575,7 +594,7 @@ class Task < ApplicationRecord
   end
 
   def trigger_transition(trigger: '', by_user: nil, bulk: false, group_transition: false, quality: 1, recursive_fix: false,
-                         check_feedback: false)
+                         check_feedback: false, system_transition: false)
     #
     # Ensure that assessor is allowed to update the task in the indicated way
     #
@@ -594,20 +613,7 @@ class Task < ApplicationRecord
     # Protect closed states from student changes
     return nil if [:student, :group_member].include?(role) && task_submission_closed?
 
-    if task_definition.lock_assessments_to_tutorial_stream
-      unit_role = unit.unit_role_for(by_user)
-      tutorial_stream = task_definition.tutorial_stream
-      tutorials = tutorial_stream.tutorials
-      return nil unless tutorials.any? { |t| t.unit_role == unit_role }
-    end
-
-    # Check to see if another tutor has claimed this task from overflow
-    if active_overflow_task_claim
-      unit_role = unit.unit_role_for(by_user)
-      if unit_role && unit_role.id != active_overflow_task_claim.claimed_by_unit_role_id
-        return nil
-      end
-    end
+    return nil unless transition_assignment_allowed?(by_user, system_transition)
     #
     # State transitions based upon the trigger
     #
@@ -633,7 +639,7 @@ class Task < ApplicationRecord
           return nil
         end
 
-        if check_feedback
+        if transition_feedback_check_required?(check_feedback, system_transition)
           if status == TaskStatus.complete && !has_manual_feedback_since_first_ready_for_feedback?
             errors.add(:task_status, "cannot be moved to '#{status.name}' until feedback has been given")
             return nil
