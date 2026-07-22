@@ -122,6 +122,7 @@ class CommunicationRulesApi < Grape::API
                   target_grade: project.target_grade,
                   spec_con_days: project.spec_con_days,
                   last_sign_in_at: project.user&.last_sign_in_at,
+                  last_viewed_at: project.last_viewed_at,
                   campus: project.campus&.name
                 }
               end
@@ -513,6 +514,7 @@ class CommunicationRulesApi < Grape::API
               full_name: [project.user&.first_name, project.user&.last_name].compact.join(' '),
               target_grade: project.target_grade,
               last_sign_in_at: project.user&.last_sign_in_at,
+              last_viewed_at: project.last_viewed_at,
               campus: project.campus&.name
             }
           end
@@ -568,6 +570,7 @@ class CommunicationRulesApi < Grape::API
       optional :task_status_count, type: Integer
       optional :task_target_grade, type: Integer
       optional :last_sign_in_at, type: DateTime
+      optional :activity_days, type: Integer
       optional :spec_con_days, type: Integer
       optional :tutorial_id, type: Integer
       optional :tutorial_stream_id, type: Integer
@@ -591,6 +594,7 @@ class CommunicationRulesApi < Grape::API
       task_status_count: raw_condition_params[:task_status_count],
       task_target_grade: raw_condition_params[:task_target_grade],
       last_sign_in_at: raw_condition_params[:last_sign_in_at],
+      activity_days: raw_condition_params[:activity_days],
       spec_con_days: raw_condition_params[:spec_con_days],
       tutorial_id: raw_condition_params[:tutorial_id],
       tutorial_stream_id: raw_condition_params[:tutorial_stream_id],
@@ -618,6 +622,7 @@ class CommunicationRulesApi < Grape::API
       optional :task_status_count, type: Integer
       optional :task_target_grade, type: Integer
       optional :last_sign_in_at, type: DateTime
+      optional :activity_days, type: Integer
       optional :spec_con_days, type: Integer
       optional :tutorial_id, type: Integer
       optional :tutorial_stream_id, type: Integer
@@ -642,6 +647,7 @@ class CommunicationRulesApi < Grape::API
       task_status_count: raw_condition_params[:task_status_count],
       task_target_grade: raw_condition_params[:task_target_grade],
       last_sign_in_at: raw_condition_params[:last_sign_in_at],
+      activity_days: raw_condition_params[:activity_days],
       spec_con_days: raw_condition_params[:spec_con_days],
       tutorial_id: raw_condition_params[:tutorial_id],
       tutorial_stream_id: raw_condition_params[:tutorial_stream_id],

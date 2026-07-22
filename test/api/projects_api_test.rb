@@ -4,6 +4,7 @@ require './lib/helpers/database_populator'
 
 class ProjectsApiTest < ActiveSupport::TestCase
   include Rack::Test::Methods
+  include ActiveSupport::Testing::TimeHelpers
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
   include TestHelpers::TestFileHelper
@@ -84,6 +85,29 @@ class ProjectsApiTest < ActiveSupport::TestCase
 
     assert_json_limit_keys_to_exactly keys, last_response_body
     assert_json_matches_model project, last_response_body, key_test
+  end
+
+  def test_get_project_records_when_student_viewed_it
+    user = FactoryBot.create(:user, :student, enrol_in: 1)
+    project = user.projects.first
+    viewed_at = Time.zone.parse('2026-07-21 12:00:00 UTC')
+    add_auth_header_for(user: user)
+
+    travel_to(viewed_at) { get "/api/projects/#{project.id}" }
+
+    assert_equal 200, last_response.status
+    assert_equal viewed_at, project.reload.last_viewed_at
+  end
+
+  def test_get_project_does_not_record_staff_view_as_student_view
+    project = FactoryBot.create(:project)
+    admin = FactoryBot.create(:user, :admin)
+    add_auth_header_for(user: admin)
+
+    get "/api/projects/#{project.id}"
+
+    assert_equal 200, last_response.status
+    assert_nil project.reload.last_viewed_at
   end
 
   def test_projects_works_with_inactive_units

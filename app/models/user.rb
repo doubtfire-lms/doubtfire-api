@@ -90,6 +90,18 @@ class User < ApplicationRecord
     end
   end
 
+  # Record a completed interactive sign in. Signing in is also an access event.
+  def record_sign_in!
+    now = Time.current
+    update!(last_sign_in_at: now, last_access_at: now)
+  end
+
+  # Refresh-token exchanges provide a low-write indication that the user is
+  # still accessing OnTrack without updating the user on every API request.
+  def record_access!
+    update!(last_access_at: Time.current)
+  end
+
   #
   # Force-generates a new authentication token, regardless of whether or not
   # it is actually expired

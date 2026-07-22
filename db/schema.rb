@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_19_232351) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_22_030000) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -105,6 +105,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_19_232351) do
     t.string "operator", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "activity_days"
     t.index ["campus_id"], name: "index_communication_conditions_on_campus_id"
     t.index ["communication_id"], name: "index_communication_conditions_on_communication_id"
     t.index ["task_definition_id"], name: "index_communication_conditions_on_task_definition_id"
@@ -467,6 +468,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_19_232351) do
     t.integer "spec_con_days", default: 0, null: false
     t.bigint "assessor_id"
     t.datetime "portfolio_submission_date"
+    t.datetime "last_viewed_at"
     t.index ["assessor_id"], name: "index_projects_on_assessor_id"
     t.index ["campus_id"], name: "index_projects_on_campus_id"
     t.index ["enrolled"], name: "index_projects_on_enrolled"
@@ -991,6 +993,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_19_232351) do
     t.string "tii_eula_version"
     t.datetime "tii_eula_date"
     t.boolean "tii_eula_version_confirmed", default: false, null: false
+    t.datetime "last_access_at"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["login_id"], name: "index_users_on_login_id", unique: true
     t.index ["role_id"], name: "index_users_on_role_id"

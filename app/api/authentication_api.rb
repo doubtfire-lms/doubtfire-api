@@ -77,6 +77,7 @@ class AuthenticationApi < Grape::API
 
       token&.destroy!
       token = user.generate_authentication_token!
+      user.record_sign_in!
 
       # Return user details
       present :user, user, with: Entities::UserEntity
@@ -371,6 +372,7 @@ class AuthenticationApi < Grape::API
         # Invalidate the token and regenrate a new one
         token.destroy!
         token = user.generate_authentication_token!
+        user.record_sign_in!
 
         logger.info "Login #{params[:username]} from #{request.ip}"
 
@@ -487,6 +489,8 @@ class AuthenticationApi < Grape::API
   end
   post '/auth/access-token' do
     if authenticated_via_refresh_token?
+      current_user.record_access!
+
       # Check if we have a auth token as well
       if params[:delete_auth_token]
         user_param, auth_param = get_user_and_token_from(:header)
