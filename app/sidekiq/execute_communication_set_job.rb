@@ -510,7 +510,9 @@ class ExecuteCommunicationSetJob
       statuses = Array(condition.task_statuses).map { |status| status.to_s.titleize }.join(', ')
       "Students that have #{operator_label(condition.operator)} #{condition.task_status_count} #{grade_label} tasks in [#{statuses}]"
     when 'LoginStatusCondition'
-      "Students whose last sign in is #{condition.operator.to_s.humanize.downcase} #{condition.last_sign_in_at}"
+      relative_activity_summary(condition, 'signed in')
+    when 'UnitViewedStatusCondition'
+      relative_activity_summary(condition, 'viewed this unit')
     when 'SpecConCondition'
       "Students with Special Consideration Days #{operator_label(condition.operator)} #{condition.spec_con_days}"
     when 'TutorialEnrolmentCondition'
@@ -537,6 +539,16 @@ class ExecuteCommunicationSetJob
       "Students #{enrolment_label(condition.operator).downcase} #{campus_label}"
     else
       "#{condition.type.to_s.underscore.humanize} #{condition.operator.to_s.humanize}"
+    end
+  end
+
+  def relative_activity_summary(condition, activity)
+    duration = "#{condition.activity_days} #{'day'.pluralize(condition.activity_days)}"
+
+    if condition.operator == 'more_than'
+      "Students who have not #{activity} for more than #{duration}"
+    else
+      "Students who #{activity} within the last #{duration}"
     end
   end
 
