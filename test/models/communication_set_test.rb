@@ -1,6 +1,8 @@
 require 'test_helper'
 
 class CommunicationSetTest < ActiveSupport::TestCase
+  include ActiveSupport::Testing::TimeHelpers
+
   def test_preview_projects_for_rule_excludes_students_claimed_by_earlier_rules
     unit = FactoryBot.create(
       :unit,
@@ -65,5 +67,92 @@ class CommunicationSetTest < ActiveSupport::TestCase
     matched_projects = communication_set.preview_projects_for_rule(communication_rule)
 
     assert_equal [matching_project.id], matched_projects.map(&:id)
+  end
+
+  def test_login_status_condition_uses_relative_sign_in_time_and_handles_never
+    travel_to Time.zone.parse('2026-07-22 12:00:00 UTC') do
+      unit, rule = unit_and_rule('Login activity')
+      old_project = activity_project(unit, last_sign_in_at: 8.days.ago, last_viewed_at: 1.day.ago)
+      recent_project = activity_project(unit, last_sign_in_at: 6.days.ago, last_viewed_at: 10.days.ago)
+      boundary_project = activity_project(unit, last_sign_in_at: 7.days.ago)
+      never_project = activity_project(unit)
+      condition = rule.communication_conditions.create!(
+        type: 'LoginStatusCondition',
+        operator: 'more_than',
+        activity_days: 7
+      )
+
+      assert_equal [old_project.id, never_project.id].sort, rule.matching_projects.map(&:id).sort
+
+      condition.update!(operator: 'within_last')
+      assert_equal [recent_project.id, boundary_project.id].sort, rule.matching_projects.map(&:id).sort
+    end
+  end
+
+  def test_unit_viewed_status_condition_uses_project_view_time_and_handles_never
+    travel_to Time.zone.parse('2026-07-22 12:00:00 UTC') do
+      unit, rule = unit_and_rule('Unit activity')
+      old_project = activity_project(unit, last_sign_in_at: 1.day.ago, last_viewed_at: 8.days.ago)
+      recent_project = activity_project(unit, last_sign_in_at: 10.days.ago, last_viewed_at: 6.days.ago)
+      boundary_project = activity_project(unit, last_viewed_at: 7.days.ago)
+      never_project = activity_project(unit, last_sign_in_at: 1.day.ago)
+      condition = rule.communication_conditions.create!(
+        type: 'UnitViewedStatusCondition',
+        operator: 'more_than',
+        activity_days: 7
+      )
+
+      assert_equal [old_project.id, never_project.id].sort, rule.matching_projects.map(&:id).sort
+
+      condition.update!(operator: 'within_last')
+      assert_equal [recent_project.id, boundary_project.id].sort, rule.matching_projects.map(&:id).sort
+    end
+  end
+
+  def test_copy_to_preserves_relative_activity_conditions
+    source_unit, rule = unit_and_rule('Reusable activity')
+    destination_unit = FactoryBot.create(:unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0)
+    rule.communication_conditions.create!(
+      type: 'LoginStatusCondition',
+      operator: 'within_last',
+      activity_days: 3
+    )
+    rule.communication_conditions.create!(
+      type: 'UnitViewedStatusCondition',
+      operator: 'more_than',
+      activity_days: 14
+    )
+
+    copied_set = source_unit.communication_sets.first.copy_to(destination_unit)
+    copied_conditions = copied_set.communication_rules.first.communication_conditions.index_by(&:type)
+
+    assert_equal 3, copied_conditions.fetch('LoginStatusCondition').activity_days
+    assert_equal 'within_last', copied_conditions.fetch('LoginStatusCondition').operator
+    assert_equal 14, copied_conditions.fetch('UnitViewedStatusCondition').activity_days
+    assert_equal 'more_than', copied_conditions.fetch('UnitViewedStatusCondition').operator
+  end
+
+  private
+
+  def unit_and_rule(name)
+    unit = FactoryBot.create(
+      :unit,
+      with_students: false,
+      task_count: 0,
+      stream_count: 0,
+      tutorials: 0,
+      outcome_count: 0,
+      staff_count: 0,
+      campus_count: 1
+    )
+    communication_set = unit.communication_sets.create!(name: name, active: true)
+    rule = communication_set.communication_rules.create!(name: name, operator: 'and', position: 0)
+
+    [unit, rule]
+  end
+
+  def activity_project(unit, last_sign_in_at: nil, last_viewed_at: nil)
+    user = FactoryBot.create(:user, :student, last_sign_in_at: last_sign_in_at)
+    FactoryBot.create(:project, unit: unit, user: user, last_viewed_at: last_viewed_at)
   end
 end

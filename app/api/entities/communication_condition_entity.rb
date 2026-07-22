@@ -10,6 +10,7 @@ module Entities
     expose :task_status_count
     expose :task_target_grade
     expose :last_sign_in_at
+    expose :activity_days
     expose :spec_con_days
     expose :tutorial_id
     expose :tutorial_stream_id

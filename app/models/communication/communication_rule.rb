@@ -19,8 +19,9 @@ class CommunicationRule < ApplicationRecord
     projects ||= communication_set.eligible_projects
     return projects if communication_conditions.empty?
 
+    evaluated_at = Time.current
     projects.select do |project|
-      matches = communication_conditions.map { |condition| condition_match?(project, condition) }
+      matches = communication_conditions.map { |condition| condition_match?(project, condition, evaluated_at) }
 
       operator == 'or' ? matches.any? : matches.all?
     end
@@ -28,7 +29,7 @@ class CommunicationRule < ApplicationRecord
 
   private
 
-  def condition_match?(project, condition)
+  def condition_match?(project, condition, evaluated_at)
     case condition.type
     when 'TargetGradeCondition'
       target_grade_condition_match?(project, condition)
@@ -37,7 +38,9 @@ class CommunicationRule < ApplicationRecord
     when 'TaskStatusCountCondition'
       task_status_count_condition_match?(project, condition)
     when 'LoginStatusCondition'
-      login_status_condition_match?(project, condition)
+      activity_condition_match?(project.user&.last_sign_in_at, condition, evaluated_at)
+    when 'UnitViewedStatusCondition'
+      activity_condition_match?(project.last_viewed_at, condition, evaluated_at)
     when 'SpecConCondition'
       spec_con_condition_match?(project, condition)
     when 'TutorialEnrolmentCondition'
@@ -86,12 +89,13 @@ class CommunicationRule < ApplicationRecord
     compare_value(count, condition.task_status_count, condition.operator)
   end
 
-  def login_status_condition_match?(project, condition)
-    last_sign_in_at = project.user&.last_sign_in_at
+  def activity_condition_match?(last_activity_at, condition, evaluated_at)
+    return false if condition.activity_days.blank?
 
+    threshold = evaluated_at - condition.activity_days.days
     case condition.operator
-    when 'before' then last_sign_in_at.present? && last_sign_in_at < condition.last_sign_in_at
-    when 'after' then last_sign_in_at.present? && last_sign_in_at > condition.last_sign_in_at
+    when 'more_than' then last_activity_at.nil? || last_activity_at < threshold
+    when 'within_last' then last_activity_at.present? && last_activity_at >= threshold
     else false
     end
   end

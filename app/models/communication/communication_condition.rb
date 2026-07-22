@@ -4,6 +4,7 @@ class CommunicationCondition < ApplicationRecord
     TaskDefinitionStatusCondition
     TaskStatusCountCondition
     LoginStatusCondition
+    UnitViewedStatusCondition
     SpecConCondition
     TutorialEnrolmentCondition
     TutorialStreamEnrolmentCondition
@@ -20,7 +21,7 @@ class CommunicationCondition < ApplicationRecord
   ].freeze
 
   EQUALITY_OPERATORS = %w[equal_to not_equal_to].freeze
-  DATE_OPERATORS = %w[before after].freeze
+  ACTIVITY_OPERATORS = %w[more_than within_last].freeze
   ENROLMENT_OPERATORS = %w[enrolled_in not_enrolled_in].freeze
   TASK_STATUS_KEYS = %w[
     not_started
