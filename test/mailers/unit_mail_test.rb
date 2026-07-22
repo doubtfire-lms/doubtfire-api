@@ -100,7 +100,8 @@ class UnitMailTest < ActionMailer::TestCase
       discuss_timeout_warning_days: 7,
       discuss_timeout_expire_days: 14
     )
-    task = unit.active_projects.first.tasks.first
+    project = unit.active_projects.first
+    task = project.task_for_task_definition(unit.task_definitions.first)
     task.update!(task_status: TaskStatus.discuss)
     task.update!(moved_to_discuss_at: 8.days.ago)
 
