@@ -2,6 +2,7 @@ require 'test_helper'
 
 class AuthTest < ActiveSupport::TestCase
   include Rack::Test::Methods
+  include ActiveSupport::Testing::TimeHelpers
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
 
@@ -60,6 +61,19 @@ class AuthTest < ActiveSupport::TestCase
     assert refresh_token.present?
     assert_match(/refresh_token=#{refresh_token.authentication_token};/, last_response.cookies['refresh_token'].to_s, 'Expect refresh token to be set')
     assert_match(/username=#{User.first.username};/, last_response.cookies['username'].to_s, 'Expect username to be set')
+  end
+
+  def test_auth_records_sign_in_and_access_time
+    user = User.find_by!(username: 'aadmin')
+    sign_in_time = Time.zone.parse('2026-07-21 10:00:00 UTC')
+
+    travel_to sign_in_time do
+      post_json '/api/auth.json', username: user.username, password: 'password'
+    end
+
+    assert_equal 201, last_response.status
+    assert_equal sign_in_time, user.reload.last_sign_in_at
+    assert_equal sign_in_time, user.last_access_at
   end
 
   def test_auth_no_remember
@@ -229,6 +243,22 @@ class AuthTest < ActiveSupport::TestCase
 
     assert_not_equal last_response_body['auth_token'], new_token.authentication_token
     assert_equal last_response_body['auth_token'], new_new_token.authentication_token
+  end
+
+  def test_refresh_token_updates_access_but_not_sign_in_time
+    user = FactoryBot.create(:user, last_sign_in_at: 1.day.ago, last_access_at: 1.hour.ago)
+    original_sign_in_time = user.last_sign_in_at
+    token = user.generate_authentication_token!(token_type: :refresh_token)
+    access_time = Time.zone.parse('2026-07-21 11:00:00 UTC')
+
+    set_cookie "username=#{user.username}"
+    set_cookie "refresh_token=#{token.authentication_token}"
+
+    travel_to(access_time) { post '/api/auth/access-token' }
+
+    assert_equal 201, last_response.status
+    assert_equal original_sign_in_time, user.reload.last_sign_in_at
+    assert_equal access_time, user.last_access_at
   end
 
   def test_token_signout_works_with_multiple

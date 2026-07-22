@@ -28,6 +28,7 @@ class ProjectsApi < Grape::API
     project = Project.eager_load(:unit, :user).find(params[:id])
 
     if authorise? current_user, project, :get
+      project.update!(last_viewed_at: Time.current) if project.user_id == current_user.id
       present project, with: Entities::ProjectEntity, user: current_user, for_student: true, in_project: true
     else
       error!({ error: "Couldn't find Project with id=#{params[:id]}" }, 403)
