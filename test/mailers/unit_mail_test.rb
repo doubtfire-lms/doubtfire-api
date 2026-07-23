@@ -87,10 +87,14 @@ class UnitMailTest < ActionMailer::TestCase
     assert_includes approaching.subject, 'Discussion deadline approaching'
     assert_includes approaching.text_part.body.to_s, unit.formatted_discuss_timeout_date(deadline)
     assert_includes approaching.text_part.body.to_s, "projects/#{project.id}/dashboard/#{task.task_definition.abbreviation}"
+    assert_equal 1, approaching.html_part.body.to_s.scan('<style type="text/css">').count
+    assert_includes approaching.html_part.body.to_s, 'Unsubscribe'
 
     assert_equal project.student.email, missed.to.first
     assert_includes missed.subject, 'Discussion deadline missed'
     assert_includes missed.text_part.body.to_s, 'moved to Fix and Resubmit'
+    assert_equal 1, missed.html_part.body.to_s.scan('<style type="text/css">').count
+    assert_includes missed.html_part.body.to_s, 'Unsubscribe'
   end
 
   def test_discuss_timeout_notifications_send_emails

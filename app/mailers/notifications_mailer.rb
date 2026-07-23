@@ -1,4 +1,7 @@
 class NotificationsMailer < ApplicationMailer
+  layout 'discussion_deadline_mailer',
+         only: %i[discussion_deadline_approaching discussion_deadline_missed]
+
   def add_general
     @doubtfire_host = Doubtfire::Application.config.institution[:host]
     @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
