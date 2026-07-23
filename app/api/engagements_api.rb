@@ -95,7 +95,7 @@ class EngagementsApi < Grape::API
       task_status_updates: task_status_updates
     )
 
-    present engagement.present?, with: Grape::Presenters::Presenter
+    present({ recorded: engagement.present? }, with: Grape::Presenters::Presenter)
   end
 
   desc 'Create an engagement for a project'

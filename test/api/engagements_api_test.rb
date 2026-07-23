@@ -132,7 +132,7 @@ class EngagementsApiTest < ActiveSupport::TestCase
       )
     end
 
-    assert_equal false, last_response_body
+    assert_equal false, last_response_body['recorded']
     note = @project.engagements.last.note
     assert_includes note, "#{task_definitions.first.abbreviation}: Ready for Feedback → Complete."
     assert_includes note, "#{task_definitions.second.abbreviation}: Discuss → Rediscuss."
