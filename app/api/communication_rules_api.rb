@@ -121,6 +121,7 @@ class CommunicationRulesApi < Grape::API
                   full_name: [project.user&.first_name, project.user&.last_name].compact.join(' '),
                   target_grade: project.target_grade,
                   spec_con_days: project.spec_con_days,
+                  has_portfolio: project.portfolio_exists?,
                   last_sign_in_at: project.user&.last_sign_in_at,
                   last_viewed_at: project.last_viewed_at,
                   campus: project.campus&.name
@@ -513,6 +514,7 @@ class CommunicationRulesApi < Grape::API
               student_id: project.user&.student_id,
               full_name: [project.user&.first_name, project.user&.last_name].compact.join(' '),
               target_grade: project.target_grade,
+              has_portfolio: project.portfolio_exists?,
               last_sign_in_at: project.user&.last_sign_in_at,
               last_viewed_at: project.last_viewed_at,
               campus: project.campus&.name
@@ -575,6 +577,7 @@ class CommunicationRulesApi < Grape::API
       optional :tutorial_id, type: Integer
       optional :tutorial_stream_id, type: Integer
       optional :campus_id, type: Integer
+      optional :submitted_portfolio, type: Boolean
     end
   end
   post '/units/:unit_id/communication_rules/:communication_rule_id/conditions' do
@@ -598,7 +601,8 @@ class CommunicationRulesApi < Grape::API
       spec_con_days: raw_condition_params[:spec_con_days],
       tutorial_id: raw_condition_params[:tutorial_id],
       tutorial_stream_id: raw_condition_params[:tutorial_stream_id],
-      campus_id: raw_condition_params[:campus_id]
+      campus_id: raw_condition_params[:campus_id],
+      submitted_portfolio: raw_condition_params[:submitted_portfolio]
     }.compact
 
     task_statuses = raw_condition_params[:task_statuses]
@@ -627,6 +631,7 @@ class CommunicationRulesApi < Grape::API
       optional :tutorial_id, type: Integer
       optional :tutorial_stream_id, type: Integer
       optional :campus_id, type: Integer
+      optional :submitted_portfolio, type: Boolean
     end
   end
   put '/units/:unit_id/communication_rules/:communication_rule_id/conditions/:id' do
@@ -651,7 +656,8 @@ class CommunicationRulesApi < Grape::API
       spec_con_days: raw_condition_params[:spec_con_days],
       tutorial_id: raw_condition_params[:tutorial_id],
       tutorial_stream_id: raw_condition_params[:tutorial_stream_id],
-      campus_id: raw_condition_params[:campus_id]
+      campus_id: raw_condition_params[:campus_id],
+      submitted_portfolio: raw_condition_params[:submitted_portfolio]
     }.compact
 
     task_statuses = raw_condition_params[:task_statuses]
