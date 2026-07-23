@@ -276,7 +276,10 @@ class Unit < ApplicationRecord
   def notify_discuss_timeouts!
     return 0 unless discuss_timeout_enabled
 
-    discuss_timeout_tasks.find_each.sum { |task| notify_discuss_timeout_for(task) }
+    teaching_breaks = teaching_period&.breaks.to_a
+    discuss_timeout_tasks.find_each.sum do |task|
+      notify_discuss_timeout_for(task, teaching_breaks: teaching_breaks)
+    end
   end
 
   def discuss_timeout_tasks
@@ -287,23 +290,26 @@ class Unit < ApplicationRecord
       .where('moved_to_discuss_at <= ?', discuss_timeout_warning_days.days.ago)
   end
 
-  def notify_discuss_timeout_for(task)
+  def notify_discuss_timeout_for(task, teaching_breaks: nil, now_time: Time.zone.now)
     return 0 if task.moved_to_discuss_at.blank?
 
     actor = task.project.tutor_for(task.task_definition) || main_convenor&.user
     return 0 if actor.blank?
 
-    if task.moved_to_discuss_at <= discuss_timeout_expire_days.days.ago
+    elapsed_days = task.discuss_timeout_elapsed_days(now_time, teaching_breaks: teaching_breaks)
+    if elapsed_days >= discuss_timeout_expire_days
       expire_discuss_timeout_task(task, actor)
+    elsif elapsed_days >= discuss_timeout_warning_days
+      warn_discuss_timeout_task(task, actor, teaching_breaks: teaching_breaks)
     else
-      warn_discuss_timeout_task(task, actor)
+      0
     end
   end
 
-  def warn_discuss_timeout_task(task, actor)
+  def warn_discuss_timeout_task(task, actor, teaching_breaks: nil)
     return 0 if task.notified_discuss_warning_at.present?
 
-    expiry_date = discuss_timeout_expiry_date(task)
+    expiry_date = discuss_timeout_expiry_date(task, teaching_breaks: teaching_breaks)
     created_comment = false
     Task.transaction do
       comment = task.add_discuss_timeout_comment(
@@ -347,8 +353,10 @@ class Unit < ApplicationRecord
     created_comment ? 1 : 0
   end
 
-  def discuss_timeout_expiry_date(task)
-    task.moved_to_discuss_at.to_date + discuss_timeout_expire_days
+  def discuss_timeout_expiry_date(task, teaching_breaks: nil)
+    task
+      .discuss_timeout_expiry_at(discuss_timeout_expire_days, teaching_breaks: teaching_breaks)
+      &.to_date
   end
 
   def formatted_discuss_timeout_date(date)

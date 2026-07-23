@@ -19,6 +19,7 @@ module Entities
     end
 
     expose :moved_to_discuss_at, expose_nil: false
+    expose :discuss_timeout_expiry_at, expose_nil: false
 
     expose :extensions
     expose :scorm_extensions

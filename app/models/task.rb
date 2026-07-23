@@ -453,6 +453,36 @@ class Task < ApplicationRecord
     ([0, current_time - submission_time - paused_seconds].max / 1.day).floor
   end
 
+  def discuss_timeout_elapsed_days(now_time = Time.zone.now, teaching_breaks: nil)
+    return 0 if moved_to_discuss_at.blank?
+
+    discussion_time = moved_to_discuss_at.to_f
+    current_time = now_time.to_f
+    return 0 if current_time <= discussion_time
+
+    teaching_breaks ||= unit&.teaching_period&.breaks || []
+    paused_seconds = break_overlap_seconds(discussion_time, current_time, teaching_breaks)
+
+    ([0, current_time - discussion_time - paused_seconds].max / 1.day).floor
+  end
+
+  def discuss_timeout_expiry_at(timeout_days = unit.discuss_timeout_expire_days, teaching_breaks: nil)
+    return nil if moved_to_discuss_at.blank?
+
+    deadline = moved_to_discuss_at + timeout_days.days
+    teaching_breaks ||= unit&.teaching_period&.breaks || []
+
+    teaching_breaks.sort_by(&:start_date).each do |teaching_break|
+      break_start = teaching_break.start_date
+      break_end = break_start + teaching_break.number_of_weeks.to_i.weeks
+      next if break_end <= moved_to_discuss_at || break_start >= deadline
+
+      deadline += break_end - [break_start, moved_to_discuss_at].max
+    end
+
+    deadline
+  end
+
   # Excludes any breaks that would otherwise "pause" feedback
   def calendar_days_awaiting_feedback(now_time = Time.zone.now)
     return 0 if submission_date.blank?
