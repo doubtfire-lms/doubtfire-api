@@ -937,6 +937,27 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     end
   end
 
+  def test_cannot_delete_task_definition_used_as_a_prerequisite
+    unit = FactoryBot.create(:unit, task_count: 0)
+    prerequisite = FactoryBot.create(:task_definition, unit: unit, target_grade: 0)
+    dependent = FactoryBot.create(:task_definition, unit: unit, target_grade: 0)
+    task_prerequisite = TaskPrerequisite.create!(
+      task_definition: dependent,
+      prerequisite: prerequisite,
+      task_status_id: TaskStatus.complete.id
+    )
+
+    add_auth_header_for(user: unit.main_convenor_user)
+    delete "/api/units/#{unit.id}/task_definitions/#{prerequisite.id}"
+
+    assert_equal 403, last_response.status, last_response_body
+    assert_equal "Cannot delete task definition while it is used as a prerequisite. Remove the prerequisite links first.",
+                 last_response_body['error']
+    assert TaskDefinition.exists?(prerequisite.id)
+    assert TaskDefinition.exists?(dependent.id)
+    assert TaskPrerequisite.exists?(task_prerequisite.id)
+  end
+
   def test_download_student_submission_jobs
     unit = FactoryBot.create(:unit, student_count: 1, task_count: 2)
 

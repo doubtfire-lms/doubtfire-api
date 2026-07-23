@@ -8,6 +8,21 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     Rails.application
   end
 
+  def test_validation_ignores_orphaned_prerequisite_records
+    unit = FactoryBot.create(:unit, task_count: 0)
+    prerequisite = FactoryBot.create(:task_definition, unit: unit, target_grade: 0)
+    dependent = FactoryBot.create(:task_definition, unit: unit, target_grade: 0)
+    TaskPrerequisite.create!(
+      task_definition: dependent,
+      prerequisite: prerequisite,
+      task_status_id: TaskStatus.complete.id
+    )
+
+    prerequisite.delete
+
+    assert_nothing_raised { dependent.update!(name: 'Updated task definition') }
+  end
+
   def test_overseer_requires_a_submission_history_upload
     task_definition = FactoryBot.build(
       :task_definition,

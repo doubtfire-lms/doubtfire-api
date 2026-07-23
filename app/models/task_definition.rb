@@ -55,6 +55,7 @@ class TaskDefinition < ApplicationRecord
 
   delegate :role_for, to: :unit
 
+  before_destroy :ensure_not_used_as_prerequisite, prepend: true
   before_destroy :delete_associated_files
 
   after_update :move_files_on_abbreviation_change, if: :saved_change_to_abbreviation?
@@ -184,6 +185,8 @@ class TaskDefinition < ApplicationRecord
   def check_existing_prerequisites
     prereqs = TaskPrerequisite.where(task_definition_id: id)
     prereqs.each do |dp|
+      next if dp.prerequisite.nil?
+
       if target_grade < dp.prerequisite.target_grade
         errors.add(:target_grade, "cannot be lower than prerequisite #{dp.prerequisite.abbreviation}'s target grade")
       end
@@ -191,10 +194,19 @@ class TaskDefinition < ApplicationRecord
 
     dependents = TaskPrerequisite.where(prerequisite_id: id)
     dependents.each do |pr|
+      next if pr.task_definition.nil?
+
       if target_grade > pr.task_definition.target_grade
         errors.add(:target_grade, "cannot exceed the target grade #{pr.task_definition.abbreviation} because this is a prerequisite")
       end
     end
+  end
+
+  def ensure_not_used_as_prerequisite
+    return unless TaskPrerequisite.exists?(prerequisite_id: id)
+
+    errors.add(:base, "Cannot delete task definition while it is used as a prerequisite. Remove the prerequisite links first.")
+    throw :abort
   end
 
   # In the rollover process, copy this definition into another unit
