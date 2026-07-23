@@ -23,11 +23,21 @@ class ProjectsApi < Grape::API
   desc 'Get project'
   params do
     requires :id, type: Integer, desc: 'The id of the project to get'
+    optional :record_attendance, type: Boolean, default: false,
+                                 desc: 'Record attendance when fetching the project during an enrolled tutorial'
   end
   get '/projects/:id' do
     project = Project.eager_load(:unit, :user).find(params[:id])
 
     if authorise? current_user, project, :get
+      if params[:record_attendance]
+        unless authorise?(current_user, project, :create_engagement)
+          error!({ error: 'You do not have permission to record attendance for this project.' }, 403)
+        end
+
+        EngagementTracker.record_attendance(user: current_user, project: project)
+      end
+
       project.update!(last_viewed_at: Time.current) if project.user_id == current_user.id
       present project, with: Entities::ProjectEntity, user: current_user, for_student: true, in_project: true
     else
