@@ -62,6 +62,42 @@ class EngagementsApi < Grape::API
     present engagement, with: Entities::EngagementDetailEntity
   end
 
+  desc 'Record an automatic class discussion engagement'
+  params do
+    requires :task_status_updates, type: Array do
+      requires :task_definition_id, type: Integer
+      requires :from_status, type: String
+      requires :to_status, type: String
+    end
+  end
+  post '/projects/:project_id/engagements/class_discussion' do
+    project = Project.find(params[:project_id])
+    unless authorise?(current_user, project, :create_engagement)
+      error!({ error: 'You do not have permission to record a class discussion.' }, 403)
+    end
+
+    task_status_updates = params[:task_status_updates].map do |update|
+      task_definition = project.unit.task_definitions.find(update[:task_definition_id])
+      from_status = TaskStatus.status_for_name(update[:from_status])
+      to_status = TaskStatus.status_for_name(update[:to_status])
+      error!({ error: 'Invalid task status supplied for class discussion.' }, 422) unless from_status && to_status
+
+      {
+        task: task_definition.abbreviation,
+        from: from_status.name,
+        to: to_status.name
+      }
+    end
+
+    engagement = EngagementTracker.record_class_discussion(
+      user: current_user,
+      project: project,
+      task_status_updates: task_status_updates
+    )
+
+    present engagement.present?, with: Grape::Presenters::Presenter
+  end
+
   desc 'Create an engagement for a project'
   params do
     requires :engagement_type, type: String

@@ -2,6 +2,7 @@ require 'test_helper'
 
 class EngagementsApiTest < ActiveSupport::TestCase
   include Rack::Test::Methods
+  include ActiveSupport::Testing::TimeHelpers
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
   include TestHelpers::TestFileHelper
@@ -45,6 +46,109 @@ class EngagementsApiTest < ActiveSupport::TestCase
     assert_equal [earlier.id, later.id], (last_response_body.map { |engagement| engagement['id'] })
     assert_equal 'negative', last_response_body.first['engagement_type']
     assert_equal @tutor.id, last_response_body.first.dig('user', 'id')
+  end
+
+  def test_records_automatic_class_discussion_with_tutorial_context
+    tutorial = @unit.tutorials.first
+    tutorial.campus.update!(timezone: 'UTC')
+    @project.enrol_in(tutorial)
+    tutorial.update!(meeting_day: 'Monday', meeting_time: '10:00')
+    add_auth_header_for(user: @tutor)
+    task_definition = @unit.task_definitions.first
+
+    assert_difference 'Engagement.count', 1 do
+      travel_to(Time.zone.parse('2026-07-20 10:30:00 UTC')) do
+        post_json(
+          "/api/projects/#{@project.id}/engagements/class_discussion",
+          {
+            task_status_updates: [
+              {
+                task_definition_id: task_definition.id,
+                from_status: 'ready_for_feedback',
+                to_status: 'complete'
+              }
+            ]
+          }
+        )
+      end
+    end
+
+    assert_equal 201, last_response.status
+    engagement = @project.engagements.last
+    assert_equal 'Discussion', engagement.engagement_type
+    assert_equal(
+      "Updated task statuses during tutorial. #{task_definition.abbreviation}: Ready for Feedback → Complete.",
+      engagement.note
+    )
+    assert_equal @tutor, engagement.user
+  end
+
+  def test_records_class_discussion_without_status_updates_outside_tutorial
+    add_auth_header_for(user: @tutor)
+
+    assert_difference 'Engagement.count', 1 do
+      post_json(
+        "/api/projects/#{@project.id}/engagements/class_discussion",
+        { task_status_updates: [] }
+      )
+    end
+
+    assert_equal 201, last_response.status
+    assert_equal(
+      'Class discussion outside of tutorial; no task statuses were updated.',
+      @project.engagements.last.note
+    )
+  end
+
+  def test_debounces_automatic_class_discussion_engagements
+    add_auth_header_for(user: @tutor)
+    path = "/api/projects/#{@project.id}/engagements/class_discussion"
+    task_definitions = @unit.task_definitions.first(2)
+
+    assert_difference 'Engagement.count', 1 do
+      post_json(
+        path,
+        {
+          task_status_updates: [
+            {
+              task_definition_id: task_definitions.first.id,
+              from_status: 'ready_for_feedback',
+              to_status: 'complete'
+            }
+          ]
+        }
+      )
+      post_json(
+        path,
+        {
+          task_status_updates: [
+            {
+              task_definition_id: task_definitions.second.id,
+              from_status: 'discuss',
+              to_status: 'rediscuss'
+            }
+          ]
+        }
+      )
+    end
+
+    assert_equal false, last_response_body
+    note = @project.engagements.last.note
+    assert_includes note, "#{task_definitions.first.abbreviation}: Ready for Feedback → Complete."
+    assert_includes note, "#{task_definitions.second.abbreviation}: Discuss → Rediscuss."
+  end
+
+  def test_student_cannot_record_automatic_class_discussion
+    add_auth_header_for(user: @student)
+
+    assert_no_difference 'Engagement.count' do
+      post_json(
+        "/api/projects/#{@project.id}/engagements/class_discussion",
+        { task_status_updates: [] }
+      )
+    end
+
+    assert_equal 403, last_response.status
   end
 
   def test_student_and_unrelated_tutor_cannot_create_engagements

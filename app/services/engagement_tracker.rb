@@ -3,7 +3,9 @@ class EngagementTracker
   TUTORIAL_DURATION = 2.hours
 
   def self.record_attendance(user:, project:, occurred_at: Time.zone.now)
-    record_during_tutorial(
+    return unless during_enrolled_tutorial?(project, occurred_at)
+
+    record_engagement(
       user: user,
       project: project,
       engagement_type: 'Attendance',
@@ -12,11 +14,32 @@ class EngagementTracker
     )
   end
 
-  def self.record_during_tutorial(user:, project:, engagement_type:, note:, occurred_at:)
-    return unless during_enrolled_tutorial?(project, occurred_at)
+  def self.record_class_discussion(user:, project:, task_status_updates:, occurred_at: Time.zone.now)
+    timing = during_enrolled_tutorial?(project, occurred_at) ? 'during tutorial' : 'outside of tutorial'
+    note = if task_status_updates.any?
+             status_update_note(timing, task_status_updates)
+           else
+             "Class discussion #{timing}; no task statuses were updated."
+           end
 
+    record_engagement(
+      user: user,
+      project: project,
+      engagement_type: 'Discussion',
+      note: note,
+      occurred_at: occurred_at
+    ) do |recent_engagement|
+      merge_status_updates!(recent_engagement, timing, task_status_updates)
+    end
+  end
+
+  def self.record_engagement(user:, project:, engagement_type:, note:, occurred_at:)
     project.with_lock do
-      return if recently_recorded?(project, engagement_type, occurred_at)
+      recent_engagement = recently_recorded(project, engagement_type, occurred_at)
+      if recent_engagement
+        yield recent_engagement if block_given?
+        return
+      end
 
       project.engagements.create!(
         user: user,
@@ -27,11 +50,35 @@ class EngagementTracker
     end
   end
 
-  def self.recently_recorded?(project, engagement_type, occurred_at)
+  def self.recently_recorded(project, engagement_type, occurred_at)
     project.engagements
            .where('LOWER(engagement_type) = ?', engagement_type.downcase)
            .where(occurred_at: (occurred_at - DEBOUNCE)..occurred_at)
-           .exists?
+           .order(occurred_at: :desc)
+           .first
+  end
+
+  def self.status_update_note(timing, task_status_updates)
+    ["Updated task statuses #{timing}.", *status_update_sentences(task_status_updates)].join(' ')
+  end
+
+  def self.status_update_sentences(task_status_updates)
+    task_status_updates.map do |update|
+      "#{update[:task]}: #{update[:from]} → #{update[:to]}."
+    end
+  end
+
+  def self.merge_status_updates!(engagement, timing, task_status_updates)
+    updates = status_update_sentences(task_status_updates)
+    return if updates.empty?
+
+    if engagement.note.include?('no task statuses were updated')
+      engagement.update!(note: status_update_note(timing, task_status_updates))
+      return
+    end
+
+    new_updates = updates.reject { |update| engagement.note.include?(update) }
+    engagement.update!(note: "#{engagement.note} #{new_updates.join(' ')}") if new_updates.any?
   end
 
   def self.during_enrolled_tutorial?(project, occurred_at)
@@ -47,5 +94,10 @@ class EngagementTracker
     end
   end
 
-  private_class_method :record_during_tutorial, :recently_recorded?, :during_enrolled_tutorial?
+  private_class_method :record_engagement,
+                       :recently_recorded,
+                       :status_update_note,
+                       :status_update_sentences,
+                       :merge_status_updates!,
+                       :during_enrolled_tutorial?
 end
