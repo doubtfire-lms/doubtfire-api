@@ -98,15 +98,16 @@ class UnitContentsApi < Grape::API
           "url(#{quote}#{rewrite_reference.call(Regexp.last_match(2))}#{quote})"
         end
       when 'text/javascript', 'application/javascript'
-        contents
-          .gsub(/\b((?:import|export)(?:\s*[^"']*?\s*from\s*)?\s*)(["'])([^"']+)\2/) do
-            "#{Regexp.last_match(1)}#{Regexp.last_match(2)}" \
-              "#{rewrite_reference.call(Regexp.last_match(3))}#{Regexp.last_match(2)}"
-          end
-          .gsub(/\b(import\s*\(\s*)(["'])([^"']+)\2(\s*\))/) do
-            "#{Regexp.last_match(1)}#{Regexp.last_match(2)}#{rewrite_reference.call(Regexp.last_match(3))}" \
-              "#{Regexp.last_match(2)}#{Regexp.last_match(4)}"
-          end
+        contents = contents.gsub(
+          /\b((?:import|export)(?:\s*[^"']*?\s*from\s*)?\s*)(["'])([^"']+)\2/
+        ) do
+          "#{Regexp.last_match(1)}#{Regexp.last_match(2)}" \
+            "#{rewrite_reference.call(Regexp.last_match(3))}#{Regexp.last_match(2)}"
+        end
+        contents.gsub(/\b(import\s*\(\s*)(["'])([^"']+)\2(\s*\))/) do
+          "#{Regexp.last_match(1)}#{Regexp.last_match(2)}#{rewrite_reference.call(Regexp.last_match(3))}" \
+            "#{Regexp.last_match(2)}#{Regexp.last_match(4)}"
+        end
       else
         contents
       end
