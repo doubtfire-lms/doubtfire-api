@@ -1,6 +1,8 @@
 require 'grape'
 require 'entities/unit_content_link_entity'
 require 'entities/unit_content_site_entity'
+require 'mime/types'
+require 'uri'
 
 class UnitContentsApi < Grape::API
   helpers AuthenticationHelpers
@@ -24,10 +26,144 @@ class UnitContentsApi < Grape::API
 
       error!({ error: 'Not authorised to manage unit content' }, 403)
     end
+
+    def unit_content_reference_url(unit_id, site_id, reference, current_path)
+      return reference if reference.blank? || reference.match?(%r{\A(?:[a-z][a-z0-9+.-]*:|//|#)}i)
+
+      reference_path = reference.split(/[?#]/, 2).first
+      resolved_path =
+        if reference_path.start_with?('/')
+          reference_path
+        else
+          File.expand_path(reference_path, "/#{File.dirname(current_path)}")
+        end
+
+      query = Rack::Utils.build_query(
+        content_route: resolved_path,
+        content_site_id: site_id
+      )
+      fragment = reference.include?('#') ? "##{reference.split('#', 2).last}" : ''
+
+      "/api/units/#{unit_id}/content2?#{query}#{fragment}"
+    end
+
+    def rewrite_unit_content_response(contents, content_type, unit_id, site_id, current_path)
+      rewrite_reference = lambda do |reference|
+        unit_content_reference_url(unit_id, site_id, reference, current_path)
+      end
+
+      case content_type
+      when 'text/html'
+        contents = contents.gsub(
+          /(<(?:iframe|img|link|script|source|video|audio)\b[^>]*?\b(?:href|poster|src)=)(["'])([^"']+)\2/i
+        ) do
+          "#{Regexp.last_match(1)}#{Regexp.last_match(2)}" \
+            "#{rewrite_reference.call(Regexp.last_match(3))}#{Regexp.last_match(2)}"
+        end
+        contents.gsub(/\bsrcset=(["'])([^"']+)\1/i) do
+          quote = Regexp.last_match(1)
+          srcset = Regexp.last_match(2).split(',').map do |entry|
+            reference, descriptor = entry.strip.split(/\s+/, 2)
+            [rewrite_reference.call(reference), descriptor].compact.join(' ')
+          end.join(', ')
+
+          "srcset=#{quote}#{srcset}#{quote}"
+        end
+      when 'text/css'
+        contents.gsub(/url\((["']?)([^"')]+)\1\)/i) do
+          quote = Regexp.last_match(1)
+          "url(#{quote}#{rewrite_reference.call(Regexp.last_match(2))}#{quote})"
+        end
+      when 'text/javascript', 'application/javascript'
+        contents
+          .gsub(/\b((?:import|export)(?:\s*[^"']*?\s*from\s*)?\s*)(["'])([^"']+)\2/) do
+            "#{Regexp.last_match(1)}#{Regexp.last_match(2)}" \
+              "#{rewrite_reference.call(Regexp.last_match(3))}#{Regexp.last_match(2)}"
+          end
+          .gsub(/\b(import\s*\(\s*)(["'])([^"']+)\2(\s*\))/) do
+            "#{Regexp.last_match(1)}#{Regexp.last_match(2)}#{rewrite_reference.call(Regexp.last_match(3))}" \
+              "#{Regexp.last_match(2)}#{Regexp.last_match(4)}"
+          end
+      else
+        contents
+      end
+    end
   end
 
   before do
-    authenticated?
+    # authenticated?
+  end
+
+  desc 'Get a unit content route'
+  params do
+    optional :content_route, type: String, desc: 'The content route being loaded'
+    optional :content_site_id, type: Integer, desc: 'Specific content site to load'
+  end
+  get '/units/:id/content2' do
+    unit = Unit.find(params[:id])
+
+    # unless authorise?(current_user, unit, :get_unit) || authorise?(current_user, User, :admin_units)
+    #   error!({ error: "Couldn't find Unit with id=#{params[:id]}" }, 403)
+    # end
+
+    link = nil
+    site = if params[:content_site_id].present?
+             unit.unit_content_sites.find(params[:content_site_id])
+           else
+             link = unit_content_link_for_route(unit, params[:content_route])
+             link&.unit_content_site ||
+               unit.unit_content_sites.find_by(is_main: true)
+           end
+
+    error!({ error: 'Unit content archive is not configured' }, 404) unless site
+
+    error!({ error: 'Unit content archive is not available' }, 404) unless File.exist?(site.archive_path)
+
+    content_route = URI::DEFAULT_PARSER.unescape(params[:content_route].presence || '/')
+    route_parts = content_route.split('/').reject(&:blank?)
+    error!({ error: 'Invalid unit content route' }, 422) if route_parts.any? { |part| ['.', '..'].include?(part) }
+
+    root_parts = site.root_dir.to_s.split('/').reject(&:blank?)
+    requested_entry_path = (root_parts + route_parts).join('/')
+    archive_entry_paths = [
+      requested_entry_path,
+      (root_parts + route_parts + ['index.html']).join('/')
+    ].uniq
+    archive_entry = nil
+    file_contents = nil
+
+    Zip::File.open(site.archive_path) do |zip_file|
+      archive_entry = archive_entry_paths.filter_map { |path| zip_file.find_entry(path) }.find(&:file?)
+      file_contents = archive_entry.get_input_stream.read if archive_entry
+    end
+
+    error!({ error: "Unit content route '#{content_route}' is not available" }, 404) unless archive_entry
+
+    response_content_type = MIME::Types.type_for(archive_entry.name).first&.content_type
+    response_content_type ||= 'application/octet-stream'
+    root_prefix = root_parts.join('/')
+    current_path = archive_entry.name.delete_prefix("#{root_prefix}/")
+    file_contents = rewrite_unit_content_response(
+      file_contents,
+      response_content_type,
+      unit.id,
+      site.id,
+      current_path
+    )
+
+    content_type response_content_type
+    header['Content-Disposition'] = "inline; filename=#{File.basename(archive_entry.name)}"
+    header['X-Content-Site-Id'] = site.id.to_s
+    header['X-Content-Route'] = link&.route || content_route
+    header['X-Content-Root-Dir'] = site.root_dir
+    header['Access-Control-Expose-Headers'] =
+      'Content-Disposition,X-Content-Site-Id,X-Content-Route,X-Content-Root-Dir'
+    header['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    env['api.format'] = :binary
+
+    body file_contents
+  rescue Zip::Error
+    error!({ error: 'Unit content archive is invalid' }, 422)
   end
 
   desc 'Get unit content archive'
