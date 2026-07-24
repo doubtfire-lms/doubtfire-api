@@ -1,4 +1,5 @@
 require 'test_helper'
+require 'minitest/mock'
 
 class CommunicationSetTest < ActiveSupport::TestCase
   include ActiveSupport::Testing::TimeHelpers
@@ -106,6 +107,35 @@ class CommunicationSetTest < ActiveSupport::TestCase
 
       condition.update!(operator: 'within_last')
       assert_equal [recent_project.id, boundary_project.id].sort, rule.matching_projects.map(&:id).sort
+    end
+  end
+
+  def test_portfolio_submitted_condition_matches_both_submission_states
+    unit, rule = unit_and_rule('Portfolio submission')
+    submitted_project = FactoryBot.create(
+      :project,
+      unit: unit,
+      portfolio_submission_date: nil
+    )
+    unsubmitted_project = FactoryBot.create(
+      :project,
+      unit: unit,
+      portfolio_submission_date: Time.zone.parse('2026-07-22 12:00:00 UTC')
+    )
+    condition = rule.communication_conditions.create!(
+      type: 'PortfolioSubmittedCondition',
+      operator: 'equal_to',
+      submitted_portfolio: true
+    )
+
+    submitted_project.stub(:portfolio_exists?, true) do
+      unsubmitted_project.stub(:portfolio_exists?, false) do
+        projects = [submitted_project, unsubmitted_project]
+        assert_equal [submitted_project.id], rule.matching_projects(projects).map(&:id)
+
+        condition.update!(submitted_portfolio: false)
+        assert_equal [unsubmitted_project.id], rule.matching_projects(projects).map(&:id)
+      end
     end
   end
 
