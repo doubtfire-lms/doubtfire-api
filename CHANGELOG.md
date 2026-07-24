@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-35](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-34...v11.0.0-35) (2026-07-24)
+
+
+### Bug Fixes
+
+* enable youtube embeds ([a8da36c](https://github.com/b0ink/doubtfire-deploy/commit/a8da36c3fbf64af3fad6bfaf02cd66e9921b903e))
+
 ## [11.0.0-34](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-33...v11.0.0-34) (2026-07-24)
 
 
