@@ -278,6 +278,8 @@ class Project < ApplicationRecord
   end
 
   def task_details_for_shallow_serializer(user)
+    teaching_breaks = unit.teaching_period&.breaks.to_a
+
     tasks
       .joins(:task_status)
       .joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment')")
@@ -309,6 +311,8 @@ class Project < ApplicationRecord
           extensions: t.extensions,
           scorm_extensions: t.scorm_extensions,
           due_date: t.due_date,
+          moved_to_discuss_at: t.moved_to_discuss_at,
+          discuss_timeout_expiry_at: t.discuss_timeout_expiry_at(teaching_breaks: teaching_breaks),
           submission_date: t.submission_date,
           completion_date: t.completion_date,
           target_start_date: t.target_start_date,
