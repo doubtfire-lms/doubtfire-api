@@ -220,7 +220,13 @@ class Unit < ApplicationRecord
   validates :feedback_overflow_threshold_days,
             numericality: { greater_than_or_equal_to: 0 }
 
+  validates :discuss_timeout_warning_days,
+            numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+  validates :discuss_timeout_expire_days,
+            numericality: { only_integer: true, greater_than_or_equal_to: 1 }
+
   validate :warning_not_greater_than_overflow
+  validate :discuss_timeout_warning_before_expiry
 
   validate :validate_end_date_after_start_date
   validate :ensure_teaching_period_dates_match, if: :has_teaching_period?
@@ -254,6 +260,117 @@ class Unit < ApplicationRecord
       :feedback_warning_threshold_days,
       'must be less than or equal to the overflow threshold'
     )
+  end
+
+  def discuss_timeout_warning_before_expiry
+    return unless discuss_timeout_enabled
+    return if discuss_timeout_warning_days < discuss_timeout_expire_days
+
+    errors.add(:discuss_timeout_warning_days, 'must be less than the expiry days')
+  end
+
+  def self.notify_discuss_timeouts!
+    set_active.find_each(&:notify_discuss_timeouts!)
+  end
+
+  def notify_discuss_timeouts!
+    return 0 unless discuss_timeout_enabled
+
+    teaching_breaks = teaching_period&.breaks.to_a
+    discuss_timeout_tasks.find_each.sum do |task|
+      notify_discuss_timeout_for(task, teaching_breaks: teaching_breaks)
+    end
+  end
+
+  def discuss_timeout_tasks
+    tasks
+      .includes(:project, :task_definition)
+      .where(task_status_id: TaskStatus.discuss.id)
+      .where.not(moved_to_discuss_at: nil)
+      .where('moved_to_discuss_at <= ?', discuss_timeout_warning_days.days.ago)
+  end
+
+  def notify_discuss_timeout_for(task, teaching_breaks: nil, now_time: Time.zone.now)
+    return 0 if task.moved_to_discuss_at.blank?
+
+    actor = task.project.tutor_for(task.task_definition) || main_convenor&.user
+    return 0 if actor.blank?
+
+    elapsed_days = task.discuss_timeout_elapsed_days(now_time, teaching_breaks: teaching_breaks)
+    if elapsed_days >= discuss_timeout_expire_days
+      expire_discuss_timeout_task(task, actor)
+    elsif elapsed_days >= discuss_timeout_warning_days
+      warn_discuss_timeout_task(task, actor, teaching_breaks: teaching_breaks)
+    else
+      0
+    end
+  end
+
+  def warn_discuss_timeout_task(task, actor, teaching_breaks: nil)
+    return 0 if task.notified_discuss_warning_at.present?
+
+    expiry_date = discuss_timeout_expiry_date(task, teaching_breaks: teaching_breaks)
+    created_comment = false
+    Task.transaction do
+      comment = task.add_discuss_timeout_comment(
+        actor,
+        DiscussTimeoutComment.warning,
+        "You must discuss this task with your tutor before #{formatted_discuss_timeout_date(expiry_date)}. If it has not been discussed by then, it will move to Fix and Resubmit, and you will need to resubmit your work."
+      )
+      raise ActiveRecord::Rollback if comment.blank?
+
+      task.update!(notified_discuss_warning_at: Time.zone.now)
+      queue_discuss_timeout_email(task, actor, :approaching, expiry_date)
+      created_comment = true
+    end
+
+    created_comment ? 1 : 0
+  end
+
+  def expire_discuss_timeout_task(task, actor)
+    return 0 if task.notified_discuss_expiry_at.present?
+
+    created_comment = false
+    Task.transaction do
+      task.update!(notified_discuss_expiry_at: Time.zone.now)
+      unless task.trigger_transition(trigger: 'fix', by_user: actor, system_transition: true)
+        raise ActiveRecord::Rollback
+      end
+
+      comment = task.add_discuss_timeout_comment(
+        actor,
+        DiscussTimeoutComment.expired,
+        "This task moved to Fix and Resubmit because it was not discussed by the deadline. Review any feedback and resubmit it when you are ready."
+      )
+      unless comment
+        raise ActiveRecord::Rollback
+      end
+
+      queue_discuss_timeout_email(task, actor, :missed)
+      created_comment = true
+    end
+
+    created_comment ? 1 : 0
+  end
+
+  def discuss_timeout_expiry_date(task, teaching_breaks: nil)
+    task
+      .discuss_timeout_expiry_at(discuss_timeout_expire_days, teaching_breaks: teaching_breaks)
+      &.to_date
+  end
+
+  def formatted_discuss_timeout_date(date)
+    result = "the #{date.day.ordinalize} of #{Date::MONTHNAMES[date.month]}"
+    return result if date.year == Time.zone.today.year
+
+    "#{result} #{date.year}"
+  end
+
+  def queue_discuss_timeout_email(task, actor, type, expiry_date = nil)
+    return unless send_notifications
+    return unless task.project.student.receive_feedback_notifications
+
+    SendDiscussTimeoutEmailJob.perform_async(task.id, actor.id, type.to_s, expiry_date&.iso8601)
   end
 
   def detailed_name

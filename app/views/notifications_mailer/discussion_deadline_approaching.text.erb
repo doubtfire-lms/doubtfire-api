@@ -1,0 +1,14 @@
+Hi <%= @student.first_name %>,
+
+You must discuss task <%= @task.task_definition.abbreviation %> with your tutor before <%= @deadline %>.
+
+If it is not discussed by then, it will move to Fix and Resubmit, and you will need to resubmit your work.
+
+View this task in <%= @doubtfire_product_name %>: <%= @task_url %>
+
+Cheers,
+The <%= @doubtfire_product_name %> Team on behalf of <%= @sender.name %>
+
+---
+
+Visit <%= @unsubscribe_url %> to unsubscribe from these notifications.

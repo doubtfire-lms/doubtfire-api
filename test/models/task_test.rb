@@ -129,6 +129,21 @@ class TaskTest < ActiveSupport::TestCase
     assert_equal TaskStatus.complete, task.task_status
   end
 
+  def test_system_transition_bypasses_manual_feedback_requirement
+    project = FactoryBot.create(:project)
+    task = project.task_for_task_definition(project.unit.task_definitions.first)
+
+    task.update!(task_status: TaskStatus.ready_for_feedback)
+
+    assert task.trigger_transition(
+      trigger: 'fix',
+      by_user: project.student,
+      check_feedback: true,
+      system_transition: true
+    )
+    assert_equal TaskStatus.fix_and_resubmit, task.task_status
+  end
+
   def test_trigger_transition_requires_recent_manual_tutor_feedback_for_fix_and_redo_when_checking_feedback
     travel_to Time.zone.parse('2026-05-13 10:00:00 UTC') do
       project = FactoryBot.create(:project)

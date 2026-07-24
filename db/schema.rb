@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_23_032138) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_22_065239) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -705,10 +705,16 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_23_032138) do
     t.datetime "target_start_date"
     t.datetime "target_due_date"
     t.datetime "last_tutor_feedback_at"
+    t.datetime "moved_to_discuss_at"
+    t.datetime "notified_discuss_warning_at"
+    t.datetime "notified_discuss_expiry_at"
     t.index ["group_submission_id"], name: "index_tasks_on_group_submission_id"
     t.index ["project_id", "task_definition_id"], name: "tasks_uniq_proj_task_def", unique: true
     t.index ["project_id"], name: "index_tasks_on_project_id"
     t.index ["task_definition_id"], name: "index_tasks_on_task_definition_id"
+    t.index ["task_status_id", "moved_to_discuss_at"], name: "index_tasks_on_task_status_id_and_moved_to_discuss_at"
+    t.index ["task_status_id", "notified_discuss_expiry_at"], name: "index_tasks_on_task_status_id_and_notified_discuss_expiry_at"
+    t.index ["task_status_id", "notified_discuss_warning_at"], name: "index_tasks_on_task_status_id_and_notified_discuss_warning_at"
     t.index ["task_status_id"], name: "index_tasks_on_task_status_id"
   end
 
@@ -930,6 +936,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_23_032138) do
     t.integer "feedback_overflow_threshold_days", default: 7
     t.boolean "enforce_feedback_before_discussed_in_class", default: false, null: false
     t.text "grade_values", size: :long, collation: "utf8mb4_bin"
+    t.boolean "discuss_timeout_enabled", default: false, null: false
+    t.integer "discuss_timeout_warning_days", default: 7, null: false
+    t.integer "discuss_timeout_expire_days", default: 14, null: false
     t.index ["draft_task_definition_id"], name: "index_units_on_draft_task_definition_id"
     t.index ["main_convenor_id"], name: "index_units_on_main_convenor_id"
     t.index ["overseer_image_id"], name: "index_units_on_overseer_image_id"

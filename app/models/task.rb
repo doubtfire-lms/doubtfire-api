@@ -147,6 +147,7 @@ class Task < ApplicationRecord
   delegate :target_date, to: :task_definition
   delegate :update_task_stats, to: :project
 
+  before_save :set_discuss_timeout_tracking, if: :will_save_change_to_task_status_id?
   after_update :update_task_stats, if: :saved_change_to_task_status_id? # TODO: consider moving to async task
 
   validates :task_definition_id, uniqueness: { scope: :project,
@@ -258,6 +259,12 @@ class Task < ApplicationRecord
         'recipients.email AS recipient_email',
         'task_comments.reply_to_id AS reply_to_id'
       )
+  end
+
+  def set_discuss_timeout_tracking
+    self.moved_to_discuss_at = task_status_id == TaskStatus.discuss.id ? Time.zone.now : nil
+    self.notified_discuss_warning_at = nil
+    self.notified_discuss_expiry_at = nil
   end
 
   def current_task_similarities
@@ -446,6 +453,36 @@ class Task < ApplicationRecord
     ([0, current_time - submission_time - paused_seconds].max / 1.day).floor
   end
 
+  def discuss_timeout_elapsed_days(now_time = Time.zone.now, teaching_breaks: nil)
+    return 0 if moved_to_discuss_at.blank?
+
+    discussion_time = moved_to_discuss_at.to_f
+    current_time = now_time.to_f
+    return 0 if current_time <= discussion_time
+
+    teaching_breaks ||= unit&.teaching_period&.breaks || []
+    paused_seconds = break_overlap_seconds(discussion_time, current_time, teaching_breaks)
+
+    ([0, current_time - discussion_time - paused_seconds].max / 1.day).floor
+  end
+
+  def discuss_timeout_expiry_at(timeout_days = unit.discuss_timeout_expire_days, teaching_breaks: nil)
+    return nil if moved_to_discuss_at.blank?
+
+    deadline = moved_to_discuss_at + timeout_days.days
+    teaching_breaks ||= unit&.teaching_period&.breaks || []
+
+    teaching_breaks.sort_by(&:start_date).each do |teaching_break|
+      break_start = teaching_break.start_date
+      break_end = break_start + teaching_break.number_of_weeks.to_i.weeks
+      next if break_end <= moved_to_discuss_at || break_start >= deadline
+
+      deadline += break_end - [break_start, moved_to_discuss_at].max
+    end
+
+    deadline
+  end
+
   # Excludes any breaks that would otherwise "pause" feedback
   def calendar_days_awaiting_feedback(now_time = Time.zone.now)
     return 0 if submission_date.blank?
@@ -552,6 +589,25 @@ class Task < ApplicationRecord
     claim
   end
 
+  def transition_assignment_allowed?(by_user, system_transition)
+    return true if system_transition
+
+    if task_definition.lock_assessments_to_tutorial_stream
+      unit_role = unit.unit_role_for(by_user)
+      return false unless task_definition.tutorial_stream.tutorials.any? { |tutorial| tutorial.unit_role == unit_role }
+    end
+
+    claim = active_overflow_task_claim
+    return true if claim.blank?
+
+    unit_role = unit.unit_role_for(by_user)
+    unit_role.nil? || unit_role.id == claim.claimed_by_unit_role_id
+  end
+
+  def transition_feedback_check_required?(check_feedback, system_transition)
+    check_feedback && !system_transition
+  end
+
   def group
     return nil unless group_task?
 
@@ -568,11 +624,12 @@ class Task < ApplicationRecord
   end
 
   def trigger_transition(trigger: '', by_user: nil, bulk: false, group_transition: false, quality: 1, recursive_fix: false,
-                         check_feedback: false)
+                         check_feedback: false, system_transition: false)
     #
     # Ensure that assessor is allowed to update the task in the indicated way
     #
     role = role_for(by_user)
+    role = :tutor if system_transition && by_user.present?
 
     return nil if role.nil?
 
@@ -587,20 +644,7 @@ class Task < ApplicationRecord
     # Protect closed states from student changes
     return nil if [:student, :group_member].include?(role) && task_submission_closed?
 
-    if task_definition.lock_assessments_to_tutorial_stream
-      unit_role = unit.unit_role_for(by_user)
-      tutorial_stream = task_definition.tutorial_stream
-      tutorials = tutorial_stream.tutorials
-      return nil unless tutorials.any? { |t| t.unit_role == unit_role }
-    end
-
-    # Check to see if another tutor has claimed this task from overflow
-    if active_overflow_task_claim
-      unit_role = unit.unit_role_for(by_user)
-      if unit_role && unit_role.id != active_overflow_task_claim.claimed_by_unit_role_id
-        return nil
-      end
-    end
+    return nil unless transition_assignment_allowed?(by_user, system_transition)
     #
     # State transitions based upon the trigger
     #
@@ -626,7 +670,7 @@ class Task < ApplicationRecord
           return nil
         end
 
-        if check_feedback
+        if transition_feedback_check_required?(check_feedback, system_transition)
           if status == TaskStatus.complete && !has_manual_feedback_since_first_ready_for_feedback?
             errors.add(:task_status, "cannot be moved to '#{status.name}' until feedback has been given")
             return nil
@@ -985,6 +1029,20 @@ class Task < ApplicationRecord
     discussed.recipient = current_user == project.student ? project.tutor_for(task_definition) : project.student
     discussed.save!
     discussed
+  end
+
+  def add_discuss_timeout_comment(current_user, content_type, text)
+    return nil unless individual_task_or_submitter_of_group_task?
+
+    comment = DiscussTimeoutComment.create
+    comment.task = self
+    comment.user = current_user
+    comment.comment = text
+    comment.content_type = content_type
+    comment.recipient = project.student
+    comment.save!
+
+    comment
   end
 
   def add_checked_in_comment(current_user)
