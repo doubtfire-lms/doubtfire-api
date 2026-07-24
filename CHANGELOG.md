@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-36](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-35...v11.0.0-36) (2026-07-24)
+
+
+### Features
+
+* communication condition to check if student has portfolio ([#651](https://github.com/b0ink/doubtfire-deploy/issues/651)) ([90d362e](https://github.com/b0ink/doubtfire-deploy/commit/90d362e4ff2d32d0e3791d0bec3f5f2d6f649ee1))
+
+
+### Bug Fixes
+
+* normalize upload requirement file keys on save ([#653](https://github.com/b0ink/doubtfire-deploy/issues/653)) ([bf457a1](https://github.com/b0ink/doubtfire-deploy/commit/bf457a1a2137e7586b36eb9bc9b14045caad28f4))
+
 ## [11.0.0-35](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-34...v11.0.0-35) (2026-07-24)
 
 
