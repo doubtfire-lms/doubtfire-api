@@ -2,6 +2,41 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-36](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-35...v11.0.0-36) (2026-07-24)
+
+
+### Features
+
+* communication condition to check if student has portfolio ([#651](https://github.com/b0ink/doubtfire-deploy/issues/651)) ([90d362e](https://github.com/b0ink/doubtfire-deploy/commit/90d362e4ff2d32d0e3791d0bec3f5f2d6f649ee1))
+
+
+### Bug Fixes
+
+* normalize upload requirement file keys on save ([#653](https://github.com/b0ink/doubtfire-deploy/issues/653)) ([bf457a1](https://github.com/b0ink/doubtfire-deploy/commit/bf457a1a2137e7586b36eb9bc9b14045caad28f4))
+
+## [11.0.0-35](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-34...v11.0.0-35) (2026-07-24)
+
+
+### Bug Fixes
+
+* enable youtube embeds ([a8da36c](https://github.com/b0ink/doubtfire-deploy/commit/a8da36c3fbf64af3fad6bfaf02cd66e9921b903e))
+
+## [11.0.0-34](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-33...v11.0.0-34) (2026-07-24)
+
+
+### Features
+
+* add last sign in and last unit access communication conditions ([50fc821](https://github.com/b0ink/doubtfire-deploy/commit/50fc8215598766fa8927ca480b122a361803d689))
+* discuss timeout ([#646](https://github.com/b0ink/doubtfire-deploy/issues/646)) ([f6dfd80](https://github.com/b0ink/doubtfire-deploy/commit/f6dfd806570f6b30384571210402a3e92c405b2f))
+* track last access to site and unit ([2141fd6](https://github.com/b0ink/doubtfire-deploy/commit/2141fd6876f50c5705f16acdd1f27d9b65152078))
+
+
+### Bug Fixes
+
+* allow unit deletion with task prerequisites ([2b3752a](https://github.com/b0ink/doubtfire-deploy/commit/2b3752ac6b888cffc38cefa86a58bbebfb844aff))
+* iterate sentry exception interface values correctly ([4818049](https://github.com/b0ink/doubtfire-deploy/commit/48180497875529f6ac843a00519a6ce69f4ac4bc))
+* prevent deleting task definitions used as prerequisites ([f26c9c5](https://github.com/b0ink/doubtfire-deploy/commit/f26c9c573894543a50220dc7708fc4540e764aaf))
+
 ## [11.0.0-33](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-32...v11.0.0-33) (2026-07-19)
 
 

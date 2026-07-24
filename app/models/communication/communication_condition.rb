@@ -9,6 +9,7 @@ class CommunicationCondition < ApplicationRecord
     TutorialEnrolmentCondition
     TutorialStreamEnrolmentCondition
     CampusCondition
+    PortfolioSubmittedCondition
   ].freeze
 
   GRADE_OPERATORS = %w[

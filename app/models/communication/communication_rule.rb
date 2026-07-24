@@ -49,6 +49,8 @@ class CommunicationRule < ApplicationRecord
       tutorial_stream_enrolment_condition_match?(project, condition)
     when 'CampusCondition'
       campus_condition_match?(project, condition)
+    when 'PortfolioSubmittedCondition'
+      portfolio_submitted_condition_match?(project, condition)
     else
       false
     end
@@ -122,6 +124,10 @@ class CommunicationRule < ApplicationRecord
     enrolled = project.campus_id == condition.campus_id
 
     condition.operator == 'not_enrolled_in' ? !enrolled : enrolled
+  end
+
+  def portfolio_submitted_condition_match?(project, condition)
+    project.portfolio_exists? == condition.submitted_portfolio
   end
 
   def compare_value(left, right, operator)

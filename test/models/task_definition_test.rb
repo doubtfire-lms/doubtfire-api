@@ -8,6 +8,38 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     Rails.application
   end
 
+  def test_validation_ignores_orphaned_prerequisite_records
+    unit = FactoryBot.create(:unit, task_count: 0)
+    prerequisite = FactoryBot.create(:task_definition, unit: unit, target_grade: 0)
+    dependent = FactoryBot.create(:task_definition, unit: unit, target_grade: 0)
+    TaskPrerequisite.create!(
+      task_definition: dependent,
+      prerequisite: prerequisite,
+      task_status_id: TaskStatus.complete.id
+    )
+
+    prerequisite.delete
+
+    assert_nothing_raised { dependent.update!(name: 'Updated task definition') }
+  end
+
+  def test_unit_can_be_destroyed_when_its_tasks_have_prerequisites
+    unit = FactoryBot.create(:unit, task_count: 0)
+    prerequisite = FactoryBot.create(:task_definition, unit: unit, target_grade: 0)
+    dependent = FactoryBot.create(:task_definition, unit: unit, target_grade: 0)
+    task_prerequisite = TaskPrerequisite.create!(
+      task_definition: dependent,
+      prerequisite: prerequisite,
+      task_status_id: TaskStatus.complete.id
+    )
+
+    unit.destroy!
+
+    assert_not TaskDefinition.exists?(prerequisite.id)
+    assert_not TaskDefinition.exists?(dependent.id)
+    assert_not TaskPrerequisite.exists?(task_prerequisite.id)
+  end
+
   def test_overseer_requires_a_submission_history_upload
     task_definition = FactoryBot.build(
       :task_definition,
@@ -33,6 +65,22 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     task_definition.validate
     assert_empty task_definition.errors[:upload_requirements]
+  end
+
+  def test_normalizes_duplicate_and_out_of_order_upload_requirement_keys
+    task_definition = FactoryBot.build(
+      :task_definition,
+      upload_requirements: [
+        { 'key' => 'file1', 'name' => 'main.rb', 'type' => 'code' },
+        { 'key' => 'file1', 'name' => 'output.png', 'type' => 'image' },
+        { 'key' => 'file5', 'name' => 'report.pdf', 'type' => 'document' }
+      ]
+    )
+
+    task_definition.save!
+    task_definition.reload
+
+    assert_equal %w[file0 file1 file2], task_definition.upload_requirements.pluck('key')
   end
 
   def test_default_quality_points

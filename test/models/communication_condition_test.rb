@@ -63,6 +63,20 @@ class CommunicationConditionTest < ActiveSupport::TestCase
     end
   end
 
+  def test_portfolio_submitted_condition_requires_a_boolean
+    condition = CommunicationCondition.new(
+      type: 'PortfolioSubmittedCondition',
+      communication: communication_rule,
+      operator: 'equal_to',
+      submitted_portfolio: false
+    )
+
+    assert condition.valid?, condition.errors.full_messages
+
+    condition.submitted_portfolio = nil
+    assert_not condition.valid?
+  end
+
   private
 
   def communication_rule
