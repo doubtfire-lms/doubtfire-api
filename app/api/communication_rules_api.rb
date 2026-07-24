@@ -28,6 +28,25 @@ class CommunicationRulesApi < Grape::API
       )
     end
 
+    def permitted_condition_params(raw_condition)
+      ActionController::Parameters.new(raw_condition).permit(
+        :type,
+        :operator,
+        :target_grade,
+        :task_definition_id,
+        :task_status_count,
+        :task_target_grade,
+        :last_sign_in_at,
+        :activity_days,
+        :spec_con_days,
+        :tutorial_id,
+        :tutorial_stream_id,
+        :campus_id,
+        :submitted_portfolio,
+        task_statuses: []
+      ).to_h.compact
+    end
+
     def schedule_params_from_request
       communication_set_params = params[:communication_set] || params['communication_set'] || {}
       communication_set_params[:schedules] || communication_set_params['schedules']
@@ -588,27 +607,7 @@ class CommunicationRulesApi < Grape::API
     end
 
     rule = unit.communication_rules.find(params[:communication_rule_id])
-    raw_condition_params = params[:communication_condition]
-    condition_params = {
-      type: raw_condition_params[:type],
-      operator: raw_condition_params[:operator],
-      target_grade: raw_condition_params[:target_grade],
-      task_definition_id: raw_condition_params[:task_definition_id],
-      task_status_count: raw_condition_params[:task_status_count],
-      task_target_grade: raw_condition_params[:task_target_grade],
-      last_sign_in_at: raw_condition_params[:last_sign_in_at],
-      activity_days: raw_condition_params[:activity_days],
-      spec_con_days: raw_condition_params[:spec_con_days],
-      tutorial_id: raw_condition_params[:tutorial_id],
-      tutorial_stream_id: raw_condition_params[:tutorial_stream_id],
-      campus_id: raw_condition_params[:campus_id],
-      submitted_portfolio: raw_condition_params[:submitted_portfolio]
-    }.compact
-
-    task_statuses = raw_condition_params[:task_statuses]
-    condition_params[:task_statuses] = Array(task_statuses) unless task_statuses.nil?
-
-    condition = rule.communication_conditions.create!(condition_params)
+    condition = rule.communication_conditions.create!(permitted_condition_params(params[:communication_condition]))
     present condition, with: Entities::CommunicationConditionEntity
   end
 
@@ -643,27 +642,7 @@ class CommunicationRulesApi < Grape::API
 
     rule = unit.communication_rules.find(params[:communication_rule_id])
     condition = rule.communication_conditions.find(params[:id])
-    raw_condition_params = params[:communication_condition]
-    condition_params = {
-      type: raw_condition_params[:type],
-      operator: raw_condition_params[:operator],
-      target_grade: raw_condition_params[:target_grade],
-      task_definition_id: raw_condition_params[:task_definition_id],
-      task_status_count: raw_condition_params[:task_status_count],
-      task_target_grade: raw_condition_params[:task_target_grade],
-      last_sign_in_at: raw_condition_params[:last_sign_in_at],
-      activity_days: raw_condition_params[:activity_days],
-      spec_con_days: raw_condition_params[:spec_con_days],
-      tutorial_id: raw_condition_params[:tutorial_id],
-      tutorial_stream_id: raw_condition_params[:tutorial_stream_id],
-      campus_id: raw_condition_params[:campus_id],
-      submitted_portfolio: raw_condition_params[:submitted_portfolio]
-    }.compact
-
-    task_statuses = raw_condition_params[:task_statuses]
-    condition_params[:task_statuses] = Array(task_statuses) unless task_statuses.nil?
-
-    condition.update!(condition_params)
+    condition.update!(permitted_condition_params(params[:communication_condition]))
     present condition, with: Entities::CommunicationConditionEntity
   end
 
