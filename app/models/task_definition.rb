@@ -55,6 +55,7 @@ class TaskDefinition < ApplicationRecord
 
   delegate :role_for, to: :unit
 
+  before_validation :normalize_upload_requirement_keys
   before_destroy :delete_associated_files
 
   after_update :move_files_on_abbreviation_change, if: :saved_change_to_abbreviation?
@@ -392,6 +393,11 @@ class TaskDefinition < ApplicationRecord
 
       i += 1
     end
+  end
+
+  def normalize_upload_requirement_keys
+    normalized_requirements = self.class.normalize_upload_requirement_keys(upload_requirements)
+    self.upload_requirements = normalized_requirements unless normalized_requirements == upload_requirements
   end
 
   def submission_history_required_for_overseer
