@@ -1,4 +1,7 @@
 class NotificationsMailer < ApplicationMailer
+  layout 'discussion_deadline_mailer',
+         only: %i[discussion_deadline_approaching discussion_deadline_missed]
+
   def add_general
     @doubtfire_host = Doubtfire::Application.config.institution[:host]
     @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
@@ -80,6 +83,27 @@ class NotificationsMailer < ApplicationMailer
     mail(to: email_with_name, from: tutor_email, subject: subject)
   end
 
+  def discussion_deadline_approaching(task, sender, expiry_date)
+    add_discussion_deadline_details(task, sender)
+    @deadline = task.unit.formatted_discuss_timeout_date(expiry_date)
+
+    mail(
+      to: %("#{@student.name}" <#{@student.email}>),
+      from: %("#{@sender.name}" <#{@sender.email}>),
+      subject: "#{@unit.code}: Discussion deadline approaching for #{@task.task_definition.abbreviation}"
+    )
+  end
+
+  def discussion_deadline_missed(task, sender)
+    add_discussion_deadline_details(task, sender)
+
+    mail(
+      to: %("#{@student.name}" <#{@student.email}>),
+      from: %("#{@sender.name}" <#{@sender.email}>),
+      subject: "#{@unit.code}: Discussion deadline missed for #{@task.task_definition.abbreviation}"
+    )
+  end
+
   def top_task_desc(tt)
     "#{tt[:task_definition].abbreviation} - #{tt[:task_definition].name} #{"- which you need to discuss with your tutor" if tt[:status] == :discuss}"
   end
@@ -112,4 +136,16 @@ class NotificationsMailer < ApplicationMailer
   helper_method :were_was
   helper_method :are_is
   helper_method :this_these
+
+  private
+
+  def add_discussion_deadline_details(task, sender)
+    add_general
+    @task = task
+    @project = task.project
+    @unit = task.unit
+    @student = @project.student
+    @sender = sender
+    @task_url = "#{@doubtfire_host}/projects/#{@project.id}/dashboard/#{@task.task_definition.abbreviation}"
+  end
 end
