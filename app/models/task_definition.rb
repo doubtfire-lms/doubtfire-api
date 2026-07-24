@@ -396,6 +396,9 @@ class TaskDefinition < ApplicationRecord
   end
 
   def normalize_upload_requirement_keys
+    return unless upload_requirements.is_a?(Array)
+    return unless upload_requirements.all? { |requirement| requirement.is_a?(Hash) && requirement.key?('key') }
+
     normalized_requirements = self.class.normalize_upload_requirement_keys(upload_requirements)
     self.upload_requirements = normalized_requirements unless normalized_requirements == upload_requirements
   end
