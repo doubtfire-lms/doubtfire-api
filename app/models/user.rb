@@ -144,6 +144,13 @@ class User < ApplicationRecord
   end
 
   #
+  # Generate an authentication token for unit content asset retrieval
+  #
+  def generate_content_authentication_token!
+    generate_authentication_token!(token_type: :content)
+  end
+
+  #
   # Returns authentication of the user
   #
   def token_for_text?(a_token, token_type)

@@ -8,7 +8,6 @@ class UnitContentsApi < Grape::API
   helpers AuthenticationHelpers
   helpers AuthorisationHelpers
   helpers MimeCheckHelpers
-  helpers FileStreamHelper
 
   helpers do
     def unit_content_link_for_route(unit, content_route)
@@ -27,7 +26,14 @@ class UnitContentsApi < Grape::API
       error!({ error: 'Not authorised to manage unit content' }, 403)
     end
 
-    def unit_content_reference_url(unit_id, site_id, reference, current_path)
+    def unit_content_reference_url(
+      unit_id,
+      site_id,
+      reference,
+      current_path,
+      username,
+      auth_token
+    )
       return reference if reference.blank? || reference.match?(%r{\A(?:[a-z][a-z0-9+.-]*:|//|#)}i)
 
       reference_path = reference.split(/[?#]/, 2).first
@@ -40,16 +46,33 @@ class UnitContentsApi < Grape::API
 
       query = Rack::Utils.build_query(
         content_route: resolved_path,
-        content_site_id: site_id
+        content_site_id: site_id,
+        username: username,
+        auth_token: auth_token
       )
       fragment = reference.include?('#') ? "##{reference.split('#', 2).last}" : ''
 
-      "/api/units/#{unit_id}/content2?#{query}#{fragment}"
+      "/api/units/#{unit_id}/content?#{query}#{fragment}"
     end
 
-    def rewrite_unit_content_response(contents, content_type, unit_id, site_id, current_path)
+    def rewrite_unit_content_response(
+      contents,
+      content_type,
+      unit_id,
+      site_id,
+      current_path,
+      username,
+      auth_token
+    )
       rewrite_reference = lambda do |reference|
-        unit_content_reference_url(unit_id, site_id, reference, current_path)
+        unit_content_reference_url(
+          unit_id,
+          site_id,
+          reference,
+          current_path,
+          username,
+          auth_token
+        )
       end
 
       case content_type
@@ -91,20 +114,26 @@ class UnitContentsApi < Grape::API
   end
 
   before do
-    # authenticated?
+    if request.path.match?(%r{/units/\d+/content\z})
+      authenticated?(:content)
+    else
+      authenticated?
+    end
   end
 
   desc 'Get a unit content route'
   params do
     optional :content_route, type: String, desc: 'The content route being loaded'
     optional :content_site_id, type: Integer, desc: 'Specific content site to load'
+    requires :username, type: String, desc: 'Username associated with the scoped content token'
+    requires :auth_token, type: String, desc: 'Scoped content authentication token'
   end
-  get '/units/:id/content2' do
+  get '/units/:id/content' do
     unit = Unit.find(params[:id])
 
-    # unless authorise?(current_user, unit, :get_unit) || authorise?(current_user, User, :admin_units)
-    #   error!({ error: "Couldn't find Unit with id=#{params[:id]}" }, 403)
-    # end
+    unless authorise?(current_user, unit, :get_unit) || authorise?(current_user, User, :admin_units)
+      error!({ error: "Couldn't find Unit with id=#{params[:id]}" }, 403)
+    end
 
     link = nil
     site = if params[:content_site_id].present?
@@ -148,7 +177,9 @@ class UnitContentsApi < Grape::API
       response_content_type,
       unit.id,
       site.id,
-      current_path
+      current_path,
+      params[:username],
+      params[:auth_token]
     )
 
     content_type response_content_type
@@ -159,52 +190,12 @@ class UnitContentsApi < Grape::API
     header['Access-Control-Expose-Headers'] =
       'Content-Disposition,X-Content-Site-Id,X-Content-Route,X-Content-Root-Dir'
     header['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    header['Referrer-Policy'] = 'no-referrer'
     env['api.format'] = :binary
 
     body file_contents
   rescue Zip::Error
     error!({ error: 'Unit content archive is invalid' }, 422)
-  end
-
-  desc 'Get unit content archive'
-  params do
-    optional :content_route, type: String, desc: 'The content route being loaded'
-    optional :content_site_id, type: Integer, desc: 'Specific content site to load'
-  end
-  get '/units/:id/content' do
-    unit = Unit.find(params[:id])
-
-    unless authorise?(current_user, unit, :get_unit) || authorise?(current_user, User, :admin_units)
-      error!({ error: "Couldn't find Unit with id=#{params[:id]}" }, 403)
-    end
-
-    content_src_dir = 'src'
-    link = nil
-    site = if params[:content_site_id].present?
-             unit.unit_content_sites.find(params[:content_site_id])
-           else
-             link = unit_content_link_for_route(unit, params[:content_route])
-             link&.unit_content_site ||
-               unit.unit_content_sites.find_by(is_main: true)
-           end
-
-    error!({ error: 'Unit content archive is not configured' }, 404) unless site
-
-    content_archive_path = site.archive_path
-
-    error!({ error: 'Unit content archive is not available' }, 404) unless File.exist?(content_archive_path)
-
-    content_type 'application/zip'
-    header['Content-Disposition'] = "inline; filename=#{File.basename(site.original_filename)}"
-    header['X-Content-Source-Directory'] = content_src_dir
-    header['X-Content-Site-Id'] = site.id.to_s
-    header['X-Content-Route'] = link&.route || params[:content_route] || '/'
-    header['X-Content-Root-Dir'] = site.root_dir
-    header['Access-Control-Expose-Headers'] =
-      'Content-Disposition,X-Content-Source-Directory,X-Content-Site-Id,X-Content-Route,X-Content-Root-Dir'
-    env['api.format'] = :binary
-
-    stream_file content_archive_path
   end
 
   desc 'List unit content sites'
