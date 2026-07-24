@@ -322,7 +322,8 @@ class TaskDefinitionsApi < Grape::API
     end
 
     task_def.destroy
-    task_def.destroyed?
+    error!({ error: task_def.errors.full_messages.last }, 403) unless task_def.destroyed?
+    true
   end
 
   desc 'Upload the task sheet for a given task'
