@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-37](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-36...v11.0.0-37) (2026-07-24)
+
+
+### Features
+
+* automated engagement stamps ([#650](https://github.com/b0ink/doubtfire-deploy/issues/650)) ([59641bd](https://github.com/b0ink/doubtfire-deploy/commit/59641bd390da394b8aff20c21433dc885419c319))
+
+
+### Bug Fixes
+
+* pass saml settings correctly to logout response ([4f60eff](https://github.com/b0ink/doubtfire-deploy/commit/4f60eff0eea770d20cee2226a13b1ad10dfafc0e))
+* pass saml settings correctly to logout response ([#648](https://github.com/b0ink/doubtfire-deploy/issues/648)) ([8df3ea9](https://github.com/b0ink/doubtfire-deploy/commit/8df3ea9a4ec5dd45b7697e6ae11ab88e54fe2b64))
+
 ## [11.0.0-36](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-35...v11.0.0-36) (2026-07-24)
 
 
