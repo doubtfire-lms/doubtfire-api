@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-34](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-33...v11.0.0-34) (2026-07-24)
+
+
+### Features
+
+* add last sign in and last unit access communication conditions ([50fc821](https://github.com/b0ink/doubtfire-deploy/commit/50fc8215598766fa8927ca480b122a361803d689))
+* discuss timeout ([#646](https://github.com/b0ink/doubtfire-deploy/issues/646)) ([f6dfd80](https://github.com/b0ink/doubtfire-deploy/commit/f6dfd806570f6b30384571210402a3e92c405b2f))
+* track last access to site and unit ([2141fd6](https://github.com/b0ink/doubtfire-deploy/commit/2141fd6876f50c5705f16acdd1f27d9b65152078))
+
+
+### Bug Fixes
+
+* allow unit deletion with task prerequisites ([2b3752a](https://github.com/b0ink/doubtfire-deploy/commit/2b3752ac6b888cffc38cefa86a58bbebfb844aff))
+* iterate sentry exception interface values correctly ([4818049](https://github.com/b0ink/doubtfire-deploy/commit/48180497875529f6ac843a00519a6ce69f4ac4bc))
+* prevent deleting task definitions used as prerequisites ([f26c9c5](https://github.com/b0ink/doubtfire-deploy/commit/f26c9c573894543a50220dc7708fc4540e764aaf))
+
 ## [11.0.0-33](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-32...v11.0.0-33) (2026-07-19)
 
 
