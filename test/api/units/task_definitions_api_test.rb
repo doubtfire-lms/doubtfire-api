@@ -215,6 +215,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert_requested upload_stub, times: 1
     assert_requested delete_stub, times: 0
 
+    TaskPrerequisite.where(prerequisite_id: td.id).destroy_all
     td.destroy!
     assert_requested delete_stub, times: 1
   end

@@ -23,6 +23,23 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert_nothing_raised { dependent.update!(name: 'Updated task definition') }
   end
 
+  def test_unit_can_be_destroyed_when_its_tasks_have_prerequisites
+    unit = FactoryBot.create(:unit, task_count: 0)
+    prerequisite = FactoryBot.create(:task_definition, unit: unit, target_grade: 0)
+    dependent = FactoryBot.create(:task_definition, unit: unit, target_grade: 0)
+    task_prerequisite = TaskPrerequisite.create!(
+      task_definition: dependent,
+      prerequisite: prerequisite,
+      task_status_id: TaskStatus.complete.id
+    )
+
+    unit.destroy!
+
+    assert_not TaskDefinition.exists?(prerequisite.id)
+    assert_not TaskDefinition.exists?(dependent.id)
+    assert_not TaskPrerequisite.exists?(task_prerequisite.id)
+  end
+
   def test_overseer_requires_a_submission_history_upload
     task_definition = FactoryBot.build(
       :task_definition,

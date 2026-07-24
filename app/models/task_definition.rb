@@ -203,6 +203,7 @@ class TaskDefinition < ApplicationRecord
   end
 
   def ensure_not_used_as_prerequisite
+    return if destroyed_by_association&.name == :task_definitions
     return unless TaskPrerequisite.exists?(prerequisite_id: id)
 
     errors.add(:base, "Cannot delete task definition while it is used as a prerequisite. Remove the prerequisite links first.")
