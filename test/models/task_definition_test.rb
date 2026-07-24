@@ -67,6 +67,22 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert_empty task_definition.errors[:upload_requirements]
   end
 
+  def test_normalizes_duplicate_and_out_of_order_upload_requirement_keys
+    task_definition = FactoryBot.build(
+      :task_definition,
+      upload_requirements: [
+        { 'key' => 'file1', 'name' => 'main.rb', 'type' => 'code' },
+        { 'key' => 'file1', 'name' => 'output.png', 'type' => 'image' },
+        { 'key' => 'file5', 'name' => 'report.pdf', 'type' => 'document' }
+      ]
+    )
+
+    task_definition.save!
+    task_definition.reload
+
+    assert_equal %w[file0 file1 file2], task_definition.upload_requirements.pluck('key')
+  end
+
   def test_default_quality_points
     test_unit = Unit.first
     td = TaskDefinition.new({

@@ -55,6 +55,7 @@ class TaskDefinition < ApplicationRecord
 
   delegate :role_for, to: :unit
 
+  before_validation :normalize_upload_requirement_keys
   before_destroy :ensure_not_used_as_prerequisite, prepend: true
   before_destroy :delete_associated_files
 
@@ -405,6 +406,14 @@ class TaskDefinition < ApplicationRecord
 
       i += 1
     end
+  end
+
+  def normalize_upload_requirement_keys
+    return unless upload_requirements.is_a?(Array)
+    return unless upload_requirements.all? { |requirement| requirement.is_a?(Hash) && requirement.key?('key') }
+
+    normalized_requirements = self.class.normalize_upload_requirement_keys(upload_requirements)
+    self.upload_requirements = normalized_requirements unless normalized_requirements == upload_requirements
   end
 
   def submission_history_required_for_overseer
