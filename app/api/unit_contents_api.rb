@@ -32,7 +32,7 @@ class UnitContentsApi < Grape::API
       reference,
       current_path,
       username,
-      auth_token
+      content_token
     )
       return reference if reference.blank? || reference.match?(%r{\A(?:[a-z][a-z0-9+.-]*:|//|#)}i)
 
@@ -48,7 +48,7 @@ class UnitContentsApi < Grape::API
         content_route: resolved_path,
         content_site_id: site_id,
         username: username,
-        auth_token: auth_token
+        content_token: content_token
       )
       fragment = reference.include?('#') ? "##{reference.split('#', 2).last}" : ''
 
@@ -62,7 +62,7 @@ class UnitContentsApi < Grape::API
       site_id,
       current_path,
       username,
-      auth_token
+      content_token
     )
       rewrite_reference = lambda do |reference|
         unit_content_reference_url(
@@ -71,7 +71,7 @@ class UnitContentsApi < Grape::API
           reference,
           current_path,
           username,
-          auth_token
+          content_token
         )
       end
 
@@ -127,7 +127,7 @@ class UnitContentsApi < Grape::API
     optional :content_route, type: String, desc: 'The content route being loaded'
     optional :content_site_id, type: Integer, desc: 'Specific content site to load'
     requires :username, type: String, desc: 'Username associated with the scoped content token'
-    requires :auth_token, type: String, desc: 'Scoped content authentication token'
+    requires :content_token, type: String, desc: 'Scoped content authentication token'
   end
   get '/units/:id/content' do
     unit = Unit.find(params[:id])
@@ -180,7 +180,7 @@ class UnitContentsApi < Grape::API
       site.id,
       current_path,
       params[:username],
-      params[:auth_token]
+      params[:content_token]
     )
 
     content_type response_content_type
