@@ -483,6 +483,19 @@ class AuthenticationApi < Grape::API
     end
   end
 
+  desc 'Get unit content authentication token'
+  get '/auth/content' do
+    if authenticated?(:general)
+      token = current_user.auth_tokens.find_by(token_type: :content)
+      if token.nil? || token.auth_token_expiry <= Time.zone.now
+        token&.destroy
+        token = current_user.generate_content_authentication_token!
+      end
+
+      present :content_auth_token, token.authentication_token
+    end
+  end
+
   desc 'Get access token from the refresh token cookie'
   params do
     optional :delete_auth_token, type: Boolean, desc: 'Delete the auth token if also provided', default: true

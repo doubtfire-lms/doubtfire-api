@@ -98,6 +98,7 @@ module AuthenticationHelpers
       user_param, auth_param = get_user_and_token_from(:cookie)
     else
       user_param, auth_param = get_user_and_token_from(:header)
+      auth_param = params['content_token'] if token_type == :content
     end
 
     case user_auth_token_type(user_param, auth_param, token_type)
