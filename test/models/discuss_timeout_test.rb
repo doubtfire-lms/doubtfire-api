@@ -28,11 +28,11 @@ class DiscussTimeoutTest < ActiveSupport::TestCase
       assert_equal TaskStatus.discuss, task.reload.task_status
       assert task.notified_discuss_warning_at.present?
 
-      travel_to Time.zone.parse('2026-07-27 12:00:00') do
-        assert_equal 14, task.discuss_timeout_elapsed_days
-        assert_equal 1, unit.notify_discuss_timeouts!
-        assert_equal TaskStatus.fix_and_resubmit, task.reload.task_status
-      end
+      travel 4.days
+
+      assert_equal 14, task.discuss_timeout_elapsed_days
+      assert_equal 1, unit.notify_discuss_timeouts!
+      assert_equal TaskStatus.fix_and_resubmit, task.reload.task_status
     end
   end
 
