@@ -164,8 +164,10 @@ class AuthenticationApi < Grape::API
       requires :SAMLResponse, type: String, desc: 'SAML logout response data.'
     end
     post '/auth/saml_logout' do
-      response = OneLogin::RubySaml::Logoutresponse.new(params[:SAMLResponse], allowed_clock_drift: 1.second,
-                                                                               settings: AuthenticationHelpers.saml_settings)
+      response = OneLogin::RubySaml::Logoutresponse.new(
+        params[:SAMLResponse],
+        AuthenticationHelpers.saml_settings
+      )
 
       # Check if the SAML response is valid - if not log an error
       unless response.is_valid?
