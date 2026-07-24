@@ -191,7 +191,7 @@ class UnitContentsApi < Grape::API
     header['Access-Control-Expose-Headers'] =
       'Content-Disposition,X-Content-Site-Id,X-Content-Route,X-Content-Root-Dir'
     header['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-    header['Referrer-Policy'] = 'no-referrer'
+    header['Referrer-Policy'] = 'strict-origin'
     env['api.format'] = :binary
 
     body file_contents
