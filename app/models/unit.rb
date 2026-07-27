@@ -720,19 +720,18 @@ class Unit < ApplicationRecord
     chip_mapping = {}
 
     outcome_mapping.each do |source_outcome, new_outcome|
-      source_outcome.feedback_chips.each do |chip|
+      source_outcome.feedback_chips.find_each do |chip|
         new_chip = chip.dup
-        new_outcome.feedback_chips << new_chip
-        new_chip.learning_outcome_id = new_outcome.id
-        new_chip.parent_chip_id = nil
+        new_chip.learning_outcome = new_outcome
+        new_chip.parent_chip = nil
         new_chip.save!
-        chip_mapping[chip] = new_chip
+        chip_mapping[chip.id] = new_chip
       end
 
       source_outcome.feedback_chips.where.not(parent_chip_id: nil).find_each do |old_chip|
-        child_chip = chip_mapping[old_chip]
-        parent_chip = chip_mapping[old_chip.parent_chip]
-        child_chip.update(parent_chip_id: parent_chip.id)
+        child_chip = chip_mapping.fetch(old_chip.id)
+        parent_chip = chip_mapping.fetch(old_chip.parent_chip_id)
+        child_chip.update!(parent_chip: parent_chip)
       end
     end
 
