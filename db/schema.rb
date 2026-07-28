@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_24_015355) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_28_051502) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -61,6 +61,19 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_24_015355) do
     t.datetime "updated_at", null: false
     t.index ["feedback_chip_id"], name: "index_chip_usages_on_feedback_chip_id"
     t.index ["tutor_id"], name: "index_chip_usages_on_tutor_id"
+  end
+
+  create_table "comment_read_cursors", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "task_id", null: false
+    t.bigint "user_id", null: false
+    t.bigint "last_read_comment_id", null: false
+    t.datetime "read_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["last_read_comment_id"], name: "index_comment_read_cursors_on_last_read_comment_id"
+    t.index ["task_id", "user_id"], name: "index_comment_read_cursors_on_task_id_and_user_id", unique: true
+    t.index ["task_id"], name: "index_comment_read_cursors_on_task_id"
+    t.index ["user_id"], name: "index_comment_read_cursors_on_user_id"
   end
 
   create_table "comments_read_receipts", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
@@ -1026,6 +1039,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_24_015355) do
 
   add_foreign_key "chip_usages", "feedback_chips"
   add_foreign_key "chip_usages", "users", column: "tutor_id"
+  add_foreign_key "comment_read_cursors", "task_comments", column: "last_read_comment_id"
+  add_foreign_key "comment_read_cursors", "tasks"
+  add_foreign_key "comment_read_cursors", "users"
   add_foreign_key "feedback_chips", "feedback_chips", column: "parent_chip_id"
   add_foreign_key "feedback_chips", "learning_outcomes"
   add_foreign_key "learning_outcome_links", "learning_outcomes", column: "source_id"
