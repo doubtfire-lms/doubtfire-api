@@ -56,8 +56,8 @@ class EngagementsApi < Grape::API
     error!({ error: 'You do not have permission to view these engagements.' }, 403) unless authorise?(current_user, project, :get_engagements)
 
     engagements = engagements_for(project)
-                         .includes(:user, :engagement_comments)
-                         .order(:occurred_at, :created_at)
+                  .includes(:user, :engagement_comments)
+                  .order(:occurred_at, :created_at)
     present engagements, with: Entities::EngagementEntity
   end
 
@@ -67,8 +67,8 @@ class EngagementsApi < Grape::API
     error!({ error: 'You do not have permission to view this engagement.' }, 403) unless authorise?(current_user, project, :get_engagements)
 
     engagement = engagements_for(project)
-                        .includes(:user, engagement_comments: :user)
-                        .find(params[:id])
+                 .includes(:user, engagement_comments: :user)
+                 .find(params[:id])
     present engagement, with: Entities::EngagementDetailEntity
   end
 
