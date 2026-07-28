@@ -6,6 +6,8 @@ class Task < ApplicationRecord
   include ApplicationHelper
   include GradeHelper
 
+  attr_accessor :discussion_confirmed_for_transition
+
   #
   # Permissions around task data
   #
@@ -171,7 +173,8 @@ class Task < ApplicationRecord
   end
 
   def prevent_complete_if_requires_discussion
-    if task_definition&.requires_discussion && task_status == TaskStatus.complete && !has_discussed_in_class_comment?
+    if task_definition&.requires_discussion && task_status == TaskStatus.complete &&
+       !has_discussed_in_class_comment? && !discussion_confirmed_for_transition
       errors.add(:task_status, "cannot be 'complete' until task has been discussed in class")
     end
   end
@@ -662,7 +665,8 @@ class Task < ApplicationRecord
     else
       # Only tutors can perform these actions
       if role == :tutor
-        if status == TaskStatus.complete && task_definition.requires_discussion && !has_discussed_in_class_comment?
+        if status == TaskStatus.complete && task_definition.requires_discussion &&
+           !has_discussed_in_class_comment? && !discussion_confirmed_for_transition
           return nil
         end
 

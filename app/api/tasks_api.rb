@@ -169,10 +169,8 @@ class TasksApi < Grape::API
     # check the user can put this task
     if authorise? current_user, project, :make_submission
       task = project.task_for_task_definition(task_definition)
-
-      if !params[:discussed].nil? && authorise?(current_user, project, :assess)
-        task.add_discussed_comment(current_user)
-      end
+      mark_as_discussed = params[:discussed] == true && authorise?(current_user, project, :assess)
+      needs_discussed_comment = mark_as_discussed && !task.has_discussed_in_class_comment?
 
       # if trigger supplied...
       unless params[:trigger].nil?
@@ -199,24 +197,33 @@ class TasksApi < Grape::API
           error!({ error: 'This task can only be assessed in portfolio.' }, 403)
         end
 
-        if task.task_definition.requires_discussion && params[:trigger] == 'complete' && !task.has_discussed_in_class_comment?
+        if task.task_definition.requires_discussion && params[:trigger] == 'complete' &&
+           !task.has_discussed_in_class_comment? && !mark_as_discussed
           error!({ error: 'This task must be discussed in class before it can be marked complete.' }, 403)
         end
 
         logger.info "#{current_user.username} assessing task #{task.id} to #{params[:trigger]}"
-        result = task.trigger_transition(
-          trigger: params[:trigger],
-          by_user: current_user,
-          quality: params[:quality_pts],
-          recursive_fix: params[:trigger_recursive_fix],
-          check_feedback: true
-        )
+        begin
+          task.discussion_confirmed_for_transition = mark_as_discussed
+          result = task.trigger_transition(
+            trigger: params[:trigger],
+            by_user: current_user,
+            quality: params[:quality_pts],
+            recursive_fix: params[:trigger_recursive_fix],
+            check_feedback: true
+          )
+        ensure
+          task.discussion_confirmed_for_transition = false
+        end
+
         if result.nil? && task.errors.any?
           error!({ error: task.errors.full_messages.to_sentence }, 403)
         end
         if result.nil? && task.task_definition.restrict_status_updates
           error!({ error: 'This task can only be updated by your tutor.' }, 403)
         end
+        task.add_discussed_comment(current_user) if result && needs_discussed_comment
+
         SessionTracker.record_assessment_activity(
           action: "assessing",
           user: current_user,
@@ -225,6 +232,8 @@ class TasksApi < Grape::API
           task: task
         )
       end
+
+      task.add_discussed_comment(current_user) if params[:trigger].nil? && needs_discussed_comment
 
       # if grade was supplied
       unless grade.nil?
