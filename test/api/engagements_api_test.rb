@@ -59,6 +59,11 @@ class EngagementsApiTest < ActiveSupport::TestCase
     assert_equal [engagement.id], @project.engagements.pluck(:id)
     assert_equal [engagement.id], other_project.shared_engagements.pluck(:id)
     assert_equal [other_project.id], engagement.additional_projects.pluck(:id)
+
+    add_auth_header_for(user: other_student)
+    get "/api/projects/#{other_project.id}/engagements/#{engagement.id}"
+    assert_equal [@student.id, other_student.id].sort,
+                 last_response_body['students'].pluck('id').sort
   end
 
   def test_records_automatic_class_discussion_with_tutorial_context
