@@ -43,6 +43,134 @@ class UnitRole < ApplicationRecord
       .max_by(&:days_awaiting_feedback)
   end
 
+  # Operational workload data for the tutor dashboard. This intentionally uses
+  # the same task source as the tutor inbox so that dashboard figures follow the
+  # inbox's assignment and visibility rules.
+  def tutor_dashboard_stats(viewer:)
+    now = Time.zone.now
+    inbox_tasks = unit.tasks_for_task_inbox(user, true).to_a.uniq(&:task_id)
+    ready_status_id = TaskStatus.ready_for_feedback.id
+    need_help_status_id = TaskStatus.need_help.id
+    ready_tasks = inbox_tasks.select { |task| task.status_id.to_i == ready_status_id }
+
+    warning_cutoff = now - unit.feedback_warning_threshold_days.days
+    overflow_cutoff = now - unit.feedback_overflow_threshold_days.days
+    dated_ready_tasks = ready_tasks.select(&:submission_date)
+    overdue_tasks = dated_ready_tasks.select { |task| task.submission_date <= overflow_cutoff }
+    warning_tasks = dated_ready_tasks.select do |task|
+      task.submission_date <= warning_cutoff && task.submission_date > overflow_cutoff
+    end
+    within_threshold_tasks = dated_ready_tasks.select { |task| task.submission_date > warning_cutoff }
+
+    boolean_type = ActiveModel::Type::Boolean.new
+    viewer_can_moderate_target = viewer.role == Role.convenor || mentor_id == viewer.id
+    moderation_count =
+      if viewer_can_moderate_target
+        unit.tasks_for_moderation(viewer.user).count do |task|
+          task_tutor = task.project.tutor_for(task.task_definition)
+          task_tutor.present? && task_tutor.id == user_id
+        end
+      end
+
+    {
+      generated_at: now,
+      unit_role: {
+        id: id,
+        role: role.name,
+        user: {
+          id: user.id,
+          name: user.name,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          nickname: user.nickname
+        }
+      },
+      thresholds: {
+        warning_days: unit.feedback_warning_threshold_days,
+        overflow_days: unit.feedback_overflow_threshold_days
+      },
+      inbox: {
+        total_count: inbox_tasks.length,
+        ready_for_feedback_count: ready_tasks.length,
+        overdue_count: overdue_tasks.length,
+        needs_help_count: inbox_tasks.count { |task| task.status_id.to_i == need_help_status_id },
+        unread_activity_count: inbox_tasks.count { |task| task.number_unread.to_i.positive? },
+        pinned_count: inbox_tasks.count { |task| boolean_type.cast(task.pinned) },
+        age_buckets: {
+          within_threshold_count: within_threshold_tasks.length,
+          warning_count: warning_tasks.length,
+          overdue_count: overdue_tasks.length,
+          missing_submission_date_count: ready_tasks.count { |task| task.submission_date.blank? }
+        },
+        oldest_tasks: dashboard_oldest_tasks(ready_tasks, now),
+        by_task_definition: dashboard_task_definition_breakdown(ready_tasks, overflow_cutoff)
+      },
+      tutor_notes: {
+        total_count: tutor_notes.count,
+        unread_by_tutor_count: tutor_notes
+          .where(read_by_unit_role: false)
+          .where.not(user_id: user_id)
+          .count
+      },
+      moderation: {
+        pending_count: moderation_count
+      },
+      permissions: {
+        can_switch_tutor: viewer.role == Role.convenor,
+        can_view_moderation: viewer.role == Role.convenor || unit.staff.where(mentor_id: viewer.id).exists?,
+        can_view_overflow: viewer.can_mark_overflow_tasks?,
+        can_access_tutor_notes: viewer == self || viewer.role == Role.convenor
+      }
+    }
+  end
+
+  def dashboard_oldest_tasks(ready_tasks, now)
+    task_records = Task
+                   .where(id: ready_tasks.map(&:task_id))
+                   .includes(:task_definition, project: [:user, { unit: { teaching_period: :breaks } }])
+                   .index_by(&:id)
+
+    ready_tasks
+      .filter_map { |task| task_records[task.task_id] }
+      .select(&:submission_date)
+      .sort_by(&:submission_date)
+      .first(5)
+      .map do |task|
+        {
+          id: task.id,
+          project_id: task.project_id,
+          student_id: task.project.student.id,
+          student_name: task.project.student.name,
+          task_definition_id: task.task_definition_id,
+          task_definition_abbreviation: task.task_definition.abbreviation,
+          task_definition_name: task.task_definition.name,
+          submission_date: task.submission_date,
+          days_awaiting_feedback: task.days_awaiting_feedback(now)
+        }
+      end
+  end
+
+  def dashboard_task_definition_breakdown(ready_tasks, overflow_cutoff)
+    result = ready_tasks.group_by(&:task_definition_id).filter_map do |task_definition_id, tasks|
+      task_definition = unit.task_definitions.find { |definition| definition.id == task_definition_id }
+      next if task_definition.nil?
+
+      {
+        task_definition_id: task_definition.id,
+        abbreviation: task_definition.abbreviation,
+        name: task_definition.name,
+        ready_for_feedback_count: tasks.length,
+        overdue_count: tasks.count do |task|
+          task.submission_date.present? && task.submission_date <= overflow_cutoff
+        end
+      }
+    end
+
+    result.sort_by { |row| [-row[:overdue_count], -row[:ready_for_feedback_count], row[:abbreviation]] }
+  end
+
+  private :dashboard_oldest_tasks, :dashboard_task_definition_breakdown
+
   #
   # Permissions around unit role data
   #
