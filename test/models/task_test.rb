@@ -1851,7 +1851,7 @@ class TaskTest < ActiveSupport::TestCase
     task3.trigger_transition(trigger: 'ready_for_feedback', by_user: unit.main_convenor_user)
     task4.trigger_transition(trigger: 'ready_for_feedback', by_user: unit.main_convenor_user)
 
-    task2.comments.delete_all
+    task2.comments.destroy_all
 
     task1.reload
     task2.reload
