@@ -52,8 +52,10 @@ class CommentReadCursorTest < ActiveSupport::TestCase
   def test_destroying_the_cursor_comment_rewinds_each_users_cursor
     project = FactoryBot.create(:project)
     task = project.task_for_task_definition(project.unit.task_definitions.first)
-    author = project.unit.main_convenor_user
-    readers = [project.student, FactoryBot.create(:user, :tutor)]
+    other_staff = FactoryBot.create(:user, :tutor)
+    project.unit.employ_staff(other_staff, Role.tutor)
+    author = project.student
+    readers = [project.tutor_for(task.task_definition), other_staff]
     previous_comment = task.add_text_comment(author, 'First')
     cursor_comment = task.add_text_comment(author, 'Second')
 
