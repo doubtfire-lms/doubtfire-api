@@ -2452,86 +2452,51 @@ class Unit < ApplicationRecord
       .select('tutorials.tutorial_stream_id as tutorial_stream_id', 'tutorials.id as tutorial_id', 'project_id', 'tutorials.unit_role_id as unit_role_id').to_sql
   end
 
-  def task_comment_summary_subquery(user)
-    TaskComment
-      .joins(task: :project)
-      .joins(
-        "LEFT JOIN comment_read_cursors inbox_cursor " \
-        "ON inbox_cursor.task_id = task_comments.task_id " \
-        "AND inbox_cursor.user_id = #{user.id.to_i}"
-      )
-      .where(projects: { unit_id: id })
-      .where("task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment'")
-      .where(
-        "task_comments.content_type IS NULL OR " \
-        "task_comments.content_type NOT IN ('plan', 'discussed_in_class')"
-      )
-      .select(
-        'task_comments.task_id AS task_id',
-        'SUM(CASE WHEN inbox_cursor.last_read_comment_id IS NULL ' \
-        'OR task_comments.id > inbox_cursor.last_read_comment_id THEN 1 ELSE 0 END) AS number_unread',
-        'MAX(task_comments.created_at) AS latest_comment_at',
-        "MAX(CASE WHEN task_comments.type = 'ExtensionComment' " \
-        'AND task_comments.date_extension_assessed IS NULL THEN 1 ELSE 0 END) AS has_extensions'
-      )
-      .group('task_comments.task_id')
-      .to_sql
-  end
-
-  def task_similarity_summary_subquery
-    TaskSimilarity
-      .joins(task: :project)
-      .where(projects: { unit_id: id })
-      .where(flagged: true)
-      .select('task_similarities.task_id AS task_id', 'COUNT(*) AS similar_to_count')
-      .group('task_similarities.task_id')
-      .to_sql
-  end
-
   #
   # Return all tasks from the database for this unit and given user
   #
   def get_all_tasks_for(user, my_tutorials_only = false)
-    result = student_tasks
-             .joins(:task_status)
-             .joins(
-               "LEFT OUTER JOIN (#{tutorial_enrolment_subquery}) AS sq " \
-               'ON sq.project_id = projects.id ' \
-               'AND (sq.tutorial_stream_id = task_definitions.tutorial_stream_id ' \
-               'OR sq.tutorial_stream_id IS NULL)'
-             )
-             .joins(
-               "LEFT OUTER JOIN (#{task_comment_summary_subquery(user)}) AS comment_summary " \
-               'ON comment_summary.task_id = tasks.id'
-             )
-             .joins(
-               "LEFT JOIN task_pins AS inbox_pins " \
-               "ON inbox_pins.task_id = tasks.id AND inbox_pins.user_id = #{user.id.to_i}"
-             )
-             .joins(
-               "LEFT OUTER JOIN (#{task_similarity_summary_subquery}) AS similarity_summary " \
-               'ON similarity_summary.task_id = tasks.id'
-             )
-             .select(
-               'sq.tutorial_id AS tutorial_id',
-               'sq.tutorial_stream_id AS tutorial_stream_id',
-               'tasks.id',
-               'COALESCE(comment_summary.number_unread, 0) AS number_unread',
-               'inbox_pins.task_id IS NOT NULL AS pinned',
-               'COALESCE(comment_summary.has_extensions, 0) > 0 AS has_extensions',
-               'tasks.project_id',
-               'tasks.id AS task_id',
-               'tasks.task_definition_id',
-               'task_definitions.start_date AS start_date',
-               'task_statuses.id AS status_id',
-               'tasks.completion_date',
-               'tasks.times_assessed',
-               'tasks.submission_date',
-               'tasks.grade AS grade',
-               'tasks.quality_pts',
-               'COALESCE(similarity_summary.similar_to_count, 0) AS similar_to_count',
-               'comment_summary.latest_comment_at'
-             )
+    result =  student_tasks.
+              joins(:task_status).
+              joins("LEFT OUTER JOIN (#{tutorial_enrolment_subquery}) as sq ON sq.project_id = projects.id AND (sq.tutorial_stream_id = task_definitions.tutorial_stream_id OR sq.tutorial_stream_id IS NULL)").
+              joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment') AND (task_comments.content_type IS NULL OR (task_comments.content_type <> 'plan' AND task_comments.content_type <> 'discussed_in_class'))").
+              joins("LEFT JOIN comment_read_cursors crc ON crc.task_id = tasks.id AND crc.user_id = #{user.id}").
+              joins("LEFT JOIN task_pins ON task_pins.task_id = tasks.id AND task_pins.user_id = #{user.id}").
+              joins('LEFT OUTER JOIN task_similarities ON tasks.id = task_similarities.task_id').
+              select(
+                'sq.tutorial_id AS tutorial_id',
+                'sq.tutorial_stream_id AS tutorial_stream_id',
+                'tasks.id',
+                "SUM(case when (crc.last_read_comment_id IS NULL OR task_comments.id > crc.last_read_comment_id) AND NOT task_comments.id is null then 1 else 0 end) as number_unread",
+                'COUNT(distinct task_pins.task_id) != 0 as pinned',
+                "SUM(case when task_comments.date_extension_assessed IS NULL AND task_comments.type = 'ExtensionComment' AND NOT task_comments.id IS NULL THEN 1 ELSE 0 END) > 0 as has_extensions",
+                'project_id',
+                'tasks.id as task_id',
+                'task_definition_id',
+                'task_definitions.start_date as start_date',
+                'task_statuses.id as status_id',
+                'completion_date',
+                'times_assessed',
+                'submission_date',
+                'tasks.grade as grade',
+                'quality_pts',
+                'SUM(case when task_similarities.flagged then 1 else 0 end) as similar_to_count'
+              ).
+              group(
+                'sq.tutorial_id',
+                'sq.tutorial_stream_id',
+                'task_statuses.id',
+                'project_id',
+                'tasks.id',
+                'task_definition_id',
+                'task_definitions.start_date',
+                'status_id',
+                'completion_date',
+                'times_assessed',
+                'submission_date',
+                'grade',
+                'quality_pts'
+              )
     if my_tutorials_only
       unit_role = unit_role_for(user)
       unless unit_role.nil?
@@ -2564,12 +2529,8 @@ class Unit < ApplicationRecord
   #
   def tasks_for_task_inbox(user, my_students_only = false)
     get_all_tasks_for(user, my_students_only)
-      .where(
-        'task_statuses.id IN (:ids) OR inbox_pins.task_id IS NOT NULL OR ' \
-        'COALESCE(comment_summary.number_unread, 0) > 0',
-        ids: [TaskStatus.ready_for_feedback, TaskStatus.need_help]
-      )
-      .order('pinned DESC, submission_date ASC, latest_comment_at ASC, task_definition_id ASC')
+      .having('task_statuses.id IN (:ids) OR COUNT(task_pins.task_id) > 0 OR SUM(case when (crc.last_read_comment_id IS NULL OR task_comments.id > crc.last_read_comment_id) AND NOT task_comments.id is null then 1 else 0 end) > 0', ids: [TaskStatus.ready_for_feedback, TaskStatus.need_help])
+      .order('pinned DESC, submission_date ASC, MAX(task_comments.created_at) ASC, task_definition_id ASC')
   end
 
   #
