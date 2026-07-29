@@ -9,44 +9,20 @@ class CommentReadCursor < ApplicationRecord
   validates :task_id, uniqueness: { scope: :user_id }
   validate :last_read_comment_belongs_to_task
 
-  def self.advance(task_id:, user_ids:, comment_id:, read_at: Time.current)
-    user_ids = Array(user_ids).compact.map(&:to_i).uniq
-    return if user_ids.empty?
-
-    now = Time.current
-
-    transaction do
-      cursors = where(task_id: task_id, user_id: user_ids)
-
-      # rubocop:disable Rails/SkipsModelValidations
-      missing_user_ids = user_ids - cursors.pluck(:user_id)
-
-      # Create first-time cursors in one query.
-      if missing_user_ids.any?
-        insert_all(
-          missing_user_ids.map do |user_id|
-            {
-              task_id: task_id,
-              user_id: user_id,
-              last_read_comment_id: comment_id,
-              read_at: read_at,
-              created_at: now,
-              updated_at: now
-            }
-          end
-        )
-      end
-
-      # Existing cursors only move forward.
-      cursors
-        .where('last_read_comment_id < ?', comment_id)
-        .update_all(
-          last_read_comment_id: comment_id,
-          read_at: read_at,
-          updated_at: now
-        )
-      # rubocop:enable Rails/SkipsModelValidations
+  def self.advance(task:, user:, comment:, read_at: Time.current)
+    cursor = create_or_find_by!(task: task, user: user) do |new_cursor|
+      new_cursor.last_read_comment = comment
+      new_cursor.read_at = read_at
     end
+
+    # A cursor is a high-water mark, so an older comment cannot move it backwards.
+    return cursor if cursor.last_read_comment_id >= comment.id
+
+    cursor.with_lock do
+      cursor.update!(last_read_comment: comment, read_at: read_at) if cursor.last_read_comment_id < comment.id
+    end
+
+    cursor
   end
 
   private

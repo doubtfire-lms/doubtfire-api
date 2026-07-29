@@ -81,12 +81,8 @@ class TaskComment < ApplicationRecord
     }
   end
 
-  def create_comment_read_receipt_entry(user)
-    CommentReadCursor.advance(
-      task_id: task_id,
-      user_ids: user.id,
-      comment_id: id
-    )
+  def advance_read_cursor(user)
+    CommentReadCursor.advance(task: task, user: user, comment: self)
   end
 
   def comment
@@ -162,18 +158,10 @@ class TaskComment < ApplicationRecord
     end
   end
 
-  def mark_as_read(user, unit = self.unit)
-    return if read_by?(user) # avoid propagating if not needed
+  def mark_as_read(user)
+    return if read_by?(user)
 
-    if user == project.tutor_for(task.task_definition)
-      CommentReadCursor.advance(
-        task_id: task_id,
-        user_ids: unit.staff.pluck(:user_id),
-        comment_id: id
-      )
-    else
-      create_comment_read_receipt_entry(user)
-    end
+    advance_read_cursor(user)
   end
 
   def mark_as_unread(user)

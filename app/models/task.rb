@@ -235,7 +235,7 @@ class Task < ApplicationRecord
     end
 
     latest_comment_by_task.each_value do |comment|
-      comment.mark_as_read(user, unit)
+      comment.mark_as_read(user)
     end
   end
 
@@ -1092,7 +1092,7 @@ class Task < ApplicationRecord
       raise "Error attaching uploaded file." unless discussion.add_prompt(prompt, index)
     end
 
-    discussion.mark_as_read(user, unit)
+    discussion.mark_as_read(user)
 
     logger.info(discussion)
     return discussion
