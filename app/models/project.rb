@@ -279,47 +279,22 @@ class Project < ApplicationRecord
 
   def task_details_for_shallow_serializer(user)
     teaching_breaks = unit.teaching_period&.breaks.to_a
-    comment_summary = TaskComment
-                      .joins(:task)
-                      .joins(
-                        "LEFT JOIN comment_read_cursors project_cursor " \
-                        "ON project_cursor.task_id = task_comments.task_id " \
-                        "AND project_cursor.user_id = #{user.id.to_i}"
-                      )
-                      .where(tasks: { project_id: id })
-                      .where("task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment'")
-                      .select(
-                        'task_comments.task_id AS task_id',
-                        'SUM(CASE WHEN project_cursor.last_read_comment_id IS NULL ' \
-                        'OR task_comments.id > project_cursor.last_read_comment_id ' \
-                        'THEN 1 ELSE 0 END) AS number_unread'
-                      )
-                      .group('task_comments.task_id')
-                      .to_sql
-
-    similarity_summary = TaskSimilarity
-                         .joins(:task)
-                         .where(tasks: { project_id: id })
-                         .where(flagged: true)
-                         .select('task_similarities.task_id AS task_id', 'COUNT(*) AS similar_to_count')
-                         .group('task_similarities.task_id')
-                         .to_sql
 
     tasks
       .joins(:task_status)
-      .joins(
-        "LEFT OUTER JOIN (#{comment_summary}) AS project_comment_summary " \
-        'ON project_comment_summary.task_id = tasks.id'
-      )
-      .joins(
-        "LEFT OUTER JOIN (#{similarity_summary}) AS project_similarity_summary " \
-        'ON project_similarity_summary.task_id = tasks.id'
-      )
+      .joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment')")
+      .joins("LEFT JOIN comment_read_cursors crc ON crc.task_id = tasks.id AND crc.user_id = #{user.id}")
+      .joins('LEFT OUTER JOIN task_similarities ON tasks.id = task_similarities.task_id')
       .select(
-        'COALESCE(project_comment_summary.number_unread, 0) AS number_unread', 'project_id', 'tasks.id as id',
+        'SUM(case when (crc.last_read_comment_id IS NULL OR task_comments.id > crc.last_read_comment_id) AND NOT task_comments.id is null then 1 else 0 end) as number_unread', 'project_id', 'tasks.id as id',
         'task_definition_id', 'task_statuses.id as status_id',
         'completion_date', 'times_assessed', 'submission_date', 'tasks.grade as grade', 'quality_pts', 'include_in_portfolio', 'grade',
-        'COALESCE(project_similarity_summary.similar_to_count, 0) AS similar_to_count'
+        'SUM(case when task_similarities.flagged then 1 else 0 end) as similar_to_count'
+      )
+      .group(
+        'task_statuses.id', 'tasks.project_id', 'tasks.id', 'task_definition_id', 'status_id',
+        'completion_date', 'times_assessed', 'submission_date', 'grade', 'quality_pts',
+        'include_in_portfolio', 'grade'
       )
       .map do |r|
         t = Task.find(r.id)
