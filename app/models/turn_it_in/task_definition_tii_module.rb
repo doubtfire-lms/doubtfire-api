@@ -21,14 +21,14 @@ module TaskDefinitionTiiModule
   def tii_checks?
     TurnItIn.enabled? &&
       !upload_requirements.empty? &&
-      ((0..upload_requirements.length - 1).map { |i| use_tii?(i) }.inject(:|) || false)
+      ((0..(upload_requirements.length - 1)).map { |i| use_tii?(i) }.inject(:|) || false)
   end
 
   def had_tii_checks_before_last_save?
     TurnItIn.enabled? &&
       upload_requirements_before_last_save.present? &&
       !upload_requirements_before_last_save.empty? &&
-      ((0..upload_requirements_before_last_save.length - 1).map { |i| use_tii?(i, upload_requirements_before_last_save) }.inject(:|) || false)
+      ((0..(upload_requirements_before_last_save.length - 1)).map { |i| use_tii?(i, upload_requirements_before_last_save) }.inject(:|) || false)
   end
 
   # Send all doc and docx files from the task resources to turn it in

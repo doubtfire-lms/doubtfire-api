@@ -580,7 +580,7 @@ class TaskDefinition < ApplicationRecord
         target_day,
         due_week,
         due_day,
-        tutorial_stream.present? ? tutorial_stream.abbreviation : nil,
+        tutorial_stream.presence&.abbreviation,
         assess_in_portfolio_only,
         task_prerequisites.map do |tp|
           prereq = TaskDefinition.find(tp.prerequisite_id)

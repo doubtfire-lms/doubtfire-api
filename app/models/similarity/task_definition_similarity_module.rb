@@ -15,12 +15,12 @@ module TaskDefinitionSimilarityModule
     logger.info "Deleting old links for task definition #{id} - #{abbreviation}"
     MossTaskSimilarity.joins(:task).where('tasks.task_definition_id' => id).find_each do |plnk|
       pair = MossTaskSimilarity.find_by(id: plnk.id)
-      pair.destroy! if pair.present?
+      pair.presence&.destroy!
     end
 
     JplagTaskSimilarity.joins(:task).where('tasks.task_definition_id' => id).find_each do |plnk|
       pair = JplagTaskSimilarity.find_by(id: plnk.id)
-      pair.destroy! if pair.present?
+      pair.presence&.destroy!
     end
   end
 end

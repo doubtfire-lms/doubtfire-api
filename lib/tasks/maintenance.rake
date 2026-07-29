@@ -69,7 +69,7 @@ namespace :maintenance do
     begin
       exception = StandardError.new(message)
       mail = ErrorLogMailer.error_message('Accept Submission Cleanup', message, exception)
-      mail.deliver_now if mail.present?
+      mail.presence&.deliver_now
     rescue StandardError => e
       Rails.logger.error "Failed to send error log to admin for task #{task.id}!\n#{e.message}"
     end
@@ -130,7 +130,7 @@ namespace :maintenance do
 
     OverseerAssessment
       .pre_queued
-      .includes(task: [project: :user])
+      .includes(task: [{ project: :user }])
       .where('created_at < ?', stale_before)
       .find_each do |assessment|
       if accept_overseer_job_present?(assessment.id)

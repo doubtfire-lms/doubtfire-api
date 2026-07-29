@@ -554,7 +554,7 @@ class TaskDefinitionsApi < Grape::API
     subquery = unit
                .tutorial_enrolments
                .joins(:tutorial)
-               .where('tutorials.tutorial_stream_id = :sid OR tutorials.tutorial_stream_id IS NULL', sid: (stream.present? ? stream.id : nil))
+               .where('tutorials.tutorial_stream_id = :sid OR tutorials.tutorial_stream_id IS NULL', sid: stream.presence&.id)
                .select('tutorials.tutorial_stream_id as tutorial_stream_id', 'tutorials.id as tutorial_id', 'project_id').to_sql
 
     result = unit.student_tasks

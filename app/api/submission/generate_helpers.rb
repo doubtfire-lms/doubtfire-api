@@ -6,7 +6,7 @@ module Submission::GenerateHelpers
   # Scoops out a files array from the params provided
   #
   def scoop_files(params, upload_reqs)
-    files = params.reject { |key| !(key =~ /^file\d+$/) }
+    files = params.slice(*params.keys.grep(/\Afile\d+\z/))
 
     error!({ error: 'Upload requirements mismatch with files provided' }, 403) if files.length != upload_reqs.length
     #

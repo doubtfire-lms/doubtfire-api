@@ -151,7 +151,7 @@ class UnitContentsApi < Grape::API
 
     content_route = URI::DEFAULT_PARSER.unescape(params[:content_route].presence || '/')
     route_parts = content_route.split('/').reject(&:blank?)
-    error!({ error: 'Invalid unit content route' }, 422) if route_parts.any? { |part| ['.', '..'].include?(part) }
+    error!({ error: 'Invalid unit content route' }, 422) if route_parts.intersect?(['.', '..'])
 
     root_parts = site.root_dir.to_s.split('/').reject(&:blank?)
     requested_entry_path = (root_parts + route_parts).join('/')

@@ -111,7 +111,7 @@ class SubmissionHistory < ApplicationRecord
     buffer.string
   end
 
-  def has_submission_files? # rubocop:disable Naming/PredicateName
+  def has_submission_files? # rubocop:disable Naming/PredicatePrefix
     return false unless File.exist?(archive_file_name)
 
     Zip::File.open(archive_file_name) { |archive| submission_entries(archive).any? }

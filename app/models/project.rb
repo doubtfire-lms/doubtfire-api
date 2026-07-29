@@ -233,7 +233,7 @@ class Project < ApplicationRecord
   def tutorial_enrolment_for_stream(tutorial_stream)
     tutorial_enrolments
       .joins(:tutorial)
-      .where('tutorials.tutorial_stream_id = :sid OR tutorials.tutorial_stream_id IS NULL', sid: (tutorial_stream.present? ? tutorial_stream.id : nil))
+      .where('tutorials.tutorial_stream_id = :sid OR tutorials.tutorial_stream_id IS NULL', sid: (tutorial_stream.presence&.id))
       .first
   end
 

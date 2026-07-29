@@ -24,7 +24,7 @@ class D2lPostGradesJob
     logger.info "Finished posting grades for unit #{unit.id} by user #{user.id}"
 
     mail = D2lResultMailer.result_message(unit, user)
-    mail.deliver if mail.present?
+    mail.presence&.deliver
 
     logger.info "Sent email to user #{user.id} for unit #{unit.id} grade transfer result"
   rescue StandardError => e
@@ -32,7 +32,7 @@ class D2lPostGradesJob
 
     begin
       mail = D2lResultMailer.result_message(unit, user, result_message: "failed. Please check the D2L settings for the unit, and your permissions within D2L to upload results. #{e.message}", success: false)
-      mail.deliver if mail.present?
+      mail.presence&.deliver
 
       logger.info "Sent fail email to user #{user.id} for unit #{unit.id} grade transfer result"
     rescue StandardError => exception
