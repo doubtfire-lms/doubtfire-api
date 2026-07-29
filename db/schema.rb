@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_28_051502) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_29_020310) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -558,6 +558,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_28_051502) do
     t.bigint "reply_to_id"
     t.bigint "commentable_id"
     t.string "commentable_type"
+    t.integer "attention_audience"
     t.index ["assessor_id"], name: "index_task_comments_on_assessor_id"
     t.index ["commentable_type", "commentable_id"], name: "index_task_comments_on_commentable_type_and_commentable_id"
     t.index ["discussion_comment_id"], name: "index_task_comments_on_discussion_comment_id"

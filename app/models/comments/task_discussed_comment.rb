@@ -1,6 +1,7 @@
 class TaskDiscussedComment < TaskComment
   before_create do
     self.content_type = :discussed_in_class
+    self.attention_audience = :none
   end
 
   after_create do

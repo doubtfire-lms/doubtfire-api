@@ -230,6 +230,8 @@ class Task < ApplicationRecord
     latest_comment_by_task = {}
 
     comments.each do |comment|
+      next unless comment.requires_attention_for?(user)
+
       current = latest_comment_by_task[comment.task_id]
       latest_comment_by_task[comment.task_id] = comment if current.nil? || current.id < comment.id
     end
@@ -891,7 +893,11 @@ class Task < ApplicationRecord
           # Since we are calling this assess method again, we recursively check for more dependent tasks that need to be updated
           task.assess(TaskStatus.fix_and_resubmit, assessor, assess_date, recursive_fix)
           task.add_status_comment(assessor, TaskStatus.fix_and_resubmit)
-          task.add_text_comment(assessor, "**Automated comment**: A prerequisite task was updated to Fix and Resubmit, so this task was updated as well. You may need to review and update the prerequisite before resubmitting.")
+          task.add_text_comment(
+            assessor,
+            "**Automated comment**: A prerequisite task was updated to Fix and Resubmit, so this task was updated as well. You may need to review and update the prerequisite before resubmitting.",
+            attention_audience: :student
+          )
         end
       end
 
@@ -991,7 +997,7 @@ class Task < ApplicationRecord
     task_definition.weighting.to_f
   end
 
-  def add_text_comment(user, text, reply_to_id = nil)
+  def add_text_comment(user, text, reply_to_id = nil, attention_audience: nil)
     text = text.strip
     return nil if user.nil? || text.nil? || text.empty?
 
@@ -1009,6 +1015,7 @@ class Task < ApplicationRecord
     comment.content_type = :text
     comment.recipient = user == project.student ? project.tutor_for(task_definition) : project.student
     comment.reply_to_id = reply_to_id
+    comment.attention_audience = attention_audience if attention_audience.present?
     comment.save!
 
     comment
@@ -1631,7 +1638,11 @@ class Task < ApplicationRecord
     rescue => e
       SubmissionHistory.clear_document_previews(self)
       trigger_transition trigger: 'fix', by_user: project.tutor_for(task_definition)
-      add_text_comment project.tutor_for(task_definition), "**Automated Comment**: Something went wrong with your submission. Check the files and resubmit this task. #{e.message}"
+      add_text_comment(
+        project.tutor_for(task_definition),
+        "**Automated Comment**: Something went wrong with your submission. Check the files and resubmit this task. #{e.message}",
+        attention_audience: :student
+      )
       raise e
     ensure
       # Ensure latex aux file is removed - if broken will cause issues for next submission in sidekiq

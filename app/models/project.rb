@@ -279,10 +279,11 @@ class Project < ApplicationRecord
 
   def task_details_for_shallow_serializer(user)
     teaching_breaks = unit.teaching_period&.breaks.to_a
+    attention_audience = TaskComment.attention_audiences.fetch(user == student ? 'student' : 'staff')
 
     tasks
       .joins(:task_status)
-      .joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment')")
+      .joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id AND (task_comments.attention_audience IS NULL OR task_comments.attention_audience = #{attention_audience}) AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment')")
       .joins("LEFT JOIN comment_read_cursors crc ON crc.task_id = tasks.id AND crc.user_id = #{user.id}")
       .joins('LEFT OUTER JOIN task_similarities ON tasks.id = task_similarities.task_id')
       .select(

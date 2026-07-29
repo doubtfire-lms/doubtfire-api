@@ -1,6 +1,7 @@
 class TaskCheckedInComment < TaskComment
   before_create do
     self.content_type = :checked_in
+    self.attention_audience = :none
   end
 
   after_create do

@@ -78,4 +78,37 @@ class CommentReadCursorTest < ActiveSupport::TestCase
 
     assert_nil CommentReadCursor.find_by(task: task, user: reader)
   end
+
+  def test_only_staff_attention_comments_count_in_the_tutor_inbox
+    project = FactoryBot.create(:project)
+    task = project.task_for_task_definition(project.unit.task_definitions.first)
+    tutor = project.tutor_for(task.task_definition)
+
+    student_comment = task.add_text_comment(project.student, 'Please review this')
+    status_comment = task.add_status_comment(project.student, TaskStatus.ready_for_feedback)
+    assessment_comment = AssessmentComment.create!(
+      task: task,
+      user: tutor,
+      recipient: project.student,
+      comment: 'Automated assessment complete'
+    )
+
+    assert student_comment.attention_staff?
+    assert status_comment.attention_none?
+    assert assessment_comment.attention_student?
+    assert student_comment.new_for?(tutor)
+    assert_not status_comment.new_for?(tutor)
+    assert_not assessment_comment.new_for?(tutor)
+    assert_nil CommentReadCursor.find_by(task: task, user: tutor)
+
+    inbox_task = project.unit.tasks_for_task_inbox(tutor).find { |item| item.task_id == task.id }
+    assert_not_nil inbox_task
+    assert_equal 1, inbox_task.number_unread.to_i
+
+    task.mark_comments_as_read(tutor, task.comments)
+
+    cursor = CommentReadCursor.find_by!(task: task, user: tutor)
+    assert_equal student_comment.id, cursor.last_read_comment_id
+    assert_not(project.unit.tasks_for_task_inbox(tutor).any? { |item| item.task_id == task.id })
+  end
 end

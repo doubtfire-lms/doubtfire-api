@@ -8,6 +8,8 @@ class TaskComment < ApplicationRecord
   include FileHelper
   include AuthorisationHelpers
 
+  enum :attention_audience, { none: 0, student: 1, staff: 2 }, prefix: :attention
+
   belongs_to :task, optional: false # Foreign key
   belongs_to :user, optional: false
   has_one :unit, through: :task
@@ -32,6 +34,8 @@ class TaskComment < ApplicationRecord
   validates :recipient, presence: true
   validates :comment, length: { minimum: 0, maximum: 4095, allow_blank: true }
   validate :valid_reply_to?, on: :create
+
+  before_validation :set_default_attention_audience, on: :create
 
   # After create, mark as read by user creating
   after_create do
@@ -169,17 +173,28 @@ class TaskComment < ApplicationRecord
   end
 
   def new_for?(user)
-    !read_by? user
+    requires_attention_for?(user) && !read_by?(user)
   end
 
   def read_by?(user)
+    return true if self.user == user || !requires_attention_for?(user)
+
     cursor = CommentReadCursor.find_by(task_id: task_id, user_id: user.id)
     cursor.present? && cursor.last_read_comment_id >= id
   end
 
   def time_read_by(user)
+    return nil unless requires_attention_for?(user)
+
     cursor = CommentReadCursor.find_by(task_id: task_id, user_id: user.id)
     cursor&.read_at if cursor&.last_read_comment_id.to_i >= id
+  end
+
+  def requires_attention_for?(user)
+    return true if attention_audience.nil?
+    return attention_student? if user == project.student
+
+    attention_staff?
   end
 
   def rewind_comment_read_cursors
@@ -201,5 +216,13 @@ class TaskComment < ApplicationRecord
       )
       # rubocop:enable Rails/SkipsModelValidations
     end
+  end
+
+  private
+
+  def set_default_attention_audience
+    return if attention_audience.present? || user.nil? || task.nil?
+
+    self.attention_audience = user == task.project.student ? :staff : :student
   end
 end
