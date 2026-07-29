@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style type="text/css">
+    .main {
+      font-family: "Lucida Grande", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: #333;
+      font-size: 14px;
+      width: 100%;
+      max-width: 800px;
+      margin: 100px auto 0px auto;
+      background-image: url('<%= @doubtfire_host %>/assets/images/logo.png');
+      background-size: 3.5em;
+      background-repeat: no-repeat;
+      background-position: top 40px right 45px;
+      padding: 30px 40px;
+      border: solid 1px rgb(240, 240, 240);
+      line-height: 200%;
+      text-align: justify;
+    }
+    footer, .footer {
+      font-family: "Lucida Grande", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      text-align: center;
+      margin-top: 10px;
+      color: #aaa;
+      font-size: 0.7em;
+    }
+    .subtext {
+      color: #aaa;
+      font-size: 0.7em;
+      margin-bottom: 10px;
+      margin-top: -10px;
+    }
+    a, a:visited {
+      color: #6a97d2;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    h1 {
+      font-size: 1.1em;
+    }
+    .notification-box {
+      background: #fafafa;
+      border-left: 4px solid #1565c0;
+      margin: 20px 0;
+      padding: 15px 20px;
+    }
+    .notification-box.warning {
+      border-left-color: #ed6c02;
+    }
+    .notification-box.critical {
+      border-left-color: #c62828;
+    }
+    .notification-box p {
+      margin: 8px 0 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="main">
+    <h1><%= @unit.name %> - Notification Summary</h1>
+    <p class="subtext"><%= @unit.code %></p>
+
+    <p>Hi <%= @recipient.first_name %>,</p>
+
+    <p>
+      You have <%= @notification_count %> new <%= 'change'.pluralize(@notification_count) %>
+      across <%= @groups.count %> <%= 'notification'.pluralize(@groups.count) %>.
+    </p>
+
+    <% @groups.each do |group| %>
+      <div class="notification-box <%= group[:severity] %>">
+        <strong><%= group[:summary] %></strong>
+        <% if group[:task] %>
+          <p>
+            <a href="<%= @doubtfire_host %>/projects/<%= group[:task][:project_id] %>/dashboard/<%= group[:task][:abbreviation] %><%= '?tutor=true' if group[:task][:staff_view] %>">
+              View this task
+            </a>
+          </p>
+        <% end %>
+      </div>
+    <% end %>
+
+    <p>
+      <a href="<%= @notification_url %>">View all notifications and email settings</a>
+    </p>
+
+    <p>
+      Cheers,<br />
+      The <%= @doubtfire_product_name %> Team on behalf of <%= @sender.name %>
+    </p>
+  </div>
+
+  <footer class="footer">
+    <a href="<%= @unsubscribe_url %>">Unsubscribe</a> | Generated with <%= @doubtfire_product_name %>
+  </footer>
+</body>
+</html>

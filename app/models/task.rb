@@ -141,6 +141,8 @@ class Task < ApplicationRecord
   has_many :tii_submissions, dependent: :destroy
   has_many :test_attempts, dependent: :destroy
   has_many :session_activities, dependent: :destroy
+  has_many :notifications, dependent: :destroy
+  has_many :source_notifications, as: :source, class_name: 'Notification', dependent: :destroy
 
   delegate :unit, to: :project
   delegate :student, to: :project

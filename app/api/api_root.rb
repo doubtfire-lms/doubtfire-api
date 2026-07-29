@@ -99,6 +99,7 @@ class ApiRoot < Grape::API
   mount UnitContentsApi
   mount UnitsApi
   mount TutorNotesApi
+  mount NotificationsApi
 
   mount D2lIntegrationApi::D2lApi
   mount D2lIntegrationApi::OauthPublicApi
@@ -162,6 +163,7 @@ class ApiRoot < Grape::API
   AuthenticationHelpers.add_auth_to DiscussionPromptsApi
   AuthenticationHelpers.add_auth_to OverseerStepsApi
   AuthenticationHelpers.add_auth_to TutorNotesApi
+  AuthenticationHelpers.add_auth_to NotificationsApi
 
   add_swagger_documentation \
     base_path: nil,

@@ -5,10 +5,6 @@ class TaskStatusComment < TaskComment
     self.content_type = :status
   end
 
-  after_create do
-    mark_as_read(self.recipient)
-  end
-
   def serialize(user)
     json = super(user)
     json[:recipient_read_time] = nil

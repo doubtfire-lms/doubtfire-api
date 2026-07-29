@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_24_015355) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_29_043436) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -340,6 +340,54 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_24_015355) do
     t.index ["task_definition_id"], name: "index_moderated_tasks_on_task_definition_id"
     t.index ["task_id", "moderation_type"], name: "uniq_mod_tasks_task_type", unique: true
     t.index ["task_id"], name: "index_moderated_tasks_on_task_id"
+  end
+
+  create_table "notification_preferences", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "unit_id", null: false
+    t.text "email_categories", size: :long, null: false, collation: "utf8mb4_bin"
+    t.string "email_frequency", limit: 16, default: "weekly", null: false
+    t.string "email_time", limit: 5, default: "09:00", null: false
+    t.integer "email_weekday", default: 1, null: false
+    t.string "timezone", default: "UTC", null: false
+    t.datetime "next_digest_at"
+    t.datetime "last_digest_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["next_digest_at"], name: "index_notification_preferences_on_next_digest_at"
+    t.index ["unit_id"], name: "index_notification_preferences_on_unit_id"
+    t.index ["user_id", "unit_id"], name: "index_notification_preferences_on_user_and_unit", unique: true
+    t.index ["user_id"], name: "index_notification_preferences_on_user_id"
+    t.check_constraint "json_valid(`email_categories`)", name: "email_categories"
+  end
+
+  create_table "notifications", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "recipient_id", null: false
+    t.bigint "unit_id", null: false
+    t.bigint "project_id"
+    t.bigint "task_id"
+    t.bigint "actor_id"
+    t.string "kind", limit: 64, null: false
+    t.string "source_type", limit: 64
+    t.bigint "source_id"
+    t.string "deduplication_key", limit: 191, null: false
+    t.text "metadata", size: :long, null: false, collation: "utf8mb4_bin"
+    t.datetime "read_at"
+    t.datetime "email_processed_at"
+    t.datetime "email_sent_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["actor_id"], name: "index_notifications_on_actor_id"
+    t.index ["project_id"], name: "index_notifications_on_project_id"
+    t.index ["recipient_id", "deduplication_key"], name: "index_notifications_on_recipient_and_deduplication_key", unique: true
+    t.index ["recipient_id", "read_at", "created_at"], name: "index_notifications_on_recipient_read_created"
+    t.index ["recipient_id", "task_id", "read_at"], name: "index_notifications_on_recipient_task_read"
+    t.index ["recipient_id", "unit_id", "email_processed_at"], name: "index_notifications_for_email_delivery"
+    t.index ["recipient_id"], name: "index_notifications_on_recipient_id"
+    t.index ["source_type", "source_id"], name: "index_notifications_on_source_type_and_source_id"
+    t.index ["task_id"], name: "index_notifications_on_task_id"
+    t.index ["unit_id"], name: "index_notifications_on_unit_id"
+    t.check_constraint "json_valid(`metadata`)", name: "metadata"
   end
 
   create_table "overflow_task_claim_logs", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
@@ -1030,6 +1078,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_24_015355) do
   add_foreign_key "feedback_chips", "learning_outcomes"
   add_foreign_key "learning_outcome_links", "learning_outcomes", column: "source_id"
   add_foreign_key "learning_outcome_links", "learning_outcomes", column: "target_id"
+  add_foreign_key "notification_preferences", "units"
+  add_foreign_key "notification_preferences", "users"
+  add_foreign_key "notifications", "projects"
+  add_foreign_key "notifications", "tasks"
+  add_foreign_key "notifications", "units"
+  add_foreign_key "notifications", "users", column: "actor_id"
+  add_foreign_key "notifications", "users", column: "recipient_id"
   add_foreign_key "user_oauth_states", "users"
   add_foreign_key "user_oauth_tokens", "users"
 end

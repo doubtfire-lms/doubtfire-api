@@ -141,6 +141,7 @@ class TaskCommentsApi < Grape::API
       # mark every comment type except for DiscussionComments so we don't mark it as read.
       comments_to_mark_as_read = comments.where("TYPE is null OR TYPE != 'DiscussionComment'")
       task.mark_comments_as_read(current_user, comments_to_mark_as_read)
+      Notification.mark_task_read(current_user, task)
     else
       result = []
     end
@@ -267,6 +268,7 @@ class TaskCommentsApi < Grape::API
 
     task_comment = task.comments.find(params[:id])
     task_comment.mark_as_unread(current_user)
+    Notification.reopen_for_source(task_comment, current_user)
 
     SessionTracker.record_assessment_activity(
       action: 'mark-comment-unread',

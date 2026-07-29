@@ -6,6 +6,7 @@ class OverseerAssessment < ApplicationRecord
   has_one :project, through: :task
   has_many :assessment_comments, as: :commentable, dependent: :destroy
   has_many :overseer_step_results, dependent: :destroy
+  has_many :notifications, as: :source, dependent: :destroy
 
   validates :status,                  presence: true
   validates :task_id,                 presence: true
@@ -14,6 +15,10 @@ class OverseerAssessment < ApplicationRecord
   validates :submission_timestamp, uniqueness: { scope: :task_id }
   validates :submission_history_id, uniqueness: true
   validate :submission_history_matches_task
+
+  after_update_commit do
+    Notification.create_for_overseer(self) if saved_change_to_status? && failed?
+  end
 
   enum :status, { pre_queued: 0, passed: 1, failed: 2 }
 
@@ -43,7 +48,6 @@ class OverseerAssessment < ApplicationRecord
          AND student_read_receipts.user_id = projects.user_id
       SQL
       .where(status: statuses[:failed], student_notified_at: nil)
-      .where(users: { receive_task_notifications: true })
       .where('overseer_assessments.updated_at <= ?', notification_cutoff)
       .where('student_read_receipts.id IS NULL')
       .where(<<~SQL.squish)

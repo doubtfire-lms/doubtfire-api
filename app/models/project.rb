@@ -31,6 +31,7 @@ class Project < ApplicationRecord
   has_many :comments, through: :tasks
   has_many :tutorial_enrolments, dependent: :destroy
   has_many :session_activities,  dependent: :destroy
+  has_many :notifications, dependent: :destroy
 
   has_many :staff_notes, dependent: :destroy
   has_many :engagements, dependent: :destroy, inverse_of: :project

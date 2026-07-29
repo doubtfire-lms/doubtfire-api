@@ -110,22 +110,22 @@ class UnitMailTest < ActionMailer::TestCase
     task.update!(moved_to_discuss_at: 8.days.ago)
 
     assert_equal 1, unit.notify_discuss_timeouts!
-    assert_equal 1, SendDiscussTimeoutEmailJob.jobs.count
+    assert_equal 1, SendImmediateNotificationJob.jobs.count
 
-    approaching_job = SendDiscussTimeoutEmailJob.jobs.shift
+    approaching_job = SendImmediateNotificationJob.jobs.shift
     assert_emails 1 do
-      SendDiscussTimeoutEmailJob.new.perform(*approaching_job['args'])
+      SendImmediateNotificationJob.new.perform(*approaching_job['args'])
     end
     assert_includes ActionMailer::Base.deliveries.last.subject, 'Discussion deadline approaching'
 
     task.update!(moved_to_discuss_at: 15.days.ago)
 
     assert_equal 1, unit.notify_discuss_timeouts!
-    assert_equal 1, SendDiscussTimeoutEmailJob.jobs.count
+    assert_equal 1, SendImmediateNotificationJob.jobs.count
 
-    missed_job = SendDiscussTimeoutEmailJob.jobs.shift
+    missed_job = SendImmediateNotificationJob.jobs.shift
     assert_emails 1 do
-      SendDiscussTimeoutEmailJob.new.perform(*missed_job['args'])
+      SendImmediateNotificationJob.new.perform(*missed_job['args'])
     end
     assert_includes ActionMailer::Base.deliveries.last.subject, 'Discussion deadline missed'
   end

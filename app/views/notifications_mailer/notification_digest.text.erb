@@ -1,0 +1,16 @@
+Hi <%= @recipient.first_name %>,
+
+You have <%= @notification_count %> new <%= 'change'.pluralize(@notification_count) %> across <%= @groups.count %> <%= 'notification'.pluralize(@groups.count) %> in <%= @unit.code %>.
+
+<% @groups.each do |group| %>
+- <%= group[:summary] %>
+<% if group[:task] %>
+  <%= @doubtfire_host %>/projects/<%= group[:task][:project_id] %>/dashboard/<%= group[:task][:abbreviation] %><%= '?tutor=true' if group[:task][:staff_view] %>
+<% end %>
+<% end %>
+
+View all notifications and email settings:
+<%= @notification_url %>
+
+Cheers,
+The <%= @doubtfire_product_name %> Team

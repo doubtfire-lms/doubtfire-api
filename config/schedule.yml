@@ -28,6 +28,18 @@ notify_discuss_timeout:
   cron: "every day at 8am"
   class: "NotifyDiscussTimeoutJob"
 
+poll_notification_digests:
+  cron: "every 5 minutes"
+  class: "PollNotificationDigestsJob"
+
+create_pending_overseer_notifications:
+  cron: "every 5 minutes"
+  class: "CreatePendingOverseerNotificationsJob"
+
+prune_notifications:
+  cron: "every day at 2am"
+  class: "PruneNotificationsJob"
+
 # archive_old_units:
 #   cron: "every 6 months"
 #   class: "ArchiveOldUnitsJob"

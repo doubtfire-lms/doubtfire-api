@@ -16,6 +16,7 @@ class TaskComment < ApplicationRecord
   belongs_to :recipient, class_name: 'User', optional: false
 
   has_many :comments_read_receipts, class_name: 'CommentsReadReceipts', dependent: :destroy, inverse_of: :task_comment
+  has_many :notifications, as: :source, dependent: :destroy
 
   # Can optionally be a reply to a comment
   belongs_to :task_comment, optional: true
@@ -32,6 +33,9 @@ class TaskComment < ApplicationRecord
   # After create, mark as read by user creating
   after_create do
     mark_as_read(self.user)
+  end
+  after_create_commit do
+    Notification.create_for_task_comment(self)
   end
 
   # Delete action - before dependent association

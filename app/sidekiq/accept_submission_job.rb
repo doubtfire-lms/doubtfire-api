@@ -30,14 +30,7 @@ class AcceptSubmissionJob
     rescue StandardError => e
       logger.error e
 
-      # Send email to student if task pdf failed
-      if task.project.student.receive_task_notifications
-        begin
-          PortfolioEvidenceMailer.task_pdf_failed(task.project, [task]).deliver
-        rescue StandardError => e
-          logger.error "Failed to send task pdf failed email for project #{task.project.id}!\n#{e.message}"
-        end
-      end
+      Notification.create_pdf_failure(task)
 
       begin
         # Notify system admin
@@ -59,6 +52,8 @@ class AcceptSubmissionJob
 
       return
     end
+
+    Notification.resolve_task_kinds(task, 'pdf_generation_failed')
 
     # Mark this task for moderation
     tutor_user = task.project.tutor_for(task.task_definition)

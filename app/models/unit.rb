@@ -181,6 +181,8 @@ class Unit < ApplicationRecord
   has_many :communication_set_schedules, through: :communication_sets, class_name: 'CommunicationSetSchedule'
   has_many :unit_content_sites, dependent: :destroy
   has_many :unit_content_links, dependent: :destroy
+  has_many :notifications, dependent: :destroy
+  has_many :notification_preferences, dependent: :destroy
 
   has_many :comments, through: :projects
   has_many :tasks, through: :projects
@@ -320,7 +322,6 @@ class Unit < ApplicationRecord
       raise ActiveRecord::Rollback if comment.blank?
 
       task.update!(notified_discuss_warning_at: Time.zone.now)
-      queue_discuss_timeout_email(task, actor, :approaching, expiry_date)
       created_comment = true
     end
 
@@ -346,7 +347,6 @@ class Unit < ApplicationRecord
         raise ActiveRecord::Rollback
       end
 
-      queue_discuss_timeout_email(task, actor, :missed)
       created_comment = true
     end
 
@@ -364,13 +364,6 @@ class Unit < ApplicationRecord
     return result if date.year == Time.zone.today.year
 
     "#{result} #{date.year}"
-  end
-
-  def queue_discuss_timeout_email(task, actor, type, expiry_date = nil)
-    return unless send_notifications
-    return unless task.project.student.receive_feedback_notifications
-
-    SendDiscussTimeoutEmailJob.perform_async(task.id, actor.id, type.to_s, expiry_date&.iso8601)
   end
 
   def detailed_name
@@ -3099,19 +3092,6 @@ class Unit < ApplicationRecord
         done[task.project] = [] if done[task.project].nil?
         done[task.project] << task
       end
-    end
-
-    # send emails...
-    begin
-      done.each do |project, tasks|
-        logger.info "Checking feedback email for project #{project.id}"
-        if project.student.receive_feedback_notifications
-          logger.info "Emailing feedback notification to #{project.student.name}"
-          PortfolioEvidenceMailer.task_feedback_ready(project, tasks).deliver
-        end
-      end
-    rescue => e
-      logger.error "Failed to send emails from feedback submission. Rescued with error: #{e.message}"
     end
 
     true
