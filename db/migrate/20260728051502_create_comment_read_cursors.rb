@@ -12,9 +12,9 @@ class CreateCommentReadCursors < ActiveRecord::Migration[8.0]
 
   def create_cursor_table
     create_table :comment_read_cursors do |t|
-      t.references :task, null: false, foreign_key: true
-      t.references :user, null: false, foreign_key: true
-      t.references :last_read_comment, null: false, foreign_key: { to_table: :task_comments }
+      t.references :task, null: false
+      t.references :user, null: false
+      t.references :last_read_comment, null: false
       t.datetime :read_at, null: false
 
       t.timestamps

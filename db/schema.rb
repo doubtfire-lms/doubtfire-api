@@ -1039,9 +1039,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_28_051502) do
 
   add_foreign_key "chip_usages", "feedback_chips"
   add_foreign_key "chip_usages", "users", column: "tutor_id"
-  add_foreign_key "comment_read_cursors", "task_comments", column: "last_read_comment_id"
-  add_foreign_key "comment_read_cursors", "tasks"
-  add_foreign_key "comment_read_cursors", "users"
   add_foreign_key "feedback_chips", "feedback_chips", column: "parent_chip_id"
   add_foreign_key "feedback_chips", "learning_outcomes"
   add_foreign_key "learning_outcome_links", "learning_outcomes", column: "source_id"
