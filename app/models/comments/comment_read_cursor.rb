@@ -6,7 +6,6 @@ class CommentReadCursor < ApplicationRecord
   belongs_to :last_read_comment, class_name: 'TaskComment'
 
   validates :task, :user, :last_read_comment, :read_at, presence: true
-  validates :task_id, uniqueness: { scope: :user_id }
   validate :last_read_comment_belongs_to_task
 
   def self.advance(task:, user:, comment:, read_at: Time.current)

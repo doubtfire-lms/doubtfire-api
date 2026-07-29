@@ -48,4 +48,34 @@ class CommentReadCursorTest < ActiveSupport::TestCase
     assert_not comment.read_by?(other_staff)
     assert_nil CommentReadCursor.find_by(task: task, user: other_staff)
   end
+
+  def test_destroying_the_cursor_comment_rewinds_each_users_cursor
+    project = FactoryBot.create(:project)
+    task = project.task_for_task_definition(project.unit.task_definitions.first)
+    author = project.unit.main_convenor_user
+    readers = [project.student, FactoryBot.create(:user, :tutor)]
+    previous_comment = task.add_text_comment(author, 'First')
+    cursor_comment = task.add_text_comment(author, 'Second')
+
+    readers.each { |reader| cursor_comment.mark_as_read(reader) }
+
+    cursor_comment.destroy!
+
+    readers.each do |reader|
+      cursor = CommentReadCursor.find_by!(task: task, user: reader)
+      assert_equal previous_comment.id, cursor.last_read_comment_id
+    end
+  end
+
+  def test_destroying_the_only_comment_removes_its_cursors
+    project = FactoryBot.create(:project)
+    task = project.task_for_task_definition(project.unit.task_definitions.first)
+    reader = project.student
+    comment = task.add_text_comment(project.unit.main_convenor_user, 'Only comment')
+
+    comment.mark_as_read(reader)
+    comment.destroy!
+
+    assert_nil CommentReadCursor.find_by(task: task, user: reader)
+  end
 end
