@@ -20,6 +20,13 @@ class CommentReadCursorTest < ActiveSupport::TestCase
     assert_equal 1, CommentReadCursor.where(task: task, user: reader).count
     assert(comments.none? { |comment| comment.new_for?(reader) })
 
+    CommentReadCursor.advance(
+      task_id: task.id,
+      user_ids: reader.id,
+      comment_id: comments.first.id
+    )
+    assert_equal comments.last.id, cursor.reload.last_read_comment_id
+
     comments.second.mark_as_unread(reader)
 
     assert_not comments.first.new_for?(reader)

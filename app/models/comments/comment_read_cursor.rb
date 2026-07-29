@@ -14,37 +14,39 @@ class CommentReadCursor < ApplicationRecord
     return if user_ids.empty?
 
     now = Time.current
-    values = user_ids.map do |user_id|
-      [
-        task_id,
-        user_id,
-        comment_id,
-        read_at,
-        now,
-        now
-      ].map { |value| connection.quote(value) }.join(', ')
-    end.join('), (')
 
-    connection.execute(<<~SQL.squish)
-      INSERT INTO comment_read_cursors
-        (task_id, user_id, last_read_comment_id, read_at, created_at, updated_at)
-      VALUES (#{values})
-      ON DUPLICATE KEY UPDATE
-        read_at = IF(
-          last_read_comment_id < VALUES(last_read_comment_id),
-          VALUES(read_at),
-          read_at
-        ),
-        updated_at = IF(
-          last_read_comment_id < VALUES(last_read_comment_id),
-          VALUES(updated_at),
-          updated_at
-        ),
-        last_read_comment_id = GREATEST(
-          last_read_comment_id,
-          VALUES(last_read_comment_id)
+    transaction do
+      cursors = where(task_id: task_id, user_id: user_ids)
+
+      # rubocop:disable Rails/SkipsModelValidations
+      missing_user_ids = user_ids - cursors.pluck(:user_id)
+
+      # Create first-time cursors in one query.
+      if missing_user_ids.any?
+        insert_all(
+          missing_user_ids.map do |user_id|
+            {
+              task_id: task_id,
+              user_id: user_id,
+              last_read_comment_id: comment_id,
+              read_at: read_at,
+              created_at: now,
+              updated_at: now
+            }
+          end
         )
-    SQL
+      end
+
+      # Existing cursors only move forward.
+      cursors
+        .where('last_read_comment_id < ?', comment_id)
+        .update_all(
+          last_read_comment_id: comment_id,
+          read_at: read_at,
+          updated_at: now
+        )
+      # rubocop:enable Rails/SkipsModelValidations
+    end
   end
 
   private
