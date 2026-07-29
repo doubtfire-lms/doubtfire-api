@@ -34,7 +34,7 @@ class CommentReadCursorTest < ActiveSupport::TestCase
     assert comments.last.new_for?(reader)
   end
 
-  def test_reading_a_comment_only_advances_the_readers_cursor
+  def test_assigned_tutor_reading_a_comment_advances_all_staff_cursors
     project = FactoryBot.create(:project)
     task = project.task_for_task_definition(project.unit.task_definitions.first)
     assigned_tutor = project.tutor_for(task.task_definition)
@@ -45,8 +45,43 @@ class CommentReadCursorTest < ActiveSupport::TestCase
     comment.mark_as_read(assigned_tutor)
 
     assert comment.read_by?(assigned_tutor)
-    assert_not comment.read_by?(other_staff)
-    assert_nil CommentReadCursor.find_by(task: task, user: other_staff)
+    assert comment.read_by?(other_staff)
+    assert_equal comment.id, CommentReadCursor.find_by!(task: task, user: other_staff).last_read_comment_id
+  end
+
+  def test_changing_tutorial_does_not_show_comments_already_read_by_the_teaching_team
+    project = FactoryBot.create(:project)
+    unit = project.unit
+    task_definition = unit.task_definitions.first
+    original_tutor = unit.main_convenor_user
+    new_tutor = FactoryBot.create(:user, :tutor)
+    new_tutor_role = unit.employ_staff(new_tutor, Role.tutor)
+    original_tutorial = FactoryBot.create(
+      :tutorial,
+      unit: unit,
+      campus: project.campus,
+      unit_role: unit.unit_role_for(original_tutor)
+    )
+    new_tutorial = FactoryBot.create(
+      :tutorial,
+      unit: unit,
+      campus: project.campus,
+      unit_role: new_tutor_role
+    )
+    project.enrol_in(original_tutorial)
+    task = project.task_for_task_definition(task_definition)
+    comment = task.add_text_comment(project.student, 'Please review this')
+
+    original_inbox = unit.tasks_for_task_inbox(original_tutor, true).map(&:task_id)
+    assert_includes original_inbox, task.id
+
+    comment.mark_as_read(original_tutor)
+    assert_equal comment.id, CommentReadCursor.find_by!(task: task, user: new_tutor).last_read_comment_id
+
+    project.enrol_in(new_tutorial)
+
+    new_tutor_inbox = unit.tasks_for_task_inbox(new_tutor, true).map(&:task_id)
+    assert_not_includes new_tutor_inbox, task.id
   end
 
   def test_destroying_the_cursor_comment_rewinds_each_users_cursor

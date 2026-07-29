@@ -162,10 +162,18 @@ class TaskComment < ApplicationRecord
     end
   end
 
-  def mark_as_read(user)
+  def mark_as_read(user, unit = self.unit)
     return if read_by?(user)
 
-    advance_read_cursor(user)
+    if user == project.tutor_for(task.task_definition)
+      CommentReadCursor.transaction do
+        unit.staff.each do |staff_member|
+          advance_read_cursor(staff_member.user)
+        end
+      end
+    else
+      advance_read_cursor(user)
+    end
   end
 
   def mark_as_unread(user)
