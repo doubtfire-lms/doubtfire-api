@@ -43,20 +43,25 @@ module AuthorisationHelpers
     # Can pass in instance or class
     obj_class = object.class == Class ? object : object.class
 
-    role_obj = object.role_for(user)
+    # System administrators retain their administrator permissions even when
+    # they have a lower-level role within the object's unit.
+    system_admin = user.has_admin_capability?
+    role_obj = system_admin ? user.role : object.role_for(user)
 
     return false if role_obj.nil?
 
-    # Attempt to get the unit role from a Unit context
-    unit_role = object&.unit_role_for(user) if object.respond_to?(:unit_role_for)
+    unless system_admin
+      # Attempt to get the unit role from a Unit context
+      unit_role = object&.unit_role_for(user) if object.respond_to?(:unit_role_for)
 
-    # Attempt to get the unit role if object has a unit reference
-    if unit_role.nil? && object.respond_to?(:unit)
-      unit_role = object.unit.unit_role_for(user)
-    end
+      # Attempt to get the unit role if object has a unit reference
+      if unit_role.nil? && object.respond_to?(:unit)
+        unit_role = object.unit.unit_role_for(user)
+      end
 
-    if !unit_role.nil? && unit_role.observer_only && !OBSERVER_ONLY_PERMISSIONS.include?(action)
-      return false
+      if !unit_role.nil? && unit_role.observer_only && !OBSERVER_ONLY_PERMISSIONS.include?(action)
+        return false
+      end
     end
 
     role = role_obj.to_sym
