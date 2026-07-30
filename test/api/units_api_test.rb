@@ -459,6 +459,34 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_json_matches_model original.reload, unit, %w( name code description start_date end_date active auto_apply_extension_before_deadline send_notifications )
   end
 
+  def test_system_administrator_enrolled_as_student_can_update_unit
+    unit = FactoryBot.create(:unit, with_students: false)
+    administrator = FactoryBot.create(:user, :admin)
+    unit.enrol_student(administrator, Campus.first)
+
+    assert_equal Role.student, unit.role_for(administrator)
+
+    add_auth_header_for(user: administrator)
+    put_json "/api/units/#{unit.id}", { unit: { name: 'Updated by student administrator' } }
+
+    assert_equal 200, last_response.status, last_response_body
+    assert_equal 'Updated by student administrator', unit.reload.name
+  end
+
+  def test_system_administrator_employed_as_tutor_can_update_unit
+    unit = FactoryBot.create(:unit, with_students: false)
+    administrator = FactoryBot.create(:user, :admin)
+    unit.employ_staff(administrator, Role.tutor)
+
+    assert_equal Role.tutor, unit.role_for(administrator)
+
+    add_auth_header_for(user: administrator)
+    put_json "/api/units/#{unit.id}", { unit: { name: 'Updated by tutor administrator' } }
+
+    assert_equal 200, last_response.status, last_response_body
+    assert_equal 'Updated by tutor administrator', unit.reload.name
+  end
+
   #Test PUT for updating unit details with empty name
   def test_put_update_unit_empty_name
     unit = Unit.first
