@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-40](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-39...v11.0.0-40) (2026-07-30)
+
+
+### Features
+
+* enable unit content download ([1757731](https://github.com/b0ink/doubtfire-deploy/commit/17577319e897641cbc8ba20af029ee448fc61379))
+
 ## [11.0.0-39](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-38...v11.0.0-39) (2026-07-28)
 
 
