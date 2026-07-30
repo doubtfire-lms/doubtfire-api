@@ -40,6 +40,13 @@ module AuthorisationHelpers
   def authorise?(user, object, action, perm_get_fn = method(:get_permission_hash), other = nil)
     # Can pass in instance or class
     obj_class = object.class == Class ? object : object.class
+    perm_hash = obj_class.permissions
+
+    # System administrator permissions take precedence over contextual roles.
+    if user.has_admin_capability?
+      system_perms = perm_get_fn.call(user.role.to_sym, perm_hash, other)
+      return true if system_perms&.include?(action)
+    end
 
     role_obj = object.role_for(user)
 
@@ -58,7 +65,6 @@ module AuthorisationHelpers
     end
 
     role = role_obj.to_sym
-    perm_hash = obj_class.permissions
     perms = perm_get_fn.call(role, perm_hash, other)
 
     # No permissions, default to false authorise, else check if the action
