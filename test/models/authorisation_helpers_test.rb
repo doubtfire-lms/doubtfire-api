@@ -15,10 +15,11 @@ class AuthorisationHelpersTest < ActiveSupport::TestCase
   end
 
   test 'system administrator role takes precedence over a student unit role' do
-    @unit.enrol_student(@admin, Campus.first)
+    project = @unit.enrol_student(@admin, Campus.first)
 
     assert_equal Role.student, @unit.role_for(@admin)
     assert AuthorisationHelpers.authorise?(@admin, @unit, :update)
+    assert AuthorisationHelpers.authorise?(@admin, project, :make_submission)
   end
 
   test 'system administrator role takes precedence over a tutor unit role' do
@@ -26,5 +27,6 @@ class AuthorisationHelpersTest < ActiveSupport::TestCase
 
     assert_equal Role.tutor, @unit.role_for(@admin)
     assert AuthorisationHelpers.authorise?(@admin, @unit, :update)
+    assert AuthorisationHelpers.authorise?(@admin, @unit, :provide_feedback)
   end
 end
