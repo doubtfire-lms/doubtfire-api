@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-43](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-42...v11.0.0-43) (2026-08-03)
+
+
+### Features
+
+* group engagement ([#658](https://github.com/b0ink/doubtfire-deploy/issues/658)) ([6f02a33](https://github.com/b0ink/doubtfire-deploy/commit/6f02a33942ccbd5107eb4a88f9274b848196e3c5))
+
 ## [11.0.0-42](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-41...v11.0.0-42) (2026-07-31)
 
 
