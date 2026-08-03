@@ -48,6 +48,24 @@ class EngagementsApiTest < ActiveSupport::TestCase
     assert_equal @tutor.id, last_response_body.first.dig('user', 'id')
   end
 
+  def test_tutor_can_create_one_engagement_for_multiple_students
+    other_student = FactoryBot.create(:user, :student)
+    other_project = @unit.enrol_student(other_student, nil)
+
+    engagement = create_engagement(
+      overrides: { project_ids: [@project.id, other_project.id] }
+    )
+
+    assert_equal [engagement.id], @project.engagements.pluck(:id)
+    assert_equal [engagement.id], other_project.shared_engagements.pluck(:id)
+    assert_equal [other_project.id], engagement.additional_projects.pluck(:id)
+
+    add_auth_header_for(user: other_student)
+    get "/api/projects/#{other_project.id}/engagements/#{engagement.id}"
+    assert_equal [@student.id, other_student.id].sort,
+                 last_response_body['students'].pluck('id').sort
+  end
+
   def test_records_automatic_class_discussion_with_tutorial_context
     tutorial = @unit.tutorials.first
     tutorial.campus.update!(timezone: 'UTC')

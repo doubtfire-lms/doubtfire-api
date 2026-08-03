@@ -9,6 +9,8 @@ class Engagement < ApplicationRecord
   belongs_to :project, optional: false, inverse_of: :engagements
   belongs_to :user, optional: false, inverse_of: :engagements
 
+  has_many :engagement_projects, dependent: :destroy, inverse_of: :engagement
+  has_many :additional_projects, through: :engagement_projects, source: :project
   has_many :engagement_comments,
            -> { order(:created_at) },
            dependent: :destroy,
