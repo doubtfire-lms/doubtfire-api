@@ -447,6 +447,36 @@ class UnitsApi < Grape::API
     present job, with: Entities::SidekiqJobEntity
   end
 
+  desc 'Upload CSV of staff notes for students in a unit'
+  params do
+    requires :file, type: File, desc: 'CSV upload file.'
+  end
+  post '/csv/units/:id/staff_notes' do
+    unit = Unit.find(params[:id])
+    unless authorise? current_user, unit, :upload_staff_notes_csv
+      error!({ error: "Not authorised to upload staff notes to #{unit.code}" }, 403)
+    end
+
+    if params[:file].blank?
+      error!({ error: "No file uploaded" }, 403)
+    end
+
+    ensure_csv!(params[:file][:tempfile])
+
+    import_csv_dir = Rails.root.join(FileHelper.tmp_file_dir, 'csv')
+    file_name = File.join(import_csv_dir, "import-staff-notes-csv-#{unit.id}-#{Process.pid}-#{Thread.current.object_id}-#{current_user.id}.csv")
+    FileUtils.mkdir_p(import_csv_dir)
+
+    csv = CSV.read(params[:file][:tempfile], headers: true)
+    CSV.open(file_name, "w", write_headers: true, headers: csv.headers) do |out|
+      csv.each { |row| out << row }
+    end
+
+    job_id = ImportStaffNotesCsvJob.perform_async(unit.id, current_user.id, file_name)
+    job = setup_job(job_id)
+    present job, with: Entities::SidekiqJobEntity
+  end
+
   desc 'Upload CSV with the students to un-enrol from the unit'
   params do
     requires :file, type: File, desc: 'CSV upload file.'

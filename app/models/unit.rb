@@ -77,6 +77,7 @@ class Unit < ApplicationRecord
       :get_tutor_times_summary,
       :get_marking_sessions,
       :upload_grades_csv,
+      :upload_staff_notes_csv,
       :get_staff_notes,
       :capture_task_completion_snapshot,
       :manage_unit_content,
@@ -108,6 +109,7 @@ class Unit < ApplicationRecord
       :download_jplag_report,
       :get_marking_sessions,
       :get_staff_notes,
+      :upload_staff_notes_csv,
       :get_tutor_times,
       :manage_unit_content,
       :mannage_communications,
@@ -2214,6 +2216,97 @@ class Unit < ApplicationRecord
           ]
         end
     end
+  end
+
+  def import_staff_notes_from_csv(file, author_id, progress_callback: nil)
+    success = []
+    errors = []
+    ignored = []
+    author = User.find(author_id)
+
+    csv = CSV.new(File.read(file), headers: true,
+                                   header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
+                                   converters: [->(i) { i.nil? ? '' : i }, ->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }])
+    unless csv.header_row?
+      errors << { row: [], message: "Header row missing" }
+      return { success: success, ignored: ignored, errors: errors }
+    end
+
+    csv.shift
+    total_rows = csv.read.size
+    progress_callback&.call(message: "Importing staff notes", rows_processed: 0, total_rows: total_rows)
+
+    CSV.foreach(file, headers: true,
+                      header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
+                      converters: [->(i) { i.nil? ? '' : i }, ->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]).with_index(1) do |row, row_count|
+      progress_callback&.call(message: "Importing staff notes", rows_processed: row_count, total_rows: total_rows)
+
+      begin
+        missing = missing_headers(row, ['comment'])
+        unless row.headers.include?('username') || row.headers.include?('login_id')
+          missing << 'username or login_id'
+        end
+        if missing.any?
+          errors << { row: row, message: "Missing headers: #{missing.join(', ')}" }
+          next
+        end
+
+        username = row['username']&.strip
+        login_id = row['login_id']&.strip
+        comment = row['comment']&.strip
+
+        if username.blank? && login_id.blank?
+          errors << { row: row, message: "Username or login_id is required" }
+          next
+        end
+
+        if comment.blank?
+          errors << { row: row, message: "Comment is required" }
+          next
+        end
+
+        username_user = User.find_by(username: username.downcase) if username.present?
+        login_id_user = User.find_by(login_id: login_id) if login_id.present?
+
+        if username.present? && username_user.nil?
+          errors << { row: row, message: "Could not find user with username #{username}" }
+          next
+        end
+
+        if login_id.present? && login_id_user.nil?
+          errors << { row: row, message: "Could not find user with login_id #{login_id}" }
+          next
+        end
+
+        if username_user && login_id_user && username_user != login_id_user
+          errors << { row: row, message: "Username and login_id do not match the same user" }
+          next
+        end
+
+        student = username_user || login_id_user
+        project = projects.find_by(user: student)
+        if project.nil?
+          errors << { row: row, message: "Student is not enrolled in unit" }
+          next
+        end
+
+        if project.staff_notes.last&.note == comment
+          ignored << { row: row, message: "Staff note already exists" }
+          next
+        end
+
+        project.add_staff_note(author, comment)
+        success << { row: row, message: "Staff note added for #{student.username}" }
+      rescue Exception => e
+        errors << { row: row, message: e.message }
+      end
+    end
+
+    {
+      success: success,
+      ignored: ignored,
+      errors: errors
+    }
   end
 
   def get_portfolio_zip_filename(current_user)
