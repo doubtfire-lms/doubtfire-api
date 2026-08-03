@@ -149,7 +149,7 @@ class UnitContentSite < ApplicationRecord
 
       unless File.exist?(extracted_path) && File.size(extracted_path) == entry.size
         temporary_path = "#{extracted_path}.#{SecureRandom.hex(6)}.tmp"
-        entry.extract(temporary_path) { true }
+        entry.extract(File.basename(temporary_path), destination_directory: File.dirname(temporary_path)) { true }
         FileUtils.mv(temporary_path, extracted_path)
       end
 

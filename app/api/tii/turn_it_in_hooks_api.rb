@@ -4,18 +4,17 @@ module Tii
   class TurnItInHooksApi < Grape::API
     include LogHelper
 
-    desc 'Accept the TurnItIn EULA', {
-      headers: {
-        "X-Turnitin-Signature" => {
-          description: "Valdates server identity",
-          required: true
-        },
-        "X-Turnitin-EventType" => {
-          description: "The name of the event type for this request",
-          required: true
-        }
-      }
-    }
+    desc 'Accept the TurnItIn EULA',
+         headers: {
+           "X-Turnitin-Signature" => {
+             description: "Valdates server identity",
+             required: true
+           },
+           "X-Turnitin-EventType" => {
+             description: "The name of the event type for this request",
+             required: true
+           }
+         }
     post 'tii_hook' do
       raw_data = env['api.request.input']
       data = JSON.parse(raw_data)

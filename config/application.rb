@@ -305,8 +305,6 @@ module Doubtfire
       end
     end
 
-    config.active_support.to_time_preserves_timezone = :zone
-
     # Generators for test framework
     if Rails.env.test?
       config.generators do |g|

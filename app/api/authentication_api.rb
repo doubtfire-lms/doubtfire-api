@@ -424,19 +424,14 @@ class AuthenticationApi < Grape::API
   # Sign out
   #
   desc 'Sign out',
-       {
-         headers:
-         {
-           "username" =>
-           {
-             description: "User username",
-             required: true
-           },
-           "auth_token" =>
-           {
-             description: "The user's temporary auth token",
-             required: true
-           }
+       headers: {
+         "username" => {
+           description: "User username",
+           required: true
+         },
+         "auth_token" => {
+           description: "The user's temporary auth token",
+           required: true
          }
        }
   params do

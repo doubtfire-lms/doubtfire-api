@@ -59,8 +59,8 @@ class AuthTest < ActiveSupport::TestCase
 
     refresh_token = User.first.auth_tokens.where(token_type: :refresh_token).last
     assert refresh_token.present?
-    assert_match(/refresh_token=#{refresh_token.authentication_token};/, last_response.cookies['refresh_token'].to_s, 'Expect refresh token to be set')
-    assert_match(/username=#{User.first.username};/, last_response.cookies['username'].to_s, 'Expect username to be set')
+    assert_equal refresh_token.authentication_token, last_response.cookies['refresh_token'].value, 'Expect refresh token to be set'
+    assert_equal User.first.username, last_response.cookies['username'].value, 'Expect username to be set'
   end
 
   def test_auth_records_sign_in_and_access_time
@@ -87,8 +87,8 @@ class AuthTest < ActiveSupport::TestCase
 
     assert_equal 201, last_response.status
 
-    assert_match(/refresh_token=;/, last_response.cookies['refresh_token'].to_s, 'Expect refresh token to be deleted')
-    assert_match(/username=;/, last_response.cookies['username'].to_s, 'Expect username to be deleted')
+    assert_empty last_response.cookies['refresh_token'].value, 'Expect refresh token to be deleted'
+    assert_empty last_response.cookies['username'].value, 'Expect username to be deleted'
   end
 
   # Test auth when username is invalid
@@ -203,8 +203,8 @@ class AuthTest < ActiveSupport::TestCase
     # 204 response code means success!
     assert_equal 204, last_response.status
 
-    assert_match(/username=;/, last_response.cookies['username'].to_s)
-    assert_match(/refresh_token=;/, last_response.cookies['refresh_token'].to_s)
+    assert_empty last_response.cookies['username'].value
+    assert_empty last_response.cookies['refresh_token'].value
   end
 
   def test_refresh_token

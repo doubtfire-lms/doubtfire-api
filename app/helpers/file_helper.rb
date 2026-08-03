@@ -956,7 +956,7 @@ module FileHelper
 
     input_files = Dir.entries(task_dir).select { |f| (f =~ /^\d{3}\.(cover|document|code|image)/).zero? }
 
-    Zip::File.open(zip_file, Zip::File::CREATE) do |zip|
+    Zip::File.open(zip_file, create: true) do |zip|
       zip.mkdir task.id.to_s
       input_files.each do |in_file|
         zip.add "#{task.id}/#{in_file}", "#{task_dir}#{in_file}"

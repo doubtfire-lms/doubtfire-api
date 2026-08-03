@@ -49,7 +49,7 @@ class UnitContentsApiTest < ActiveSupport::TestCase
   private
 
   def write_zip(path, entries)
-    Zip::File.open(path, Zip::File::CREATE) do |zip|
+    Zip::File.open(path, create: true) do |zip|
       entries.each do |entry_name, contents|
         zip.get_output_stream(entry_name) { |stream| stream.write(contents) }
       end

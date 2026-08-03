@@ -265,7 +265,8 @@ module UnitSimilarityModule
           zip_file.each do |entry|
             dest = File.join(tasks_dir, 'base', entry.name)
             FileUtils.mkdir_p(File.dirname(dest))
-            entry.extract(dest) { true }
+            dest = dest.chomp(File::SEPARATOR)
+            entry.extract(File.basename(dest), destination_directory: File.dirname(dest)) { true }
           end
         end
       end

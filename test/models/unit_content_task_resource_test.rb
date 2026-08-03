@@ -98,7 +98,7 @@ class UnitContentTaskResourceTest < ActiveSupport::TestCase
 
   def with_content_site_from_files(unit, entries)
     Tempfile.create(['unit-content', '.zip']) do |archive|
-      Zip::File.open(archive.path, Zip::File::CREATE) do |zip|
+      Zip::File.open(archive.path, create: true) do |zip|
         entries.each { |entry_name, source_path| zip.add(entry_name, source_path) }
       end
 
@@ -114,7 +114,7 @@ class UnitContentTaskResourceTest < ActiveSupport::TestCase
   end
 
   def write_zip(path, entries)
-    Zip::File.open(path, Zip::File::CREATE) do |zip|
+    Zip::File.open(path, create: true) do |zip|
       entries.each do |entry_name, contents|
         zip.get_output_stream(entry_name) { |stream| stream.write(contents) }
       end

@@ -120,7 +120,7 @@ class TaskSimilarityTest < ActiveSupport::TestCase
     zip_path = Rails.root.join("tmp/resources/resources.zip")
     FileUtils.mkdir_p(zip_path.dirname)
 
-    Zip::File.open(zip_path, Zip::File::CREATE) do |zipfile|
+    Zip::File.open(zip_path, create: true) do |zipfile|
       zipfile.add(File.basename(java_file), java_file)
     end
 

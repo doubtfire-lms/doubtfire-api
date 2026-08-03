@@ -55,7 +55,7 @@ class TaskTest < ActiveSupport::TestCase
     convenor = unit.main_convenor_user
     task_definition = unit.task_definitions.first
     task = project.task_for_task_definition(task_definition)
-    comment_text = "\xF0\x9F\x98\x82".force_encoding(Encoding::UTF_8)
+    comment_text = "\xF0\x9F\x98\x82".b.force_encoding(Encoding::UTF_8)
 
     comment = task.add_text_comment(convenor, comment_text)
 
