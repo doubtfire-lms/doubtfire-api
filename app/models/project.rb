@@ -34,6 +34,8 @@ class Project < ApplicationRecord
 
   has_many :staff_notes, dependent: :destroy
   has_many :engagements, dependent: :destroy, inverse_of: :project
+  has_many :engagement_projects, dependent: :destroy
+  has_many :shared_engagements, through: :engagement_projects, source: :engagement
 
   # Callbacks - methods called are private
   before_destroy :can_destroy?

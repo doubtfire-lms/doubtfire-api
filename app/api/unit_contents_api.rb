@@ -7,6 +7,7 @@ require 'uri'
 class UnitContentsApi < Grape::API
   helpers AuthenticationHelpers
   helpers AuthorisationHelpers
+  helpers FileStreamHelper
   helpers MimeCheckHelpers
 
   helpers do
@@ -207,6 +208,19 @@ class UnitContentsApi < Grape::API
     present unit.unit_content_sites.order(created_at: :desc),
             with: Entities::UnitContentSiteEntity,
             include_file_paths: true
+  end
+
+  desc 'Download a unit content site archive'
+  get '/units/:id/content/sites/:site_id/archive' do
+    unit = Unit.find(params[:id])
+    authorise_unit_content_management!(unit)
+
+    site = unit.unit_content_sites.find(params[:site_id])
+    filename = FileHelper.sanitized_filename(site.original_filename)
+
+    content_type 'application/zip'
+    header['Content-Disposition'] = "attachment; filename=\"#{filename}\""
+    stream_file site.archive_path
   end
 
   desc 'Upload a unit content site archive'

@@ -12,6 +12,9 @@ module Entities
     end
     expose :attachment_file_name, if: ->(engagement, _) { engagement.attachment? }
     expose :user, using: Entities::Minimal::MinimalUserEntity
+    expose :students, using: Entities::Minimal::MinimalUserEntity do |engagement|
+      [engagement.project.user, *engagement.additional_projects.map(&:user)]
+    end
     expose :comment_count do |engagement|
       engagement.engagement_comments.size
     end
