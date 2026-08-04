@@ -22,6 +22,10 @@ class MoodleApi
     request('mod_assign_get_assignments', 'courseids[0]' => @integration.course_id)
   end
 
+  def course_details
+    request('core_course_get_courses_by_field', 'field' => 'id', 'value' => @integration.course_id)
+  end
+
   def students
     request(
       'core_enrol_get_enrolled_users',
@@ -47,26 +51,31 @@ class MoodleApi
     results = []
     progress_callback&.call(1, 'Fetching course assignments')
     assignment_response = test_function(results, 'mod_assign_get_assignments') { assignments }
-    progress_callback&.call(2, 'Fetching enrolled users')
+    progress_callback&.call(2, 'Fetching course details')
+    course_response = test_function(results, 'core_course_get_courses_by_field') { course_details }
+    progress_callback&.call(3, 'Fetching enrolled users')
     enrolled_users = test_function(results, 'core_enrol_get_enrolled_users') { students }
 
-    course = Array(assignment_response&.fetch('courses', nil)).find do |item|
+    assignment_course = Array(assignment_response&.fetch('courses', nil)).find do |item|
       item['id'].to_i == @integration.course_id
     end
-    available_assignments = Array(course&.fetch('assignments', nil))
+    course = Array(course_response&.fetch('courses', nil)).find do |item|
+      item['id'].to_i == @integration.course_id
+    end || assignment_course
+    available_assignments = Array(assignment_course&.fetch('assignments', nil))
     assignment_id = @integration.assignment_id || available_assignments.first&.fetch('id', nil)
     participant_user = Array(enrolled_users).find do |user|
       Array(user['roles']).any? { |role| role['shortname'] == 'student' }
     end
 
-    progress_callback&.call(3, 'Testing assignment flag access')
+    progress_callback&.call(4, 'Testing assignment flag access')
 
     test_function(results, 'mod_assign_get_user_flags') do
       raise Error, 'No assignment is available to test this permission' if assignment_id.blank?
 
       user_flags(assignment_id)
     end
-    progress_callback&.call(4, 'Tested get participant access')
+    progress_callback&.call(5, 'Tested get participant access')
     test_function(results, 'mod_assign_get_participant', successful_error_codes: ['userisfilteredout']) do
       if assignment_id.blank? || participant_user.blank?
         raise Error, 'An assignment and enrolled student are required to test this permission'
@@ -75,12 +84,12 @@ class MoodleApi
       participant(assignment_id, participant_user['id'])
     end
 
-    progress_callback&.call(5, 'Fetching course groups')
+    progress_callback&.call(6, 'Fetching course groups')
     groups = test_function(results, 'core_group_get_course_groups') { course_groups }
     available_groups = Array(groups)
 
     {
-      course: course&.slice('id', 'fullname', 'shortname'),
+      course: course&.slice('id', 'fullname', 'shortname', 'startdate', 'enddate'),
       assignments: available_assignments.map { |item| item.slice('id', 'name', 'duedate') },
       groups: available_groups.map { |item| item.slice('id', 'name', 'idnumber') },
       permissions: results

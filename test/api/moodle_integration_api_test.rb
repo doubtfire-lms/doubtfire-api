@@ -85,7 +85,7 @@ class MoodleIntegrationApiTest < ActiveSupport::TestCase
       'jid' => 'moodle-job-id',
       'status' => 'queued',
       'at' => 0,
-      'total' => 5
+      'total' => 6
     }
 
     TestMoodleConnectionJob.stub(:perform_async, 'moodle-job-id') do
@@ -98,7 +98,7 @@ class MoodleIntegrationApiTest < ActiveSupport::TestCase
 
     assert_equal 201, last_response.status, last_response.inspect
     assert_equal 'moodle-job-id', last_response_body['id']
-    assert_equal 5, last_response_body['total_count'].to_i
+    assert_equal 6, last_response_body['total_count'].to_i
   end
 
   test 'Moodle imports enqueue preview and import jobs' do
