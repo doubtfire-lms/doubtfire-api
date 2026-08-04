@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'test_helper'
+require 'minitest/mock'
 
 class MoodleApiTest < ActiveSupport::TestCase
   setup do

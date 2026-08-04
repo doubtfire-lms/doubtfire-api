@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'test_helper'
+require 'minitest/mock'
 
 class MoodleIntegrationApiTest < ActiveSupport::TestCase
   include Rack::Test::Methods
@@ -95,7 +96,7 @@ class MoodleIntegrationApiTest < ActiveSupport::TestCase
       end
     end
 
-    assert_equal 200, last_response.status, last_response.inspect
+    assert_equal 201, last_response.status, last_response.inspect
     assert_equal 'moodle-job-id', last_response_body['id']
     assert_equal 5, last_response_body['total_count'].to_i
   end
@@ -127,10 +128,10 @@ class MoodleIntegrationApiTest < ActiveSupport::TestCase
         Sidekiq::Status.stub(:get_all, job) do
           Sidekiq::Status.stub(:store_for_id, true) do
             post "/api/units/#{unit.id}/moodle/import_students", preview_only: true
-            assert_equal 200, last_response.status, last_response.inspect
+            assert_equal 201, last_response.status, last_response.inspect
 
             post "/api/units/#{unit.id}/moodle/import_extensions", preview_only: false
-            assert_equal 200, last_response.status, last_response.inspect
+            assert_equal 201, last_response.status, last_response.inspect
           end
         end
       end

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'test_helper'
+require 'minitest/mock'
 
 class ImportMoodleJobsTest < ActiveSupport::TestCase
   test 'student preview reports Moodle data without syncing enrolments' do
@@ -95,9 +96,10 @@ class ImportMoodleJobsTest < ActiveSupport::TestCase
 
   test 'student group mapping creates a missing group using a unit tutorial' do
     unit = FactoryBot.create(:unit, with_students: false, moodle_enabled: true)
-    tutorial = FactoryBot.create(:tutorial, unit: unit)
-    group_set = FactoryBot.create(:group_set, unit: unit)
     project = FactoryBot.create(:project, unit: unit)
+    tutorial = FactoryBot.create(:tutorial, unit: unit, campus: project.campus)
+    group_set = FactoryBot.create(:group_set, unit: unit)
+    TutorialEnrolment.create!(project: project, tutorial: tutorial)
     integration = unit.create_moodle_integration!(course_id: 42, api_key: 'secret-token')
     mapping = integration.moodle_group_mappings.create!(
       moodle_group_id: 31,
