@@ -83,6 +83,7 @@ class UnitsApi < Grape::API
       optional :send_notifications, type: Boolean, desc: 'Indicates if emails should be sent on updates each week'
       optional :enable_sync_timetable, type: Boolean, desc: 'Sync to timetable automatically if supported by deployment'
       optional :enable_sync_enrolments, type: Boolean, desc: 'Sync student enrolments automatically if supported by deployment'
+      optional :moodle_enabled, type: Boolean, desc: 'Enable the Moodle integration for this unit'
       optional :draft_task_definition_id, type: Integer, desc: 'Indicates the ID of the task definition used as the "draft learning summary task"'
       optional :portfolio_auto_generation_date, type: Date, desc: 'Indicates a date where student portfolio will automatically compile'
       optional :allow_flexible_dates, type: Boolean, desc: 'Can turn on/off flexible dates for tasks in this unit'
@@ -128,6 +129,7 @@ class UnitsApi < Grape::API
                                                           :send_notifications,
                                                           :enable_sync_timetable,
                                                           :enable_sync_enrolments,
+                                                          :moodle_enabled,
                                                           :draft_task_definition_id,
                                                           :portfolio_auto_generation_date,
                                                           :allow_flexible_dates,

@@ -62,6 +62,7 @@ class ApiRoot < Grape::API
   mount DiscussionCommentApi
   mount EngagementsApi
   mount ExtensionCommentsApi
+  mount MoodleIntegrationApi
   mount ScormExtensionCommentsApi
   mount GroupSetsApi
   mount LearningOutcomesApi
@@ -122,6 +123,7 @@ class ApiRoot < Grape::API
   AuthenticationHelpers.add_auth_to DiscussionCommentApi
   AuthenticationHelpers.add_auth_to EngagementsApi
   AuthenticationHelpers.add_auth_to ExtensionCommentsApi
+  AuthenticationHelpers.add_auth_to MoodleIntegrationApi
   AuthenticationHelpers.add_auth_to ScormExtensionCommentsApi
   AuthenticationHelpers.add_auth_to GroupSetsApi
   AuthenticationHelpers.add_auth_to LearningOutcomesApi
