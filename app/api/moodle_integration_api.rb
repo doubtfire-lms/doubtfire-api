@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'grape'
+require 'entities/moodle_integration_entity'
 require 'entities/sidekiq_job_entity'
 
 class MoodleIntegrationApi < Grape::API
@@ -20,18 +21,8 @@ class MoodleIntegrationApi < Grape::API
       error!({ error: 'Not authorised to manage Moodle for this unit' }, 403)
     end
 
-    integration = unit.moodle_integration
-    present(
-      {
-        id: integration&.id,
-        course_id: integration&.course_id,
-        assignment_id: integration&.assignment_id,
-        assignment_name: integration&.assignment_name,
-        fetch_extensions: integration&.fetch_extensions || false,
-        api_key_configured: integration&.api_key.present?
-      },
-      with: Grape::Presenters::Presenter
-    )
+    integration = unit.moodle_integration || unit.build_moodle_integration
+    present integration, with: Entities::MoodleIntegrationEntity
   end
 
   desc 'Update Moodle settings for a unit'
@@ -41,6 +32,18 @@ class MoodleIntegrationApi < Grape::API
     optional :assignment_id, type: Integer
     optional :assignment_name, type: String
     optional :fetch_extensions, type: Boolean, default: false
+    optional :group_mapping_enabled, type: Boolean, default: false
+    optional :group_mappings, type: Array do
+      requires :moodle_group_id, type: Integer
+      requires :moodle_group_name, type: String
+      requires :target_type, type: String, values: MoodleGroupMapping::TARGET_TYPES
+      optional :group_set_id, type: Integer
+      optional :group_id, type: Integer
+      optional :campus_id, type: Integer
+      optional :tutorial_stream_id, type: Integer
+      optional :tutorial_id, type: Integer
+      optional :create_if_missing, type: Boolean, default: false
+    end
   end
   put '/units/:unit_id/moodle' do
     unit = Unit.find(params[:unit_id])
@@ -50,24 +53,35 @@ class MoodleIntegrationApi < Grape::API
     end
 
     integration = unit.moodle_integration || unit.build_moodle_integration
-    integration.course_id = params[:course_id]
-    integration.api_key = params[:api_key] if params[:api_key].present?
-    integration.fetch_extensions = params[:fetch_extensions]
-    integration.assignment_id = params[:fetch_extensions] ? params[:assignment_id] : nil
-    integration.assignment_name = params[:fetch_extensions] ? params[:assignment_name] : nil
-    integration.save!
+    MoodleIntegration.transaction do
+      integration.course_id = params[:course_id]
+      integration.api_key = params[:api_key] if params[:api_key].present?
+      integration.fetch_extensions = params[:fetch_extensions]
+      integration.assignment_id = params[:fetch_extensions] ? params[:assignment_id] : nil
+      integration.assignment_name = params[:fetch_extensions] ? params[:assignment_name] : nil
+      integration.group_mapping_enabled = params[:group_mapping_enabled]
+      integration.save!
 
-    present(
-      {
-        id: integration.id,
-        course_id: integration.course_id,
-        assignment_id: integration.assignment_id,
-        assignment_name: integration.assignment_name,
-        fetch_extensions: integration.fetch_extensions,
-        api_key_configured: integration.api_key.present?
-      },
-      with: Grape::Presenters::Presenter
-    )
+      if integration.group_mapping_enabled?
+        integration.moodle_group_mappings.delete_all
+        Array(params[:group_mappings]).each do |mapping|
+          integration.moodle_group_mappings.create!(
+            moodle_group_id: mapping[:moodle_group_id],
+            moodle_group_name: mapping[:moodle_group_name],
+            target_type: mapping[:target_type],
+            group_set_id: mapping[:group_set_id],
+            group_id: mapping[:group_id],
+            campus_id: mapping[:campus_id],
+            tutorial_stream_id: mapping[:tutorial_stream_id],
+            tutorial_id: mapping[:tutorial_id],
+            create_if_missing: mapping[:create_if_missing]
+          )
+        end
+      end
+    end
+
+    integration.moodle_group_mappings.reload
+    present integration, with: Entities::MoodleIntegrationEntity
   end
 
   desc 'Test Moodle API permissions for a unit'

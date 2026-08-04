@@ -39,6 +39,10 @@ class MoodleApi
     request('mod_assign_get_participant', 'assignid' => assignment_id, 'userid' => user_id, 'embeduser' => 0)
   end
 
+  def course_groups
+    request('core_group_get_course_groups', 'courseid' => @integration.course_id)
+  end
+
   def test_connection(progress_callback: nil)
     results = []
     progress_callback&.call(1, 'Fetching course assignments')
@@ -71,9 +75,14 @@ class MoodleApi
       participant(assignment_id, participant_user['id'])
     end
 
+    progress_callback&.call(5, 'Fetching course groups')
+    groups = test_function(results, 'core_group_get_course_groups') { course_groups }
+    available_groups = Array(groups)
+
     {
       course: course&.slice('id', 'fullname', 'shortname'),
       assignments: available_assignments.map { |item| item.slice('id', 'name', 'duedate') },
+      groups: available_groups.map { |item| item.slice('id', 'name', 'idnumber') },
       permissions: results
     }
   end

@@ -20,7 +20,15 @@ class MoodleIntegrationApiTest < ActiveSupport::TestCase
       api_key: 'secret-token',
       assignment_id: 7,
       assignment_name: 'Portfolio',
-      fetch_extensions: true
+      fetch_extensions: true,
+      group_mapping_enabled: true,
+      group_mappings: [{
+        moodle_group_id: 31,
+        moodle_group_name: 'Hawthorn',
+        target_type: 'campus',
+        campus_id: FactoryBot.create(:campus).id,
+        create_if_missing: false
+      }]
     }
 
     assert_equal 200, last_response.status, last_response.inspect
@@ -29,6 +37,8 @@ class MoodleIntegrationApiTest < ActiveSupport::TestCase
     assert_equal 'secret-token', integration.api_key
     assert_equal 'Portfolio', integration.assignment_name
     assert integration.fetch_extensions
+    assert integration.group_mapping_enabled
+    assert_equal 'Hawthorn', integration.moodle_group_mappings.first.moodle_group_name
     assert_equal integration.id, last_response_body['id']
     assert_equal true, last_response_body['api_key_configured']
     assert_not last_response.body.include?('secret-token')
@@ -38,6 +48,8 @@ class MoodleIntegrationApiTest < ActiveSupport::TestCase
     assert_equal 7, last_response_body['assignment_id']
     assert_equal 'Portfolio', last_response_body['assignment_name']
     assert_equal true, last_response_body['fetch_extensions']
+    assert_equal true, last_response_body['group_mapping_enabled']
+    assert_equal 31, last_response_body['group_mappings'].first['moodle_group_id']
     assert_nil last_response_body['api_key']
   end
 
@@ -72,7 +84,7 @@ class MoodleIntegrationApiTest < ActiveSupport::TestCase
       'jid' => 'moodle-job-id',
       'status' => 'queued',
       'at' => 0,
-      'total' => 4
+      'total' => 5
     }
 
     TestMoodleConnectionJob.stub(:perform_async, 'moodle-job-id') do
@@ -85,7 +97,7 @@ class MoodleIntegrationApiTest < ActiveSupport::TestCase
 
     assert_equal 200, last_response.status, last_response.inspect
     assert_equal 'moodle-job-id', last_response_body['id']
-    assert_equal 4, last_response_body['total_count'].to_i
+    assert_equal 5, last_response_body['total_count'].to_i
   end
 
   test 'Moodle imports enqueue preview and import jobs' do

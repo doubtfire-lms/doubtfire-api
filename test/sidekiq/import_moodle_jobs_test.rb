@@ -44,6 +44,80 @@ class ImportMoodleJobsTest < ActiveSupport::TestCase
     moodle.verify
   end
 
+  test 'student preview reports configured Moodle group mappings without changing students' do
+    unit = FactoryBot.create(:unit, with_students: false, moodle_enabled: true)
+    campus = FactoryBot.create(:campus)
+    integration = unit.create_moodle_integration!(
+      course_id: 42,
+      api_key: 'secret-token',
+      group_mapping_enabled: true
+    )
+    integration.moodle_group_mappings.create!(
+      moodle_group_id: 31,
+      moodle_group_name: 'City students',
+      target_type: 'campus',
+      campus: campus
+    )
+    moodle = Minitest::Mock.new
+    moodle.expect(
+      :students,
+      [{
+        'id' => 12,
+        'username' => 'group.student',
+        'idnumber' => '654321',
+        'firstname' => 'Group',
+        'lastname' => 'Student',
+        'email' => 'group.student@example.com',
+        'groups' => [{ 'id' => 31, 'name' => 'City students' }],
+        'roles' => [{ 'shortname' => 'student' }]
+      }]
+    )
+    stored = nil
+    job = ImportMoodleStudentsJob.new
+
+    MoodleApi.stub(:new, moodle) do
+      job.stub(:at, nil) do
+        job.stub(:total, nil) do
+          job.stub(:store, ->(**data) { stored = data }) do
+            assert_no_difference -> { unit.projects.count } do
+              job.perform(unit.id, true)
+            end
+          end
+        end
+      end
+    end
+
+    result = JSON.parse(stored[:result])
+    assert_equal campus.name, result['success'].first.dig('row', 'mapped_campus')
+    assert_equal 'City students', result['success'].first.dig('row', 'moodle_groups')
+    moodle.verify
+  end
+
+  test 'student group mapping creates a missing group using a unit tutorial' do
+    unit = FactoryBot.create(:unit, with_students: false, moodle_enabled: true)
+    tutorial = FactoryBot.create(:tutorial, unit: unit)
+    group_set = FactoryBot.create(:group_set, unit: unit)
+    project = FactoryBot.create(:project, unit: unit)
+    integration = unit.create_moodle_integration!(course_id: 42, api_key: 'secret-token')
+    mapping = integration.moodle_group_mappings.create!(
+      moodle_group_id: 31,
+      moodle_group_name: 'Moodle Group 1',
+      target_type: 'group',
+      group_set: group_set,
+      create_if_missing: true
+    )
+
+    job = ImportMoodleStudentsJob.new
+    assert_difference -> { group_set.groups.count }, 1 do
+      assert job.send(:apply_mappings, project, [mapping])
+    end
+
+    group = group_set.groups.find_by!(name: 'Moodle Group 1')
+    assert_equal tutorial, group.tutorial
+    assert_equal group, project.reload.group_for_groupset(group_set)
+    assert_not job.send(:apply_mappings, project.reload, [mapping])
+  end
+
   test 'extension preview reports calculated days without updating the project' do
     unit = FactoryBot.create(:unit, with_students: false, moodle_enabled: true)
     user = FactoryBot.create(:user, :student, username: 'extension.student')

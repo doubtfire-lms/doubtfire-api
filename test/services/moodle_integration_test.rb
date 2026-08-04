@@ -22,17 +22,21 @@ class MoodleApiTest < ActiveSupport::TestCase
       'username' => 'student',
       'roles' => [{ 'shortname' => 'student' }]
     }]
+    groups = [{ 'id' => 31, 'name' => 'Tutorial A', 'idnumber' => 'T-A' }]
 
     @integration.stub(:assignments, assignments) do
       @integration.stub(:students, students) do
         @integration.stub(:user_flags, {}) do
           @integration.stub(:participant, {}) do
-            result = @integration.test_connection
+            @integration.stub(:course_groups, groups) do
+              result = @integration.test_connection
 
-            assert_equal 'Programming 1', result[:course]['fullname']
-            assert_equal 'Portfolio', result[:assignments].first['name']
-            assert_equal %w[mod_assign_get_assignments core_enrol_get_enrolled_users mod_assign_get_user_flags mod_assign_get_participant], result[:permissions].pluck(:function)
-            assert result[:permissions].all? { |permission| permission[:success] }
+              assert_equal 'Programming 1', result[:course]['fullname']
+              assert_equal 'Portfolio', result[:assignments].first['name']
+              assert_equal 'Tutorial A', result[:groups].first['name']
+              assert_equal %w[mod_assign_get_assignments core_enrol_get_enrolled_users mod_assign_get_user_flags mod_assign_get_participant core_group_get_course_groups], result[:permissions].pluck(:function)
+              assert(result[:permissions].all? { |permission| permission[:success] })
+            end
           end
         end
       end
@@ -42,12 +46,14 @@ class MoodleApiTest < ActiveSupport::TestCase
   test 'connection test reports an individual failed permission' do
     @integration.stub(:assignments, { 'courses' => [] }) do
       @integration.stub(:students, []) do
-        result = @integration.test_connection
+        @integration.stub(:course_groups, []) do
+          result = @integration.test_connection
 
-        flags = result[:permissions].find { |permission| permission[:function] == 'mod_assign_get_user_flags' }
-        participant = result[:permissions].find { |permission| permission[:function] == 'mod_assign_get_participant' }
-        assert_not flags[:success]
-        assert_not participant[:success]
+          flags = result[:permissions].find { |permission| permission[:function] == 'mod_assign_get_user_flags' }
+          participant = result[:permissions].find { |permission| permission[:function] == 'mod_assign_get_participant' }
+          assert_not flags[:success]
+          assert_not participant[:success]
+        end
       end
     end
   end
@@ -66,11 +72,15 @@ class MoodleApiTest < ActiveSupport::TestCase
       @integration.stub(:students, students) do
         @integration.stub(:user_flags, {}) do
           @integration.stub(:participant, ->(*) { raise filtered }) do
-            result = @integration.test_connection
-            permission = result[:permissions].last
+            @integration.stub(:course_groups, []) do
+              result = @integration.test_connection
+              permission = result[:permissions].find do |item|
+                item[:function] == 'mod_assign_get_participant'
+              end
 
-            assert permission[:success]
-            assert_equal 'User is filtered out', permission[:message]
+              assert permission[:success]
+              assert_equal 'User is filtered out', permission[:message]
+            end
           end
         end
       end

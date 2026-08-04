@@ -2,6 +2,7 @@
 
 class MoodleIntegration < ApplicationRecord
   belongs_to :unit
+  has_many :moodle_group_mappings, dependent: :destroy
 
   encrypts :api_key
 
