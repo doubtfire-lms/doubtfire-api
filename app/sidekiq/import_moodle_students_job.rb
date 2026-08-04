@@ -149,7 +149,13 @@ class ImportMoodleStudentsJob
     mappings.each do |mapping|
       case mapping.target_type
       when 'group'
-        errors << "Select an existing group in #{mapping.group_set.name}" if !mapping.create_if_missing? && mapping.group.blank?
+        if mapping.create_if_missing?
+          if mapping.tutorial.blank? == mapping.tutorial_stream.blank?
+            errors << 'Select an existing tutorial or a tutorial stream for the new group'
+          end
+        elsif mapping.group.blank?
+          errors << "Select an existing group in #{mapping.group_set.name}"
+        end
       when 'tutorial'
         if !mapping.create_if_missing? && mapping.tutorial.blank?
           errors << "Select an existing tutorial in #{mapping.tutorial_stream.name}"
@@ -193,17 +199,29 @@ class ImportMoodleStudentsJob
         group = mapping.group
         if mapping.create_if_missing?
           group = mapping.group_set.groups.where('LOWER(name) = ?', mapping.moodle_group_name.downcase).first
-          tutorial = project.tutorial_enrolments.includes(:tutorial).first&.tutorial ||
-                     mapping.group_set.groups.first&.tutorial ||
-                     project.unit.tutorials.first
-          if group.blank? && tutorial.blank?
-            raise ActiveRecord::RecordNotSaved, 'A tutorial is required before a group can be created'
+          tutorial = group&.tutorial || mapping.tutorial
+          if tutorial.blank?
+            tutorial = mapping.tutorial_stream.tutorials.where(
+              unit: project.unit
+            ).where('LOWER(abbreviation) = ?', mapping.moodle_group_name.downcase).first
+            tutorial ||= Tutorial.create!(
+              unit: project.unit,
+              tutorial_stream: mapping.tutorial_stream,
+              abbreviation: mapping.moodle_group_name,
+              meeting_day: 'Moodle',
+              meeting_time: '',
+              meeting_location: mapping.moodle_group_name
+            )
           end
           group ||= Group.create!(
             group_set: mapping.group_set,
             tutorial: tutorial,
             name: mapping.moodle_group_name
           )
+          if project.tutorial_for_stream(tutorial.tutorial_stream)&.id != tutorial.id
+            project.enrol_in(tutorial)
+            changed = true
+          end
         end
         if project.group_for_groupset(mapping.group_set)&.id != group.id
           group.add_member(project)

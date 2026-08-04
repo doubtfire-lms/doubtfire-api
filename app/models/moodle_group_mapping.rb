@@ -25,7 +25,15 @@ class MoodleGroupMapping < ApplicationRecord
     when 'group'
       errors.add(:group_set, 'must be selected') if group_set.blank?
       errors.add(:group_set, 'must belong to this unit') if group_set.present? && group_set.unit != unit
-      unless create_if_missing?
+      if create_if_missing?
+        if tutorial.blank? == tutorial_stream.blank?
+          errors.add(:base, 'select an existing tutorial or a tutorial stream for the new group')
+        end
+        errors.add(:tutorial, 'must belong to this unit') if tutorial.present? && tutorial.unit != unit
+        if tutorial_stream.present? && tutorial_stream.unit != unit
+          errors.add(:tutorial_stream, 'must belong to this unit')
+        end
+      else
         errors.add(:group, 'must be selected') if group.blank?
         if group.present? && (group.group_set != group_set || group.unit != unit)
           errors.add(:group, 'must belong to the selected group set')

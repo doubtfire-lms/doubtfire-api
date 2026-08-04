@@ -99,13 +99,13 @@ class ImportMoodleJobsTest < ActiveSupport::TestCase
     project = FactoryBot.create(:project, unit: unit)
     tutorial = FactoryBot.create(:tutorial, unit: unit, campus: project.campus)
     group_set = FactoryBot.create(:group_set, unit: unit)
-    TutorialEnrolment.create!(project: project, tutorial: tutorial)
     integration = unit.create_moodle_integration!(course_id: 42, api_key: 'secret-token')
     mapping = integration.moodle_group_mappings.create!(
       moodle_group_id: 31,
       moodle_group_name: 'Moodle Group 1',
       target_type: 'group',
       group_set: group_set,
+      tutorial: tutorial,
       create_if_missing: true
     )
 
@@ -116,7 +116,38 @@ class ImportMoodleJobsTest < ActiveSupport::TestCase
 
     group = group_set.groups.find_by!(name: 'Moodle Group 1')
     assert_equal tutorial, group.tutorial
+    assert_equal tutorial, project.reload.tutorial_for_stream(tutorial.tutorial_stream)
     assert_equal group, project.reload.group_for_groupset(group_set)
+    assert_not job.send(:apply_mappings, project.reload, [mapping])
+  end
+
+  test 'student group mapping creates a matching tutorial and group' do
+    unit = FactoryBot.create(:unit, with_students: false, moodle_enabled: true)
+    project = FactoryBot.create(:project, unit: unit)
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
+    group_set = FactoryBot.create(:group_set, unit: unit)
+    integration = unit.create_moodle_integration!(course_id: 42, api_key: 'secret-token')
+    mapping = integration.moodle_group_mappings.create!(
+      moodle_group_id: 32,
+      moodle_group_name: 'Moodle Group 2',
+      target_type: 'group',
+      group_set: group_set,
+      tutorial_stream: tutorial_stream,
+      create_if_missing: true
+    )
+
+    job = ImportMoodleStudentsJob.new
+    assert_difference -> { group_set.groups.count }, 1 do
+      assert_difference -> { tutorial_stream.tutorials.count }, 1 do
+        assert job.send(:apply_mappings, project, [mapping])
+      end
+    end
+
+    tutorial = tutorial_stream.tutorials.find_by!(abbreviation: 'Moodle Group 2')
+    group = group_set.groups.find_by!(name: 'Moodle Group 2')
+    assert_equal tutorial, group.tutorial
+    assert_equal tutorial, project.reload.tutorial_for_stream(tutorial_stream)
+    assert_equal group, project.group_for_groupset(group_set)
     assert_not job.send(:apply_mappings, project.reload, [mapping])
   end
 
