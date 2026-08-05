@@ -28,6 +28,10 @@ notify_discuss_timeout:
   cron: "every day at 8am"
   class: "NotifyDiscussTimeoutJob"
 
+sync_moodle_integrations:
+  cron: "every day at 3am"
+  class: "SyncMoodleIntegrationsJob"
+
 # archive_old_units:
 #   cron: "every 6 months"
 #   class: "ArchiveOldUnitsJob"

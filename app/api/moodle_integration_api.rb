@@ -32,6 +32,8 @@ class MoodleIntegrationApi < Grape::API
     optional :assignment_id, type: Integer
     optional :assignment_name, type: String
     optional :fetch_extensions, type: Boolean, default: false
+    optional :auto_sync_students, type: Boolean, default: false
+    optional :auto_sync_extensions, type: Boolean, default: false
     optional :group_mapping_enabled, type: Boolean, default: false
     optional :group_mappings, type: Array do
       requires :moodle_group_id, type: Integer
@@ -59,6 +61,8 @@ class MoodleIntegrationApi < Grape::API
       integration.fetch_extensions = params[:fetch_extensions]
       integration.assignment_id = params[:fetch_extensions] ? params[:assignment_id] : nil
       integration.assignment_name = params[:fetch_extensions] ? params[:assignment_name] : nil
+      integration.auto_sync_students = params[:auto_sync_students]
+      integration.auto_sync_extensions = params[:fetch_extensions] && params[:auto_sync_extensions]
       integration.group_mapping_enabled = params[:group_mapping_enabled]
       integration.save!
 

@@ -9,6 +9,8 @@ class AddMoodleIntegrationToUnits < ActiveRecord::Migration[8.0]
       t.bigint :assignment_id
       t.string :assignment_name
       t.boolean :fetch_extensions, null: false, default: false
+      t.boolean :auto_sync_students, null: false, default: false
+      t.boolean :auto_sync_extensions, null: false, default: false
       t.boolean :group_mapping_enabled, null: false, default: false
 
       t.timestamps

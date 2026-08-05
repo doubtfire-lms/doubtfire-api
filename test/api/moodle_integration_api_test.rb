@@ -22,6 +22,8 @@ class MoodleIntegrationApiTest < ActiveSupport::TestCase
       assignment_id: 7,
       assignment_name: 'Portfolio',
       fetch_extensions: true,
+      auto_sync_students: true,
+      auto_sync_extensions: true,
       group_mapping_enabled: true,
       group_mappings: [{
         moodle_group_id: 31,
@@ -38,6 +40,8 @@ class MoodleIntegrationApiTest < ActiveSupport::TestCase
     assert_equal 'secret-token', integration.api_key
     assert_equal 'Portfolio', integration.assignment_name
     assert integration.fetch_extensions
+    assert integration.auto_sync_students
+    assert integration.auto_sync_extensions
     assert integration.group_mapping_enabled
     assert_equal 'Hawthorn', integration.moodle_group_mappings.first.moodle_group_name
     assert_equal integration.id, last_response_body['id']
@@ -49,6 +53,8 @@ class MoodleIntegrationApiTest < ActiveSupport::TestCase
     assert_equal 7, last_response_body['assignment_id']
     assert_equal 'Portfolio', last_response_body['assignment_name']
     assert_equal true, last_response_body['fetch_extensions']
+    assert_equal true, last_response_body['auto_sync_students']
+    assert_equal true, last_response_body['auto_sync_extensions']
     assert_equal true, last_response_body['group_mapping_enabled']
     assert_equal 31, last_response_body['group_mappings'].first['moodle_group_id']
     assert_nil last_response_body['api_key']

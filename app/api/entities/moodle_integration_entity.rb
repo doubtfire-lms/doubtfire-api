@@ -7,6 +7,8 @@ module Entities
     expose :assignment_id
     expose :assignment_name
     expose :fetch_extensions
+    expose :auto_sync_students
+    expose :auto_sync_extensions
     expose :group_mapping_enabled
     expose :moodle_group_mappings,
            as: :group_mappings,

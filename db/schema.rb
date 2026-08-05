@@ -381,6 +381,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_04_005203) do
     t.bigint "assignment_id"
     t.string "assignment_name"
     t.boolean "fetch_extensions", default: false, null: false
+    t.boolean "auto_sync_students", default: false, null: false
+    t.boolean "auto_sync_extensions", default: false, null: false
     t.boolean "group_mapping_enabled", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
