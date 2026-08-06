@@ -7,6 +7,7 @@ require 'onelogin/ruby-saml'
 # This is used by the grape api.
 #
 module AuthenticationHelpers
+  CONTENT_TOKEN_COOKIE = 'content_token'.freeze
   # private functions
 
   # Check that the user and token are valid
@@ -73,12 +74,16 @@ module AuthenticationHelpers
   #   :cookie - from the request cookie
   # @return [String, String] The username and token
   def get_user_and_token_from(source)
-    if source == :header
+    case source
+    when :header
       user_param = headers['username'] || headers['Username'] || params['username']
       auth_param = headers['auth-token'] || headers['Auth-Token'] || params['authToken'] || headers['Auth_Token'] || headers['auth_token'] || params['auth_token'] || params['Auth_Token']
-    elsif source == :cookie
+    when :cookie
       user_param = cookies['username']
       auth_param = cookies['refresh_token']
+    when :content_cookie
+      user_param = cookies['username']
+      auth_param = cookies[CONTENT_TOKEN_COOKIE]
     else
       # Default to nil
       user_param = nil
@@ -122,6 +127,31 @@ module AuthenticationHelpers
   def current_user
     username = headers['username'] || headers['Username'] || params['username'] || cookies['username']
     User.eager_load(:role, :auth_tokens).find_by(username: username)
+  end
+
+  def set_content_cookie_in_response(token = nil)
+    domain = Doubtfire::Application.config.institution[:cookie_domain]
+    common_options = {
+      domain: domain,
+      path: '/api/units/',
+      secure: request.ssl? || Rails.env.production?,
+      same_site: :strict,
+      httponly: true
+    }
+
+    if token.present?
+      cookies['username'] = common_options.merge(
+        value: current_user.username,
+        expires: token.auth_token_expiry
+      )
+      cookies[CONTENT_TOKEN_COOKIE] = common_options.merge(
+        value: token.authentication_token,
+        expires: token.auth_token_expiry
+      )
+    else
+      cookies.delete('username', **common_options)
+      cookies.delete(CONTENT_TOKEN_COOKIE, **common_options)
+    end
   end
 
   #
