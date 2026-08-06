@@ -621,6 +621,21 @@ class TaskTest < ActiveSupport::TestCase
       assert_not page.text.include?('ERROR when parsing'), page.text
     end
 
+    # test an image pasted into a Markdown cell and stored in the notebook's
+    # attachments MIME bundle
+    data_to_post = with_file('test_files/submissions/embedded_markdown_image.ipynb', 'application/json', data_to_post)
+
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
+
+    assert_equal 201, last_response.status, last_response_body
+    assert task.convert_submission_to_pdf(log_to_stdout: true)
+
+    reader = PDF::Reader.new(task.final_pdf_path)
+    reader.pages.each do |page|
+      assert_not page.text.include?('ERROR when parsing'), page.text
+      assert_not page.text.include?('Image attachment unavailable'), page.text
+    end
+
     # test line wrapping in jupynotex
     data_to_post = with_file('test_files/submissions/long.ipynb', 'application/json', data_to_post)
 
