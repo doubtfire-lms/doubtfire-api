@@ -114,6 +114,9 @@ module Submission
       optional :as_attachment, type: Boolean, desc: 'Whether or not to download file as attachment. Default is false.'
     end
     get '/projects/:id/task_def_id/:task_definition_id/submission' do
+      # Requests through Caddy are intercepted before the general /api proxy.
+      # Rails authorises those requests via SubmissionDownloadAuthorizationsController,
+      # then Caddy serves the PDF. This remains the direct-Rails fallback path.
       project = Project.eager_load(:unit).find(params[:id])
       task_definition = project.unit.task_definitions.select(:id, :name, :abbreviation).find(params[:task_definition_id])
 
