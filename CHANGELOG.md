@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-44](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-43...v11.0.0-44) (2026-08-08)
+
+
+### Features
+
+* bulk upload staff notes ([6c3b3e0](https://github.com/b0ink/doubtfire-deploy/commit/6c3b3e0b1b67ad3226718e9e7925b849802e0ae3))
+* bulk upload staff notes ([#665](https://github.com/b0ink/doubtfire-deploy/issues/665)) ([3e0f32d](https://github.com/b0ink/doubtfire-deploy/commit/3e0f32d724f3664deddbff8fef55ca10c8fed3b1))
+
 ## [11.0.0-43](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-42...v11.0.0-43) (2026-08-03)
 
 
