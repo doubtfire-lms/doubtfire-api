@@ -84,6 +84,35 @@ class CommentReadCursorTest < ActiveSupport::TestCase
     assert_not_includes unit.tasks_for_task_inbox(other_staff).map(&:task_id), task.id
   end
 
+  def test_group_students_have_independent_unread_comment_cursors
+    unit = FactoryBot.create(
+      :unit,
+      group_sets: 1,
+      groups: [{ gs: 0, students: 2 }],
+      group_tasks: [{ idx: 0, gs: 0 }]
+    )
+    task_definition = unit.task_definitions.first
+    projects = unit.groups.first.projects.to_a
+    first_task = projects.first.task_for_task_definition(task_definition)
+    second_task = projects.second.task_for_task_definition(task_definition)
+    tutor = projects.first.tutor_for(task_definition)
+
+    comment = first_task.add_text_comment(tutor, 'Feedback for the group')
+    second_task.reload
+
+    assert comment.new_for?(projects.first.student)
+    assert comment.new_for?(projects.second.student)
+    assert_equal 1, unread_count(projects.first, task_definition)
+    assert_equal 1, unread_count(projects.second, task_definition)
+
+    first_task.mark_comments_as_read(projects.first.student, first_task.all_comments)
+
+    assert_not comment.new_for?(projects.first.student)
+    assert comment.new_for?(projects.second.student)
+    assert_equal 0, unread_count(projects.first, task_definition)
+    assert_equal 1, unread_count(projects.second, task_definition)
+  end
+
   def test_destroying_the_cursor_comment_rewinds_each_users_cursor
     project = FactoryBot.create(:project)
     task = project.task_for_task_definition(project.unit.task_definitions.first)
@@ -147,5 +176,12 @@ class CommentReadCursorTest < ActiveSupport::TestCase
     cursor = CommentReadCursor.find_by!(task: task, user: tutor)
     assert_equal student_comment.id, cursor.last_read_comment_id
     assert_not(project.unit.tasks_for_task_inbox(tutor).any? { |item| item.task_id == task.id })
+  end
+
+  private
+
+  def unread_count(project, task_definition)
+    project.task_details_for_shallow_serializer(project.student)
+           .find { |task| task[:task_definition_id] == task_definition.id }[:num_new_comments].to_i
   end
 end

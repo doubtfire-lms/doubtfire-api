@@ -285,8 +285,11 @@ class Project < ApplicationRecord
 
     tasks
       .joins(:task_status)
-      .joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id AND (task_comments.attention_audience IS NULL OR task_comments.attention_audience = #{attention_audience}) AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment')")
-      .joins("LEFT JOIN comment_read_cursors crc ON crc.task_id = tasks.id AND crc.user_id = #{user.id}")
+      .joins('LEFT JOIN tasks comment_tasks ON comment_tasks.id = tasks.id ' \
+             'OR (tasks.group_submission_id IS NOT NULL ' \
+             'AND comment_tasks.group_submission_id = tasks.group_submission_id)')
+      .joins("LEFT JOIN task_comments ON task_comments.task_id = comment_tasks.id AND (task_comments.attention_audience IS NULL OR task_comments.attention_audience = #{attention_audience}) AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment')")
+      .joins("LEFT JOIN comment_read_cursors crc ON crc.task_id = task_comments.task_id AND crc.user_id = #{user.id.to_i}")
       .joins('LEFT OUTER JOIN task_similarities ON tasks.id = task_similarities.task_id')
       .select(
         'SUM(case when (crc.last_read_comment_id IS NULL OR task_comments.id > crc.last_read_comment_id) AND NOT task_comments.id is null then 1 else 0 end) as number_unread', 'project_id', 'tasks.id as id',

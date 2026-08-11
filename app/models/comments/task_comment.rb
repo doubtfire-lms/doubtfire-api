@@ -195,7 +195,7 @@ class TaskComment < ApplicationRecord
 
   def requires_attention_for?(user)
     return true if attention_audience.nil?
-    return attention_student? if user == project.student
+    return attention_student? if task.student_participant?(user)
 
     attention_staff?
   end
