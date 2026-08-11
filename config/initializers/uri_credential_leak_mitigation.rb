@@ -5,8 +5,9 @@ require 'uri'
 module UriCredentialLeakMitigation
   def +(other)
     combined = super
+    other_uri = other.is_a?(URI::Generic) ? other : URI.parse(other.to_str)
 
-    return combined unless other.respond_to?(:absolute?) && !other.absolute?
+    return combined if other_uri.absolute?
     return combined unless combined.respond_to?(:user=) || combined.respond_to?(:password=)
 
     sanitized = combined.dup

@@ -97,6 +97,13 @@ module Doubtfire
       credential_value.nil? ? ENV.fetch(env_key, default) : credential_value
     end
 
+    def self.cors_origin_for(host)
+      host = host.to_s.strip
+      return host if host.start_with?('http://', 'https://')
+
+      "https://#{host}"
+    end
+
     # ==> Log to stdout
     config.log_to_stdout = Application.fetch_boolean_env('DF_LOG_TO_STDOUT')
 
@@ -300,7 +307,7 @@ module Doubtfire
     # CORS_ALLOWED_ORIGINS="http://localhost:4200,https://frontend.example.edu"
     default_cors_origins = [
       'http://localhost:4200',
-      "https://#{config.institution[:host]}"
+      Application.cors_origin_for(config.institution[:host])
     ].uniq
     allowed_cors_origins = ENV.fetch('CORS_ALLOWED_ORIGINS', default_cors_origins.join(','))
                               .split(',')
@@ -317,8 +324,8 @@ module Doubtfire
         end
 
         resource '*',
-                 headers: %w[Content-Type Authorization Accept],
-                 methods: %i[get post put delete options]
+                 headers: :any,
+                 methods: %i[get post put patch delete options head]
       end
     end
 
