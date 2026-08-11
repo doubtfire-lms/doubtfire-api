@@ -15,7 +15,7 @@ class AllowedCharactersValidator < ActiveModel::EachValidator
     return if value.blank?
 
     whitelist = CHARACTER_WHITELISTS.fetch(options.fetch(:type))
-    return if alphanumeric?(value.first) && value.each_char.all? { |character| alphanumeric?(character) || whitelist.include?(character) }
+    return if value.each_char.all? { |character| alphanumeric?(character) || whitelist.include?(character) }
 
     record.errors.add(attribute, 'contains unsupported characters')
   end
