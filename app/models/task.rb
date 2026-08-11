@@ -588,6 +588,16 @@ class Task < ApplicationRecord
     !group_submission.nil? || !task_definition.group_set.nil?
   end
 
+  def student_participant_ids
+    return [project.user_id] if group_submission.nil?
+
+    group_submission.projects.distinct.pluck(:user_id)
+  end
+
+  def student_participant?(user)
+    user.present? && student_participant_ids.include?(user.id)
+  end
+
   def active_overflow_task_claim
     claim = overflow_task_claim
     return nil unless claim

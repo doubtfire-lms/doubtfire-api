@@ -162,17 +162,12 @@ class TaskComment < ApplicationRecord
     end
   end
 
-  def mark_as_read(user, unit = self.unit)
-    return if read_by?(user)
+  def mark_as_read(user)
+    assigned_tutor = project.tutor_for(task.task_definition)
 
-    if user == project.tutor_for(task.task_definition)
-      CommentReadCursor.transaction do
-        unit.staff.each do |staff_member|
-          advance_read_cursor(staff_member.user)
-        end
-      end
-    else
-      advance_read_cursor(user)
+    CommentReadCursor.transaction do
+      advance_read_cursor(user) unless read_by?(user)
+      remove_unneeded_staff_cursors(assigned_tutor) if user == assigned_tutor
     end
   end
 
@@ -227,6 +222,11 @@ class TaskComment < ApplicationRecord
   end
 
   private
+
+  def remove_unneeded_staff_cursors(assigned_tutor)
+    retained_user_ids = task.student_participant_ids << assigned_tutor.id
+    CommentReadCursor.where(task_id: task_id).where.not(user_id: retained_user_ids).delete_all
+  end
 
   def set_default_attention_audience
     return if attention_audience.present? || user.nil? || task.nil?

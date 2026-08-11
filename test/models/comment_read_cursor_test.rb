@@ -34,54 +34,54 @@ class CommentReadCursorTest < ActiveSupport::TestCase
     assert comments.last.new_for?(reader)
   end
 
-  def test_assigned_tutor_reading_a_comment_advances_all_staff_cursors
+  def test_assigned_tutor_reading_a_comment_removes_other_staff_cursors
     project = FactoryBot.create(:project)
     task = project.task_for_task_definition(project.unit.task_definitions.first)
     assigned_tutor = project.tutor_for(task.task_definition)
     other_staff = FactoryBot.create(:user, :tutor)
     project.unit.employ_staff(other_staff, Role.tutor)
+    tutor_comment = task.add_text_comment(assigned_tutor, 'Some feedback')
+    tutor_comment.mark_as_read(project.student)
     comment = task.add_text_comment(project.student, 'A question')
+
+    comment.mark_as_read(other_staff)
+    assert_equal comment.id, CommentReadCursor.find_by!(task: task, user: other_staff).last_read_comment_id
 
     comment.mark_as_read(assigned_tutor)
 
     assert comment.read_by?(assigned_tutor)
-    assert comment.read_by?(other_staff)
-    assert_equal comment.id, CommentReadCursor.find_by!(task: task, user: other_staff).last_read_comment_id
+    assert_nil CommentReadCursor.find_by(task: task, user: other_staff)
+    assert_equal tutor_comment.id, CommentReadCursor.find_by!(task: task, user: project.student).last_read_comment_id
   end
 
-  def test_changing_tutorial_does_not_show_comments_already_read_by_the_teaching_team
+  def test_assigned_tutor_cursor_hides_a_task_from_other_staff_inboxes
     project = FactoryBot.create(:project)
     unit = project.unit
     task_definition = unit.task_definitions.first
-    original_tutor = unit.main_convenor_user
-    new_tutor = FactoryBot.create(:user, :tutor)
-    new_tutor_role = unit.employ_staff(new_tutor, Role.tutor)
-    original_tutorial = FactoryBot.create(
+    assigned_tutor = FactoryBot.create(:user, :tutor)
+    assigned_tutor_role = unit.employ_staff(assigned_tutor, Role.tutor)
+    tutorial = FactoryBot.create(
       :tutorial,
       unit: unit,
       campus: project.campus,
-      unit_role: unit.unit_role_for(original_tutor)
+      tutorial_stream: task_definition.tutorial_stream,
+      unit_role: assigned_tutor_role
     )
-    new_tutorial = FactoryBot.create(
-      :tutorial,
-      unit: unit,
-      campus: project.campus,
-      unit_role: new_tutor_role
-    )
-    project.enrol_in(original_tutorial)
+    project.enrol_in(tutorial)
+    other_staff = FactoryBot.create(:user, :tutor)
+    unit.employ_staff(other_staff, Role.tutor)
     task = project.task_for_task_definition(task_definition)
     comment = task.add_text_comment(project.student, 'Please review this')
 
-    original_inbox = unit.tasks_for_task_inbox(original_tutor, true).map(&:task_id)
-    assert_includes original_inbox, task.id
+    assert_includes unit.tasks_for_task_inbox(other_staff).map(&:task_id), task.id
 
-    comment.mark_as_read(original_tutor)
-    assert_equal comment.id, CommentReadCursor.find_by!(task: task, user: new_tutor).last_read_comment_id
+    comment.mark_as_read(other_staff)
+    assert_equal comment.id, CommentReadCursor.find_by!(task: task, user: other_staff).last_read_comment_id
 
-    project.enrol_in(new_tutorial)
+    comment.mark_as_read(assigned_tutor)
 
-    new_tutor_inbox = unit.tasks_for_task_inbox(new_tutor, true).map(&:task_id)
-    assert_not_includes new_tutor_inbox, task.id
+    assert_nil CommentReadCursor.find_by(task: task, user: other_staff)
+    assert_not_includes unit.tasks_for_task_inbox(other_staff).map(&:task_id), task.id
   end
 
   def test_destroying_the_cursor_comment_rewinds_each_users_cursor
