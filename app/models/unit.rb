@@ -2552,6 +2552,10 @@ class Unit < ApplicationRecord
     staff_attention = TaskComment.attention_audiences.fetch('staff')
     unread_comment = '(COALESCE(crc.last_read_comment_id, 0) < task_comments.id ' \
                      'AND COALESCE(tutor_crc.last_read_comment_id, 0) < task_comments.id)'
+    similarity_stats = TaskSimilarity
+                       .select('task_id', 'COUNT(*) AS similarity_count', 'SUM(flagged) AS flagged_count')
+                       .group(:task_id)
+                       .to_sql
     result =  student_tasks.
               joins(:task_status).
               joins("LEFT OUTER JOIN (#{tutorial_enrolment_subquery}) as sq ON sq.project_id = projects.id AND (sq.tutorial_stream_id = task_definitions.tutorial_stream_id OR sq.tutorial_stream_id IS NULL)").
@@ -2560,6 +2564,9 @@ class Unit < ApplicationRecord
                 'LEFT JOIN tasks group_comment_tasks ON tasks.group_submission_id IS NOT NULL ' \
                 'AND group_comment_tasks.group_submission_id = tasks.group_submission_id'
               ).
+              joins("LEFT JOIN comment_read_cursors crc ON crc.task_id = COALESCE(group_comment_tasks.id, tasks.id) AND crc.user_id = #{user.id.to_i}").
+              joins('LEFT JOIN comment_read_cursors tutor_crc ON tutor_crc.task_id = COALESCE(group_comment_tasks.id, tasks.id) ' \
+                    'AND tutor_crc.user_id = task_tutor_roles.user_id').
               joins(
                 'LEFT JOIN task_comments ON task_comments.task_id = COALESCE(group_comment_tasks.id, tasks.id) ' \
                 "AND (task_comments.attention_audience IS NULL OR task_comments.attention_audience = #{staff_attention}) " \
@@ -2567,16 +2574,14 @@ class Unit < ApplicationRecord
                 "AND (task_comments.content_type IS NULL OR (task_comments.content_type <> 'plan' " \
                 "AND task_comments.content_type <> 'discussed_in_class'))"
               ).
-              joins("LEFT JOIN comment_read_cursors crc ON crc.task_id = task_comments.task_id AND crc.user_id = #{user.id.to_i}").
-              joins('LEFT JOIN comment_read_cursors tutor_crc ON tutor_crc.task_id = task_comments.task_id ' \
-                    'AND tutor_crc.user_id = task_tutor_roles.user_id').
               joins("LEFT JOIN task_pins ON task_pins.task_id = tasks.id AND task_pins.user_id = #{user.id}").
-              joins('LEFT OUTER JOIN task_similarities ON tasks.id = task_similarities.task_id').
+              joins("LEFT JOIN (#{similarity_stats}) task_similarity_stats ON task_similarity_stats.task_id = tasks.id").
               select(
                 'sq.tutorial_id AS tutorial_id',
                 'sq.tutorial_stream_id AS tutorial_stream_id',
                 'tasks.id',
-                "SUM(case when #{unread_comment} AND task_comments.id IS NOT NULL then 1 else 0 end) as number_unread",
+                "SUM(case when #{unread_comment} AND task_comments.id IS NOT NULL " \
+                'then COALESCE(task_similarity_stats.similarity_count, 1) else 0 end) as number_unread',
                 'COUNT(distinct task_pins.task_id) != 0 as pinned',
                 "SUM(case when task_comments.date_extension_assessed IS NULL AND task_comments.type = 'ExtensionComment' AND NOT task_comments.id IS NULL THEN 1 ELSE 0 END) > 0 as has_extensions",
                 'project_id',
@@ -2589,7 +2594,7 @@ class Unit < ApplicationRecord
                 'submission_date',
                 'tasks.grade as grade',
                 'quality_pts',
-                'SUM(case when task_similarities.flagged then 1 else 0 end) as similar_to_count'
+                'COALESCE(MAX(task_similarity_stats.flagged_count), 0) AS similar_to_count'
               ).
               group(
                 'sq.tutorial_id',
@@ -2640,7 +2645,7 @@ class Unit < ApplicationRecord
     unread_comment = '(COALESCE(crc.last_read_comment_id, 0) < task_comments.id ' \
                      'AND COALESCE(tutor_crc.last_read_comment_id, 0) < task_comments.id)'
     get_all_tasks_for(user, my_students_only)
-      .having("task_statuses.id IN (:ids) OR COUNT(task_pins.task_id) > 0 OR SUM(case when #{unread_comment} AND task_comments.id IS NOT NULL then 1 else 0 end) > 0", ids: [TaskStatus.ready_for_feedback, TaskStatus.need_help])
+      .having("task_statuses.id IN (:ids) OR COUNT(task_pins.task_id) > 0 OR SUM(case when #{unread_comment} AND task_comments.id IS NOT NULL then COALESCE(task_similarity_stats.similarity_count, 1) else 0 end) > 0", ids: [TaskStatus.ready_for_feedback, TaskStatus.need_help])
       .order('pinned DESC, submission_date ASC, MAX(task_comments.created_at) ASC, task_definition_id ASC')
   end
 
