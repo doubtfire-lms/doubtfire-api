@@ -3,9 +3,9 @@
 class AllowedCharactersValidator < ActiveModel::EachValidator
   ALPHANUMERIC_CHARACTER = /\A[\p{L}\p{M}\p{N}]\z/u
   CHARACTER_WHITELISTS = {
-    first_name: ' -()',
-    last_name: ' -()',
-    preferred_name: ' -()',
+    first_name: ' -()_',
+    last_name: ' -()_',
+    preferred_name: ' -()_',
     unit_name: ' -#()',
     title: " -#()&/:_",
     unit_code: '-#/_'
