@@ -807,6 +807,7 @@ class UnitModelTest < ActiveSupport::TestCase
   test 'unit and task titles allow common teaching title punctuation' do
     assert FactoryBot.build(:unit, name: 'C# for Beginners (Part 1)').valid?
     assert FactoryBot.build(:task_definition, unit: @unit, name: 'Hyphenated-Task #1 (Core)').valid?
+    assert FactoryBot.build(:task_definition, unit: @unit, name: 'P1.1 - Hello World').valid?
   end
 
   test 'unit and task titles reject equals, plus, and at characters anywhere' do
