@@ -808,6 +808,7 @@ class UnitModelTest < ActiveSupport::TestCase
     assert FactoryBot.build(:unit, name: 'C# for Beginners (Part 1)').valid?
     assert FactoryBot.build(:task_definition, unit: @unit, name: 'Hyphenated-Task #1 (Core)').valid?
     assert FactoryBot.build(:task_definition, unit: @unit, name: 'P1.1 - Hello World').valid?
+    assert FactoryBot.build(:task_definition, unit: @unit, name: "Student's Task").valid?
   end
 
   test 'unit and task titles reject equals, plus, and at characters anywhere' do

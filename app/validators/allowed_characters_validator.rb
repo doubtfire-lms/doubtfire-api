@@ -7,7 +7,7 @@ class AllowedCharactersValidator < ActiveModel::EachValidator
     last_name: " -()_'’",
     preferred_name: " -()_'’",
     unit_name: " -#()",
-    title: " -#()&/:_.",
+    title: " -#()&/:_.'",
     unit_code: "-#/_"
   }.freeze
 
