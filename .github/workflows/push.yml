@@ -22,16 +22,18 @@ env:
   DF_TEST_DB_DATABASE: "doubtfire-test"
   DF_TEST_DB_USERNAME: "dfire"
   DF_TEST_DB_PASSWORD: "pwd"
-  OVERSEER_ENABLED: "0"
+  OVERSEER_ENABLED: "true"
   DF_ENCRYPTION_PRIMARY_KEY: "AMLOMYA5GV8B4fTK3VKMhVGn8WdvUW8g"
   DF_ENCRYPTION_DETERMINISTIC_KEY: "anlmuJ6cB3bN3biXRbYvmPsC5ALPFqGG"
   DF_ENCRYPTION_KEY_DERIVATION_SALT: "hzPR8D4qpOnAg7VeAhkhWw6JmmzKJB10"
   DF_REDIS_SIDEKIQ_URL: "redis://redis:6379/0"
   LATEX_CONTAINER_NAME: doubtfire-texlive
   LATEX_BUILD_PATH: /texlive/shell/latex_build.sh
-  DF_JPLAG_REPORT_DIR: /jplag/results
+  GOTENBERG_IMAGE: doubtfire-gotenberg-development:local
+  GOTENBERG_FALLBACK_VOLUME_CONTAINER: doubtfire-gotenberg-volumes
   LTI_SHARED_API_SECRET: "abc123"
   LTI_ENABLED: true
+  DF_INITIAL_ADMIN_PASSWORD: "password"
 
 jobs:
   unit-tests:
@@ -64,6 +66,16 @@ jobs:
           tags: doubtfire-texlive-development:local
           cache-from: type=gha,scope=texlive
           cache-to: type=gha,mode=max,scope=texlive
+      - name: Build Gotenberg image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: gotenberg.Dockerfile
+          push: false
+          load: true
+          tags: doubtfire-gotenberg-development:local
+          cache-from: type=gha,scope=gotenberg
+          cache-to: type=gha,mode=max,scope=gotenberg
       - name: Build JPlag image
         uses: docker/build-push-action@v5
         with:
@@ -104,6 +116,13 @@ jobs:
             -v ${{ github.workspace }}:/doubtfire
             -v /var/run/docker.sock:/var/run/docker.sock
           run: docker exec -t ${{ env.LATEX_CONTAINER_NAME }} lualatex -v
+      - name: Start Gotenberg volume container
+        run: >
+          docker run --detach
+          --name ${{ env.GOTENBERG_FALLBACK_VOLUME_CONTAINER }}
+          --network none
+          --volume ${{ github.workspace }}/tmp/gotenberg:/workdir/gotenberg
+          alpine sleep infinity
       - name: Start JPlag service
         uses: maus007/docker-run-action-fork@207a4e2a8ebf7e4b985656ba990b1e53715dce2a
         with:
@@ -111,7 +130,6 @@ jobs:
           options: >
             --name jplag
             -v ${{ github.workspace }}/student-work:/student-work
-            -v ${{ github.workspace }}/jplag/results:${{ env.DF_JPLAG_REPORT_DIR }}
             -v ${{ github.workspace }}/tmp/jplag:/tmp/jplag
             -v ${{ github.workspace }}/test_files/submissions/jplag:/test_files
             --detach
@@ -152,9 +170,11 @@ jobs:
             -e DF_REDIS_SIDEKIQ_URL
             -e LATEX_CONTAINER_NAME
             -e LATEX_BUILD_PATH
-            -e DF_JPLAG_REPORT_DIR
+            -e GOTENBERG_IMAGE
+            -e GOTENBERG_FALLBACK_VOLUME_CONTAINER
             -e LTI_SHARED_API_SECRET
             -e LTI_ENABLED
+            -e DF_INITIAL_ADMIN_PASSWORD
           run: bundle exec rake db:populate
       - name: Run unit tests
         uses: maus007/docker-run-action-fork@207a4e2a8ebf7e4b985656ba990b1e53715dce2a
@@ -164,7 +184,6 @@ jobs:
             -v ${{ github.workspace }}:/doubtfire
             -v ${{ github.workspace }}/student-work:/student-work
             -v /var/run/docker.sock:/var/run/docker.sock
-            -v ${{ github.workspace }}/jplag/results:${{ env.DF_JPLAG_REPORT_DIR }}
             -v ${{ github.workspace }}/tmp/jplag:/tmp/jplag
             -e RAILS_ENV
             -e DF_STUDENT_WORK_DIR
@@ -185,7 +204,8 @@ jobs:
             -e DF_REDIS_SIDEKIQ_URL
             -e LATEX_CONTAINER_NAME
             -e LATEX_BUILD_PATH
-            -e DF_JPLAG_REPORT_DIR
+            -e GOTENBERG_IMAGE
+            -e GOTENBERG_FALLBACK_VOLUME_CONTAINER
             -e LTI_SHARED_API_SECRET
             -e LTI_ENABLED
           run: TERM=xterm bundle exec rails test
@@ -193,3 +213,6 @@ jobs:
         run: docker rm -f ${{ env.LATEX_CONTAINER_NAME }}
       - name: Stop JPlag service
         run: docker rm -f jplag
+      - name: Stop Gotenberg volume container
+        if: always()
+        run: docker rm -f ${{ env.GOTENBERG_FALLBACK_VOLUME_CONTAINER }}

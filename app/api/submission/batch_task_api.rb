@@ -5,6 +5,7 @@ module Submission
     helpers GenerateHelpers
     helpers AuthenticationHelpers
     helpers AuthorisationHelpers
+    helpers SidekiqHelper
 
     before do
       authenticated?
@@ -61,5 +62,38 @@ module Submission
 
     #   present unit.upload_batch_task_zip_or_csv(current_user, params[:file]), with: Grape::Presenters::Presenter
     # end # post
+
+    desc 'Upload a batch feedback CSV or zip package for a selected task definition.'
+    params do
+      requires :file, type: File, desc: 'Batch feedback csv or zip upload'
+      requires :unit_id, type: Integer, desc: 'Unit ID to upload marked submissions to.'
+      requires :task_definition_id, type: Integer, desc: 'Task definition ID the uploaded CSV relates to.'
+    end
+    post '/submission/batch_feedback_csv/' do
+      unit = Unit.find(params[:unit_id])
+      unit.task_definitions.find(params[:task_definition_id])
+
+      unless authorise? current_user, unit, :provide_bulk_feedback
+        error!({ error: 'Not authorised to batch upload feedback csv' }, 401)
+      end
+
+      error!({ error: "No file uploaded" }, 403) if params[:file].blank?
+
+      import_dir = Rails.root.join(FileHelper.tmp_file_dir, 'batch-feedback')
+      FileUtils.mkdir_p(import_dir)
+
+      extension = File.extname(params[:file][:filename].to_s)
+      extension = '.upload' if extension.blank?
+      file_name = File.join(
+        import_dir,
+        "batch-feedback-#{unit.id}-#{params[:task_definition_id]}-#{Process.pid}-#{Thread.current.object_id}-#{current_user.id}#{extension}"
+      )
+
+      FileUtils.cp(params[:file][:tempfile].path, file_name)
+
+      job_id = ImportBatchFeedbackJob.perform_async(unit.id, current_user.id, params[:task_definition_id], file_name)
+      job = setup_job(job_id)
+      present job, with: Entities::SidekiqJobEntity
+    end
   end
 end

@@ -106,7 +106,7 @@ Doubtfire::Application.configure do
   # pdfgen log verbosity
   config.pdfgen_quiet = false
 
-  config.active_record.encryption.key_derivation_salt = ENV['DF_ENCRYPTION_KEY_DERIVATION_SALT'] || 'U9jurHMfZbMpzlbDTMe5OSAhUJYHla9Z'
-  config.active_record.encryption.deterministic_key = ENV['DF_ENCRYPTION_DETERMINISTIC_KEY'] || 'zYtzYUlLFaWdvdUO5eIINRT6ZKDddcgx'
-  config.active_record.encryption.primary_key = ENV['DF_ENCRYPTION_PRIMARY_KEY'] || '92zoF7RJaQ01JEExOgHbP9bRWldNQUz5'
+  config.active_record.encryption.key_derivation_salt = Doubtfire::Application.fetch_credential_or_env(:active_record_encryption, :key_derivation_salt, env_key: 'DF_ENCRYPTION_KEY_DERIVATION_SALT', default: 'U9jurHMfZbMpzlbDTMe5OSAhUJYHla9Z')
+  config.active_record.encryption.deterministic_key = Doubtfire::Application.fetch_credential_or_env(:active_record_encryption, :deterministic_key, env_key: 'DF_ENCRYPTION_DETERMINISTIC_KEY', default: 'zYtzYUlLFaWdvdUO5eIINRT6ZKDddcgx')
+  config.active_record.encryption.primary_key = Doubtfire::Application.fetch_credential_or_env(:active_record_encryption, :primary_key, env_key: 'DF_ENCRYPTION_PRIMARY_KEY', default: '92zoF7RJaQ01JEExOgHbP9bRWldNQUz5')
 end

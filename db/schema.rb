@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_03_09_065302) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_28_033837) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -73,6 +73,94 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_09_065302) do
     t.index ["user_id"], name: "index_comments_read_receipts_on_user_id"
   end
 
+  create_table "communication_actions", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.string "type", null: false
+    t.bigint "communication_rule_id", null: false
+    t.string "subject"
+    t.text "body"
+    t.boolean "email_tutors", default: false, null: false
+    t.boolean "email_convenors", default: false, null: false
+    t.integer "target_grade"
+    t.bigint "task_definition_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["communication_rule_id"], name: "index_communication_actions_on_communication_rule_id"
+    t.index ["task_definition_id"], name: "index_communication_actions_on_task_definition_id"
+    t.index ["type"], name: "index_communication_actions_on_type"
+  end
+
+  create_table "communication_conditions", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.string "type", null: false
+    t.bigint "communication_id", null: false
+    t.integer "target_grade"
+    t.bigint "task_definition_id"
+    t.text "task_statuses", size: :long, collation: "utf8mb4_bin"
+    t.datetime "last_sign_in_at"
+    t.bigint "tutorial_id"
+    t.bigint "tutorial_stream_id"
+    t.bigint "campus_id"
+    t.integer "task_status_count"
+    t.integer "task_target_grade"
+    t.integer "spec_con_days"
+    t.string "operator", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "activity_days"
+    t.boolean "submitted_portfolio"
+    t.index ["campus_id"], name: "index_communication_conditions_on_campus_id"
+    t.index ["communication_id"], name: "index_communication_conditions_on_communication_id"
+    t.index ["task_definition_id"], name: "index_communication_conditions_on_task_definition_id"
+    t.index ["tutorial_id"], name: "index_communication_conditions_on_tutorial_id"
+    t.index ["tutorial_stream_id"], name: "index_communication_conditions_on_tutorial_stream_id"
+    t.index ["type"], name: "index_communication_conditions_on_type"
+    t.check_constraint "json_valid(`task_statuses`)", name: "task_statuses"
+  end
+
+  create_table "communication_rules", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "communication_set_id", null: false
+    t.integer "position", default: 0, null: false
+    t.string "name"
+    t.string "operator"
+    t.boolean "send_log_to_convenors", default: false, null: false
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["communication_set_id"], name: "index_communication_rules_on_communication_set_id"
+  end
+
+  create_table "communication_set_schedules", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "communication_set_id", null: false
+    t.string "name"
+    t.boolean "active", default: true, null: false
+    t.integer "anchor_week", null: false
+    t.string "anchor_day", null: false
+    t.integer "hour", default: 8, null: false
+    t.integer "minute", default: 0, null: false
+    t.string "timezone", default: "UTC", null: false
+    t.string "recurrence", default: "none", null: false
+    t.integer "interval", default: 1, null: false
+    t.integer "repeat_count"
+    t.datetime "until_at"
+    t.text "ice_cube_schedule", size: :long, collation: "utf8mb4_bin"
+    t.datetime "next_run_at"
+    t.datetime "last_run_at"
+    t.datetime "last_enqueued_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active", "next_run_at"], name: "index_communication_set_schedules_on_active_and_next_run_at"
+    t.index ["communication_set_id"], name: "index_communication_set_schedules_on_communication_set_id"
+    t.check_constraint "json_valid(`ice_cube_schedule`)", name: "ice_cube_schedule"
+  end
+
+  create_table "communication_sets", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "unit_id", null: false
+    t.string "name"
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["unit_id"], name: "index_communication_sets_on_unit_id"
+  end
+
   create_table "d2l_assessment_mappings", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.bigint "unit_id", null: false
     t.string "org_unit_id"
@@ -97,6 +185,44 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_09_065302) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["task_definition_id"], name: "index_discussion_prompts_on_task_definition_id"
+  end
+
+  create_table "engagement_comments", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "engagement_id", null: false
+    t.bigint "user_id", null: false
+    t.bigint "reply_to_id"
+    t.text "comment", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["engagement_id"], name: "index_engagement_comments_on_engagement_id"
+    t.index ["reply_to_id"], name: "index_engagement_comments_on_reply_to_id"
+    t.index ["user_id"], name: "index_engagement_comments_on_user_id"
+  end
+
+  create_table "engagement_projects", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "engagement_id", null: false
+    t.bigint "project_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["engagement_id", "project_id"], name: "index_engagement_projects_on_engagement_id_and_project_id", unique: true
+    t.index ["engagement_id"], name: "index_engagement_projects_on_engagement_id"
+    t.index ["project_id"], name: "index_engagement_projects_on_project_id"
+  end
+
+  create_table "engagements", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "project_id", null: false
+    t.bigint "user_id", null: false
+    t.string "engagement_type", null: false
+    t.text "note", null: false
+    t.datetime "occurred_at", null: false
+    t.text "evidence_url"
+    t.string "content_type"
+    t.string "attachment_extension"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id", "occurred_at"], name: "index_engagements_on_project_id_and_occurred_at"
+    t.index ["project_id"], name: "index_engagements_on_project_id"
+    t.index ["user_id"], name: "index_engagements_on_user_id"
   end
 
   create_table "feedback_chips", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
@@ -226,6 +352,26 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_09_065302) do
     t.index ["task_id"], name: "index_moderated_tasks_on_task_id"
   end
 
+  create_table "overflow_task_claim_logs", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "unit_id", null: false
+    t.bigint "task_id", null: false
+    t.bigint "claimed_by_unit_role_id", null: false
+    t.bigint "claimed_by_user_id", null: false
+    t.bigint "original_tutor_user_id"
+    t.bigint "student_user_id", null: false
+    t.integer "days_awaiting_feedback", null: false
+    t.datetime "claimed_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["claimed_by_unit_role_id"], name: "index_overflow_task_claim_logs_on_claimed_by_unit_role_id"
+    t.index ["claimed_by_user_id"], name: "index_overflow_task_claim_logs_on_claimed_by_user_id"
+    t.index ["original_tutor_user_id"], name: "index_overflow_task_claim_logs_on_original_tutor_user_id"
+    t.index ["student_user_id"], name: "index_overflow_task_claim_logs_on_student_user_id"
+    t.index ["task_id"], name: "index_overflow_task_claim_logs_on_task_id"
+    t.index ["unit_id", "claimed_at"], name: "index_overflow_task_claim_logs_on_unit_id_and_claimed_at"
+    t.index ["unit_id"], name: "index_overflow_task_claim_logs_on_unit_id"
+  end
+
   create_table "overflow_task_claims", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.bigint "task_id", null: false
     t.bigint "claimed_by_unit_role_id", null: false
@@ -242,6 +388,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_09_065302) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "total_steps"
+    t.datetime "student_notified_at"
+    t.bigint "submission_history_id", null: false
+    t.index ["status", "student_notified_at", "updated_at"], name: "index_overseer_assessments_on_status_notified_updated"
+    t.index ["submission_history_id"], name: "index_overseer_assessments_on_submission_history_id", unique: true
     t.index ["task_id", "submission_timestamp"], name: "index_overseer_assessments_on_task_id_and_submission_timestamp", unique: true
     t.index ["task_id"], name: "index_overseer_assessments_on_task_id"
   end
@@ -328,6 +478,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_09_065302) do
     t.integer "portfolio_generation_pid"
     t.integer "spec_con_days", default: 0, null: false
     t.bigint "assessor_id"
+    t.datetime "portfolio_submission_date"
+    t.datetime "last_viewed_at"
     t.index ["assessor_id"], name: "index_projects_on_assessor_id"
     t.index ["campus_id"], name: "index_projects_on_campus_id"
     t.index ["enrolled"], name: "index_projects_on_enrolled"
@@ -372,6 +524,15 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_09_065302) do
     t.index ["user_id"], name: "index_staff_notes_on_user_id"
   end
 
+  create_table "submission_histories", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "task_id", null: false
+    t.string "submission_timestamp", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["task_id", "submission_timestamp"], name: "index_submission_histories_on_task_and_timestamp", unique: true
+    t.index ["task_id"], name: "index_submission_histories_on_task_id"
+  end
+
   create_table "task_comments", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.bigint "task_id", null: false
     t.bigint "user_id", null: false
@@ -402,6 +563,15 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_09_065302) do
     t.index ["task_id"], name: "index_task_comments_on_task_id"
     t.index ["task_status_id"], name: "index_task_comments_on_task_status_id"
     t.index ["user_id"], name: "index_task_comments_on_user_id"
+  end
+
+  create_table "task_completion_snapshots", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "unit_id", null: false
+    t.string "snapshot_timestamp", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["unit_id", "snapshot_timestamp"], name: "idx_on_unit_id_snapshot_timestamp_e923c3ae10", unique: true
+    t.index ["unit_id"], name: "index_task_completion_snapshots_on_unit_id"
   end
 
   create_table "task_definition_grade_due_dates", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
@@ -545,10 +715,16 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_09_065302) do
     t.datetime "target_start_date"
     t.datetime "target_due_date"
     t.datetime "last_tutor_feedback_at"
+    t.datetime "moved_to_discuss_at"
+    t.datetime "notified_discuss_warning_at"
+    t.datetime "notified_discuss_expiry_at"
     t.index ["group_submission_id"], name: "index_tasks_on_group_submission_id"
     t.index ["project_id", "task_definition_id"], name: "tasks_uniq_proj_task_def", unique: true
     t.index ["project_id"], name: "index_tasks_on_project_id"
     t.index ["task_definition_id"], name: "index_tasks_on_task_definition_id"
+    t.index ["task_status_id", "moved_to_discuss_at"], name: "index_tasks_on_task_status_id_and_moved_to_discuss_at"
+    t.index ["task_status_id", "notified_discuss_expiry_at"], name: "index_tasks_on_task_status_id_and_notified_discuss_expiry_at"
+    t.index ["task_status_id", "notified_discuss_warning_at"], name: "index_tasks_on_task_status_id_and_notified_discuss_warning_at"
     t.index ["task_status_id"], name: "index_tasks_on_task_status_id"
   end
 
@@ -695,6 +871,32 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_09_065302) do
     t.index ["unit_role_id"], name: "index_tutorials_on_unit_role_id"
   end
 
+  create_table "unit_content_links", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "unit_id", null: false
+    t.bigint "unit_content_site_id", null: false
+    t.string "context_type", null: false
+    t.string "context_key", null: false
+    t.string "route", default: "/", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["unit_content_site_id"], name: "index_unit_content_links_on_unit_content_site_id"
+    t.index ["unit_id", "context_type", "context_key"], name: "index_unit_content_links_on_context", unique: true
+    t.index ["unit_id"], name: "index_unit_content_links_on_unit_id"
+  end
+
+  create_table "unit_content_sites", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "unit_id", null: false
+    t.string "name", null: false
+    t.string "original_filename", null: false
+    t.string "archive_path", null: false
+    t.string "root_dir", default: "/", null: false
+    t.boolean "is_main", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["unit_id", "name"], name: "index_unit_content_sites_on_unit_id_and_name", unique: true
+    t.index ["unit_id"], name: "index_unit_content_sites_on_unit_id"
+  end
+
   create_table "unit_roles", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.bigint "user_id"
     t.bigint "tutorial_id"
@@ -742,10 +944,16 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_09_065302) do
     t.boolean "mark_late_submissions_as_assess_in_portfolio", default: false, null: false
     t.integer "feedback_warning_threshold_days", default: 5
     t.integer "feedback_overflow_threshold_days", default: 7
+    t.boolean "enforce_feedback_before_discussed_in_class", default: false, null: false
+    t.text "grade_values", size: :long, collation: "utf8mb4_bin"
+    t.boolean "discuss_timeout_enabled", default: false, null: false
+    t.integer "discuss_timeout_warning_days", default: 7, null: false
+    t.integer "discuss_timeout_expire_days", default: 14, null: false
     t.index ["draft_task_definition_id"], name: "index_units_on_draft_task_definition_id"
     t.index ["main_convenor_id"], name: "index_units_on_main_convenor_id"
     t.index ["overseer_image_id"], name: "index_units_on_overseer_image_id"
     t.index ["teaching_period_id"], name: "index_units_on_teaching_period_id"
+    t.check_constraint "json_valid(`grade_values`)", name: "grade_values"
   end
 
   create_table "user_oauth_states", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
@@ -796,6 +1004,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_09_065302) do
     t.string "tii_eula_version"
     t.datetime "tii_eula_date"
     t.boolean "tii_eula_version_confirmed", default: false, null: false
+    t.datetime "last_access_at"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["login_id"], name: "index_users_on_login_id", unique: true
     t.index ["role_id"], name: "index_users_on_role_id"

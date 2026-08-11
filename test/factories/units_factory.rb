@@ -143,6 +143,8 @@ FactoryBot.define do
             next
           end
 
+          next if campus_tutorials.empty?
+
           if campus_tutorials.first.tutorial_stream.present?
             tutorial_streams.each_with_index do |ts, i|
               p.enrol_in ts.tutorials.where(campus_id: c.id).sample
@@ -153,7 +155,7 @@ FactoryBot.define do
         end
 
         eval.part_enrolled_student_count.times do
-          unit.tutorial_enrolments.joins(:project).where('projects.campus_id = :campus_id', campus_id: c.id).sample.destroy
+          unit.tutorial_enrolments.joins(:project).where('projects.campus_id = :campus_id', campus_id: c.id).sample&.destroy
         end
       end
 

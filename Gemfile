@@ -103,6 +103,7 @@ gem 'net-smtp', require: false
 gem 'tca_client'
 
 # Async jobs
+gem 'ice_cube'
 gem 'sidekiq'
 gem 'sidekiq-cron'
 gem 'sidekiq-status'
@@ -121,3 +122,6 @@ gem 'pdf-reader'
 gem 'oauth2'
 
 gem "sys-filesystem"
+
+gem "sentry-rails"
+gem "sentry-ruby"

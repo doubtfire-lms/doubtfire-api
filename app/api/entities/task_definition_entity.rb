@@ -1,3 +1,5 @@
+require 'entities/unit_content_link_entity'
+
 module Entities
   class TaskDefinitionEntity < Grape::Entity
     format_with(:date_only) do |date|
@@ -19,15 +21,9 @@ module Entities
       expose :target_date
       expose :due_date
       expose :start_date
-      # expose :p_target_date, expose_nil: false
-      expose :c_target_date, expose_nil: false
-      expose :d_target_date, expose_nil: false
-      expose :hd_target_date, expose_nil: false
-
-      expose :c_start_date, expose_nil: false
-      expose :d_start_date, expose_nil: false
-      expose :hd_start_date, expose_nil: false
     end
+
+    expose :grade_due_date_overrides, as: :grade_due_dates, expose_nil: false
 
     expose :upload_requirements, expose_nil: false do |task_definition, options|
       if staff?(options[:my_role])
@@ -49,6 +45,10 @@ module Entities
     expose :has_task_assessment_resources?, as: :has_task_assessment_resources, if: ->(unit, options) { staff?(options[:my_role]) }
     expose :has_task_assessment_script?, as: :has_task_assessment_script, if: ->(unit, options) { staff?(options[:my_role]) }
     expose :has_scorm_data?, as: :has_scorm_data
+    expose :has_content_link?, as: :has_content_link
+    expose :content_link, using: UnitContentLinkEntity, expose_nil: false
+    expose :has_task_resource_link?, as: :has_task_resource_link
+    expose :task_resource_link, using: UnitContentLinkEntity, expose_nil: false
     expose :scorm_enabled
     expose :scorm_allow_review
     expose :scorm_bypass_test

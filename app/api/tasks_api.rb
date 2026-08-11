@@ -158,6 +158,7 @@ class TasksApi < Grape::API
     optional :grade, type: Integer, desc: 'Grade value if task is a graded task (required if task definition is a graded task)'
     optional :quality_pts, type: Integer, desc: 'Quality points value if task has quality assessment'
     optional :discussed, type: Boolean, desc: 'Mark task as discussed'
+    optional :trigger_recursive_fix, desc: 'If marking fix and resubmit, recursively update preqreuisite submissions to fix'
   end
   put '/projects/:id/task_def_id/:task_definition_id' do
     project = Project.find(params[:id])
@@ -168,10 +169,8 @@ class TasksApi < Grape::API
     # check the user can put this task
     if authorise? current_user, project, :make_submission
       task = project.task_for_task_definition(task_definition)
-
-      if !params[:discussed].nil? && authorise?(current_user, project, :assess)
-        task.add_discussed_comment(current_user)
-      end
+      mark_as_discussed = params[:discussed] == true && authorise?(current_user, project, :assess)
+      needs_discussed_comment = mark_as_discussed && !task.has_discussed_in_class_comment?
 
       # if trigger supplied...
       unless params[:trigger].nil?
@@ -198,15 +197,33 @@ class TasksApi < Grape::API
           error!({ error: 'This task can only be assessed in portfolio.' }, 403)
         end
 
-        if task.task_definition.requires_discussion && params[:trigger] == 'complete' && !task.has_discussed_in_class_comment?
+        if task.task_definition.requires_discussion && params[:trigger] == 'complete' &&
+           !task.has_discussed_in_class_comment? && !mark_as_discussed
           error!({ error: 'This task must be discussed in class before it can be marked complete.' }, 403)
         end
 
         logger.info "#{current_user.username} assessing task #{task.id} to #{params[:trigger]}"
-        result = task.trigger_transition(trigger: params[:trigger], by_user: current_user, quality: params[:quality_pts])
+        begin
+          task.discussion_confirmed_for_transition = mark_as_discussed
+          result = task.trigger_transition(
+            trigger: params[:trigger],
+            by_user: current_user,
+            quality: params[:quality_pts],
+            recursive_fix: params[:trigger_recursive_fix],
+            check_feedback: true
+          )
+        ensure
+          task.discussion_confirmed_for_transition = false
+        end
+
+        if result.nil? && task.errors.any?
+          error!({ error: task.errors.full_messages.to_sentence }, 403)
+        end
         if result.nil? && task.task_definition.restrict_status_updates
           error!({ error: 'This task can only be updated by your tutor.' }, 403)
         end
+        task.add_discussed_comment(current_user) if result && needs_discussed_comment
+
         SessionTracker.record_assessment_activity(
           action: "assessing",
           user: current_user,
@@ -215,6 +232,8 @@ class TasksApi < Grape::API
           task: task
         )
       end
+
+      task.add_discussed_comment(current_user) if params[:trigger].nil? && needs_discussed_comment
 
       # if grade was supplied
       unless grade.nil?
@@ -506,19 +525,30 @@ class TasksApi < Grape::API
       error!({ error: "This task has already been claimed by another tutor" }, 409)
     end
 
-    inactive_claim = task.overflow_task_claim
-    inactive_claim&.destroy!
+    claimed_at = Time.zone.now
+    original_tutor = task.tutor
 
-    task_claim = OverflowTaskClaim.create!({
-                                             task: task,
-                                             claimed_by_unit_role_id: my_unit_role.id
-                                           })
+    ActiveRecord::Base.transaction do
+      task.overflow_task_claim&.destroy!
 
-    unless task_claim.valid?
-      error!({ error: "Failed to claim task" }, 400)
+      OverflowTaskClaim.create!(
+        task: task,
+        claimed_by_unit_role: my_unit_role
+      )
+
+      OverflowTaskClaimLog.create!(
+        unit: unit,
+        task: task,
+        claimed_by_unit_role: my_unit_role,
+        claimed_by_user: current_user,
+        original_tutor_user: original_tutor,
+        student_user: project.student,
+        days_awaiting_feedback: task.days_awaiting_feedback(claimed_at),
+        claimed_at: claimed_at
+      )
     end
 
-    logger.info "Overflow task claim: {\"user_id\": #{current_user.id},\"task_id\": #{task.id}, \"timestamp\": \"#{Time.zone.now}\", \"original_tutor_user_id\": #{task.tutor ? task.tutor.id : -1}}"
+    logger.info "Overflow task claim: {\"user_id\": #{current_user.id},\"task_id\": #{task.id}, \"timestamp\": \"#{claimed_at}\", \"original_tutor_user_id\": #{original_tutor ? original_tutor.id : -1}}"
 
     true
   end

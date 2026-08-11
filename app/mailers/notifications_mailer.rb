@@ -1,4 +1,7 @@
 class NotificationsMailer < ApplicationMailer
+  layout 'discussion_deadline_mailer',
+         only: %i[discussion_deadline_approaching discussion_deadline_missed]
+
   def add_general
     @doubtfire_host = Doubtfire::Application.config.institution[:host]
     @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
@@ -61,7 +64,7 @@ class NotificationsMailer < ApplicationMailer
 
     @student_engagements = @engagements.select { |e| [TaskStatus.not_started.name, TaskStatus.need_help.name, TaskStatus.working_on_it.name, TaskStatus.ready_for_feedback.name].include? e.engagement }.count
 
-    @staff_engagements = @engagements.select { |e| [TaskStatus.complete.name, TaskStatus.feedback_exceeded.name, TaskStatus.redo.name, TaskStatus.discuss.name, TaskStatus.attention_required.name, TaskStatus.demonstrate.name, TaskStatus.fail.name].include? e.engagement }.count
+    @staff_engagements = @engagements.select { |e| [TaskStatus.complete.name, TaskStatus.feedback_exceeded.name, TaskStatus.redo.name, TaskStatus.discuss.name, TaskStatus.rediscuss.name, TaskStatus.attention_required.name, TaskStatus.demonstrate.name, TaskStatus.fail.name].include? e.engagement }.count
 
     @task_states = project.tasks.joins(:task_status).select("count(tasks.id) as number, task_statuses.name as status").group("task_statuses.name")
 
@@ -78,6 +81,27 @@ class NotificationsMailer < ApplicationMailer
     subject = "#{project.unit.name}: Weekly Summary"
 
     mail(to: email_with_name, from: tutor_email, subject: subject)
+  end
+
+  def discussion_deadline_approaching(task, sender, expiry_date)
+    add_discussion_deadline_details(task, sender)
+    @deadline = task.unit.formatted_discuss_timeout_date(expiry_date)
+
+    mail(
+      to: %("#{@student.name}" <#{@student.email}>),
+      from: %("#{@sender.name}" <#{@sender.email}>),
+      subject: "#{@unit.code}: Discussion deadline approaching for #{@task.task_definition.abbreviation}"
+    )
+  end
+
+  def discussion_deadline_missed(task, sender)
+    add_discussion_deadline_details(task, sender)
+
+    mail(
+      to: %("#{@student.name}" <#{@student.email}>),
+      from: %("#{@sender.name}" <#{@sender.email}>),
+      subject: "#{@unit.code}: Discussion deadline missed for #{@task.task_definition.abbreviation}"
+    )
   end
 
   def top_task_desc(tt)
@@ -112,4 +136,16 @@ class NotificationsMailer < ApplicationMailer
   helper_method :were_was
   helper_method :are_is
   helper_method :this_these
+
+  private
+
+  def add_discussion_deadline_details(task, sender)
+    add_general
+    @task = task
+    @project = task.project
+    @unit = task.unit
+    @student = @project.student
+    @sender = sender
+    @task_url = "#{@doubtfire_host}/projects/#{@project.id}/dashboard/#{@task.task_definition.abbreviation}"
+  end
 end

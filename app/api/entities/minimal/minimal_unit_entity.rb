@@ -20,6 +20,10 @@ module Entities
       end
 
       expose :active
+      expose :grade_values
+      expose :grade_definitions
+      expose :discuss_timeout_enabled, unless: :summary_only
+      expose :discuss_timeout_expire_days, unless: :summary_only
     end
   end
 end

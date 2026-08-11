@@ -178,6 +178,21 @@ class TaskCommentsApi < Grape::API
       error!({ error: 'Not authorised to delete this comment' }, 403)
     end
 
+    # Comments that don't reveal a delete button
+    protected_comment_types = [
+      AssessmentComment,
+      ExtensionComment,
+      ScormComment,
+      TaskCheckedInComment,
+      TaskDiscussedComment,
+      TaskFeedbackReviewRequestComment,
+      TaskStatusComment
+    ]
+
+    if protected_comment_types.any? { |comment_type| task_comment.is_a?(comment_type) }
+      error!({ error: 'This comment type cannot be deleted' }, 403)
+    end
+
     task_comment.destroy
 
     SessionTracker.record_assessment_activity(
@@ -189,6 +204,54 @@ class TaskCommentsApi < Grape::API
     )
 
     present false
+  end
+
+  desc 'Edit a comment'
+  params do
+    requires :comment, type: String, desc: 'The updated comment text'
+  end
+  put '/projects/:project_id/task_def_id/:task_definition_id/comments/:id' do
+    project = Project.find(params[:project_id])
+    task_definition = project.unit.task_definitions.find(params[:task_definition_id])
+
+    unless authorise? current_user, project, :make_submission
+      error!({ error: 'Not authorised to edit this comment' }, 403)
+    end
+
+    task = project.task_for_task_definition(task_definition)
+    task_comment = task.all_comments.find(params[:id])
+
+    unless task_comment.user == current_user
+      error!({ error: 'You can only edit your own comments' }, 403)
+    end
+
+    unless task_comment.content_type.blank? || task_comment.content_type == 'text'
+      error!({ error: 'Only text comments can be edited' }, 403)
+    end
+
+    if task_comment.created_at < 10.minutes.ago
+      error!({ error: 'Comments can only be edited within 10 minutes of being created' }, 403)
+    end
+
+    if params[:comment].blank?
+      error!({ error: 'Comment text is empty, unable to update comment' }, 403)
+    end
+
+    task_comment.comment = params[:comment]
+
+    unless task_comment.save
+      error!({ error: task_comment.errors.full_messages.to_sentence.presence || 'Unable to update comment' }, 403)
+    end
+
+    SessionTracker.record_assessment_activity(
+      action: 'edit-comment',
+      user: current_user,
+      project: project,
+      ip_address: request.ip,
+      task: task
+    )
+
+    present task_comment.serialize(current_user), with: Grape::Presenters::Presenter
   end
 
   desc 'Mark a comment as unread'

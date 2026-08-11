@@ -96,7 +96,12 @@ No Tutor
 % DATE SECTION
 %----------------------------------------------------------------------------------------
 
-{\large \today}\\[3cm] % Date, change the \today to a set date if you want to be precise
+<% if @formatted_submission_date.present? %>
+{\large <%= lesc @formatted_submission_date %>}\\[0.2cm]
+{\large \textcolor{gray}{<%= lesc @formatted_submission_time %>}}\\[3cm]
+<% else %>
+\vspace{3cm}
+<% end %>
 
 %----------------------------------------------------------------------------------------
 % LOGO SECTION
@@ -125,7 +130,7 @@ No Tutor
   \textbf{Task} & \textbf{Status} & \textbf{Times Assessed} \\
   \hline
 <% @task_defs.each do |td| %>
-  <%= lesc td.name %> &
+  <%= lesc "#{td.abbreviation} #{td.name}" %> &
   <% task = task_for_def(td)
     if task.nil?
   %>

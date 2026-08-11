@@ -18,6 +18,7 @@ class TeachingPeriod < ApplicationRecord
   validate :validate_end_date_after_start_date, :validate_active_until_after_end_date
 
   after_update :propogate_date_changes
+  after_update :refresh_communication_schedule_caches, if: :saved_change_to_teaching_dates?
 
   # Public methods
 
@@ -115,7 +116,10 @@ class TeachingPeriod < ApplicationRecord
 
     start_day_num = start_date.wday
 
-    result = week_start + (day_num - start_day_num).days
+    day_offset = day_num - start_day_num
+    day_offset += 7 if day_offset.negative?
+
+    result = week_start + day_offset.days
 
     for a_break in breaks do
       if result >= a_break.start_date && result < a_break.end_date
@@ -130,6 +134,13 @@ class TeachingPeriod < ApplicationRecord
 
   def future_teaching_periods
     TeachingPeriod.where("start_date > :end_date", end_date: end_date)
+  end
+
+  def refresh_communication_schedule_caches
+    CommunicationSetSchedule
+      .joins(communication_set: :unit)
+      .where(units: { teaching_period_id: id })
+      .find_each(&:refresh_next_run_at!)
   end
 
   private
@@ -159,5 +170,9 @@ class TeachingPeriod < ApplicationRecord
     units.each do |u|
       u.update(start_date: self.start_date, end_date: self.end_date)
     end
+  end
+
+  def saved_change_to_teaching_dates?
+    saved_change_to_start_date? || saved_change_to_end_date?
   end
 end

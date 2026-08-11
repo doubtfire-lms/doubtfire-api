@@ -8,6 +8,81 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     Rails.application
   end
 
+  def test_validation_ignores_orphaned_prerequisite_records
+    unit = FactoryBot.create(:unit, task_count: 0)
+    prerequisite = FactoryBot.create(:task_definition, unit: unit, target_grade: 0)
+    dependent = FactoryBot.create(:task_definition, unit: unit, target_grade: 0)
+    TaskPrerequisite.create!(
+      task_definition: dependent,
+      prerequisite: prerequisite,
+      task_status_id: TaskStatus.complete.id
+    )
+
+    prerequisite.delete
+
+    assert_nothing_raised { dependent.update!(name: 'Updated task definition') }
+  end
+
+  def test_unit_can_be_destroyed_when_its_tasks_have_prerequisites
+    unit = FactoryBot.create(:unit, task_count: 0)
+    prerequisite = FactoryBot.create(:task_definition, unit: unit, target_grade: 0)
+    dependent = FactoryBot.create(:task_definition, unit: unit, target_grade: 0)
+    task_prerequisite = TaskPrerequisite.create!(
+      task_definition: dependent,
+      prerequisite: prerequisite,
+      task_status_id: TaskStatus.complete.id
+    )
+
+    unit.destroy!
+
+    assert_not TaskDefinition.exists?(prerequisite.id)
+    assert_not TaskDefinition.exists?(dependent.id)
+    assert_not TaskPrerequisite.exists?(task_prerequisite.id)
+  end
+
+  def test_overseer_requires_a_submission_history_upload
+    task_definition = FactoryBot.build(
+      :task_definition,
+      assessment_enabled: true,
+      upload_requirements: [
+        { 'key' => 'file0', 'name' => 'main.rb', 'type' => 'code', 'submission_history' => false }
+      ]
+    )
+
+    assert_not task_definition.valid?
+    assert_includes task_definition.errors[:upload_requirements],
+                    'must include at least one file in submission history when Overseer is enabled'
+  end
+
+  def test_overseer_accepts_a_submission_history_upload
+    task_definition = FactoryBot.build(
+      :task_definition,
+      assessment_enabled: true,
+      upload_requirements: [
+        { 'key' => 'file0', 'name' => 'main.rb', 'type' => 'code', 'submission_history' => true }
+      ]
+    )
+
+    task_definition.validate
+    assert_empty task_definition.errors[:upload_requirements]
+  end
+
+  def test_normalizes_duplicate_and_out_of_order_upload_requirement_keys
+    task_definition = FactoryBot.build(
+      :task_definition,
+      upload_requirements: [
+        { 'key' => 'file1', 'name' => 'main.rb', 'type' => 'code' },
+        { 'key' => 'file1', 'name' => 'output.png', 'type' => 'image' },
+        { 'key' => 'file5', 'name' => 'report.pdf', 'type' => 'document' }
+      ]
+    )
+
+    task_definition.save!
+    task_definition.reload
+
+    assert_equal %w[file0 file1 file2], task_definition.upload_requirements.pluck('key')
+  end
+
   def test_default_quality_points
     test_unit = Unit.first
     td = TaskDefinition.new({
@@ -113,6 +188,34 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     td.destroy
   end
 
+  def test_upload_requirements_allow_zip
+    test_unit = Unit.first
+    td = TaskDefinition.new({
+      unit_id: test_unit.id,
+      tutorial_stream: test_unit.tutorial_streams.first,
+      name: 'Test zip requirement',
+      description: 'test def',
+      weighting: 4,
+      target_grade: 0,
+      start_date: test_unit.start_date + 1.week,
+      target_date: test_unit.start_date + 2.weeks,
+      abbreviation: 'TestZipReq',
+      restrict_status_updates: false,
+      upload_requirements: [
+        {
+          "key" => 'file0',
+          "name" => 'Source Zip',
+          "type" => 'zip'
+        }
+      ],
+      plagiarism_warn_pct: 0.8,
+      is_graded: false,
+      max_quality_pts: 5
+    })
+
+    assert td.valid?, td.errors.full_messages.join(', ')
+  end
+
   def test_group_tasks
     u = FactoryBot.create(:unit)
     activity_type = FactoryBot.create(:activity_type)
@@ -141,11 +244,34 @@ class TaskDefinitionTest < ActiveSupport::TestCase
   def test_export_task_definitions_csv
     unit = FactoryBot.create(:unit, with_students: false)
     stream_1 = FactoryBot.create(:tutorial_stream, unit: unit)
+    task_def_with_steps = unit.task_definitions.first
+    task_def_with_steps.overseer_steps.create!(
+      name: 'compile',
+      description: 'Compile the submission',
+      display_name: 'Compile',
+      display_description: 'Compile step',
+      run_command: 'make test',
+      timeout: 45,
+      sort_order: 0,
+      step_type: 'run',
+      partial_output_diff: true,
+      stdin_input_file: 'stdin.txt',
+      expected_output_file: 'expected.txt',
+      feedback_message: 'Compilation failed',
+      status_on_success_id: TaskStatus.complete.id,
+      status_on_failure_id: TaskStatus.fix_and_resubmit.id,
+      halt_on_success: false,
+      halt_on_failure: true,
+      show_expected_output: true,
+      show_stdin: false,
+      show_stdout: true,
+      enabled: true
+    )
 
     task_defs_csv = CSV.parse unit.task_definitions_csv, headers: true
     task_defs_csv.each do |task_def_csv|
       task_def = unit.task_definitions.find_by(abbreviation: task_def_csv['abbreviation'])
-      keys_to_ignore = %w[tutorial_stream start_week start_day target_week target_day due_week due_day upload_requirements task_prerequisites discussion_prompts]
+      keys_to_ignore = %w[tutorial_stream start_week start_day target_week target_day due_week due_day upload_requirements task_prerequisites discussion_prompts overseer_steps]
       task_def_csv.each do |key, value|
         unless keys_to_ignore.include?(key)
           assert_equal(task_def[key].to_s, value)
@@ -170,7 +296,124 @@ class TaskDefinitionTest < ActiveSupport::TestCase
       end.to_json
 
       assert_equal prerequisites, task_def_csv['task_prerequisites']
+
+      overseer_steps = task_def.overseer_steps.map do |step|
+        {
+          'name' => step.name,
+          'description' => step.description,
+          'display_name' => step.display_name,
+          'display_description' => step.display_description,
+          'run_command' => step.run_command,
+          'timeout' => step.timeout,
+          'sort_order' => step.sort_order,
+          'step_type' => step.step_type,
+          'partial_output_diff' => step.partial_output_diff,
+          'stdin_input_file' => step.stdin_input_file,
+          'expected_output_file' => step.expected_output_file,
+          'feedback_message' => step.feedback_message,
+          'status_on_success' => TaskStatus.find_by(id: step.status_on_success_id)&.status_key&.to_s,
+          'status_on_failure' => TaskStatus.find_by(id: step.status_on_failure_id)&.status_key&.to_s,
+          'halt_on_success' => step.halt_on_success,
+          'halt_on_failure' => step.halt_on_failure,
+          'show_expected_output' => step.show_expected_output,
+          'show_stdin' => step.show_stdin,
+          'show_stdout' => step.show_stdout,
+          'enabled' => step.enabled
+        }
+      end
+
+      assert_equal overseer_steps, JSON.parse(task_def_csv['overseer_steps'])
     end
+  end
+
+  def test_import_overseer_steps_from_csv_fixture
+    target_unit = Unit.create!(
+      code: 'CSVSTEP1',
+      name: 'CSV Import With Overseer Steps',
+      description: 'Import target',
+      teaching_period: TeachingPeriod.find(3)
+    )
+
+    result = target_unit.import_tasks_from_csv(
+      File.open(Rails.root.join("test_files/COS10001-ImportTasksWithOverseerSteps.csv"))
+    )
+
+    assert_empty result[:errors], result
+
+    imported_task_def = target_unit.task_definitions.find_by(abbreviation: '1.1P')
+    assert_not_nil imported_task_def
+    assert_equal 1, imported_task_def.overseer_steps.count
+
+    imported_step = imported_task_def.overseer_steps.first
+    assert_equal 'Step 1', imported_step.name
+    assert_equal 'Step 1 student', imported_step.display_name
+    assert_equal 'b64:IyEvYmluL2Jhc2gKCmVjaG8gIkhlbGxvIHdvcmxkISI', imported_step.run_command
+    assert_equal 30, imported_step.timeout
+    assert_equal 'status_check', imported_step.step_type
+    assert_nil imported_step.status_on_success_id
+    assert_nil imported_step.status_on_failure_id
+    assert_nil imported_step.partial_output_diff
+    assert_nil imported_step.stdin_input_file
+    assert_nil imported_step.expected_output_file
+    assert_nil imported_step.feedback_message
+    assert_nil imported_step.halt_on_success
+    assert_nil imported_step.halt_on_failure
+    assert imported_step.show_expected_output
+    assert_nil imported_step.show_stdin
+    assert imported_step.show_stdout
+    assert imported_step.enabled
+  end
+
+  def test_import_does_not_skip_task_name_containing_name
+    target_unit = Unit.create!(
+      code: 'CSVNAME1',
+      name: 'CSV Import With Name Substring',
+      description: 'Import target',
+      teaching_period: TeachingPeriod.find(3)
+    )
+
+    csv = CSV.generate do |rows|
+      rows << TaskDefinition.required_csv_columns
+      rows << [
+        'Coin Clash (Tournament Mini-Project)',
+        'D4',
+        'Build an adversarial game agent.',
+        1,
+        0,
+        false,
+        0,
+        false,
+        90,
+        false,
+        false,
+        false,
+        false,
+        0,
+        nil,
+        [{ key: 'file0', name: 'coin_clash.rb', type: 'code' }].to_json,
+        1,
+        'Tue',
+        1,
+        'Tue',
+        1,
+        'Tue',
+        nil,
+        false,
+        [].to_json,
+        [].to_json
+      ]
+    end
+
+    file = Tempfile.new(['task-definitions', '.csv'])
+    file.write(csv)
+    file.close
+
+    result = target_unit.import_tasks_from_csv(file.path)
+
+    assert_empty result[:errors], result
+    assert target_unit.task_definitions.exists?(abbreviation: 'D4')
+  ensure
+    file&.unlink
   end
 
   def test_export_without_tutorial_stream

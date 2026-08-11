@@ -33,6 +33,9 @@ class Project < ApplicationRecord
   has_many :session_activities,  dependent: :destroy
 
   has_many :staff_notes, dependent: :destroy
+  has_many :engagements, dependent: :destroy, inverse_of: :project
+  has_many :engagement_projects, dependent: :destroy
+  has_many :shared_engagements, through: :engagement_projects, source: :engagement
 
   # Callbacks - methods called are private
   before_destroy :can_destroy?
@@ -59,7 +62,9 @@ class Project < ApplicationRecord
       :make_submission,
       :get_submission,
       :change,
-      :reprocess_submission
+      :reprocess_submission,
+      :get_engagements,
+      :comment_engagement
     ]
     # What can tutors do with projects?
     tutor_role_permissions = [
@@ -74,7 +79,11 @@ class Project < ApplicationRecord
       :get_staff_note,
       :create_staff_note,
       :reprocess_submission,
-      :get_discussion_prompt
+      :get_discussion_prompt,
+      :get_engagements,
+      :create_engagement,
+      :edit_engagement,
+      :comment_engagement
     ]
 
     # What can admins do with projects?
@@ -82,7 +91,8 @@ class Project < ApplicationRecord
       :get,
       :get_submission,
       :reprocess_submission,
-      :get_discussion_prompt
+      :get_discussion_prompt,
+      :get_engagements
     ]
 
     # What can auditors do with projects?
@@ -91,7 +101,8 @@ class Project < ApplicationRecord
       :get_submission,
       :get_staff_note,
       :reprocess_submission,
-      :get_discussion_prompt
+      :get_discussion_prompt,
+      :get_engagements
     ]
 
     # What can nil users do with projects?
@@ -261,16 +272,7 @@ class Project < ApplicationRecord
   # Get a string representation of the Target Grade
   #
   def target_grade_desc
-    case target_grade
-    when 1
-      'Credit'
-    when 2
-      'Distinction'
-    when 3
-      'High Distinction'
-    else
-      'Pass'
-    end
+    unit.grade_label(target_grade)
   end
 
   def reference_date
@@ -278,6 +280,8 @@ class Project < ApplicationRecord
   end
 
   def task_details_for_shallow_serializer(user)
+    teaching_breaks = unit.teaching_period&.breaks.to_a
+
     tasks
       .joins(:task_status)
       .joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment')")
@@ -309,6 +313,8 @@ class Project < ApplicationRecord
           extensions: t.extensions,
           scorm_extensions: t.scorm_extensions,
           due_date: t.due_date,
+          moved_to_discuss_at: t.moved_to_discuss_at,
+          discuss_timeout_expiry_at: t.discuss_timeout_expiry_at(teaching_breaks: teaching_breaks),
           submission_date: t.submission_date,
           completion_date: t.completion_date,
           target_start_date: t.target_start_date,
@@ -361,7 +367,7 @@ class Project < ApplicationRecord
     #
     overdue_tasks = task_states.select { |ts| to_target.call(ts) < Time.zone.today }
 
-    for i in GradeHelper::RANGE
+    for i in unit.grade_values
       graded_tasks = overdue_tasks.select { |ts| ts[:task_definition].target_grade == i  }
 
       graded_tasks.each do |ts|
@@ -377,7 +383,7 @@ class Project < ApplicationRecord
     #
     soon_tasks = task_states.select { |ts| to_target.call(ts) >= Time.zone.today && to_target.call(ts) < Time.zone.today + 7.days }
 
-    for i in GradeHelper::RANGE
+    for i in unit.grade_values
       graded_tasks = soon_tasks.select { |ts| ts[:task_definition].target_grade == i }
 
       graded_tasks.each do |ts|
@@ -392,7 +398,7 @@ class Project < ApplicationRecord
     #
     ahead_tasks = task_states.select { |ts| to_target.call(ts) >= Time.zone.today + 7.days }
 
-    for i in GradeHelper::RANGE
+    for i in unit.grade_values
       graded_tasks = ahead_tasks.select { |ts| ts[:task_definition].target_grade == i }
 
       graded_tasks.each do |ts|
@@ -506,7 +512,7 @@ class Project < ApplicationRecord
 
       red_pct = ((project_task_counts.fail_count + project_task_counts.feedback_exceeded_count + project_task_counts.time_exceeded_count) / total_task_counts[target_grade]).signif(2)
       orange_pct = ((project_task_counts.redo_count + project_task_counts.need_help_count + project_task_counts.fix_and_resubmit_count) / total_task_counts[target_grade]).signif(2)
-      green_pct = ((project_task_counts.discuss_count + project_task_counts.demonstrate_count + project_task_counts.complete_count) / total_task_counts[target_grade]).signif(2)
+      green_pct = ((project_task_counts.discuss_count + project_task_counts.rediscuss_count + project_task_counts.demonstrate_count + project_task_counts.complete_count) / total_task_counts[target_grade]).signif(2)
       blue_pct = (project_task_counts.ready_for_feedback_count / total_task_counts[target_grade]).signif(2)
       grey_pct = (1 - red_pct - orange_pct - green_pct - blue_pct).signif(2)
 
@@ -545,19 +551,14 @@ class Project < ApplicationRecord
   # task_stats field
   def update_task_stats
     # generate SQL for columns that count the number of tasks per grade
-    count_by_grade = (GradeHelper::RANGE).map { |grade_id| "SUM(CASE WHEN target_grade <= #{grade_id} THEN 1 ELSE 0 END) AS count_#{grade_id}" }
+    count_by_grade = unit.grade_values.map { |grade_id| "SUM(CASE WHEN target_grade <= #{grade_id} THEN 1 ELSE 0 END) AS count_#{grade_id}" }
 
     # Get the count of the total number of tasks less than each target grade
     task_count = unit
                  .task_definitions
                  .select(*count_by_grade) # create columns for each grade
                  .map do |r| # map to array
-      [
-        r['count_0'].to_f || 0.0,
-        r['count_1'].to_f || 0.0,
-        r['count_2'].to_f || 0.0,
-        r['count_3'].to_f || 0.0
-      ]
+      unit.grade_values.index_with { |grade_id| r["count_#{grade_id}"].to_f || 0.0 }
     end
                  .first # there is only one row returned...
 

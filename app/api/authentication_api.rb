@@ -77,10 +77,12 @@ class AuthenticationApi < Grape::API
 
       token&.destroy!
       token = user.generate_authentication_token!
+      user.record_sign_in!
 
       # Return user details
       present :user, user, with: Entities::UserEntity
       present :auth_token, token.authentication_token
+      present :auth_token_expiry, token.auth_token_expiry
       set_refresh_cookie_in_response(remember)
     end
   end
@@ -162,8 +164,10 @@ class AuthenticationApi < Grape::API
       requires :SAMLResponse, type: String, desc: 'SAML logout response data.'
     end
     post '/auth/saml_logout' do
-      response = OneLogin::RubySaml::Logoutresponse.new(params[:SAMLResponse], allowed_clock_drift: 1.second,
-                                                                               settings: AuthenticationHelpers.saml_settings)
+      response = OneLogin::RubySaml::Logoutresponse.new(
+        params[:SAMLResponse],
+        AuthenticationHelpers.saml_settings
+      )
 
       # Check if the SAML response is valid - if not log an error
       unless response.is_valid?
@@ -370,12 +374,14 @@ class AuthenticationApi < Grape::API
         # Invalidate the token and regenrate a new one
         token.destroy!
         token = user.generate_authentication_token!
+        user.record_sign_in!
 
         logger.info "Login #{params[:username]} from #{request.ip}"
 
         # Respond user details with new auth token
         present :user, user, with: Entities::UserEntity
         present :auth_token, token.authentication_token
+        present :auth_token_expiry, token.auth_token_expiry
         set_refresh_cookie_in_response(params[:remember])
       end
     end
@@ -479,12 +485,27 @@ class AuthenticationApi < Grape::API
     end
   end
 
+  desc 'Get unit content authentication token'
+  get '/auth/content' do
+    if authenticated?(:general)
+      token = current_user.auth_tokens.find_by(token_type: :content)
+      if token.nil? || token.auth_token_expiry <= Time.zone.now
+        token&.destroy
+        token = current_user.generate_content_authentication_token!
+      end
+
+      present :content_auth_token, token.authentication_token
+    end
+  end
+
   desc 'Get access token from the refresh token cookie'
   params do
     optional :delete_auth_token, type: Boolean, desc: 'Delete the auth token if also provided', default: true
   end
   post '/auth/access-token' do
     if authenticated_via_refresh_token?
+      current_user.record_access!
+
       # Check if we have a auth token as well
       if params[:delete_auth_token]
         user_param, auth_param = get_user_and_token_from(:header)
@@ -499,8 +520,10 @@ class AuthenticationApi < Grape::API
         end
       end
       # Return user details
+      token = current_user.generate_authentication_token!(token_type: :general, force_new: false)
       present :user, current_user, with: Entities::UserEntity
-      present :auth_token, current_user.generate_authentication_token!(token_type: :general, force_new: false).authentication_token
+      present :auth_token, token.authentication_token
+      present :auth_token_expiry, token.auth_token_expiry
     else
       present nil
     end

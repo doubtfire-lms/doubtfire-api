@@ -459,6 +459,34 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_json_matches_model original.reload, unit, %w( name code description start_date end_date active auto_apply_extension_before_deadline send_notifications )
   end
 
+  def test_system_administrator_enrolled_as_student_can_update_unit
+    unit = FactoryBot.create(:unit, with_students: false)
+    administrator = FactoryBot.create(:user, :admin)
+    unit.enrol_student(administrator, Campus.first)
+
+    assert_equal Role.student, unit.role_for(administrator)
+
+    add_auth_header_for(user: administrator)
+    put_json "/api/units/#{unit.id}", { unit: { name: 'Updated by student administrator' } }
+
+    assert_equal 200, last_response.status, last_response_body
+    assert_equal 'Updated by student administrator', unit.reload.name
+  end
+
+  def test_system_administrator_employed_as_tutor_can_update_unit
+    unit = FactoryBot.create(:unit, with_students: false)
+    administrator = FactoryBot.create(:user, :admin)
+    unit.employ_staff(administrator, Role.tutor)
+
+    assert_equal Role.tutor, unit.role_for(administrator)
+
+    add_auth_header_for(user: administrator)
+    put_json "/api/units/#{unit.id}", { unit: { name: 'Updated by tutor administrator' } }
+
+    assert_equal 200, last_response.status, last_response_body
+    assert_equal 'Updated by tutor administrator', unit.reload.name
+  end
+
   #Test PUT for updating unit details with empty name
   def test_put_update_unit_empty_name
     unit = Unit.first
@@ -621,5 +649,170 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
     unit.reload
     assert_equal task_def_doc.id, unit.draft_task_definition_id
+  end
+
+  def test_get_task_completion_snapshots
+    unit = FactoryBot.create :unit, with_students: false, task_count: 1, stream_count: 0, tutorials: 1, campus_count: 1
+    tutorial = unit.tutorials.first
+    task_definition = unit.task_definitions_by_grade.first
+
+    older_snapshot = TaskCompletionSnapshot.create!(
+      unit: unit,
+      snapshot_timestamp: Time.zone.parse('2026-04-01 10:00:00').to_i.to_s
+    )
+
+    mid_snapshot = TaskCompletionSnapshot.create!(
+      unit: unit,
+      snapshot_timestamp: Time.zone.parse('2026-04-02 10:00:00').to_i.to_s
+    )
+
+    latest_snapshot = TaskCompletionSnapshot.create!(
+      unit: unit,
+      snapshot_timestamp: Time.zone.parse('2026-04-03 10:00:00').to_i.to_s
+    )
+
+    older_snapshot.store_stats!(build_task_completion_snapshot_csv(tutorial, task_definition, [TaskStatus.not_started.id]))
+    mid_snapshot.store_stats!(build_task_completion_snapshot_csv(tutorial, task_definition, [TaskStatus.complete.id, TaskStatus.complete.id]))
+    latest_snapshot.store_stats!(build_task_completion_snapshot_csv(tutorial, task_definition, [TaskStatus.complete.id, TaskStatus.complete.id, TaskStatus.complete.id]))
+
+    add_auth_header_for(user: unit.main_convenor_user)
+    header 'Host', 'localhost'
+    get "/api/units/#{unit.id}/stats/task_completion_snapshots", { limit: 2 }
+
+    assert_equal 200, last_response.status, last_response_body
+    assert_equal 2, last_response_body.length
+
+    assert_equal latest_snapshot.snapshot_date.to_s, last_response_body[0]['snapshot_date'].to_date.to_s
+    assert_equal mid_snapshot.snapshot_date.to_s, last_response_body[1]['snapshot_date'].to_date.to_s
+
+    latest_stats = last_response_body[0]['stats']
+    assert_equal 3, latest_stats[tutorial.campus.name][tutorial.abbreviation][task_definition.abbreviation]['complete']
+
+    assert_not_equal older_snapshot.snapshot_date.to_s, last_response_body[1]['snapshot_date'].to_date.to_s
+  end
+
+  def test_get_task_completion_snapshots_filters_by_date
+    unit = FactoryBot.create :unit, with_students: false, task_count: 1, stream_count: 0, tutorials: 1, campus_count: 1
+    tutorial = unit.tutorials.first
+    task_definition = unit.task_definitions_by_grade.first
+
+    TaskCompletionSnapshot.create!(
+      unit: unit,
+      snapshot_timestamp: Time.zone.parse('2026-03-30 10:00:00').to_i.to_s
+    )
+
+    included_snapshot = TaskCompletionSnapshot.create!(
+      unit: unit,
+      snapshot_timestamp: Time.zone.parse('2026-04-02 10:00:00').to_i.to_s
+    )
+
+    TaskCompletionSnapshot.create!(
+      unit: unit,
+      snapshot_timestamp: Time.zone.parse('2026-04-05 10:00:00').to_i.to_s
+    )
+
+    unit.task_completion_snapshots.find_each do |snapshot|
+      snapshot.store_stats!(build_task_completion_snapshot_csv(tutorial, task_definition, [TaskStatus.complete.id]))
+    end
+
+    add_auth_header_for(user: unit.main_convenor_user)
+    header 'Host', 'localhost'
+    get "/api/units/#{unit.id}/stats/task_completion_snapshots", {
+      start_date: Date.new(2026, 4, 1),
+      end_date: Date.new(2026, 4, 3)
+    }
+
+    assert_equal 200, last_response.status, last_response_body
+    assert_equal 1, last_response_body.length
+    assert_equal included_snapshot.snapshot_date.to_s, last_response_body[0]['snapshot_date'].to_date.to_s
+  end
+
+  def test_get_task_completion_snapshots_not_authorised
+    unit = FactoryBot.create :unit, with_students: false, task_count: 0
+    TaskCompletionSnapshot.create!(
+      unit: unit,
+      snapshot_timestamp: Time.zone.now.to_i.to_s
+    )
+
+    add_auth_header_for(user: User.where(role: Role.student).first)
+    header 'Host', 'localhost'
+    get "/api/units/#{unit.id}/stats/task_completion_snapshots"
+
+    assert_equal 403, last_response.status
+  end
+
+  def test_post_capture_task_completion_snapshot
+    Sidekiq::Testing.inline! do
+      unit = FactoryBot.create :unit
+
+      count_before = TaskCompletionSnapshot.where(unit: unit).count
+
+      add_auth_header_for(user: unit.main_convenor_user)
+      header 'Host', 'localhost'
+      post "/api/units/#{unit.id}/stats/task_completion_snapshots/capture"
+
+      assert_equal 201, last_response.status, last_response_body
+      assert_not_nil last_response_body['id']
+
+      snapshot = TaskCompletionSnapshot.where(unit: unit).order(snapshot_timestamp: :desc).first
+      assert_not_nil snapshot
+      assert_equal count_before + 1, TaskCompletionSnapshot.where(unit: unit).count
+
+      assert_equal Date.current.to_s, snapshot.snapshot_date.to_s
+      assert_not_empty snapshot.load_stats
+      assert File.exist?(snapshot.snapshot_file_path)
+    ensure
+      Sidekiq::Testing.fake!
+    end
+  end
+
+  def test_post_capture_task_completion_snapshot_not_authorised
+    unit = FactoryBot.create :unit, with_students: false, task_count: 0
+
+    add_auth_header_for(user: User.where(role: Role.student).first)
+    header 'Host', 'localhost'
+    post "/api/units/#{unit.id}/stats/task_completion_snapshots/capture"
+
+    assert_equal 403, last_response.status
+  end
+
+  private
+
+  def build_task_completion_snapshot_csv(tutorial, task_definition, statuses)
+    headers = [
+      'Student ID',
+      'Username',
+      'Student Name',
+      'Campus',
+      'Target Grade',
+      'Email',
+      'Portfolio',
+      'Grade',
+      'Rationale',
+      'Assessor',
+      'Tutorial',
+      task_definition.abbreviation,
+    ]
+
+    CSV.generate do |csv|
+      csv << headers
+
+      statuses.each_with_index do |status, index|
+        csv << [
+          "#{index + 1}",
+          "student-#{index + 1}",
+          "Student #{index + 1}",
+          tutorial.campus.abbreviation,
+          '0',
+          "student-#{index + 1}@example.com",
+          'false',
+          '',
+          '',
+          '',
+          tutorial.abbreviation,
+          status,
+        ]
+      end
+    end
   end
 end

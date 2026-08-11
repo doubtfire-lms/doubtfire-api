@@ -42,6 +42,9 @@ module PdfGeneration
                     :base_path,
                     :image_path,
                     :learning_summary_report,
+                    :submission_date,
+                    :formatted_submission_date,
+                    :formatted_submission_time,
                     :ordered_tasks,
                     :portfolio_tasks,
                     :task_defs,
@@ -55,6 +58,8 @@ module PdfGeneration
         @student = project.student
         @project = project
         @learning_summary_report = project.learning_summary_report_path
+        @submission_date = project.portfolio_submission_date
+        @formatted_submission_date, @formatted_submission_time = format_submission_date(project)
         @files = project.portfolio_files(ensure_valid: true, force_ascii: is_retry)
         @base_path = project.portfolio_temp_path
         @image_path = Rails.root.join('public/assets/images')
@@ -66,12 +71,35 @@ module PdfGeneration
         @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
         @is_retry = is_retry
         @include_pax = !is_retry
-        @work_id = "portfolio-#{project.id}-#{Time.now.to_i}-#{Process.pid}-#{Thread.current.object_id}#{'-retry' if is_retry}"
+        @work_id = FileHelper.sanitized_path(
+          "portfolio-#{Time.current.strftime('%Y%m%d-%H%M')}-#{project.student.username}-#{project.id}-#{Process.pid}#{'-retry' if is_retry}"
+        )
       end
 
       def make_pdf
         logger.debug 'Running make_pdf: (portfolio)'
         generate_pdf(template: '/portfolio/portfolio_pdf')
+      end
+
+      private
+
+      def format_submission_date(project)
+        return [nil, nil] if @submission_date.blank?
+
+        campus_timezone = project.campus&.timezone.presence
+
+        submission_time =
+          if campus_timezone.present?
+            @submission_date.in_time_zone(campus_timezone)
+          else
+            @submission_date.to_time.getlocal
+          end
+
+        timezone_label = campus_timezone || ENV['TZ'].presence || submission_time.zone || Time.zone.name
+        [
+          submission_time.strftime('%d %b %Y'),
+          "#{submission_time.strftime('%I:%M %p')} #{timezone_label}"
+        ]
       end
     end
 
@@ -87,9 +115,7 @@ module PdfGeneration
 
     # Create the portfolio for this project
     def create_portfolio
-      self.compile_portfolio = false
-      save!
-
+      logger.info "Creating portfolio for #{user.username} in #{unit.code}"
       begin
         pac = ProjectAppController.new
         pac.init(self, false)
@@ -116,8 +142,13 @@ module PdfGeneration
         logger.info "Created portfolio at #{portfolio_path} - #{log_details}"
 
         self.portfolio_production_date = Time.zone.now
-        save
+        self.compile_portfolio = false
+        save!
+        true
       rescue StandardError => e
+        self.compile_portfolio = false
+        save!
+
         logger.error "Failed to convert portfolio to PDF - #{log_details} -\nError: #{e.message}"
 
         log_file = e.message.scan(%r{/.*\.log}).first
@@ -171,6 +202,19 @@ module PdfGeneration
           task.task_definition.upload_requirements.blank? &&
           ![TaskStatus.need_help.id, TaskStatus.working_on_it.id].include?(task.task_status_id)
         )
+      end
+    end
+
+    # Return the tasks that are currently being processed
+    def tasks_processing_pdf
+      # Get assigned tasks that should be included in the portfolio
+      tasks = self.tasks.joins(:task_definition).order('task_definitions.target_date, task_definitions.abbreviation')
+
+      # Select tasks that should have a PDF submission, but is currently being processed
+      tasks.select do |task|
+        !task.has_pdf &&
+          task.processing_pdf? &&
+          task.task_definition.upload_requirements.present?
       end
     end
 
@@ -260,7 +304,7 @@ module PdfGeneration
       result = []
 
       Dir.chdir(portfolio_tmp_dir)
-      files = Dir.glob('*').select { |f| (f =~ /^\d{3}-(cover|document|code|image)/) == 0 }
+      files = Dir.glob('*').select { |f| (f =~ /^\d{3}-(cover|document|code|image|zip|archive)/) == 0 }
       files.each do |file|
         parts = file.split('-')
         idx = parts[0].to_i

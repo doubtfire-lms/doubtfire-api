@@ -2,6 +2,11 @@ class AcceptSubmissionJob
   include Sidekiq::Job
   include LogHelper
 
+  sidekiq_options lock: :until_executed,
+                  lock_args_method: ->(args) { [args.first] },
+                  on_conflict: :reject,
+                  retry: false
+
   def perform(task_id, user_id, accepted_tii_eula, test_submission)
     begin
       # Ensure cwd is valid...
@@ -36,6 +41,16 @@ class AcceptSubmissionJob
 
       begin
         # Notify system admin
+        if defined?(Sentry)
+          Sentry.capture_exception(
+            e,
+            extra: {
+              task_id: task.id,
+              task_definition_abbreviation: task.task_definition.abbreviation,
+              latex_log_message: e.respond_to?(:log_message) ? e.log_message.to_s.last(5000) : nil
+            }
+          )
+        end
         mail = ErrorLogMailer.error_message('Accept Submission', "Failed to convert submission to PDF for task #{task.log_details}", e)
         mail.deliver if mail.present?
       rescue StandardError => e
@@ -60,19 +75,24 @@ class AcceptSubmissionJob
       task.send_documents_to_tii(user, accepted_tii_eula: accepted_tii_eula)
     end
 
-    if task.overseer_enabled? || test_submission
-      overseer_assessment = OverseerAssessment.create_for(task, test_submission)
-      if overseer_assessment.present?
-        logger.info "Launching Overseer assessment for task_def_id: #{task.task_definition.id} task_id: #{task.id}"
-
-        overseer_assessment.send_to_overseer(test_submission: test_submission)
-
-      else
-        logger.info "Overseer assessment for task_def_id: #{task.task_definition.id} task_id: #{task.id} was not performed #{overseer_assessment.inspect}"
-      end
+    if SubmissionHistory.enabled_requirements(task).any?
+      submission_timestamp = Time.now.utc.to_i
+      SubmissionHistory.mark_pending(task)
+      CreateSubmissionHistoryJob.perform_async(task.id, submission_timestamp, test_submission)
+    elsif task.overseer_enabled? || test_submission
+      logger.error "Overseer assessment was not performed because task definition #{task.task_definition.id} has no submission history files configured"
     end
   rescue StandardError => e # to raise error message to avoid unnecessary retry
     logger.error e
+    if defined?(Sentry)
+      Sentry.capture_exception(
+        e,
+        extra: {
+          task_id: task&.id,
+          task_definition_abbreviation: task&.task_definition&.abbreviation
+        }
+      )
+    end
     task.clear_in_process
   end
 end

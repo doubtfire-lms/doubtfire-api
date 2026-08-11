@@ -98,6 +98,7 @@ module AuthenticationHelpers
       user_param, auth_param = get_user_and_token_from(:cookie)
     else
       user_param, auth_param = get_user_and_token_from(:header)
+      auth_param = params['content_token'] if token_type == :content
     end
 
     case user_auth_token_type(user_param, auth_param, token_type)
@@ -221,7 +222,7 @@ module AuthenticationHelpers
 
       # Generate a new token when the old one is absent or getting close to expiring
       if token.nil? || token.auth_token_expiry <= Time.zone.now - 12.hours
-        token = current_user.generate_authentication_token!(token_type: :refresh_token, expiry: Time.zone.now + 1.week)
+        token = current_user.generate_authentication_token!(token_type: :refresh_token)
       end
 
       domain = Doubtfire::Application.config.institution[:cookie_domain]

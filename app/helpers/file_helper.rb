@@ -6,14 +6,28 @@ require 'tmpdir'
 require 'open3'
 require 'shellwords'
 require 'pdf-reader'
+require 'zlib'
+require 'rubygems/package'
 
 module FileHelper
   extend LogHelper
   extend TimeoutHelper
   extend MimeCheckHelpers
 
+  ZIP_NESTED_ARCHIVE_EXTENSIONS = %w[
+    .7z .bz2 .ear .gz .jar .rar .tar .tar.bz2 .tar.gz .tar.xz .tbz .tbz2 .tgz .txz .war .xz .zip
+  ].freeze
+  WORD_DOCUMENT_EXTENSION = '.docx'
+  WORD_DOCUMENT_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  COMPOUND_FILE_SIGNATURE = "\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1".b.freeze
+  WORD_DOCUMENT_ENCRYPTION_STREAM_NAMES = %w[EncryptedPackage EncryptionInfo].map do |name|
+    name.encode(Encoding::UTF_16LE).b.freeze
+  end.freeze
+
+  class DocumentConversionError < StandardError; end
+
   def known_extension?(extn)
-    allow_extensions = %w(pdf ps csv xls xlsx pas cpp c cs csv h hpp java py js html coffee scss yaml yml xml json ts r rb rmd rnw rhtml rpres tex vb sql txt md jack hack asm hdl tst out cmp vm sh bat dat ipynb css png bmp tiff tif jpeg jpg gif zip gz tar wav ogg mp3 mp4 webm aac pcm aiff flac wma alac pml vue)
+    allow_extensions = %w(pdf ps docx csv xls xlsx pas cpp c cs csv h hpp java py js html coffee scss yaml yml xml json ts r rb rmd rnw rhtml rpres tex vb sql txt md jack hack asm hdl tst out cmp vm sh bat dat ipynb css png bmp tiff tif jpeg jpg gif zip gz tgz tar wav ogg mp3 mp4 webm aac pcm aiff flac wma alac pml vue)
 
     # Allow empty or nil extensions for blobs otherwise check that it matches the allowed list
     extn.blank? || allow_extensions.include?(extn)
@@ -24,6 +38,8 @@ module FileHelper
   # - file is passed the file uploaded to Doubtfire (a hash with all relevant data about the file)
   #
   def accept_file(file, name, kind)
+    word_document = kind == 'document' && word_document?(file[:filename] || file['tempfile'].path)
+
     case kind
     when 'image'
       mime_allow_list = ['image/png', 'image/gif', 'image/bmp', 'image/tiff', 'image/jpeg', 'image/x-ms-bmp']
@@ -33,7 +49,21 @@ module FileHelper
                 'text/x-yaml', 'application/xml', 'text/x-typescript', 'text/x-vhdl', 'text/x-asm', 'text/x-jack', 'application/x-httpd-php',
                 'application/tst', 'text/x-cmp', 'text/x-vm', 'application/x-sh', 'application/x-bat', 'application/dat', 'application/x-wine-extension-ini']
     when 'document'
-      mime_allow_list = [ 'application/pdf' ]
+      mime_allow_list = if word_document
+                          [WORD_DOCUMENT_MIME_TYPE]
+                        else
+                          ['application/pdf']
+                        end
+    when 'zip', 'archive'
+      mime_allow_list = [
+        'application/zip',
+        'application/x-zip',
+        'application/x-zip-compressed',
+        'multipart/x-zip',
+        'application/x-tar',
+        'application/gzip',
+        'application/x-gzip'
+      ]
     when 'audio'
       mime_allow_list = ['audio/', 'video/webm', 'application/ogg', 'application/octet-stream']
     when 'comment_attachment'
@@ -54,6 +84,24 @@ module FileHelper
       }
     end
 
+    if word_document && !word_document_conversion_configured?
+      msg = 'Word documents are currently not supported. Please export your document to PDF.'
+      logger.error 'Word document upload rejected because conversion is not configured'
+      return {
+        accepted: false,
+        msg: msg
+      }
+    end
+
+    if word_document && encrypted_word_document?(file['tempfile'].path)
+      msg = 'Word document is encrypted or password protected. Remove the password protection and upload it again.'
+      logger.debug 'Word document is encrypted or password protected'
+      return {
+        accepted: false,
+        msg: msg
+      }
+    end
+
     mime_check = mime_in_list?(file['tempfile'].path, mime_allow_list)
     unless mime_check
       msg = 'invalid file MIME type, file is likely corrupted.'
@@ -64,8 +112,9 @@ module FileHelper
       }
     end
 
-    # Extra checks for PDF documents
-    if kind == 'document'
+    # Extra checks for PDF documents. DOCX files are converted and validated as
+    # PDFs when the submission is processed asynchronously.
+    if kind == 'document' && !word_document
       pdf_validation_result = validate_pdf(file['tempfile'].path)
 
       if pdf_validation_result[:encrypted]
@@ -87,6 +136,18 @@ module FileHelper
       end
     end
 
+    if %w[zip archive].include?(kind)
+      zip_validation_result = validate_zip_upload(file['tempfile'].path, File.basename(file[:filename].to_s))
+
+      unless zip_validation_result[:valid]
+        logger.debug "Zip file is invalid: #{zip_validation_result[:msg]}"
+        return {
+          accepted: false,
+          msg: zip_validation_result[:msg]
+        }
+      end
+    end
+
     logger.debug 'Uploaded file is accepted'
 
     # All checks are done
@@ -94,6 +155,119 @@ module FileHelper
       accepted: true,
       msg: 'success'
     }
+  end
+
+  def word_document?(path)
+    File.extname(path.to_s).casecmp(WORD_DOCUMENT_EXTENSION).zero?
+  end
+
+  def word_document_conversion_configured?
+    config = Doubtfire::Application.config
+    config.gotenberg_image.present? &&
+      (config.gotenberg_workdir_volume_mount.present? || config.gotenberg_fallback_volume_container.present?)
+  end
+
+  # Password-protected OOXML files are stored in an OLE compound file rather
+  # than the ZIP container used by normal DOCX files. Confirm the compound-file
+  # signature and both encryption stream names to avoid treating any malformed
+  # or incorrectly named DOCX as encrypted.
+  def encrypted_word_document?(path)
+    longest_stream_name = WORD_DOCUMENT_ENCRYPTION_STREAM_NAMES.map(&:bytesize).max
+    matched_stream_names = Array.new(WORD_DOCUMENT_ENCRYPTION_STREAM_NAMES.length, false)
+
+    File.open(path, 'rb') do |file|
+      return false unless file.read(COMPOUND_FILE_SIGNATURE.bytesize) == COMPOUND_FILE_SIGNATURE
+
+      buffer = ''.b
+      while (chunk = file.read(16 * 1024))
+        buffer << chunk
+        WORD_DOCUMENT_ENCRYPTION_STREAM_NAMES.each_with_index do |stream_name, index|
+          matched_stream_names[index] ||= buffer.include?(stream_name)
+        end
+        return true if matched_stream_names.all?
+
+        buffer = buffer.byteslice(-(longest_stream_name - 1), longest_stream_name - 1) || ''.b
+      end
+    end
+
+    false
+  rescue Errno::ENOENT, Errno::EACCES, IOError
+    false
+  end
+
+  def convert_word_document_to_pdf(source_path, destination_path, work_id: SecureRandom.uuid)
+    work_id = work_id.to_s
+    unless work_id.match?(/\A[A-Za-z0-9_-]+\z/)
+      raise DocumentConversionError, 'Invalid Gotenberg work id.'
+    end
+
+    work_root = Rails.root.join("tmp/gotenberg")
+    work_dir = work_root.join(work_id)
+    input_path = work_dir.join('input.docx')
+    output_path = work_dir.join('output.pdf')
+
+    FileUtils.mkdir_p(work_dir)
+    FileUtils.chmod(0o777, work_dir)
+    FileUtils.cp(source_path, input_path)
+
+    stdout, stderr, status = run_word_document_conversion(work_id)
+    unless status.success?
+      details = [stdout, stderr].compact.join("\n").strip.first(1_000)
+      message = "Word document conversion failed with exit status #{status.exitstatus}."
+      message = "#{message} #{details}" if details.present?
+      raise DocumentConversionError, message
+    end
+
+    unless File.exist?(output_path) && validate_pdf(output_path)[:valid]
+      raise DocumentConversionError, 'Gotenberg did not produce a valid PDF for the Word document.'
+    end
+
+    FileUtils.mv(output_path, destination_path)
+    destination_path
+  rescue SystemCallError => e
+    raise DocumentConversionError, "Word document conversion failed: #{e.message}"
+  ensure
+    FileUtils.rm_rf(work_dir) if defined?(work_dir) && work_dir
+  end
+
+  def run_word_document_conversion(work_id)
+    Open3.capture3(*word_document_conversion_command(work_id))
+  end
+
+  def word_document_conversion_command(work_id)
+    config = Doubtfire::Application.config
+    raise DocumentConversionError, 'GOTENBERG_IMAGE is not configured.' if config.gotenberg_image.blank?
+
+    timeout_seconds = config.word_document_conversion_timeout_seconds.to_i
+    timeout_seconds = 120 unless timeout_seconds.positive?
+
+    [
+      'docker', 'run', '--rm',
+      '--cpus', '1',
+      '--network', 'none',
+      *gotenberg_volume_arguments(work_id),
+      '--name', "gotenberg-word-#{work_id}",
+      '--env', "WORD_DOCUMENT_CONVERSION_TIMEOUT_SECONDS=#{timeout_seconds}",
+      '--entrypoint', config.word_document_build_path,
+      config.gotenberg_image,
+      work_id
+    ]
+  end
+
+  def gotenberg_volume_arguments(work_id)
+    config = Doubtfire::Application.config
+    mount = config.gotenberg_workdir_volume_mount
+
+    if mount.present?
+      host_work_dir = File.join(mount, work_id)
+      container_work_dir = "/workdir/gotenberg/#{work_id}"
+      ['--volume', "#{host_work_dir}:#{container_work_dir}"]
+    elsif config.gotenberg_fallback_volume_container.present?
+      ['--volumes-from', config.gotenberg_fallback_volume_container]
+    else
+      raise DocumentConversionError,
+            'Set GOTENBERG_WORKDIR_VOLUME_MOUNT or GOTENBERG_FALLBACK_VOLUME_CONTAINER.'
+    end
   end
 
   #
@@ -276,6 +450,25 @@ module FileHelper
     dst
   end
 
+  def unit_analytics_dir(unit, create: true, archived: true)
+    dst = unit_work_root(unit, archived: archived)
+    dst << 'analytics/'
+
+    FileUtils.mkdir_p(dst) if create
+    dst
+  end
+
+  def unit_task_status_snapshot_path(unit, create: true, archived: true)
+    analytics_dir = unit_analytics_dir(unit, create: create, archived: archived)
+    FileUtils.mkdir_p(analytics_dir) if create
+    File.join(analytics_dir, 'task-status-snapshots.zip')
+  end
+
+  def snapshot_csv_filename(snapshot_timestamp)
+    return nil if snapshot_timestamp.blank?
+    "#{sanitized_filename(snapshot_timestamp.to_s)}.csv"
+  end
+
   #
   # Generates a path for storing student portfolios
   #
@@ -293,17 +486,43 @@ module FileHelper
     File.join(student_portfolio_dir(unit, username, create: create, archived: archived), FileHelper.sanitized_filename("#{username}-portfolio.pdf"))
   end
 
-  def task_jplag_report_dir(unit)
-    file_server = Doubtfire::Application.config.jplag_report_dir
-    "#{file_server}/#{unit.code}-#{unit.id}/" # trust the server config and passed in type for paths
+  def root_jplag_report_dir(archived: false)
+    file_server = if archived
+                    archive_root
+                  else
+                    student_work_root
+                  end
+
+    "#{file_server}/jplag/results/"
+  end
+
+  def unit_jplag_report_dir(unit, create: false, archived: true)
+    dst = if (unit.archived && archived) || (archived == :force)
+            File.join(root_jplag_report_dir(archived: true), sanitized_path("#{unit.code}-#{unit.id}"))
+          else
+            File.join(root_jplag_report_dir(archived: false), sanitized_path("#{unit.code}-#{unit.id}"))
+          end
+
+    FileUtils.mkdir_p dst if create
+    "#{dst}/"
+  end
+
+  def task_jplag_report_dir(unit, create: false, archived: true)
+    unit_jplag_report_dir(unit, create: create, archived: archived)
   end
 
   def task_jplag_report_path(unit, task)
-    File.join(task_jplag_report_dir(unit), FileHelper.sanitized_filename("#{task.abbreviation}-result.jplag"))
+    File.join(unit_jplag_report_dir(unit), FileHelper.sanitized_filename("#{task.abbreviation}-result.jplag"))
   end
 
   def comment_attachment_path(task_comment, attachment_extension)
     "#{File.join(student_work_dir(:comment, task_comment.task), "#{task_comment.id.to_s}#{attachment_extension}")}"
+  end
+
+  def engagement_attachment_path(engagement, attachment_extension)
+    dir = File.join(project_work_root(engagement.project), 'engagement')
+    FileUtils.mkdir_p(dir)
+    File.join(dir, "#{engagement.id}#{attachment_extension}")
   end
 
   def comment_prompt_path(task_comment, attachment_extension, count)
@@ -317,7 +536,7 @@ module FileHelper
   def compress_image_to_dest(source, dest, delete_frames = false)
     exec = "convert -quiet \
             \"#{source}\" \
-            #{delete_frames ? '-delete 1--1' : ''} -strip -density 72 -quality 85% -resize 2048x2048\\> -resize 48x48\\< \
+            #{delete_frames ? '-delete 1--1' : ''} -auto-orient -strip -density 72 -quality 85% -resize 2048x2048\\> -resize 48x48\\< \
             \"#{dest}\" >>/dev/null 2>>/dev/null"
 
     system_try_within 40, 'compressing image using convert', exec
@@ -381,6 +600,193 @@ module FileHelper
     end
 
     FileUtils.rm_f tmp_file
+  end
+
+  def zip_path_safe?(path)
+    return false if path.blank?
+
+    clean_path = path.tr('\\', '/')
+    return false if clean_path.start_with?('/') || clean_path.include?("\0")
+
+    clean_path.sub!(%r{\A\./+}, '')
+    clean_path.split('/').none? { |part| part.blank? || part == '.' || part == '..' }
+  end
+
+  def zip_entry_limit
+    limit = Doubtfire::Application.config.zip_entry_limit.to_i
+    limit.positive? ? limit : 1_000
+  end
+
+  def zip_compression_ratio_limit
+    limit = Doubtfire::Application.config.zip_compression_ratio_limit.to_i
+    limit.positive? ? limit : 100
+  end
+
+  def zip_uncompressed_size_multiplier
+    multiplier = Doubtfire::Application.config.zip_uncompressed_size_multiplier.to_i
+    multiplier.positive? ? multiplier : 10
+  end
+
+  def zip_nested_archive?(path)
+    clean_path = path.to_s.downcase
+    ZIP_NESTED_ARCHIVE_EXTENSIONS.any? { |extension| clean_path.end_with?(extension) }
+  end
+
+  def validate_zip_upload_entry!(name, size, zip_stats, _max_file_size, max_uncompressed_size)
+    raise 'Zip contains a file with an unsafe path.' unless zip_path_safe?(name)
+    raise 'Zip contains another archive file. Nested archives are not allowed.' if zip_nested_archive?(name)
+
+    zip_stats[:entries] += 1
+    zip_stats[:total_uncompressed_size] += size.to_i
+
+    raise "Zip contains too many files. Limit is #{zip_entry_limit} files." if zip_stats[:entries] > zip_entry_limit
+    # raise "Zip contains a file larger than the #{max_file_size / 1_000_000}MB file limit." if size.to_i > max_file_size
+    if zip_stats[:total_uncompressed_size] > max_uncompressed_size
+      raise "Zip expands beyond the #{max_uncompressed_size / 1_000_000}MB uncompressed size limit."
+    end
+  end
+
+  def validate_zip_file(path, max_file_size, max_uncompressed_size)
+    stats = { entries: 0, total_uncompressed_size: 0 }
+
+    Zip::File.open(path) do |zip_file|
+      zip_file.each do |entry|
+        raise 'Encrypted zip entries are not supported.' if entry.respond_to?(:encrypted?) && entry.encrypted?
+        raise 'Zip contains an unsupported link entry.' if entry.respond_to?(:ftype) && entry.ftype == :symlink
+        next if entry.directory?
+
+        validate_zip_upload_entry!(entry.name, entry.size, stats, max_file_size, max_uncompressed_size)
+      end
+    end
+
+    stats
+  end
+
+  def validate_tar_file(io, max_file_size, max_uncompressed_size)
+    stats = { entries: 0, total_uncompressed_size: 0 }
+
+    Gem::Package::TarReader.new(io) do |tar|
+      tar.each do |entry|
+        next if entry.directory?
+        raise 'Zip contains an unsupported non-file entry.' unless entry.file?
+
+        validate_zip_upload_entry!(entry.full_name, entry.header.size, stats, max_file_size, max_uncompressed_size)
+      end
+    end
+
+    stats
+  end
+
+  def validate_zip_upload(path, filename)
+    max_file_size = Doubtfire::Application.config.max_file_size.to_i
+    max_file_size = 10_000_000 if max_file_size <= 0
+    max_uncompressed_size = max_file_size * zip_uncompressed_size_multiplier
+    return { valid: false, msg: "Zip exceeds the #{max_file_size / 1_000_000}MB file limit." } if File.size(path) > max_file_size
+
+    begin
+      stats =
+        if filename.downcase.end_with?('.zip')
+          validate_zip_file(path, max_file_size, max_uncompressed_size)
+        elsif filename.downcase.end_with?('.tar')
+          File.open(path, 'rb') { |file| validate_tar_file(file, max_file_size, max_uncompressed_size) }
+        elsif filename.downcase.end_with?('.tar.gz', '.tgz')
+          Zlib::GzipReader.open(path) { |gzip| validate_tar_file(gzip, max_file_size, max_uncompressed_size) }
+        else
+          return { valid: false, msg: 'Unsupported zip format. Use .zip, .tar, .tar.gz, or .tgz.' }
+        end
+
+      return { valid: false, msg: 'Zip must contain at least one file.' } if stats[:entries].zero?
+
+      compressed_size = [File.size(path), 1].max
+      if stats[:total_uncompressed_size] / compressed_size > zip_compression_ratio_limit
+        return { valid: false, msg: "Zip compression ratio is too high. Limit is #{zip_compression_ratio_limit}:1." }
+      end
+
+      { valid: true, msg: 'success' }
+    rescue Zip::Error, Zlib::Error, Gem::Package::TarInvalidError, EOFError
+      { valid: false, msg: 'Zip file is corrupted or not a supported zip.' }
+    rescue StandardError => e
+      { valid: false, msg: e.message }
+    end
+  end
+
+  def zip_tree_add_path(tree, path)
+    clean_path = path.to_s.tr('\\', '/').sub(%r{\A\./+}, '').sub(%r{/+\z}, '')
+    return if clean_path.blank?
+
+    parts = clean_path.split('/').reject(&:blank?)
+    node = tree
+
+    parts.each_with_index do |part, index|
+      key = index == parts.length - 1 ? part : "#{part}/"
+      node[key] ||= {}
+      node = node[key]
+    end
+  end
+
+  def zip_tree_walk(node, prefix = '', lines = [])
+    sorted_entries = node.keys.sort_by { |key| [key.end_with?('/') ? 0 : 1, key.downcase] }
+
+    sorted_entries.each_with_index do |name, index|
+      last = index == sorted_entries.length - 1
+      connector = '↳ '
+      lines << "#{prefix}#{connector}#{name}"
+      zip_tree_walk(node[name], "#{prefix}  ", lines) if node[name].any?
+    end
+
+    lines
+  end
+
+  def zip_file_tree(path, filename, display_limit: 200)
+    tree = {}
+    entries = 0
+
+    read_entry = lambda do |entry_name|
+      return unless zip_path_safe?(entry_name)
+
+      entries += 1
+      zip_tree_add_path(tree, entry_name)
+    end
+
+    if filename.downcase.end_with?('.zip')
+      Zip::File.open(path) do |zip_file|
+        zip_file.each do |entry|
+          next if entry.directory?
+
+          read_entry.call(entry.name)
+        end
+      end
+    elsif filename.downcase.end_with?('.tar')
+      File.open(path, 'rb') do |file|
+        Gem::Package::TarReader.new(file) do |tar|
+          tar.each do |entry|
+            next if entry.directory?
+
+            read_entry.call(entry.full_name)
+          end
+        end
+      end
+    elsif filename.downcase.end_with?('.tar.gz', '.tgz', '.gz')
+      Zlib::GzipReader.open(path) do |gzip|
+        Gem::Package::TarReader.new(gzip) do |tar|
+          tar.each do |entry|
+            next if entry.directory?
+
+            read_entry.call(entry.full_name)
+          end
+        end
+      end
+    end
+
+    all_lines = zip_tree_walk(tree)
+    lines = all_lines.first(display_limit)
+    { lines: lines, entries: entries, tree_lines: all_lines.length, truncated: all_lines.length > display_limit }
+  rescue Zip::Error, Zlib::Error, Gem::Package::TarInvalidError, EOFError => e
+    logger.debug "Could not read zip file tree for #{filename}: #{e.message}"
+    { lines: [], entries: 0, truncated: false, error: true }
+  rescue StandardError => e
+    logger.debug "Could not read zip file tree for #{filename}: #{e.message}"
+    { lines: [], entries: 0, truncated: false, error: true }
   end
 
   def pages_in_pdf(path)
@@ -765,6 +1171,13 @@ module FileHelper
   end
   # Export functions as module functions
   module_function :accept_file
+  module_function :word_document?
+  module_function :word_document_conversion_configured?
+  module_function :encrypted_word_document?
+  module_function :convert_word_document_to_pdf
+  module_function :run_word_document_conversion
+  module_function :word_document_conversion_command
+  module_function :gotenberg_volume_arguments
   module_function :sanitized_path
   module_function :sanitized_filename
   module_function :task_file_dir_for_unit
@@ -778,11 +1191,15 @@ module FileHelper
   module_function :unit_dir
   module_function :root_portfolio_dir
   module_function :unit_portfolio_dir
+  module_function :unit_analytics_dir
+  module_function :unit_task_status_snapshot_path
+  module_function :snapshot_csv_filename
   module_function :unit_work_root
   module_function :project_work_root
   module_function :student_portfolio_dir
   module_function :student_portfolio_path
   module_function :comment_attachment_path
+  module_function :engagement_attachment_path
   module_function :comment_prompt_path
   module_function :comment_reply_prompt_path
   module_function :compress_image_to_dest
@@ -790,6 +1207,18 @@ module FileHelper
   module_function :qpdf
   module_function :move_files
   module_function :validate_pdf
+  module_function :zip_path_safe?
+  module_function :zip_entry_limit
+  module_function :zip_compression_ratio_limit
+  module_function :zip_uncompressed_size_multiplier
+  module_function :zip_nested_archive?
+  module_function :validate_zip_upload_entry!
+  module_function :validate_zip_file
+  module_function :validate_tar_file
+  module_function :validate_zip_upload
+  module_function :zip_tree_add_path
+  module_function :zip_tree_walk
+  module_function :zip_file_tree
   module_function :copy_pdf
   module_function :read_file_to_str
   module_function :path_to_plagarism_html
@@ -815,6 +1244,8 @@ module FileHelper
   module_function :known_extension?
   module_function :pages_in_pdf
   module_function :line_wrap
+  module_function :root_jplag_report_dir
+  module_function :unit_jplag_report_dir
   module_function :task_jplag_report_dir
   module_function :task_jplag_report_path
 end

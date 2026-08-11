@@ -1,157 +1,229 @@
-![Doubtfire Logo](https://github.com/doubtfire-lms/doubtfire-web/raw/6.2.x/src/assets/icons/android-chrome-192x192.png)
+<p align="center">
+	<img alt="OnTrack logo" src="public/assets/images/logo.svg" width="192">
+</p>
 
-# Doubtfire API [![test-doubtfire-api](https://github.com/doubtfire-lms/doubtfire-api/actions/workflows/push.yml/badge.svg)](https://github.com/doubtfire-lms/doubtfire-api/actions/workflows/push.yml) [![CodeQL](https://github.com/doubtfire-lms/doubtfire-api/actions/workflows/codeql.yml/badge.svg)](https://github.com/doubtfire-lms/doubtfire-api/actions/workflows/codeql.yml) [![RuboCop](https://github.com/doubtfire-lms/doubtfire-api/actions/workflows/rubocop.yml/badge.svg)](https://github.com/doubtfire-lms/doubtfire-api/actions/workflows/rubocop.yml)
+# OnTrack API
 
-Doubtfire is a feedback-driven learning support system.
+[![test-doubtfire-api](https://github.com/doubtfire-lms/doubtfire-api/actions/workflows/push.yml/badge.svg)](https://github.com/doubtfire-lms/doubtfire-api/actions/workflows/push.yml) [![CodeQL](https://github.com/doubtfire-lms/doubtfire-api/actions/workflows/codeql.yml/badge.svg)](https://github.com/doubtfire-lms/doubtfire-api/actions/workflows/codeql.yml) [![RuboCop](https://github.com/doubtfire-lms/doubtfire-api/actions/workflows/rubocop.yml/badge.svg)](https://github.com/doubtfire-lms/doubtfire-api/actions/workflows/rubocop.yml)
 
-## Table of Contents
+OnTrack (formerly Doubtfire) is a feedback-driven learning support system. This repository contains
+the Rails and Grape API used by OnTrack.
 
-- [Doubtfire API](#doubtfire-api--)
-  - [Table of Contents](#table-of-contents)
-  - [Getting started](#getting-started)
-    - [Clone Repository](#clone-repository)
-    - [Install script](#install-script)
-    - [Manual install](#manual-install)
-  - [Environment variables](#environment-variables)
-    - [Get it up and running!](#get-it-up-and-running)
-- [Running Rake Tasks](#running-rake-tasks)
-- [Testing](#testing)
-- [Contributing](#contributing)
-- [License](#license)
+## Development and deployment
 
-## Getting started
+Use the
+[doubtfire-deploy](https://github.com/doubtfire-lms/doubtfire-deploy)
+repository for the supported development environment and the deployment guide.
+It checks out this API as a submodule and provides the database, Redis, PDF
+services, web app, and required configuration in one place.
 
-See [Doubtfire Deploy](https://github.com/doubtfire-lms/doubtfire-deploy) for instructions on deploying, and contributing, to the Doubtfire project.
+When the development environment is running, the API documentation is available
+at <http://localhost:3000/api/docs/>.
 
 ## Environment variables
 
-Doubtfire requires multiple environment variables that help define settings about the Doubtfire instance running. Whilst these will default to other values, you may want to override them in production.
+The API supports the environment variables below. The production deployment
+template is maintained in
+[`doubtfire-deploy`](https://github.com/doubtfire-lms/doubtfire-deploy/blob/main/production/api/.env.production).
+An unset variable uses its application default where one exists; an empty value
+may override that default with an empty string.
 
-| Key                            | Description                                                                                                                                                                                                                                                                 | Default                        |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
-| `DF_AUTH_METHOD`               | The authentication method you would like Doubtfire to use. Possible values are `database` for standard authentication with the database, `ldap`                                                                                                                             | `database`                     |
-|                                |   for [LDAP](https://www.freebsd.org/doc/en/articles/ldap-auth/), `aaf` for [AAF Rapid Connect](https://rapid.aaf.edu.au/), or `SAML2` for [SAML2.0 auth](https://en.wikipedia.org/wiki/SAML_2.0).                                                                          |                                |
-| `DF_STUDENT_WORK_DIR`          | The directory to store uploaded student work for processing.                                                                                                                                                                                                                | `student_work`                 |
-| `DF_ARCHIVE_DIR`               | The directory to move archived unit files to, and access from.                                                                                                                                                                                                              | `DF_STUDENT_WORK_DIR/archive`  |
-| `DF_INSTITUTION_NAME`          | The name of your institution running Doubtfire.                                                                                                                                                                                                                             | _Doubtfire University_         |
-| `DF_INSTITUTION_EMAIL_DOMAIN`  | The email domain from which emails are sent to and from in your institution.                                                                                                                                                                                                | `doubtfire.com`                |
-| `DF_INSTITUTION_HOST`          | The host running the Doubtfire instance.                                                                                                                                                                                                                                    | `localhost:3000`               |
-| `DF_COOKIE_DOMAIN`             | The domain to be associated with secure cookies.                                                                                                                                                                                                                            | Attempts to read from host     |
-| `DF_INSTITUTION_PRODUCT_NAME`  | The name of the product (i.e. Doubtfire) at your institution.                                                                                                                                                                                                               | _Doubtfire_                    |
-| `DF_INSTITUTION_HAS_LOGO`      | Set to true (or 1) if there is an associated institution logo to be included in the header.                                                                                                                                                                                 | false                          |
-| `DF_INSTITUTION_LOGO_URL`      | The url of the logo to include in the header if there is a logo.                                                                                                                                                                                                            | /assets/images/institution-logo.png |
-| `DF_INSTITUTION_LOGO_LINK_URL` | The url used for the hyperlink associated with clicking the logo.                                                                                                                                                                                                           | /                              |
-| `DF_SECRET_KEY_BASE`           | The Rails secret key.                                                                                                                                                                                                                                                       | Default key provided.          |
-| `DF_SECRET_KEY_ATTR`           | The secret key to encrypt certain database fields.                                                                                                                                                                                                                          | Default key provided.          |
-| `DF_SECRET_KEY_DEVISE`         | The secret key provided to Devise.                                                                                                                                                                                                                                          | Default key provided.          |
-| `DF_SECRET_KEY_MOSS`           | The secret key provided to [Moss](http://theory.stanford.edu/~aiken/moss/) for plagiarism detection. This value will need to be set to run `rake submission:check_plagiarism` (otherwise you **won't** need it). You will need to register for a Moss account to use this.  | No default.                    |
-| `DF_INSTITUTION_PRIVACY`       | A statement related to the need for students to submit their own work, and that this work may be uploaded to 3rd parties for the purpose of plagiarism detection.                                                                                                           | Default statement provided     |
-| `DF_INSTITUTION_PLAGIARISM`    | A statement clarifying the terms plagiarism and collusion.                                                                                                                                                                                                                  | Default statement provided     |
-| `DF_INSTITUTION_SETTINGS_RB`   | The path of the institution specific settings rb code - used to map student imports from institutional exports to a format understood by Doubtfire.                                                                                                                         | No default                     |
-| `DF_FFMPEG_PATH`               | The path of to the ffmpeg binary for audio processing.                                                                                                                                                                                                                      | ffmpeg                         |
-| `DF_REDIS_CACHE_URL`           | The redis URL for rails used for development and production, ignored in the test env.                                                                                                                                                                                       | `redis://localhost:6379/0`     |
-| `DF_REDIS_SIDEKIQ_URL`         | The redis URL for sidekiq. A working redis server is **mandatory** for sidekiq in all environments.                                                                                                                                                                         | `redis://localhost:6379/1`     |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
-| **Turn It In Integration**     |                                                                                                                                                                                                                                                                             |                                |
-| `TII_ENABLED`                  | Whether or not Turn It In integration is enabled.                                                                                                                                                                                                                           | 0 / false                      |
-| `TII_INDEX_SUBMISSIONS`        | Whether or not to index submissions in Turn It In. Should be set to 1 or true in production environments                                                                                                                                                                    | 0 / false                      |
-| `TII_REGISTER_WEBHOOK`         | Whether or not to register a webhook with Turn It In. Should be set to 1 or true in production environments                                                                                                                                                                 | 0 / false                      |
-| `TCA_API_KEY`                  | The API key for Turn It In integration, acquire from the Turn It In administration interface.                                                                                                                                                                               | No default                     |
-| `TCA_HOST`                     | The host for the Turn It In integration, eg: https://institution.turnitin.com                                                                                                                                                                                               | No default                     |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
-| **D2L Integration**            |                                                                                                                                                                                                                                                                             |                                |
-| `D2L_ENABLED`                  | Whether or not D2L integration is enabled.                                                                                                                                                                                                                                  | 0 / false                      |
-| `D2L_CLIENT_ID`                | The client ID for D2L integration - from the oauth registration in D2L                                                                                                                                                                                                      | No default                     |
-| `D2L_CLIENT_SECRET`            | The client secret for D2L integration - from the oauth registration in D2L                                                                                                                                                                                                  | No default                     |
-| `D2L_REDIRECT_URI`             | The redirect URI for D2L integration. Must redirect to https://host/api/d2l/callback which must match the oauth registration in D2L                                                                                                                                         | No default                     |
-| `D2L_API_HOST`                 | The specific institutional URL for the D2L server, eg: https://d2l.institution.edu                                                                                                                                                                                          | No default                     |
-| `D2L_OAUTH_SITE`               | The location of the D2L authentication server.                                                                                                                                                                                                                              | `https://auth.brightspace.com` |
-| `D2L_OAUTH_SITE_AUTHORIZE_URL` | The URL to authorize the D2L integration.                                                                                                                                                                                                                                   | `/oauth2/auth`                 |
-| `D2L_OAUTH_SITE_TOKEN_URL`     | The URL to get the token for the D2L integration.                                                                                                                                                                                                                           | `/core/connect/token`          |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
-| **Latex Configuration**        |                                                                                                                                                                                                                                                                             |                                |
-| `LATEX_CONTAINER_NAME`         | The name of the container housing the latex image. Used when pdfs are generated.                                                                                                                                                                                            | No default                     |
-| `LATEX_BUILD_PATH`             | The path to the latex build script within the container.                                                                                                                                                                                                                    | /texlive/shell/latex_build.sh  |
+### Application and database
 
-If you have chosen to use AAF Rapid Connect authentication, then you will also need to provide the following:
+| Variable                    | Purpose                                   | Default                    |
+| --------------------------- | ----------------------------------------- | -------------------------- |
+| `RAILS_ENV`                 | Rails runtime environment.                | `development`              |
+| `DF_LOG_TO_STDOUT`          | Send Rails logs to standard output.       | `false`                    |
+| `DF_PRODUCTION_DB_ADAPTER`  | Production database adapter.              | Deployment-specific        |
+| `DF_PRODUCTION_DB_HOST`     | Production database host.                 | Deployment-specific        |
+| `DF_PRODUCTION_DB_DATABASE` | Production database name.                 | Deployment-specific        |
+| `DF_PRODUCTION_DB_USERNAME` | Production database username.             | Deployment-specific        |
+| `DF_PRODUCTION_DB_PASSWORD` | Production database password.             | Deployment-specific        |
+| `DF_REDIS_CACHE_URL`        | Redis connection used by the Rails cache. | `redis://localhost:6379/0` |
+| `DF_REDIS_SIDEKIQ_URL`      | Redis connection used by Sidekiq.         | `redis://localhost:6379/1` |
 
-| Key                            | Description                                                                                                                                                                            | Default                         |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
-| `DF_AAF_ISSUER_URL`            | The URL of the AFF issuer, either `https://rapid.test.aaf.edu.au` for testing or `https://rapid.aaf.edu.au` for production.                                                            | `https://rapid.test.aaf.edu.au` |
-| `DF_AAF_AUDIENCE_URL`          | The URL of the AAF registered application.                                                                                                                                             | No default - required           |
-| `DF_AAF_CALLBACK_URL`          | The secure endpoint within your application that AAF Rapid Connect should POST responses to. It **must end with `/api/auth/jwt`** to access the Doubtfire JWT authentication endpoint. | No default - required           |
-| `DF_AAF_UNIQUE_URL`            | The unique URL provided by AAF Rapid Connect used for redirection out of Doubtfire.                                                                                                    | No default - required           |
-| `DF_AAF_IDENTITY_PROVIDER_URL` | The URL of the AAF-registered identity provider.                                                                                                                                       | No default - required           |
-| `DF_AAF_AUTH_SIGNOUT_URL`      | The URL to redirect to on sign out in order to log out of AAF Rapid Connect.                                                                                                           | No default - required           |
-| `DF_SECRET_KEY_AAF`            | The secret used to register your application with AAF.                                                                                                                                 | `secretsecret12345`             |
+### Storage and processing
 
-If you are authenticating using SAML2, then you will also need to provide the following:
+| Variable                              | Purpose                                                          | Default                         |
+| ------------------------------------- | ---------------------------------------------------------------- | ------------------------------- |
+| `DF_STUDENT_WORK_DIR`                 | Directory containing uploaded student work.                      | `student_work`                  |
+| `DF_ARCHIVE_DIR`                      | Directory containing archived student work.                      | `DF_STUDENT_WORK_DIR/archive`   |
+| `DF_ARCHIVE_UNITS`                    | Enable automatic unit archiving.                                 | `false`                         |
+| `DF_UNIT_ARCHIVE_PERIOD`              | Years to retain units before archiving.                          | `2`                             |
+| `DF_MAX_PDF_GEN_PROCESSES`            | Maximum concurrent PDF-generation processes.                     | `2`                             |
+| `DF_MAX_FILE_SIZE`                    | Maximum uploaded file size in bytes.                             | `10000000`                      |
+| `DF_ZIP_ENTRY_LIMIT`                  | Maximum number of entries in an uploaded ZIP.                    | `1000`                          |
+| `DF_ZIP_COMPRESSION_RATIO_LIMIT`      | Maximum permitted ZIP compression ratio.                         | `100`                           |
+| `DF_ZIP_UNCOMPRESSED_SIZE_MULTIPLIER` | Maximum expanded ZIP size as a multiple of `DF_MAX_FILE_SIZE`.   | `10`                            |
+| `DF_AUDITOR_UNIT_ACCESS_YEARS`        | Number of years of units visible to auditors.                    | `2`                             |
+| `DF_IMPORT_STUDENTS_WEEKS_BEFPRE`     | Weeks before a teaching period that student imports are allowed. | `1`                             |
+| `DF_FFMPEG_PATH`                      | Path to FFmpeg for audio processing.                             | `ffmpeg`                        |
+| `LATEX_CONTAINER_NAME`                | Container used for LaTeX PDF generation.                         | Unset                           |
+| `LATEX_BUILD_PATH`                    | LaTeX build script inside that container.                        | `/texlive/shell/latex_build.sh` |
 
-| Key                            | Description                                                                                                                                                                            | Default                         |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
-| `DF_SAML_METADATA_URL`         | The URL to getch the SAML metadata. Either the url or a file path to the meta data must be provided. Where the url is provided it will be used.                                        | No default                      |
-| `DF_SAML_METADATA_FILE_PATH`   | The path to the metadata xml file. When the url is not set, this path will be used to get the metadata for the saml settings.                                                          | No default                      |
-| `DF_SAML_CONSUMER_SERVICE_URL` | The URL of the SAML application.                                                                                                                                                       | No default - required           |
-| `DF_SAML_IDP_TARGET_URL`       | The IDP SAML login URL, (e.g., "https://login.microsoftonline.com/xxxx/saml2") - OnTrack will redirect to this for login.                                                              | No default - required           |
-| `DF_SAML_IDP_SIGNOUT_URL`      | The IDP SAML logout URL, (e.g., "https://login.microsoftonline.com/xxxx/saml2") - OnTrack will redirect to this for logout.                                                            | the SAML login url              |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
-| `DF_AAF_CALLBACK_URL`          | The secure endpoint within your application that AAF Rapid Connect should POST responses to. It **must end with `/api/auth/jwt`** to access the Doubtfire JWT authentication endpoint. | No default - required           |
-| `DF_AAF_UNIQUE_URL`            | The unique URL provided by AAF Rapid Connect used for redirection out of Doubtfire.                                                                                                    | No default - required           |
-| `DF_AAF_IDENTITY_PROVIDER_URL` | The URL of the AAF-registered identity provider.                                                                                                                                       | No default - required           |
-| `DF_AAF_AUTH_SIGNOUT_URL`      | The URL to redirect to on sign out in order to log out of AAF Rapid Connect.                                                                                                           | No default - required           |
-| `DF_SECRET_KEY_AAF`            | The secret used to register your application with AAF.                                                                                                                                 | `secretsecret12345`             |
+### Institution
 
-You may choose to keep your environment variables inside a `.env` file using key-value pairs:
+| Variable                       | Purpose                                       | Default                               |
+| ------------------------------ | --------------------------------------------- | ------------------------------------- |
+| `DF_INSTITUTION_NAME`          | Institution display name.                     | Institution configuration             |
+| `DF_INSTITUTION_EMAIL_DOMAIN`  | Institution email domain.                     | Institution configuration             |
+| `DF_INSTITUTION_HOST`          | Public application URL.                       | Institution configuration             |
+| `DF_COOKIE_DOMAIN`             | Domain assigned to secure cookies.            | Derived from `DF_INSTITUTION_HOST`    |
+| `DF_INSTITUTION_PRODUCT_NAME`  | Product name shown to users.                  | Institution configuration             |
+| `DF_INSTITUTION_HAS_LOGO`      | Enable an institution logo.                   | `false`                               |
+| `DF_INSTITUTION_LOGO_URL`      | Institution logo URL.                         | `/assets/images/institution-logo.png` |
+| `DF_INSTITUTION_LOGO_LINK_URL` | Destination opened from the institution logo. | `/`                                   |
+| `DF_INSTITUTION_PRIVACY`       | Submission privacy and authorship statement.  | Institution configuration             |
+| `DF_INSTITUTION_PLAGIARISM`    | Plagiarism and collusion statement.           | Institution configuration             |
+| `DF_INSTITUTION_SETTINGS_RB`   | Institution-specific Ruby configuration file. | Unset                                 |
 
+### Authentication and encryption
+
+Rails credentials take precedence over the corresponding environment fallback
+for `DF_SECRET_KEY_BASE`, `DF_SECRET_KEY_ATTR`, `DF_SECRET_KEY_DEVISE`,
+`DF_SECRET_KEY_AAF`, `DF_SECRET_KEY_MOSS`, and `LTI_SHARED_API_SECRET`.
+
+| Variable                            | Purpose                                                      | Default                          |
+| ----------------------------------- | ------------------------------------------------------------ | -------------------------------- |
+| `DF_AUTH_METHOD`                    | Authentication method: `database`, `ldap`, `aaf`, or `saml`. | `database`                       |
+| `DF_ACCESS_TOKEN_EXPIRY_SECONDS`    | Access-token lifetime in seconds.                            | `7200`                           |
+| `DF_REFRESH_TOKEN_EXPIRY_SECONDS`   | Refresh-token lifetime in seconds.                           | `604800`                         |
+| `DF_SECRET_KEY_BASE`                | Rails secret key base fallback.                              | Required in production           |
+| `DF_SECRET_KEY_ATTR`                | Legacy encrypted-attribute key fallback.                     | Required in production           |
+| `DF_SECRET_KEY_DEVISE`              | Devise secret fallback.                                      | Required in production           |
+| `DF_SECRET_KEY_MOSS`                | MOSS integration secret fallback.                            | Unset                            |
+| `DF_ENCRYPTION_PRIMARY_KEY`         | Active Record Encryption primary key.                        | Required when encryption is used |
+| `DF_ENCRYPTION_DETERMINISTIC_KEY`   | Active Record Encryption deterministic key.                  | Required when encryption is used |
+| `DF_ENCRYPTION_KEY_DERIVATION_SALT` | Active Record Encryption derivation salt.                    | Required when encryption is used |
+
+#### AAF Rapid Connect
+
+| Variable                       | Purpose                                   | Default                         |
+| ------------------------------ | ----------------------------------------- | ------------------------------- |
+| `DF_AAF_ISSUER_URL`            | AAF issuer URL.                           | `https://rapid.test.aaf.edu.au` |
+| `DF_AAF_AUDIENCE_URL`          | Registered application URL.               | Required for AAF                |
+| `DF_AAF_CALLBACK_URL`          | API JWT callback URL.                     | Required for AAF                |
+| `DF_AAF_IDENTITY_PROVIDER_URL` | Registered identity-provider URL.         | Required for AAF                |
+| `DF_AAF_UNIQUE_URL`            | Rapid Connect authentication-request URL. | Required for AAF                |
+| `DF_AAF_AUTH_SIGNOUT_URL`      | URL used after sign-out.                  | Unset                           |
+| `DF_SECRET_KEY_AAF`            | AAF shared-secret fallback.               | Required for AAF in production  |
+
+#### SAML
+
+| Variable                                  | Purpose                                                     | Default                |
+| ----------------------------------------- | ----------------------------------------------------------- | ---------------------- |
+| `DF_SAML_METADATA_URL`                    | Identity-provider metadata URL.                             | Unset                  |
+| `DF_SAML_METADATA_FILE_PATH`              | Local identity-provider metadata file.                      | Unset                  |
+| `DF_SAML_CONSUMER_SERVICE_URL`            | SAML assertion consumer URL.                                | Required for SAML      |
+| `DF_SAML_SP_ENTITY_ID`                    | Service-provider entity ID.                                 | Required for SAML      |
+| `DF_SAML_IDP_TARGET_URL`                  | Identity-provider login URL.                                | Required for SAML      |
+| `DF_SAML_IDP_SIGNOUT_URL`                 | Identity-provider logout URL.                               | Unset                  |
+| `DF_SAML_IDP_CERT`                        | Identity-provider certificate when metadata is unavailable. | Conditionally required |
+| `DF_SAML_IDP_SAML_NAME_IDENTIFIER_FORMAT` | SAML NameID format.                                         | Email address          |
+
+#### LDAP
+
+| Variable                    | Purpose                                              | Default              |
+| --------------------------- | ---------------------------------------------------- | -------------------- |
+| `DF_LDAP_HOST`              | LDAP server host.                                    | Required for LDAP    |
+| `DF_LDAP_PORT`              | LDAP server port.                                    | LDAP library default |
+| `DF_LDAP_ATTRIBUTE`         | LDAP attribute used as the login identifier.         | Required for LDAP    |
+| `DF_LDAP_BASE`              | LDAP search base.                                    | Required for LDAP    |
+| `DF_LDAP_SSL`               | Enable an encrypted LDAP connection.                 | `false`              |
+| `DF_LDAP_USE_ADMIN_TO_BIND` | Bind with an administrator account before searching. | `false`              |
+| `DF_LDAP_ADMIN_USER`        | LDAP administrator bind user.                        | Unset                |
+| `DF_LDAP_ADMIN_PWD`         | LDAP administrator bind password.                    | Unset                |
+
+#### D2L
+
+| Variable                       | Purpose                                               | Default                        |
+| ------------------------------ | ----------------------------------------------------- | ------------------------------ |
+| `D2L_ENABLED`                  | Enable D2L integration.                               | `false`                        |
+| `D2L_CLIENT_ID`                | D2L OAuth client ID.                                  | Unset                          |
+| `D2L_CLIENT_SECRET`            | D2L OAuth client secret.                              | Unset                          |
+| `D2L_REDIRECT_URI`             | D2L OAuth callback URL ending in `/api/d2l/callback`. | Unset                          |
+| `D2L_API_HOST`                 | Institution D2L API host.                             | Unset                          |
+| `D2L_OAUTH_SITE`               | D2L authorization server.                             | `https://auth.brightspace.com` |
+| `D2L_OAUTH_SITE_AUTHORIZE_URL` | D2L authorization path.                               | `/oauth2/auth`                 |
+| `D2L_OAUTH_SITE_TOKEN_URL`     | D2L token path.                                       | `/core/connect/token`          |
+
+### Email
+
+| Variable                     | Purpose                                  | Default             |
+| ---------------------------- | ---------------------------------------- | ------------------- |
+| `DF_MAIL_PERFORM_DELIVERIES` | Enable outgoing email delivery.          | Disabled            |
+| `DF_MAIL_DELIVERY_METHOD`    | Action Mailer delivery method.           | Deployment-specific |
+| `DF_SMTP_ADDRESS`            | SMTP server address.                     | Unset               |
+| `DF_SMTP_PORT`               | SMTP server port.                        | Unset               |
+| `DF_SMTP_DOMAIN`             | SMTP HELO domain.                        | Unset               |
+| `DF_SMTP_USERNAME`           | SMTP username.                           | Unset               |
+| `DF_SMTP_PASSWORD`           | SMTP password.                           | Unset               |
+| `DF_SMTP_AUTHENTICATION`     | SMTP authentication method.              | Unset               |
+| `DF_EMAIL_ERRORS_TO`         | Address receiving PDF-generation errors. | Unset               |
+
+### Integrations and background services
+
+| Variable                         | Purpose                                                         | Default |
+| -------------------------------- | --------------------------------------------------------------- | ------- |
+| `TII_ENABLED`                    | Enable Turnitin integration.                                    | `false` |
+| `TII_INDEX_SUBMISSIONS`          | Index submissions in Turnitin.                                  | `false` |
+| `TII_REGISTER_WEBHOOK`           | Register the Turnitin webhook.                                  | `false` |
+| `TCA_API_KEY`                    | Turnitin Core API key.                                          | Unset   |
+| `TCA_HOST`                       | Turnitin institution host.                                      | Unset   |
+| `DF_JPLAG_MIN_TOKENS`            | Minimum matching-token threshold used by JPlag.                 | `-1`    |
+| `DF_JPLAG_SKIP_CLUSTER_CHECK`    | Skip JPlag cluster calculation.                                 | `false` |
+| `DF_JPLAG_MAX_SHOWN_COMPARISONS` | Maximum comparisons retained in a JPlag report; `-1` means all. | `2500`  |
+| `LTI_ENABLED`                    | Enable LTI routes and authentication.                           | `false` |
+| `LTI_SHARED_API_SECRET`          | Shared secret between the Rails and LTI APIs.                   | Unset   |
+| `MODERATION_SCORE_FACTOR`        | Multiplier applied to moderation score changes.                 | `1.0`   |
+
+### Overseer and container access
+
+| Variable                                             | Purpose                                                       | Default                           |
+| ---------------------------------------------------- | ------------------------------------------------------------- | --------------------------------- |
+| `OVERSEER_ENABLED`                                   | Enable Overseer assessment services.                          | `false`                           |
+| `OVERSEER_WORKDIR_VOLUME_MOUNT`                      | Host directory used for isolated Overseer work.               | Required when Overseer is enabled |
+| `OVERSEER_FALLBACK_VOLUME_CONTAINER`                 | Shared-container fallback when a host mount cannot be used.   | Unset                             |
+| `OVERSEER_STUDENT_NOTIFICATION_GRACE_PERIOD_MINUTES` | Delay before notifying students of unread failed assessments. | `30`                              |
+| `DISK_SPACE_ENDPOINT_ENABLED`                        | Expose host storage availability to Overseer administrators.  | `false`                           |
+| `DOCKER_REGISTRY_URL`                                | Registry used for Overseer images.                            | Unset                             |
+| `DOCKER_PROXY_URL`                                   | Docker proxy or registry login endpoint.                      | Unset                             |
+| `DOCKER_USER`                                        | Docker registry username.                                     | Unset                             |
+| `DOCKER_TOKEN`                                       | Docker registry access token.                                 | Unset                             |
+
+### Error reporting
+
+| Variable             | Purpose                                      | Default           |
+| -------------------- | -------------------------------------------- | ----------------- |
+| `SENTRY_DSN`         | Sentry project data-source name.             | Unset             |
+| `SENTRY_ENVIRONMENT` | Environment label attached to Sentry events. | Rails environment |
+
+## Testing
+
+OnTrack aims to follow a
+[Test-Driven Development](https://en.wikipedia.org/wiki/Test-driven_development)
+approach. New or changed models and API endpoints should be accompanied by
+tests that describe and verify their expected behaviour.
+
+Run API commands inside the `doubtfire-deploy` Dev Container:
+
+```sh
+cd /workspace/doubtfire-api
+rails test
+
+# Running an individual test
+rails test test/api/settings_test:14 # test_get_config_details
 ```
-DF_INSTITUTION_HOST=doubtfire.unifoo.edu.au
-DF_INSTITUTION_NAME="University of Foo"
-```
 
-You can also keep multiple `.env` files for different environments, e.g.: `.env.production` is different to `.env.develoment`. Doubtfire uses the [dotenv](https://github.com/bkeepers/dotenv) gem to make this happen.
+Tests are grouped under `test/models`, `test/api`, and `test/helpers`. Shared
+test helpers should be placed in `test/helpers`, with helper modules defined
+under the `TestHelpers` namespace. List the available maintenance and
+development tasks with `rails --tasks`.
 
-### Get it up and running!
+## Contributing
 
-Once you've installed using either in install script or the manual install steps.
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-```
-$ bundle exec rails s
-```
+## License
 
-You should see all the Doubtfire endpoints at **[http://localhost:3000/api/docs/](http://localhost:3000/api/docs/)**, which means the API is running.
-
-# Running Rake Tasks
-
-You can perform developer-specific tasks using `rake`. For a list of all tasks, execute in the root directory:
-
-```
-rake --tasks
-```
-
-# Testing
-
-Our aim with testing Doubtfire is to migrate to a [Test-Driven Development](https://en.wikipedia.org/wiki/Test-driven_development)
-strategy, testing all new models and API endpoints (although we plan on writing
-more tests for _existing_ models and API endpoints). If you are writing a new
-API endpoint or model, we strongly suggest you include unit tests in the
-appropriate folders (see below).
-
-To run unit tests, execute:
-
-```bash
-$ rake test
-```
-
-Unit tests are located in the `test` directory, where **model** tests are under
-the `model` subdirectory and **API** tests are under the `api` subdirectory.
-
-Any **helpers** should be included in the `helpers` subdirectory and helper
-modules should be written under the `TestHelpers` module.
-
-# Contributing
-
-Refer to CONTRIBUTING.md
-
-# License
-
-Licensed under GNU Affero General Public License (AGPL) v3
+Licensed under the GNU Affero General Public License (AGPL) v3.

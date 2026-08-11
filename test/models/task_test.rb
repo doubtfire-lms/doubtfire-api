@@ -9,6 +9,7 @@ class TaskTest < ActiveSupport::TestCase
   include TestHelpers::TestFileHelper
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
+  include ActiveSupport::Testing::TimeHelpers
 
   def error!(msg, _code)
     raise StandardError, msg
@@ -46,6 +47,188 @@ class TaskTest < ActiveSupport::TestCase
     comments.each do |data|
       assert_equal 0, data.is_new
     end
+  end
+
+  def test_add_text_comment_with_raw_utf8_emoji_bytes
+    project = FactoryBot.create(:project)
+    unit = project.unit
+    convenor = unit.main_convenor_user
+    task_definition = unit.task_definitions.first
+    task = project.task_for_task_definition(task_definition)
+    comment_text = "\xF0\x9F\x98\x82".force_encoding(Encoding::UTF_8)
+
+    comment = task.add_text_comment(convenor, comment_text)
+
+    assert comment.persisted?
+    assert_equal comment_text, comment.comment
+    assert_equal comment_text, TaskComment.find(comment.id).read_attribute(:comment)
+  end
+
+  def test_trigger_transition_allows_assessment_outcomes_without_feedback_check_by_default
+    project = FactoryBot.create(:project)
+    unit = project.unit
+    task_definition = unit.task_definitions.first
+    task = project.task_for_task_definition(task_definition)
+    tutor = unit.main_convenor_user
+
+    task.update!(task_status: TaskStatus.ready_for_feedback)
+    task.add_status_comment(project.student, TaskStatus.ready_for_feedback)
+
+    assert task.trigger_transition(trigger: 'complete', by_user: tutor)
+    assert_equal TaskStatus.complete, task.task_status
+  end
+
+  def test_trigger_transition_only_allows_rediscuss_from_discuss
+    project = FactoryBot.create(:project)
+    unit = project.unit
+    task_definition = unit.task_definitions.first
+    task = project.task_for_task_definition(task_definition)
+    tutor = unit.main_convenor_user
+
+    task.update!(task_status: TaskStatus.ready_for_feedback)
+
+    assert_nil task.trigger_transition(trigger: 'rediscuss', by_user: tutor)
+    assert_equal TaskStatus.ready_for_feedback, task.task_status
+
+    task.update!(task_status: TaskStatus.discuss)
+
+    assert task.trigger_transition(trigger: 'rediscuss', by_user: tutor)
+    assert_equal TaskStatus.rediscuss, task.task_status
+  end
+
+  def test_trigger_transition_requires_manual_feedback_before_assessment_outcomes_when_checking_feedback
+    project = FactoryBot.create(:project)
+    unit = project.unit
+    task_definition = unit.task_definitions.first
+    task = project.task_for_task_definition(task_definition)
+    tutor = unit.main_convenor_user
+
+    task.update!(task_status: TaskStatus.ready_for_feedback)
+    task.add_status_comment(project.student, TaskStatus.ready_for_feedback)
+
+    assert_nil task.trigger_transition(trigger: 'complete', by_user: tutor, check_feedback: true)
+    assert_equal TaskStatus.ready_for_feedback, task.task_status
+    assert_includes task.errors.full_messages.to_sentence, 'until feedback has been given'
+
+    task.reload
+    task.add_text_comment(project.student, 'Student follow-up')
+
+    assert_nil task.trigger_transition(trigger: 'fix', by_user: tutor, check_feedback: true)
+    assert_equal TaskStatus.ready_for_feedback, task.task_status
+
+    task.reload
+    task.add_text_comment(tutor, '**Automated Message:** Automated feedback is not enough')
+
+    assert_nil task.trigger_transition(trigger: 'redo', by_user: tutor, check_feedback: true)
+    assert_equal TaskStatus.ready_for_feedback, task.task_status
+
+    task.reload
+    task.add_text_comment(tutor, 'Manual tutor feedback')
+
+    assert task.trigger_transition(trigger: 'complete', by_user: tutor, check_feedback: true)
+    assert_equal TaskStatus.complete, task.task_status
+  end
+
+  def test_system_transition_bypasses_manual_feedback_requirement
+    project = FactoryBot.create(:project)
+    task = project.task_for_task_definition(project.unit.task_definitions.first)
+
+    task.update!(task_status: TaskStatus.ready_for_feedback)
+
+    assert task.trigger_transition(
+      trigger: 'fix',
+      by_user: project.student,
+      check_feedback: true,
+      system_transition: true
+    )
+    assert_equal TaskStatus.fix_and_resubmit, task.task_status
+  end
+
+  def test_trigger_transition_requires_recent_manual_tutor_feedback_for_fix_and_redo_when_checking_feedback
+    travel_to Time.zone.parse('2026-05-13 10:00:00 UTC') do
+      project = FactoryBot.create(:project)
+      unit = project.unit
+      task_definition = unit.task_definitions.first
+      task = project.task_for_task_definition(task_definition)
+      tutor = unit.main_convenor_user
+
+      task.update!(task_status: TaskStatus.ready_for_feedback)
+      task.add_status_comment(project.student, TaskStatus.ready_for_feedback)
+      task.add_text_comment(tutor, 'Older manual tutor feedback').update!(created_at: 11.minutes.ago)
+
+      assert_nil task.trigger_transition(trigger: 'fix', by_user: tutor, check_feedback: true)
+      assert_equal TaskStatus.ready_for_feedback, task.task_status
+
+      task.reload
+      task.add_text_comment(tutor, 'Recent manual tutor feedback')
+
+      assert task.trigger_transition(trigger: 'fix', by_user: tutor, check_feedback: true)
+      assert_equal TaskStatus.fix_and_resubmit, task.task_status
+
+      task.update!(task_status: TaskStatus.ready_for_feedback)
+      task.add_text_comment(tutor, 'Recent manual tutor feedback for redo')
+
+      assert task.trigger_transition(trigger: 'redo', by_user: tutor, check_feedback: true)
+      assert_equal TaskStatus.redo, task.task_status
+    end
+  end
+
+  def test_days_awaiting_feedback_pauses_during_break
+    travel_to Time.zone.parse('2026-04-10 00:00:00 UTC') do
+      teaching_period = FactoryBot.create(
+        :teaching_period,
+        start_date: Time.zone.parse('2026-03-01 00:00:00 UTC'),
+        end_date: Time.zone.parse('2026-04-30 00:00:00 UTC'),
+        active_until: Time.zone.parse('2026-05-31 00:00:00 UTC')
+      )
+      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 2)
+
+      unit = FactoryBot.create(:unit, teaching_period: teaching_period, with_students: false)
+      task = FactoryBot.create(:task, project: FactoryBot.create(:project, unit: unit))
+      task.update!(submission_date: Time.zone.parse('2026-03-29 00:00:00 UTC'))
+
+      assert_equal 3.0, task.days_awaiting_feedback
+      assert_equal 12.0, task.calendar_days_awaiting_feedback
+    end
+    travel_back
+  end
+
+  def test_days_awaiting_feedback_resumes_after_break
+    travel_to Time.zone.parse('2026-04-18 00:00:00 UTC') do
+      teaching_period = FactoryBot.create(
+        :teaching_period,
+        start_date: Time.zone.parse('2026-03-01 00:00:00 UTC'),
+        end_date: Time.zone.parse('2026-04-30 00:00:00 UTC'),
+        active_until: Time.zone.parse('2026-05-31 00:00:00 UTC')
+      )
+      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 2)
+
+      unit = FactoryBot.create(:unit, teaching_period: teaching_period, with_students: false)
+      task = FactoryBot.create(:task, project: FactoryBot.create(:project, unit: unit))
+      task.update!(submission_date: Time.zone.parse('2026-03-29 00:00:00 UTC'))
+
+      assert_equal 6.0, task.days_awaiting_feedback
+    end
+    travel_back
+  end
+
+  def test_days_awaiting_feedback_stays_at_zero_for_submissions_made_during_break
+    travel_to Time.zone.parse('2026-04-10 00:00:00 UTC') do
+      teaching_period = FactoryBot.create(
+        :teaching_period,
+        start_date: Time.zone.parse('2026-03-01 00:00:00 UTC'),
+        end_date: Time.zone.parse('2026-04-30 00:00:00 UTC'),
+        active_until: Time.zone.parse('2026-05-31 00:00:00 UTC')
+      )
+      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 2)
+
+      unit = FactoryBot.create(:unit, teaching_period: teaching_period, with_students: false)
+      task = FactoryBot.create(:task, project: FactoryBot.create(:project, unit: unit))
+      task.update!(submission_date: Time.zone.parse('2026-04-05 00:00:00 UTC'))
+
+      assert_equal 0.0, task.days_awaiting_feedback
+    end
+    travel_back
   end
 
   def test_pdf_creation_with_gif
@@ -88,6 +271,61 @@ class TaskTest < ActiveSupport::TestCase
     assert path
     assert File.exist? path
     assert File.exist? task.final_pdf_path
+
+    td.destroy
+    assert_not File.exist? path
+  end
+
+  def test_pdf_creation_with_code_csv_and_gif_has_stable_last_page_footer
+    unit = Unit.first
+    td = TaskDefinition.new({
+                              unit_id: unit.id,
+                              tutorial_stream: unit.tutorial_streams.first,
+                              name: 'Task with code and image',
+                              description: 'Code and image task',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: unit.start_date + 1.week,
+                              target_date: unit.start_date + 2.weeks,
+                              abbreviation: 'TaskPdfWithCodeCsvAndGif',
+                              restrict_status_updates: false,
+                              upload_requirements: [
+                                { "key" => 'file0', "name" => 'Code file', "type" => 'code' },
+                                { "key" => 'file1', "name" => 'An Image', "type" => 'image' }
+                              ],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0
+                            })
+    td.save!
+
+    data_to_post = with_files(
+      [
+        { path: 'test_files/COS10001-ImportTasksWithTutorialStream.csv', type: 'text/csv' },
+        { path: 'test_files/submissions/unbelievable.gif', type: 'image/gif' }
+      ],
+      { trigger: 'ready_for_feedback' }
+    )
+
+    project = unit.active_projects.first
+
+    add_auth_header_for user: unit.main_convenor_user
+
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
+
+    assert_equal 201, last_response.status, last_response_body
+
+    task = project.task_for_task_definition(td)
+    assert task.convert_submission_to_pdf(log_to_stdout: true)
+    path = task.zip_file_path_for_done_task
+    assert path
+    assert File.exist? path
+    assert File.exist? task.final_pdf_path
+
+    reader = PDF::Reader.new(task.final_pdf_path)
+
+    assert_equal 6, reader.pages.count # 1 cover page + 5 pages
+    assert_includes reader.pages.last.text.gsub(/\s+/, ' '), 'Page 5 of 5'
 
     td.destroy
     assert_not File.exist? path
@@ -381,6 +619,21 @@ class TaskTest < ActiveSupport::TestCase
     reader.pages.each do |page|
       assert_not page.text.include? 'The rest of this line has been truncated by the system to improve readability.'
       assert_not page.text.include?('ERROR when parsing'), page.text
+    end
+
+    # test an image pasted into a Markdown cell and stored in the notebook's
+    # attachments MIME bundle
+    data_to_post = with_file('test_files/submissions/embedded_markdown_image.ipynb', 'application/json', data_to_post)
+
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
+
+    assert_equal 201, last_response.status, last_response_body
+    assert task.convert_submission_to_pdf(log_to_stdout: true)
+
+    reader = PDF::Reader.new(task.final_pdf_path)
+    reader.pages.each do |page|
+      assert_not page.text.include?('ERROR when parsing'), page.text
+      assert_not page.text.include?('Image attachment unavailable'), page.text
     end
 
     # test line wrapping in jupynotex
@@ -715,6 +968,126 @@ class TaskTest < ActiveSupport::TestCase
     unit.destroy!
   end
 
+  def test_docx_submission_preserves_original_and_stores_pdf_history_preview
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
+    task_definition = TaskDefinition.create!(
+      unit_id: unit.id,
+      tutorial_stream: unit.tutorial_streams.first,
+      name: 'Word Document Test Task',
+      description: 'Test task',
+      weighting: 4,
+      target_grade: 0,
+      start_date: unit.start_date + 1.week,
+      target_date: unit.start_date + 2.weeks,
+      abbreviation: 'WordDocTestTask',
+      restrict_status_updates: false,
+      upload_requirements: [
+        {
+          'key' => 'file0',
+          'name' => 'A Word document',
+          'type' => 'document',
+          'submission_history' => true
+        }
+      ],
+      plagiarism_warn_pct: 0.8,
+      is_graded: false,
+      max_quality_pts: 0
+    )
+
+    data_to_post = with_file(
+      'test_files/TestWordDoc.docx',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      { trigger: 'ready_for_feedback' }
+    )
+    project = unit.active_projects.first
+    add_auth_header_for user: unit.main_convenor_user
+
+    post "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/submission", data_to_post
+
+    assert_equal 201, last_response.status, last_response_body
+
+    task = project.task_for_task_definition(task_definition)
+    conversion_work_id = nil
+    converter = lambda do |_source_path, destination_path, work_id:|
+      conversion_work_id = work_id
+      FileUtils.cp(Rails.root.join('test_files/submissions/valid.pdf'), destination_path)
+      destination_path
+    end
+    original_converter = FileHelper.method(:convert_word_document_to_pdf)
+    FileHelper.define_singleton_method(:convert_word_document_to_pdf, converter)
+    begin
+      converted = task.convert_submission_to_pdf(log_to_stdout: true)
+    ensure
+      FileHelper.define_singleton_method(:convert_word_document_to_pdf, original_converter)
+    end
+
+    assert converted
+    assert_match(/\Atask-#{task.id}-/, conversion_work_id)
+    assert FileHelper.validate_pdf(task.final_pdf_path)[:valid]
+
+    Zip::File.open(task.zip_file_path_for_done_task) do |archive|
+      assert archive.find_entry("#{task.id}/000-document.docx")
+      assert_nil archive.find_entry("#{task.id}/000-document.pdf")
+    end
+
+    history = SubmissionHistory.create_archive!(task, '12345')
+    Zip::File.open(history.archive_file_name) do |archive|
+      assert archive.find_entry("12345/#{task.id}/000-document.pdf")
+      assert_nil archive.find_entry("12345/#{task.id}/000-document.docx")
+    end
+  ensure
+    task_definition&.destroy!
+    unit&.destroy!
+  end
+
+  def test_docx_submission_text_is_included_in_final_pdf
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
+    task_definition = TaskDefinition.create!(
+      unit_id: unit.id,
+      tutorial_stream: unit.tutorial_streams.first,
+      name: 'Word Document PDF Text Test Task',
+      description: 'Test task',
+      weighting: 4,
+      target_grade: 0,
+      start_date: unit.start_date + 1.week,
+      target_date: unit.start_date + 2.weeks,
+      abbreviation: 'WordDocPdfText',
+      restrict_status_updates: false,
+      upload_requirements: [
+        {
+          'key' => 'file0',
+          'name' => 'A Word document',
+          'type' => 'document'
+        }
+      ],
+      plagiarism_warn_pct: 0.8,
+      is_graded: false,
+      max_quality_pts: 0
+    )
+
+    data_to_post = with_file(
+      'test_files/TestWordDoc.docx',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      { trigger: 'ready_for_feedback' }
+    )
+    project = unit.active_projects.first
+    add_auth_header_for user: unit.main_convenor_user
+
+    post "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/submission", data_to_post
+
+    assert_equal 201, last_response.status, last_response_body
+
+    task = project.task_for_task_definition(task_definition)
+    assert task.convert_submission_to_pdf(log_to_stdout: true)
+    assert File.exist?(task.final_pdf_path)
+
+    pdf_text = PDF::Reader.new(task.final_pdf_path).pages.map(&:text).join(' ').gsub(/\s+/, ' ')
+    assert_includes pdf_text, 'This is a test word document, with at least six words.'
+  ensure
+    task_definition&.destroy!
+    unit&.destroy!
+  end
+
   def test_pdf_creation_fails_on_invalid_pdf
     unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
     td = TaskDefinition.new({
@@ -822,7 +1195,9 @@ class TaskTest < ActiveSupport::TestCase
     task_definition = unit.task_definitions.first
 
     task_definition.start_date = Time.zone.now - 1.week
+    task_definition.target_date = Time.zone.now + 1.day
     task_definition.due_date = Time.zone.now + 1.week
+    task_definition.target_grade = 0
     task_definition.upload_requirements = [
       {
         "key" => 'file0',
@@ -1471,7 +1846,7 @@ class TaskTest < ActiveSupport::TestCase
     assert_equal TaskStatus.ready_for_feedback, task3.task_status
     assert_equal TaskStatus.ready_for_feedback, task4.task_status
 
-    # Test case 1: Ensure parent prerequisite is not affected
+    # Test case 1: Without recursive_fix, dependent tasks should not be affected
     task2.assess(TaskStatus.fix_and_resubmit, tutor)
 
     task1.reload
@@ -1479,10 +1854,10 @@ class TaskTest < ActiveSupport::TestCase
     task3.reload
     task4.reload
 
-    # Task 1 should not be affected if the dependent task is assessed to fix and resubmit
+    # Task 1 should not be affected, and recursive fixes should not run by default
     assert_equal TaskStatus.ready_for_feedback, task1.task_status, "Parent prerequisite should not be affected"
     assert_equal TaskStatus.fix_and_resubmit, task2.task_status, "Task should have updated to Fix and Resubmit"
-    assert_equal TaskStatus.fix_and_resubmit, task3.task_status, "Dependent task should have automatically moved to Fix and Resubmit"
+    assert_equal TaskStatus.ready_for_feedback, task3.task_status, "Dependent task should not change without recursive_fix"
     assert_equal TaskStatus.ready_for_feedback, task4.task_status # Task 4 has no prerequsite links
 
     # Reset status
@@ -1499,7 +1874,7 @@ class TaskTest < ActiveSupport::TestCase
     task4.reload
 
     # Test case 2: Ensure dependent tasks are recursively moved to fix and resubmit
-    task1.assess(TaskStatus.fix_and_resubmit, tutor)
+    task1.assess(TaskStatus.fix_and_resubmit, tutor, Time.zone.now, true)
 
     task1.reload
     task2.reload
@@ -1527,7 +1902,7 @@ class TaskTest < ActiveSupport::TestCase
     task4.reload
 
     # Test case 3: Ensure tasks that are not Ready for Feedback are not moved to Fix and resubmit
-    task1.assess(TaskStatus.fix_and_resubmit, tutor)
+    task1.assess(TaskStatus.fix_and_resubmit, tutor, Time.zone.now, true)
 
     task1.reload
     task2.reload

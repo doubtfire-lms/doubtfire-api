@@ -134,6 +134,52 @@ class WebcalTest < ActiveSupport::TestCase
     task.update(extensions: 0)
   end
 
+  test 'Includes events with flexible planned task dates if available' do
+    @webcal.update(include_start_dates: true)
+    @current_unit1.update!(allow_flexible_dates: true)
+
+    td = @current_unit1.task_definitions.first
+    task = @current_project1.task_for_task_definition(td)
+    task.update!(
+      target_start_date: td.start_date + 2.days,
+      target_due_date: td.target_date + 3.days
+    )
+
+    cal = @webcal.to_ical
+    td_start_event = cal.events.detect { |e| e.summary == @webcal.event_name_for_task_definition(td, 'start') }
+    td_end_event = cal.events.detect { |e| e.summary == @webcal.event_name_for_task_definition(td, 'end') }
+
+    assert_equal task.target_start_date.to_date, td_start_event.dtstart.to_date
+    assert_equal task.target_start_date.to_date, td_start_event.dtend.to_date
+    assert_equal task.target_due_date.to_date, td_end_event.dtstart.to_date
+    assert_equal task.target_due_date.to_date, td_end_event.dtend.to_date
+  end
+
+  test 'Includes events with flexible grade guideline dates if no planned task dates exist' do
+    @webcal.update(include_start_dates: true)
+    @current_unit2.update!(allow_flexible_dates: true)
+
+    td = @current_unit2.task_definitions.first
+    Task.where(project: @current_project2, task_definition: td).destroy_all
+
+    grade_start_date = td.start_date + 2.days
+    grade_due_date = td.target_date + 3.days
+    td.grade_due_dates.create!(
+      target_grade: @current_project2.target_grade,
+      start_date: grade_start_date,
+      target_due_date: grade_due_date
+    )
+
+    cal = @webcal.to_ical
+    td_start_event = cal.events.detect { |e| e.summary == @webcal.event_name_for_task_definition(td, 'start') }
+    td_end_event = cal.events.detect { |e| e.summary == @webcal.event_name_for_task_definition(td, 'end') }
+
+    assert_equal grade_start_date.to_date, td_start_event.dtstart.to_date
+    assert_equal grade_start_date.to_date, td_start_event.dtend.to_date
+    assert_equal grade_due_date.to_date, td_end_event.dtstart.to_date
+    assert_equal grade_due_date.to_date, td_end_event.dtend.to_date
+  end
+
   test 'Includes webcal reminders correctly' do
     cal = @webcal.to_ical
     all_task_defs = @current_unit1.task_definitions + @current_unit2.task_definitions
@@ -155,15 +201,16 @@ class WebcalTest < ActiveSupport::TestCase
 
     time = 2
     checks = [
-      { unit: 'W', trigger_symbol: :weeks },
-      { unit: 'D', trigger_symbol: :days },
-      { unit: 'H', trigger_symbol: :hours },
-      { unit: 'M', trigger_symbol: :minutes },
+      { unit: 'W', trigger_symbol: :weeks, expected_trigger: 'TRIGGER;RELATED=START:-P2W' },
+      { unit: 'D', trigger_symbol: :days, expected_trigger: 'TRIGGER;RELATED=START:-P2D' },
+      { unit: 'H', trigger_symbol: :hours, expected_trigger: 'TRIGGER;RELATED=START:-PT2H' },
+      { unit: 'M', trigger_symbol: :minutes, expected_trigger: 'TRIGGER;RELATED=START:-PT2M' },
     ]
 
     checks.each do |check|
       @webcal.update(reminder_time: time, reminder_unit: check[:unit])
       cal = @webcal.to_ical
+      assert_includes cal.to_ical, check[:expected_trigger]
 
       per_task_def.call do |td, ev|
 

@@ -237,6 +237,83 @@ class UnitModelTest < ActiveSupport::TestCase
     unit2.destroy
   end
 
+  def test_rollover_of_communication_sets
+    task_definition = FactoryBot.create(:task_definition, unit: @unit, tutorial_stream: @unit.tutorial_streams.first)
+    communication_set = @unit.communication_sets.create!(name: 'At Risk Follow Up', active: true)
+    communication_set.communication_set_schedules.create!(
+      name: 'Weekly follow up',
+      active: true,
+      anchor_week: 1,
+      anchor_day: 'Monday',
+      hour: 9,
+      minute: 30,
+      timezone: 'UTC',
+      recurrence: 'weekly',
+      interval: 1,
+      last_run_at: Time.zone.now,
+      last_enqueued_at: Time.zone.now
+    )
+    communication_rule = communication_set.communication_rules.create!(
+      name: 'Not started',
+      operator: 'and',
+      position: 0,
+      send_log_to_convenors: true,
+      active: true
+    )
+    communication_rule.communication_conditions.create!(
+      type: 'TaskDefinitionStatusCondition',
+      operator: 'equal_to',
+      task_definition: task_definition,
+      task_statuses: ['not_started']
+    )
+    communication_rule.communication_conditions.create!(
+      type: 'TutorialStreamEnrolmentCondition',
+      operator: 'enrolled_in',
+      tutorial_stream: @unit.tutorial_streams.first
+    )
+    communication_rule.communication_actions.create!(
+      type: 'EmailStudentAction',
+      subject: 'Please start {{unit.code}}',
+      body: 'Hello {{student.first_name}}'
+    )
+
+    unit2 = @unit.rollover TeachingPeriod.find(2), nil, nil, nil
+
+    assert_equal 1, unit2.communication_sets.count
+    new_set = unit2.communication_sets.first
+    assert_not_equal communication_set.id, new_set.id
+    assert_equal 'At Risk Follow Up', new_set.name
+    assert_equal true, new_set.active
+
+    assert_equal 1, new_set.communication_set_schedules.count
+    new_schedule = new_set.communication_set_schedules.first
+    assert_not_equal communication_set.communication_set_schedules.first.id, new_schedule.id
+    assert_equal 'Weekly follow up', new_schedule.name
+    assert_equal 'weekly', new_schedule.recurrence
+    assert_nil new_schedule.last_run_at
+    assert_nil new_schedule.last_enqueued_at
+
+    assert_equal 1, new_set.communication_rules.count
+    new_rule = new_set.communication_rules.first
+    assert_not_equal communication_rule.id, new_rule.id
+    assert_equal 'Not started', new_rule.name
+    assert_equal true, new_rule.send_log_to_convenors
+
+    new_task_definition = unit2.task_definitions.find_by!(abbreviation: task_definition.abbreviation)
+    task_condition = new_rule.communication_conditions.find_by!(type: 'TaskDefinitionStatusCondition')
+    assert_equal new_task_definition, task_condition.task_definition
+    assert_equal ['not_started'], task_condition.task_statuses
+
+    new_tutorial_stream = unit2.tutorial_streams.find_by!(abbreviation: @unit.tutorial_streams.first.abbreviation)
+    stream_condition = new_rule.communication_conditions.find_by!(type: 'TutorialStreamEnrolmentCondition')
+    assert_equal new_tutorial_stream, stream_condition.tutorial_stream
+
+    assert_equal 1, new_rule.communication_actions.count
+    assert_equal 'Please start {{unit.code}}', new_rule.communication_actions.first.subject
+
+    unit2.destroy
+  end
+
   def test_rollover_of_tasks_have_same_start_week_and_day
     @unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Tasks.csv"))
 
@@ -351,6 +428,62 @@ class UnitModelTest < ActiveSupport::TestCase
     assert_equal new_prompt3.task_definition.id, new_td2.id
     assert_equal new_prompt3.content, 'Discuss use of AI'
     assert_equal new_prompt3.priority, 3
+  end
+
+  def test_rollover_of_overseer_steps
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 2)
+    td = unit.task_definitions.first
+
+    td.overseer_steps.create!(
+      name: 'compile',
+      description: 'Compile the submission',
+      display_name: 'Compile',
+      display_description: 'Compile step',
+      run_command: 'make test',
+      timeout: 45,
+      sort_order: 0,
+      step_type: 'run',
+      partial_output_diff: true,
+      stdin_input_file: 'stdin.txt',
+      expected_output_file: 'expected.txt',
+      feedback_message: 'Compilation failed',
+      status_on_success_id: TaskStatus.complete.id,
+      status_on_failure_id: TaskStatus.fix_and_resubmit.id,
+      halt_on_success: false,
+      halt_on_failure: true,
+      show_expected_output: true,
+      show_stdin: false,
+      show_stdout: true,
+      enabled: true
+    )
+
+    unit2 = unit.rollover(TeachingPeriod.find(2), nil, nil, nil)
+    new_td = unit2.task_definitions.find_by!(abbreviation: td.abbreviation)
+    new_step = new_td.overseer_steps.first
+
+    assert_equal 1, new_td.overseer_steps.count
+    assert_not_nil new_step, 'Overseer step should be duplicated in rollover'
+    assert_equal new_td.id, new_step.task_definition_id
+    assert_equal 'compile', new_step.name
+    assert_equal 'Compile the submission', new_step.description
+    assert_equal 'Compile', new_step.display_name
+    assert_equal 'Compile step', new_step.display_description
+    assert_equal 'make test', new_step.run_command
+    assert_equal 45, new_step.timeout
+    assert_equal 0, new_step.sort_order
+    assert_equal 'run', new_step.step_type
+    assert_equal true, new_step.partial_output_diff
+    assert_equal 'stdin.txt', new_step.stdin_input_file
+    assert_equal 'expected.txt', new_step.expected_output_file
+    assert_equal 'Compilation failed', new_step.feedback_message
+    assert_equal TaskStatus.complete.id, new_step.status_on_success_id
+    assert_equal TaskStatus.fix_and_resubmit.id, new_step.status_on_failure_id
+    assert_equal false, new_step.halt_on_success
+    assert_equal true, new_step.halt_on_failure
+    assert_equal true, new_step.show_expected_output
+    assert_equal false, new_step.show_stdin
+    assert_equal true, new_step.show_stdout
+    assert_equal true, new_step.enabled
   end
 
   def test_rollover_of_task_prerequisites
@@ -603,7 +736,7 @@ class UnitModelTest < ActiveSupport::TestCase
     end
 
     # 18 = 9 general + 2 streams + 3 task defs + 1 group details + 1 stars + 1 grade + 1 contrib
-    check_task_completion_csv unit, 18
+    check_task_completion_csv unit, 19
   end
 
   def test_task_completion_csv_no_task_data
@@ -779,6 +912,21 @@ class UnitModelTest < ActiveSupport::TestCase
     assert unit.valid?, 'It should be ok to change to the convenor user'
   end
 
+  def test_change_main_convenor_does_not_allow_observer_only_roles
+    unit = FactoryBot.create :unit, campus_count: 1, tutorials: 0, stream_count: 0, task_count: 0, with_students: false
+
+    convenor_user = FactoryBot.create :user, :convenor
+    convenor_user_role = unit.employ_staff convenor_user, Role.convenor
+    convenor_user_role.update!(observer_only: true)
+
+    unit.main_convenor_id = convenor_user_role.id
+    assert_not unit.valid?, 'It should not be ok to change to an observer-only convenor user'
+
+    convenor_user_role.update!(observer_only: false)
+    unit.main_convenor.reload
+    assert unit.valid?, 'It should be ok once the convenor user is no longer observer only'
+  end
+
   def test_change_main_convenor_does_not_allow_roles_from_other_units
     unit = FactoryBot.create :unit, campus_count: 1, tutorials:0, stream_count:0, task_count:0, with_students:false
     other_unit = FactoryBot.create :unit, campus_count: 1, tutorials:0, stream_count:0, task_count:0, with_students:false
@@ -879,6 +1027,17 @@ class UnitModelTest < ActiveSupport::TestCase
     assert task_pdf.include?(unit.code)
     assert task_pdf.include?(unit.id.to_s)
 
+    old_submission_history_path = FileHelper.unit_submission_history_dir(unit, archived: false)
+    FileUtils.mkdir_p(old_submission_history_path)
+    submission_history_file = 'output.txt'
+    FileUtils.touch(File.join(old_submission_history_path, submission_history_file))
+    assert File.exist?(File.join(old_submission_history_path, submission_history_file))
+
+    old_jplag_report_path = FileHelper.task_jplag_report_path(unit, td)
+    FileUtils.mkdir_p(File.dirname(old_jplag_report_path))
+    FileUtils.touch(old_jplag_report_path)
+    assert File.exist?(old_jplag_report_path)
+
     unit.code = "New-#{unit.code}"
     unit.save!
 
@@ -895,6 +1054,15 @@ class UnitModelTest < ActiveSupport::TestCase
 
     assert File.exist?(task.final_pdf_path), "Portfolio evidence file does not exist = #{task.final_pdf_path}"
     assert task.has_pdf
+
+    new_submission_history_path = FileHelper.unit_submission_history_dir(unit, archived: false)
+    assert_not File.exist?(old_submission_history_path),
+               "Old submission history still exists - #{old_submission_history_path}"
+    assert File.exist?(File.join(new_submission_history_path, submission_history_file)),
+           "New submission history file does not exist - #{new_submission_history_path}"
+
+    assert_not File.exist?(old_jplag_report_path), "Old JPlag report still exists - #{old_jplag_report_path}"
+    assert File.exist?(FileHelper.task_jplag_report_path(unit, td)), "New JPlag report does not exist"
 
     unit.destroy!
   end
@@ -985,11 +1153,16 @@ class UnitModelTest < ActiveSupport::TestCase
     FileUtils.mkdir_p(old_submission_history_path)
     FileUtils.touch(File.join(old_submission_history_path, 'output.txt'))
 
+    old_jplag_report_path = FileHelper.task_jplag_report_path(unit, td)
+    FileUtils.mkdir_p(File.dirname(old_jplag_report_path))
+    FileUtils.touch(old_jplag_report_path)
+
     assert File.exist?(old_path)
     assert File.exist?(task_pdf)
     assert File.exist?(old_portfolio_path)
     assert File.exist?(old_submission_history_path)
     assert File.exist?(File.join(old_submission_history_path, 'output.txt'))
+    assert File.exist?(old_jplag_report_path)
 
     unit.move_files_to_archive
     unit.archived = true
@@ -1007,6 +1180,8 @@ class UnitModelTest < ActiveSupport::TestCase
     assert_not File.exist?(old_submission_history_path), "Old submission history still exists - #{old_submission_history_path}"
     assert File.exist?(FileHelper.task_submission_identifier_path(:done, task))
     assert File.exist?(File.join(FileHelper.task_submission_identifier_path_with_timestamp(:done, task, '123_45'), 'output.txt'))
+    assert_not File.exist?(old_jplag_report_path), "Old JPlag report still exists - #{old_jplag_report_path}"
+    assert File.exist?(FileHelper.task_jplag_report_path(unit, td)), "New JPlag report does not exist"
 
     assert File.exist?(task.final_pdf_path), "Portfolio evidence file does not exist - #{task.final_pdf_path}"
 
@@ -1136,6 +1311,124 @@ class UnitModelTest < ActiveSupport::TestCase
 
     assert_not unit.valid?, '"mark_late_submissions_as_assess_in_portfolio" cannot be disabled while tasks are in the Assess in Portfolio state'
     assert_includes unit.errors[:mark_late_submissions_as_assess_in_portfolio], 'cannot be disabled while tasks are in the Assess in Portfolio state'
+  end
+
+
+  test 'capture-task-complete-stats-snapshot creates snapshot for date' do
+    data = build_unit_with_controlled_task_statuses
+    unit = data[:unit]
+    snapshot_time = Time.zone.local(2026, 4, 8, 23, 55, 0)
+    expected_stats = parse_task_completion_stats_csv(unit, unit.task_completion_csv_generator(task_status_uses_id: true))
+
+    count_before = unit.task_completion_snapshots.count
+    snapshot = unit.capture_task_complete_stats_snapshot!(snapshot_time: snapshot_time)
+
+    assert_equal count_before + 1, unit.task_completion_snapshots.count
+    assert_equal snapshot_time.to_date, snapshot.snapshot_date
+    assert_equal snapshot_time.to_i.to_s, snapshot.snapshot_timestamp
+    assert_equal expected_stats, snapshot.load_stats
+
+    persisted_snapshot = unit.task_completion_snapshots.find_by(snapshot_timestamp: snapshot_time.to_i.to_s)
+    assert_not_nil persisted_snapshot
+    assert_equal snapshot.id, persisted_snapshot.id
+  ensure
+    unit&.destroy
+  end
+
+  test 'capture-task-complete-stats-snapshot creates a new snapshot for a new timestamp' do
+    data = build_unit_with_controlled_task_statuses
+    unit = data[:unit]
+    task_definitions = data[:task_definitions]
+    student2 = data[:student2]
+
+    first_time = Time.zone.local(2026, 4, 8, 9, 0, 0)
+    second_time = Time.zone.local(2026, 4, 8, 20, 0, 0)
+
+    first_snapshot = unit.capture_task_complete_stats_snapshot!(snapshot_time: first_time)
+    first_stats = first_snapshot.load_stats.deep_dup
+    count_before = unit.task_completion_snapshots.count
+
+    # Change one task status so the new capture has different stats.
+    student2.task_for_task_definition(task_definitions[0]).update!(task_status: TaskStatus.fail)
+    expected_updated_stats = parse_task_completion_stats_csv(unit, unit.task_completion_csv_generator(task_status_uses_id: true))
+
+    updated_snapshot = unit.capture_task_complete_stats_snapshot!(snapshot_time: second_time)
+
+    assert_equal count_before + 1, unit.task_completion_snapshots.count
+    assert_not_equal first_snapshot.id, updated_snapshot.id
+    assert_equal second_time.to_i.to_s, updated_snapshot.snapshot_timestamp
+    assert_not_equal first_stats, updated_snapshot.load_stats
+    assert_equal expected_updated_stats, updated_snapshot.load_stats
+  ensure
+    unit&.destroy
+  end
+
+  private
+
+  def parse_task_completion_stats_csv(unit, csv_text)
+    csv = CSV.parse(csv_text, headers: true)
+    streams = unit.tutorial_streams.pluck(:abbreviation)
+    streams = ['Tutorial'] if streams.empty?
+    task_definitions = unit.task_definitions_by_grade
+    campus_header = csv.headers.find { |header| header.to_s.casecmp('Campus').zero? }
+
+    campus_names_by_abbreviation = if campus_header.present?
+                                     abbreviations = csv.map { |row| row[campus_header].to_s.strip }.reject(&:blank?).uniq
+                                     Campus.where(abbreviation: abbreviations).pluck(:abbreviation, :name).to_h
+                                   else
+                                     {}
+                                   end
+
+    csv.each_with_object(Hash.new { |hash, key| hash[key] = {} }) do |row, stats|
+      streams.each do |stream_name|
+        tutorial_name = row[stream_name].to_s.strip
+        next if tutorial_name.blank?
+
+        campus_abbreviation = campus_header.present? ? row[campus_header].to_s.strip : nil
+
+        campus_name = if campus_abbreviation.present?
+                        campus_names_by_abbreviation[campus_abbreviation] || campus_abbreviation
+                      elsif stream_name == 'Tutorial'
+                        unit.tutorials.find_by(abbreviation: tutorial_name)&.campus&.name || stream_name
+                      else
+                        stream_name
+                      end
+
+        stats[campus_name][tutorial_name] ||= {}
+
+        task_definitions.each do |task_definition|
+          status_name = row[task_definition.abbreviation].to_s.strip
+          status_key = TaskStatus.id_to_key(status_name.to_i) || :not_started
+          stats[campus_name][tutorial_name][task_definition.abbreviation] ||= Hash.new(0)
+          stats[campus_name][tutorial_name][task_definition.abbreviation][status_key.to_s] += 1
+        end
+      end
+    end
+  end
+
+  def build_unit_with_controlled_task_statuses
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 2, stream_count: 0, tutorials: 1, campus_count: 1)
+    tutorial = unit.tutorials.first
+    campus = tutorial.campus
+    task_definitions = unit.task_definitions.order(:id).to_a
+
+    student1 = unit.enrol_student(FactoryBot.create(:user, :student), campus)
+    student2 = unit.enrol_student(FactoryBot.create(:user, :student), campus)
+    student1.enrol_in(tutorial)
+    student2.enrol_in(tutorial)
+
+    student1.task_for_task_definition(task_definitions[0]).update!(task_status: TaskStatus.complete)
+    student2.task_for_task_definition(task_definitions[0]).update!(task_status: TaskStatus.complete)
+    student1.task_for_task_definition(task_definitions[1]).update!(task_status: TaskStatus.fail)
+    student2.task_for_task_definition(task_definitions[1]).update!(task_status: TaskStatus.not_started)
+
+    {
+      unit: unit,
+      tutorial: tutorial,
+      task_definitions: task_definitions,
+      student1: student1,
+      student2: student2
+    }
   end
 
 end

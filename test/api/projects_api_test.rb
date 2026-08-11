@@ -4,6 +4,7 @@ require './lib/helpers/database_populator'
 
 class ProjectsApiTest < ActiveSupport::TestCase
   include Rack::Test::Methods
+  include ActiveSupport::Testing::TimeHelpers
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
   include TestHelpers::TestFileHelper
@@ -84,6 +85,103 @@ class ProjectsApiTest < ActiveSupport::TestCase
 
     assert_json_limit_keys_to_exactly keys, last_response_body
     assert_json_matches_model project, last_response_body, key_test
+  end
+
+  def test_get_project_records_when_student_viewed_it
+    user = FactoryBot.create(:user, :student, enrol_in: 1)
+    project = user.projects.first
+    viewed_at = Time.zone.parse('2026-07-21 12:00:00 UTC')
+    add_auth_header_for(user: user)
+
+    travel_to(viewed_at) { get "/api/projects/#{project.id}" }
+
+    assert_equal 200, last_response.status
+    assert_equal viewed_at, project.reload.last_viewed_at
+  end
+
+  def test_get_project_does_not_record_staff_view_as_student_view
+    project = FactoryBot.create(:project)
+    admin = FactoryBot.create(:user, :admin)
+    add_auth_header_for(user: admin)
+
+    get "/api/projects/#{project.id}"
+
+    assert_equal 200, last_response.status
+    assert_nil project.reload.last_viewed_at
+  end
+
+  def test_get_project_can_record_attendance_during_enrolled_tutorial
+    project, tutor, tutorial = attendance_test_data
+    attended_at = Time.zone.parse('2026-07-20 10:30:00 UTC')
+    tutorial.update!(meeting_day: 'Monday', meeting_time: '10:00')
+    add_auth_header_for(user: tutor)
+
+    assert_difference 'Engagement.count', 1 do
+      travel_to(attended_at) { get "/api/projects/#{project.id}?record_attendance=true" }
+    end
+
+    assert_equal 200, last_response.status
+    attendance = project.engagements.last
+    assert_equal tutor, attendance.user
+    assert_equal 'Attendance', attendance.engagement_type
+    assert_equal 'Attended tutorial and QR scanned.', attendance.note
+    assert_equal attended_at, attendance.occurred_at
+  end
+
+  def test_get_project_does_not_record_attendance_outside_enrolled_tutorial
+    project, tutor, tutorial = attendance_test_data
+    tutorial.update!(meeting_day: 'Monday', meeting_time: '10:00')
+    add_auth_header_for(user: tutor)
+
+    assert_no_difference 'Engagement.count' do
+      travel_to(Time.zone.parse('2026-07-20 12:00:00 UTC')) do
+        get "/api/projects/#{project.id}?record_attendance=true"
+      end
+    end
+
+    assert_equal 200, last_response.status
+  end
+
+  def test_get_project_debounces_attendance_for_fifteen_minutes
+    project, tutor, tutorial = attendance_test_data
+    tutorial.update!(meeting_day: 'Monday', meeting_time: '10:00')
+    add_auth_header_for(user: tutor)
+
+    assert_difference 'Engagement.count', 1 do
+      travel_to(Time.zone.parse('2026-07-20 10:30:00 UTC')) do
+        get "/api/projects/#{project.id}?record_attendance=true"
+      end
+    end
+
+    assert_no_difference 'Engagement.count' do
+      travel_to(Time.zone.parse('2026-07-20 10:44:00 UTC')) do
+        get "/api/projects/#{project.id}?record_attendance=true"
+      end
+    end
+
+    assert_difference 'Engagement.count', 1 do
+      travel_to(Time.zone.parse('2026-07-20 10:46:00 UTC')) do
+        get "/api/projects/#{project.id}?record_attendance=true"
+      end
+    end
+  end
+
+  def test_get_project_rejects_attendance_trigger_without_unit_teaching_access
+    project, = attendance_test_data
+    add_auth_header_for(user: project.student)
+
+    assert_no_difference 'Engagement.count' do
+      get "/api/projects/#{project.id}?record_attendance=true"
+    end
+
+    assert_equal 403, last_response.status
+
+    add_auth_header_for(user: FactoryBot.create(:user, :admin))
+    assert_no_difference 'Engagement.count' do
+      get "/api/projects/#{project.id}?record_attendance=true"
+    end
+
+    assert_equal 403, last_response.status
   end
 
   def test_projects_works_with_inactive_units
@@ -191,5 +289,20 @@ class ProjectsApiTest < ActiveSupport::TestCase
     unit.destroy!
   ensure
     FileUtils.rm_f(project.portfolio_path)
+  end
+
+  private
+
+  def attendance_test_data
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0)
+    tutorial = unit.tutorials.first
+    tutorial.campus.update!(timezone: 'UTC')
+    student = FactoryBot.create(:user, :student)
+    project = unit.enrol_student(student, tutorial.campus)
+    project.enrol_in(tutorial)
+    tutor = FactoryBot.create(:user, :tutor)
+    unit.employ_staff(tutor, Role.tutor)
+
+    [project, tutor, tutorial]
   end
 end

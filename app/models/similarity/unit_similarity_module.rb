@@ -105,10 +105,10 @@ module UnitSimilarityModule
 
     # need pwd to restore after cding into submission folder (so the files do not have full path)
     pwd = FileUtils.pwd
+    completed_all_checks = true
 
     # making temp directory for unit - jplag
     root_work_dir = Rails.root.join("tmp", "jplag", "#{code}-#{id}")
-    unit_code = "#{code}-#{id}"
 
     begin
       logger.info "Checking plagiarsm for unit #{code} - #{name} (id=#{id})"
@@ -138,20 +138,27 @@ module UnitSimilarityModule
         FileUtils.mkdir_p(tasks_dir)
 
         # There are new tasks, check these with JPLAG
-        run_jplag_on_done_files(td, tasks_dir, tasks_with_files, unit_code)
-        report_path = "#{Doubtfire::Application.config.jplag_report_dir}/#{unit_code}/#{td.abbreviation}-result.jplag"
-        warn_pct = td.plagiarism_warn_pct || 50
-        logger.debug "Warn PCT: #{warn_pct}"
+        report_path = FileHelper.task_jplag_report_path(self, td)
+        begin
+          run_jplag_on_done_files(td, tasks_dir, tasks_with_files, report_path)
+          warn_pct = td.plagiarism_warn_pct || 50
+          logger.debug "Warn PCT: #{warn_pct}"
 
-        # Remove any existing plagiarism links that are below the threshold, in case it has been updated since the last analysis
-        JplagTaskSimilarity.joins(:task)
-                           .where("pct < ? AND tasks.task_definition_id = ?", warn_pct, td.id)
-                           .delete_all
+          # Remove any existing plagiarism links that are below the threshold, in case it has been updated since the last analysis
+          JplagTaskSimilarity.joins(:task)
+                             .where("pct < ? AND tasks.task_definition_id = ?", warn_pct, td.id)
+                             .delete_all
 
-        process_jplag_plagiarism_report(report_path, warn_pct, td.group_set)
+          process_jplag_plagiarism_report(report_path, warn_pct, td.group_set)
+        rescue StandardError => e
+          completed_all_checks = false
+          logger.error "Failed to check JPlag similarity for task #{td.name} (id=#{td.id}). Error: #{e.message}"
+        end
       end
-      self.last_plagarism_scan = Time.zone.now
-      save!
+      if completed_all_checks
+        self.last_plagarism_scan = Time.zone.now
+        save!
+      end
     ensure
       FileUtils.chdir(pwd) if FileUtils.pwd != pwd
     end
@@ -230,29 +237,36 @@ module UnitSimilarityModule
   # end
 
   # JPLAG Function - extracts "done" files for each task and packages them into a directory for JPLAG to run on
-  def run_jplag_on_done_files(task_definition, tasks_dir, tasks_with_files, unit_code)
+  def run_jplag_on_done_files(task_definition, tasks_dir, tasks_with_files, report_path)
     similarity_pct = task_definition.plagiarism_warn_pct
     return if similarity_pct.nil?
 
     # Check if the directory exists and create it if it doesn't
-    results_dir = "/jplag/results/#{unit_code}"
+    results_dir = File.dirname(report_path)
     system("docker exec -i jplag sh -c 'if [ ! -d \"#{results_dir}\" ]; then mkdir -p \"#{results_dir}\"; fi'") || raise('Failed to create JPlag results directory')
 
     # Remove existing result file if it exists
-    result_file = "#{results_dir}/#{task_definition.abbreviation}-result.jplag"
-    system("docker exec -i jplag sh -c 'if [ -f \"#{result_file}\" ]; then rm \"#{result_file}\"; fi'") || raise('Failed to remove previous JPlag report')
+    system("docker exec -i jplag sh -c 'if [ -f \"#{report_path}\" ]; then rm \"#{report_path}\"; fi'") || raise('Failed to remove previous JPlag report')
 
     # Extract task resources for base code
     use_base_code = false
     if task_definition.has_task_resources? && task_definition.use_resources_for_jplag_base_code
       use_base_code = true
-      path = task_definition.task_resources
+      linked_resource = task_definition.linked_task_resource
 
-      Zip::File.open(path) do |zip_file|
-        zip_file.each do |entry|
-          dest = File.join(tasks_dir, 'base', entry.name)
-          FileUtils.mkdir_p(File.dirname(dest))
-          entry.extract(dest) { true }
+      if linked_resource && !task_definition.task_resource_zip?(linked_resource)
+        base_dir = File.join(tasks_dir, 'base')
+        FileUtils.mkdir_p(base_dir)
+        FileUtils.cp(linked_resource[:path], File.join(base_dir, linked_resource[:filename]))
+      else
+        path = linked_resource ? linked_resource[:path] : task_definition.task_resources
+
+        Zip::File.open(path) do |zip_file|
+          zip_file.each do |entry|
+            dest = File.join(tasks_dir, 'base', entry.name)
+            FileUtils.mkdir_p(File.dirname(dest))
+            entry.extract(dest) { true }
+          end
         end
       end
     end
@@ -305,8 +319,26 @@ module UnitSimilarityModule
     skip_cluster_check = Doubtfire::Application.config.jplag_skip_cluster_check
     skip_cluster_string = skip_cluster_check ? '--cluster-skip' : ''
 
+    max_shown_comparisons = Doubtfire::Application.config.jplag_max_shown_comparisons
+    max_shown_comparisons = 2500 if max_shown_comparisons.nil?
+
     # Run JPLAG on the extracted files. JPlag container should already be in the /jplag/ workdir.
-    docker_command = "docker exec -i jplag java -jar jplag-jar-with-dependencies.jar --skip-version-check #{tasks_dir_split}/submissions #{base_code_string} -l #{file_lang} --similarity-threshold=#{similarity_threshold} #{min_token_string} #{skip_cluster_string} -M RUN -r #{results_dir}/#{task_definition.abbreviation}-result --overwrite"
+    docker_command = [
+      "docker exec -i jplag",
+      "java -jar jplag-jar-with-dependencies.jar",
+      "--skip-version-check",
+      "#{tasks_dir_split}/submissions",
+      base_code_string,
+      "-l #{file_lang}",
+      "--similarity-threshold=#{similarity_threshold}",
+      "--shown-comparisons=#{max_shown_comparisons}",
+      min_token_string,
+      skip_cluster_string,
+      "-M RUN",
+      "-r #{report_path.delete_suffix('.jplag')}",
+      "--overwrite"
+    ].join(" ")
+
     logger.debug "Executing command: #{docker_command}"
     system(docker_command)
 
