@@ -39,10 +39,6 @@ class MoodleApi
     request('mod_assign_get_user_flags', 'assignmentids[0]' => assignment_id)
   end
 
-  def participant(assignment_id, user_id)
-    request('mod_assign_get_participant', 'assignid' => assignment_id, 'userid' => user_id, 'embeduser' => 0)
-  end
-
   def course_groups
     request('core_group_get_course_groups', 'courseid' => @integration.course_id)
   end
@@ -64,10 +60,6 @@ class MoodleApi
     end || assignment_course
     available_assignments = Array(assignment_course&.fetch('assignments', nil))
     assignment_id = @integration.assignment_id || available_assignments.first&.fetch('id', nil)
-    participant_user = Array(enrolled_users).find do |user|
-      Array(user['roles']).any? { |role| role['shortname'] == 'student' }
-    end
-
     progress_callback&.call(4, 'Testing assignment flag access')
 
     test_function(results, 'mod_assign_get_user_flags') do
@@ -75,16 +67,8 @@ class MoodleApi
 
       user_flags(assignment_id)
     end
-    progress_callback&.call(5, 'Tested get participant access')
-    test_function(results, 'mod_assign_get_participant', successful_error_codes: ['userisfilteredout']) do
-      if assignment_id.blank? || participant_user.blank?
-        raise Error, 'An assignment and enrolled student are required to test this permission'
-      end
 
-      participant(assignment_id, participant_user['id'])
-    end
-
-    progress_callback&.call(6, 'Fetching course groups')
+    progress_callback&.call(5, 'Fetching course groups')
     groups = test_function(results, 'core_group_get_course_groups') { course_groups }
     available_groups = Array(groups)
 
@@ -98,17 +82,12 @@ class MoodleApi
 
   private
 
-  def test_function(results, function, successful_error_codes: [])
+  def test_function(results, function)
     response = yield
     results << { function: function, success: true }
     response
   rescue Error => e
-    result = if successful_error_codes.include?(e.code)
-               { function: function, success: true, message: e.message }
-             else
-               { function: function, success: false, error: e.message }
-             end
-    results << result
+    results << { function: function, success: false, error: e.message }
     nil
   end
 

@@ -10,7 +10,7 @@ class TestMoodleConnectionJob
                   retry: false
 
   def perform(unit_id)
-    total(6)
+    total(5)
     at(0, 'Starting Moodle connection test')
 
     unit = Unit.find(unit_id)
