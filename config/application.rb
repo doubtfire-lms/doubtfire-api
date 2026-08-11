@@ -296,12 +296,29 @@ module Doubtfire
       Rails.root.join('app/models/d2l')
 
     # CORS config
+    # Configure a strict allowlist. Override per environment via:
+    # CORS_ALLOWED_ORIGINS="http://localhost:4200,https://frontend.example.edu"
+    default_cors_origins = [
+      'http://localhost:4200',
+      "https://#{config.institution[:host]}"
+    ].uniq
+    allowed_cors_origins = ENV.fetch('CORS_ALLOWED_ORIGINS', default_cors_origins.join(','))
+                              .split(',')
+                              .map(&:strip)
+                              .reject(&:empty?)
+                              .uniq
+
     config.middleware.insert_before Rack::MethodOverride, SentryTunnelMiddleware
 
     config.middleware.insert_before Warden::Manager, Rack::Cors do
       allow do
-        origins '*'
-        resource '*', headers: :any, methods: %i(get post put delete options)
+        origins do |source, _env|
+          allowed_cors_origins.include?(source)
+        end
+
+        resource '*',
+                 headers: %w[Content-Type Authorization Accept],
+                 methods: %i[get post put delete options]
       end
     end
 

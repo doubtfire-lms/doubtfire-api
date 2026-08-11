@@ -10,9 +10,6 @@ class ApiRoot < Grape::API
   format :json
 
   before do
-    header['Access-Control-Allow-Origin'] = '*'
-    header['Access-Control-Request-Method'] = '*'
-
     Thread.current.thread_variable_set(:ip, request.ip)
   end
 
