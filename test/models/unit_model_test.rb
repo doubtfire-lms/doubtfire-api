@@ -804,6 +804,36 @@ class UnitModelTest < ActiveSupport::TestCase
     assert_equal unit.active_projects.count, rows, "Expected number or rows in csv - #{csv_str}"
   end
 
+  test 'unit and task titles allow common teaching title punctuation' do
+    assert FactoryBot.build(:unit, name: 'C# for Beginners (Part 1)').valid?
+    assert FactoryBot.build(:task_definition, unit: @unit, name: 'Hyphenated-Task #1 (Core)').valid?
+  end
+
+  test 'unit and task titles reject equals, plus, and at characters anywhere' do
+    ['={', '=2+2', '+command', '@command', 'Unit=Name', 'Unit+Name', 'Unit@Name'].each do |value|
+      unit = FactoryBot.build(:unit, name: value)
+      task_definition = FactoryBot.build(:task_definition, unit: @unit, name: value)
+
+      assert_not unit.valid?, value
+      assert_includes unit.errors[:name], 'contains unsupported characters'
+      assert_not task_definition.valid?, value
+      assert_includes task_definition.errors[:name], 'contains unsupported characters'
+    end
+  end
+
+  test 'unit codes allow hyphens and slashes but reject unsupported characters' do
+    assert FactoryBot.build(:unit, code: 'ABC1001-ABC1002').valid?
+    assert FactoryBot.build(:unit, code: 'ABC1001-ABC1002C#').valid?
+    assert FactoryBot.build(:unit, code: 'ABC1001/ABC1002').valid?
+
+    ['ABC1001-ABC1002=', 'ABC1001+ABC1002', 'ABC1001@ABC1002'].each do |value|
+      unit = FactoryBot.build(:unit, code: value)
+
+      assert_not unit.valid?, value
+      assert_includes unit.errors[:code], 'contains unsupported characters'
+    end
+  end
+
   test 'student export neutralises formulas from existing data' do
     unit = FactoryBot.create(:unit, student_count: 1, unenrolled_student_count: 0, part_enrolled_student_count: 0, inactive_student_count: 0)
     student = unit.active_projects.first.user

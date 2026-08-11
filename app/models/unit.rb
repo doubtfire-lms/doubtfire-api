@@ -207,6 +207,8 @@ class Unit < ApplicationRecord
   belongs_to :overseer_image, optional: true
 
   validates :name, :description, :start_date, :end_date, presence: true
+  validates :name, allowed_characters: { type: :unit_name }
+  validates :code, allowed_characters: { type: :unit_code }
 
   validates :description, length: { maximum: 4095, allow_blank: true }
 

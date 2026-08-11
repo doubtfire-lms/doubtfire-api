@@ -92,7 +92,7 @@ class TaskDefinition < ApplicationRecord
   serialize :upload_requirements, coder: JSON
 
   # Model validations/constraints
-  validates :name, uniqueness: { scope:  :unit_id } # task definition names within a unit must be unique
+  validates :name, allowed_characters: { type: :title }, uniqueness: { scope: :unit_id } # task definition names within a unit must be unique
   validates :abbreviation, uniqueness: { scope: :unit_id } # task definition names within a unit must be unique
 
   validates :target_grade, numericality: { only_integer: true, greater_than_or_equal_to: 0 }

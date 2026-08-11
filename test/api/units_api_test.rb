@@ -459,6 +459,33 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_json_matches_model original.reload, unit, %w( name code description start_date end_date active auto_apply_extension_before_deadline send_notifications )
   end
 
+  def test_units_put_rejects_unsupported_name_and_code_characters
+    unit = FactoryBot.create(:unit, with_students: false, name: 'Original-Unit #1 (Core)', code: 'ABC1001-ABC1002')
+    add_auth_header_for(user: unit.main_convenor_user)
+
+    ['={', 'Unit+Name', 'Unit@Name'].each do |name|
+      put_json "/api/units/#{unit.id}", { unit: { name: name } }
+
+      assert_equal 400, last_response.status, last_response_body
+      assert_equal 'Original-Unit #1 (Core)', unit.reload.name
+    end
+
+    put_json "/api/units/#{unit.id}", { unit: { code: 'ABC1001-ABC1002=' } }
+
+    assert_equal 400, last_response.status, last_response_body
+    assert_equal 'ABC1001-ABC1002', unit.reload.code
+  end
+
+  def test_units_put_allows_hash_in_unit_code
+    unit = FactoryBot.create(:unit, with_students: false, code: 'ABC1001-ABC1002')
+    add_auth_header_for(user: unit.main_convenor_user)
+
+    put_json "/api/units/#{unit.id}", { unit: { code: 'ABC1001-ABC1002C#' } }
+
+    assert_equal 200, last_response.status, last_response_body
+    assert_equal 'ABC1001-ABC1002C#', unit.reload.code
+  end
+
   def test_system_administrator_enrolled_as_student_can_update_unit
     unit = FactoryBot.create(:unit, with_students: false)
     administrator = FactoryBot.create(:user, :admin)

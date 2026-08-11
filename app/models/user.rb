@@ -184,8 +184,9 @@ class User < ApplicationRecord
   has_many    :marking_sessions, dependent: :destroy
 
   # Model validations/constraints
-  validates :first_name,  presence: true
-  validates :last_name,   presence: true
+  validates :first_name,  presence: true, allowed_characters: { type: :first_name }
+  validates :last_name,   presence: true, allowed_characters: { type: :last_name }
+  validates :nickname,    allowed_characters: { type: :preferred_name }, allow_blank: true
   validates :role_id,     presence: true
   validates :username,    presence: true, uniqueness: { case_sensitive: false }
   validates :email,       presence: true, uniqueness: { case_sensitive: false }, format: { with: /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\z/i }

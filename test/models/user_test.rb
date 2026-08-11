@@ -40,6 +40,34 @@ class UserTest < ActiveSupport::TestCase
     refute user.valid?
   end
 
+  test 'profile names allow hyphens and parentheses' do
+    user = FactoryBot.build(:user, first_name: 'Mary-Jane', last_name: 'Smith (Jones)', nickname: 'MJ (Student)')
+
+    assert user.valid?
+  end
+
+  test 'profile name fields reject hash characters' do
+    {
+      first_name: 'First#Name',
+      last_name: 'Last#Name',
+      nickname: 'Preferred#Name'
+    }.each do |attribute, value|
+      user = FactoryBot.build(:user, attribute => value)
+
+      assert_not user.valid?, attribute
+      assert_includes user.errors[attribute], 'contains unsupported characters'
+    end
+  end
+
+  test 'profile names reject spreadsheet formulas and unsupported punctuation' do
+    ['=2+2', '+SUM(A1:A2)', '@command', 'Name=Value', 'Name+Value', 'Name@Value'].each do |value|
+      user = FactoryBot.build(:user, first_name: value)
+
+      assert_not user.valid?, value
+      assert_includes user.errors[:first_name], 'contains unsupported characters'
+    end
+  end
+
   test 'CSV formula escaping neutralises spreadsheet control prefixes' do
     ['=2+2', '+SUM(A1:A2)', '-1+2', '@command', "\tcommand", "\rcommand", "\ncommand"].each do |value|
       assert_equal "'#{value}", CsvHelper.escape_spreadsheet_formula(value)
