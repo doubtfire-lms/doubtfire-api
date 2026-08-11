@@ -510,7 +510,7 @@ class User < ApplicationRecord
         end
       end
       User.order('id').each do |user|
-        row << user.attributes.select { |attribute| exportables.include? attribute }.map do |key, value|
+        values = user.attributes.select { |attribute| exportables.include? attribute }.map do |key, value|
           # pass in a blank encrypted_password and the role name instead of just role_id
           if key == 'encrypted_password'
             ''
@@ -520,6 +520,7 @@ class User < ApplicationRecord
             value
           end
         end
+        row << CsvHelper.escape_spreadsheet_formulas(values)
       end
     end
   end

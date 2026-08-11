@@ -804,6 +804,22 @@ class UnitModelTest < ActiveSupport::TestCase
     assert_equal unit.active_projects.count, rows, "Expected number or rows in csv - #{csv_str}"
   end
 
+  test 'student export neutralises formulas from existing data' do
+    unit = FactoryBot.create(:unit, student_count: 1, unenrolled_student_count: 0, part_enrolled_student_count: 0, inactive_student_count: 0)
+    student = unit.active_projects.first.user
+    student.assign_attributes(first_name: '=2+2', last_name: '+SUM(A1:A2)', nickname: '@command', student_id: '-1+2')
+    student.save!(validate: false)
+
+    entry = CSV.parse(unit.export_users_to_csv, headers: true).first
+
+    assert_equal "'=2+2", entry['first_name']
+    assert_equal "'+SUM(A1:A2)", entry['last_name']
+    assert_equal "'@command", entry['preferred_name']
+    assert_equal "'-1+2", entry['student_id']
+  ensure
+    unit&.destroy
+  end
+
   def test_import_users
     unit = FactoryBot.create(:unit, code: 'SIT101', stream_count: 0, with_students: false, tutorials: 0)
     t1 = unit.add_tutorial(

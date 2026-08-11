@@ -40,6 +40,23 @@ class UserTest < ActiveSupport::TestCase
     refute user.valid?
   end
 
+  test 'CSV formula escaping neutralises spreadsheet control prefixes' do
+    ['=2+2', '+SUM(A1:A2)', '-1+2', '@command', "\tcommand", "\rcommand", "\ncommand"].each do |value|
+      assert_equal "'#{value}", CsvHelper.escape_spreadsheet_formula(value)
+    end
+
+    assert_equal 'Mary-Jane', CsvHelper.escape_spreadsheet_formula('Mary-Jane')
+  end
+
+  test 'system user export neutralises formulas from existing data' do
+    @user.first_name = '=2+2'
+    @user.save!(validate: false)
+
+    entry = CSV.parse(User.export_to_csv, headers: true).find { |row| row['username'] == @user.username }
+
+    assert_equal "'=2+2", entry['first_name']
+  end
+
   def test_can_create_multiple_auth_tokens
     user = FactoryBot.create(:user)
     t1 = user.generate_authentication_token!

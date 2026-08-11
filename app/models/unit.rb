@@ -1542,7 +1542,7 @@ class Unit < ApplicationRecord
         ).group(
           'projects.id', 'student_id', 'username', 'first_name', 'nickname', 'last_name', 'email', 'campus_abbreviation'
         ).each do |row|
-          csv << ([
+          csv << escape_spreadsheet_formulas([
             code,
             row['campus_abbreviation'],
             row['username'],

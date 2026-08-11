@@ -1,4 +1,19 @@
 module CsvHelper
+  SPREADSHEET_FORMULA_PREFIX = /\A[=+\-@\t\r\n]/
+
+  # CSV quoting does not prevent spreadsheet applications from evaluating a
+  # cell as a formula. Prefix formula-like values with an apostrophe so the
+  # spreadsheet treats the value as text.
+  def escape_spreadsheet_formula(value)
+    return value unless value.is_a?(String) && value.match?(SPREADSHEET_FORMULA_PREFIX)
+
+    "'#{value}"
+  end
+
+  def escape_spreadsheet_formulas(values)
+    values.map { |value| escape_spreadsheet_formula(value) }
+  end
+
   def csv_date_to_date(date)
     return if date.blank?
 
@@ -31,4 +46,6 @@ module CsvHelper
 
   module_function :csv_date_to_date
   module_function :missing_headers
+  module_function :escape_spreadsheet_formula
+  module_function :escape_spreadsheet_formulas
 end
