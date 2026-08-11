@@ -307,7 +307,7 @@ module Doubtfire
                               .map(&:strip)
                               .reject(&:empty?)
                               .uniq
-    
+
     config.middleware.insert_before Rack::MethodOverride, SentryTunnelMiddleware
 
     config.middleware.insert_before Warden::Manager, Rack::Cors do
