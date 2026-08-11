@@ -92,9 +92,13 @@ class MoodleApi
   end
 
   def request(function, params)
-    raise Error, 'DF_MOODLE_API_URL is not configured' if Doubtfire::Application.config.moodle_api_url.blank?
+    config = Doubtfire::Application.config
+    api_url = config.moodle_api_url if config.respond_to?(:moodle_api_url)
+    if api_url.blank?
+      raise Error, 'OnTrack backend Moodle API URL is not configured (DF_MOODLE_API_URL)'
+    end
 
-    base_url = Doubtfire::Application.config.moodle_api_url.sub(%r{/+\z}, '')
+    base_url = api_url.sub(%r{/+\z}, '')
     endpoint = base_url.end_with?('/webservice/rest/server.php') ? base_url : "#{base_url}/webservice/rest/server.php"
     response = Net::HTTP.post_form(
       URI.parse(endpoint),

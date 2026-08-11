@@ -9,6 +9,21 @@ class MoodleApiTest < ActiveSupport::TestCase
     @integration = MoodleApi.new(settings)
   end
 
+  test 'connection test reports missing backend Moodle configuration' do
+    settings = Struct.new(:course_id, :api_key, :assignment_id).new(42, 'token', 7)
+    integration = MoodleApi.new(settings)
+
+    Doubtfire::Application.stub(:config, Object.new) do
+      result = integration.test_connection
+
+      assert_equal 5, result[:permissions].length
+      assert(result[:permissions].none? { |permission| permission[:success] })
+      assert(result[:permissions].all? do |permission|
+        permission[:error] == 'OnTrack backend Moodle API URL is not configured (DF_MOODLE_API_URL)'
+      end)
+    end
+  end
+
   test 'connection test reports each required permission and course assignments' do
     assignments = {
       'courses' => [{
