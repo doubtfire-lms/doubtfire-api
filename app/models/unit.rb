@@ -2551,7 +2551,8 @@ class Unit < ApplicationRecord
   def get_all_tasks_for(user, my_tutorials_only = false)
     staff_attention = TaskComment.attention_audiences.fetch('staff')
     unread_comment = '(COALESCE(crc.last_read_comment_id, 0) < task_comments.id ' \
-                     'AND COALESCE(tutor_crc.last_read_comment_id, 0) < task_comments.id)'
+                     'AND COALESCE(tutor_crc.last_read_comment_id, 0) < task_comments.id ' \
+                     "AND task_comments.user_id <> #{user.id.to_i})"
     similarity_stats = TaskSimilarity
                        .select('task_id', 'COUNT(*) AS similarity_count', 'SUM(flagged) AS flagged_count')
                        .group(:task_id)
@@ -2639,7 +2640,8 @@ class Unit < ApplicationRecord
   #
   def tasks_for_task_inbox(user, my_students_only = false)
     unread_comment = '(COALESCE(crc.last_read_comment_id, 0) < task_comments.id ' \
-                     'AND COALESCE(tutor_crc.last_read_comment_id, 0) < task_comments.id)'
+                     'AND COALESCE(tutor_crc.last_read_comment_id, 0) < task_comments.id ' \
+                     "AND task_comments.user_id <> #{user.id.to_i})"
     get_all_tasks_for(user, my_students_only)
       .having("task_statuses.id IN (:ids) OR COUNT(task_pins.task_id) > 0 OR SUM(case when #{unread_comment} AND task_comments.id IS NOT NULL then COALESCE(task_similarity_stats.similarity_count, 1) else 0 end) > 0", ids: [TaskStatus.ready_for_feedback, TaskStatus.need_help])
       .order('pinned DESC, submission_date ASC, MAX(task_comments.created_at) ASC, task_definition_id ASC')

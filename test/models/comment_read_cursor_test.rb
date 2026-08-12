@@ -143,6 +143,17 @@ class CommentReadCursorTest < ActiveSupport::TestCase
                  group_task_ids_in_staff_inbox(unit, tutor, task_definition).sort
   end
 
+  def test_legacy_comment_authored_by_student_does_not_create_a_stuck_unread_badge
+    project = FactoryBot.create(:project)
+    task_definition = project.unit.task_definitions.first
+    task = project.task_for_task_definition(task_definition)
+    comment = task.add_text_comment(project.student, 'Already read by its author')
+    comment.update_column(:attention_audience, nil) # rubocop:disable Rails/SkipsModelValidations
+
+    assert_nil CommentReadCursor.find_by(task: task, user: project.student)
+    assert_equal 0, unread_count(project, task_definition)
+  end
+
   def test_destroying_the_cursor_comment_rewinds_each_users_cursor
     project = FactoryBot.create(:project)
     task = project.task_for_task_definition(project.unit.task_definitions.first)
