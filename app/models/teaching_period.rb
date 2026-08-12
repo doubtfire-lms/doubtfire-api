@@ -26,11 +26,12 @@ class TeachingPeriod < ApplicationRecord
     "#{year} #{period}"
   end
 
-  def add_break(start_date, number_of_weeks)
+  def add_break(start_date, number_of_weeks, campus_ids = [])
     break_in_teaching_period = Break.new
     break_in_teaching_period.start_date = start_date
     break_in_teaching_period.number_of_weeks = number_of_weeks
     break_in_teaching_period.teaching_period = self
+    break_in_teaching_period.campus_ids = campus_ids || []
 
     break_in_teaching_period.save!
     # add after save to ensure valid break
@@ -39,7 +40,7 @@ class TeachingPeriod < ApplicationRecord
     break_in_teaching_period
   end
 
-  def update_break(id, start_date, number_of_weeks)
+  def update_break(id, start_date, number_of_weeks, campus_ids = nil)
     break_in_teaching_period = breaks.find(id)
 
     if start_date.present?
@@ -50,8 +51,14 @@ class TeachingPeriod < ApplicationRecord
       break_in_teaching_period.number_of_weeks = number_of_weeks
     end
 
+    break_in_teaching_period.campus_ids = campus_ids if campus_ids.present? || campus_ids == []
+
     break_in_teaching_period.save!
     break_in_teaching_period
+  end
+
+  def breaks_for(campus)
+    breaks.select { |teaching_break| teaching_break.applies_to?(campus) }
   end
 
   def week_number(date)

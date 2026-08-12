@@ -1,6 +1,25 @@
 require 'test_helper'
 
 class DiscussTimeoutTest < ActiveSupport::TestCase
+  def test_discussion_deadline_uses_breaks_for_the_students_campus
+    teaching_period = FactoryBot.create(
+      :teaching_period,
+      start_date: Time.zone.parse('2026-06-01 00:00:00'),
+      end_date: Time.zone.parse('2026-09-30 23:59:59'),
+      active_until: Time.zone.parse('2026-10-31 23:59:59')
+    )
+    campus = FactoryBot.create(:campus)
+    other_campus = FactoryBot.create(:campus)
+    teaching_period.add_break(Time.zone.parse('2026-07-13 00:00:00'), 1, [other_campus.id])
+    teaching_period.add_break(Time.zone.parse('2026-07-27 00:00:00'), 1, [campus.id])
+    unit = FactoryBot.create(:unit, teaching_period: teaching_period)
+    task = unit.active_projects.first.task_for_task_definition(unit.task_definitions.first)
+    task.project.update!(campus: campus)
+    task.update!(moved_to_discuss_at: Time.zone.parse('2026-07-06 12:00:00'))
+
+    assert_equal Time.zone.parse('2026-07-20 12:00:00'), task.discuss_timeout_expiry_at(14)
+  end
+
   def test_teaching_period_break_pauses_warning_and_expiry
     travel_to Time.zone.parse('2026-07-23 12:00:00') do
       teaching_period = FactoryBot.create(

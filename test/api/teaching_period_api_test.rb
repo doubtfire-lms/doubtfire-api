@@ -54,15 +54,23 @@ class TeachingPeriodTest < ActiveSupport::TestCase
   def test_update_break_from_teaching_period
     tp = TeachingPeriod.first
     to_update = tp.breaks.first
+    campus = FactoryBot.create(:campus)
+    new_start_date = to_update.start_date + 1.day
 
     # Add username and auth_token to Header
-    add_auth_header_for(user: User.first)
+    add_auth_header_for(user: FactoryBot.create(:user, :admin))
 
     # The api call we are testing
-    put_json "/api/teaching_periods/#{tp.id}/breaks/#{to_update.id}", { number_of_weeks: 5 }
+    put_json "/api/teaching_periods/#{tp.id}/breaks/#{to_update.id}", {
+      start_date: new_start_date,
+      number_of_weeks: 5,
+      campus_ids: [campus.id]
+    }
 
     to_update.reload
     assert_equal 5, to_update.number_of_weeks
+    assert_equal [campus.id], to_update.campus_ids
+    assert_equal new_start_date.to_date, to_update.start_date.to_date
   end
 
   def test_update_break_must_be_from_teaching_period

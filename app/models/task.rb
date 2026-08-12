@@ -450,7 +450,7 @@ class Task < ApplicationRecord
     current_time = now_time.to_f
     return 0 if current_time <= submission_time
 
-    teaching_breaks = unit&.teaching_period&.breaks || []
+    teaching_breaks = effective_teaching_breaks
     paused_seconds = break_overlap_seconds(submission_time, current_time, teaching_breaks)
 
     ([0, current_time - submission_time - paused_seconds].max / 1.day).floor
@@ -463,7 +463,7 @@ class Task < ApplicationRecord
     current_time = now_time.to_f
     return 0 if current_time <= discussion_time
 
-    teaching_breaks ||= unit&.teaching_period&.breaks || []
+    teaching_breaks ||= effective_teaching_breaks
     paused_seconds = break_overlap_seconds(discussion_time, current_time, teaching_breaks)
 
     ([0, current_time - discussion_time - paused_seconds].max / 1.day).floor
@@ -473,7 +473,7 @@ class Task < ApplicationRecord
     return nil if moved_to_discuss_at.blank?
 
     deadline = moved_to_discuss_at + timeout_days.days
-    teaching_breaks ||= unit&.teaching_period&.breaks || []
+    teaching_breaks ||= effective_teaching_breaks
 
     teaching_breaks.sort_by(&:start_date).each do |teaching_break|
       break_start = teaching_break.start_date
@@ -491,6 +491,10 @@ class Task < ApplicationRecord
     return 0 if submission_date.blank?
 
     [0, (now_time.to_date - submission_date.to_date).to_i].max
+  end
+
+  def effective_teaching_breaks
+    unit&.teaching_period&.breaks_for(project&.campus) || []
   end
 
   def complete?
