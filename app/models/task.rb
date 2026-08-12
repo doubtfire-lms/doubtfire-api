@@ -569,6 +569,12 @@ class Task < ApplicationRecord
     !group_submission.nil? || !task_definition.group_set.nil?
   end
 
+  def related_submission_histories
+    return submission_histories unless group_submission
+
+    SubmissionHistory.where(task_id: group_submission.tasks.select(:id))
+  end
+
   def active_overflow_task_claim
     claim = overflow_task_claim
     return nil unless claim
