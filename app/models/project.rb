@@ -295,7 +295,7 @@ class Project < ApplicationRecord
       .joins("LEFT JOIN task_comments ON task_comments.task_id = COALESCE(group_comment_tasks.id, tasks.id) AND (task_comments.attention_audience IS NULL OR task_comments.attention_audience = #{attention_audience}) AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment')")
       .joins("LEFT JOIN (#{similarity_stats}) task_similarity_stats ON task_similarity_stats.task_id = tasks.id")
       .select(
-        'SUM(case when (crc.last_read_comment_id IS NULL OR task_comments.id > crc.last_read_comment_id) AND NOT task_comments.id is null then COALESCE(task_similarity_stats.similarity_count, 1) else 0 end) as number_unread', 'project_id', 'tasks.id as id',
+        "SUM(case when task_comments.user_id <> #{user.id.to_i} AND (crc.last_read_comment_id IS NULL OR task_comments.id > crc.last_read_comment_id) AND NOT task_comments.id is null then COALESCE(task_similarity_stats.similarity_count, 1) else 0 end) as number_unread", 'project_id', 'tasks.id as id',
         'task_definition_id', 'task_statuses.id as status_id',
         'completion_date', 'times_assessed', 'submission_date', 'tasks.grade as grade', 'quality_pts', 'include_in_portfolio', 'grade',
         'COALESCE(MAX(task_similarity_stats.flagged_count), 0) AS similar_to_count'

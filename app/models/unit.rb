@@ -2560,15 +2560,11 @@ class Unit < ApplicationRecord
               joins(:task_status).
               joins("LEFT OUTER JOIN (#{tutorial_enrolment_subquery}) as sq ON sq.project_id = projects.id AND (sq.tutorial_stream_id = task_definitions.tutorial_stream_id OR sq.tutorial_stream_id IS NULL)").
               joins("LEFT JOIN unit_roles task_tutor_roles ON task_tutor_roles.id = COALESCE(sq.unit_role_id, #{main_convenor_id.to_i})").
-              joins(
-                'LEFT JOIN tasks group_comment_tasks ON tasks.group_submission_id IS NOT NULL ' \
-                'AND group_comment_tasks.group_submission_id = tasks.group_submission_id'
-              ).
-              joins("LEFT JOIN comment_read_cursors crc ON crc.task_id = COALESCE(group_comment_tasks.id, tasks.id) AND crc.user_id = #{user.id.to_i}").
-              joins('LEFT JOIN comment_read_cursors tutor_crc ON tutor_crc.task_id = COALESCE(group_comment_tasks.id, tasks.id) ' \
+              joins("LEFT JOIN comment_read_cursors crc ON crc.task_id = tasks.id AND crc.user_id = #{user.id.to_i}").
+              joins('LEFT JOIN comment_read_cursors tutor_crc ON tutor_crc.task_id = tasks.id ' \
                     'AND tutor_crc.user_id = task_tutor_roles.user_id').
               joins(
-                'LEFT JOIN task_comments ON task_comments.task_id = COALESCE(group_comment_tasks.id, tasks.id) ' \
+                'LEFT JOIN task_comments ON task_comments.task_id = tasks.id ' \
                 "AND (task_comments.attention_audience IS NULL OR task_comments.attention_audience = #{staff_attention}) " \
                 "AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment') " \
                 "AND (task_comments.content_type IS NULL OR (task_comments.content_type <> 'plan' " \

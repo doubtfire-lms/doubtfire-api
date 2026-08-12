@@ -113,6 +113,36 @@ class CommentReadCursorTest < ActiveSupport::TestCase
     assert_equal 1, unread_count(projects.second, task_definition)
   end
 
+  def test_group_student_comments_alert_other_students_and_only_the_source_staff_inbox_task
+    unit = FactoryBot.create(
+      :unit,
+      group_sets: 1,
+      groups: [{ gs: 0, students: 3 }],
+      group_tasks: [{ idx: 0, gs: 0 }]
+    )
+    task_definition = unit.task_definitions.first
+    projects = unit.groups.first.projects.to_a
+    tasks = projects.map { |project| project.task_for_task_definition(task_definition) }
+    tutor = projects.first.tutor_for(task_definition)
+
+    first_comment = tasks.first.add_text_comment(projects.first.student, 'First student question')
+
+    assert_nil first_comment.attention_audience
+    assert_not first_comment.new_for?(projects.first.student)
+    assert first_comment.new_for?(projects.second.student)
+    assert first_comment.new_for?(projects.third.student)
+    assert first_comment.new_for?(tutor)
+    assert_equal 0, unread_count(projects.first, task_definition)
+    assert_equal 1, unread_count(projects.second, task_definition)
+    assert_equal 1, unread_count(projects.third, task_definition)
+    assert_equal [tasks.first.id], group_task_ids_in_staff_inbox(unit, tutor, task_definition)
+
+    tasks.second.add_text_comment(projects.second.student, 'Second student question')
+
+    assert_equal [tasks.first.id, tasks.second.id].sort,
+                 group_task_ids_in_staff_inbox(unit, tutor, task_definition).sort
+  end
+
   def test_destroying_the_cursor_comment_rewinds_each_users_cursor
     project = FactoryBot.create(:project)
     task = project.task_for_task_definition(project.unit.task_definitions.first)
@@ -183,5 +213,11 @@ class CommentReadCursorTest < ActiveSupport::TestCase
   def unread_count(project, task_definition)
     project.task_details_for_shallow_serializer(project.student)
            .find { |task| task[:task_definition_id] == task_definition.id }[:num_new_comments].to_i
+  end
+
+  def group_task_ids_in_staff_inbox(unit, tutor, task_definition)
+    unit.tasks_for_task_inbox(tutor)
+        .select { |task| task.task_definition_id == task_definition.id }
+        .map(&:task_id)
   end
 end

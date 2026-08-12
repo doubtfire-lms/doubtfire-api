@@ -230,6 +230,7 @@ class TaskComment < ApplicationRecord
 
   def set_default_attention_audience
     return if attention_audience.present? || user.nil? || task.nil?
+    return if task.group_submission.present? && task.student_participant?(user)
 
     self.attention_audience = user == task.project.student ? :staff : :student
   end
