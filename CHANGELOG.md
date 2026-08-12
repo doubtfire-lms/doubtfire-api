@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-45](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-44...v11.0.0-45) (2026-08-12)
+
+
+### Bug Fixes
+
+* address uri mitigation and cors regressions ([919b6ab](https://github.com/b0ink/doubtfire-deploy/commit/919b6abf2e65ab20dc4d2af4cff6f3b6dfc849d8))
+* ensure correct context is found for learning chips import ([76f3ff1](https://github.com/b0ink/doubtfire-deploy/commit/76f3ff1370a93a8092a5c07bcc4af11043c37308))
+* mitigate URI credential leakage in relative URI merges ([60082f0](https://github.com/b0ink/doubtfire-deploy/commit/60082f00fa86686efcc8e506f28defd8c02b3d7f))
+* tighten API CORS policy to trusted origins ([cdb7eb6](https://github.com/b0ink/doubtfire-deploy/commit/cdb7eb6ec0c8ab73c5e9b79b850382e2327d0726))
+* validate user input ([#668](https://github.com/b0ink/doubtfire-deploy/issues/668)) ([a9649c7](https://github.com/b0ink/doubtfire-deploy/commit/a9649c7a61d1fac5ba8eef63d6102165fb97e15e))
+
+## [11.0.0-44](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-43...v11.0.0-44) (2026-08-08)
+
+
+### Features
+
+* bulk upload staff notes ([6c3b3e0](https://github.com/b0ink/doubtfire-deploy/commit/6c3b3e0b1b67ad3226718e9e7925b849802e0ae3))
+* bulk upload staff notes ([#665](https://github.com/b0ink/doubtfire-deploy/issues/665)) ([3e0f32d](https://github.com/b0ink/doubtfire-deploy/commit/3e0f32d724f3664deddbff8fef55ca10c8fed3b1))
+
 ## [11.0.0-43](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-42...v11.0.0-43) (2026-08-03)
 
 
