@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class MoodleGroupMapping < ApplicationRecord
-  TARGET_TYPES = %w[group campus tutorial].freeze
+  TARGET_TYPES = %w[group campus tutorial ignore].freeze
 
   belongs_to :moodle_integration
   belongs_to :group_set, optional: true
@@ -46,11 +46,9 @@ class MoodleGroupMapping < ApplicationRecord
       if tutorial_stream.present? && tutorial_stream.unit != unit
         errors.add(:tutorial_stream, 'must belong to this unit')
       end
-      unless create_if_missing?
-        errors.add(:tutorial, 'must be selected') if tutorial.blank?
-        if tutorial.present? && (tutorial.tutorial_stream != tutorial_stream || tutorial.unit != unit)
-          errors.add(:tutorial, 'must belong to the selected tutorial stream')
-        end
+      errors.add(:tutorial, 'must be selected') if tutorial.blank?
+      if tutorial.present? && (tutorial.tutorial_stream != tutorial_stream || tutorial.unit != unit)
+        errors.add(:tutorial, 'must belong to the selected tutorial stream')
       end
     end
   end

@@ -157,9 +157,7 @@ class ImportMoodleStudentsJob
           errors << "Select an existing group in #{mapping.group_set.name}"
         end
       when 'tutorial'
-        if !mapping.create_if_missing? && mapping.tutorial.blank?
-          errors << "Select an existing tutorial in #{mapping.tutorial_stream.name}"
-        end
+        errors << "Select an existing tutorial in #{mapping.tutorial_stream.name}" if mapping.tutorial.blank?
       end
     end
     errors
@@ -176,19 +174,6 @@ class ImportMoodleStudentsJob
 
       mappings.select { |mapping| mapping.target_type == 'tutorial' }.each do |mapping|
         tutorial = mapping.tutorial
-        if mapping.create_if_missing?
-          tutorial = mapping.tutorial_stream.tutorials.where(
-            unit: project.unit
-          ).where('LOWER(abbreviation) = ?', mapping.moodle_group_name.downcase).first
-          tutorial ||= Tutorial.create!(
-            unit: project.unit,
-            tutorial_stream: mapping.tutorial_stream,
-            abbreviation: mapping.moodle_group_name,
-            meeting_day: 'Moodle',
-            meeting_time: '',
-            meeting_location: mapping.moodle_group_name
-          )
-        end
         if project.tutorial_for_stream(mapping.tutorial_stream)&.id != tutorial.id
           project.enrol_in(tutorial)
           changed = true

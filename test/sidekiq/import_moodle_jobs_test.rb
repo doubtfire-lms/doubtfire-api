@@ -151,6 +151,32 @@ class ImportMoodleJobsTest < ActiveSupport::TestCase
     assert_not job.send(:apply_mappings, project.reload, [mapping])
   end
 
+  test 'ignored mappings do nothing and tutorial mappings require an existing tutorial' do
+    unit = FactoryBot.create(:unit, with_students: false, moodle_enabled: true)
+    project = FactoryBot.create(:project, unit: unit)
+    integration = unit.create_moodle_integration!(course_id: 42, api_key: 'secret-token')
+    ignored = integration.moodle_group_mappings.create!(
+      moodle_group_id: 33,
+      moodle_group_name: 'Teaching staff',
+      target_type: 'ignore'
+    )
+    stream = FactoryBot.create(:tutorial_stream, unit: unit)
+    missing_tutorial = integration.moodle_group_mappings.build(
+      moodle_group_id: 34,
+      moodle_group_name: 'Tutorial 1',
+      target_type: 'tutorial',
+      tutorial_stream: stream,
+      create_if_missing: true
+    )
+
+    assert_not ImportMoodleStudentsJob.new.send(:apply_mappings, project, [ignored])
+    assert_not missing_tutorial.valid?
+    assert_includes missing_tutorial.errors[:tutorial], 'must be selected'
+    assert_no_difference -> { stream.tutorials.count } do
+      assert_raises(ActiveRecord::RecordInvalid) { missing_tutorial.save! }
+    end
+  end
+
   test 'extension preview reports calculated days without updating the project' do
     unit = FactoryBot.create(:unit, with_students: false, moodle_enabled: true)
     user = FactoryBot.create(:user, :student, username: 'extension.student')

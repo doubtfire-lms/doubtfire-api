@@ -102,6 +102,38 @@ class MoodleIntegrationApi < Grape::API
     present job, with: Entities::SidekiqJobEntity
   end
 
+  desc 'Pre-fill Moodle group mappings using institution settings'
+  params do
+    requires :groups, type: Array do
+      requires :id, type: Integer
+      requires :name, type: String
+      optional :idnumber, type: String
+    end
+  end
+  post '/units/:unit_id/moodle/prefill_group_mappings' do
+    unit = Unit.find(params[:unit_id])
+    error!({ error: 'Moodle integration is not enabled for this unit' }, 404) unless unit.moodle_enabled?
+    unless authorise?(current_user, unit, :update)
+      error!({ error: 'Not authorised to manage Moodle for this unit' }, 403)
+    end
+    error!({ error: 'Configure Moodle for this unit first' }, 422) if unit.moodle_integration.blank?
+
+    settings = Doubtfire::Application.config.institution_settings
+    groups = params[:groups].map { |group| group.to_h.symbolize_keys }
+    mappings = if settings.respond_to?(:prefill_moodle_group_mappings)
+                 settings.prefill_moodle_group_mappings(unit, groups)
+               else
+                 groups.map do |group|
+                   {
+                     moodle_group_id: group[:id],
+                     moodle_group_name: group[:name],
+                     target_type: 'ignore'
+                   }
+                 end
+               end
+    { group_mappings: mappings }
+  end
+
   desc 'Import active Moodle students into a unit'
   params do
     requires :preview_only, type: Boolean, default: false

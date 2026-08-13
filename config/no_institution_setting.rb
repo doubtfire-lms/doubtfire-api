@@ -1,5 +1,15 @@
 class InstitutionSettings
 
+  def prefill_moodle_group_mappings(_unit, groups)
+    groups.map do |group|
+      {
+        moodle_group_id: group[:id],
+        moodle_group_name: group[:name],
+        target_type: 'ignore'
+      }
+    end
+  end
+
   # Used when importing students from a CSV into a unit. This is called to check if
   # the headers in the CSV match an institution system. If this returns true, the import
   # will be processed using the lambdas you specify in the import_settings.

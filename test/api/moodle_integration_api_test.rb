@@ -145,4 +145,39 @@ class MoodleIntegrationApiTest < ActiveSupport::TestCase
 
     assert_equal [[:students, unit.id, true], [:extensions, unit.id, false]], queued
   end
+
+  test 'group mapping pre-fill delegates to institution settings without persisting records' do
+    unit = FactoryBot.create(:unit, with_students: false, moodle_enabled: true)
+    unit.create_moodle_integration!(course_id: 42, api_key: 'secret-token')
+    add_auth_header_for(user: unit.main_convenor_user)
+    settings = Minitest::Mock.new
+    groups = [{ id: 31, name: 'Tutorial A', idnumber: 'T-A' }]
+    settings.expect(
+      :prefill_moodle_group_mappings,
+      [{ moodle_group_id: 31, moodle_group_name: 'Tutorial A', target_type: 'ignore' }],
+      [unit, groups]
+    )
+    mapping_count = unit.moodle_integration.moodle_group_mappings.count
+    tutorial_count = unit.tutorials.count
+
+    Doubtfire::Application.config.stub(:institution_settings, settings) do
+      post "/api/units/#{unit.id}/moodle/prefill_group_mappings", groups: groups
+    end
+
+    assert_equal 201, last_response.status, last_response.inspect
+    assert_equal 'ignore', last_response_body['group_mappings'].first['target_type']
+    assert_equal mapping_count, unit.moodle_integration.moodle_group_mappings.count
+    assert_equal tutorial_count, unit.tutorials.count
+    settings.verify
+  end
+
+  test 'student cannot pre-fill Moodle group mappings' do
+    unit = FactoryBot.create(:unit, with_students: false, moodle_enabled: true)
+    unit.create_moodle_integration!(course_id: 42, api_key: 'secret-token')
+    add_auth_header_for(user: FactoryBot.create(:user, :student))
+
+    post "/api/units/#{unit.id}/moodle/prefill_group_mappings", groups: [{ id: 31, name: 'Tutorial A' }]
+
+    assert_equal 403, last_response.status
+  end
 end
