@@ -11,7 +11,6 @@ class MoodleGroupMapping < ApplicationRecord
   belongs_to :tutorial, optional: true
 
   validates :moodle_group_id, numericality: { only_integer: true, greater_than: 0 }
-  validates :moodle_group_id, uniqueness: { scope: :moodle_integration_id }
   validates :moodle_group_name, presence: true
   validates :target_type, inclusion: { in: TARGET_TYPES }
   validate :valid_target

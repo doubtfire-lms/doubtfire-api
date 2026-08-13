@@ -12,6 +12,8 @@ class AddMoodleIntegrationToUnits < ActiveRecord::Migration[8.0]
       t.boolean :auto_sync_students, null: false, default: false
       t.boolean :auto_sync_extensions, null: false, default: false
       t.boolean :group_mapping_enabled, null: false, default: false
+      t.boolean :validated, null: false, default: false
+      t.datetime :validated_at
 
       t.timestamps
     end
@@ -33,7 +35,6 @@ class AddMoodleIntegrationToUnits < ActiveRecord::Migration[8.0]
 
     add_index :moodle_group_mappings,
               [:moodle_integration_id, :moodle_group_id],
-              unique: true,
               name: 'index_moodle_group_mappings_on_integration_and_group'
   end
 end

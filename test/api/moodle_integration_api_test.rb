@@ -43,6 +43,7 @@ class MoodleIntegrationApiTest < ActiveSupport::TestCase
     assert integration.auto_sync_students
     assert integration.auto_sync_extensions
     assert integration.group_mapping_enabled
+    assert_not integration.validated
     assert_equal 'Hawthorn', integration.moodle_group_mappings.first.moodle_group_name
     assert_equal integration.id, last_response_body['id']
     assert_equal true, last_response_body['api_key_configured']
@@ -56,6 +57,7 @@ class MoodleIntegrationApiTest < ActiveSupport::TestCase
     assert_equal true, last_response_body['auto_sync_students']
     assert_equal true, last_response_body['auto_sync_extensions']
     assert_equal true, last_response_body['group_mapping_enabled']
+    assert_equal false, last_response_body['validated']
     assert_equal 31, last_response_body['group_mappings'].first['moodle_group_id']
     assert_nil last_response_body['api_key']
   end
@@ -114,7 +116,9 @@ class MoodleIntegrationApiTest < ActiveSupport::TestCase
       api_key: 'secret-token',
       assignment_id: 7,
       assignment_name: 'Portfolio',
-      fetch_extensions: true
+      fetch_extensions: true,
+      validated: true,
+      validated_at: Time.current
     )
     add_auth_header_for(user: unit.main_convenor_user)
     queued = []
@@ -144,6 +148,62 @@ class MoodleIntegrationApiTest < ActiveSupport::TestCase
     end
 
     assert_equal [[:students, unit.id, true], [:extensions, unit.id, false]], queued
+  end
+
+  test 'Moodle integration validation enqueues a validation job' do
+    unit = FactoryBot.create(:unit, with_students: false, moodle_enabled: true)
+    unit.create_moodle_integration!(course_id: 42, api_key: 'secret-token')
+    add_auth_header_for(user: unit.main_convenor_user)
+    job = { 'jid' => 'moodle-validation-job', 'status' => 'queued', 'at' => 0, 'total' => 1 }
+
+    ValidateMoodleIntegrationJob.stub(:perform_async, 'moodle-validation-job') do
+      Sidekiq::Status.stub(:get_all, job) do
+        Sidekiq::Status.stub(:store_for_id, true) do
+          post "/api/units/#{unit.id}/moodle/validate"
+        end
+      end
+    end
+
+    assert_equal 201, last_response.status, last_response.inspect
+    assert_equal 'moodle-validation-job', last_response_body['id']
+  end
+
+  test 'student import requires a validated Moodle integration' do
+    unit = FactoryBot.create(:unit, with_students: false, moodle_enabled: true)
+    unit.create_moodle_integration!(course_id: 42, api_key: 'secret-token')
+    add_auth_header_for(user: unit.main_convenor_user)
+
+    post "/api/units/#{unit.id}/moodle/import_students", preview_only: true
+
+    assert_equal 422, last_response.status
+    assert_equal 'Validate the Moodle integration before importing students', last_response_body['error']
+  end
+
+  test 'extension import requires a validated Moodle integration' do
+    unit = FactoryBot.create(:unit, with_students: false, moodle_enabled: true)
+    unit.create_moodle_integration!(
+      course_id: 42,
+      api_key: 'secret-token',
+      fetch_extensions: true,
+      assignment_id: 7,
+      assignment_name: 'Portfolio'
+    )
+    add_auth_header_for(user: unit.main_convenor_user)
+
+    post "/api/units/#{unit.id}/moodle/import_extensions", preview_only: true
+
+    assert_equal 422, last_response.status
+    assert_equal 'Validate the Moodle integration before importing extensions', last_response_body['error']
+  end
+
+  test 'student cannot validate the Moodle integration' do
+    unit = FactoryBot.create(:unit, with_students: false, moodle_enabled: true)
+    unit.create_moodle_integration!(course_id: 42, api_key: 'secret-token')
+    add_auth_header_for(user: FactoryBot.create(:user, :student))
+
+    post "/api/units/#{unit.id}/moodle/validate"
+
+    assert_equal 403, last_response.status
   end
 
   test 'group mapping pre-fill delegates to institution settings without persisting records' do

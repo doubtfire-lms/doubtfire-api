@@ -10,6 +10,8 @@ module Entities
     expose :auto_sync_students
     expose :auto_sync_extensions
     expose :group_mapping_enabled
+    expose :validated
+    expose :validated_at
     expose :moodle_group_mappings,
            as: :group_mappings,
            using: Entities::MoodleGroupMappingEntity

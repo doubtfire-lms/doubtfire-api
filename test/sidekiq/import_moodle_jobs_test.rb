@@ -6,8 +6,13 @@ require 'minitest/mock'
 class ImportMoodleJobsTest < ActiveSupport::TestCase
   test 'student preview reports Moodle data without syncing enrolments' do
     unit = FactoryBot.create(:unit, with_students: false, moodle_enabled: true)
-    integration = unit.create_moodle_integration!(course_id: 42, api_key: 'secret-token')
+    integration = unit.create_moodle_integration!(
+      course_id: 42,
+      api_key: 'secret-token',
+      group_mapping_enabled: true
+    )
     moodle = Minitest::Mock.new
+    moodle.expect(:course_groups, [])
     moodle.expect(
       :students,
       [{
@@ -48,6 +53,7 @@ class ImportMoodleJobsTest < ActiveSupport::TestCase
   test 'student preview reports configured Moodle group mappings without changing students' do
     unit = FactoryBot.create(:unit, with_students: false, moodle_enabled: true)
     campus = FactoryBot.create(:campus)
+    second_campus = FactoryBot.create(:campus)
     integration = unit.create_moodle_integration!(
       course_id: 42,
       api_key: 'secret-token',
@@ -59,7 +65,14 @@ class ImportMoodleJobsTest < ActiveSupport::TestCase
       target_type: 'campus',
       campus: campus
     )
+    integration.moodle_group_mappings.create!(
+      moodle_group_id: 31,
+      moodle_group_name: 'City students',
+      target_type: 'campus',
+      campus: second_campus
+    )
     moodle = Minitest::Mock.new
+    moodle.expect(:course_groups, [{ 'id' => 31, 'name' => 'City students' }])
     moodle.expect(
       :students,
       [{
@@ -89,7 +102,7 @@ class ImportMoodleJobsTest < ActiveSupport::TestCase
     end
 
     result = JSON.parse(stored[:result])
-    assert_equal campus.name, result['success'].first.dig('row', 'mapped_campus')
+    assert_equal [campus.name, second_campus.name].join(', '), result['success'].first.dig('row', 'mapped_campus')
     assert_equal 'City students', result['success'].first.dig('row', 'moodle_groups')
     moodle.verify
   end
@@ -186,14 +199,21 @@ class ImportMoodleJobsTest < ActiveSupport::TestCase
       api_key: 'secret-token',
       assignment_id: 7,
       assignment_name: 'Portfolio',
-      fetch_extensions: true
+      fetch_extensions: true,
+      group_mapping_enabled: true
     )
     due_date = Time.zone.parse('2026-08-01 09:00:00').to_i
     moodle = Minitest::Mock.new
     moodle.expect(
       :assignments,
-      { 'courses' => [{ 'id' => 42, 'assignments' => [{ 'id' => 7, 'duedate' => due_date }] }] }
+      {
+        'courses' => [{
+          'id' => 42,
+          'assignments' => [{ 'id' => 7, 'name' => 'Portfolio', 'duedate' => due_date }]
+        }]
+      }
     )
+    moodle.expect(:course_groups, [])
     moodle.expect(
       :students,
       [

@@ -64,6 +64,8 @@ class MoodleIntegrationApi < Grape::API
       integration.auto_sync_students = params[:auto_sync_students]
       integration.auto_sync_extensions = params[:fetch_extensions] && params[:auto_sync_extensions]
       integration.group_mapping_enabled = params[:group_mapping_enabled]
+      integration.validated = false
+      integration.validated_at = nil
       integration.save!
 
       if integration.group_mapping_enabled?
@@ -86,6 +88,19 @@ class MoodleIntegrationApi < Grape::API
 
     integration.moodle_group_mappings.reload
     present integration, with: Entities::MoodleIntegrationEntity
+  end
+
+  desc 'Validate Moodle settings against the current Moodle course'
+  post '/units/:unit_id/moodle/validate' do
+    unit = Unit.find(params[:unit_id])
+    error!({ error: 'Moodle integration is not enabled for this unit' }, 404) unless unit.moodle_enabled?
+    unless authorise?(current_user, unit, :update)
+      error!({ error: 'Not authorised to manage Moodle for this unit' }, 403)
+    end
+    error!({ error: 'Configure Moodle for this unit first' }, 422) if unit.moodle_integration.blank?
+
+    job_id = ValidateMoodleIntegrationJob.perform_async(unit.id)
+    present setup_job(job_id), with: Entities::SidekiqJobEntity
   end
 
   desc 'Test Moodle API permissions for a unit'
@@ -144,7 +159,11 @@ class MoodleIntegrationApi < Grape::API
     unless authorise?(current_user, unit, :upload_csv)
       error!({ error: 'Not authorised to manage Moodle for this unit' }, 403)
     end
-    error!({ error: 'Configure Moodle for this unit first' }, 422) if unit.moodle_integration.blank?
+    integration = unit.moodle_integration
+    error!({ error: 'Configure Moodle for this unit first' }, 422) if integration.blank?
+    unless integration.validated?
+      error!({ error: 'Validate the Moodle integration before importing students' }, 422)
+    end
 
     job_id = ImportMoodleStudentsJob.perform_async(unit.id, params[:preview_only])
     present setup_job(job_id), with: Entities::SidekiqJobEntity
@@ -163,6 +182,9 @@ class MoodleIntegrationApi < Grape::API
 
     integration = unit.moodle_integration
     error!({ error: 'Configure Moodle for this unit first' }, 422) if integration.blank?
+    unless integration.validated?
+      error!({ error: 'Validate the Moodle integration before importing extensions' }, 422)
+    end
     unless integration.fetch_extensions && integration.assignment_id.present?
       error!({ error: 'Enable extension imports and select a Moodle assignment first' }, 422)
     end

@@ -58,6 +58,20 @@ class SyncMoodleIntegrationsJobTest < ActiveSupport::TestCase
     end
   end
 
+  test 'does not queue syncs until the Moodle integration is validated' do
+    travel_to Time.zone.local(2026, 8, 4, 3, 0, 0) do
+      unit = create_unit(start_date: 1.week.ago, end_date: 1.week.from_now)
+      create_integration(
+        unit: unit,
+        auto_sync_students: true,
+        auto_sync_extensions: true,
+        validated: false
+      )
+
+      assert_queued_imports students: [], extensions: []
+    end
+  end
+
   private
 
   def create_unit(start_date:, end_date:, active: true, moodle_enabled: true)
@@ -72,14 +86,15 @@ class SyncMoodleIntegrationsJobTest < ActiveSupport::TestCase
   end
 
   def create_integration(unit:, auto_sync_students: false, auto_sync_extensions: false,
-                         fetch_extensions: true, assignment_id: 7)
+                         fetch_extensions: true, assignment_id: 7, validated: true)
     unit.create_moodle_integration!(
       course_id: unit.id,
       api_key: 'secret-token',
       assignment_id: assignment_id,
       fetch_extensions: fetch_extensions,
       auto_sync_students: auto_sync_students,
-      auto_sync_extensions: auto_sync_extensions
+      auto_sync_extensions: auto_sync_extensions,
+      validated: validated
     )
   end
 

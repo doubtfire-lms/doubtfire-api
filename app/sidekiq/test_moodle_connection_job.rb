@@ -21,6 +21,21 @@ class TestMoodleConnectionJob
     result = MoodleApi.new(integration).test_connection(
       progress_callback: ->(completed, message) { at(completed, message) }
     )
+    groups_loaded = result[:permissions].any? do |permission|
+      permission[:function] == 'core_group_get_course_groups' && permission[:success]
+    end
+    assignments_loaded = result[:permissions].any? do |permission|
+      permission[:function] == 'mod_assign_get_assignments' && permission[:success]
+    end
+    if groups_loaded && (!integration.fetch_extensions? || assignments_loaded)
+      MoodleIntegrationValidator.new(integration).validate(
+        groups: result[:groups],
+        assignments: result[:assignments],
+        record_success: false
+      )
+    else
+      integration.update!(validated: false, validated_at: nil)
+    end
 
     store(result: result.to_json)
   end

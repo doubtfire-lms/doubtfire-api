@@ -15,11 +15,11 @@ class SyncMoodleIntegrationsJob
       unit = integration.unit
       next unless unit.moodle_enabled? && unit.active?
 
-      if integration.auto_sync_students? && today.between?(unit.start_date.to_date, unit.end_date.to_date)
+      if integration.auto_sync_students? && integration.validated? && today.between?(unit.start_date.to_date, unit.end_date.to_date)
         ImportMoodleStudentsJob.perform_async(unit.id, false)
       end
 
-      next unless integration.auto_sync_extensions?
+      next unless integration.auto_sync_extensions? && integration.validated?
       next unless integration.fetch_extensions? && integration.assignment_id.present?
       next unless today.between?(unit.start_date.to_date, unit.end_date.to_date + 14.days)
 

@@ -384,6 +384,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_04_005203) do
     t.boolean "auto_sync_students", default: false, null: false
     t.boolean "auto_sync_extensions", default: false, null: false
     t.boolean "group_mapping_enabled", default: false, null: false
+    t.boolean "validated", default: false, null: false
+    t.datetime "validated_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["unit_id"], name: "index_moodle_integrations_on_unit_id", unique: true

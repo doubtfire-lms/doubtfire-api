@@ -20,16 +20,27 @@ class ImportMoodleStudentsJob
     raise MoodleApi::Error, 'Configure Moodle for this unit first' if integration.blank?
 
     moodle = MoodleApi.new(integration)
+    at(0, 'Validating Moodle integration')
+    assignments = if integration.fetch_extensions?
+                    MoodleIntegrationValidator.assignments_for_course(integration, moodle.assignments)
+                  else
+                    []
+                  end
+    MoodleIntegrationValidator.new(integration).validate!(
+      groups: moodle.course_groups,
+      assignments: assignments
+    )
+    at(0, 'Fetching enrolled Moodle students')
     students = moodle.students.select do |student|
       Array(student['roles']).any? { |role| role['shortname'] == 'student' }
     end
     mappings = integration.group_mapping_enabled? ? integration.moodle_group_mappings.includes(:group_set, :group, :campus, :tutorial_stream, :tutorial) : []
-    mappings_by_group_id = mappings.index_by(&:moodle_group_id)
+    mappings_by_group_id = mappings.group_by(&:moodle_group_id)
     total(students.length)
 
     rows = students.map do |student|
-      student_mappings = Array(student['groups']).filter_map do |group|
-        mappings_by_group_id[group['id'].to_i]
+      student_mappings = Array(student['groups']).flat_map do |group|
+        mappings_by_group_id.fetch(group['id'].to_i, [])
       end
       display_row = {
         unit_code: unit.code,

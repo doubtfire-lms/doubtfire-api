@@ -24,8 +24,13 @@ class ImportMoodleExtensionsJob
 
     moodle = MoodleApi.new(integration)
     assignment_response = moodle.assignments
-    course = Array(assignment_response['courses']).find { |item| item['id'].to_i == integration.course_id }
-    assignment = Array(course&.fetch('assignments', nil)).find do |item|
+    assignments = MoodleIntegrationValidator.assignments_for_course(integration, assignment_response)
+    at(0, 'Validating Moodle integration')
+    MoodleIntegrationValidator.new(integration).validate!(
+      groups: moodle.course_groups,
+      assignments: assignments
+    )
+    assignment = assignments.find do |item|
       item['id'].to_i == integration.assignment_id
     end
     raise MoodleApi::Error, 'The selected assignment was not found in this course' if assignment.blank?
