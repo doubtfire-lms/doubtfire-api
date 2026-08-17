@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-50](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-49...v11.0.0-50) (2026-08-17)
+
+
+### Bug Fixes
+
+* remove default json value ([cb959bf](https://github.com/b0ink/doubtfire-deploy/commit/cb959bfea92c98f55e57a7476544da3316f33d71))
+
 ## [11.0.0-49](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-48...v11.0.0-49) (2026-08-17)
 
 
