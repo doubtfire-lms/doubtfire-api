@@ -1,6 +1,5 @@
 class EngagementTracker
   DEBOUNCE = 15.minutes
-  TUTORIAL_DURATION = 2.hours
 
   def self.record_attendance(user:, project:, occurred_at: Time.zone.now)
     return unless during_enrolled_tutorial?(project, occurred_at)
@@ -90,7 +89,7 @@ class EngagementTracker
       next false unless tutorial.meeting_day == local_time.strftime('%A')
 
       tutorial_start = timezone.parse("#{local_time.to_date} #{tutorial.meeting_time}")
-      local_time >= tutorial_start && local_time < tutorial_start + TUTORIAL_DURATION
+      local_time >= tutorial_start && local_time < tutorial_start + tutorial.duration_minutes.minutes
     end
   end
 
