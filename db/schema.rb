@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_08_12_020302) do
+ActiveRecord::Schema[8.0].define(version: 2026_08_17_055309) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -866,6 +866,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_12_020302) do
     t.integer "capacity", default: -1
     t.bigint "campus_id"
     t.bigint "tutorial_stream_id"
+    t.integer "duration_minutes", default: 120, null: false
     t.index ["abbreviation", "unit_id"], name: "index_tutorials_on_abbreviation_and_unit_id", unique: true
     t.index ["campus_id"], name: "index_tutorials_on_campus_id"
     t.index ["tutorial_stream_id"], name: "index_tutorials_on_tutorial_stream_id"
