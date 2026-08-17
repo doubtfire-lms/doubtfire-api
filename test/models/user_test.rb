@@ -40,8 +40,13 @@ class UserTest < ActiveSupport::TestCase
     refute user.valid?
   end
 
-  test 'profile names allow hyphens, parentheses, and apostrophes' do
-    user = FactoryBot.build(:user, first_name: "Mary-Jane O'Neil", last_name: 'O’Hara (Jones)', nickname: 'D’Angelo (Student)')
+  test 'profile names allow commas, periods, slashes, hyphens, parentheses, and apostrophes' do
+    user = FactoryBot.build(
+      :user,
+      first_name: "Dr./Prof. Mary-Jane O'Neil",
+      last_name: 'O’Hara/Jones, Jr.',
+      nickname: 'D’Angelo/Student (Ph.D.)'
+    )
 
     assert user.valid?
   end
