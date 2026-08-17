@@ -51,6 +51,14 @@ class UserTest < ActiveSupport::TestCase
     assert user.valid?
   end
 
+  test 'profile name fields allow fullwidth commas' do
+    %i[first_name last_name nickname].each do |attribute|
+      user = FactoryBot.build(:user, attribute => '王，名字')
+
+      assert user.valid?, attribute
+    end
+  end
+
   test 'profile name fields reject hash characters' do
     {
       first_name: 'First#Name',
