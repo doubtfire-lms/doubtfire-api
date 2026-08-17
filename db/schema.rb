@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_08_04_005203) do
+ActiveRecord::Schema[8.0].define(version: 2026_08_17_013339) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -370,7 +370,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_04_005203) do
     t.index ["campus_id"], name: "index_moodle_group_mappings_on_campus_id"
     t.index ["group_id"], name: "index_moodle_group_mappings_on_group_id"
     t.index ["group_set_id"], name: "index_moodle_group_mappings_on_group_set_id"
-    t.index ["moodle_integration_id", "moodle_group_id"], name: "index_moodle_group_mappings_on_integration_and_group", unique: true
+    t.index ["moodle_integration_id", "moodle_group_id"], name: "index_moodle_group_mappings_on_integration_and_group"
     t.index ["moodle_integration_id"], name: "index_moodle_group_mappings_on_moodle_integration_id"
     t.index ["tutorial_id"], name: "index_moodle_group_mappings_on_tutorial_id"
     t.index ["tutorial_stream_id"], name: "index_moodle_group_mappings_on_tutorial_stream_id"
