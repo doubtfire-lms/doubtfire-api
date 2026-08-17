@@ -280,7 +280,7 @@ class Project < ApplicationRecord
   end
 
   def task_details_for_shallow_serializer(user)
-    teaching_breaks = unit.teaching_period&.breaks.to_a
+    teaching_breaks = unit.teaching_period&.breaks_for(campus) || []
 
     tasks
       .joins(:task_status)

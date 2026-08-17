@@ -12,6 +12,7 @@ class BreaksApi < Grape::API
   params do
     requires :start_date, type: Date, desc: 'The start date of the break'
     requires :number_of_weeks, type: Integer, desc: 'Break duration'
+    optional :campus_ids, type: Array[Integer], desc: 'Campuses this break applies to; empty applies to all campuses'
   end
   post '/teaching_periods/:teaching_period_id/breaks' do
     unless authorise? current_user, User, :handle_teaching_period
@@ -24,7 +25,7 @@ class BreaksApi < Grape::API
     start_date = params[:start_date]
     number_of_weeks = params[:number_of_weeks]
 
-    result = teaching_period.add_break(start_date, number_of_weeks)
+    result = teaching_period.add_break(start_date, number_of_weeks, params[:campus_ids])
     present result, with: Entities::BreakEntity
   end
 
@@ -32,6 +33,7 @@ class BreaksApi < Grape::API
   params do
     optional :start_date, type: Date, desc: 'The start date of the break'
     optional :number_of_weeks, type: Integer, desc: 'Break duration'
+    optional :campus_ids, type: Array[Integer], desc: 'Campuses this break applies to; empty applies to all campuses'
   end
   put '/teaching_periods/:teaching_period_id/breaks/:id' do
     unless authorise? current_user, User, :handle_teaching_period
@@ -45,7 +47,7 @@ class BreaksApi < Grape::API
     start_date = params[:start_date]
     number_of_weeks = params[:number_of_weeks]
 
-    result = teaching_period.update_break(id, start_date, number_of_weeks)
+    result = teaching_period.update_break(id, start_date, number_of_weeks, params[:campus_ids])
     present result, with: Entities::BreakEntity
   end
 

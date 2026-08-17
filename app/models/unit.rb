@@ -280,9 +280,8 @@ class Unit < ApplicationRecord
   def notify_discuss_timeouts!
     return 0 unless discuss_timeout_enabled
 
-    teaching_breaks = teaching_period&.breaks.to_a
     discuss_timeout_tasks.find_each.sum do |task|
-      notify_discuss_timeout_for(task, teaching_breaks: teaching_breaks)
+      notify_discuss_timeout_for(task)
     end
   end
 
