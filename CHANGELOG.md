@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-47](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-46...v11.0.0-47) (2026-08-17)
+
+
+### Bug Fixes
+
+* support full width commas ([ed719ab](https://github.com/b0ink/doubtfire-deploy/commit/ed719ab5b76a669544a4a55eeb91e432a21d7e7c))
+
 ## [11.0.0-46](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-45...v11.0.0-46) (2026-08-17)
 
 
