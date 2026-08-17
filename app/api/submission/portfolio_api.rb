@@ -45,22 +45,41 @@ module Submission
       optional :idx,   type: Integer, desc: 'The index of the file'
       optional :kind,  type: String, desc: 'The kind of file being removed: document, code, or image'
       optional :name,  type: String, desc: 'Name of file to remove'
+      optional :confirm_late, type: Boolean, default: false, desc: 'Confirm deletion after the effective portfolio deadline'
     end
     delete '/submission/project/:id/portfolio' do
       project = Project.find(params[:id])
+      deleting_whole_portfolio = params[:idx].nil? && params[:name].nil? && params[:kind].nil?
 
-      unless authorise? current_user, project, :make_submission
-        error!({ error: "Not authorised to alter portfolio for project '#{params[:id]}'" }, 401)
-      end
+      if deleting_whole_portfolio
+        unit_role = project.unit.unit_role_for(current_user)
+        can_delete = project.user_id == current_user.id || unit_role&.role_id == Role.convenor_id
+        unless can_delete
+          error!({ error: "Not authorised to delete portfolio for project '#{params[:id]}'" }, 403)
+        end
+        if project.compile_portfolio?
+          error!({ error: 'The portfolio is still compiling. Wait for compilation to finish before deleting it.' }, 409)
+        end
+        if project.portfolio_deadline_passed? && !params[:confirm_late]
+          error!({
+                   error: 'Deleting this portfolio requires confirmation because the effective portfolio deadline has passed.',
+                   portfolio_late_confirmation_required: true,
+                   effective_portfolio_deadline: project.effective_portfolio_deadline.iso8601,
+                   effective_portfolio_deadline_timezone: project.effective_portfolio_deadline_timezone
+                 }, 409)
+        end
 
-      # Remove file or portfolio?
-      if params[:idx].nil? && params[:name].nil? && params[:kind].nil?
         project.update!({
                           portfolio_submission_date: nil,
-                          portfolio_production_date: nil
+                          portfolio_production_date: nil,
+                          compile_portfolio: false
                         })
         project.remove_portfolio # returns details of file
       elsif !(params[:idx].nil? || params[:name].nil? || params[:kind].nil?)
+        unless authorise? current_user, project, :make_submission
+          error!({ error: "Not authorised to alter portfolio for project '#{params[:id]}'" }, 403)
+        end
+
         idx = params[:idx]
         name = params[:name]
         kind = params[:kind]

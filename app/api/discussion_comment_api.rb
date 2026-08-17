@@ -66,7 +66,9 @@ class DiscussionCommentApi < Grape::API
     if project.has_task_for_task_definition? task_definition
       task = project.task_for_task_definition(task_definition)
       discussion_comment = task.all_comments.find(params[:task_comment_id]).becomes(DiscussionComment)
-      discussion_comment.mark_discussion_started
+      # Opening a prompt is read-only while a submitted portfolio freezes the
+      # project. Keep the download available without changing discussion state.
+      discussion_comment.mark_discussion_started unless project.portfolio_locked?
 
       prompt_path = discussion_comment.attachment_path(prompt_number)
 

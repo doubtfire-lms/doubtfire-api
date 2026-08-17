@@ -217,6 +217,29 @@ class UnitModelTest < ActiveSupport::TestCase
     unit2.destroy
   end
 
+  def test_rollover_retains_and_shifts_portfolio_submission_settings
+    @unit.update!(portfolio_auto_generation_date: nil)
+    original_deadline = (@unit.start_date + 3.weeks + 2.days).change(hour: 14, min: 35)
+    deadline_campus = Campus.first
+    @unit.update!(
+      portfolio_deadline: original_deadline.strftime('%Y-%m-%dT%H:%M'),
+      portfolio_deadline_per_campus: false,
+      portfolio_deadline_campus: deadline_campus,
+      lock_project_on_portfolio_submission: true
+    )
+
+    unit2 = @unit.rollover TeachingPeriod.find(2), nil, nil, nil
+
+    assert unit2.lock_project_on_portfolio_submission?
+    refute unit2.portfolio_deadline_per_campus?
+    assert_equal deadline_campus, unit2.portfolio_deadline_campus
+    assert_equal @unit.week_number(original_deadline), unit2.week_number(unit2.portfolio_deadline)
+    assert_equal original_deadline.wday, unit2.portfolio_deadline.wday
+    assert_equal [14, 35], [unit2.portfolio_deadline.hour, unit2.portfolio_deadline.min]
+
+    unit2.destroy
+  end
+
   def test_rollover_of_group_tasks
     unit = FactoryBot.create(:unit,
       code: 'SIT102',

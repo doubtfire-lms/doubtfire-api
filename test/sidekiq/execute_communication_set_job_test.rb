@@ -3,6 +3,38 @@
 require 'test_helper'
 
 class ExecuteCommunicationSetJobTest < ActiveSupport::TestCase
+  def test_task_comment_action_skips_a_frozen_project_without_creating_a_task
+    unit = FactoryBot.create(
+      :unit,
+      with_students: false,
+      task_count: 1,
+      stream_count: 0,
+      tutorials: 0,
+      outcome_count: 0,
+      staff_count: 1,
+      lock_project_on_portfolio_submission: true
+    )
+    task_definition = unit.task_definitions.first
+    project = unit.enrol_student(FactoryBot.create(:user, :student), Campus.first)
+    project.update!(compile_portfolio: true)
+    communication_set = unit.communication_sets.create!(name: 'Frozen Set', active: true)
+    communication_rule = communication_set.communication_rules.create!(
+      name: 'Frozen Comment Rule',
+      operator: 'and',
+      position: 0
+    )
+    communication_rule.communication_actions.create!(
+      type: 'TaskCommentAction',
+      task_definition: task_definition,
+      body: 'This must not change frozen evidence'
+    )
+
+    ExecuteCommunicationSetJob.new.perform(communication_set.id)
+
+    assert_not project.tasks.exists?(task_definition: task_definition)
+    assert_empty TaskComment.joins(task: :project).where(projects: { id: project.id })
+  end
+
   def test_task_comment_action_adds_a_comment_to_each_selected_students_task
     unit = FactoryBot.create(
       :unit,
@@ -51,7 +83,7 @@ class ExecuteCommunicationSetJobTest < ActiveSupport::TestCase
 
     assert_equal comment_author, comment_one.user
     assert_equal comment_author, comment_two.user
-    assert_equal 'Please review Ada for ' + unit.code, comment_one.comment
-    assert_equal 'Please review Grace for ' + unit.code, comment_two.comment
+    assert_equal "Please review Ada for #{unit.code}", comment_one.comment
+    assert_equal "Please review Grace for #{unit.code}", comment_two.comment
   end
 end

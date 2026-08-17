@@ -268,6 +268,25 @@ class Project < ApplicationRecord
     unit.active
   end
 
+  def portfolio_locked?
+    unit.lock_project_on_portfolio_submission? && (compile_portfolio? || portfolio_available)
+  end
+
+  def effective_portfolio_deadline
+    unit.effective_portfolio_deadline_for(self)
+  end
+
+  def effective_portfolio_deadline_timezone
+    return nil if unit.portfolio_deadline.blank?
+
+    unit.portfolio_deadline_timezone_for(self).name
+  end
+
+  def portfolio_deadline_passed?(at: Time.current)
+    deadline = effective_portfolio_deadline
+    deadline.present? && at > deadline
+  end
+
   #
   # Get a string representation of the Target Grade
   #
@@ -537,6 +556,8 @@ class Project < ApplicationRecord
   end
 
   def revert_overdue_tasks
+    return if portfolio_locked?
+
     tasks.each do |task|
       next if task.submission_date.blank?
 

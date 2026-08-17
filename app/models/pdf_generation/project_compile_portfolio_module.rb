@@ -146,6 +146,10 @@ module PdfGeneration
         save!
         true
       rescue StandardError => e
+        # A partially written output is not an available portfolio. Removing it
+        # ensures a failed compilation releases the submission lock.
+        FileUtils.rm_f(portfolio_path)
+        self.portfolio_production_date = nil
         self.compile_portfolio = false
         save!
 
@@ -262,6 +266,8 @@ module PdfGeneration
     end
 
     def move_to_portfolio(file, name, kind)
+      raise ActiveRecord::ReadOnlyRecord, 'Portfolio files are frozen after portfolio submission' if portfolio_locked?
+
       # get path to portfolio dir
       # get path to tmp folder where file parts will be stored
       portfolio_tmp_dir = portfolio_temp_path
@@ -320,6 +326,8 @@ module PdfGeneration
 
     # Remove a file from the portfolio tmp folder
     def remove_portfolio_file(idx, kind, name)
+      raise ActiveRecord::ReadOnlyRecord, 'Portfolio files are frozen after portfolio submission' if portfolio_locked?
+
       # get path to portfolio dir
       portfolio_tmp_dir = portfolio_temp_path
       return unless Dir.exist? portfolio_tmp_dir

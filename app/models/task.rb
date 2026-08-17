@@ -6,7 +6,7 @@ class Task < ApplicationRecord
   include ApplicationHelper
   include GradeHelper
 
-  attr_accessor :discussion_confirmed_for_transition
+  attr_accessor :discussion_confirmed_for_transition, :portfolio_lock_bypass
 
   #
   # Permissions around task data
@@ -118,6 +118,7 @@ class Task < ApplicationRecord
   end
 
   # Delete action - before dependent association
+  before_destroy :prevent_destroy_when_portfolio_locked
   before_destroy :delete_associated_files
 
   # Model associations
@@ -163,6 +164,7 @@ class Task < ApplicationRecord
   validate :prevent_complete_if_requires_discussion
   validate :prevent_feedback_exceeed_if_assess_in_portfolio_enabled
   validate :prevent_time_exceeed_if_assess_in_portfolio_enabled
+  validate :prevent_changes_when_portfolio_locked
 
   include TaskTiiModule
 
@@ -189,6 +191,17 @@ class Task < ApplicationRecord
     if (unit.mark_late_submissions_as_assess_in_portfolio || task_definition.assess_in_portfolio_only) && task_status == TaskStatus.time_exceeded
       errors.add(:task_status, "cannot be 'time_exceeded' if unit 'has tasks assessed in portolio' enabled")
     end
+  end
+
+  def prevent_changes_when_portfolio_locked
+    return unless project&.portfolio_locked?
+    return if portfolio_lock_bypass
+
+    errors.add(:base, 'Task cannot be changed while the project portfolio is submitted')
+  end
+
+  def portfolio_lock_prevents_transition?(group_transition)
+    project.portfolio_locked? && !group_transition && !portfolio_lock_bypass
   end
 
   def for_definition_with_quality?
@@ -632,6 +645,11 @@ class Task < ApplicationRecord
 
   def trigger_transition(trigger: '', by_user: nil, bulk: false, group_transition: false, quality: 1, recursive_fix: false,
                          check_feedback: false, system_transition: false)
+    if portfolio_lock_prevents_transition?(group_transition)
+      errors.add(:base, 'Project is locked because its portfolio has been submitted')
+      return nil
+    end
+
     #
     # Ensure that assessor is allowed to update the task in the indicated way
     #
@@ -1414,6 +1432,14 @@ class Task < ApplicationRecord
     result
   end
 
+  def prevent_destroy_when_portfolio_locked
+    return unless project&.portfolio_locked?
+    return if project.destroyed? || project.marked_for_destruction?
+
+    errors.add(:base, 'Task cannot be deleted while the project portfolio is submitted')
+    throw :abort
+  end
+
   class TaskAppController < ApplicationController
     include LatexHelper
 
@@ -1664,6 +1690,8 @@ class Task < ApplicationRecord
   # The student has uploaded new work...
   #
   def create_submission_and_trigger_state_change(user, propagate = true, contributions = nil, trigger = 'ready_for_feedback', initial_task = nil)
+    self.portfolio_lock_bypass = true if group_task? && initial_task.present?
+
     if group_task? && propagate
       if contributions.nil? # even distribution
         contribs = group.projects.map { |proj| { project: proj, pct: 100 / group.projects.count, pts: 3 } }
@@ -1691,6 +1719,8 @@ class Task < ApplicationRecord
 
       save
     end
+  ensure
+    self.portfolio_lock_bypass = false
   end
 
   #

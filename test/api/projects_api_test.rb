@@ -52,7 +52,7 @@ class ProjectsApiTest < ActiveSupport::TestCase
     # Add username and auth_token to Header
     add_auth_header_for(user: user)
 
-    keys = %w[id unit campus_id user_id target_grade portfolio_available spec_con_days escalation_attempts_remaining]
+    keys = %w[id unit campus_id user_id target_grade portfolio_available portfolio_locked effective_portfolio_deadline effective_portfolio_deadline_timezone portfolio_deadline_passed spec_con_days escalation_attempts_remaining]
     key_test = %w[campus_id target_grade spec_con_days]
 
     get '/api/projects'
@@ -77,8 +77,8 @@ class ProjectsApiTest < ActiveSupport::TestCase
     # Add username and auth_token to Header
     add_auth_header_for(user: user)
 
-    keys = %w[id unit unit_id user_id campus_id target_grade submitted_grade portfolio_files compile_portfolio portfolio_available uses_draft_learning_summary tasks tutorial_enrolments groups spec_con_days escalation_attempts_remaining]
-    key_test = keys - %w[unit user_id portfolio_available tasks tutorial_enrolments groups]
+    keys = %w[id unit unit_id user_id campus_id target_grade submitted_grade portfolio_files compile_portfolio portfolio_available portfolio_locked effective_portfolio_deadline effective_portfolio_deadline_timezone portfolio_deadline_passed uses_draft_learning_summary tasks tutorial_enrolments groups spec_con_days escalation_attempts_remaining]
+    key_test = keys - %w[unit user_id portfolio_available portfolio_locked effective_portfolio_deadline effective_portfolio_deadline_timezone portfolio_deadline_passed tasks tutorial_enrolments groups]
 
     get "/api/projects/#{project.id}"
     assert_equal 200, last_response.status, last_response_body
@@ -227,10 +227,15 @@ class ProjectsApiTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status, last_response_body
     assert_equal user.projects.find(project.id).submitted_grade, 2
 
-    keys = %w(campus_id target_grade submitted_grade compile_portfolio portfolio_available uses_draft_learning_summary)
+    keys = %w[
+      campus_id target_grade submitted_grade compile_portfolio portfolio_available portfolio_locked
+      effective_portfolio_deadline effective_portfolio_deadline_timezone portfolio_deadline_passed
+      uses_draft_learning_summary
+    ]
 
     assert_json_limit_keys_to_exactly keys, last_response_body
-    assert_json_matches_model project, last_response_body, keys
+    assert_json_matches_model project, last_response_body,
+                              keys - %w[portfolio_locked effective_portfolio_deadline effective_portfolio_deadline_timezone portfolio_deadline_passed]
 
     DatabasePopulator.generate_portfolio(project)
 

@@ -6,6 +6,10 @@ module Entities
       date.strftime('%Y-%m-%d')
     end
 
+    format_with(:local_datetime) do |date|
+      date&.strftime('%Y-%m-%dT%H:%M')
+    end
+
     def is_staff?(my_role)
       [Role.tutor_id, Role.convenor_id, Role.admin_id, Role.auditor_id].include?(my_role.id) unless my_role.nil?
     end
@@ -62,6 +66,13 @@ module Entities
     expose :allow_student_change_tutorial, unless: :summary_only
     expose :allow_flexible_dates, unless: :summary_only
     expose :mark_late_submissions_as_assess_in_portfolio, unless: :summary_only
+
+    with_options(unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }) do
+      expose :portfolio_deadline, format_with: :local_datetime, expose_nil: true
+      expose :portfolio_deadline_per_campus
+      expose :portfolio_deadline_campus_id, expose_nil: true
+      expose :lock_project_on_portfolio_submission
+    end
 
     expose :learning_outcomes, using: LearningOutcomeEntity, as: :ilos, unless: :summary_only
     expose :tutorial_streams, using: TutorialStreamEntity, unless: :summary_only

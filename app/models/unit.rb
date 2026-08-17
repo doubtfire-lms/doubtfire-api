@@ -206,6 +206,8 @@ class Unit < ApplicationRecord
 
   belongs_to :overseer_image, optional: true
 
+  belongs_to :portfolio_deadline_campus, class_name: 'Campus', optional: true
+
   validates :name, :description, :start_date, :end_date, presence: true
   validates :name, allowed_characters: { type: :unit_name }
   validates :code, allowed_characters: { type: :unit_code }
@@ -243,6 +245,8 @@ class Unit < ApplicationRecord
   validate :cant_disable_aip_only_if_aip_tasks_exist
   validate :grade_definitions_are_valid
   validate :configured_grades_preserve_used_values, if: :will_save_change_to_grade_values?
+  validate :shared_portfolio_deadline_has_campus
+  validate :portfolio_deadline_format_is_valid
 
   scope :current,               -> { current_for_date(Time.zone.now) }
   scope :current_for_date,      ->(date) { where('start_date <= ? AND end_date >= ?', date, date) }
@@ -273,6 +277,65 @@ class Unit < ApplicationRecord
     errors.add(:discuss_timeout_warning_days, 'must be less than the expiry days')
   end
 
+  def shared_portfolio_deadline_has_campus
+    return if portfolio_deadline.blank? || portfolio_deadline_per_campus?
+    return if portfolio_deadline_campus.present?
+
+    errors.add(:portfolio_deadline_campus, 'must be selected when one campus timezone is used for all students')
+  end
+
+  def portfolio_deadline_format_is_valid
+    return unless @portfolio_deadline_format_invalid
+
+    errors.add(:portfolio_deadline, 'must use the format YYYY-MM-DDTHH:mm')
+  end
+
+  # Keep the API terminology while storing the value in the existing column.
+  def portfolio_deadline
+    portfolio_due_date
+  end
+
+  def portfolio_deadline=(value)
+    @portfolio_deadline_format_invalid = false
+    if value.is_a?(String) && value.present?
+      begin
+        parsed = DateTime.strptime(value, '%Y-%m-%dT%H:%M')
+        value = Time.zone.local(parsed.year, parsed.month, parsed.day, parsed.hour, parsed.min)
+      rescue ArgumentError
+        @portfolio_deadline_format_invalid = true
+        value = nil
+      end
+    end
+
+    self.portfolio_due_date = value
+  end
+
+  def portfolio_deadline_timezone_for(project)
+    timezone_name = if portfolio_deadline_per_campus?
+                      project&.campus&.timezone
+                    else
+                      portfolio_deadline_campus&.timezone
+                    end
+
+    ActiveSupport::TimeZone[timezone_name.presence || Time.zone.name] || Time.zone
+  end
+
+  def effective_portfolio_deadline_for(project)
+    return nil if portfolio_deadline.blank?
+
+    timezone = portfolio_deadline_timezone_for(project)
+    local_deadline = timezone.local(
+      portfolio_deadline.year,
+      portfolio_deadline.month,
+      portfolio_deadline.day,
+      portfolio_deadline.hour,
+      portfolio_deadline.min,
+      portfolio_deadline.sec
+    )
+
+    local_deadline.advance(days: project&.spec_con_days.to_i)
+  end
+
   def self.notify_discuss_timeouts!
     set_active.find_each(&:notify_discuss_timeouts!)
   end
@@ -294,6 +357,7 @@ class Unit < ApplicationRecord
   end
 
   def notify_discuss_timeout_for(task, teaching_breaks: nil, now_time: Time.zone.now)
+    return 0 if task.project.portfolio_locked?
     return 0 if task.moved_to_discuss_at.blank?
 
     actor = task.project.tutor_for(task.task_definition) || main_convenor&.user
@@ -634,6 +698,18 @@ class Unit < ApplicationRecord
     if self.portfolio_auto_generation_date.present?
       # Update the portfolio auto generation date to be the same day of the week and week number as the old date
       new_unit.portfolio_auto_generation_date = new_unit.date_for_week_and_day(week_number(self.portfolio_auto_generation_date), Date::ABBR_DAYNAMES[self.portfolio_auto_generation_date.wday])
+    end
+
+    if portfolio_deadline.present?
+      shifted_deadline = new_unit.date_for_week_and_day(
+        week_number(portfolio_deadline),
+        Date::ABBR_DAYNAMES[portfolio_deadline.wday]
+      )
+      new_unit.portfolio_deadline = shifted_deadline.change(
+        hour: portfolio_deadline.hour,
+        min: portfolio_deadline.min,
+        sec: portfolio_deadline.sec
+      )
     end
 
     # Clear main convenor - do not use old role id
@@ -3984,6 +4060,8 @@ class Unit < ApplicationRecord
     overdue_statuses = [TaskStatus.time_exceeded.id]
 
     tasks.where(task_status_id: overdue_statuses).find_each do |task|
+      next if task.project.portfolio_locked?
+
       task.add_status_comment(main_convenor.user, TaskStatus.assess_in_portfolio)
       task.update(task_status_id: TaskStatus.assess_in_portfolio.id)
     end
