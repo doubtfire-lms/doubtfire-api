@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-48](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-47...v11.0.0-48) (2026-08-17)
+
+
+### Features
+
+* add separate breaks for different campuses ([#670](https://github.com/b0ink/doubtfire-deploy/issues/670)) ([bfa41bf](https://github.com/b0ink/doubtfire-deploy/commit/bfa41bf0ed9fd7fd6b49a98d1a601857d6c3e3ad))
+
+## [11.0.0-47](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-46...v11.0.0-47) (2026-08-17)
+
+
+### Bug Fixes
+
+* support full width commas ([ed719ab](https://github.com/b0ink/doubtfire-deploy/commit/ed719ab5b76a669544a4a55eeb91e432a21d7e7c))
+
+## [11.0.0-46](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-45...v11.0.0-46) (2026-08-17)
+
+
+### Bug Fixes
+
+* extend valid character list ([c3da5be](https://github.com/b0ink/doubtfire-deploy/commit/c3da5be61751a83414cfc0ae6caee2232a00469a))
+
 ## [11.0.0-45](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-44...v11.0.0-45) (2026-08-12)
 
 

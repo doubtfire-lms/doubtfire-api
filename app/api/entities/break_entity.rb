@@ -11,5 +11,6 @@ module Entities
     end
 
     expose :number_of_weeks
+    expose :campus_ids
   end
 end
