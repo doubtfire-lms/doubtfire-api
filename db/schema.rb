@@ -37,7 +37,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_17_000000) do
     t.bigint "teaching_period_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.text "campus_ids", size: :long, default: "[]", null: false, collation: "utf8mb4_bin"
+    t.text "campus_ids", size: :long, collation: "utf8mb4_bin"
     t.index ["teaching_period_id"], name: "index_breaks_on_teaching_period_id"
     t.check_constraint "json_valid(`campus_ids`)", name: "campus_ids"
   end
@@ -866,6 +866,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_17_000000) do
     t.integer "capacity", default: -1
     t.bigint "campus_id"
     t.bigint "tutorial_stream_id"
+    t.integer "duration_minutes", default: 120, null: false
     t.index ["abbreviation", "unit_id"], name: "index_tutorials_on_abbreviation_and_unit_id", unique: true
     t.index ["campus_id"], name: "index_tutorials_on_campus_id"
     t.index ["tutorial_stream_id"], name: "index_tutorials_on_tutorial_stream_id"
