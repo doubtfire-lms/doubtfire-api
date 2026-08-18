@@ -268,6 +268,13 @@ class Project < ApplicationRecord
     unit.active
   end
 
+  # True once this project's portfolio has been submitted (compiling or available) in a unit
+  # that locks projects on portfolio submission. Tasks and comments are frozen while true, so
+  # the project reflects exactly what the student had when they created their portfolio.
+  def portfolio_locked?
+    unit.lock_project_on_portfolio_submission? && (compile_portfolio? || portfolio_available)
+  end
+
   #
   # Get a string representation of the Target Grade
   #
@@ -537,6 +544,8 @@ class Project < ApplicationRecord
   end
 
   def revert_overdue_tasks
+    return if portfolio_locked?
+
     tasks.each do |task|
       next if task.submission_date.blank?
 

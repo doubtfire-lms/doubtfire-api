@@ -62,6 +62,9 @@ module Entities
     expose :allow_student_change_tutorial, unless: :summary_only
     expose :allow_flexible_dates, unless: :summary_only
     expose :mark_late_submissions_as_assess_in_portfolio, unless: :summary_only
+    # Students need to see this too, so the portfolio review step can warn them
+    # that submitting will lock their tasks - it is not staff-only.
+    expose :lock_project_on_portfolio_submission, unless: :summary_only
 
     expose :learning_outcomes, using: LearningOutcomeEntity, as: :ilos, unless: :summary_only
     expose :tutorial_streams, using: TutorialStreamEntity, unless: :summary_only

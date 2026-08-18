@@ -257,6 +257,10 @@ class TasksApi < Grape::API
   post '/projects/:id/task_def_id/:task_definition_id/check_in' do
     project = Project.find(params[:id])
 
+    if project.portfolio_locked?
+      error!({ error: 'This project is locked because its portfolio has been submitted.' }, 403)
+    end
+
     unless authorise?(current_user, project, :assess)
       error!({ error: 'You do not have permission to assess this task.' }, 403)
     end

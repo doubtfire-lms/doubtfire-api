@@ -325,7 +325,12 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal actual_unit['start_date'].to_date, expected_unit.start_date.to_date
     assert_equal actual_unit['end_date'].to_date, expected_unit.end_date.to_date
 
-    keys = %w[code id name main_convenor_id description active auto_apply_extension_before_deadline send_notifications enable_sync_enrolments enable_sync_timetable draft_task_definition_id allow_student_extension_requests extension_weeks_on_resubmit_request allow_student_change_tutorial]
+    keys = %w[
+      code id name main_convenor_id description active auto_apply_extension_before_deadline
+      send_notifications enable_sync_enrolments enable_sync_timetable draft_task_definition_id
+      allow_student_extension_requests extension_weeks_on_resubmit_request
+      allow_student_change_tutorial lock_project_on_portfolio_submission
+    ]
 
     assert actual_unit.key?("my_role"), actual_unit.inspect
     assert_equal expected_unit.role_for(expected_unit.main_convenor_user).name, actual_unit["my_role"]

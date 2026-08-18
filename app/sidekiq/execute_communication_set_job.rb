@@ -242,6 +242,17 @@ class ExecuteCommunicationSetJob
         }
       end
 
+      if project.portfolio_locked?
+        next {
+          action_id: action.id,
+          action_type: action.type,
+          status: 'skipped',
+          project_id: project.id,
+          username: project.user&.username,
+          reason: 'portfolio submitted'
+        }
+      end
+
       task = project.task_for_task_definition(task_definition)
       rendered_comment = render_template(comment_text_template, project, unit, rule, projects.length)
 

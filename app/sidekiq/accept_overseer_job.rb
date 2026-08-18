@@ -47,7 +47,7 @@ class AcceptOverseerJob
     failure_status = nil
 
     comment = task.comments.find_by(commentable: oa)
-    unless comment
+    unless comment || task.project.portfolio_locked?
       oa.add_assessment_comment("Tests in progress")
     end
 
@@ -87,11 +87,11 @@ class AcceptOverseerJob
       end
     end
 
-    oa.update_assessment_comment("Tests complete: #{steps_passed} / #{active_overseer_steps.count}")
+    oa.update_assessment_comment("Tests complete: #{steps_passed} / #{active_overseer_steps.count}") unless task.project.portfolio_locked?
 
     if steps_attempted == steps_passed && assessment_pass
       oa.update!(status: :passed)
-      unless success_status.nil?
+      unless success_status.nil? || task.project.portfolio_locked?
         # TODO: have an override status setting for the step? eg. if the task is overdue, let it remain overdue, otherwise use this task status
         task.update!(task_status: success_status)
         task.add_status_comment(task.project.tutor_for(task.task_definition), success_status)
@@ -102,13 +102,15 @@ class AcceptOverseerJob
       oa.update!(status: :failed)
       # preserve_status_on_failure = [TaskStatus.time_exceeded.id, TaskStatus.assess_in_portfolio.id].include?(task.task_status_id)
 
-      unless failure_status.nil? # || preserve_status_on_failure
+      unless failure_status.nil? || task.project.portfolio_locked? # || preserve_status_on_failure
         # TODO: have an override status setting for the step? eg. if the task is overdue, let it remain overdue, otherwise use this task status
         task.update!(task_status: failure_status)
         task.add_status_comment(task.project.tutor_for(task.task_definition), failure_status)
         oa.update!(result_task_status: failure_status.status_key.to_s)
       end
-      task.add_text_comment(task.project.tutor_for(task.task_definition), "**Automated comment**: Some tests did not pass for this submission. Please review the Overseer report, verify your output, and resubmit.")
+      unless task.project.portfolio_locked?
+        task.add_text_comment(task.project.tutor_for(task.task_definition), "**Automated comment**: Some tests did not pass for this submission. Please review the Overseer report, verify your output, and resubmit.")
+      end
     end
 
     FileUtils.rm_rf(work_dir)

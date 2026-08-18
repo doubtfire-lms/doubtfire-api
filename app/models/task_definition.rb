@@ -290,6 +290,8 @@ class TaskDefinition < ApplicationRecord
     overdue_statuses = [TaskStatus.time_exceeded.id]
 
     tasks.where(task_status_id: overdue_statuses).find_each do |task|
+      next if task.project.portfolio_locked?
+
       task.add_status_comment(unit.main_convenor.user, TaskStatus.assess_in_portfolio)
       task.update(task_status_id: TaskStatus.assess_in_portfolio.id)
     end
@@ -305,6 +307,8 @@ class TaskDefinition < ApplicationRecord
                        .where(task_status: [TaskStatus.time_exceeded, TaskStatus.assess_in_portfolio])
 
     late_submissions.each do |task|
+      next if task.project.portfolio_locked?
+
       task.add_status_comment(unit.main_convenor.user, TaskStatus.ready_for_feedback)
       task.update(task_status_id: TaskStatus.ready_for_feedback.id)
     end

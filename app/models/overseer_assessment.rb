@@ -274,7 +274,7 @@ class OverseerAssessment < ApplicationRecord
         self.result_task_status = task.status
       end
 
-      if task.ready_for_feedback? && new_status.present?
+      if task.ready_for_feedback? && new_status.present? && !task.project.portfolio_locked?
         task.add_status_comment(task.task_definition.unit.main_convenor.user, new_status)
         task.update task_status: new_status
       end
