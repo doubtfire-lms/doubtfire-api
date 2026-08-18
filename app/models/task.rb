@@ -6,7 +6,7 @@ class Task < ApplicationRecord
   include ApplicationHelper
   include GradeHelper
 
-  attr_accessor :discussion_confirmed_for_transition, :portfolio_lock_bypass
+  attr_accessor :discussion_confirmed_for_transition
 
   #
   # Permissions around task data
@@ -195,13 +195,8 @@ class Task < ApplicationRecord
 
   def prevent_changes_when_portfolio_locked
     return unless project&.portfolio_locked?
-    return if portfolio_lock_bypass
 
     errors.add(:base, 'Task cannot be changed while the project portfolio is submitted')
-  end
-
-  def portfolio_lock_prevents_transition?(group_transition)
-    project.portfolio_locked? && !group_transition && !portfolio_lock_bypass
   end
 
   def for_definition_with_quality?
@@ -645,7 +640,7 @@ class Task < ApplicationRecord
 
   def trigger_transition(trigger: '', by_user: nil, bulk: false, group_transition: false, quality: 1, recursive_fix: false,
                          check_feedback: false, system_transition: false)
-    if portfolio_lock_prevents_transition?(group_transition)
+    if project.portfolio_locked?
       errors.add(:base, 'Project is locked because its portfolio has been submitted')
       return nil
     end
@@ -1690,8 +1685,6 @@ class Task < ApplicationRecord
   # The student has uploaded new work...
   #
   def create_submission_and_trigger_state_change(user, propagate = true, contributions = nil, trigger = 'ready_for_feedback', initial_task = nil)
-    self.portfolio_lock_bypass = true if group_task? && initial_task.present?
-
     if group_task? && propagate
       if contributions.nil? # even distribution
         contribs = group.projects.map { |proj| { project: proj, pct: 100 / group.projects.count, pts: 3 } }
@@ -1699,7 +1692,13 @@ class Task < ApplicationRecord
         contribs = contributions.map { |data| { project: Project.find(data[:project_id]), pct: data[:pct].to_i, pts: data[:pts].to_i } }
       end
       group_submission = group.create_submission self, "#{user.name} has submitted work", contribs
-      group_submission.tasks.each { |t| t.create_submission_and_trigger_state_change(user, false, contributions, trigger, self) }
+      group_submission.tasks.each do |t|
+        # Group members whose own portfolio is locked keep the exact task state
+        # they had when they submitted - do not propagate this submission to them.
+        next if t.project.portfolio_locked?
+
+        t.create_submission_and_trigger_state_change(user, false, contributions, trigger, self)
+      end
       reload
     else
       self.file_uploaded_at = Time.zone.now
@@ -1719,8 +1718,6 @@ class Task < ApplicationRecord
 
       save
     end
-  ensure
-    self.portfolio_lock_bypass = false
   end
 
   #

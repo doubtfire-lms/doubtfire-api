@@ -17,12 +17,12 @@ class GroupSubmission < ApplicationRecord
     begin
       FileHelper.delete_group_submission(group_submission)
 
-      # Also remove evidence from group members through the explicit group
-      # operation bypass so frozen members cannot be changed by other paths.
-      tasks.where.not(portfolio_evidence: nil).find_each do |task|
-        with_portfolio_lock_bypass(task) do
-          task.update!(portfolio_evidence: nil)
-        end
+      # also remove evidence from group members - skip anyone whose portfolio
+      # is locked so their task state stays exactly as submitted
+      tasks.where('portfolio_evidence IS NOT NULL').find_each do |task|
+        next if task.project.portfolio_locked?
+
+        task.update(portfolio_evidence: nil)
       end
     rescue => e
       logger.error "Failed to delete group submission #{group_submission.id}. Error: #{e.message}"
@@ -30,28 +30,23 @@ class GroupSubmission < ApplicationRecord
   end
 
   def propagate_transition(initial_task, trigger, by_user, quality)
-    Task.transaction do
-      tasks.each do |task|
-        next if [TaskStatus.complete.id, TaskStatus.feedback_exceeded.id, TaskStatus.fail.id].include? task.task_status_id
-        next if task == initial_task
+    tasks.each do |task|
+      next if [TaskStatus.complete.id, TaskStatus.feedback_exceeded.id, TaskStatus.fail.id].include? task.task_status_id
+      next if task.project.portfolio_locked?
 
-        with_portfolio_lock_bypass(task) do
-          task.extensions = initial_task.extensions unless initial_task.extensions < task.extensions
-          task.trigger_transition(trigger: trigger, by_user: by_user, group_transition: true, quality: quality)
-        end
+      if task != initial_task
+        task.extensions = initial_task.extensions unless initial_task.extensions < task.extensions
+        task.trigger_transition(trigger: trigger, by_user: by_user, group_transition: true, quality: quality)
       end
     end
   end
 
   def propagate_grade(initial_task, new_grade, ui)
-    Task.transaction do
-      tasks.each do |task|
-        next if task == initial_task
+    tasks.each do |task|
+      next if task.project.portfolio_locked?
 
-        with_portfolio_lock_bypass(task) do
-          task.grade_task new_grade, ui, grading_group = true
-          task.save!
-        end
+      if task != initial_task
+        task.grade_task new_grade, ui, grading_group = true
       end
     end
   end
@@ -74,13 +69,4 @@ class GroupSubmission < ApplicationRecord
   end
 
   delegate :processing_pdf?, to: :submitter_task
-
-  private
-
-  def with_portfolio_lock_bypass(task)
-    task.portfolio_lock_bypass = true
-    yield
-  ensure
-    task.portfolio_lock_bypass = false
-  end
 end

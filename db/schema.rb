@@ -953,12 +953,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_18_003147) do
     t.integer "discuss_timeout_warning_days", default: 7, null: false
     t.integer "discuss_timeout_expire_days", default: 14, null: false
     t.boolean "lock_project_on_portfolio_submission", default: false, null: false
-    t.boolean "portfolio_deadline_per_campus", default: true, null: false
-    t.bigint "portfolio_deadline_campus_id"
     t.index ["draft_task_definition_id"], name: "index_units_on_draft_task_definition_id"
     t.index ["main_convenor_id"], name: "index_units_on_main_convenor_id"
     t.index ["overseer_image_id"], name: "index_units_on_overseer_image_id"
-    t.index ["portfolio_deadline_campus_id"], name: "index_units_on_portfolio_deadline_campus_id"
     t.index ["teaching_period_id"], name: "index_units_on_teaching_period_id"
     t.check_constraint "json_valid(`grade_values`)", name: "grade_values"
   end

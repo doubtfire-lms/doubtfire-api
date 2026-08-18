@@ -259,8 +259,7 @@ class TaskCommentsApi < Grape::API
     project = Project.find(params[:project_id])
     task_definition = project.unit.task_definitions.find(params[:task_definition_id])
 
-    # Read-receipt state remains editable even when portfolio evidence is frozen.
-    unless authorise? current_user, project, :get
+    unless authorise? current_user, project, :make_submission
       error!({ error: 'Not authorised to mark comment as unread' }, 403)
     end
 

@@ -31,41 +31,6 @@ module AuthorisationHelpers
     :get_tutor_times
   ].freeze
 
-  PORTFOLIO_LOCKED_PROJECT_ACTIONS = [
-    :make_submission,
-    :change,
-    :trigger_week_end,
-    :reprocess_submission
-  ].freeze
-
-  PORTFOLIO_LOCKED_TASK_READ_ACTIONS = [
-    :get,
-    :get_submission,
-    :get_discussion,
-    :view_plagiarism,
-    :review_own_attempt,
-    :review_other_attempt
-  ].freeze
-
-  def portfolio_lock_project_for(object)
-    return object if object.is_a?(Project)
-    return object.project if object.respond_to?(:project)
-    return object.task.project if object.respond_to?(:task) && object.task.respond_to?(:project)
-
-    nil
-  end
-
-  def portfolio_lock_blocks?(object, action)
-    project = portfolio_lock_project_for(object)
-    return false unless project&.portfolio_locked?
-
-    if object.is_a?(Project)
-      PORTFOLIO_LOCKED_PROJECT_ACTIONS.include?(action)
-    else
-      !PORTFOLIO_LOCKED_TASK_READ_ACTIONS.include?(action)
-    end
-  end
-
   #
   # Authorises if the user can perform an action on the object
   #
@@ -78,8 +43,6 @@ module AuthorisationHelpers
     # Can pass in instance or class
     obj_class = object.class == Class ? object : object.class
     perm_hash = obj_class.permissions
-
-    return false if object.class != Class && portfolio_lock_blocks?(object, action)
 
     # System administrator permissions take precedence over contextual roles.
     if user.has_admin_capability?
@@ -112,7 +75,5 @@ module AuthorisationHelpers
   end
 
   module_function :get_permission_hash
-  module_function :portfolio_lock_project_for
-  module_function :portfolio_lock_blocks?
   module_function :authorise?
 end

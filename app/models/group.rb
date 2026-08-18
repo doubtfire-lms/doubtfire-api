@@ -236,33 +236,27 @@ class Group < ApplicationRecord
     gs.group = self
     gs.notes = notes
     gs.submitted_by_project = submitter_task.project
+    gs.save!
 
-    GroupSubmission.transaction do
-      gs.save!
+    contributors.each do |contrib|
+      project = contrib[:project]
+      task = project.matching_task submitter_task
 
-      contributors.each do |contrib|
-        project = contrib[:project]
-        task = project.matching_task submitter_task
+      # A group member whose own portfolio is locked keeps the exact task
+      # state they had when they submitted, so leave their task alone.
+      next if task.task_submission_closed? || task.project.portfolio_locked?
 
-        next if task.task_submission_closed?
-
-        begin
-          task.portfolio_lock_bypass = true
-          if contrib[:pct].to_i > 0
-            task.group_submission = gs
-            task.contribution_pct = contrib[:pct]
-            task.contribution_pts = contrib[:pts]
-          end
-          task.save!
-        ensure
-          task.portfolio_lock_bypass = false
-        end
+      if contrib[:pct].to_i > 0
+        task.group_submission = gs
+        task.contribution_pct = contrib[:pct]
+        task.contribution_pts = contrib[:pts]
       end
+      task.save
+    end
 
-      if old_gs
-        old_gs.reload
-        old_gs.destroy! if old_gs.projects.count.zero?
-      end
+    if old_gs
+      old_gs.reload
+      old_gs.destroy! if old_gs.projects.count.zero?
     end
 
     # ensure that original task is reloaded... update will have effected a different object

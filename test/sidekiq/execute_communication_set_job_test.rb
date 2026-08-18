@@ -83,7 +83,7 @@ class ExecuteCommunicationSetJobTest < ActiveSupport::TestCase
 
     assert_equal comment_author, comment_one.user
     assert_equal comment_author, comment_two.user
-    assert_equal "Please review Ada for #{unit.code}", comment_one.comment
-    assert_equal "Please review Grace for #{unit.code}", comment_two.comment
+    assert_equal 'Please review Ada for ' + unit.code, comment_one.comment
+    assert_equal 'Please review Grace for ' + unit.code, comment_two.comment
   end
 end

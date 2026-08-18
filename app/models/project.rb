@@ -268,23 +268,11 @@ class Project < ApplicationRecord
     unit.active
   end
 
+  # True once this project's portfolio has been submitted (compiling or available) in a unit
+  # that locks projects on portfolio submission. Tasks and comments are frozen while true, so
+  # the project reflects exactly what the student had when they created their portfolio.
   def portfolio_locked?
     unit.lock_project_on_portfolio_submission? && (compile_portfolio? || portfolio_available)
-  end
-
-  def effective_portfolio_deadline
-    unit.effective_portfolio_deadline_for(self)
-  end
-
-  def effective_portfolio_deadline_timezone
-    return nil if unit.portfolio_deadline.blank?
-
-    unit.portfolio_deadline_timezone_for(self).name
-  end
-
-  def portfolio_deadline_passed?(at: Time.current)
-    deadline = effective_portfolio_deadline
-    deadline.present? && at > deadline
   end
 
   #

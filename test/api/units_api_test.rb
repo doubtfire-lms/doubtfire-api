@@ -329,8 +329,7 @@ class UnitsApiTest < ActiveSupport::TestCase
       code id name main_convenor_id description active auto_apply_extension_before_deadline
       send_notifications enable_sync_enrolments enable_sync_timetable draft_task_definition_id
       allow_student_extension_requests extension_weeks_on_resubmit_request
-      allow_student_change_tutorial portfolio_deadline portfolio_deadline_per_campus
-      portfolio_deadline_campus_id lock_project_on_portfolio_submission
+      allow_student_change_tutorial lock_project_on_portfolio_submission
     ]
 
     assert actual_unit.key?("my_role"), actual_unit.inspect

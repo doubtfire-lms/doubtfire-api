@@ -41,7 +41,6 @@ class TaskComment < ApplicationRecord
 
   def prevent_changes_when_portfolio_locked
     return unless task&.project&.portfolio_locked?
-    return if task.portfolio_lock_bypass
 
     errors.add(:base, 'Comment cannot be changed while the project portfolio is submitted')
   end
@@ -50,7 +49,6 @@ class TaskComment < ApplicationRecord
     return unless task&.project&.portfolio_locked?
     return if task.destroyed? || task.marked_for_destruction?
     return if task.project.destroyed? || task.project.marked_for_destruction?
-    return if task.portfolio_lock_bypass
 
     errors.add(:base, 'Comment cannot be deleted while the project portfolio is submitted')
     throw :abort

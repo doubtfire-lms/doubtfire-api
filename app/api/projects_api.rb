@@ -175,9 +175,6 @@ class ProjectsApi < Grape::API
         :compile_portfolio,
         :portfolio_available,
         :portfolio_locked,
-        :effective_portfolio_deadline,
-        :effective_portfolio_deadline_timezone,
-        :portfolio_deadline_passed,
         :uses_draft_learning_summary,
         :stats
       ],
