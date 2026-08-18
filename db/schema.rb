@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_08_17_055309) do
+ActiveRecord::Schema[8.0].define(version: 2026_08_18_000000) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -86,9 +86,11 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_17_055309) do
     t.bigint "task_definition_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "unresolved_references", size: :long, collation: "utf8mb4_bin"
     t.index ["communication_rule_id"], name: "index_communication_actions_on_communication_rule_id"
     t.index ["task_definition_id"], name: "index_communication_actions_on_task_definition_id"
     t.index ["type"], name: "index_communication_actions_on_type"
+    t.check_constraint "json_valid(`unresolved_references`)", name: "unresolved_references"
   end
 
   create_table "communication_conditions", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
@@ -109,6 +111,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_17_055309) do
     t.datetime "updated_at", null: false
     t.integer "activity_days"
     t.boolean "submitted_portfolio"
+    t.text "unresolved_references", size: :long, collation: "utf8mb4_bin"
     t.index ["campus_id"], name: "index_communication_conditions_on_campus_id"
     t.index ["communication_id"], name: "index_communication_conditions_on_communication_id"
     t.index ["task_definition_id"], name: "index_communication_conditions_on_task_definition_id"
@@ -116,6 +119,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_17_055309) do
     t.index ["tutorial_stream_id"], name: "index_communication_conditions_on_tutorial_stream_id"
     t.index ["type"], name: "index_communication_conditions_on_type"
     t.check_constraint "json_valid(`task_statuses`)", name: "task_statuses"
+    t.check_constraint "json_valid(`unresolved_references`)", name: "unresolved_references"
   end
 
   create_table "communication_rules", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|

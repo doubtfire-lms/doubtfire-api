@@ -53,6 +53,8 @@ class CommunicationCondition < ApplicationRecord
 
   attribute :task_statuses, :json, default: -> { [] }
 
+  include CommunicationReferences
+
   validates :type, presence: true, inclusion: { in: VALID_TYPES }
   validates :operator, presence: true
   before_validation :normalize_task_statuses

@@ -9,5 +9,7 @@ class CommunicationAction < ApplicationRecord
   belongs_to :communication_rule, class_name: 'CommunicationRule'
   belongs_to :task_definition, optional: true
 
+  include CommunicationReferences
+
   validates :type, presence: true, inclusion: { in: VALID_TYPES }
 end

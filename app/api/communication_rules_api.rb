@@ -52,6 +52,30 @@ class CommunicationRulesApi < Grape::API
       communication_set_params[:schedules] || communication_set_params['schedules']
     end
 
+    # Executing a set whose rules cannot be evaluated is refused up front, so
+    # staff see why immediately instead of the job failing out of sight.
+    def reject_unresolved!(communication_set)
+      unresolved_rules = communication_set.unresolved_rules
+      return if unresolved_rules.empty?
+
+      error!(
+        {
+          error: 'This communication set references records that do not exist in this unit',
+          unresolved_rules: unresolved_rules.map do |rule|
+            { id: rule.id, name: rule.name, unresolved: rule.unresolved_summaries }
+          end
+        },
+        409
+      )
+    end
+
+    def import_document_from_request
+      document = params[:document]
+      raise CommunicationSetImporter::InvalidDocument, 'No document provided' if document.blank?
+
+      document.respond_to?(:to_h) ? document.to_h : document
+    end
+
     def sync_set_schedules!(communication_set, raw_schedules)
       schedules = Array(raw_schedules).map { |schedule| permitted_schedule_params(schedule).to_h }
 
@@ -261,6 +285,7 @@ class CommunicationRulesApi < Grape::API
     end
 
     communication_set = unit.communication_sets.find(params[:id])
+    reject_unresolved!(communication_set)
     job_id = ExecuteCommunicationSetJob.perform_async(communication_set.id)
     job = setup_job(job_id)
 
@@ -489,6 +514,7 @@ class CommunicationRulesApi < Grape::API
     end
 
     rule = unit.communication_rules.find(params[:id])
+    reject_unresolved!(rule.communication_set)
     job_id = ExecuteCommunicationSetJob.perform_async(rule.communication_set_id, rule.id)
     job = setup_job(job_id)
 
@@ -767,5 +793,100 @@ class CommunicationRulesApi < Grape::API
     rule = unit.communication_rules.find(params[:communication_rule_id])
     rule.communication_actions.find(params[:id]).destroy!
     status 204
+  end
+
+  desc 'Export a communication set as a portable document'
+  params do
+    requires :unit_id, type: Integer
+    requires :id, type: Integer
+  end
+  get '/units/:unit_id/communication_sets/:id/export' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :get_unit
+      error!({ error: 'Not authorised to export unit communications' }, 403)
+    end
+
+    communication_set = unit.communication_sets
+                            .includes(:communication_set_schedules, communication_rules: [:communication_conditions, :communication_actions])
+                            .find(params[:id])
+
+    present CommunicationSetExporter.export_set(communication_set)
+  end
+
+  desc 'Export a communication rule as a portable document'
+  params do
+    requires :unit_id, type: Integer
+    requires :id, type: Integer
+  end
+  get '/units/:unit_id/communication_rules/:id/export' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :get_unit
+      error!({ error: 'Not authorised to export unit communications' }, 403)
+    end
+
+    rule = unit.communication_rules.includes(:communication_conditions, :communication_actions).find(params[:id])
+
+    present CommunicationSetExporter.export_rule(rule)
+  end
+
+  desc 'Import a communication set from a portable document'
+  params do
+    requires :unit_id, type: Integer
+    requires :document, type: Hash
+    optional :dry_run, type: Boolean, default: false
+  end
+  post '/units/:unit_id/communication_sets/import' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :update
+      error!({ error: 'Not authorised to update unit communications' }, 403)
+    end
+
+    begin
+      importer = CommunicationSetImporter.new(import_document_from_request, unit)
+      report = importer.import_set(dry_run: params[:dry_run])
+    rescue CommunicationSetImporter::InvalidDocument => e
+      error!({ error: e.message }, 400)
+    end
+
+    communication_set = report[:imported_id] && unit.communication_sets.find(report[:imported_id])
+
+    present(
+      report: report,
+      communication_set: communication_set && Entities::CommunicationSetEntity.represent(communication_set)
+    )
+  end
+
+  desc 'Import a communication rule into an existing communication set'
+  params do
+    requires :unit_id, type: Integer
+    requires :communication_set_id, type: Integer
+    requires :document, type: Hash
+    optional :dry_run, type: Boolean, default: false
+  end
+  post '/units/:unit_id/communication_sets/:communication_set_id/rules/import' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :update
+      error!({ error: 'Not authorised to update unit communications' }, 403)
+    end
+
+    communication_set = unit.communication_sets.find(params[:communication_set_id])
+
+    begin
+      importer = CommunicationSetImporter.new(import_document_from_request, unit)
+      report = importer.import_rule(communication_set, dry_run: params[:dry_run])
+    rescue CommunicationSetImporter::InvalidDocument => e
+      error!({ error: e.message }, 400)
+    end
+
+    rule = report[:imported_id] && communication_set.communication_rules.find(report[:imported_id])
+
+    present(
+      report: report,
+      rule: rule && Entities::CommunicationRuleEntity.represent(rule)
+    )
   end
 end

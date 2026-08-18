@@ -1,4 +1,10 @@
 class CommunicationRule < ApplicationRecord
+  # Raised rather than evaluating a rule whose references are broken. Silently
+  # treating a missing reference as "no match" would widen the rule -- a
+  # condition on a task that no longer exists reads every student as
+  # 'not_started' -- and mail people who were never meant to be targeted.
+  class UnresolvedReferenceError < StandardError; end
+
   LOGICAL_OPERATORS = %w[and or].freeze
 
   belongs_to :communication_set, class_name: 'CommunicationSet'
@@ -15,7 +21,26 @@ class CommunicationRule < ApplicationRecord
   validates :operator, presence: true, inclusion: { in: LOGICAL_OPERATORS }
   validates :position, presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 
+  # Conditions and actions that cannot be evaluated because the record they
+  # point at is missing from this unit.
+  def unresolved_records
+    (communication_conditions.to_a + communication_actions.to_a).select(&:unresolved?)
+  end
+
+  def unresolved?
+    unresolved_records.any?
+  end
+
+  def unresolved_summaries
+    unresolved_records.filter_map(&:unresolved_summary)
+  end
+
   def matching_projects(projects = nil)
+    if unresolved?
+      raise UnresolvedReferenceError,
+            "Communication rule '#{name}' references records that do not exist in this unit"
+    end
+
     projects ||= communication_set.eligible_projects
     return projects if communication_conditions.empty?
 
