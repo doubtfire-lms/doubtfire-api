@@ -207,6 +207,8 @@ class Unit < ApplicationRecord
   belongs_to :overseer_image, optional: true
 
   validates :name, :description, :start_date, :end_date, presence: true
+  validates :name, allowed_characters: { type: :unit_name }
+  validates :code, allowed_characters: { type: :unit_code }
 
   validates :description, length: { maximum: 4095, allow_blank: true }
 
@@ -278,9 +280,8 @@ class Unit < ApplicationRecord
   def notify_discuss_timeouts!
     return 0 unless discuss_timeout_enabled
 
-    teaching_breaks = teaching_period&.breaks.to_a
     discuss_timeout_tasks.find_each.sum do |task|
-      notify_discuss_timeout_for(task, teaching_breaks: teaching_breaks)
+      notify_discuss_timeout_for(task)
     end
   end
 
@@ -1542,7 +1543,7 @@ class Unit < ApplicationRecord
         ).group(
           'projects.id', 'student_id', 'username', 'first_name', 'nickname', 'last_name', 'email', 'campus_abbreviation'
         ).each do |row|
-          csv << ([
+          csv << escape_spreadsheet_formulas([
             code,
             row['campus_abbreviation'],
             row['username'],

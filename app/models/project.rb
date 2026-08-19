@@ -235,7 +235,7 @@ class Project < ApplicationRecord
   def tutorial_enrolment_for_stream(tutorial_stream)
     tutorial_enrolments
       .joins(:tutorial)
-      .where('tutorials.tutorial_stream_id = :sid OR tutorials.tutorial_stream_id IS NULL', sid: (tutorial_stream.present? ? tutorial_stream.id : nil))
+      .where('tutorials.tutorial_stream_id = :sid OR tutorials.tutorial_stream_id IS NULL', sid: (tutorial_stream.presence&.id))
       .first
   end
 
@@ -280,7 +280,7 @@ class Project < ApplicationRecord
   end
 
   def task_details_for_shallow_serializer(user)
-    teaching_breaks = unit.teaching_period&.breaks.to_a
+    teaching_breaks = unit.teaching_period&.breaks_for(campus) || []
     attention_audience = TaskComment.attention_audiences.fetch(user == student ? 'student' : 'staff')
     similarity_stats = TaskSimilarity
                        .select('task_id', 'COUNT(*) AS similarity_count', 'SUM(flagged) AS flagged_count')
