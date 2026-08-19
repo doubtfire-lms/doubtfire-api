@@ -101,7 +101,7 @@ class UnitRolesApi < Grape::API
     end
   end
   put '/unit_roles/:id' do
-    unit_role = UnitRole.find_by(id: params[:id])
+    unit_role = UnitRole.find(params[:id])
 
     unless (authorise? current_user, unit_role.unit, :employ_staff) || (authorise? current_user, User, :admin_units)
       error!({ error: "Not authorised to update unit role with id=#{params[:id]}" }, 403)
@@ -112,13 +112,17 @@ class UnitRolesApi < Grape::API
       error!({ error: "You cannot make yourself an observer" }, 403)
     end
 
-    # Once they're an observer, they'll no longer have access to this route to remove the observer status from themselves
-    # But let's double check just in case this route gets whitelisted...
-
     unit = unit_role.unit
     current_unit_role = unit.unit_role_for(current_user)
 
-    if current_unit_role.observer_only
+    if current_unit_role.nil?
+      # Only administrators can manage staff within a unit that they are not employed in
+      unless current_user.has_admin_capability?
+        error!({ error: "You are not authorised to update this staff member." }, 403)
+      end
+    elsif current_unit_role.observer_only
+      # Once they're an observer, they'll no longer have access to this route to remove the observer status from themselves
+      # But let's double check just in case this route gets whitelisted...
       error!({ error: "You are not authorised to update this staff member." }, 403)
     end
 
