@@ -94,6 +94,57 @@ class CommunicationRulesApiTest < ActiveSupport::TestCase
     end
   end
 
+  def test_rules_are_returned_ordered_by_position
+    admin = FactoryBot.create(:user, :admin)
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0)
+    communication_set = unit.communication_sets.create!(name: 'Ordering', active: true)
+
+    # Created out of order on purpose -- id order must not decide the response order.
+    third = communication_set.communication_rules.create!(name: 'Third', operator: 'and', position: 2)
+    first = communication_set.communication_rules.create!(name: 'First', operator: 'and', position: 0)
+    second = communication_set.communication_rules.create!(name: 'Second', operator: 'and', position: 1)
+    expected = [first.id, second.id, third.id]
+    add_auth_header_for(user: admin)
+
+    get "/api/units/#{unit.id}/communication_sets"
+    assert_equal 200, last_response.status
+    assert_equal expected, last_response_body.first['rules'].map { |rule| rule['id'] }
+
+    get "/api/units/#{unit.id}/communication_sets/#{communication_set.id}"
+    assert_equal 200, last_response.status
+    assert_equal expected, last_response_body['rules'].map { |rule| rule['id'] }
+
+    get "/api/units/#{unit.id}/communication_sets/#{communication_set.id}/rules"
+    assert_equal 200, last_response.status
+    assert_equal expected, last_response_body.map { |rule| rule['id'] }
+
+    # And the order follows position after a drag-and-drop style reorder.
+    put_json "/api/units/#{unit.id}/communication_rules/#{third.id}", communication_rule: { position: 0 }
+    put_json "/api/units/#{unit.id}/communication_rules/#{first.id}", communication_rule: { position: 1 }
+    put_json "/api/units/#{unit.id}/communication_rules/#{second.id}", communication_rule: { position: 2 }
+
+    get "/api/units/#{unit.id}/communication_sets/#{communication_set.id}"
+    assert_equal 200, last_response.status
+    assert_equal [third.id, first.id, second.id], last_response_body['rules'].map { |rule| rule['id'] }
+  end
+
+  def test_update_rule_position_reorders_the_set
+    admin = FactoryBot.create(:user, :admin)
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0)
+    communication_set = unit.communication_sets.create!(name: 'Ordering', active: true)
+    first_rule = communication_set.communication_rules.create!(name: 'First', operator: 'and', position: 0)
+    second_rule = communication_set.communication_rules.create!(name: 'Second', operator: 'and', position: 1)
+    add_auth_header_for(user: admin)
+
+    put_json "/api/units/#{unit.id}/communication_rules/#{second_rule.id}", communication_rule: { position: 0 }
+    assert_equal 200, last_response.status
+
+    put_json "/api/units/#{unit.id}/communication_rules/#{first_rule.id}", communication_rule: { position: 1 }
+    assert_equal 200, last_response.status
+
+    assert_equal [second_rule.id, first_rule.id], communication_set.reload.communication_rules.map(&:id)
+  end
+
   def test_create_and_update_portfolio_submitted_condition
     admin = FactoryBot.create(:user, :admin)
     unit = FactoryBot.create(:unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0)
