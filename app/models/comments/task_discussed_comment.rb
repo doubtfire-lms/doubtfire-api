@@ -4,10 +4,6 @@ class TaskDiscussedComment < TaskComment
     self.attention_audience = :none
   end
 
-  after_create do
-    mark_as_read(self.recipient)
-  end
-
   def serialize(user)
     json = super(user)
     json[:recipient_read_time] = nil

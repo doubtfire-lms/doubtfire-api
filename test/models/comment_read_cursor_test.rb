@@ -178,6 +178,40 @@ class CommentReadCursorTest < ActiveSupport::TestCase
     assert_includes project.unit.tasks_for_task_inbox(tutor).map(&:task_id), task.id
   end
 
+  def test_feedback_review_request_does_not_advance_tutor_cursor_past_unread_comment
+    project = FactoryBot.create(:project)
+    task_definition = project.unit.task_definitions.first
+    task = project.task_for_task_definition(task_definition)
+    student = project.student
+    tutor = project.tutor_for(task_definition)
+    unread_comment = task.add_text_comment(student, 'Please review this')
+
+    review_request = task.add_feedback_review_request_comment(student)
+
+    assert review_request.attention_none?
+    assert_nil CommentReadCursor.find_by(task: task, user: tutor)
+    assert unread_comment.new_for?(tutor)
+    assert_includes project.unit.tasks_for_task_inbox(tutor).map(&:task_id), task.id
+  end
+
+  def test_discussion_comment_requires_student_attention
+    project = FactoryBot.create(:project)
+    task = project.task_for_task_definition(project.unit.task_definitions.first)
+    tutor = project.tutor_for(task.task_definition)
+
+    discussion = DiscussionComment.create!(
+      task: task,
+      user: tutor,
+      recipient: project.student,
+      comment: '',
+      content_type: :discussion,
+      number_of_prompts: 1
+    )
+
+    assert discussion.attention_student?
+    assert discussion.new_for?(project.student)
+  end
+
   def test_destroying_the_cursor_comment_rewinds_each_users_cursor
     project = FactoryBot.create(:project)
     task = project.task_for_task_definition(project.unit.task_definitions.first)
