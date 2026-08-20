@@ -16,8 +16,5 @@ module Entities
     expose :tutorial_stream_id
     expose :campus_id
     expose :submitted_portfolio
-    expose :unresolved_references
-    expose :unresolved?, as: :unresolved
-    expose :unresolved_summary
   end
 end

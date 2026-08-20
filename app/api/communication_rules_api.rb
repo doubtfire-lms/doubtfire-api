@@ -73,28 +73,19 @@ class CommunicationRulesApi < Grape::API
       communication_set_params[:schedules] || communication_set_params['schedules']
     end
 
-    # Executing a set whose rules cannot be evaluated is refused up front, so
-    # staff see why immediately instead of the job failing out of sight.
+    # Rules are applied in order and each one removes the students it matches
+    # from the rules below it, so one rule that cannot be evaluated makes every
+    # rule under it wrong too. The whole set is refused, not just that rule.
     def reject_unresolved!(communication_set)
-      unresolved_rules = communication_set.unresolved_rules
-      return if unresolved_rules.empty?
+      return if communication_set.executable?
 
       error!(
         {
           error: 'This communication set references records that do not exist in this unit',
-          unresolved_rules: unresolved_rules.map do |rule|
-            { id: rule.id, name: rule.name, unresolved: rule.unresolved_summaries }
-          end
+          unresolved_rules: communication_set.unresolved_rules.map { |rule| { id: rule.id, name: rule.name } }
         },
         409
       )
-    end
-
-    def import_document_from_request
-      document = params[:document]
-      raise CommunicationSetImporter::InvalidDocument, 'No document provided' if document.blank?
-
-      document.respond_to?(:to_h) ? document.to_h : document
     end
 
     def sync_set_schedules!(communication_set, raw_schedules)
@@ -768,7 +759,7 @@ class CommunicationRulesApi < Grape::API
     status 204
   end
 
-  desc 'Export a communication set as a portable document'
+  desc 'Copy a communication set as a portable document'
   params do
     requires :unit_id, type: Integer
     requires :id, type: Integer
@@ -777,17 +768,13 @@ class CommunicationRulesApi < Grape::API
     unit = Unit.find(params[:unit_id])
 
     unless authorise? current_user, unit, :get_unit
-      error!({ error: 'Not authorised to export unit communications' }, 403)
+      error!({ error: 'Not authorised to get unit communications' }, 403)
     end
 
-    communication_set = unit.communication_sets
-                            .includes(:communication_set_schedules, communication_rules: [:communication_conditions, :communication_actions])
-                            .find(params[:id])
-
-    present CommunicationSetExporter.export_set(communication_set)
+    present CommunicationTransfer.export_set(unit.communication_sets.find(params[:id]))
   end
 
-  desc 'Export a communication rule as a portable document'
+  desc 'Copy a communication rule as a portable document'
   params do
     requires :unit_id, type: Integer
     requires :id, type: Integer
@@ -796,19 +783,16 @@ class CommunicationRulesApi < Grape::API
     unit = Unit.find(params[:unit_id])
 
     unless authorise? current_user, unit, :get_unit
-      error!({ error: 'Not authorised to export unit communications' }, 403)
+      error!({ error: 'Not authorised to get unit communications' }, 403)
     end
 
-    rule = unit.communication_rules.includes(:communication_conditions, :communication_actions).find(params[:id])
-
-    present CommunicationSetExporter.export_rule(rule)
+    present CommunicationTransfer.export_rule(unit.communication_rules.find(params[:id]))
   end
 
-  desc 'Import a communication set from a portable document'
+  desc 'Import a communication set from a copied document'
   params do
     requires :unit_id, type: Integer
     requires :document, type: Hash
-    optional :dry_run, type: Boolean, default: false
   end
   post '/units/:unit_id/communication_sets/import' do
     unit = Unit.find(params[:unit_id])
@@ -818,26 +802,19 @@ class CommunicationRulesApi < Grape::API
     end
 
     begin
-      importer = CommunicationSetImporter.new(import_document_from_request, unit)
-      report = importer.import_set(dry_run: params[:dry_run])
-    rescue CommunicationSetImporter::InvalidDocument => e
+      communication_set = CommunicationTransfer.import_set(params[:document], unit)
+    rescue CommunicationTransfer::InvalidDocument => e
       error!({ error: e.message }, 400)
     end
 
-    communication_set = report[:imported_id] && unit.communication_sets.find(report[:imported_id])
-
-    present(
-      report: report,
-      communication_set: communication_set && Entities::CommunicationSetEntity.represent(communication_set)
-    )
+    present communication_set, with: Entities::CommunicationSetEntity
   end
 
-  desc 'Import a communication rule into an existing communication set'
+  desc 'Import a communication rule into an existing set'
   params do
     requires :unit_id, type: Integer
     requires :communication_set_id, type: Integer
     requires :document, type: Hash
-    optional :dry_run, type: Boolean, default: false
   end
   post '/units/:unit_id/communication_sets/:communication_set_id/rules/import' do
     unit = Unit.find(params[:unit_id])
@@ -849,17 +826,11 @@ class CommunicationRulesApi < Grape::API
     communication_set = unit.communication_sets.find(params[:communication_set_id])
 
     begin
-      importer = CommunicationSetImporter.new(import_document_from_request, unit)
-      report = importer.import_rule(communication_set, dry_run: params[:dry_run])
-    rescue CommunicationSetImporter::InvalidDocument => e
+      rule = CommunicationTransfer.import_rule(params[:document], communication_set)
+    rescue CommunicationTransfer::InvalidDocument => e
       error!({ error: e.message }, 400)
     end
 
-    rule = report[:imported_id] && communication_set.communication_rules.find(report[:imported_id])
-
-    present(
-      report: report,
-      rule: rule && Entities::CommunicationRuleEntity.represent(rule)
-    )
+    present rule, with: Entities::CommunicationRuleEntity
   end
 end

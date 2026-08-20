@@ -63,12 +63,8 @@ class CommunicationSet < ApplicationRecord
     allocations = []
 
     communication_rules.each do |rule|
-      # A broken rule is shown in the preview as matching nobody so the editor
-      # can still render the set, but the whole set stays unexecutable: this
-      # allocation is a waterfall, and the students the rule would have consumed
-      # now fall through to later rules, so every row below it is unreliable too.
-      matched_projects = rule.unresolved? ? [] : rule.matching_projects(remaining_projects)
-      allocations << { rule: rule, projects: matched_projects, unresolved: rule.unresolved? }
+      matched_projects = rule.matching_projects(remaining_projects)
+      allocations << { rule: rule, projects: matched_projects }
       return allocations if rule.id == target_rule.id
 
       remaining_projects -= matched_projects
@@ -77,9 +73,8 @@ class CommunicationSet < ApplicationRecord
     allocations
   end
 
-  # Rules that cannot be evaluated because they reference records missing from
-  # this unit -- usually the result of an import, or of a task definition being
-  # deleted after the rule was written.
+  # Rules that reference records missing from this unit, usually after a set was
+  # copied in from another unit or a task definition was deleted.
   def unresolved_rules
     communication_rules.select(&:unresolved?)
   end
@@ -109,14 +104,18 @@ class CommunicationSet < ApplicationRecord
       new_rule.save!
 
       rule.communication_conditions.each do |condition|
-        new_condition = copy_record_to(condition, other_unit)
+        new_condition = condition.dup
         new_condition.communication = new_rule
+        new_condition.task_definition = matching_task_definition(other_unit, condition)
+        new_condition.tutorial_stream = matching_tutorial_stream(other_unit, condition)
+        new_condition.tutorial = matching_tutorial(other_unit, condition)
         new_condition.save!
       end
 
       rule.communication_actions.each do |action|
-        new_action = copy_record_to(action, other_unit)
+        new_action = action.dup
         new_action.communication_rule = new_rule
+        new_action.task_definition = matching_task_definition(other_unit, action)
         new_action.save!
       end
     end
@@ -126,20 +125,24 @@ class CommunicationSet < ApplicationRecord
 
   private
 
-  # Rebuilds a condition or action against another unit. References resolve by
-  # natural key where the target unit has an equivalent record; where it does
-  # not, the reference is kept as a placeholder so the rule is flagged and
-  # blocked rather than quietly matching the wrong students.
-  def copy_record_to(record, other_unit)
-    new_record = record.dup
-    new_record.unresolved_references = nil
+  def matching_task_definition(unit, condition)
+    return nil if condition.task_definition.blank?
 
-    CommunicationReferenceResolver.apply(
-      new_record,
-      CommunicationReferenceResolver.describe(record),
-      other_unit
+    unit.task_definitions.find_by(abbreviation: condition.task_definition.abbreviation)
+  end
+
+  def matching_tutorial_stream(unit, condition)
+    return nil if condition.tutorial_stream.blank?
+
+    unit.tutorial_streams.find_by(abbreviation: condition.tutorial_stream.abbreviation)
+  end
+
+  def matching_tutorial(unit, condition)
+    return nil if condition.tutorial.blank?
+
+    unit.tutorials.find_by(
+      abbreviation: condition.tutorial.abbreviation,
+      campus_id: condition.tutorial.campus_id
     )
-
-    new_record
   end
 end

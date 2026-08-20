@@ -12,18 +12,16 @@ class ExecuteCommunicationSetJob
   def perform(communication_set_id, target_rule_id = nil)
     communication_set = CommunicationSet.find(communication_set_id)
     rules = communication_set.communication_rules.to_a
-    target_rule_id = target_rule_id&.to_i
 
-    # Refuse the whole set, not just the broken rules. Allocation is a waterfall
-    # -- each rule consumes the students it matches before the next rule sees
-    # them -- so skipping one unevaluable rule sends its students into a later
-    # rule and mails them the wrong thing.
+    # Refuse the whole set, not just the broken rules: allocation is a waterfall,
+    # so a rule that cannot be evaluated sends its students into a later rule and
+    # mails them the wrong thing.
     unresolved_rules = rules.select(&:unresolved?)
     if unresolved_rules.any?
-      raise CommunicationRule::UnresolvedReferenceError,
-            "Communication set #{communication_set.id} cannot run: #{unresolved_rules.map(&:name).join(', ')} " \
+      raise "Communication set #{communication_set.id} cannot run: #{unresolved_rules.map(&:name).join(', ')} " \
             'reference records that do not exist in this unit'
     end
+    target_rule_id = target_rule_id&.to_i
 
     if target_rule_id.present? && rules.none? { |rule| rule.id == target_rule_id }
       raise ActiveRecord::RecordNotFound, "CommunicationRule #{target_rule_id} not found in set #{communication_set_id}"

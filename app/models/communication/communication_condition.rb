@@ -42,6 +42,14 @@ class CommunicationCondition < ApplicationRecord
     rediscuss
   ].freeze
 
+  # The unit-scoped record each condition type cannot be evaluated without.
+  REQUIRED_REFERENCES = {
+    'TaskDefinitionStatusCondition' => :task_definition,
+    'TutorialEnrolmentCondition' => :tutorial,
+    'TutorialStreamEnrolmentCondition' => :tutorial_stream,
+    'CampusCondition' => :campus
+  }.freeze
+
   belongs_to :communication,
              class_name: 'CommunicationRule',
              inverse_of: :communication_conditions
@@ -53,11 +61,28 @@ class CommunicationCondition < ApplicationRecord
 
   attribute :task_statuses, :json, default: -> { [] }
 
-  include CommunicationReferences
-
   validates :type, presence: true, inclusion: { in: VALID_TYPES }
   validates :operator, presence: true
   before_validation :normalize_task_statuses
+
+  def required_reference
+    REQUIRED_REFERENCES[type]
+  end
+
+  # True when this condition points at nothing, or at a record belonging to
+  # another unit -- the usual result of copying a rule in from elsewhere. It
+  # cannot be evaluated: a missing task definition reads as 'not_started' for
+  # every student, which would widen the rule rather than narrow it.
+  def unresolved?
+    reference = required_reference
+    return false if reference.nil?
+
+    target = public_send(reference)
+    return true if target.blank?
+
+    # Campuses are shared between units; everything else must be our own.
+    target.respond_to?(:unit_id) && target.unit_id != communication.unit_id
+  end
 
   def task_statuses_must_be_present
     unless task_statuses.is_a?(Array) && task_statuses.any?(&:present?)
