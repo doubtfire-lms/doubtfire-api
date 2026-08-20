@@ -39,6 +39,14 @@ class CommunicationSetTest < ActiveSupport::TestCase
 
     assert_equal 2, first_rule_matches.length
     assert_empty second_rule_matches
+
+    # In isolation both rules match everyone; subtracting the first reproduces the cascade.
+    first_independent = communication_set.independent_matches_for_rule(first_rule)
+    second_independent = communication_set.independent_matches_for_rule(second_rule)
+
+    assert_equal 2, first_independent.length
+    assert_equal 2, second_independent.length
+    assert_empty second_independent - first_independent
   end
 
   def test_preview_projects_for_rule_matches_spec_con_days
