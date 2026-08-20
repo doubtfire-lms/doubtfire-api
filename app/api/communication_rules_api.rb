@@ -42,6 +42,8 @@ class CommunicationRulesApi < Grape::API
         :tutorial_id,
         :tutorial_stream_id,
         :campus_id,
+        :group_set_id,
+        :group_id,
         :submitted_portfolio,
         task_statuses: []
       ).to_h.compact
@@ -584,6 +586,8 @@ class CommunicationRulesApi < Grape::API
       optional :tutorial_id, type: Integer
       optional :tutorial_stream_id, type: Integer
       optional :campus_id, type: Integer
+      optional :group_set_id, type: Integer
+      optional :group_id, type: Integer
       optional :submitted_portfolio, type: Boolean
     end
   end
@@ -618,6 +622,8 @@ class CommunicationRulesApi < Grape::API
       optional :tutorial_id, type: Integer
       optional :tutorial_stream_id, type: Integer
       optional :campus_id, type: Integer
+      optional :group_set_id, type: Integer
+      optional :group_id, type: Integer
       optional :submitted_portfolio, type: Boolean
     end
   end

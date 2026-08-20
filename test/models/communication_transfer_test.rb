@@ -115,6 +115,48 @@ class CommunicationTransferTest < ActiveSupport::TestCase
     assert_not rolled_over.executable?
   end
 
+  def test_group_references_travel_by_name_and_repoint_on_import
+    group_set = FactoryBot.create(:group_set, unit: @source_unit, name: 'Project Teams')
+    group = FactoryBot.create(:group, group_set: group_set, name: 'Team A', tutorial: @source_unit.tutorials.first)
+    @rule.communication_conditions.create!(type: 'GroupSetEnrolmentCondition', operator: 'enrolled_in', group_set: group_set)
+    @rule.communication_conditions.create!(type: 'GroupEnrolmentCondition', operator: 'not_enrolled_in', group: group)
+
+    document = CommunicationTransfer.export_set(@set)
+    exported = document.dig('set', 'rules', 0, 'conditions').index_by { |condition| condition['type'] }
+
+    assert_equal({ 'group_set' => 'Project Teams' }, exported.fetch('GroupSetEnrolmentCondition')['reference'])
+    # A group name is only unique inside its set, so the set name travels too.
+    assert_equal({ 'group' => 'Team A', 'group_set' => 'Project Teams' }, exported.fetch('GroupEnrolmentCondition')['reference'])
+
+    target_unit = unit_with_task('T1.1')
+    target_set = FactoryBot.create(:group_set, unit: target_unit, name: 'Project Teams')
+    target_group = FactoryBot.create(:group, group_set: target_set, name: 'Team A', tutorial: target_unit.tutorials.first)
+
+    imported = CommunicationTransfer.import_set(document, target_unit).communication_rules.first
+                                    .communication_conditions.index_by(&:type)
+
+    assert_equal target_set.id, imported.fetch('GroupSetEnrolmentCondition').group_set_id
+    assert_equal target_group.id, imported.fetch('GroupEnrolmentCondition').group_id
+    assert_equal 'not_enrolled_in', imported.fetch('GroupEnrolmentCondition').operator
+  end
+
+  def test_a_group_that_only_matches_by_name_in_another_set_is_not_imported
+    group_set = FactoryBot.create(:group_set, unit: @source_unit, name: 'Project Teams')
+    group = FactoryBot.create(:group, group_set: group_set, name: 'Team A', tutorial: @source_unit.tutorials.first)
+    @rule.communication_conditions.create!(type: 'GroupEnrolmentCondition', operator: 'enrolled_in', group: group)
+
+    target_unit = unit_with_task('T1.1')
+    other_set = FactoryBot.create(:group_set, unit: target_unit, name: 'Reading Groups')
+    FactoryBot.create(:group, group_set: other_set, name: 'Team A', tutorial: target_unit.tutorials.first)
+
+    imported = CommunicationTransfer.import_set(CommunicationTransfer.export_set(@set), target_unit)
+    condition = imported.communication_rules.first.communication_conditions.find { |c| c.type == 'GroupEnrolmentCondition' }
+
+    assert_nil condition.group_id
+    assert_predicate condition, :unresolved?
+    assert_not imported.executable?
+  end
+
   private
 
   def unit_with_task(abbreviation)
@@ -123,7 +165,7 @@ class CommunicationTransferTest < ActiveSupport::TestCase
       with_students: false,
       task_count: 0,
       stream_count: 0,
-      tutorials: 0,
+      tutorials: 1,
       outcome_count: 0,
       staff_count: 1,
       campus_count: 1

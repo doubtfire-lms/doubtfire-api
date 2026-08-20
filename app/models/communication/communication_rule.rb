@@ -61,6 +61,10 @@ class CommunicationRule < ApplicationRecord
       tutorial_stream_enrolment_condition_match?(project, condition)
     when 'CampusCondition'
       campus_condition_match?(project, condition)
+    when 'GroupSetEnrolmentCondition'
+      group_set_enrolment_condition_match?(project, condition)
+    when 'GroupEnrolmentCondition'
+      group_enrolment_condition_match?(project, condition)
     when 'PortfolioSubmittedCondition'
       portfolio_submitted_condition_match?(project, condition)
     else
@@ -136,6 +140,27 @@ class CommunicationRule < ApplicationRecord
     enrolled = project.campus_id == condition.campus_id
 
     condition.operator == 'not_enrolled_in' ? !enrolled : enrolled
+  end
+
+  # A student belongs to a group set when they are in any of its groups.
+  def group_set_enrolment_condition_match?(project, condition)
+    enrolled = active_group_memberships(project).any? do |membership|
+      membership.group&.group_set_id == condition.group_set_id
+    end
+
+    condition.operator == 'not_enrolled_in' ? !enrolled : enrolled
+  end
+
+  def group_enrolment_condition_match?(project, condition)
+    enrolled = active_group_memberships(project).any? { |membership| membership.group_id == condition.group_id }
+
+    condition.operator == 'not_enrolled_in' ? !enrolled : enrolled
+  end
+
+  # Memberships are kept after a student leaves a group, so only the active ones
+  # say where they are now.
+  def active_group_memberships(project)
+    project.group_memberships.select(&:active?)
   end
 
   def portfolio_submitted_condition_match?(project, condition)

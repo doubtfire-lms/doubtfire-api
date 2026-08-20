@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_08_20_043724) do
+ActiveRecord::Schema[8.0].define(version: 2026_08_20_054718) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -110,8 +110,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_20_043724) do
     t.datetime "updated_at", null: false
     t.integer "activity_days"
     t.boolean "submitted_portfolio"
+    t.bigint "group_set_id"
+    t.bigint "group_id"
     t.index ["campus_id"], name: "index_communication_conditions_on_campus_id"
     t.index ["communication_id"], name: "index_communication_conditions_on_communication_id"
+    t.index ["group_id"], name: "index_communication_conditions_on_group_id"
+    t.index ["group_set_id"], name: "index_communication_conditions_on_group_set_id"
     t.index ["task_definition_id"], name: "index_communication_conditions_on_task_definition_id"
     t.index ["tutorial_id"], name: "index_communication_conditions_on_tutorial_id"
     t.index ["tutorial_stream_id"], name: "index_communication_conditions_on_tutorial_stream_id"
