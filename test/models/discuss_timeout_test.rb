@@ -10,8 +10,8 @@ class DiscussTimeoutTest < ActiveSupport::TestCase
     )
     campus = FactoryBot.create(:campus)
     other_campus = FactoryBot.create(:campus)
-    teaching_period.add_break(Time.zone.parse('2026-07-13 00:00:00'), 1, [other_campus.id])
-    teaching_period.add_break(Time.zone.parse('2026-07-27 00:00:00'), 1, [campus.id])
+    teaching_period.add_break(Time.zone.parse('2026-07-13 00:00:00'), 7, [other_campus.id])
+    teaching_period.add_break(Time.zone.parse('2026-07-27 00:00:00'), 7, [campus.id])
     unit = FactoryBot.create(:unit, teaching_period: teaching_period)
     task = unit.active_projects.first.task_for_task_definition(unit.task_definitions.first)
     task.project.update!(campus: campus)
@@ -28,7 +28,7 @@ class DiscussTimeoutTest < ActiveSupport::TestCase
         end_date: Time.zone.parse('2026-09-30 23:59:59'),
         active_until: Time.zone.parse('2026-10-31 23:59:59')
       )
-      teaching_period.add_break(Time.zone.parse('2026-07-13 00:00:00'), 1)
+      teaching_period.add_break(Time.zone.parse('2026-07-13 00:00:00'), 7)
       unit = FactoryBot.create(
         :unit,
         teaching_period: teaching_period,

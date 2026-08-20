@@ -37,7 +37,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_20_053053) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.text "campus_ids", size: :long, collation: "utf8mb4_bin"
-    t.integer "number_of_weeks", null: false
+    t.string "label"
+    t.integer "number_of_days", null: false
     t.index ["teaching_period_id"], name: "index_breaks_on_teaching_period_id"
     t.check_constraint "json_valid(`campus_ids`)", name: "campus_ids"
   end
