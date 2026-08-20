@@ -137,6 +137,7 @@ class TasksApi < Grape::API
         user: current_user,
         comment: "Planned date adjusted to #{task.due_date.strftime('%d %b')}.",
         content_type: :plan,
+        attention_audience: :none,
         recipient: project.student,
         extension_weeks: params[:extensions]
       )
@@ -403,6 +404,7 @@ class TasksApi < Grape::API
         user: current_user,
         comment: comment_text,
         content_type: :plan,
+        attention_audience: :none,
         recipient: project.student
       )
 
@@ -442,6 +444,7 @@ class TasksApi < Grape::API
           user: current_user,
           comment: comment_text,
           content_type: :plan,
+          attention_audience: :none,
           recipient: project.student
         )
 
