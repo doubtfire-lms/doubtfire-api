@@ -9,6 +9,8 @@ class CommunicationCondition < ApplicationRecord
     TutorialEnrolmentCondition
     TutorialStreamEnrolmentCondition
     CampusCondition
+    GroupSetEnrolmentCondition
+    GroupEnrolmentCondition
     PortfolioSubmittedCondition
   ].freeze
 
@@ -46,7 +48,9 @@ class CommunicationCondition < ApplicationRecord
     'TaskDefinitionStatusCondition' => :task_definition,
     'TutorialEnrolmentCondition' => :tutorial,
     'TutorialStreamEnrolmentCondition' => :tutorial_stream,
-    'CampusCondition' => :campus
+    'CampusCondition' => :campus,
+    'GroupSetEnrolmentCondition' => :group_set,
+    'GroupEnrolmentCondition' => :group
   }.freeze
 
   belongs_to :communication,
@@ -57,6 +61,8 @@ class CommunicationCondition < ApplicationRecord
   belongs_to :tutorial, optional: true
   belongs_to :tutorial_stream, optional: true
   belongs_to :campus, optional: true
+  belongs_to :group_set, optional: true
+  belongs_to :group, optional: true
 
   attribute :task_statuses, :json, default: -> { [] }
 
@@ -79,7 +85,8 @@ class CommunicationCondition < ApplicationRecord
     return true if target.blank?
 
     # Campuses are shared between units; everything else must be our own.
-    target.respond_to?(:unit_id) && target.unit_id != communication.unit_id
+    owning_unit_id = reference_unit_id(target)
+    owning_unit_id.present? && owning_unit_id != communication.unit_id
   end
 
   def task_statuses_must_be_present
@@ -95,6 +102,14 @@ class CommunicationCondition < ApplicationRecord
   end
 
   private
+
+  # Groups reach their unit through their group set rather than a column of
+  # their own, and campuses have no unit at all.
+  def reference_unit_id(target)
+    return target.unit_id if target.respond_to?(:unit_id)
+
+    target.group_set&.unit_id if target.respond_to?(:group_set)
+  end
 
   def normalize_task_statuses
     parsed_statuses =

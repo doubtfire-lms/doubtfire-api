@@ -21,7 +21,9 @@ class CommunicationTransfer
   ].freeze
   ACTION_ATTRIBUTES = %w[type subject body email_tutors email_convenors target_grade].freeze
 
-  # Campuses are shared between units; everything else is unit scoped.
+  # Abbreviated references. Campuses are shared between units; everything else
+  # is unit scoped. Group sets and groups are named rather than abbreviated, so
+  # they are matched separately.
   SCOPES = {
     task_definition: ->(unit) { unit.task_definitions },
     tutorial: ->(unit) { unit.tutorials },
@@ -96,9 +98,19 @@ class CommunicationTransfer
       document = attributes_of(record, attributes)
       reference = record.required_reference
       target = reference && record.public_send(reference)
-      document['reference'] = { reference.to_s => target.abbreviation } if target
+      document['reference'] = reference_document(reference, target) if target
 
       document
+    end
+
+    # A group name is only unique inside its group set, so a group travels with
+    # the name of the set it sits in.
+    def reference_document(reference, target)
+      case reference
+      when :group_set then { 'group_set' => target.name }
+      when :group then { 'group' => target.name, 'group_set' => target.group_set.name }
+      else { reference.to_s => target.abbreviation }
+      end
     end
 
     def attributes_of(record, attributes)
@@ -124,8 +136,7 @@ class CommunicationTransfer
       reference = record.required_reference
 
       if reference.present?
-        abbreviation = document.dig('reference', reference.to_s)
-        record.public_send("#{reference}=", find_reference(reference, abbreviation, rule.unit))
+        record.public_send("#{reference}=", find_reference(reference, document['reference'] || {}, rule.unit))
       end
 
       record.save!
@@ -136,10 +147,35 @@ class CommunicationTransfer
       raise InvalidDocument, "Rule '#{rule.name}' cannot be used in this unit: #{e.record.errors.full_messages.join(', ')}"
     end
 
-    def find_reference(reference, abbreviation, unit)
-      return nil if abbreviation.blank?
+    def find_reference(reference, document, unit)
+      case reference
+      when :group_set then find_group_set(document['group_set'], unit)
+      when :group then find_group(document['group'], document['group_set'], unit)
+      else
+        abbreviation = document[reference.to_s]
+        return nil if abbreviation.blank?
 
-      SCOPES.fetch(reference).call(unit).find_by(abbreviation: abbreviation)
+        SCOPES.fetch(reference).call(unit).find_by(abbreviation: abbreviation)
+      end
+    end
+
+    def find_group_set(name, unit)
+      find_named(unit.group_sets, name)
+    end
+
+    def find_group(name, group_set_name, unit)
+      group_set = find_group_set(group_set_name, unit)
+      return nil if group_set.nil?
+
+      find_named(group_set.groups, name)
+    end
+
+    # Names are nullable on both group sets and groups, so a blank one must not
+    # be allowed to match the first unnamed record.
+    def find_named(scope, name)
+      return nil if name.blank?
+
+      scope.find_by(name: name)
     end
 
     def expect!(document, format)

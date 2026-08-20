@@ -16,6 +16,8 @@ module Entities
     expose :tutorial_id
     expose :tutorial_stream_id
     expose :campus_id
+    expose :group_set_id
+    expose :group_id
     expose :submitted_portfolio
   end
 end

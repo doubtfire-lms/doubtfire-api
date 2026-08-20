@@ -24,7 +24,8 @@ class CommunicationSet < ApplicationRecord
             :campus,
             { unit: :task_definitions },
             { tasks: [:task_status, :task_definition] },
-            { tutorial_enrolments: :tutorial }
+            { tutorial_enrolments: :tutorial },
+            { group_memberships: :group }
           )
           .to_a
   end
@@ -107,6 +108,8 @@ class CommunicationSet < ApplicationRecord
         new_condition.task_definition = matching_task_definition(other_unit, condition)
         new_condition.tutorial_stream = matching_tutorial_stream(other_unit, condition)
         new_condition.tutorial = matching_tutorial(other_unit, condition)
+        new_condition.group_set = matching_group_set(other_unit, condition)
+        new_condition.group = matching_group(other_unit, condition)
         new_condition.save!
       end
 
@@ -133,6 +136,20 @@ class CommunicationSet < ApplicationRecord
     return nil if condition.tutorial_stream.blank?
 
     unit.tutorial_streams.find_by(abbreviation: condition.tutorial_stream.abbreviation)
+  end
+
+  # Group sets and groups are named rather than abbreviated, and a group name is
+  # only unique inside its set.
+  def matching_group_set(unit, condition)
+    return nil if condition.group_set.blank?
+
+    unit.group_sets.find_by(name: condition.group_set.name)
+  end
+
+  def matching_group(unit, condition)
+    return nil if condition.group.blank?
+
+    unit.group_sets.find_by(name: condition.group.group_set.name)&.groups&.find_by(name: condition.group.name)
   end
 
   def matching_tutorial(unit, condition)
