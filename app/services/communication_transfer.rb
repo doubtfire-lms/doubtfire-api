@@ -1,11 +1,9 @@
-# Moves communication sets and rules between units as a JSON document, so staff
-# can copy a set in one unit and paste it into another.
+# Moves communication sets and rules between units as a JSON document.
 #
-# The document carries abbreviations instead of database ids. On import each one
-# is looked up in the target unit; a reference with no equivalent there is left
-# nil rather than failing the import, so the rule keeps its conditions and
-# actions. CommunicationRule#unresolved? then flags it in the editor and the set
-# is blocked from running until someone repoints it.
+# References travel as abbreviations rather than database ids. One with no
+# equivalent in the target unit is left nil instead of failing the import, so
+# the rule keeps its conditions and actions; CommunicationRule#unresolved? then
+# flags it and blocks the set from running until someone repoints it.
 class CommunicationTransfer
   class InvalidDocument < StandardError; end
 
@@ -23,8 +21,7 @@ class CommunicationTransfer
   ].freeze
   ACTION_ATTRIBUTES = %w[type subject body email_tutors email_convenors target_grade].freeze
 
-  # Where each reference is looked up in the target unit. Campuses are shared
-  # between units; everything else is unit scoped.
+  # Campuses are shared between units; everything else is unit scoped.
   SCOPES = {
     task_definition: ->(unit) { unit.task_definitions },
     tutorial: ->(unit) { unit.tutorials },
@@ -59,9 +56,9 @@ class CommunicationTransfer
         )
 
         Array(document['schedules']).each do |schedule|
-          # Imported schedules arrive switched off. The schedule runner is the
-          # one place an active flag is honoured, so this is what stops a set
-          # mailing students before anyone has looked at it.
+          # Switched off on the way in: the schedule runner is the one place an
+          # active flag is honoured, so this is what stops a set mailing students
+          # before anyone has looked at it.
           set.communication_set_schedules.create!(schedule.slice(*SCHEDULE_ATTRIBUTES).merge('active' => false))
         end
 
@@ -133,9 +130,9 @@ class CommunicationTransfer
 
       record.save!
     rescue ActiveRecord::RecordInvalid => e
-      # Not everything that fails here is a missing reference -- units enable
-      # different target grades, so a grade-based rule can be valid where it was
-      # written and invalid here. Name the rule rather than the bare model.
+      # Not every failure here is a missing reference -- units enable different
+      # target grades, so a grade-based rule can be valid where it was written
+      # and invalid here. Name the rule rather than the bare model.
       raise InvalidDocument, "Rule '#{rule.name}' cannot be used in this unit: #{e.record.errors.full_messages.join(', ')}"
     end
 

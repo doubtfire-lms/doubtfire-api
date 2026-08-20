@@ -73,9 +73,6 @@ class CommunicationRulesApi < Grape::API
       communication_set_params[:schedules] || communication_set_params['schedules']
     end
 
-    # Rules are applied in order and each one removes the students it matches
-    # from the rules below it, so one rule that cannot be evaluated makes every
-    # rule under it wrong too. The whole set is refused, not just that rule.
     def reject_unresolved!(communication_set)
       return if communication_set.executable?
 

@@ -15,7 +15,6 @@ class CommunicationRule < ApplicationRecord
   validates :operator, presence: true, inclusion: { in: LOGICAL_OPERATORS }
   validates :position, presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 
-  # Conditions and actions pointing at records that are missing from this unit.
   def unresolved_records
     (communication_conditions.to_a + communication_actions.to_a).select(&:unresolved?)
   end
@@ -25,9 +24,8 @@ class CommunicationRule < ApplicationRecord
   end
 
   def matching_projects(projects = nil)
-    # A rule that cannot be evaluated matches nobody. Nothing is sent on the
-    # back of this: ExecuteCommunicationSetJob refuses the whole set before any
-    # rule runs, so this only affects the editor preview.
+    # Only reached by the editor preview -- ExecuteCommunicationSetJob refuses
+    # the whole set before any rule runs, so nothing is sent on the back of this.
     return [] if unresolved?
 
     projects ||= communication_set.eligible_projects

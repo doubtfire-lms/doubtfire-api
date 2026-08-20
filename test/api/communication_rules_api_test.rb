@@ -231,8 +231,6 @@ class CommunicationRulesApiTest < ActiveSupport::TestCase
 
     assert_equal true, condition['unresolved']
 
-    # The editor recomputes the rule's flag from the record it just saved, so
-    # the condition has to report its own state on update.
     put_json "/api/units/#{target_unit.id}/communication_rules/#{rule['id']}/conditions/#{condition['id']}",
              communication_condition: {
                type: 'TaskDefinitionStatusCondition',
@@ -244,7 +242,6 @@ class CommunicationRulesApiTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
     assert_equal false, last_response_body['unresolved']
 
-    # And the set is runnable again once nothing is left unresolved.
     get "/api/units/#{target_unit.id}/communication_sets/#{imported_id}"
 
     assert_equal true, last_response_body['executable']

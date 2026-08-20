@@ -42,7 +42,6 @@ class CommunicationCondition < ApplicationRecord
     rediscuss
   ].freeze
 
-  # The unit-scoped record each condition type cannot be evaluated without.
   REQUIRED_REFERENCES = {
     'TaskDefinitionStatusCondition' => :task_definition,
     'TutorialEnrolmentCondition' => :tutorial,
@@ -69,10 +68,9 @@ class CommunicationCondition < ApplicationRecord
     REQUIRED_REFERENCES[type]
   end
 
-  # True when this condition points at nothing, or at a record belonging to
-  # another unit -- the usual result of copying a rule in from elsewhere. It
-  # cannot be evaluated: a missing task definition reads as 'not_started' for
-  # every student, which would widen the rule rather than narrow it.
+  # A missing reference cannot be left to evaluate: an absent task definition
+  # reads as 'not_started' for every student, widening the rule instead of
+  # narrowing it.
   def unresolved?
     reference = required_reference
     return false if reference.nil?

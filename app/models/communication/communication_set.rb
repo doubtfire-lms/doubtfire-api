@@ -73,8 +73,6 @@ class CommunicationSet < ApplicationRecord
     allocations
   end
 
-  # Rules that reference records missing from this unit, usually after a set was
-  # copied in from another unit or a task definition was deleted.
   def unresolved_rules
     communication_rules.select(&:unresolved?)
   end
