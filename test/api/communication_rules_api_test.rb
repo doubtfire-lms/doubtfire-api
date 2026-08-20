@@ -49,11 +49,100 @@ class CommunicationRulesApiTest < ActiveSupport::TestCase
     get "/api/units/#{unit.id}/communication_sets/#{communication_set.id}"
 
     assert_equal 200, last_response.status
-    student = last_response_body['previews'].first['allocations'].first['students'].first
+    assert_equal 1, last_response_body['eligible_student_count']
+    refute last_response_body.key?('previews')
+
+    get "/api/units/#{unit.id}/communication_rules/#{rule.id}/preview"
+
+    assert_equal 200, last_response.status
+    assert_equal rule.id, last_response_body['rule_id']
+    assert_equal 1, last_response_body['eligible_student_count']
+    student = last_response_body['students'].first
+    assert_equal project.id, student['project_id']
     assert_equal project.user.username, student['username']
     assert_equal false, student['has_portfolio']
     assert_equal viewed_at.iso8601(3), Time.zone.parse(student['last_viewed_at']).iso8601(3)
     assert_equal project.user.last_sign_in_at.iso8601(3), Time.zone.parse(student['last_sign_in_at']).iso8601(3)
+  end
+
+  def test_rule_preview_ignores_earlier_rules_in_the_set
+    admin = FactoryBot.create(:user, :admin)
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0)
+    communication_set = unit.communication_sets.create!(name: 'Spec con', active: true)
+    first_rule = communication_set.communication_rules.create!(name: 'First', operator: 'and', position: 0)
+    second_rule = communication_set.communication_rules.create!(name: 'Second', operator: 'and', position: 1)
+
+    [first_rule, second_rule].each do |rule|
+      rule.communication_conditions.create!(
+        type: 'SpecConCondition',
+        operator: 'greater_than_or_equal_to',
+        spec_con_days: 3
+      )
+    end
+
+    matching_project = FactoryBot.create(:project, unit: unit, spec_con_days: 4)
+    FactoryBot.create(:project, unit: unit, spec_con_days: 1)
+    add_auth_header_for(user: admin)
+
+    # Both rules report the same student -- the second is no longer filtered by the first.
+    [first_rule, second_rule].each do |rule|
+      get "/api/units/#{unit.id}/communication_rules/#{rule.id}/preview"
+
+      assert_equal 200, last_response.status
+      assert_equal 2, last_response_body['eligible_student_count']
+      assert_equal [matching_project.id], last_response_body['students'].map { |student| student['project_id'] }
+    end
+  end
+
+  def test_rules_are_returned_ordered_by_position
+    admin = FactoryBot.create(:user, :admin)
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0)
+    communication_set = unit.communication_sets.create!(name: 'Ordering', active: true)
+
+    # Created out of order on purpose -- id order must not decide the response order.
+    third = communication_set.communication_rules.create!(name: 'Third', operator: 'and', position: 2)
+    first = communication_set.communication_rules.create!(name: 'First', operator: 'and', position: 0)
+    second = communication_set.communication_rules.create!(name: 'Second', operator: 'and', position: 1)
+    expected = [first.id, second.id, third.id]
+    add_auth_header_for(user: admin)
+
+    get "/api/units/#{unit.id}/communication_sets"
+    assert_equal 200, last_response.status
+    assert_equal expected, last_response_body.first['rules'].map { |rule| rule['id'] }
+
+    get "/api/units/#{unit.id}/communication_sets/#{communication_set.id}"
+    assert_equal 200, last_response.status
+    assert_equal expected, last_response_body['rules'].map { |rule| rule['id'] }
+
+    get "/api/units/#{unit.id}/communication_sets/#{communication_set.id}/rules"
+    assert_equal 200, last_response.status
+    assert_equal expected, last_response_body.map { |rule| rule['id'] }
+
+    # And the order follows position after a drag-and-drop style reorder.
+    put_json "/api/units/#{unit.id}/communication_rules/#{third.id}", communication_rule: { position: 0 }
+    put_json "/api/units/#{unit.id}/communication_rules/#{first.id}", communication_rule: { position: 1 }
+    put_json "/api/units/#{unit.id}/communication_rules/#{second.id}", communication_rule: { position: 2 }
+
+    get "/api/units/#{unit.id}/communication_sets/#{communication_set.id}"
+    assert_equal 200, last_response.status
+    assert_equal [third.id, first.id, second.id], last_response_body['rules'].map { |rule| rule['id'] }
+  end
+
+  def test_update_rule_position_reorders_the_set
+    admin = FactoryBot.create(:user, :admin)
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0)
+    communication_set = unit.communication_sets.create!(name: 'Ordering', active: true)
+    first_rule = communication_set.communication_rules.create!(name: 'First', operator: 'and', position: 0)
+    second_rule = communication_set.communication_rules.create!(name: 'Second', operator: 'and', position: 1)
+    add_auth_header_for(user: admin)
+
+    put_json "/api/units/#{unit.id}/communication_rules/#{second_rule.id}", communication_rule: { position: 0 }
+    assert_equal 200, last_response.status
+
+    put_json "/api/units/#{unit.id}/communication_rules/#{first_rule.id}", communication_rule: { position: 1 }
+    assert_equal 200, last_response.status
+
+    assert_equal [second_rule.id, first_rule.id], communication_set.reload.communication_rules.map(&:id)
   end
 
   def test_create_and_update_portfolio_submitted_condition
