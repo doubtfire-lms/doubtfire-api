@@ -63,12 +63,12 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     # The api call we are testing
     put_json "/api/teaching_periods/#{tp.id}/breaks/#{to_update.id}", {
       start_date: new_start_date,
-      number_of_weeks: 5,
+      number_of_days: 35,
       campus_ids: [campus.id]
     }
 
     to_update.reload
-    assert_equal 5, to_update.number_of_weeks
+    assert_equal 35, to_update.number_of_days
     assert_equal [campus.id], to_update.campus_ids
     assert_equal new_start_date.to_date, to_update.start_date.to_date
   end
@@ -76,18 +76,18 @@ class TeachingPeriodTest < ActiveSupport::TestCase
   def test_update_break_must_be_from_teaching_period
     tp = TeachingPeriod.first
     to_update = TeachingPeriod.last.breaks.first
-    num_weeks = to_update.number_of_weeks
+    num_days = to_update.number_of_days
 
     # Add username and auth_token to Header
     add_auth_header_for(user: User.first)
 
     # The api call we are testing
-    put_json "/api/teaching_periods/#{tp.id}/breaks/#{to_update.id}", { number_of_weeks: num_weeks + 1 }
+    put_json "/api/teaching_periods/#{tp.id}/breaks/#{to_update.id}", { number_of_days: num_days + 7 }
 
     assert_equal 404, last_response.status
 
     to_update.reload
-    assert_equal num_weeks, to_update.number_of_weeks
+    assert_equal num_days, to_update.number_of_days
   end
 
   # Replace a teaching period
