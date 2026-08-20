@@ -477,7 +477,7 @@ class Task < ApplicationRecord
 
     teaching_breaks.sort_by(&:start_date).each do |teaching_break|
       break_start = teaching_break.start_date
-      break_end = break_start + teaching_break.number_of_weeks.to_i.weeks
+      break_end = break_start + teaching_break.number_of_days.to_i.days
       next if break_end <= moved_to_discuss_at || break_start >= deadline
 
       deadline += break_end - [break_start, moved_to_discuss_at].max
@@ -1908,7 +1908,7 @@ class Task < ApplicationRecord
   def break_overlap_seconds(start_time, end_time, teaching_breaks)
     teaching_breaks.sum do |teaching_break|
       break_start = teaching_break.start_date.to_f
-      break_duration = teaching_break.number_of_weeks.to_i.weeks
+      break_duration = teaching_break.number_of_days.to_i.days
       break_end = break_start + break_duration
 
       next 0 unless break_start.finite? && break_duration.positive?
