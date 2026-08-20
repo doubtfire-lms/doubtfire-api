@@ -206,7 +206,21 @@ class EngagementsApi < Grape::API
   delete '/projects/:project_id/engagements/:id' do
     project = Project.find(params[:project_id])
     engagement = engagement_for(project)
-    error!({ error: 'You do not have permission to delete this engagement.' }, 403) unless authorise?(current_user, project.unit, :delete_engagement)
+
+    # Convenors can delete any engagement, tutors can only delete their own
+    can_delete_any = authorise?(current_user, project.unit, :delete_engagement)
+    can_delete_own = engagement.user_id == current_user.id &&
+                     authorise?(current_user, project, :delete_engagement)
+    error!({ error: 'You do not have permission to delete this engagement.' }, 403) unless can_delete_any || can_delete_own
+
+    # Convenors get a longer window to delete engagements than their tutors do
+    delete_window = can_delete_any ? Engagement::CONVENOR_DELETE_WINDOW : Engagement::DELETE_WINDOW
+    unless engagement.within_delete_window?(delete_window)
+      error!(
+        { error: "Engagements can only be deleted within #{delete_window.inspect} of being created." },
+        403
+      )
+    end
 
     engagement.destroy!
     present engagement.destroyed?, with: Grape::Presenters::Presenter

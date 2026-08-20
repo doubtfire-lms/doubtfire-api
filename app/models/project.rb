@@ -83,6 +83,7 @@ class Project < ApplicationRecord
       :get_engagements,
       :create_engagement,
       :edit_engagement,
+      :delete_engagement,
       :comment_engagement
     ]
 
