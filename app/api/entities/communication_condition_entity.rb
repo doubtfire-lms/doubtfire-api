@@ -6,6 +6,7 @@ module Entities
     expose :operator
     expose :target_grade
     expose :task_definition_id
+    expose :unresolved?, as: :unresolved
     expose :task_statuses
     expose :task_status_count
     expose :task_target_grade

@@ -216,6 +216,41 @@ class CommunicationRulesApiTest < ActiveSupport::TestCase
     assert_equal ['Chase T1.1'], last_response_body['unresolved_rules'].map { |rule| rule['name'] }
   end
 
+  def test_repointing_a_condition_clears_the_unresolved_flag_it_returns
+    admin = FactoryBot.create(:user, :admin)
+    source_unit = transferable_unit('T1.1')
+    target_unit = transferable_unit('Different')
+    add_auth_header_for(user: admin)
+
+    get "/api/units/#{source_unit.id}/communication_sets/#{transferable_set(source_unit).id}/export"
+    post_json "/api/units/#{target_unit.id}/communication_sets/import", document: last_response_body
+
+    imported_id = last_response_body['id']
+    rule = last_response_body['rules'].first
+    condition = rule['conditions'].first
+
+    assert_equal true, condition['unresolved']
+
+    # The editor recomputes the rule's flag from the record it just saved, so
+    # the condition has to report its own state on update.
+    put_json "/api/units/#{target_unit.id}/communication_rules/#{rule['id']}/conditions/#{condition['id']}",
+             communication_condition: {
+               type: 'TaskDefinitionStatusCondition',
+               operator: 'equal_to',
+               task_definition_id: target_unit.task_definitions.first.id,
+               task_statuses: ['not_started']
+             }
+
+    assert_equal 200, last_response.status
+    assert_equal false, last_response_body['unresolved']
+
+    # And the set is runnable again once nothing is left unresolved.
+    get "/api/units/#{target_unit.id}/communication_sets/#{imported_id}"
+
+    assert_equal true, last_response_body['executable']
+    assert_equal [false], last_response_body['rules'].map { |item| item['unresolved'] }
+  end
+
   def test_importing_a_rule_document_as_a_set_is_rejected
     admin = FactoryBot.create(:user, :admin)
     unit = transferable_unit('T1.1')

@@ -156,6 +156,7 @@ class CommunicationRulesApi < Grape::API
       unit_id: communication_set.unit_id,
       name: communication_set.name,
       active: communication_set.active,
+      executable: communication_set.executable?,
       eligible_student_count: communication_set.eligible_project_count,
       schedules: Entities::CommunicationSetScheduleEntity.represent(communication_set.communication_set_schedules),
       rules: Entities::CommunicationRuleEntity.represent(communication_set.communication_rules)
