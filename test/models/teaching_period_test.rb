@@ -147,7 +147,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     tp = TeachingPeriod.find(2)
 
     break_in_cal_week = ((tp.breaks.first.start_date - tp.start_date) / 1.week).ceil + 1 # + 1 as mon break
-    assert_equal tp.breaks.first.start_date + tp.breaks.first.number_of_weeks.week, tp.date_for_week(break_in_cal_week)
+    assert_equal tp.breaks.first.start_date + tp.breaks.first.number_of_days.days, tp.date_for_week(break_in_cal_week)
   end
 
   test 'can map week number to date across breaks starting friday' do
@@ -155,19 +155,19 @@ class TeachingPeriodTest < ActiveSupport::TestCase
 
     break_in_cal_week = ((tp.breaks.first.start_date - tp.start_date) / 1.week).ceil # no +1 as Fri
     assert_equal tp.breaks.first.start_date - 4.days, tp.date_for_week(break_in_cal_week)
-    assert_equal tp.breaks.first.start_date + tp.breaks.first.number_of_weeks.week + 3.days, tp.date_for_week(break_in_cal_week + 1)
+    assert_equal tp.breaks.first.start_date + tp.breaks.first.number_of_days.days + 3.days, tp.date_for_week(break_in_cal_week + 1)
   end
 
   test 'week number works with mult-week breaks' do
     tp = TeachingPeriod.find(3)
 
     assert_equal tp.week_number(tp.breaks.first.start_date) + 1, tp.week_number(tp.breaks.first.end_date)
-    assert_equal 2, tp.breaks.first.number_of_weeks
+    assert_equal 14, tp.breaks.first.number_of_days
   end
 
   test 'check end date' do
     TeachingPeriod.all.each do |tp|
-      assert_equal tp.breaks.first.start_date + tp.breaks.first.number_of_weeks.weeks, tp.breaks.first.end_date
+      assert_equal tp.breaks.first.start_date + tp.breaks.first.number_of_days.days, tp.breaks.first.end_date
     end
   end
 
@@ -214,7 +214,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
 
     tp = TeachingPeriod.create(data)
 
-    tp.add_break(tp.date_for_week(3), 1)
+    tp.add_break(tp.date_for_week(3), 7)
 
     assert tp.breaks.count > 0
     tp.destroy
@@ -246,10 +246,10 @@ class TeachingPeriodTest < ActiveSupport::TestCase
 
       assert_equal Time.zone.local(2026, 2, 16, 9, 30, 0), schedule.next_run_at
 
-      teaching_break = tp.add_break(Date.parse('2026-02-09'), 1)
+      teaching_break = tp.add_break(Date.parse('2026-02-09'), 7)
       assert_equal Time.zone.local(2026, 2, 23, 9, 30, 0), schedule.reload.next_run_at
 
-      tp.update_break(teaching_break.id, Date.parse('2026-02-23'), 1)
+      tp.update_break(teaching_break.id, Date.parse('2026-02-23'), 7)
       assert_equal Time.zone.local(2026, 2, 16, 9, 30, 0), schedule.reload.next_run_at
 
       teaching_break.destroy

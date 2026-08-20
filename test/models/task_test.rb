@@ -181,7 +181,7 @@ class TaskTest < ActiveSupport::TestCase
         end_date: Time.zone.parse('2026-04-30 00:00:00 UTC'),
         active_until: Time.zone.parse('2026-05-31 00:00:00 UTC')
       )
-      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 2)
+      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 14)
 
       unit = FactoryBot.create(:unit, teaching_period: teaching_period, with_students: false)
       task = FactoryBot.create(:task, project: FactoryBot.create(:project, unit: unit))
@@ -201,7 +201,7 @@ class TaskTest < ActiveSupport::TestCase
         end_date: Time.zone.parse('2026-04-30 00:00:00 UTC'),
         active_until: Time.zone.parse('2026-05-31 00:00:00 UTC')
       )
-      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 2)
+      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 14)
 
       unit = FactoryBot.create(:unit, teaching_period: teaching_period, with_students: false)
       task = FactoryBot.create(:task, project: FactoryBot.create(:project, unit: unit))
@@ -220,7 +220,7 @@ class TaskTest < ActiveSupport::TestCase
         end_date: Time.zone.parse('2026-04-30 00:00:00 UTC'),
         active_until: Time.zone.parse('2026-05-31 00:00:00 UTC')
       )
-      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 2)
+      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 14)
 
       unit = FactoryBot.create(:unit, teaching_period: teaching_period, with_students: false)
       task = FactoryBot.create(:task, project: FactoryBot.create(:project, unit: unit))
@@ -241,8 +241,8 @@ class TaskTest < ActiveSupport::TestCase
       )
       special_campus = FactoryBot.create(:campus)
       default_campus = FactoryBot.create(:campus)
-      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 1, [default_campus.id])
-      teaching_period.add_break(Time.zone.parse('2026-04-08 00:00:00 UTC'), 1, [special_campus.id])
+      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 7, [default_campus.id])
+      teaching_period.add_break(Time.zone.parse('2026-04-08 00:00:00 UTC'), 7, [special_campus.id])
       unit = FactoryBot.create(:unit, teaching_period: teaching_period, with_students: false)
       special_task = FactoryBot.create(:task, project: FactoryBot.create(:project, unit: unit, campus: special_campus))
       default_task = FactoryBot.create(:task, project: FactoryBot.create(:project, unit: unit, campus: default_campus))

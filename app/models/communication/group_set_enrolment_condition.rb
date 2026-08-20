@@ -1,3 +1,3 @@
-class TutorialEnrolmentCondition < CommunicationCondition
+class GroupSetEnrolmentCondition < CommunicationCondition
   validates :operator, inclusion: { in: ENROLMENT_OPERATORS }
 end
