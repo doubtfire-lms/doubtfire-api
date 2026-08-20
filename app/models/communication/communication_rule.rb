@@ -2,7 +2,7 @@ class CommunicationRule < ApplicationRecord
   LOGICAL_OPERATORS = %w[and or].freeze
 
   belongs_to :communication_set, class_name: 'CommunicationSet'
-  delegate :unit, to: :communication_set
+  delegate :unit, :unit_id, to: :communication_set
 
   has_many :communication_conditions,
            class_name: 'CommunicationCondition',
@@ -15,7 +15,19 @@ class CommunicationRule < ApplicationRecord
   validates :operator, presence: true, inclusion: { in: LOGICAL_OPERATORS }
   validates :position, presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 
+  def unresolved_records
+    (communication_conditions.to_a + communication_actions.to_a).select(&:unresolved?)
+  end
+
+  def unresolved?
+    unresolved_records.any?
+  end
+
   def matching_projects(projects = nil)
+    # Only reached by the editor preview -- ExecuteCommunicationSetJob refuses
+    # the whole set before any rule runs, so nothing is sent on the back of this.
+    return [] if unresolved?
+
     projects ||= communication_set.eligible_projects
     return projects if communication_conditions.empty?
 

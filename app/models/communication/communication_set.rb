@@ -73,6 +73,14 @@ class CommunicationSet < ApplicationRecord
     allocations
   end
 
+  def unresolved_rules
+    communication_rules.select(&:unresolved?)
+  end
+
+  def executable?
+    unresolved_rules.empty?
+  end
+
   def copy_to(other_unit)
     new_set = dup
     new_set.unit = other_unit

@@ -42,6 +42,13 @@ class CommunicationCondition < ApplicationRecord
     rediscuss
   ].freeze
 
+  REQUIRED_REFERENCES = {
+    'TaskDefinitionStatusCondition' => :task_definition,
+    'TutorialEnrolmentCondition' => :tutorial,
+    'TutorialStreamEnrolmentCondition' => :tutorial_stream,
+    'CampusCondition' => :campus
+  }.freeze
+
   belongs_to :communication,
              class_name: 'CommunicationRule',
              inverse_of: :communication_conditions
@@ -56,6 +63,24 @@ class CommunicationCondition < ApplicationRecord
   validates :type, presence: true, inclusion: { in: VALID_TYPES }
   validates :operator, presence: true
   before_validation :normalize_task_statuses
+
+  def required_reference
+    REQUIRED_REFERENCES[type]
+  end
+
+  # A missing reference cannot be left to evaluate: an absent task definition
+  # reads as 'not_started' for every student, widening the rule instead of
+  # narrowing it.
+  def unresolved?
+    reference = required_reference
+    return false if reference.nil?
+
+    target = public_send(reference)
+    return true if target.blank?
+
+    # Campuses are shared between units; everything else must be our own.
+    target.respond_to?(:unit_id) && target.unit_id != communication.unit_id
+  end
 
   def task_statuses_must_be_present
     unless task_statuses.is_a?(Array) && task_statuses.any?(&:present?)

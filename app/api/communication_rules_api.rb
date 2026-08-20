@@ -73,6 +73,18 @@ class CommunicationRulesApi < Grape::API
       communication_set_params[:schedules] || communication_set_params['schedules']
     end
 
+    def reject_unresolved!(communication_set)
+      return if communication_set.executable?
+
+      error!(
+        {
+          error: 'This communication set references records that do not exist in this unit',
+          unresolved_rules: communication_set.unresolved_rules.map { |rule| { id: rule.id, name: rule.name } }
+        },
+        409
+      )
+    end
+
     def sync_set_schedules!(communication_set, raw_schedules)
       schedules = Array(raw_schedules).map { |schedule| permitted_schedule_params(schedule).to_h }
 
@@ -141,6 +153,7 @@ class CommunicationRulesApi < Grape::API
       unit_id: communication_set.unit_id,
       name: communication_set.name,
       active: communication_set.active,
+      executable: communication_set.executable?,
       eligible_student_count: communication_set.eligible_project_count,
       schedules: Entities::CommunicationSetScheduleEntity.represent(communication_set.communication_set_schedules),
       rules: Entities::CommunicationRuleEntity.represent(communication_set.communication_rules)
@@ -255,6 +268,7 @@ class CommunicationRulesApi < Grape::API
     end
 
     communication_set = unit.communication_sets.find(params[:id])
+    reject_unresolved!(communication_set)
     job_id = ExecuteCommunicationSetJob.perform_async(communication_set.id)
     job = setup_job(job_id)
 
@@ -483,6 +497,7 @@ class CommunicationRulesApi < Grape::API
     end
 
     rule = unit.communication_rules.find(params[:id])
+    reject_unresolved!(rule.communication_set)
     job_id = ExecuteCommunicationSetJob.perform_async(rule.communication_set_id, rule.id)
     job = setup_job(job_id)
 
@@ -740,5 +755,80 @@ class CommunicationRulesApi < Grape::API
     rule = unit.communication_rules.find(params[:communication_rule_id])
     rule.communication_actions.find(params[:id]).destroy!
     status 204
+  end
+
+  desc 'Copy a communication set as a portable document'
+  params do
+    requires :unit_id, type: Integer
+    requires :id, type: Integer
+  end
+  get '/units/:unit_id/communication_sets/:id/export' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :get_unit
+      error!({ error: 'Not authorised to get unit communications' }, 403)
+    end
+
+    present CommunicationTransfer.export_set(unit.communication_sets.find(params[:id]))
+  end
+
+  desc 'Copy a communication rule as a portable document'
+  params do
+    requires :unit_id, type: Integer
+    requires :id, type: Integer
+  end
+  get '/units/:unit_id/communication_rules/:id/export' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :get_unit
+      error!({ error: 'Not authorised to get unit communications' }, 403)
+    end
+
+    present CommunicationTransfer.export_rule(unit.communication_rules.find(params[:id]))
+  end
+
+  desc 'Import a communication set from a copied document'
+  params do
+    requires :unit_id, type: Integer
+    requires :document, type: Hash
+  end
+  post '/units/:unit_id/communication_sets/import' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :update
+      error!({ error: 'Not authorised to update unit communications' }, 403)
+    end
+
+    begin
+      communication_set = CommunicationTransfer.import_set(params[:document], unit)
+    rescue CommunicationTransfer::InvalidDocument => e
+      error!({ error: e.message }, 400)
+    end
+
+    present communication_set, with: Entities::CommunicationSetEntity
+  end
+
+  desc 'Import a communication rule into an existing set'
+  params do
+    requires :unit_id, type: Integer
+    requires :communication_set_id, type: Integer
+    requires :document, type: Hash
+  end
+  post '/units/:unit_id/communication_sets/:communication_set_id/rules/import' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :update
+      error!({ error: 'Not authorised to update unit communications' }, 403)
+    end
+
+    communication_set = unit.communication_sets.find(params[:communication_set_id])
+
+    begin
+      rule = CommunicationTransfer.import_rule(params[:document], communication_set)
+    rescue CommunicationTransfer::InvalidDocument => e
+      error!({ error: e.message }, 400)
+    end
+
+    present rule, with: Entities::CommunicationRuleEntity
   end
 end
