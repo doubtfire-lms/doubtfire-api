@@ -3200,10 +3200,11 @@ class Unit < ApplicationRecord
     begin
       done.each do |project, tasks|
         logger.info "Checking feedback email for project #{project.id}"
-        if project.student.receive_feedback_notifications
-          logger.info "Emailing feedback notification to #{project.student.name}"
-          PortfolioEvidenceMailer.task_feedback_ready(project, tasks).deliver
-        end
+        next unless project.enrolled
+        next unless project.student.receive_feedback_notifications
+
+        logger.info "Emailing feedback notification to #{project.student.name}"
+        PortfolioEvidenceMailer.task_feedback_ready(project, tasks).deliver
       end
     rescue => e
       logger.error "Failed to send emails from feedback submission. Rescued with error: #{e.message}"

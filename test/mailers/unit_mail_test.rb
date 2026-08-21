@@ -141,4 +141,35 @@ class UnitMailTest < ActionMailer::TestCase
     assert_empty SendDiscussTimeoutEmailJob.jobs
   end
 
+  def test_batch_feedback_updates_unenrolled_students_without_emailing_them
+    unit = FactoryBot.create(:unit)
+    project = unit.active_projects.first
+    task = project.task_for_task_definition(unit.task_definitions.first)
+    task.update!(task_status: TaskStatus.ready_for_feedback)
+    project.update!(enrolled: false)
+    csv = CSV.generate do |rows|
+      rows << unit.check_mark_csv_headers.split(',')
+      rows << [
+        project.student.username,
+        project.student.name,
+        '',
+        task.task_definition.abbreviation,
+        'Complete',
+        '',
+        '0',
+        'Imported feedback'
+      ]
+    end
+
+    success = []
+    errors = []
+    assert_no_emails do
+      unit.update_task_status_from_csv(unit.main_convenor_user, csv, success, [], errors)
+    end
+
+    assert_empty errors
+    assert_equal TaskStatus.complete, task.reload.task_status
+    assert_equal 'Imported feedback', task.comments.last.comment
+  end
+
 end
