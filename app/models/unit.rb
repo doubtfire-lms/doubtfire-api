@@ -371,6 +371,7 @@ class Unit < ApplicationRecord
 
   def queue_discuss_timeout_email(task, actor, type, expiry_date = nil)
     return unless send_notifications
+    return unless task.project.enrolled
     return unless task.project.student.receive_feedback_notifications
 
     SendDiscussTimeoutEmailJob.perform_async(task.id, actor.id, type.to_s, expiry_date&.iso8601)

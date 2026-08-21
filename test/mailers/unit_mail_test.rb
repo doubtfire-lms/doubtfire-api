@@ -130,4 +130,15 @@ class UnitMailTest < ActionMailer::TestCase
     assert_includes ActionMailer::Base.deliveries.last.subject, 'Discussion deadline missed'
   end
 
+  def test_discuss_timeout_notifications_are_not_queued_for_unenrolled_students
+    unit = FactoryBot.create(:unit)
+    project = unit.active_projects.first
+    task = project.task_for_task_definition(unit.task_definitions.first)
+    project.update!(enrolled: false)
+
+    unit.queue_discuss_timeout_email(task, unit.main_convenor_user, :approaching, 7.days.from_now)
+
+    assert_empty SendDiscussTimeoutEmailJob.jobs
+  end
+
 end
