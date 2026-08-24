@@ -277,6 +277,42 @@ class CommentReadCursorTest < ActiveSupport::TestCase
     assert_not(project.unit.tasks_for_task_inbox(tutor).any? { |item| item.task_id == task.id })
   end
 
+  def test_inbox_order_uses_submission_date_for_ready_for_feedback_and_oldest_unread_comment_otherwise
+    unit = FactoryBot.create(
+      :unit,
+      student_count: 4,
+      unenrolled_student_count: 0,
+      part_enrolled_student_count: 0,
+      inactive_student_count: 0,
+      task_count: 1,
+      tutorials: 1,
+      staff_count: 1
+    )
+    task_definition = unit.task_definitions.first
+    projects = unit.active_projects.to_a
+    tasks = projects.map { |project| project.task_for_task_definition(task_definition) }
+    tutor = projects.first.tutor_for(task_definition)
+    start_time = Time.zone.parse('2026-08-01 09:00:00')
+
+    tasks[0].update!(task_status: TaskStatus.ready_for_feedback, submission_date: start_time)
+    tasks[1].update!(task_status: TaskStatus.ready_for_feedback, submission_date: start_time + 1.day)
+
+    travel_to(start_time + 2.days) do
+      tasks[2].add_text_comment(projects[2].student, 'First question')
+    end
+    travel_to(start_time + 3.days) do
+      tasks[3].add_text_comment(projects[3].student, 'Another question')
+    end
+    travel_to(start_time + 4.days) do
+      tasks[0].add_text_comment(projects[0].student, 'Follow-up on my submission')
+    end
+    travel_to(start_time + 5.days) do
+      tasks[2].add_text_comment(projects[2].student, 'Follow-up on my question')
+    end
+
+    assert_equal tasks.map(&:id), unit.tasks_for_task_inbox(tutor).map(&:task_id)
+  end
+
   private
 
   def unread_count(project, task_definition)

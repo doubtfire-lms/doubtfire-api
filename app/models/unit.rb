@@ -2636,17 +2636,22 @@ class Unit < ApplicationRecord
   #   - those that have the ready for feedback (rff) state, or
   #   - where new student comments are > 0
   #
-  # They are sorted by a task's "action_date". This defines the last
-  # time a task has been "actioned", either the submission date or latest
-  # student comment -- whichever is newer.
+  # Ready for feedback tasks are sorted by submission date. Tasks included
+  # because of unread comments are sorted by their oldest unread comment so
+  # follow-up comments do not reset how long the task has been waiting.
   #
   def tasks_for_task_inbox(user, my_students_only = false)
     unread_comment = '(COALESCE(crc.last_read_comment_id, 0) < task_comments.id ' \
                      'AND COALESCE(tutor_crc.last_read_comment_id, 0) < task_comments.id ' \
                      "AND task_comments.user_id <> #{user.id.to_i})"
+    oldest_unread_comment_at = "MIN(CASE WHEN #{unread_comment} " \
+                               'AND task_comments.id IS NOT NULL THEN task_comments.created_at END)'
+    inbox_date = "CASE WHEN task_statuses.id = #{TaskStatus.ready_for_feedback.id} " \
+                 "THEN COALESCE(submission_date, #{oldest_unread_comment_at}) " \
+                 "ELSE COALESCE(#{oldest_unread_comment_at}, submission_date) END"
     get_all_tasks_for(user, my_students_only)
       .having("task_statuses.id IN (:ids) OR COUNT(task_pins.task_id) > 0 OR SUM(case when #{unread_comment} AND task_comments.id IS NOT NULL then COALESCE(task_similarity_stats.similarity_count, 1) else 0 end) > 0", ids: [TaskStatus.ready_for_feedback, TaskStatus.need_help])
-      .order('pinned DESC, submission_date ASC, MAX(task_comments.created_at) ASC, task_definition_id ASC')
+      .order(Arel.sql("pinned DESC, #{inbox_date} ASC, task_definition_id ASC, tasks.id ASC"))
   end
 
   #
