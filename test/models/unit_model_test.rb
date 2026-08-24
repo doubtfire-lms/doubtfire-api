@@ -1310,8 +1310,8 @@ class UnitModelTest < ActiveSupport::TestCase
     task1 = student.task_for_task_definition(td1)
     task2 = student.task_for_task_definition(td2)
 
-    task1.comments.delete_all
-    task2.comments.delete_all
+    task1.comments.destroy_all
+    task2.comments.destroy_all
 
     task1.update(task_status_id: TaskStatus.time_exceeded.id)
 

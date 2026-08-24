@@ -265,7 +265,7 @@ class ExecuteCommunicationSetJob
         }
       end
 
-      comment = task.add_text_comment(comment_author, rendered_comment)
+      comment = task.add_text_comment(comment_author, rendered_comment, attention_audience: :student)
 
       if comment.nil?
         next {

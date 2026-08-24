@@ -1099,12 +1099,14 @@ class TasksApiTest < ActiveSupport::TestCase
     task.reload
     assert_equal new_start_date, task.target_start_date
     assert_equal new_end_date, task.target_due_date
+    assert task.comments.last.attention_none?
 
     put "/api/projects/#{project1.id}/reset_target_dates"
     assert_equal 200, last_response.status
     task.reload
     assert_nil task.target_start_date
     assert_nil task.target_due_date
+    assert task.comments.last.attention_none?
 
     unit.update!(allow_flexible_dates: false)
   end

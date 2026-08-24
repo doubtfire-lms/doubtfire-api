@@ -131,6 +131,7 @@ class Task < ApplicationRecord
   has_one :overflow_task_claim, dependent: :destroy
 
   has_many :comments, class_name: 'TaskComment', dependent: :destroy, inverse_of: :task
+  has_many :comment_read_cursors, dependent: :destroy, inverse_of: :task
   has_many :task_similarities, class_name: 'TaskSimilarity', dependent: :destroy, inverse_of: :task
   has_many :reverse_jplag_similarities, class_name: 'JplagTaskSimilarity', dependent: :destroy, inverse_of: :other_task, foreign_key: 'other_task_id'
   has_many :reverse_moss_similarities, class_name: 'MossTaskSimilarity', dependent: :destroy, inverse_of: :other_task, foreign_key: 'other_task_id'
@@ -226,8 +227,17 @@ class Task < ApplicationRecord
   end
 
   def mark_comments_as_read(user, comments)
+    latest_comment_by_task = {}
+
     comments.each do |comment|
-      comment.mark_as_read(user, unit)
+      next unless comment.requires_attention_for?(user)
+
+      current = latest_comment_by_task[comment.task_id]
+      latest_comment_by_task[comment.task_id] = comment if current.nil? || current.id < comment.id
+    end
+
+    latest_comment_by_task.each_value do |comment|
+      comment.mark_as_read(user)
     end
   end
 
@@ -241,16 +251,25 @@ class Task < ApplicationRecord
     TaskComment
       .joins('JOIN users AS authors ON authors.id = task_comments.user_id')
       .joins('JOIN users AS recipients ON recipients.id = task_comments.recipient_id')
-      .joins("LEFT JOIN comments_read_receipts u_crr ON u_crr.task_comment_id = task_comments.id AND u_crr.user_id = #{user.id}")
-      .joins("LEFT JOIN comments_read_receipts r_crr ON r_crr.task_comment_id = task_comments.id AND r_crr.user_id = recipients.id")
+      .joins(
+        "LEFT JOIN comment_read_cursors user_cursor " \
+        "ON user_cursor.task_id = task_comments.task_id AND user_cursor.user_id = #{user.id.to_i}"
+      )
+      .joins(
+        'LEFT JOIN comment_read_cursors recipient_cursor ' \
+        'ON recipient_cursor.task_id = task_comments.task_id ' \
+        'AND recipient_cursor.user_id = recipients.id'
+      )
       .where('task_comments.task_id = :task_id', task_id: self.id)
       .order('created_at ASC')
       .select(
         'task_comments.id AS id',
         'task_comments.comment AS comment',
         'task_comments.content_type AS content_type',
-        "case when u_crr.created_at IS NULL then 1 else 0 end AS is_new",
-        'r_crr.created_at AS recipient_read_time',
+        'CASE WHEN user_cursor.last_read_comment_id IS NULL ' \
+        'OR task_comments.id > user_cursor.last_read_comment_id THEN 1 ELSE 0 END AS is_new',
+        'CASE WHEN task_comments.id <= recipient_cursor.last_read_comment_id ' \
+        'THEN recipient_cursor.read_at ELSE NULL END AS recipient_read_time',
         'task_comments.created_at AS created_at',
         'authors.id AS author_id',
         'authors.first_name AS author_first_name',
@@ -573,6 +592,16 @@ class Task < ApplicationRecord
     !group_submission.nil? || !task_definition.group_set.nil?
   end
 
+  def student_participant_ids
+    return [project.user_id] if group_submission.nil?
+
+    group_submission.projects.distinct.pluck(:user_id)
+  end
+
+  def student_participant?(user)
+    user.present? && student_participant_ids.include?(user.id)
+  end
+
   def active_overflow_task_claim
     claim = overflow_task_claim
     return nil unless claim
@@ -878,7 +907,11 @@ class Task < ApplicationRecord
           # Since we are calling this assess method again, we recursively check for more dependent tasks that need to be updated
           task.assess(TaskStatus.fix_and_resubmit, assessor, assess_date, recursive_fix)
           task.add_status_comment(assessor, TaskStatus.fix_and_resubmit)
-          task.add_text_comment(assessor, "**Automated comment**: A prerequisite task was updated to Fix and Resubmit, so this task was updated as well. You may need to review and update the prerequisite before resubmitting.")
+          task.add_text_comment(
+            assessor,
+            "**Automated comment**: A prerequisite task was updated to Fix and Resubmit, so this task was updated as well. You may need to review and update the prerequisite before resubmitting.",
+            attention_audience: :student
+          )
         end
       end
 
@@ -978,7 +1011,7 @@ class Task < ApplicationRecord
     task_definition.weighting.to_f
   end
 
-  def add_text_comment(user, text, reply_to_id = nil)
+  def add_text_comment(user, text, reply_to_id = nil, attention_audience: nil)
     text = text.strip
     return nil if user.nil? || text.nil? || text.empty?
 
@@ -996,6 +1029,7 @@ class Task < ApplicationRecord
     comment.content_type = :text
     comment.recipient = user == project.student ? project.tutor_for(task_definition) : project.student
     comment.reply_to_id = reply_to_id
+    comment.attention_audience = attention_audience if attention_audience.present?
     comment.save!
 
     comment
@@ -1079,7 +1113,7 @@ class Task < ApplicationRecord
       raise "Error attaching uploaded file." unless discussion.add_prompt(prompt, index)
     end
 
-    discussion.mark_as_read(user, unit)
+    discussion.mark_as_read(user)
 
     logger.info(discussion)
     return discussion
@@ -1618,7 +1652,11 @@ class Task < ApplicationRecord
     rescue => e
       SubmissionHistory.clear_document_previews(self)
       trigger_transition trigger: 'fix', by_user: project.tutor_for(task_definition)
-      add_text_comment project.tutor_for(task_definition), "**Automated Comment**: Something went wrong with your submission. Check the files and resubmit this task. #{e.message}"
+      add_text_comment(
+        project.tutor_for(task_definition),
+        "**Automated Comment**: Something went wrong with your submission. Check the files and resubmit this task. #{e.message}",
+        attention_audience: :student
+      )
       raise e
     ensure
       # Ensure latex aux file is removed - if broken will cause issues for next submission in sidekiq

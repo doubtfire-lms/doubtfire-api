@@ -132,16 +132,15 @@ class TasksApi < Grape::API
       task.extensions = params[:extensions]
       task.save!
 
-      comment = TaskComment.create(
+      TaskComment.create(
         task: task,
         user: current_user,
         comment: "Planned date adjusted to #{task.due_date.strftime('%d %b')}.",
         content_type: :plan,
+        attention_audience: :none,
         recipient: project.student,
         extension_weeks: params[:extensions]
       )
-
-      comment.mark_as_read(project.tutor_for(task_definition))
 
       present task, with: Entities::TaskEntity, include_other_projects: true, update_only: true
     else
@@ -398,15 +397,14 @@ class TasksApi < Grape::API
                        "Planned date reset: #{task_definition.start_date.strftime('%d %b')} - #{task_definition.target_date.strftime('%d %b')}."
                      end
 
-      comment = TaskComment.create(
+      TaskComment.create(
         task: task,
         user: current_user,
         comment: comment_text,
         content_type: :plan,
+        attention_audience: :none,
         recipient: project.student
       )
-
-      comment.mark_as_read(project.tutor_for(task_definition))
 
       present task, with: Entities::TaskEntity, include_other_projects: true, update_only: true
     else
@@ -437,15 +435,14 @@ class TasksApi < Grape::API
         )
 
         comment_text = "Planned date reset: #{task.task_definition.start_date.strftime('%d %b')} - #{task.task_definition.target_date.strftime('%d %b')}."
-        comment = TaskComment.create(
+        TaskComment.create(
           task: task,
           user: current_user,
           comment: comment_text,
           content_type: :plan,
+          attention_audience: :none,
           recipient: project.student
         )
-
-        comment.mark_as_read(project.tutor_for(task.task_definition))
       end
 
       present project, with: Entities::ProjectEntity, user: current_user, for_student: true, in_project: true

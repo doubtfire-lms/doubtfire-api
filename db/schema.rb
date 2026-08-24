@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_08_20_054718) do
+ActiveRecord::Schema[8.0].define(version: 2026_08_20_063400) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -64,6 +64,19 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_20_054718) do
     t.datetime "updated_at", null: false
     t.index ["feedback_chip_id"], name: "index_chip_usages_on_feedback_chip_id"
     t.index ["tutor_id"], name: "index_chip_usages_on_tutor_id"
+  end
+
+  create_table "comment_read_cursors", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "task_id", null: false
+    t.bigint "user_id", null: false
+    t.bigint "last_read_comment_id", null: false
+    t.datetime "read_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["last_read_comment_id"], name: "index_comment_read_cursors_on_last_read_comment_id"
+    t.index ["task_id", "user_id"], name: "index_comment_read_cursors_on_task_id_and_user_id", unique: true
+    t.index ["task_id"], name: "index_comment_read_cursors_on_task_id"
+    t.index ["user_id"], name: "index_comment_read_cursors_on_user_id"
   end
 
   create_table "comments_read_receipts", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
@@ -562,6 +575,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_20_054718) do
     t.bigint "reply_to_id"
     t.bigint "commentable_id"
     t.string "commentable_type"
+    t.integer "attention_audience"
     t.index ["assessor_id"], name: "index_task_comments_on_assessor_id"
     t.index ["commentable_type", "commentable_id"], name: "index_task_comments_on_commentable_type_and_commentable_id"
     t.index ["discussion_comment_id"], name: "index_task_comments_on_discussion_comment_id"
