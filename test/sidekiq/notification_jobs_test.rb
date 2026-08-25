@@ -1,6 +1,8 @@
 require 'test_helper'
 
 class NotificationJobsTest < ActiveSupport::TestCase
+  include ActionMailer::TestHelper
+
   def create_settings(**attributes)
     FactoryBot.create(:notification_setting, next_digest_at: 1.minute.ago, **attributes)
   end

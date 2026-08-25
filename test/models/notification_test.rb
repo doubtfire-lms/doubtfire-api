@@ -79,7 +79,7 @@ class NotificationTest < ActiveSupport::TestCase
     assert_equal 3, groups.first[:counts]['new_task_comment']
     assert_equal 'fix_and_resubmit', groups.first[:latest_status]
     assert_includes groups.first[:summary], '3 new comments'
-    assert_includes groups.first[:summary], 'Fix and resubmit'
+    assert_includes groups.first[:summary], 'task status changed to Fix and Resubmit'
   end
 
   def test_discuss_expiry_supersedes_warning_without_hiding_feedback
@@ -104,7 +104,7 @@ class NotificationTest < ActiveSupport::TestCase
     assert_equal 'critical', group[:severity]
     assert_equal 1, group[:counts]['discuss_expired']
     assert_equal 1, group[:counts]['new_task_comment']
-    assert_includes group[:summary], 'discussion deadline missed'
+    assert_includes group[:summary], 'Discussion deadline missed'
   end
 
   def test_task_tutor_note_and_student_feedback_share_a_group_with_two_actions

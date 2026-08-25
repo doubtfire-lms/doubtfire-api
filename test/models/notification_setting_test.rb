@@ -39,7 +39,7 @@ class NotificationSettingTest < ActiveSupport::TestCase
     unit = FactoryBot.create(:unit, with_students: false, task_count: 0)
     FactoryBot.create(:notification_preference, user: settings.user, unit: unit, muted: true)
 
-    assert_empty settings.channels_for_unit(unit, 'new_task_comment')
+    assert_empty settings.channels_for_unit_id(unit.id, 'new_task_comment')
   end
 
   def test_a_muted_unit_keeps_following_the_defaults_underneath

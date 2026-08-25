@@ -145,7 +145,7 @@ class Notification < ApplicationRecord
     return if withdrawn_student?(attributes[:project], recipient)
 
     settings = NotificationSetting.for(recipient)
-    channels = settings.channels_for_unit(unit.id, kind)
+    channels = settings.channels_for_unit_id(unit.id, kind)
     return if channels.empty?
 
     notification = find_or_initialize_by(

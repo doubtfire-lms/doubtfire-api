@@ -32,7 +32,7 @@ class NotificationSetting < ApplicationRecord
 
   # The channels a unit delivers a kind on, honouring its preference when it has
   # one. A muted unit delivers nothing.
-  def channels_for_unit(unit_id, kind)
+  def channels_for_unit_id(unit_id, kind)
     preference = preference_for(unit_id)
     return [] if preference&.muted
 
@@ -40,13 +40,13 @@ class NotificationSetting < ApplicationRecord
   end
 
   def delivers?(unit, kind, channel)
-    channels_for_unit(unit&.id, kind).include?(channel.to_s)
+    channels_for_unit_id(unit&.id, kind).include?(channel.to_s)
   end
 
   # Notifications are always recorded so the digest has something to send, so the
   # in-app list has to filter them out rather than rely on them never existing.
   def shows_in_app?(unit_id, kind)
-    channels_for_unit(unit_id, kind).include?('in_app')
+    channels_for_unit_id(unit_id, kind).include?('in_app')
   end
 
   def advance_digest!(from: Time.current)

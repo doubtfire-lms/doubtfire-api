@@ -81,7 +81,7 @@ class NotificationsApiTest < ActiveSupport::TestCase
     settings = NotificationSetting.for(@student)
     settings.update!(channels: settings.channels.merge('new_task_comment' => ['email']))
 
-    get_json '/api/notifications'
+    get '/api/notifications'
 
     assert_equal 200, last_response.status
     assert_empty last_response_body['groups']
@@ -92,7 +92,7 @@ class NotificationsApiTest < ActiveSupport::TestCase
   end
 
   def test_settings_start_from_the_defaults
-    get_json '/api/notification_settings'
+    get '/api/notification_settings'
 
     assert_equal 200, last_response.status
     assert_equal 'weekly', last_response_body['digest_frequency']
