@@ -38,7 +38,10 @@ class Notification < ApplicationRecord
     return if kind.nil?
 
     recipients_for_comment(comment).each do |recipient, recipient_task|
-      next if comment.read_by?(recipient)
+      # Use the read cursor rather than read_by?, which reports "read" for any
+      # comment that does not require the user's attention. Status changes and
+      # other attention_audience :none comments still need to raise notifications.
+      next if comment.seen_by?(recipient)
 
       if kind == 'task_status_changed'
         resolve_for(recipient: recipient, task: recipient_task, kinds: kind)
@@ -75,7 +78,7 @@ class Notification < ApplicationRecord
           kind: 'overseer_failed'
         ).where.not(source: assessment).unread
       )
-      next if assessment_comment.read_by?(recipient)
+      next if assessment_comment.seen_by?(recipient)
 
       create_event(
         recipient: recipient,
@@ -176,10 +179,19 @@ class Notification < ApplicationRecord
     mark_read(where(recipient: recipient, task: task).unread)
   end
 
-  def self.reopen_for_source(source, recipient)
+  # Marking a comment unread rewinds the task's read cursor to the comment before
+  # it, so every later comment on that task becomes unread too. Reopen all of
+  # their notifications so the notification list agrees with the comment view.
+  def self.reopen_from_comment(comment, recipient)
+    later_comment_ids = TaskComment
+                        .where(task_id: comment.task_id)
+                        .where(id: comment.id..)
+                        .select(:id)
+
     # Keep email_processed_at unchanged so manually reopening a comment never resends email.
     # rubocop:disable Rails/SkipsModelValidations
-    where(source: source, recipient: recipient).update_all(read_at: nil, updated_at: Time.current)
+    where(recipient: recipient, source_type: 'TaskComment', source_id: later_comment_ids)
+      .update_all(read_at: nil, updated_at: Time.current)
     # rubocop:enable Rails/SkipsModelValidations
   end
 

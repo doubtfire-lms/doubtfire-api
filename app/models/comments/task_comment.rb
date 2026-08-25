@@ -183,11 +183,22 @@ class TaskComment < ApplicationRecord
     requires_attention_for?(user) && !read_by?(user)
   end
 
-  def read_by?(user)
-    return true if self.user == user || !requires_attention_for?(user)
+  # Has this user's read cursor for the task moved past this comment?
+  #
+  # Unlike #read_by? this ignores attention_audience, so comments that never sit
+  # unread in the comment inbox - status changes and other automated comments -
+  # still report whether the user has actually seen them.
+  def seen_by?(user)
+    return true if self.user == user
 
     cursor = CommentReadCursor.find_by(task_id: task_id, user_id: user.id)
     cursor.present? && cursor.last_read_comment_id >= id
+  end
+
+  def read_by?(user)
+    return true unless requires_attention_for?(user)
+
+    seen_by?(user)
   end
 
   def time_read_by(user)

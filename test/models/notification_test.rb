@@ -213,7 +213,7 @@ class NotificationTest < ActiveSupport::TestCase
     assert_not_nil notification.read_at
     assert_not_nil notification.email_processed_at
 
-    Notification.reopen_for_source(comment, @student)
+    Notification.reopen_from_comment(comment, @student)
     notification.reload
 
     assert_nil notification.read_at

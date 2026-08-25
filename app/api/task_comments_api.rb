@@ -268,7 +268,7 @@ class TaskCommentsApi < Grape::API
 
     task_comment = task.comments.find(params[:id])
     task_comment.mark_as_unread(current_user)
-    Notification.reopen_for_source(task_comment, current_user)
+    Notification.reopen_from_comment(task_comment, current_user)
 
     SessionTracker.record_assessment_activity(
       action: 'mark-comment-unread',
