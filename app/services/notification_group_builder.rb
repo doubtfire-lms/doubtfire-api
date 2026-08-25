@@ -108,7 +108,7 @@ class NotificationGroupBuilder
       else
         'Unit notification'
       end
-    "#{subject} — #{details.to_sentence}"
+    "#{subject} - #{details.to_sentence}"
   end
 
   def pluralize(count, noun)
