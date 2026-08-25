@@ -96,7 +96,11 @@ class NotificationsMailer < ApplicationMailer
     @group_count = @units.sum { |section| section[:groups].count }
 
     subject = "#{@notification_count} new #{'change'.pluralize(@notification_count)} across #{@group_count} #{'notification'.pluralize(@group_count)}"
-    mail(to: %("#{@recipient.name}" <#{@recipient.email}>), subject: subject)
+    mail(
+      to: %("#{@recipient.name}" <#{@recipient.email}>),
+      from: %("#{@doubtfire_product_name}" <no-reply@#{Doubtfire::Application.config.institution[:email_domain]}>),
+      subject: subject
+    )
   end
 
   def discussion_deadline_approaching(task, sender, expiry_date)
