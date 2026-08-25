@@ -12,7 +12,6 @@ class Notification < ApplicationRecord
   ].freeze
 
   DISCUSS_KINDS = %w[discuss_warning discuss_expired].freeze
-  INTERNAL_COMMENT_TYPES = %w[assessment checked_in discussed_in_class plan].freeze
 
   attribute :metadata, :json, default: -> { {} }
 
@@ -244,7 +243,11 @@ class Notification < ApplicationRecord
     when AssessmentComment
       nil
     else
-      return nil if INTERNAL_COMMENT_TYPES.include?(comment.content_type)
+      # Automated bookkeeping comments - plan changes, check-ins, discussed-in-class,
+      # feedback review requests - are attention_audience :none and raise no
+      # notification. Status comments are :none as well, but they do notify and are
+      # handled by the branch above.
+      return nil if comment.attention_none?
 
       'feedback_left'
     end
