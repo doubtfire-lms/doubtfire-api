@@ -96,11 +96,11 @@ class NotificationGroupBuilder
     details << 'discussion deadline missed' if counts['discuss_expired'].positive?
     details << 'discussion deadline approaching' if counts['discuss_warning'].positive?
     details << 'submission PDF generation failed' if counts['pdf_generation_failed'].positive?
-    details << 'automated assessment failed' if counts['overseer_failed'].positive?
+    details << 'overseer assessment failed' if counts['overseer_failed'].positive?
     moderation_notes = Notification::MODERATION_KINDS.sum { |kind| counts[kind] }
     details << pluralize(moderation_notes, 'moderation note') if moderation_notes.positive?
     details << pluralize(counts['new_task_comment'], 'new comment') if counts['new_task_comment'].positive?
-    details << "status changed to #{latest_status.to_s.humanize}" if latest_status.present?
+    details << "status changed to #{status_name(latest_status)}" if latest_status.present?
 
     subject =
       if task
@@ -108,7 +108,13 @@ class NotificationGroupBuilder
       else
         'Unit notification'
       end
-    "#{subject} - #{details.to_sentence}"
+    # Sentence case, so a single detail reads as a heading and several still join
+    # into one readable sentence.
+    "#{subject} - #{details.to_sentence.upcase_first}"
+  end
+
+  def status_name(status_key)
+    TaskStatus.status_for_name(status_key.to_s)&.name || status_key.to_s.humanize
   end
 
   def pluralize(count, noun)
