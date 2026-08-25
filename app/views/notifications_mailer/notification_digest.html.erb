@@ -41,6 +41,10 @@
     h1 {
       font-size: 1.1em;
     }
+    h2 {
+      font-size: 1em;
+      margin: 25px 0 10px;
+    }
     .notification-box {
       background: #fafafa;
       border-left: 4px solid #1565c0;
@@ -70,8 +74,7 @@
     </p>
 
     <% @units.each do |section| %>
-      <h2><%= section[:unit].code %></h2>
-      <p class="subtext"><%= section[:unit].name %></p>
+      <h2><%= section[:unit].code %> - <%= section[:unit].name %></h2>
 
       <% section[:groups].each do |group| %>
         <div class="notification-box <%= group[:severity] %>">
