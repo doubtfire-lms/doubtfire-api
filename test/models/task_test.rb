@@ -181,7 +181,7 @@ class TaskTest < ActiveSupport::TestCase
         end_date: Time.zone.parse('2026-04-30 00:00:00 UTC'),
         active_until: Time.zone.parse('2026-05-31 00:00:00 UTC')
       )
-      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 2)
+      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 14)
 
       unit = FactoryBot.create(:unit, teaching_period: teaching_period, with_students: false)
       task = FactoryBot.create(:task, project: FactoryBot.create(:project, unit: unit))
@@ -201,7 +201,7 @@ class TaskTest < ActiveSupport::TestCase
         end_date: Time.zone.parse('2026-04-30 00:00:00 UTC'),
         active_until: Time.zone.parse('2026-05-31 00:00:00 UTC')
       )
-      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 2)
+      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 14)
 
       unit = FactoryBot.create(:unit, teaching_period: teaching_period, with_students: false)
       task = FactoryBot.create(:task, project: FactoryBot.create(:project, unit: unit))
@@ -220,13 +220,37 @@ class TaskTest < ActiveSupport::TestCase
         end_date: Time.zone.parse('2026-04-30 00:00:00 UTC'),
         active_until: Time.zone.parse('2026-05-31 00:00:00 UTC')
       )
-      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 2)
+      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 14)
 
       unit = FactoryBot.create(:unit, teaching_period: teaching_period, with_students: false)
       task = FactoryBot.create(:task, project: FactoryBot.create(:project, unit: unit))
       task.update!(submission_date: Time.zone.parse('2026-04-05 00:00:00 UTC'))
 
       assert_equal 0.0, task.days_awaiting_feedback
+    end
+    travel_back
+  end
+
+  def test_days_awaiting_feedback_uses_breaks_for_the_students_campus
+    travel_to Time.zone.parse('2026-04-10 00:00:00 UTC') do
+      teaching_period = FactoryBot.create(
+        :teaching_period,
+        start_date: Time.zone.parse('2026-03-01 00:00:00 UTC'),
+        end_date: Time.zone.parse('2026-05-31 00:00:00 UTC'),
+        active_until: Time.zone.parse('2026-06-30 00:00:00 UTC')
+      )
+      special_campus = FactoryBot.create(:campus)
+      default_campus = FactoryBot.create(:campus)
+      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 7, [default_campus.id])
+      teaching_period.add_break(Time.zone.parse('2026-04-08 00:00:00 UTC'), 7, [special_campus.id])
+      unit = FactoryBot.create(:unit, teaching_period: teaching_period, with_students: false)
+      special_task = FactoryBot.create(:task, project: FactoryBot.create(:project, unit: unit, campus: special_campus))
+      default_task = FactoryBot.create(:task, project: FactoryBot.create(:project, unit: unit, campus: default_campus))
+      special_task.update!(submission_date: Time.zone.parse('2026-04-05 00:00:00 UTC'))
+      default_task.update!(submission_date: Time.zone.parse('2026-04-05 00:00:00 UTC'))
+
+      assert_equal 3, special_task.days_awaiting_feedback
+      assert_equal 2, default_task.days_awaiting_feedback
     end
     travel_back
   end
@@ -619,6 +643,21 @@ class TaskTest < ActiveSupport::TestCase
     reader.pages.each do |page|
       assert_not page.text.include? 'The rest of this line has been truncated by the system to improve readability.'
       assert_not page.text.include?('ERROR when parsing'), page.text
+    end
+
+    # test an image pasted into a Markdown cell and stored in the notebook's
+    # attachments MIME bundle
+    data_to_post = with_file('test_files/submissions/embedded_markdown_image.ipynb', 'application/json', data_to_post)
+
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
+
+    assert_equal 201, last_response.status, last_response_body
+    assert task.convert_submission_to_pdf(log_to_stdout: true)
+
+    reader = PDF::Reader.new(task.final_pdf_path)
+    reader.pages.each do |page|
+      assert_not page.text.include?('ERROR when parsing'), page.text
+      assert_not page.text.include?('Image attachment unavailable'), page.text
     end
 
     # test line wrapping in jupynotex
@@ -1851,7 +1890,7 @@ class TaskTest < ActiveSupport::TestCase
     task3.trigger_transition(trigger: 'ready_for_feedback', by_user: unit.main_convenor_user)
     task4.trigger_transition(trigger: 'ready_for_feedback', by_user: unit.main_convenor_user)
 
-    task2.comments.delete_all
+    task2.comments.destroy_all
 
     task1.reload
     task2.reload

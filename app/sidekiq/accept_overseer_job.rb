@@ -109,7 +109,11 @@ class AcceptOverseerJob
         task.add_status_comment(task.project.tutor_for(task.task_definition), failure_status)
         oa.update!(result_task_status: failure_status.status_key.to_s)
       end
-      task.add_text_comment(task.project.tutor_for(task.task_definition), "**Automated comment**: Some tests did not pass for this submission. Please review the Overseer report, verify your output, and resubmit.")
+      task.add_text_comment(
+        task.project.tutor_for(task.task_definition),
+        "**Automated comment**: Some tests did not pass for this submission. Please review the Overseer report, verify your output, and resubmit.",
+        attention_audience: :student
+      )
     end
 
     FileUtils.rm_rf(work_dir)

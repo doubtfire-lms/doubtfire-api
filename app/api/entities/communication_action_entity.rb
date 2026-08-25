@@ -9,5 +9,6 @@ module Entities
     expose :email_convenors
     expose :target_grade
     expose :task_definition_id
+    expose :unresolved?, as: :unresolved
   end
 end

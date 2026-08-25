@@ -7,6 +7,7 @@ module Entities
     expose :unit_id
     expose :name
     expose :active
+    expose :executable?, as: :executable
     expose :communication_set_schedules,
            as: :schedules,
            using: Entities::CommunicationSetScheduleEntity

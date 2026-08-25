@@ -14,11 +14,31 @@ class CommunicationSet < ApplicationRecord
 
   validates :name, presence: true
 
+  # Memoised so a request loads the student data once, not once per rule.
   def eligible_projects
-    unit.projects
-        .where(enrolled: true)
-        .includes(:user, :campus, { tasks: [:task_status, :task_definition] }, { tutorial_enrolments: :tutorial })
-        .to_a
+    @eligible_projects ||=
+      unit.projects
+          .where(enrolled: true)
+          .includes(
+            :user,
+            :campus,
+            { unit: :task_definitions },
+            { tasks: [:task_status, :task_definition] },
+            { tutorial_enrolments: :tutorial },
+            { group_memberships: :group }
+          )
+          .to_a
+  end
+
+  def eligible_project_count
+    unit.projects.where(enrolled: true).count
+  end
+
+  # Matching is a pure per-project predicate, so the set's cascade is exactly
+  # these matches minus the students earlier rules claimed. Lets callers
+  # evaluate one rule at a time instead of re-running the set.
+  def independent_matches_for_rule(target_rule)
+    target_rule.matching_projects(eligible_projects)
   end
 
   def preview_projects_for_rule(target_rule)
@@ -28,8 +48,14 @@ class CommunicationSet < ApplicationRecord
   end
 
   def preview_allocations_by_rule
+    allocations = []
+    remaining_projects = eligible_projects
+
     communication_rules.each_with_object({}) do |rule, allocations_by_rule|
-      allocations_by_rule[rule.id] = preview_allocations_for_rule(rule)
+      matched_projects = rule.matching_projects(remaining_projects)
+      allocations << { rule: rule, projects: matched_projects }
+      allocations_by_rule[rule.id] = allocations.dup
+      remaining_projects -= matched_projects
     end
   end
 
@@ -46,6 +72,14 @@ class CommunicationSet < ApplicationRecord
     end
 
     allocations
+  end
+
+  def unresolved_rules
+    communication_rules.select(&:unresolved?)
+  end
+
+  def executable?
+    unresolved_rules.empty?
   end
 
   def copy_to(other_unit)
@@ -74,6 +108,8 @@ class CommunicationSet < ApplicationRecord
         new_condition.task_definition = matching_task_definition(other_unit, condition)
         new_condition.tutorial_stream = matching_tutorial_stream(other_unit, condition)
         new_condition.tutorial = matching_tutorial(other_unit, condition)
+        new_condition.group_set = matching_group_set(other_unit, condition)
+        new_condition.group = matching_group(other_unit, condition)
         new_condition.save!
       end
 
@@ -100,6 +136,20 @@ class CommunicationSet < ApplicationRecord
     return nil if condition.tutorial_stream.blank?
 
     unit.tutorial_streams.find_by(abbreviation: condition.tutorial_stream.abbreviation)
+  end
+
+  # Group sets and groups are named rather than abbreviated, and a group name is
+  # only unique inside its set.
+  def matching_group_set(unit, condition)
+    return nil if condition.group_set.blank?
+
+    unit.group_sets.find_by(name: condition.group_set.name)
+  end
+
+  def matching_group(unit, condition)
+    return nil if condition.group.blank?
+
+    unit.group_sets.find_by(name: condition.group.group_set.name)&.groups&.find_by(name: condition.group.name)
   end
 
   def matching_tutorial(unit, condition)

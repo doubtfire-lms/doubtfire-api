@@ -7,6 +7,7 @@ module Entities
     expose :position
     expose :active
     expose :send_log_to_convenors
+    expose :unresolved?, as: :unresolved
     expose :communication_conditions,
            as: :conditions,
            using: Entities::CommunicationConditionEntity

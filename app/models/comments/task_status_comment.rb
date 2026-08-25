@@ -3,6 +3,7 @@ class TaskStatusComment < TaskComment
 
   before_create do
     self.content_type = :status
+    self.attention_audience = :none
   end
 
   def serialize(user)

@@ -77,6 +77,7 @@ class Unit < ApplicationRecord
       :get_tutor_times_summary,
       :get_marking_sessions,
       :upload_grades_csv,
+      :upload_staff_notes_csv,
       :get_staff_notes,
       :capture_task_completion_snapshot,
       :manage_unit_content,
@@ -108,6 +109,7 @@ class Unit < ApplicationRecord
       :download_jplag_report,
       :get_marking_sessions,
       :get_staff_notes,
+      :upload_staff_notes_csv,
       :get_tutor_times,
       :manage_unit_content,
       :mannage_communications,
@@ -207,6 +209,8 @@ class Unit < ApplicationRecord
   belongs_to :overseer_image, optional: true
 
   validates :name, :description, :start_date, :end_date, presence: true
+  validates :name, allowed_characters: { type: :unit_name }
+  validates :code, allowed_characters: { type: :unit_code }
 
   validates :description, length: { maximum: 4095, allow_blank: true }
 
@@ -278,9 +282,8 @@ class Unit < ApplicationRecord
   def notify_discuss_timeouts!
     return 0 unless discuss_timeout_enabled
 
-    teaching_breaks = teaching_period&.breaks.to_a
     discuss_timeout_tasks.find_each.sum do |task|
-      notify_discuss_timeout_for(task, teaching_breaks: teaching_breaks)
+      notify_discuss_timeout_for(task)
     end
   end
 
@@ -1533,7 +1536,7 @@ class Unit < ApplicationRecord
         ).group(
           'projects.id', 'student_id', 'username', 'first_name', 'nickname', 'last_name', 'email', 'campus_abbreviation'
         ).each do |row|
-          csv << ([
+          csv << escape_spreadsheet_formulas([
             code,
             row['campus_abbreviation'],
             row['username'],
@@ -2209,6 +2212,97 @@ class Unit < ApplicationRecord
     end
   end
 
+  def import_staff_notes_from_csv(file, author_id, progress_callback: nil)
+    success = []
+    errors = []
+    ignored = []
+    author = User.find(author_id)
+
+    csv = CSV.new(File.read(file), headers: true,
+                                   header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
+                                   converters: [->(i) { i.nil? ? '' : i }, ->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }])
+    unless csv.header_row?
+      errors << { row: [], message: "Header row missing" }
+      return { success: success, ignored: ignored, errors: errors }
+    end
+
+    csv.shift
+    total_rows = csv.read.size
+    progress_callback&.call(message: "Importing staff notes", rows_processed: 0, total_rows: total_rows)
+
+    CSV.foreach(file, headers: true,
+                      header_converters: [->(i) { i.nil? ? '' : i }, :downcase, ->(hdr) { hdr.strip unless hdr.nil? }],
+                      converters: [->(i) { i.nil? ? '' : i }, ->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]).with_index(1) do |row, row_count|
+      progress_callback&.call(message: "Importing staff notes", rows_processed: row_count, total_rows: total_rows)
+
+      begin
+        missing = missing_headers(row, ['comment'])
+        unless row.headers.include?('username') || row.headers.include?('login_id')
+          missing << 'username or login_id'
+        end
+        if missing.any?
+          errors << { row: row, message: "Missing headers: #{missing.join(', ')}" }
+          next
+        end
+
+        username = row['username']&.strip
+        login_id = row['login_id']&.strip
+        comment = row['comment']&.strip
+
+        if username.blank? && login_id.blank?
+          errors << { row: row, message: "Username or login_id is required" }
+          next
+        end
+
+        if comment.blank?
+          errors << { row: row, message: "Comment is required" }
+          next
+        end
+
+        username_user = User.find_by(username: username.downcase) if username.present?
+        login_id_user = User.find_by(login_id: login_id) if login_id.present?
+
+        if username.present? && username_user.nil?
+          errors << { row: row, message: "Could not find user with username #{username}" }
+          next
+        end
+
+        if login_id.present? && login_id_user.nil?
+          errors << { row: row, message: "Could not find user with login_id #{login_id}" }
+          next
+        end
+
+        if username_user && login_id_user && username_user != login_id_user
+          errors << { row: row, message: "Username and login_id do not match the same user" }
+          next
+        end
+
+        student = username_user || login_id_user
+        project = projects.find_by(user: student)
+        if project.nil?
+          errors << { row: row, message: "Student is not enrolled in unit" }
+          next
+        end
+
+        if project.staff_notes.last&.note == comment
+          ignored << { row: row, message: "Staff note already exists" }
+          next
+        end
+
+        project.add_staff_note(author, comment)
+        success << { row: row, message: "Staff note added for #{student.username}" }
+      rescue Exception => e
+        errors << { row: row, message: e.message }
+      end
+    end
+
+    {
+      success: success,
+      ignored: ignored,
+      errors: errors
+    }
+  end
+
   def get_portfolio_zip_filename(current_user)
     filename = FileHelper.sanitized_filename("portfolios-#{code}-#{current_user.username}")
     "#{FileHelper.tmp_file(filename)}.zip"
@@ -2449,18 +2543,36 @@ class Unit < ApplicationRecord
   # Return all tasks from the database for this unit and given user
   #
   def get_all_tasks_for(user, my_tutorials_only = false)
+    staff_attention = TaskComment.attention_audiences.fetch('staff')
+    unread_comment = '(COALESCE(crc.last_read_comment_id, 0) < task_comments.id ' \
+                     'AND COALESCE(tutor_crc.last_read_comment_id, 0) < task_comments.id ' \
+                     "AND task_comments.user_id <> #{user.id.to_i})"
+    similarity_stats = TaskSimilarity
+                       .select('task_id', 'COUNT(*) AS similarity_count', 'SUM(flagged) AS flagged_count')
+                       .group(:task_id)
+                       .to_sql
     result =  student_tasks.
               joins(:task_status).
               joins("LEFT OUTER JOIN (#{tutorial_enrolment_subquery}) as sq ON sq.project_id = projects.id AND (sq.tutorial_stream_id = task_definitions.tutorial_stream_id OR sq.tutorial_stream_id IS NULL)").
-              joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment') AND (task_comments.content_type IS NULL OR (task_comments.content_type <> 'plan' AND task_comments.content_type <> 'discussed_in_class'))").
-              joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}").
+              joins("LEFT JOIN unit_roles task_tutor_roles ON task_tutor_roles.id = COALESCE(sq.unit_role_id, #{main_convenor_id.to_i})").
+              joins("LEFT JOIN comment_read_cursors crc ON crc.task_id = tasks.id AND crc.user_id = #{user.id.to_i}").
+              joins('LEFT JOIN comment_read_cursors tutor_crc ON tutor_crc.task_id = tasks.id ' \
+                    'AND tutor_crc.user_id = task_tutor_roles.user_id').
+              joins(
+                'LEFT JOIN task_comments ON task_comments.task_id = tasks.id ' \
+                "AND (task_comments.attention_audience IS NULL OR task_comments.attention_audience = #{staff_attention}) " \
+                "AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment') " \
+                "AND (task_comments.content_type IS NULL OR (task_comments.content_type <> 'plan' " \
+                "AND task_comments.content_type <> 'discussed_in_class'))"
+              ).
               joins("LEFT JOIN task_pins ON task_pins.task_id = tasks.id AND task_pins.user_id = #{user.id}").
-              joins('LEFT OUTER JOIN task_similarities ON tasks.id = task_similarities.task_id').
+              joins("LEFT JOIN (#{similarity_stats}) task_similarity_stats ON task_similarity_stats.task_id = tasks.id").
               select(
                 'sq.tutorial_id AS tutorial_id',
                 'sq.tutorial_stream_id AS tutorial_stream_id',
                 'tasks.id',
-                "SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread",
+                "SUM(case when #{unread_comment} AND task_comments.id IS NOT NULL " \
+                'then COALESCE(task_similarity_stats.similarity_count, 1) else 0 end) as number_unread',
                 'COUNT(distinct task_pins.task_id) != 0 as pinned',
                 "SUM(case when task_comments.date_extension_assessed IS NULL AND task_comments.type = 'ExtensionComment' AND NOT task_comments.id IS NULL THEN 1 ELSE 0 END) > 0 as has_extensions",
                 'project_id',
@@ -2473,7 +2585,7 @@ class Unit < ApplicationRecord
                 'submission_date',
                 'tasks.grade as grade',
                 'quality_pts',
-                'SUM(case when task_similarities.flagged then 1 else 0 end) as similar_to_count'
+                'COALESCE(MAX(task_similarity_stats.flagged_count), 0) AS similar_to_count'
               ).
               group(
                 'sq.tutorial_id',
@@ -2516,14 +2628,22 @@ class Unit < ApplicationRecord
   #   - those that have the ready for feedback (rff) state, or
   #   - where new student comments are > 0
   #
-  # They are sorted by a task's "action_date". This defines the last
-  # time a task has been "actioned", either the submission date or latest
-  # student comment -- whichever is newer.
+  # Ready for feedback tasks are sorted by submission date. Tasks included
+  # because of unread comments are sorted by their oldest unread comment so
+  # follow-up comments do not reset how long the task has been waiting.
   #
   def tasks_for_task_inbox(user, my_students_only = false)
+    unread_comment = '(COALESCE(crc.last_read_comment_id, 0) < task_comments.id ' \
+                     'AND COALESCE(tutor_crc.last_read_comment_id, 0) < task_comments.id ' \
+                     "AND task_comments.user_id <> #{user.id.to_i})"
+    oldest_unread_comment_at = "MIN(CASE WHEN #{unread_comment} " \
+                               'AND task_comments.id IS NOT NULL THEN task_comments.created_at END)'
+    inbox_date = "CASE WHEN task_statuses.id = #{TaskStatus.ready_for_feedback.id} " \
+                 "THEN COALESCE(submission_date, #{oldest_unread_comment_at}) " \
+                 "ELSE COALESCE(#{oldest_unread_comment_at}, submission_date) END"
     get_all_tasks_for(user, my_students_only)
-      .having('task_statuses.id IN (:ids) OR COUNT(task_pins.task_id) > 0 OR SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) > 0', ids: [TaskStatus.ready_for_feedback, TaskStatus.need_help])
-      .order('pinned DESC, submission_date ASC, MAX(task_comments.created_at) ASC, task_definition_id ASC')
+      .having("task_statuses.id IN (:ids) OR COUNT(task_pins.task_id) > 0 OR SUM(case when #{unread_comment} AND task_comments.id IS NOT NULL then COALESCE(task_similarity_stats.similarity_count, 1) else 0 end) > 0", ids: [TaskStatus.ready_for_feedback, TaskStatus.need_help])
+      .order(Arel.sql("pinned DESC, #{inbox_date} ASC, task_definition_id ASC, tasks.id ASC"))
   end
 
   #

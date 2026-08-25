@@ -26,11 +26,13 @@ class TeachingPeriod < ApplicationRecord
     "#{year} #{period}"
   end
 
-  def add_break(start_date, number_of_weeks)
+  def add_break(start_date, number_of_days, campus_ids = [], label = nil)
     break_in_teaching_period = Break.new
     break_in_teaching_period.start_date = start_date
-    break_in_teaching_period.number_of_weeks = number_of_weeks
+    break_in_teaching_period.number_of_days = number_of_days
+    break_in_teaching_period.label = label
     break_in_teaching_period.teaching_period = self
+    break_in_teaching_period.campus_ids = campus_ids || []
 
     break_in_teaching_period.save!
     # add after save to ensure valid break
@@ -39,19 +41,27 @@ class TeachingPeriod < ApplicationRecord
     break_in_teaching_period
   end
 
-  def update_break(id, start_date, number_of_weeks)
+  def update_break(id, start_date, number_of_days, campus_ids = nil, label = nil)
     break_in_teaching_period = breaks.find(id)
 
     if start_date.present?
       break_in_teaching_period.start_date = start_date
     end
 
-    if number_of_weeks.present?
-      break_in_teaching_period.number_of_weeks = number_of_weeks
+    if number_of_days.present?
+      break_in_teaching_period.number_of_days = number_of_days
     end
+
+    break_in_teaching_period.label = label unless label.nil?
+
+    break_in_teaching_period.campus_ids = campus_ids if campus_ids.present? || campus_ids == []
 
     break_in_teaching_period.save!
     break_in_teaching_period
+  end
+
+  def breaks_for(campus)
+    breaks.select { |teaching_break| teaching_break.applies_to?(campus) }
   end
 
   def week_number(date)
@@ -65,7 +75,7 @@ class TeachingPeriod < ApplicationRecord
 
         if date >= a_break.end_date
           # past the end of the break...
-          result -= a_break.number_of_weeks
+          result -= a_break.weeks_spanned
         elsif date == a_break.start_date
           # cant use standard calculation as this give 0 for this exact moment...
           result -= 1 if date >= a_break.first_monday
@@ -99,7 +109,7 @@ class TeachingPeriod < ApplicationRecord
       if result >= a_break.start_date
         # we are in or after the break, so calculated date is
         # extended by the break period
-        result += a_break.number_of_weeks.weeks
+        result += a_break.duration
       end
     end
 
@@ -125,7 +135,7 @@ class TeachingPeriod < ApplicationRecord
       if result >= a_break.start_date && result < a_break.end_date
         # we are in or after the break, so calculated date is
         # extended by the break period
-        result += a_break.number_of_weeks.weeks
+        result += a_break.duration
       end
     end
 

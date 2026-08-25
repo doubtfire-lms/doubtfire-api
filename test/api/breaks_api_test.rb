@@ -8,15 +8,18 @@ class BreaksApiTest < ActiveSupport::TestCase
   #POST TEST
   def test_post_breaks
     teaching_period = FactoryBot.create(:teaching_period)
+    campus = FactoryBot.create(:campus)
     start = teaching_period.start_date + 4.weeks
     number_of_break = Break.count
 
     data_to_post = {
       start_date: start,
-      number_of_weeks: rand(1..3)
+      number_of_days: rand(1..3) * 7,
+      label: 'Mid semester break',
+      campus_ids: [campus.id]
     }
 
-    add_auth_header_for user: User.first
+    add_auth_header_for user: FactoryBot.create(:user, :admin)
 
     # Perform the POST
     post "/api/teaching_periods/#{teaching_period.id}/breaks", data_to_post
@@ -25,13 +28,15 @@ class BreaksApiTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status
 
     # Check if the details posted match as expected
-    response_keys = %w(start_date number_of_weeks)
+    response_keys = %w(start_date number_of_days label campus_ids)
     the_break = Break.find(last_response_body['id'])
     assert_json_matches_model(the_break, last_response_body, response_keys)
 
     # check if the details in the newly created break match as the pre-set data
     assert_equal data_to_post[:start_date].to_date, the_break.start_date.to_date
-    assert_equal data_to_post[:number_of_weeks], the_break.number_of_weeks
+    assert_equal data_to_post[:number_of_days], the_break.number_of_days
+    assert_equal data_to_post[:label], the_break.label
+    assert_equal data_to_post[:campus_ids], the_break.campus_ids
 
     # check if one more break is created
     assert_equal Break.count, number_of_break + 1
@@ -42,9 +47,9 @@ class BreaksApiTest < ActiveSupport::TestCase
   def test_get_breaks
     # Create teaching period
     teaching_period  = FactoryBot.create(:teaching_period)
-    teaching_period.add_break teaching_period.start_date + 1.week, 1
+    teaching_period.add_break teaching_period.start_date + 1.week, 7
 
-    add_auth_header_for(user: User.first)
+    add_auth_header_for(user: FactoryBot.create(:user, :admin))
 
     # Perform the GET
     get "/api/teaching_periods/#{teaching_period.id}/breaks"
@@ -54,8 +59,8 @@ class BreaksApiTest < ActiveSupport::TestCase
     assert_equal expected_data.count, last_response_body.count
     assert expected_data.count > 0
 
-    response_keys =  %w(id start_date number_of_weeks)
-    test_keys =  %w(id number_of_weeks)
+    response_keys =  %w(id start_date number_of_days label campus_ids)
+    test_keys =  %w(id number_of_days)
     last_response_body.each do | data |
       the_break = Break.find(data['id'])
       assert_json_matches_model(the_break, data, test_keys)
@@ -67,10 +72,10 @@ class BreaksApiTest < ActiveSupport::TestCase
   def test_delete_breaks
     # Create teaching period
     teaching_period  = FactoryBot.create(:teaching_period)
-    teaching_period.add_break teaching_period.start_date + 1.week, 1
-    teaching_period.add_break teaching_period.start_date + 3.week, 1
+    teaching_period.add_break teaching_period.start_date + 1.week, 7
+    teaching_period.add_break teaching_period.start_date + 3.week, 7
 
-    add_auth_header_for(user: User.first)
+    add_auth_header_for(user: FactoryBot.create(:user, :admin))
     the_break = Break.last
 
     count = teaching_period.breaks.count

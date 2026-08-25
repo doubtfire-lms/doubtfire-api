@@ -10,8 +10,18 @@ class EngagementsApi < Grape::API
   end
 
   helpers do
+    def engagements_for(project)
+      Engagement
+        .left_joins(:engagement_projects)
+        .where(
+          'engagements.project_id = :project_id OR engagement_projects.project_id = :project_id',
+          project_id: project.id
+        )
+        .distinct
+    end
+
     def engagement_for(project)
-      project.engagements.find(params[:id])
+      engagements_for(project).find(params[:id])
     end
 
     def validate_evidence!(attachment, evidence_url, remove_evidence: false)
@@ -45,9 +55,9 @@ class EngagementsApi < Grape::API
     project = Project.find(params[:project_id])
     error!({ error: 'You do not have permission to view these engagements.' }, 403) unless authorise?(current_user, project, :get_engagements)
 
-    engagements = project.engagements
-                         .includes(:user, :engagement_comments)
-                         .order(:occurred_at, :created_at)
+    engagements = engagements_for(project)
+                  .includes(:user, :engagement_comments, project: :user, additional_projects: :user)
+                  .order(:occurred_at, :created_at)
     present engagements, with: Entities::EngagementEntity
   end
 
@@ -56,9 +66,9 @@ class EngagementsApi < Grape::API
     project = Project.find(params[:project_id])
     error!({ error: 'You do not have permission to view this engagement.' }, 403) unless authorise?(current_user, project, :get_engagements)
 
-    engagement = project.engagements
-                        .includes(:user, engagement_comments: :user)
-                        .find(params[:id])
+    engagement = engagements_for(project)
+                 .includes(:user, project: :user, additional_projects: :user, engagement_comments: :user)
+                 .find(params[:id])
     present engagement, with: Entities::EngagementDetailEntity
   end
 
@@ -103,23 +113,42 @@ class EngagementsApi < Grape::API
     requires :engagement_type, type: String
     requires :note, type: String
     requires :occurred_at, type: DateTime
+    optional :project_ids, type: Array[Integer]
     optional :evidence_url, type: String
     optional :attachment, type: File
   end
   post '/projects/:project_id/engagements' do
     project = Project.find(params[:project_id])
-    error!({ error: 'You do not have permission to create an engagement.' }, 403) unless authorise?(current_user, project, :create_engagement)
+    project_ids = [project.id, *params.fetch(:project_ids, [])].uniq
+    projects = Project.where(id: project_ids).to_a
+
+    unless projects.size == project_ids.size
+      error!({ error: 'One or more selected students could not be found.' }, 404)
+    end
+    unless projects.all? { |recipient| recipient.unit_id == project.unit_id }
+      error!({ error: 'All students must belong to the same unit.' }, 422)
+    end
+    unless projects.all? { |recipient| authorise?(current_user, recipient, :create_engagement) }
+      error!(
+        { error: 'You do not have permission to create an engagement for one or more selected students.' },
+        403
+      )
+    end
 
     attachment = params[:attachment]
     attachment_type = validate_evidence!(attachment, params[:evidence_url])
 
-    engagement = project.engagements.create!(
-      user: current_user,
-      engagement_type: params[:engagement_type],
-      note: params[:note],
-      occurred_at: params[:occurred_at],
-      evidence_url: attachment.present? ? nil : params[:evidence_url]
-    )
+    engagement = nil
+    Engagement.transaction do
+      engagement = project.engagements.create!(
+        user: current_user,
+        engagement_type: params[:engagement_type],
+        note: params[:note],
+        occurred_at: params[:occurred_at],
+        evidence_url: attachment.present? ? nil : params[:evidence_url]
+      )
+      engagement.additional_projects = projects.reject { |recipient| recipient.id == project.id }
+    end
 
     engagement.replace_attachment(attachment, attachment_type) if attachment.present?
     present engagement, with: Entities::EngagementDetailEntity
@@ -177,7 +206,21 @@ class EngagementsApi < Grape::API
   delete '/projects/:project_id/engagements/:id' do
     project = Project.find(params[:project_id])
     engagement = engagement_for(project)
-    error!({ error: 'You do not have permission to delete this engagement.' }, 403) unless authorise?(current_user, project.unit, :delete_engagement)
+
+    # Convenors can delete any engagement, tutors can only delete their own
+    can_delete_any = authorise?(current_user, project.unit, :delete_engagement)
+    can_delete_own = engagement.user_id == current_user.id &&
+                     authorise?(current_user, project, :delete_engagement)
+    error!({ error: 'You do not have permission to delete this engagement.' }, 403) unless can_delete_any || can_delete_own
+
+    # Convenors get a longer window to delete engagements than their tutors do
+    delete_window = can_delete_any ? Engagement::CONVENOR_DELETE_WINDOW : Engagement::DELETE_WINDOW
+    unless engagement.within_delete_window?(delete_window)
+      error!(
+        { error: "Engagements can only be deleted within #{delete_window.inspect} of being created." },
+        403
+      )
+    end
 
     engagement.destroy!
     present engagement.destroyed?, with: Grape::Presenters::Presenter
