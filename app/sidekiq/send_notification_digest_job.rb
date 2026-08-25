@@ -8,51 +8,45 @@ class SendNotificationDigestJob
                   on_conflict: :reject,
                   retry: 5
 
-  def perform(preference_id)
-    preference = NotificationPreference.find(preference_id)
-    return if preference.email_frequency == 'off'
+  def perform(setting_id)
+    setting = NotificationSetting.find(setting_id)
+    return if setting.digest_frequency == 'off'
 
     now = Time.current
-    pending = preference.user
-                        .received_notifications
-                        .where(unit: preference.unit)
-                        .email_pending
-                        .where.not(kind: Notification::DISCUSS_KINDS)
-                        .includes(:recipient, :unit, task: [:task_definition, { project: :user }])
-    ready_ids = pending.select { |notification| notification.email_ready?(at: now) }.map(&:id)
-    ready = Notification.where(id: ready_ids)
+    ready = setting.user
+                   .received_notifications
+                   .email_pending
+                   .where.not(kind: Notification::DISCUSS_KINDS)
+                   .includes(:recipient, :unit, task: [:task_definition, { project: :user }])
+                   .select { |notification| notification.email_ready?(at: now) }
+    deliverable, skipped = ready.partition { |notification| deliverable?(setting, notification) }
 
-    deliverable_ids = ready.for_enrolled_recipients.where(kind: preference.email_categories).pluck(:id)
+    mark_processed(skipped, now)
+    if deliverable.any?
+      NotificationsMailer.notification_digest(setting.user, deliverable).deliver_now
+      mark_processed(deliverable, now, sent: true)
+    end
 
-    # Categories the user has turned off, plus anything about a project they have withdrawn from.
-    # These are immutable delivery-ledger updates and intentionally bypass callbacks.
+    setting.advance_digest!(from: now)
+  end
+
+  private
+
+  def deliverable?(setting, notification)
+    notification.unit.send_notifications &&
+      !notification.recipient_withdrawn? &&
+      setting.delivers?(notification.unit, notification.kind, :email)
+  end
+
+  # The delivery ledger is immutable once written, so these intentionally bypass callbacks.
+  def mark_processed(notifications, at, sent: false)
+    return if notifications.empty?
+
+    attributes = { email_processed_at: at, updated_at: at }
+    attributes[:email_sent_at] = at if sent
+
     # rubocop:disable Rails/SkipsModelValidations
-    ready.where.not(id: deliverable_ids).update_all(email_processed_at: now, updated_at: now)
+    Notification.where(id: notifications.map(&:id)).update_all(attributes)
     # rubocop:enable Rails/SkipsModelValidations
-
-    enabled = Notification
-              .where(id: deliverable_ids)
-              .includes(:recipient, :unit, task: [:task_definition, { project: :user }])
-              .to_a
-    unless preference.unit.send_notifications
-      # rubocop:disable Rails/SkipsModelValidations
-      Notification.where(id: enabled.map(&:id)).update_all(email_processed_at: now, updated_at: now)
-      # rubocop:enable Rails/SkipsModelValidations
-      preference.advance_digest!(from: now)
-      return
-    end
-
-    if enabled.any?
-      NotificationsMailer.notification_digest(preference, enabled).deliver_now
-      # rubocop:disable Rails/SkipsModelValidations
-      Notification.where(id: enabled.map(&:id)).update_all(
-        email_processed_at: now,
-        email_sent_at: now,
-        updated_at: now
-      )
-      # rubocop:enable Rails/SkipsModelValidations
-    end
-
-    preference.advance_digest!(from: now)
   end
 end

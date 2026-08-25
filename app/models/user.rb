@@ -194,6 +194,7 @@ class User < ApplicationRecord
               dependent: :nullify,
               inverse_of: :actor
   has_many    :notification_preferences, dependent: :destroy
+  has_one     :notification_setting, dependent: :destroy
 
   # Model validations/constraints
   validates :first_name,  presence: true, allowed_characters: { type: :first_name }

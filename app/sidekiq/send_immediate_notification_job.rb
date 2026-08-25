@@ -9,11 +9,11 @@ class SendImmediateNotificationJob
     notification = Notification.find(notification_id)
     return if notification.email_processed_at.present?
 
-    preference = NotificationPreference.for(notification.recipient, notification.unit)
+    settings = NotificationSetting.for(notification.recipient)
     unless notification.read_at.nil? &&
            notification.unit.send_notifications &&
            !notification.recipient_withdrawn? &&
-           preference.email_enabled_for?(notification.kind)
+           settings.delivers?(notification.unit, notification.kind, :email)
       notification.update!(email_processed_at: Time.current)
       return
     end

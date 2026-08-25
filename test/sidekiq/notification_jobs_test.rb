@@ -1,21 +1,26 @@
 require 'test_helper'
 
 class NotificationJobsTest < ActiveSupport::TestCase
-  def test_digest_sends_only_enabled_unread_events
+  def create_settings(**attributes)
+    FactoryBot.create(:notification_setting, next_digest_at: 1.minute.ago, **attributes)
+  end
+
+  def test_digest_sends_only_the_events_enabled_on_the_email_channel
+    settings = create_settings(channels: { 'new_task_comment' => ['in_app'] }.merge(
+      NotificationSetting.default_channels.except('new_task_comment')
+    ))
     unit = FactoryBot.create(:unit, with_students: false, task_count: 0)
-    user = FactoryBot.create(:user)
-    preference = FactoryBot.create(
-      :notification_preference,
-      user: user,
+    NotificationPreference.create!(
+      user: settings.user,
       unit: unit,
-      email_categories: ['feedback_left'],
-      next_digest_at: 1.minute.ago
+      channels: { 'new_task_comment' => %w[in_app email] }
     )
-    enabled = FactoryBot.create(:notification, recipient: user, unit: unit, kind: 'feedback_left')
-    disabled = FactoryBot.create(:notification, recipient: user, unit: unit, kind: 'pdf_generation_failed')
+
+    enabled = FactoryBot.create(:notification, recipient: settings.user, unit: unit, kind: 'new_task_comment')
+    disabled = FactoryBot.create(:notification, recipient: settings.user, kind: 'new_task_comment')
 
     assert_emails 1 do
-      SendNotificationDigestJob.new.perform(preference.id)
+      SendNotificationDigestJob.new.perform(settings.id)
     end
 
     digest_html = ActionMailer::Base.deliveries.last.html_part.body.to_s
@@ -23,46 +28,56 @@ class NotificationJobsTest < ActiveSupport::TestCase
     assert_includes digest_html, '/assets/images/logo.png'
     assert_includes digest_html, 'notification-box'
     assert_includes digest_html, 'Unsubscribe'
-    assert_includes digest_html, "on behalf of #{unit.main_convenor_user.name}"
+    assert_includes digest_html, unit.code
 
     assert_not_nil enabled.reload.email_sent_at
     assert_not_nil disabled.reload.email_processed_at
     assert_nil disabled.email_sent_at
   end
 
+  def test_digest_covers_every_unit_in_one_email
+    settings = create_settings
+    first = FactoryBot.create(:unit, with_students: false, task_count: 0)
+    second = FactoryBot.create(:unit, with_students: false, task_count: 0)
+    FactoryBot.create(:notification, recipient: settings.user, unit: first)
+    FactoryBot.create(:notification, recipient: settings.user, unit: second)
+
+    assert_emails 1 do
+      SendNotificationDigestJob.new.perform(settings.id)
+    end
+
+    digest_html = ActionMailer::Base.deliveries.last.html_part.body.to_s
+    assert_includes digest_html, first.code
+    assert_includes digest_html, second.code
+  end
+
   def test_read_notification_is_not_sent_in_digest
-    preference = FactoryBot.create(:notification_preference, next_digest_at: 1.minute.ago)
+    settings = create_settings
     notification = FactoryBot.create(
       :notification,
-      recipient: preference.user,
-      unit: preference.unit,
+      recipient: settings.user,
       read_at: Time.current,
       email_processed_at: Time.current
     )
 
     assert_no_emails do
-      SendNotificationDigestJob.new.perform(preference.id)
+      SendNotificationDigestJob.new.perform(settings.id)
     end
 
     assert_nil notification.reload.email_sent_at
   end
 
   def test_digest_leaves_an_overseer_event_pending_until_its_email_delay_expires
-    preference = FactoryBot.create(
-      :notification_preference,
-      email_categories: ['overseer_failed'],
-      next_digest_at: 1.minute.ago
-    )
+    settings = create_settings
     notification = FactoryBot.create(
       :notification,
-      recipient: preference.user,
-      unit: preference.unit,
+      recipient: settings.user,
       kind: 'overseer_failed',
       metadata: { email_not_before: 20.minutes.from_now.iso8601 }
     )
 
     assert_no_emails do
-      SendNotificationDigestJob.new.perform(preference.id)
+      SendNotificationDigestJob.new.perform(settings.id)
     end
 
     assert_nil notification.reload.email_processed_at
@@ -70,16 +85,25 @@ class NotificationJobsTest < ActiveSupport::TestCase
   end
 
   def test_unit_email_master_switch_processes_without_sending
-    preference = FactoryBot.create(:notification_preference, next_digest_at: 1.minute.ago)
-    preference.unit.update!(send_notifications: false)
-    notification = FactoryBot.create(
-      :notification,
-      recipient: preference.user,
-      unit: preference.unit
-    )
+    settings = create_settings
+    notification = FactoryBot.create(:notification, recipient: settings.user)
+    notification.unit.update!(send_notifications: false)
 
     assert_no_emails do
-      SendNotificationDigestJob.new.perform(preference.id)
+      SendNotificationDigestJob.new.perform(settings.id)
+    end
+
+    assert_not_nil notification.reload.email_processed_at
+    assert_nil notification.email_sent_at
+  end
+
+  def test_a_muted_unit_is_processed_without_sending
+    settings = create_settings
+    notification = FactoryBot.create(:notification, recipient: settings.user)
+    NotificationPreference.create!(user: settings.user, unit: notification.unit, muted: true)
+
+    assert_no_emails do
+      SendNotificationDigestJob.new.perform(settings.id)
     end
 
     assert_not_nil notification.reload.email_processed_at

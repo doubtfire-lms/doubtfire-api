@@ -1,11 +1,13 @@
 Hi <%= @recipient.first_name %>,
 
-You have <%= @notification_count %> new <%= 'change'.pluralize(@notification_count) %> across <%= @groups.count %> <%= 'notification'.pluralize(@groups.count) %> in <%= @unit.code %>.
-
-<% @groups.each do |group| %>
+You have <%= @notification_count %> new <%= 'change'.pluralize(@notification_count) %> across <%= @group_count %> <%= 'notification'.pluralize(@group_count) %>.
+<% @units.each do |section| %>
+<%= section[:unit].code %> - <%= section[:unit].name %>
+<% section[:groups].each do |group| %>
 - <%= group[:summary] %>
 <% if group[:task] %>
   <%= @doubtfire_host %>/projects/<%= group[:task][:project_id] %>/dashboard/<%= group[:task][:abbreviation] %><%= '?tutor=true' if group[:task][:staff_view] %>
+<% end %>
 <% end %>
 <% end %>
 

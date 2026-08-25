@@ -26,7 +26,7 @@ class NotificationGroupBuilder
     return "#{state_key}:task:#{notification.task_id}" if notification.task_id.present?
 
     unit_role_id = notification.metadata['unit_role_id'] || notification.metadata[:unit_role_id]
-    return "#{state_key}:tutor-notes:#{unit_role_id}" if notification.kind == 'tutor_note'
+    return "#{state_key}:tutor-notes:#{unit_role_id}" if Notification::MODERATION_KINDS.include?(notification.kind)
 
     "#{state_key}:unit:#{notification.unit_id}:#{notification.kind}"
   end
@@ -41,7 +41,7 @@ class NotificationGroupBuilder
                     &.metadata
                     &.fetch('status', nil)
     tutor_notes = items
-                  .select { |notification| notification.kind == 'tutor_note' }
+                  .select { |notification| Notification::MODERATION_KINDS.include?(notification.kind) }
                   .sort_by { |notification| [notification.created_at, notification.id] }
 
     {
@@ -86,7 +86,7 @@ class NotificationGroupBuilder
   def severity_for(items)
     kinds = items.map(&:kind)
     return 'critical' if kinds.intersect?(%w[discuss_expired pdf_generation_failed])
-    return 'warning' if kinds.intersect?(%w[discuss_warning overseer_failed tutor_note])
+    return 'warning' if kinds.intersect?(%w[discuss_warning overseer_failed] + Notification::MODERATION_KINDS)
 
     'normal'
   end
@@ -97,8 +97,9 @@ class NotificationGroupBuilder
     details << 'discussion deadline approaching' if counts['discuss_warning'].positive?
     details << 'submission PDF generation failed' if counts['pdf_generation_failed'].positive?
     details << 'automated assessment failed' if counts['overseer_failed'].positive?
-    details << pluralize(counts['tutor_note'], 'tutor note') if counts['tutor_note'].positive?
-    details << pluralize(counts['feedback_left'], 'new comment') if counts['feedback_left'].positive?
+    moderation_notes = Notification::MODERATION_KINDS.sum { |kind| counts[kind] }
+    details << pluralize(moderation_notes, 'moderation note') if moderation_notes.positive?
+    details << pluralize(counts['new_task_comment'], 'new comment') if counts['new_task_comment'].positive?
     details << "status changed to #{latest_status.to_s.humanize}" if latest_status.present?
 
     subject =

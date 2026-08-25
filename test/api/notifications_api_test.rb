@@ -45,12 +45,12 @@ class NotificationsApiTest < ActiveSupport::TestCase
   def test_get_filters_groups_by_category_and_search
     get '/api/notifications',
         state: 'unread',
-        kinds: ['feedback_left'],
+        kinds: ['new_task_comment'],
         query: @unit.code
 
     assert_equal 200, last_response.status
     assert_equal 1, last_response_body['groups'].count
-    assert_equal({ 'feedback_left' => 1 }, last_response_body.dig('groups', 0, 'counts'))
+    assert_equal({ 'new_task_comment' => 1 }, last_response_body.dig('groups', 0, 'counts'))
   end
 
   def test_mark_read_cannot_update_another_users_notification
@@ -77,27 +77,90 @@ class NotificationsApiTest < ActiveSupport::TestCase
     assert_nil other_notification.reload.read_at
   end
 
-  def test_updating_preferences_requires_unit_access
-    inaccessible_unit = FactoryBot.create(:unit, with_students: false, task_count: 0)
+  def test_a_kind_switched_off_in_app_is_hidden_but_still_emailed
+    settings = NotificationSetting.for(@student)
+    settings.update!(channels: settings.channels.merge('new_task_comment' => ['email']))
 
-    put_json "/api/notification_preferences/#{inaccessible_unit.id}",
-             email_categories: ['feedback_left'],
-             email_frequency: 'daily',
-             email_time: '10:30',
-             email_weekday: 1,
-             timezone: 'UTC'
+    get_json '/api/notifications'
 
-    assert_equal 403, last_response.status
+    assert_equal 200, last_response.status
+    assert_empty last_response_body['groups']
+    assert_equal 0, last_response_body['unread_count']
+
+    # The event is still on the ledger, waiting for the digest to pick it up.
+    assert_equal 1, @student.received_notifications.email_pending.where(kind: 'new_task_comment').count
   end
 
-  def test_updating_preferences_validates_timezone
-    put_json "/api/notification_preferences/#{@unit.id}",
-             email_categories: ['feedback_left'],
-             email_frequency: 'daily',
-             email_time: '10:30',
-             email_weekday: 1,
-             timezone: 'Not/A-Timezone'
+  def test_settings_start_from_the_defaults
+    get_json '/api/notification_settings'
+
+    assert_equal 200, last_response.status
+    assert_equal 'weekly', last_response_body['digest_frequency']
+    assert_equal %w[in_app email], last_response_body.dig('channels', 'new_task_comment')
+    assert_empty last_response_body['units']
+  end
+
+  def test_updating_settings_stores_the_schedule_and_the_units_that_differ
+    put_json '/api/notification_settings',
+             channels: { new_task_comment: ['in_app'] },
+             digest_frequency: 'daily',
+             digest_time: '10:30',
+             digest_weekday: 1,
+             weekly_summary: false,
+             units: [{ unit_id: @unit.id, muted: true }]
+
+    assert_equal 200, last_response.status
+    assert_equal 'daily', last_response_body['digest_frequency']
+    assert_equal ['in_app'], last_response_body.dig('channels', 'new_task_comment')
+    assert_equal [{ 'unit_id' => @unit.id, 'muted' => true, 'channels' => nil }], last_response_body['units']
+  end
+
+  def test_updating_settings_drops_units_that_no_longer_differ
+    NotificationPreference.create!(user: @student, unit: @unit, muted: true)
+
+    put_json '/api/notification_settings',
+             channels: { new_task_comment: ['in_app'] },
+             digest_frequency: 'daily',
+             digest_time: '10:30',
+             digest_weekday: 1,
+             weekly_summary: true,
+             units: []
+
+    assert_equal 200, last_response.status
+    assert_empty @student.notification_preferences.reload
+  end
+
+  def test_updating_settings_ignores_units_the_user_cannot_access
+    inaccessible = FactoryBot.create(:unit, with_students: false, task_count: 0)
+
+    put_json '/api/notification_settings',
+             channels: { new_task_comment: ['in_app'] },
+             digest_frequency: 'daily',
+             digest_time: '10:30',
+             digest_weekday: 1,
+             weekly_summary: true,
+             units: [{ unit_id: inaccessible.id, muted: true }]
+
+    assert_equal 200, last_response.status
+    assert_empty last_response_body['units']
+  end
+
+  def test_updating_settings_rejects_an_unknown_frequency
+    put_json '/api/notification_settings', digest_frequency: 'fortnightly'
 
     assert_equal 400, last_response.status
+  end
+
+  def test_updating_settings_leaves_out_what_was_not_sent
+    put_json '/api/notification_settings', digest_frequency: 'daily'
+    NotificationPreference.create!(user: @student, unit: @unit, muted: true)
+
+    # The client only sends what changed, so an absent key must not clear anything.
+    put_json '/api/notification_settings', digest_time: '06:00'
+
+    assert_equal 200, last_response.status
+    assert_equal 'daily', last_response_body['digest_frequency']
+    assert_equal '06:00', last_response_body['digest_time']
+    assert_equal 1, @student.notification_preferences.reload.count
   end
 end

@@ -9,8 +9,8 @@ class PollNotificationDigestsJob
                   retry: 1
 
   def perform
-    NotificationPreference.due.find_each do |preference|
-      SendNotificationDigestJob.perform_async(preference.id)
+    NotificationSetting.due.find_each do |setting|
+      SendNotificationDigestJob.perform_async(setting.id)
     end
   end
 end

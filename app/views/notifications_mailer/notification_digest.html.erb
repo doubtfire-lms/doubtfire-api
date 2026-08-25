@@ -60,27 +60,31 @@
 </head>
 <body>
   <div class="main">
-    <h1><%= @unit.name %> - Notification Summary</h1>
-    <p class="subtext"><%= @unit.code %></p>
+    <h1>Notification Summary</h1>
 
     <p>Hi <%= @recipient.first_name %>,</p>
 
     <p>
       You have <%= @notification_count %> new <%= 'change'.pluralize(@notification_count) %>
-      across <%= @groups.count %> <%= 'notification'.pluralize(@groups.count) %>.
+      across <%= @group_count %> <%= 'notification'.pluralize(@group_count) %>.
     </p>
 
-    <% @groups.each do |group| %>
-      <div class="notification-box <%= group[:severity] %>">
-        <strong><%= group[:summary] %></strong>
-        <% if group[:task] %>
-          <p>
-            <a href="<%= @doubtfire_host %>/projects/<%= group[:task][:project_id] %>/dashboard/<%= group[:task][:abbreviation] %><%= '?tutor=true' if group[:task][:staff_view] %>">
-              View this task
-            </a>
-          </p>
-        <% end %>
-      </div>
+    <% @units.each do |section| %>
+      <h2><%= section[:unit].code %></h2>
+      <p class="subtext"><%= section[:unit].name %></p>
+
+      <% section[:groups].each do |group| %>
+        <div class="notification-box <%= group[:severity] %>">
+          <strong><%= group[:summary] %></strong>
+          <% if group[:task] %>
+            <p>
+              <a href="<%= @doubtfire_host %>/projects/<%= group[:task][:project_id] %>/dashboard/<%= group[:task][:abbreviation] %><%= '?tutor=true' if group[:task][:staff_view] %>">
+                View this task
+              </a>
+            </p>
+          <% end %>
+        </div>
+      <% end %>
     <% end %>
 
     <p>
@@ -89,7 +93,7 @@
 
     <p>
       Cheers,<br />
-      The <%= @doubtfire_product_name %> Team on behalf of <%= @sender.name %>
+      The <%= @doubtfire_product_name %> Team
     </p>
   </div>
 

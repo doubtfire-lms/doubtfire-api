@@ -83,24 +83,20 @@ class NotificationsMailer < ApplicationMailer
     mail(to: email_with_name, from: tutor_email, subject: subject)
   end
 
-  def notification_digest(preference, notifications)
-    return nil if preference.nil? || notifications.blank?
+  def notification_digest(recipient, notifications)
+    return nil if recipient.nil? || notifications.blank?
 
     add_general
-    @recipient = preference.user
-    @unit = preference.unit
-    @groups = NotificationGroupBuilder.new(notifications).groups
+    @recipient = recipient
     @notification_count = notifications.count
     @notification_url = "#{@doubtfire_host}/notifications"
-    @sender = @unit.main_convenor_user
-    return nil if @sender.nil?
+    @units = notifications.group_by(&:unit).sort_by { |unit, _| unit.code }.map do |unit, for_unit|
+      { unit: unit, groups: NotificationGroupBuilder.new(for_unit).groups }
+    end
+    @group_count = @units.sum { |section| section[:groups].count }
 
-    subject = "#{@unit.code}: #{@notification_count} new #{'change'.pluralize(@notification_count)} across #{@groups.count} #{'notification'.pluralize(@groups.count)}"
-    mail(
-      to: %("#{@recipient.name}" <#{@recipient.email}>),
-      from: %("#{@sender.name}" <#{@sender.email}>),
-      subject: subject
-    )
+    subject = "#{@notification_count} new #{'change'.pluralize(@notification_count)} across #{@group_count} #{'notification'.pluralize(@group_count)}"
+    mail(to: %("#{@recipient.name}" <#{@recipient.email}>), subject: subject)
   end
 
   def discussion_deadline_approaching(task, sender, expiry_date)

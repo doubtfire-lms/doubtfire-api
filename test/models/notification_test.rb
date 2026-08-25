@@ -16,7 +16,7 @@ class NotificationTest < ActiveSupport::TestCase
     notification = Notification.find_by(source: comment, recipient: @student)
 
     assert_not_nil notification
-    assert_equal 'feedback_left', notification.kind
+    assert_equal 'new_task_comment', notification.kind
     assert_equal @task, notification.task
     assert_nil notification.read_at
   end
@@ -25,7 +25,7 @@ class NotificationTest < ActiveSupport::TestCase
     comment = @task.add_text_comment(@student, 'Could you clarify this feedback?')
     @task.add_status_comment(@student, TaskStatus.ready_for_feedback)
 
-    assert Notification.exists?(source: comment, recipient: @tutor, kind: 'feedback_left')
+    assert Notification.exists?(source: comment, recipient: @tutor, kind: 'new_task_comment')
     assert_not Notification.exists?(recipient: @tutor, kind: 'task_status_changed')
   end
 
@@ -76,7 +76,7 @@ class NotificationTest < ActiveSupport::TestCase
     groups = NotificationGroupBuilder.new(Notification.where(recipient: @student).unread).groups
 
     assert_equal 1, groups.count
-    assert_equal 3, groups.first[:counts]['feedback_left']
+    assert_equal 3, groups.first[:counts]['new_task_comment']
     assert_equal 'fix_and_resubmit', groups.first[:latest_status]
     assert_includes groups.first[:summary], '3 new comments'
     assert_includes groups.first[:summary], 'Fix and resubmit'
@@ -103,7 +103,7 @@ class NotificationTest < ActiveSupport::TestCase
     assert_nil expiry_notification.read_at
     assert_equal 'critical', group[:severity]
     assert_equal 1, group[:counts]['discuss_expired']
-    assert_equal 1, group[:counts]['feedback_left']
+    assert_equal 1, group[:counts]['new_task_comment']
     assert_includes group[:summary], 'discussion deadline missed'
   end
 
@@ -111,12 +111,12 @@ class NotificationTest < ActiveSupport::TestCase
     @task.add_text_comment(@student, 'Can you check this change?')
     unit_role = @unit.unit_role_for(@tutor)
     tutor_note = unit_role.add_tutor_note(@unit.main_convenor_user, 'Please follow up', @task.id)
-    Notification.create_for_tutor_note(tutor_note, @tutor)
+    Notification.create_for_tutor_note(tutor_note, @tutor, 'moderation_note_added')
 
     group = NotificationGroupBuilder.new(Notification.where(recipient: @tutor).unread).groups.first
 
-    assert_equal 1, group[:counts]['feedback_left']
-    assert_equal 1, group[:counts]['tutor_note']
+    assert_equal 1, group[:counts]['new_task_comment']
+    assert_equal 1, group[:counts]['moderation_note_added']
     assert_equal [tutor_note.id], group[:tutor_note_ids]
     assert_equal [Notification.find_by!(source: tutor_note).id], group[:tutor_note_notification_ids]
     assert group.dig(:task, :staff_view)
@@ -131,7 +131,7 @@ class NotificationTest < ActiveSupport::TestCase
       project: @project,
       task: @task,
       actor: @tutor,
-      kind: 'feedback_left',
+      kind: 'new_task_comment',
       source: comment,
       deduplication_key: 'same-event',
       metadata: {}
@@ -194,7 +194,7 @@ class NotificationTest < ActiveSupport::TestCase
       :notification,
       recipient: @student,
       unit: @unit,
-      kind: 'feedback_left'
+      kind: 'new_task_comment'
     )
 
     groups = NotificationGroupBuilder.new([read_notification, unread_notification]).groups

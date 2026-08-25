@@ -2,16 +2,21 @@
 
 class Notification < ApplicationRecord
   KINDS = %w[
-    feedback_left
+    new_task_comment
     task_status_changed
     overseer_failed
     pdf_generation_failed
     discuss_warning
     discuss_expired
-    tutor_note
+    moderation_note_added
+    moderation_note_reply
+    moderation_note_from_mentee
   ].freeze
 
+  CHANNELS = %w[in_app email push].freeze
+
   DISCUSS_KINDS = %w[discuss_warning discuss_expired].freeze
+  MODERATION_KINDS = %w[moderation_note_added moderation_note_reply moderation_note_from_mentee].freeze
 
   attribute :metadata, :json, default: -> { {} }
 
@@ -29,15 +34,6 @@ class Notification < ApplicationRecord
   scope :unread, -> { where(read_at: nil) }
   scope :recently_read, -> { where(read_at: 30.days.ago..) }
   scope :email_pending, -> { unread.where(email_processed_at: nil) }
-
-  # Excludes notifications addressed to a student about a project they have
-  # withdrawn from. Staff notifications about that project are unaffected.
-  scope :for_enrolled_recipients, lambda {
-    left_outer_joins(:project)
-      .where(
-        'projects.id IS NULL OR projects.enrolled = TRUE OR projects.user_id <> notifications.recipient_id'
-      )
-  }
 
   before_validation :normalize_metadata
 
@@ -124,14 +120,14 @@ class Notification < ApplicationRecord
     end
   end
 
-  def self.create_for_tutor_note(tutor_note, recipient)
+  def self.create_for_tutor_note(tutor_note, recipient, kind)
     create_event(
       recipient: recipient,
       unit: tutor_note.unit_role.unit,
       project: tutor_note.task&.project,
       task: tutor_note.task,
       actor: tutor_note.user,
-      kind: 'tutor_note',
+      kind: kind,
       source: tutor_note,
       deduplication_key: "tutor-note:#{tutor_note.id}",
       metadata: {
@@ -144,10 +140,13 @@ class Notification < ApplicationRecord
   def self.create_event(**attributes)
     recipient = attributes.fetch(:recipient)
     unit = attributes.fetch(:unit)
+    kind = attributes.fetch(:kind)
     deduplication_key = attributes.fetch(:deduplication_key)
     return if withdrawn_student?(attributes[:project], recipient)
 
-    preference = NotificationPreference.for(recipient, unit)
+    settings = NotificationSetting.for(recipient)
+    channels = settings.channels_for_unit(unit.id, kind)
+    return if channels.empty?
 
     notification = find_or_initialize_by(
       recipient: recipient,
@@ -160,12 +159,12 @@ class Notification < ApplicationRecord
       project: attributes[:project],
       task: attributes[:task],
       actor: attributes[:actor],
-      kind: attributes.fetch(:kind),
+      kind: kind,
       source: attributes[:source],
       metadata: attributes.fetch(:metadata, {})
     )
     notification.save!
-    notification.update!(email_processed_at: Time.current) if preference.email_frequency == 'off'
+    notification.update!(email_processed_at: Time.current) unless channels.include?('email')
     notification
   rescue ActiveRecord::RecordNotUnique
     find_by(recipient: recipient, deduplication_key: deduplication_key)
@@ -249,7 +248,7 @@ class Notification < ApplicationRecord
       # handled by the branch above.
       return nil if comment.attention_none?
 
-      'feedback_left'
+      'new_task_comment'
     end
   end
 

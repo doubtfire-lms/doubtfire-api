@@ -113,18 +113,21 @@ class TutorNotesApi < Grape::API
 
     reply_target = original_staff_note && unit.unit_role_for(original_staff_note.user)
 
-    notify_unit_role =
+    notify_unit_role, notification_kind =
       if reply_target && original_staff_note.user != current_user
-        reply_target      # tutor is responding to a reply -> notify original user that tutor is replying to
+        # tutor is responding to a reply -> notify original user that tutor is replying to
+        [reply_target, 'moderation_note_reply']
       elsif current_unit_role == unit_role
-        unit_role.mentor  # tutor is writing on their own notes -> notify the mentor
+        # tutor is writing on their own notes -> notify the mentor
+        [unit_role.mentor, 'moderation_note_from_mentee']
       else
-        unit_role         # anyone else wrote about this tutor, whether its their mentor or another convenor -> notify tutor
+        # anyone else wrote about this tutor, whether its their mentor or another convenor -> notify tutor
+        [unit_role, 'moderation_note_added']
       end
 
     if result.present? && notify_unit_role.present? && notify_unit_role.user_id != current_user.id
       begin
-        NotifyTutorNotesJob.perform_async(result.id, notify_unit_role.user.id)
+        NotifyTutorNotesJob.perform_async(result.id, notify_unit_role.user.id, notification_kind)
       rescue StandardError => e
         Rails.logger.error("Failed to send tutor note email for TutorNote #{result.id}: #{e.class} - #{e.message}")
       end

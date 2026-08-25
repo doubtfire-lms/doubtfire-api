@@ -2,18 +2,21 @@ FactoryBot.define do
   factory :notification do
     recipient { create(:user) }
     unit { create(:unit, with_students: false, task_count: 0) }
-    kind { 'feedback_left' }
+    kind { 'new_task_comment' }
     sequence(:deduplication_key) { |number| "factory-notification-#{number}" }
     metadata { {} }
+  end
+
+  factory :notification_setting do
+    user
+    digest_frequency { 'weekly' }
+    digest_time { '07:00' }
+    digest_weekday { 1 }
   end
 
   factory :notification_preference do
     user
     unit { create(:unit, with_students: false, task_count: 0) }
-    email_categories { Notification::KINDS }
-    email_frequency { 'weekly' }
-    email_time { '09:00' }
-    email_weekday { 1 }
-    timezone { 'UTC' }
+    muted { false }
   end
 end

@@ -375,20 +375,29 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_25_000645) do
   create_table "notification_preferences", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.bigint "unit_id", null: false
-    t.text "email_categories", size: :long, null: false, collation: "utf8mb4_bin"
-    t.string "email_frequency", limit: 16, default: "weekly", null: false
-    t.string "email_time", limit: 5, default: "09:00", null: false
-    t.integer "email_weekday", default: 1, null: false
-    t.string "timezone", default: "UTC", null: false
+    t.boolean "muted", default: false, null: false
+    t.text "channels", size: :long, collation: "utf8mb4_bin"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["unit_id"], name: "index_notification_preferences_on_unit_id"
+    t.index ["user_id", "unit_id"], name: "index_notification_preferences_on_user_and_unit", unique: true
+    t.check_constraint "json_valid(`channels`)", name: "channels"
+  end
+
+  create_table "notification_settings", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.text "channels", size: :long, null: false, collation: "utf8mb4_bin"
+    t.string "digest_frequency", limit: 16, default: "weekly", null: false
+    t.string "digest_time", limit: 5, default: "07:00", null: false
+    t.integer "digest_weekday", default: 1, null: false
+    t.boolean "weekly_summary", default: true, null: false
     t.datetime "next_digest_at"
     t.datetime "last_digest_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["next_digest_at"], name: "index_notification_preferences_on_next_digest_at"
-    t.index ["unit_id"], name: "index_notification_preferences_on_unit_id"
-    t.index ["user_id", "unit_id"], name: "index_notification_preferences_on_user_and_unit", unique: true
-    t.index ["user_id"], name: "index_notification_preferences_on_user_id"
-    t.check_constraint "json_valid(`email_categories`)", name: "email_categories"
+    t.index ["next_digest_at"], name: "index_notification_settings_on_next_digest_at"
+    t.index ["user_id"], name: "index_notification_settings_on_user_id", unique: true
+    t.check_constraint "json_valid(`channels`)", name: "channels"
   end
 
   create_table "notifications", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
@@ -413,7 +422,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_25_000645) do
     t.index ["recipient_id", "read_at", "created_at"], name: "index_notifications_on_recipient_read_created"
     t.index ["recipient_id", "task_id", "read_at"], name: "index_notifications_on_recipient_task_read"
     t.index ["recipient_id", "unit_id", "email_processed_at"], name: "index_notifications_for_email_delivery"
-    t.index ["recipient_id"], name: "index_notifications_on_recipient_id"
     t.index ["source_type", "source_id"], name: "index_notifications_on_source_type_and_source_id"
     t.index ["task_id"], name: "index_notifications_on_task_id"
     t.index ["unit_id"], name: "index_notifications_on_unit_id"
