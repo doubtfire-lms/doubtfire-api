@@ -63,7 +63,9 @@ class NotificationGroupBuilder
       latest_at: latest.created_at,
       tutor_note_ids: tutor_notes.filter_map { |notification| notification.metadata['tutor_note_id'] },
       tutor_note_unit_role_id: tutor_notes.first&.metadata&.fetch('unit_role_id', nil),
-      summary: summary_for(task, latest.recipient, counts, latest_status)
+      overseer_assessment_id: overseer_assessment_id(items),
+      detail: detail_for(counts, latest_status),
+      summary: "#{subject_for(task, latest.recipient)} - #{detail_for(counts, latest_status)}"
     }
   end
 
@@ -91,7 +93,23 @@ class NotificationGroupBuilder
     'normal'
   end
 
-  def summary_for(task, recipient, counts, latest_status)
+  # The newest failed run in the group, so opening the notification can jump
+  # straight to that report.
+  def overseer_assessment_id(items)
+    items.select { |notification| notification.kind == 'overseer_failed' }.max_by(&:created_at)&.source_id
+  end
+
+  def subject_for(task, recipient)
+    return 'Unit notification' if task.nil?
+
+    return task.task_definition.abbreviation if task.project.student == recipient
+
+    "#{task.task_definition.abbreviation} for #{task.project.student.name}"
+  end
+
+  # What happened, without the task it happened to, so callers can show the two
+  # separately rather than splitting the summary back apart.
+  def detail_for(counts, latest_status)
     details = []
     details << 'discussion deadline missed' if counts['discuss_expired'].positive?
     details << 'discussion deadline approaching' if counts['discuss_warning'].positive?
@@ -100,17 +118,11 @@ class NotificationGroupBuilder
     moderation_notes = Notification::MODERATION_KINDS.sum { |kind| counts[kind] }
     details << pluralize(moderation_notes, 'moderation note') if moderation_notes.positive?
     details << pluralize(counts['new_task_comment'], 'new comment') if counts['new_task_comment'].positive?
-    details << "status changed to #{status_name(latest_status)}" if latest_status.present?
+    details << "task status changed to #{status_name(latest_status)}" if latest_status.present?
 
-    subject =
-      if task
-        task.project.student == recipient ? task.task_definition.abbreviation : "#{task.task_definition.abbreviation} for #{task.project.student.name}"
-      else
-        'Unit notification'
-      end
     # Sentence case, so a single detail reads as a heading and several still join
     # into one readable sentence.
-    "#{subject} - #{details.to_sentence.upcase_first}"
+    details.to_sentence.upcase_first
   end
 
   def status_name(status_key)
