@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_08_20_063400) do
+ActiveRecord::Schema[8.0].define(version: 2026_08_25_000645) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -1110,13 +1110,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_20_063400) do
   add_foreign_key "feedback_chips", "learning_outcomes"
   add_foreign_key "learning_outcome_links", "learning_outcomes", column: "source_id"
   add_foreign_key "learning_outcome_links", "learning_outcomes", column: "target_id"
-  add_foreign_key "notification_preferences", "units"
-  add_foreign_key "notification_preferences", "users"
-  add_foreign_key "notifications", "projects"
-  add_foreign_key "notifications", "tasks"
-  add_foreign_key "notifications", "units"
-  add_foreign_key "notifications", "users", column: "actor_id"
-  add_foreign_key "notifications", "users", column: "recipient_id"
   add_foreign_key "user_oauth_states", "users"
   add_foreign_key "user_oauth_tokens", "users"
 end

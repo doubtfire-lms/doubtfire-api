@@ -1,11 +1,11 @@
 class CreateNotificationsAndNotificationPreferences < ActiveRecord::Migration[8.0]
   def change
     create_table :notifications do |t|
-      t.references :recipient, null: false, foreign_key: { to_table: :users }
-      t.references :unit, null: false, foreign_key: true
-      t.references :project, null: true, foreign_key: true
-      t.references :task, null: true, foreign_key: true
-      t.references :actor, null: true, foreign_key: { to_table: :users }
+      t.references :recipient, null: false
+      t.references :unit, null: false
+      t.references :project, null: true
+      t.references :task, null: true
+      t.references :actor, null: true
 
       t.string :kind, null: false, limit: 64
       t.string :source_type, null: true, limit: 64
@@ -32,8 +32,8 @@ class CreateNotificationsAndNotificationPreferences < ActiveRecord::Migration[8.
               name: 'index_notifications_on_recipient_task_read'
 
     create_table :notification_preferences do |t|
-      t.references :user, null: false, foreign_key: true
-      t.references :unit, null: false, foreign_key: true
+      t.references :user, null: false
+      t.references :unit, null: false
 
       t.json :email_categories, null: false
       t.string :email_frequency, null: false, default: 'weekly', limit: 16
