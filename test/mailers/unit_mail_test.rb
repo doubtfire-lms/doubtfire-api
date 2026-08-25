@@ -131,14 +131,23 @@ class UnitMailTest < ActionMailer::TestCase
   end
 
   def test_discuss_timeout_notifications_are_not_queued_for_unenrolled_students
-    unit = FactoryBot.create(:unit)
+    unit = FactoryBot.create(
+      :unit,
+      discuss_timeout_enabled: true,
+      discuss_timeout_warning_days: 7,
+      discuss_timeout_expire_days: 14
+    )
     project = unit.active_projects.first
     task = project.task_for_task_definition(unit.task_definitions.first)
+    task.update!(task_status: TaskStatus.discuss)
+    task.update!(moved_to_discuss_at: 8.days.ago)
     project.update!(enrolled: false)
 
-    unit.queue_discuss_timeout_email(task, unit.main_convenor_user, :approaching, 7.days.from_now)
+    # The timeout comment is still recorded, the withdrawn student just is not notified.
+    assert_equal 1, unit.notify_discuss_timeouts!
 
-    assert_empty SendDiscussTimeoutEmailJob.jobs
+    assert_empty Notification.where(recipient: project.student, task: task)
+    assert_empty SendImmediateNotificationJob.jobs
   end
 
   def test_batch_feedback_updates_unenrolled_students_without_emailing_them
@@ -170,6 +179,7 @@ class UnitMailTest < ActionMailer::TestCase
     assert_empty errors
     assert_equal TaskStatus.complete, task.reload.task_status
     assert_equal 'Imported feedback', task.comments.last.comment
+    assert_empty Notification.where(recipient: project.student, task: task)
   end
 
 end

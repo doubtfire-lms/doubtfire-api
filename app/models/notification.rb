@@ -31,6 +31,15 @@ class Notification < ApplicationRecord
   scope :recently_read, -> { where(read_at: 30.days.ago..) }
   scope :email_pending, -> { unread.where(email_processed_at: nil) }
 
+  # Excludes notifications addressed to a student about a project they have
+  # withdrawn from. Staff notifications about that project are unaffected.
+  scope :for_enrolled_recipients, lambda {
+    left_outer_joins(:project)
+      .where(
+        'projects.id IS NULL OR projects.enrolled = TRUE OR projects.user_id <> notifications.recipient_id'
+      )
+  }
+
   before_validation :normalize_metadata
 
   def self.create_for_task_comment(comment)
@@ -137,6 +146,8 @@ class Notification < ApplicationRecord
     recipient = attributes.fetch(:recipient)
     unit = attributes.fetch(:unit)
     deduplication_key = attributes.fetch(:deduplication_key)
+    return if withdrawn_student?(attributes[:project], recipient)
+
     preference = NotificationPreference.for(recipient, unit)
 
     notification = find_or_initialize_by(
@@ -202,6 +213,15 @@ class Notification < ApplicationRecord
 
   def self.resolve_for(recipient:, task:, kinds:)
     mark_read(where(recipient: recipient, task: task, kind: Array(kinds)).unread)
+  end
+
+  # A student who is no longer enrolled must not be notified about their old project.
+  def self.withdrawn_student?(project, recipient)
+    project.present? && !project.enrolled && project.user_id == recipient.id
+  end
+
+  def recipient_withdrawn?
+    self.class.withdrawn_student?(project, recipient)
   end
 
   def email_ready?(at: Time.current)

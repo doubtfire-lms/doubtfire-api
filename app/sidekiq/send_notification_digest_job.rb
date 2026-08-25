@@ -22,14 +22,16 @@ class SendNotificationDigestJob
     ready_ids = pending.select { |notification| notification.email_ready?(at: now) }.map(&:id)
     ready = Notification.where(id: ready_ids)
 
-    disabled = ready.where.not(kind: preference.email_categories)
+    deliverable_ids = ready.for_enrolled_recipients.where(kind: preference.email_categories).pluck(:id)
+
+    # Categories the user has turned off, plus anything about a project they have withdrawn from.
     # These are immutable delivery-ledger updates and intentionally bypass callbacks.
     # rubocop:disable Rails/SkipsModelValidations
-    disabled.update_all(email_processed_at: now, updated_at: now)
+    ready.where.not(id: deliverable_ids).update_all(email_processed_at: now, updated_at: now)
     # rubocop:enable Rails/SkipsModelValidations
 
-    enabled = ready
-              .where(kind: preference.email_categories)
+    enabled = Notification
+              .where(id: deliverable_ids)
               .includes(:recipient, :unit, task: [:task_definition, { project: :user }])
               .to_a
     unless preference.unit.send_notifications
