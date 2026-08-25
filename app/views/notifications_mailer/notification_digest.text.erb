@@ -1,6 +1,6 @@
 Hi <%= @recipient.first_name %>,
 
-You have <%= @notification_count %> new <%= 'change'.pluralize(@notification_count) %> across <%= @group_count %> <%= 'notification'.pluralize(@group_count) %>.
+You have <%= @notification_count %> new <%= 'notification'.pluralize(@notification_count) %> in <%= @doubtfire_product_name %>.
 <% @units.each do |section| %>
 <%= section[:unit].code %> - <%= section[:unit].name %>
 <% section[:groups].each do |group| %>

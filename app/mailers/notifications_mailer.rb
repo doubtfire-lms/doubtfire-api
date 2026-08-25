@@ -88,14 +88,14 @@ class NotificationsMailer < ApplicationMailer
 
     add_general
     @recipient = recipient
-    @notification_count = notifications.count
     @notification_url = "#{@doubtfire_host}/notifications"
     @units = notifications.group_by(&:unit).sort_by { |unit, _| unit.code }.map do |unit, for_unit|
       { unit: unit, groups: NotificationGroupBuilder.new(for_unit).groups }
     end
-    @group_count = @units.sum { |section| section[:groups].count }
+    # Grouped events, so the count matches the rows the reader can see below.
+    @notification_count = @units.sum { |section| section[:groups].count }
 
-    subject = "#{@notification_count} new #{'change'.pluralize(@notification_count)} across #{@group_count} #{'notification'.pluralize(@group_count)}"
+    subject = "#{@notification_count} new #{'notification'.pluralize(@notification_count)}"
     mail(
       to: %("#{@recipient.name}" <#{@recipient.email}>),
       from: %("#{@doubtfire_product_name}" <no-reply@#{Doubtfire::Application.config.institution[:email_domain]}>),
