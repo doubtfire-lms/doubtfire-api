@@ -193,7 +193,7 @@ class User < ApplicationRecord
               foreign_key: :actor_id,
               dependent: :nullify,
               inverse_of: :actor
-  has_many    :notification_preferences, dependent: :destroy
+  has_many    :notification_unit_overrides, dependent: :destroy
   has_one     :notification_setting, dependent: :destroy
 
   # Model validations/constraints

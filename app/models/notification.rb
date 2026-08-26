@@ -18,24 +18,28 @@ class Notification < ApplicationRecord
   DISCUSS_KINDS = %w[discuss_warning discuss_expired].freeze
   MODERATION_KINDS = %w[moderation_note_added moderation_note_reply moderation_note_from_mentee].freeze
 
-  attribute :metadata, :json, default: -> { {} }
-
   belongs_to :recipient, class_name: 'User', inverse_of: :received_notifications
   belongs_to :unit
   belongs_to :project, optional: true
   belongs_to :task, optional: true
   belongs_to :actor, class_name: 'User', optional: true, inverse_of: :acted_notifications
-  belongs_to :source, polymorphic: true, optional: true
+
+  # What raised the notification.
+  belongs_to :task_comment, optional: true
+  belongs_to :overseer_assessment, optional: true
+  belongs_to :tutor_note, optional: true
+
+  # Extras, set only by the kinds that have them.
+  belongs_to :task_status, optional: true
+  belongs_to :unit_role, optional: true
 
   validates :kind, inclusion: { in: KINDS }
   validates :deduplication_key, presence: true, uniqueness: { scope: :recipient_id }
-  validate :metadata_is_an_object
 
   scope :unread, -> { where(read_at: nil) }
   scope :recently_read, -> { where(read_at: 30.days.ago..) }
   scope :email_pending, -> { unread.where(email_processed_at: nil) }
-
-  before_validation :normalize_metadata
+  scope :email_ready, ->(at = Time.current) { where(email_not_before: [nil, ..at]) }
 
   def self.create_for_task_comment(comment)
     kind = kind_for_comment(comment)
@@ -60,9 +64,10 @@ class Notification < ApplicationRecord
         task: recipient_task,
         actor: comment.user,
         kind: kind,
-        source: comment,
+        task_comment: comment,
         deduplication_key: "task-comment:#{comment.id}:#{kind}",
-        metadata: metadata_for_comment(comment, recipient_task)
+        task_status: comment.is_a?(TaskStatusComment) ? comment.task_status : nil,
+        discuss_deadline: discuss_deadline_for(comment, recipient_task)
       )
 
       SendImmediateNotificationJob.perform_async(notification.id) if notification && DISCUSS_KINDS.include?(kind)
@@ -80,7 +85,7 @@ class Notification < ApplicationRecord
           recipient: recipient,
           task: recipient_task,
           kind: 'overseer_failed'
-        ).where.not(source: assessment).unread
+        ).where.not(overseer_assessment: assessment).unread
       )
       next if assessment_comment.seen_by?(recipient)
 
@@ -91,13 +96,9 @@ class Notification < ApplicationRecord
         task: recipient_task,
         actor: assessment.task.project.tutor_for(assessment.task.task_definition),
         kind: 'overseer_failed',
-        source: assessment,
+        overseer_assessment: assessment,
         deduplication_key: "overseer-assessment:#{assessment.id}:failed",
-        metadata: {
-          email_not_before: (
-            assessment.updated_at + OverseerAssessment.student_notification_grace_period
-          ).iso8601
-        }
+        email_not_before: assessment.updated_at + OverseerAssessment.student_notification_grace_period
       )
     end
   end
@@ -113,9 +114,7 @@ class Notification < ApplicationRecord
         task: recipient_task,
         actor: task.project.tutor_for(task.task_definition),
         kind: 'pdf_generation_failed',
-        source: task,
-        deduplication_key: "pdf-generation:#{task.id}:#{version}:failed",
-        metadata: {}
+        deduplication_key: "pdf-generation:#{task.id}:#{version}:failed"
       )
     end
   end
@@ -128,12 +127,9 @@ class Notification < ApplicationRecord
       task: tutor_note.task,
       actor: tutor_note.user,
       kind: kind,
-      source: tutor_note,
-      deduplication_key: "tutor-note:#{tutor_note.id}",
-      metadata: {
-        unit_role_id: tutor_note.unit_role_id,
-        tutor_note_id: tutor_note.id
-      }
+      tutor_note: tutor_note,
+      unit_role: tutor_note.unit_role,
+      deduplication_key: "tutor-note:#{tutor_note.id}"
     )
   end
 
@@ -160,8 +156,13 @@ class Notification < ApplicationRecord
       task: attributes[:task],
       actor: attributes[:actor],
       kind: kind,
-      source: attributes[:source],
-      metadata: attributes.fetch(:metadata, {})
+      task_comment: attributes[:task_comment],
+      overseer_assessment: attributes[:overseer_assessment],
+      tutor_note: attributes[:tutor_note],
+      task_status: attributes[:task_status],
+      unit_role: attributes[:unit_role],
+      discuss_deadline: attributes[:discuss_deadline],
+      email_not_before: attributes[:email_not_before]
     )
     notification.save!
     notification.update!(email_processed_at: Time.current) unless channels.include?('email')
@@ -199,7 +200,7 @@ class Notification < ApplicationRecord
 
     # Keep email_processed_at unchanged so manually reopening a comment never resends email.
     # rubocop:disable Rails/SkipsModelValidations
-    where(recipient: recipient, source_type: 'TaskComment', source_id: later_comment_ids)
+    where(recipient: recipient, task_comment_id: later_comment_ids)
       .update_all(read_at: nil, updated_at: Time.current)
     # rubocop:enable Rails/SkipsModelValidations
   end
@@ -223,12 +224,7 @@ class Notification < ApplicationRecord
   end
 
   def email_ready?(at: Time.current)
-    email_not_before = metadata['email_not_before'] || metadata[:email_not_before]
-    return true if email_not_before.blank?
-
-    Time.zone.parse(email_not_before) <= at
-  rescue ArgumentError, TypeError
-    true
+    email_not_before.blank? || email_not_before <= at
   end
 
   def self.kind_for_comment(comment)
@@ -252,11 +248,10 @@ class Notification < ApplicationRecord
     end
   end
 
-  def self.metadata_for_comment(comment, recipient_task)
-    result = {}
-    result[:status] = comment.task_status.status_key if comment.is_a?(TaskStatusComment)
-    result[:deadline] = recipient_task.unit.discuss_timeout_expiry_date(recipient_task)&.iso8601 if comment.content_type == DiscussTimeoutComment.warning
-    result
+  def self.discuss_deadline_for(comment, recipient_task)
+    return nil unless comment.content_type == DiscussTimeoutComment.warning
+
+    recipient_task.unit.discuss_timeout_expiry_date(recipient_task)
   end
 
   def self.recipients_for_comment(comment)
@@ -284,19 +279,5 @@ class Notification < ApplicationRecord
     comment.user == comment.project.student || comment.task.role_for(comment.user).in?(%i[student group_member])
   end
 
-  def metadata_is_an_object
-    errors.add(:metadata, 'must be a JSON object') unless metadata.is_a?(Hash)
-  end
-
-  def normalize_metadata
-    self.metadata ||= {}
-    return unless metadata.is_a?(String)
-
-    parsed = JSON.parse(metadata)
-    self.metadata = parsed if parsed.is_a?(Hash)
-  rescue JSON::ParserError
-    nil
-  end
-
-  private_class_method :kind_for_comment, :metadata_for_comment, :recipients_for_comment, :student_actor?
+  private_class_method :kind_for_comment, :discuss_deadline_for, :recipients_for_comment, :student_actor?
 end

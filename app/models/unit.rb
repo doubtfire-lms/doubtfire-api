@@ -184,7 +184,7 @@ class Unit < ApplicationRecord
   has_many :unit_content_sites, dependent: :destroy
   has_many :unit_content_links, dependent: :destroy
   has_many :notifications, dependent: :destroy
-  has_many :notification_preferences, dependent: :destroy
+  has_many :notification_unit_overrides, dependent: :destroy
 
   has_many :comments, through: :projects
   has_many :tasks, through: :projects

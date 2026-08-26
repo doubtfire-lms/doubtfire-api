@@ -26,11 +26,10 @@ class SendImmediateNotificationJob
 
     mail =
       if notification.kind == 'discuss_warning'
-        deadline = notification.metadata['deadline']
         NotificationsMailer.discussion_deadline_approaching(
           notification.task,
           sender,
-          deadline.present? ? Date.iso8601(deadline) : notification.unit.discuss_timeout_expiry_date(notification.task)
+          notification.discuss_deadline || notification.unit.discuss_timeout_expiry_date(notification.task)
         )
       else
         NotificationsMailer.discussion_deadline_missed(notification.task, sender)

@@ -12,7 +12,7 @@ class NotificationJobsTest < ActiveSupport::TestCase
       NotificationSetting.default_channels.except('new_task_comment')
     ))
     unit = FactoryBot.create(:unit, with_students: false, task_count: 0)
-    NotificationPreference.create!(
+    NotificationUnitOverride.create!(
       user: settings.user,
       unit: unit,
       channels: { 'new_task_comment' => %w[in_app email] }
@@ -75,7 +75,7 @@ class NotificationJobsTest < ActiveSupport::TestCase
       :notification,
       recipient: settings.user,
       kind: 'overseer_failed',
-      metadata: { email_not_before: 20.minutes.from_now.iso8601 }
+      email_not_before: 20.minutes.from_now
     )
 
     assert_no_emails do
@@ -102,7 +102,7 @@ class NotificationJobsTest < ActiveSupport::TestCase
   def test_a_muted_unit_is_processed_without_sending
     settings = create_settings
     notification = FactoryBot.create(:notification, recipient: settings.user)
-    NotificationPreference.create!(user: settings.user, unit: notification.unit, muted: true)
+    NotificationUnitOverride.create!(user: settings.user, unit: notification.unit, muted: true)
 
     assert_no_emails do
       SendNotificationDigestJob.new.perform(settings.id)

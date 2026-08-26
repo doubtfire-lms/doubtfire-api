@@ -116,7 +116,7 @@ class NotificationsApiTest < ActiveSupport::TestCase
   end
 
   def test_updating_settings_drops_units_that_no_longer_differ
-    NotificationPreference.create!(user: @student, unit: @unit, muted: true)
+    NotificationUnitOverride.create!(user: @student, unit: @unit, muted: true)
 
     put_json '/api/notification_settings',
              channels: { new_task_comment: ['in_app'] },
@@ -127,7 +127,7 @@ class NotificationsApiTest < ActiveSupport::TestCase
              units: []
 
     assert_equal 200, last_response.status
-    assert_empty @student.notification_preferences.reload
+    assert_empty @student.notification_unit_overrides.reload
   end
 
   def test_updating_settings_ignores_units_the_user_cannot_access
@@ -153,7 +153,7 @@ class NotificationsApiTest < ActiveSupport::TestCase
 
   def test_updating_settings_leaves_out_what_was_not_sent
     put_json '/api/notification_settings', digest_frequency: 'daily'
-    NotificationPreference.create!(user: @student, unit: @unit, muted: true)
+    NotificationUnitOverride.create!(user: @student, unit: @unit, muted: true)
 
     # The client only sends what changed, so an absent key must not clear anything.
     put_json '/api/notification_settings', digest_time: '06:00'
@@ -161,6 +161,6 @@ class NotificationsApiTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
     assert_equal 'daily', last_response_body['digest_frequency']
     assert_equal '06:00', last_response_body['digest_time']
-    assert_equal 1, @student.notification_preferences.reload.count
+    assert_equal 1, @student.notification_unit_overrides.reload.count
   end
 end

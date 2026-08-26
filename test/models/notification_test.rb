@@ -13,7 +13,7 @@ class NotificationTest < ActiveSupport::TestCase
   def test_tutor_feedback_creates_an_unread_student_notification
     comment = @task.add_text_comment(@tutor, 'Please revise this section')
 
-    notification = Notification.find_by(source: comment, recipient: @student)
+    notification = Notification.find_by(task_comment: comment, recipient: @student)
 
     assert_not_nil notification
     assert_equal 'new_task_comment', notification.kind
@@ -25,7 +25,7 @@ class NotificationTest < ActiveSupport::TestCase
     comment = @task.add_text_comment(@student, 'Could you clarify this feedback?')
     @task.add_status_comment(@student, TaskStatus.ready_for_feedback)
 
-    assert Notification.exists?(source: comment, recipient: @tutor, kind: 'new_task_comment')
+    assert Notification.exists?(task_comment: comment, recipient: @tutor, kind: 'new_task_comment')
     assert_not Notification.exists?(recipient: @tutor, kind: 'task_status_changed')
   end
 
@@ -49,23 +49,23 @@ class NotificationTest < ActiveSupport::TestCase
       TaskStatus.ready_for_feedback
     )
 
-    notifications = Notification.where(source: comment).order(:recipient_id)
+    notifications = Notification.where(task_comment: comment).order(:recipient_id)
 
     assert_equal group.projects.map(&:student).sort_by(&:id), notifications.map(&:recipient).sort_by(&:id)
     assert_equal tasks.map(&:id).sort, notifications.map(&:task_id).sort
-    assert_not Notification.exists?(source: group_member_status)
+    assert_not Notification.exists?(task_comment: group_member_status)
   end
 
   def test_only_latest_staff_status_notification_remains_unread
     first_comment = @task.add_status_comment(@tutor, TaskStatus.fix_and_resubmit)
     second_comment = @task.add_status_comment(@tutor, TaskStatus.complete)
 
-    first_notification = Notification.find_by!(source: first_comment, recipient: @student)
-    second_notification = Notification.find_by!(source: second_comment, recipient: @student)
+    first_notification = Notification.find_by!(task_comment: first_comment, recipient: @student)
+    second_notification = Notification.find_by!(task_comment: second_comment, recipient: @student)
 
     assert_not_nil first_notification.read_at
     assert_nil second_notification.read_at
-    assert_equal 'complete', second_notification.metadata['status']
+    assert_equal TaskStatus.complete, second_notification.task_status
     assert_equal 1, Notification.where(recipient: @student, task: @task, kind: 'task_status_changed').unread.count
   end
 
@@ -95,8 +95,8 @@ class NotificationTest < ActiveSupport::TestCase
       'Your discussion deadline has passed'
     )
 
-    warning_notification = Notification.find_by!(source: warning, recipient: @student)
-    expiry_notification = Notification.find_by!(source: expiry, recipient: @student)
+    warning_notification = Notification.find_by!(task_comment: warning, recipient: @student)
+    expiry_notification = Notification.find_by!(task_comment: expiry, recipient: @student)
     group = NotificationGroupBuilder.new(Notification.where(recipient: @student).unread).groups.first
 
     assert_not_nil warning_notification.read_at
@@ -118,7 +118,7 @@ class NotificationTest < ActiveSupport::TestCase
     assert_equal 1, group[:counts]['new_task_comment']
     assert_equal 1, group[:counts]['moderation_note_added']
     assert_equal [tutor_note.id], group[:tutor_note_ids]
-    assert_equal [Notification.find_by!(source: tutor_note).id], group[:tutor_note_notification_ids]
+    assert_equal [Notification.find_by!(tutor_note: tutor_note).id], group[:tutor_note_notification_ids]
     assert group.dig(:task, :staff_view)
     assert_equal @student.name, group.dig(:task, :student_name)
   end
@@ -132,9 +132,8 @@ class NotificationTest < ActiveSupport::TestCase
       task: @task,
       actor: @tutor,
       kind: 'new_task_comment',
-      source: comment,
+      task_comment: comment,
       deduplication_key: 'same-event',
-      metadata: {}
     }
 
     first = Notification.create_event(**attributes)
@@ -142,13 +141,6 @@ class NotificationTest < ActiveSupport::TestCase
 
     assert_equal first, second
     assert_equal 1, Notification.where(recipient: @student, deduplication_key: 'same-event').count
-  end
-
-  def test_metadata_normalizes_a_text_backed_json_value
-    notification = FactoryBot.build(:notification, metadata: { source: 'comment' }.to_json)
-
-    assert notification.valid?
-    assert_equal({ 'source' => 'comment' }, notification.metadata)
   end
 
   def test_overseer_failure_is_created_immediately_but_email_is_held_for_the_grace_period
@@ -165,7 +157,7 @@ class NotificationTest < ActiveSupport::TestCase
 
     grace_period = OverseerAssessment.student_notification_grace_period
     notification = Notification.find_by!(
-      source: assessment,
+      overseer_assessment: assessment,
       recipient: @student,
       kind: 'overseer_failed'
     )
@@ -175,7 +167,7 @@ class NotificationTest < ActiveSupport::TestCase
 
   def test_destroying_a_source_removes_its_notification
     comment = @task.add_text_comment(@tutor, 'Temporary feedback')
-    notification = Notification.find_by!(source: comment, recipient: @student)
+    notification = Notification.find_by!(task_comment: comment, recipient: @student)
 
     comment.destroy!
 
@@ -205,7 +197,7 @@ class NotificationTest < ActiveSupport::TestCase
 
   def test_marking_task_read_processes_email_and_marking_source_unread_reopens_in_app_only
     comment = @task.add_text_comment(@tutor, 'Read me')
-    notification = Notification.find_by!(source: comment, recipient: @student)
+    notification = Notification.find_by!(task_comment: comment, recipient: @student)
 
     Notification.mark_task_read(@student, @task)
     notification.reload

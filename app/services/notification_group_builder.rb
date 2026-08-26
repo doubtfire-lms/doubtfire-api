@@ -25,8 +25,7 @@ class NotificationGroupBuilder
     state_key = notification.read_at ? "read:#{notification.read_at.to_f}" : 'unread'
     return "#{state_key}:task:#{notification.task_id}" if notification.task_id.present?
 
-    unit_role_id = notification.metadata['unit_role_id'] || notification.metadata[:unit_role_id]
-    return "#{state_key}:tutor-notes:#{unit_role_id}" if Notification::MODERATION_KINDS.include?(notification.kind)
+    return "#{state_key}:tutor-notes:#{notification.unit_role_id}" if Notification::MODERATION_KINDS.include?(notification.kind)
 
     "#{state_key}:unit:#{notification.unit_id}:#{notification.kind}"
   end
@@ -38,8 +37,8 @@ class NotificationGroupBuilder
     latest_status = items
                     .select { |notification| notification.kind == 'task_status_changed' }
                     .max_by(&:created_at)
-                    &.metadata
-                    &.fetch('status', nil)
+                    &.task_status
+                    &.status_key
     tutor_notes = items
                   .select { |notification| Notification::MODERATION_KINDS.include?(notification.kind) }
                   .sort_by { |notification| [notification.created_at, notification.id] }
@@ -61,8 +60,8 @@ class NotificationGroupBuilder
       read: items.all? { |notification| notification.read_at.present? },
       read_at: items.filter_map(&:read_at).max,
       latest_at: latest.created_at,
-      tutor_note_ids: tutor_notes.filter_map { |notification| notification.metadata['tutor_note_id'] },
-      tutor_note_unit_role_id: tutor_notes.first&.metadata&.fetch('unit_role_id', nil),
+      tutor_note_ids: tutor_notes.filter_map(&:tutor_note_id),
+      tutor_note_unit_role_id: tutor_notes.first&.unit_role_id,
       overseer_assessment_id: overseer_assessment_id(items),
       detail: detail_for(counts, latest_status),
       summary: "#{subject_for(task, latest.recipient)} - #{detail_for(counts, latest_status)}"
@@ -96,7 +95,7 @@ class NotificationGroupBuilder
   # The newest failed run in the group, so opening the notification can jump
   # straight to that report.
   def overseer_assessment_id(items)
-    items.select { |notification| notification.kind == 'overseer_failed' }.max_by(&:created_at)&.source_id
+    items.select { |notification| notification.kind == 'overseer_failed' }.max_by(&:created_at)&.overseer_assessment_id
   end
 
   def subject_for(task, recipient)

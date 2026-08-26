@@ -24,7 +24,7 @@ class NotificationSettingTest < ActiveSupport::TestCase
     settings = NotificationSetting.for(FactoryBot.create(:user))
     unit = FactoryBot.create(:unit, with_students: false, task_count: 0)
     FactoryBot.create(
-      :notification_preference,
+      :notification_unit_override,
       user: settings.user,
       unit: unit,
       channels: { 'new_task_comment' => ['push'] }
@@ -37,7 +37,7 @@ class NotificationSettingTest < ActiveSupport::TestCase
   def test_a_muted_unit_delivers_nothing
     settings = NotificationSetting.for(FactoryBot.create(:user))
     unit = FactoryBot.create(:unit, with_students: false, task_count: 0)
-    FactoryBot.create(:notification_preference, user: settings.user, unit: unit, muted: true)
+    FactoryBot.create(:notification_unit_override, user: settings.user, unit: unit, muted: true)
 
     assert_empty settings.channels_for_unit_id(unit.id, 'new_task_comment')
   end
@@ -46,7 +46,7 @@ class NotificationSettingTest < ActiveSupport::TestCase
     settings = NotificationSetting.for(FactoryBot.create(:user))
     unit = FactoryBot.create(:unit, with_students: false, task_count: 0)
     preference = FactoryBot.create(
-      :notification_preference,
+      :notification_unit_override,
       user: settings.user,
       unit: unit,
       muted: true

@@ -27,12 +27,12 @@ class NotificationsApi < Grape::API
     end
 
     def unread_group_count
-      rows = current_user.received_notifications.unread.pluck(:task_id, :unit_id, :kind, :metadata)
-      rows.select { |_task_id, unit_id, kind, _metadata| notification_settings.shows_in_app?(unit_id, kind) }.map do |task_id, unit_id, kind, metadata|
+      rows = current_user.received_notifications.unread.pluck(:task_id, :unit_id, :kind, :unit_role_id)
+      rows.select { |_task_id, unit_id, kind, _unit_role_id| notification_settings.shows_in_app?(unit_id, kind) }.map do |task_id, unit_id, kind, unit_role_id|
         if task_id.present?
           "task:#{task_id}"
         elsif Notification::MODERATION_KINDS.include?(kind)
-          "tutor-notes:#{unit_id}:#{metadata['unit_role_id']}"
+          "tutor-notes:#{unit_id}:#{unit_role_id}"
         else
           "unit:#{unit_id}:#{kind}"
         end
@@ -49,28 +49,28 @@ class NotificationsApi < Grape::API
         weekly_summary: settings.weekly_summary,
         next_digest_at: settings.next_digest_at,
         last_digest_at: settings.last_digest_at,
-        units: current_user.notification_preferences.order(:unit_id).map { |preference| serialize_preference(preference) }
+        units: current_user.notification_unit_overrides.order(:unit_id).map { |override| serialize_override(override) }
       }
     end
 
-    def serialize_preference(preference)
+    def serialize_override(override)
       {
-        unit_id: preference.unit_id,
-        muted: preference.muted,
-        channels: preference.channels
+        unit_id: override.unit_id,
+        muted: override.muted,
+        channels: override.channels
       }
     end
 
-    # The units sent are the whole set that departs from the defaults, so any unit
-    # missing from it has been reset and no longer needs a row.
-    def replace_unit_preferences(units)
+    # The units sent are the whole set that departs from the settings, so any unit
+    # missing from it has been reset and no longer needs an override.
+    def replace_unit_overrides(units)
       accessible = accessible_unit_ids
       wanted = Array(units).select { |unit| accessible.include?(unit[:unit_id]) }
 
-      current_user.notification_preferences.where.not(unit_id: wanted.map { |unit| unit[:unit_id] }).destroy_all
+      current_user.notification_unit_overrides.where.not(unit_id: wanted.map { |unit| unit[:unit_id] }).destroy_all
       wanted.each do |unit|
-        preference = current_user.notification_preferences.find_or_initialize_by(unit_id: unit[:unit_id])
-        preference.update!(muted: unit[:muted], channels: unit[:channels])
+        override = current_user.notification_unit_overrides.find_or_initialize_by(unit_id: unit[:unit_id])
+        override.update!(muted: unit[:muted], channels: unit[:channels])
       end
     end
 
@@ -186,7 +186,7 @@ class NotificationsApi < Grape::API
 
     NotificationSetting.transaction do
       settings.update!(changes.except(:units))
-      replace_unit_preferences(changes[:units]) if changes.key?(:units)
+      replace_unit_overrides(changes[:units]) if changes.key?(:units)
     end
 
     serialize_settings(settings)

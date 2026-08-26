@@ -3,13 +3,14 @@
 # A user's notification settings: the one digest schedule they choose, and the
 # channel defaults every unit follows until it is customised.
 class NotificationSetting < ApplicationRecord
-  include HasNotificationChannels
-
   FREQUENCIES = %w[off hourly daily weekly].freeze
   TIME_FORMAT = /\A(?:[01]\d|2[0-3]):[0-5]\d\z/
 
+  attribute :channels, :json
+
   belongs_to :user
 
+  validates :channels, notification_channels: true
   validates :digest_frequency, inclusion: { in: FREQUENCIES }
   validates :digest_time, format: { with: TIME_FORMAT }
   validates :digest_weekday, inclusion: { in: 1..7 }
@@ -30,13 +31,13 @@ class NotificationSetting < ApplicationRecord
     Notification::KINDS.index_with { %w[in_app email] }
   end
 
-  # The channels a unit delivers a kind on, honouring its preference when it has
+  # The channels a unit delivers a kind on, honouring its override when it has
   # one. A muted unit delivers nothing.
   def channels_for_unit_id(unit_id, kind)
-    preference = preference_for(unit_id)
-    return [] if preference&.muted
+    override = override_for(unit_id)
+    return [] if override&.muted
 
-    preference&.customised? ? preference.channels_for(kind) : channels_for(kind)
+    Array((override&.customised? ? override.channels : channels)[kind.to_s])
   end
 
   def delivers?(unit, kind, channel)
@@ -68,11 +69,11 @@ class NotificationSetting < ApplicationRecord
 
   private
 
-  def preference_for(unit_id)
+  def override_for(unit_id)
     return nil if unit_id.nil?
 
-    @preferences_by_unit ||= user.notification_preferences.index_by(&:unit_id)
-    @preferences_by_unit[unit_id]
+    @overrides_by_unit ||= user.notification_unit_overrides.index_by(&:unit_id)
+    @overrides_by_unit[unit_id]
   end
 
   def apply_defaults

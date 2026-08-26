@@ -4,7 +4,6 @@ FactoryBot.define do
     unit { create(:unit, with_students: false, task_count: 0) }
     kind { 'new_task_comment' }
     sequence(:deduplication_key) { |number| "factory-notification-#{number}" }
-    metadata { {} }
   end
 
   factory :notification_setting do
@@ -14,7 +13,7 @@ FactoryBot.define do
     digest_weekday { 1 }
   end
 
-  factory :notification_preference do
+  factory :notification_unit_override do
     user
     unit { create(:unit, with_students: false, task_count: 0) }
     muted { false }

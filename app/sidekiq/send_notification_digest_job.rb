@@ -16,9 +16,10 @@ class SendNotificationDigestJob
     ready = setting.user
                    .received_notifications
                    .email_pending
+                   .email_ready(now)
                    .where.not(kind: Notification::DISCUSS_KINDS)
                    .includes(:recipient, :unit, task: [:task_definition, { project: :user }])
-                   .select { |notification| notification.email_ready?(at: now) }
+                   .to_a
     deliverable, skipped = ready.partition { |notification| deliverable?(setting, notification) }
 
     mark_processed(skipped, now)

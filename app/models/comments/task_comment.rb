@@ -18,7 +18,7 @@ class TaskComment < ApplicationRecord
   belongs_to :recipient, class_name: 'User', optional: false
 
   has_many :comments_read_receipts, class_name: 'CommentsReadReceipts', dependent: :destroy, inverse_of: :task_comment
-  has_many :notifications, as: :source, dependent: :destroy
+  has_many :notifications, dependent: :destroy
   has_many :comment_read_cursors,
            foreign_key: :last_read_comment_id,
            inverse_of: :last_read_comment,
