@@ -110,22 +110,22 @@ class UnitMailTest < ActionMailer::TestCase
     task.update!(moved_to_discuss_at: 8.days.ago)
 
     assert_equal 1, unit.notify_discuss_timeouts!
-    assert_equal 1, SendDiscussDeadlineEmailJob.jobs.count
+    assert_equal 1, SendDiscussTimeoutEmailJob.jobs.count
 
-    approaching_job = SendDiscussDeadlineEmailJob.jobs.shift
+    approaching_job = SendDiscussTimeoutEmailJob.jobs.shift
     assert_emails 1 do
-      SendDiscussDeadlineEmailJob.new.perform(*approaching_job['args'])
+      SendDiscussTimeoutEmailJob.new.perform(*approaching_job['args'])
     end
     assert_includes ActionMailer::Base.deliveries.last.subject, 'Discussion deadline approaching'
 
     task.update!(moved_to_discuss_at: 15.days.ago)
 
     assert_equal 1, unit.notify_discuss_timeouts!
-    assert_equal 1, SendDiscussDeadlineEmailJob.jobs.count
+    assert_equal 1, SendDiscussTimeoutEmailJob.jobs.count
 
-    missed_job = SendDiscussDeadlineEmailJob.jobs.shift
+    missed_job = SendDiscussTimeoutEmailJob.jobs.shift
     assert_emails 1 do
-      SendDiscussDeadlineEmailJob.new.perform(*missed_job['args'])
+      SendDiscussTimeoutEmailJob.new.perform(*missed_job['args'])
     end
     assert_includes ActionMailer::Base.deliveries.last.subject, 'Discussion deadline missed'
   end
@@ -147,7 +147,28 @@ class UnitMailTest < ActionMailer::TestCase
     assert_equal 1, unit.notify_discuss_timeouts!
 
     assert_empty Notification.where(recipient: project.student, task: task)
-    assert_empty SendDiscussDeadlineEmailJob.jobs
+    assert_empty SendDiscussTimeoutEmailJob.jobs
+  end
+
+  def test_discuss_timeout_notification_is_created_when_immediate_email_is_off
+    unit = FactoryBot.create(
+      :unit,
+      discuss_timeout_enabled: true,
+      discuss_timeout_warning_days: 7,
+      discuss_timeout_expire_days: 14
+    )
+    project = unit.active_projects.first
+    task = project.task_for_task_definition(unit.task_definitions.first)
+    task.update!(task_status: TaskStatus.discuss, moved_to_discuss_at: 8.days.ago)
+    settings = NotificationSetting.for(project.student)
+    settings.update!(channels: settings.channels.merge('discuss_warning' => ['in_app']))
+
+    assert_equal 1, unit.notify_discuss_timeouts!
+
+    notification = Notification.find_by!(recipient: project.student, task: task, kind: 'discuss_warning')
+    assert_nil notification.read_at
+    assert_not_nil notification.email_processed_at
+    assert_empty SendDiscussTimeoutEmailJob.jobs
   end
 
   def test_batch_feedback_updates_unenrolled_students_without_emailing_them

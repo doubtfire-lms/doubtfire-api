@@ -80,16 +80,16 @@ class NotificationJobsTest < ActiveSupport::TestCase
     assert_not_nil notification.reload.email_sent_at
   end
 
-  def test_discussion_deadlines_are_left_for_their_own_email
+  def test_an_unread_discussion_deadline_is_carried_by_the_digest
     settings = create_settings
     notification = FactoryBot.create(:notification, recipient: settings.user, kind: 'discuss_warning')
 
-    assert_no_emails do
+    assert_emails 1 do
       SendNotificationDigestJob.new.perform(settings.id)
     end
 
-    assert_nil notification.reload.email_processed_at
-    assert_nil notification.email_sent_at
+    assert_not_nil notification.reload.email_processed_at
+    assert_not_nil notification.email_sent_at
   end
 
   def test_unit_email_master_switch_processes_without_sending

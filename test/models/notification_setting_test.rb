@@ -104,9 +104,8 @@ class NotificationSettingTest < ActiveSupport::TestCase
     settings.update!(digest_frequency: 'off')
 
     assert_not_nil digested.reload.email_processed_at
+    assert_not_nil alert.reload.email_processed_at
     assert_nil settings.reload.next_digest_at
-    # Alerts never went through the digest, so they are still waiting to send.
-    assert_nil alert.reload.email_processed_at
   end
 
   def test_unknown_kinds_and_channels_are_rejected

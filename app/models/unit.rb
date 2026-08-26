@@ -325,6 +325,7 @@ class Unit < ApplicationRecord
       raise ActiveRecord::Rollback if comment.blank?
 
       task.update!(notified_discuss_warning_at: Time.zone.now)
+      queue_discuss_timeout_email(task, actor, :approaching, expiry_date)
       created_comment = true
     end
 
@@ -350,6 +351,7 @@ class Unit < ApplicationRecord
         raise ActiveRecord::Rollback
       end
 
+      queue_discuss_timeout_email(task, actor, :missed)
       created_comment = true
     end
 
@@ -367,6 +369,16 @@ class Unit < ApplicationRecord
     return result if date.year == Time.zone.today.year
 
     "#{result} #{date.year}"
+  end
+
+  def queue_discuss_timeout_email(task, actor, type, expiry_date = nil)
+    return unless send_notifications
+    return unless task.project.enrolled
+
+    kind = type == :approaching ? 'discuss_warning' : 'discuss_expired'
+    return unless NotificationSetting.for(task.project.student).delivers?(self, kind, :email)
+
+    SendDiscussTimeoutEmailJob.perform_async(task.id, actor.id, type.to_s, expiry_date&.iso8601)
   end
 
   def detailed_name
