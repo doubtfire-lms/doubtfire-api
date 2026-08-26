@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
-class SendImmediateNotificationJob
+# Emails a discussion deadline as soon as it is raised, rather than holding it for
+# the digest. Skipped if the student has already read it, or has the email off.
+class SendDiscussDeadlineEmailJob
   include Sidekiq::Job
 
   sidekiq_options retry: 5

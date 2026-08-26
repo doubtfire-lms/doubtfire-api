@@ -15,7 +15,7 @@ class Notification < ApplicationRecord
 
   CHANNELS = %w[in_app email push].freeze
 
-  # Emailed on their own rather than held for the digest. Overseer and PDF
+  # Emailed as they are raised rather than held for the digest. Overseer and PDF
   # failures are not here: they are emailed by their own cron tasks.
   DISCUSS_KINDS = %w[discuss_warning discuss_expired].freeze
   MODERATION_KINDS = %w[moderation_note_added moderation_note_reply moderation_note_from_mentee].freeze
@@ -169,7 +169,7 @@ class Notification < ApplicationRecord
     if !channels.include?('email')
       notification.update!(email_processed_at: Time.current)
     elsif DISCUSS_KINDS.include?(kind)
-      SendImmediateNotificationJob.perform_at(notification.email_not_before || Time.current, notification.id)
+      SendDiscussDeadlineEmailJob.perform_at(notification.email_not_before || Time.current, notification.id)
     end
 
     notification

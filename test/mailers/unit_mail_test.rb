@@ -110,22 +110,22 @@ class UnitMailTest < ActionMailer::TestCase
     task.update!(moved_to_discuss_at: 8.days.ago)
 
     assert_equal 1, unit.notify_discuss_timeouts!
-    assert_equal 1, SendImmediateNotificationJob.jobs.count
+    assert_equal 1, SendDiscussDeadlineEmailJob.jobs.count
 
-    approaching_job = SendImmediateNotificationJob.jobs.shift
+    approaching_job = SendDiscussDeadlineEmailJob.jobs.shift
     assert_emails 1 do
-      SendImmediateNotificationJob.new.perform(*approaching_job['args'])
+      SendDiscussDeadlineEmailJob.new.perform(*approaching_job['args'])
     end
     assert_includes ActionMailer::Base.deliveries.last.subject, 'Discussion deadline approaching'
 
     task.update!(moved_to_discuss_at: 15.days.ago)
 
     assert_equal 1, unit.notify_discuss_timeouts!
-    assert_equal 1, SendImmediateNotificationJob.jobs.count
+    assert_equal 1, SendDiscussDeadlineEmailJob.jobs.count
 
-    missed_job = SendImmediateNotificationJob.jobs.shift
+    missed_job = SendDiscussDeadlineEmailJob.jobs.shift
     assert_emails 1 do
-      SendImmediateNotificationJob.new.perform(*missed_job['args'])
+      SendDiscussDeadlineEmailJob.new.perform(*missed_job['args'])
     end
     assert_includes ActionMailer::Base.deliveries.last.subject, 'Discussion deadline missed'
   end
@@ -147,7 +147,7 @@ class UnitMailTest < ActionMailer::TestCase
     assert_equal 1, unit.notify_discuss_timeouts!
 
     assert_empty Notification.where(recipient: project.student, task: task)
-    assert_empty SendImmediateNotificationJob.jobs
+    assert_empty SendDiscussDeadlineEmailJob.jobs
   end
 
   def test_batch_feedback_updates_unenrolled_students_without_emailing_them
