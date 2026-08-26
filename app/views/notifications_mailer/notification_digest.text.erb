@@ -5,6 +5,7 @@ You have <%= @notification_count %> new <%= 'notification'.pluralize(@notificati
 <%= section[:unit].code %> - <%= section[:unit].name %>
 <% section[:groups].each do |group| %>
 - <% if group[:task] %><%= group[:task][:abbreviation] %> - <%= group[:task][:name] %><% elsif group[:project_id] %>Portfolio<% else %>Unit notification<% end %>
+  <%= notification_timestamp(group) %>
   <%= group[:detail] %>
 <% if group[:task] %>
   <%= @doubtfire_host %>/projects/<%= group[:task][:project_id] %>/dashboard/<%= group[:task][:abbreviation] %><%= '?tutor=true' if group[:task][:staff_view] %>

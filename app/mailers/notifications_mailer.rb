@@ -103,6 +103,11 @@ class NotificationsMailer < ApplicationMailer
     )
   end
 
+  def notification_timestamp(group)
+    time = group[:latest_at].in_time_zone(group[:timezone])
+    "#{time.day.ordinalize} #{time.strftime('%B %Y at %H:%M')}"
+  end
+
   def discussion_deadline_approaching(task, sender, expiry_date)
     add_discussion_deadline_details(task, sender)
     @deadline = task.unit.formatted_discuss_timeout_date(expiry_date)
@@ -156,6 +161,7 @@ class NotificationsMailer < ApplicationMailer
   helper_method :were_was
   helper_method :are_is
   helper_method :this_these
+  helper_method :notification_timestamp
 
   private
 

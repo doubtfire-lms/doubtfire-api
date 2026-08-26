@@ -1,12 +1,6 @@
 # frozen_string_literal: true
 
 class NotificationGroupBuilder
-  SEVERITY_ORDER = {
-    'critical' => 0,
-    'warning' => 1,
-    'normal' => 2
-  }.freeze
-
   def initialize(notifications)
     @notifications = notifications.to_a
   end
@@ -16,7 +10,7 @@ class NotificationGroupBuilder
       .group_by { |notification| grouping_key(notification) }
       .values
       .map { |items| build_group(items) }
-      .sort_by { |group| [group[:read] ? 1 : 0, SEVERITY_ORDER.fetch(group[:severity]), -group[:latest_at].to_f] }
+      .sort_by { |group| -group[:latest_at].to_f }
   end
 
   private
@@ -44,6 +38,7 @@ class NotificationGroupBuilder
                   .select { |notification| Notification::MODERATION_KINDS.include?(notification.kind) }
                   .sort_by { |notification| [notification.created_at, notification.id] }
     detail = detail_for(counts, latest_status)
+    project = latest.project || task&.project
 
     {
       key: grouping_key(latest),
@@ -63,6 +58,7 @@ class NotificationGroupBuilder
       read: items.all? { |notification| notification.read_at.present? },
       read_at: items.filter_map(&:read_at).max,
       latest_at: latest.created_at,
+      timezone: project&.campus&.timezone || Time.zone.name,
       tutor_note_ids: tutor_notes.filter_map(&:tutor_note_id),
       tutor_note_unit_role_id: tutor_notes.first&.unit_role_id,
       overseer_assessment_id: overseer_assessment_id(items),

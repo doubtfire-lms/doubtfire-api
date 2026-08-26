@@ -159,7 +159,8 @@ class UnitMailTest < ActionMailer::TestCase
     )
     project = unit.active_projects.first
     task = project.task_for_task_definition(unit.task_definitions.first)
-    task.update!(task_status: TaskStatus.discuss, moved_to_discuss_at: 8.days.ago)
+    task.update!(task_status: TaskStatus.discuss)
+    task.update!(moved_to_discuss_at: 8.days.ago)
     settings = NotificationSetting.for(project.student)
     settings.update!(channels: settings.channels.merge('discuss_warning' => ['in_app']))
 

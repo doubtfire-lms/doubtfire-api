@@ -175,7 +175,7 @@ class NotificationTest < ActiveSupport::TestCase
     assert_nil notification.task
     assert_nil notification.read_at
     assert_equal @project.id, group[:project_id]
-    assert_equal 'Portfolio - portfolio ready to review', group[:summary]
+    assert_equal 'Portfolio - Portfolio ready to review', group[:summary]
   end
 
   def test_a_new_portfolio_result_resolves_the_previous_one
@@ -206,25 +206,27 @@ class NotificationTest < ActiveSupport::TestCase
     assert_not Notification.exists?(notification.id)
   end
 
-  def test_unread_groups_sort_before_read_history_even_when_read_group_is_urgent
-    read_notification = FactoryBot.create(
+  def test_groups_are_sorted_by_newest_activity
+    older_unread_notification = FactoryBot.create(
       :notification,
       recipient: @student,
       unit: @unit,
       kind: 'discuss_expired',
-      read_at: Time.current
+      created_at: 2.hours.ago
     )
-    unread_notification = FactoryBot.create(
+    newer_read_notification = FactoryBot.create(
       :notification,
       recipient: @student,
       unit: @unit,
-      kind: 'new_task_comment'
+      kind: 'new_task_comment',
+      created_at: 1.hour.ago,
+      read_at: Time.current
     )
 
-    groups = NotificationGroupBuilder.new([read_notification, unread_notification]).groups
+    groups = NotificationGroupBuilder.new([older_unread_notification, newer_read_notification]).groups
 
-    assert_equal unread_notification.id, groups.first[:notification_ids].first
-    assert_not groups.first[:read]
+    assert_equal newer_read_notification.id, groups.first[:notification_ids].first
+    assert groups.first[:read]
   end
 
   def test_marking_task_read_processes_email_and_marking_source_unread_reopens_in_app_only

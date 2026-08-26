@@ -63,6 +63,11 @@
     .notification-detail {
       margin-top: 2px;
     }
+    .notification-time {
+      color: #777;
+      font-size: 0.75em;
+      margin: 0 0 4px;
+    }
   </style>
 </head>
 <body>
@@ -88,6 +93,7 @@
           <% else %>
             <strong>Unit notification</strong>
           <% end %>
+          <div class="notification-time"><%= notification_timestamp(group) %></div>
           <div class="notification-detail"><%= group[:detail] %></div>
           <% if group[:task] %>
             <p>
