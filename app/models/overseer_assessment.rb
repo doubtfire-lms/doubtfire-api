@@ -123,7 +123,7 @@ class OverseerAssessment < ApplicationRecord
   end
 
   def add_assessment_comment(text = 'Automated Assessment Started')
-    text.strip!
+    text = text.strip
     return nil if text.blank?
 
     tutor = project.tutor_for(task.task_definition)
@@ -143,7 +143,7 @@ class OverseerAssessment < ApplicationRecord
   end
 
   def update_assessment_comment(text)
-    text.strip!
+    text = text.strip
     return nil if text.blank?
 
     assessment_comment = assessment_comments.last
