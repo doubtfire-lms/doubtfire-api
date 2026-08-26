@@ -95,8 +95,8 @@ class NotificationSetting < ApplicationRecord
     digest_frequency == 'off' && saved_change_to_digest_frequency?
   end
 
-  # Nothing is waiting for a digest that will never run. Alerts are unaffected -
-  # they never went through the digest in the first place.
+  # Nothing is waiting for a digest that will never run. Discussion deadlines are
+  # unaffected - they are emailed on their own and never went through the digest.
   def process_pending_notifications
     now = Time.current
     # rubocop:disable Rails/SkipsModelValidations

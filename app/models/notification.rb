@@ -15,6 +15,8 @@ class Notification < ApplicationRecord
 
   CHANNELS = %w[in_app email push].freeze
 
+  # Emailed on their own rather than held for the digest. Overseer and PDF
+  # failures are not here: they are emailed by their own cron tasks.
   DISCUSS_KINDS = %w[discuss_warning discuss_expired].freeze
   MODERATION_KINDS = %w[moderation_note_added moderation_note_reply moderation_note_from_mentee].freeze
 
@@ -57,7 +59,7 @@ class Notification < ApplicationRecord
         resolve_for(recipient: recipient, task: recipient_task, kinds: 'discuss_warning')
       end
 
-      notification = create_event(
+      create_event(
         recipient: recipient,
         unit: recipient_task.unit,
         project: recipient_task.project,
@@ -69,8 +71,6 @@ class Notification < ApplicationRecord
         task_status: comment.is_a?(TaskStatusComment) ? comment.task_status : nil,
         discuss_deadline: discuss_deadline_for(comment, recipient_task)
       )
-
-      SendImmediateNotificationJob.perform_async(notification.id) if notification && DISCUSS_KINDS.include?(kind)
     end
   end
 
@@ -165,7 +165,13 @@ class Notification < ApplicationRecord
       email_not_before: attributes[:email_not_before]
     )
     notification.save!
-    notification.update!(email_processed_at: Time.current) unless channels.include?('email')
+
+    if !channels.include?('email')
+      notification.update!(email_processed_at: Time.current)
+    elsif DISCUSS_KINDS.include?(kind)
+      SendImmediateNotificationJob.perform_at(notification.email_not_before || Time.current, notification.id)
+    end
+
     notification
   rescue ActiveRecord::RecordNotUnique
     find_by(recipient: recipient, deduplication_key: deduplication_key)

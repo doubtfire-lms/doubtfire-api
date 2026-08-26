@@ -69,14 +69,20 @@ class NotificationJobsTest < ActiveSupport::TestCase
     assert_nil notification.reload.email_sent_at
   end
 
-  def test_digest_leaves_an_overseer_event_pending_until_its_email_delay_expires
+  def test_an_unread_overseer_failure_is_carried_by_the_digest
     settings = create_settings
-    notification = FactoryBot.create(
-      :notification,
-      recipient: settings.user,
-      kind: 'overseer_failed',
-      email_not_before: 20.minutes.from_now
-    )
+    notification = FactoryBot.create(:notification, recipient: settings.user, kind: 'overseer_failed')
+
+    assert_emails 1 do
+      SendNotificationDigestJob.new.perform(settings.id)
+    end
+
+    assert_not_nil notification.reload.email_sent_at
+  end
+
+  def test_discussion_deadlines_are_left_for_their_own_email
+    settings = create_settings
+    notification = FactoryBot.create(:notification, recipient: settings.user, kind: 'discuss_warning')
 
     assert_no_emails do
       SendNotificationDigestJob.new.perform(settings.id)
