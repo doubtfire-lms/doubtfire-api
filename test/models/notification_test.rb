@@ -77,7 +77,7 @@ class NotificationTest < ActiveSupport::TestCase
 
     assert_equal 1, groups.count
     assert_equal 3, groups.first[:counts]['new_task_comment']
-    assert_equal 'fix_and_resubmit', groups.first[:latest_status]
+    assert_equal :fix_and_resubmit, groups.first[:latest_status]
     assert_includes groups.first[:summary], '3 new comments'
     assert_includes groups.first[:summary], 'task status changed to Fix and Resubmit'
   end
