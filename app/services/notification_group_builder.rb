@@ -15,7 +15,7 @@ class NotificationGroupBuilder
     @notifications
       .group_by { |notification| grouping_key(notification) }
       .values
-      .map { |items| serialize(items) }
+      .map { |items| build_group(items) }
       .sort_by { |group| [group[:read] ? 1 : 0, SEVERITY_ORDER.fetch(group[:severity]), -group[:latest_at].to_f] }
   end
 
@@ -31,7 +31,7 @@ class NotificationGroupBuilder
     "#{state_key}:unit:#{notification.unit_id}:#{notification.kind}"
   end
 
-  def serialize(items)
+  def build_group(items)
     latest = items.max_by(&:created_at)
     task = latest.task
     counts = items.each_with_object(Hash.new(0)) { |notification, result| result[notification.kind] += 1 }
@@ -43,6 +43,7 @@ class NotificationGroupBuilder
     tutor_notes = items
                   .select { |notification| Notification::MODERATION_KINDS.include?(notification.kind) }
                   .sort_by { |notification| [notification.created_at, notification.id] }
+    detail = detail_for(counts, latest_status)
 
     {
       key: grouping_key(latest),
@@ -65,8 +66,8 @@ class NotificationGroupBuilder
       tutor_note_ids: tutor_notes.filter_map(&:tutor_note_id),
       tutor_note_unit_role_id: tutor_notes.first&.unit_role_id,
       overseer_assessment_id: overseer_assessment_id(items),
-      detail: detail_for(counts, latest_status),
-      summary: "#{subject_for(task, latest.recipient, counts)} - #{detail_for(counts, latest_status)}"
+      detail: detail,
+      summary: "#{subject_for(task, latest.recipient, counts)} - #{detail}"
     }
   end
 
