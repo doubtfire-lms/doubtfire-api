@@ -60,6 +60,9 @@
     .notification-box p {
       margin: 8px 0 0;
     }
+    .notification-detail {
+      margin-top: 2px;
+    }
   </style>
 </head>
 <body>
@@ -78,7 +81,14 @@
 
       <% section[:groups].each do |group| %>
         <div class="notification-box <%= group[:severity] %>">
-          <strong><%= group[:summary] %></strong>
+          <% if group[:task] %>
+            <strong><%= group[:task][:abbreviation] %> - <%= group[:task][:name] %></strong>
+          <% elsif group[:project_id] %>
+            <strong>Portfolio</strong>
+          <% else %>
+            <strong>Unit notification</strong>
+          <% end %>
+          <div class="notification-detail"><%= group[:detail] %></div>
           <% if group[:task] %>
             <p>
               <a href="<%= @doubtfire_host %>/projects/<%= group[:task][:project_id] %>/dashboard/<%= group[:task][:abbreviation] %><%= '?tutor=true' if group[:task][:staff_view] %>">
