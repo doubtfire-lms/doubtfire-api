@@ -121,6 +121,7 @@ class NotificationTest < ActiveSupport::TestCase
     assert_equal [Notification.find_by!(tutor_note: tutor_note).id], group[:tutor_note_notification_ids]
     assert group.dig(:task, :staff_view)
     assert_equal @student.name, group.dig(:task, :student_name)
+    assert_includes group[:detail], "1 moderation note from #{@unit.main_convenor_user.name}"
   end
 
   def test_duplicate_source_event_is_deduplicated_per_recipient

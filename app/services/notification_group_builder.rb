@@ -37,7 +37,7 @@ class NotificationGroupBuilder
     tutor_notes = items
                   .select { |notification| Notification::MODERATION_KINDS.include?(notification.kind) }
                   .sort_by { |notification| [notification.created_at, notification.id] }
-    detail = detail_for(counts, latest_status)
+    detail = detail_for(items, counts, latest_status)
     project = latest.project || task&.project
 
     {
@@ -108,7 +108,7 @@ class NotificationGroupBuilder
 
   # What happened, without the task it happened to, so callers can show the two
   # separately rather than splitting the summary back apart.
-  def detail_for(counts, latest_status)
+  def detail_for(items, counts, latest_status)
     details = []
     details << 'discussion deadline missed' if counts['discuss_expired'].positive?
     details << 'discussion deadline approaching' if counts['discuss_warning'].positive?
@@ -116,8 +116,13 @@ class NotificationGroupBuilder
     details << 'overseer assessment failed' if counts['overseer_failed'].positive?
     details << 'portfolio compilation failed' if counts['portfolio_failed'].positive?
     details << 'portfolio ready to review' if counts['portfolio_ready'].positive?
-    moderation_notes = Notification::MODERATION_KINDS.sum { |kind| counts[kind] }
-    details << pluralize(moderation_notes, 'moderation note') if moderation_notes.positive?
+    moderation_notifications = items.select { |notification| Notification::MODERATION_KINDS.include?(notification.kind) }
+    if moderation_notifications.any?
+      staff_names = moderation_notifications.filter_map { |notification| notification.actor&.name }.uniq
+      moderation_detail = pluralize(moderation_notifications.count, 'moderation note')
+      moderation_detail += " from #{staff_names.to_sentence}" if staff_names.any?
+      details << moderation_detail
+    end
     details << pluralize(counts['new_task_comment'], 'new comment') if counts['new_task_comment'].positive?
     details << "task status changed to #{status_name(latest_status)}" if latest_status.present?
 

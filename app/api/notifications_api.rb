@@ -17,7 +17,7 @@ class NotificationsApi < Grape::API
     def notification_scope
       current_user
         .received_notifications
-        .includes(:recipient, :unit, { project: :campus }, task: [:task_definition, { project: :user }])
+        .includes(:recipient, :actor, :unit, { project: :campus }, task: [:task_definition, { project: :user }])
     end
 
     # Kinds the user has switched off in the app stay in the ledger for the
