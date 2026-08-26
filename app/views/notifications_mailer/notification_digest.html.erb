@@ -85,6 +85,12 @@
                 View this task
               </a>
             </p>
+          <% elsif group[:project_id] %>
+            <p>
+              <a href="<%= @doubtfire_host %>/projects/<%= group[:project_id] %>/portfolio">
+                View your portfolio
+              </a>
+            </p>
           <% end %>
         </div>
       <% end %>

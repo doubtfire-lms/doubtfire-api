@@ -133,7 +133,7 @@ class NotificationTest < ActiveSupport::TestCase
       actor: @tutor,
       kind: 'new_task_comment',
       task_comment: comment,
-      deduplication_key: 'same-event',
+      deduplication_key: 'same-event'
     }
 
     first = Notification.create_event(**attributes)
@@ -163,6 +163,38 @@ class NotificationTest < ActiveSupport::TestCase
     )
     assert notification.email_ready?(at: Time.current + grace_period + 1.minute)
     assert_not notification.email_ready?(at: Time.current + grace_period - 1.minute)
+  end
+
+  def test_portfolio_result_uses_the_notification_ledger
+    notification = Notification.create_for_portfolio(@project, success: true)
+    group = NotificationGroupBuilder.new([notification]).groups.first
+
+    assert_equal 'portfolio_ready', notification.kind
+    assert_equal @project, notification.project
+    assert_equal @student, notification.recipient
+    assert_nil notification.task
+    assert_nil notification.read_at
+    assert_equal @project.id, group[:project_id]
+    assert_equal 'Portfolio - portfolio ready to review', group[:summary]
+  end
+
+  def test_a_new_portfolio_result_resolves_the_previous_one
+    ready = Notification.create_for_portfolio(@project, success: true)
+    @project.update!(updated_at: 1.second.from_now)
+
+    failed = Notification.create_for_portfolio(@project, success: false)
+
+    assert_not_nil ready.reload.read_at
+    assert_nil failed.read_at
+    assert_equal 'portfolio_failed', failed.kind
+  end
+
+  def test_retrying_the_same_portfolio_result_does_not_mark_it_read
+    first = Notification.create_for_portfolio(@project, success: true)
+    duplicate = Notification.create_for_portfolio(@project, success: true)
+
+    assert_equal first, duplicate
+    assert_nil first.reload.read_at
   end
 
   def test_destroying_a_source_removes_its_notification

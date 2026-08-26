@@ -42,6 +42,18 @@ class NotificationsApiTest < ActiveSupport::TestCase
     assert_equal 1, last_response_body['count']
   end
 
+  def test_portfolio_notifications_are_grouped_by_project
+    @student.received_notifications.destroy_all
+    Notification.create_for_portfolio(@project, success: true)
+
+    get '/api/notifications'
+
+    assert_equal 200, last_response.status
+    assert_equal 1, last_response_body['unread_count']
+    assert_equal @project.id, last_response_body.dig('groups', 0, 'project_id')
+    assert_equal({ 'portfolio_ready' => 1 }, last_response_body.dig('groups', 0, 'counts'))
+  end
+
   def test_get_filters_groups_by_category_and_search
     get '/api/notifications',
         state: 'unread',

@@ -201,7 +201,7 @@ class UnitRole < ApplicationRecord
   end
 
   def send_weekly_status_email(summary_stats)
-    return unless user.receive_feedback_notifications
+    return unless NotificationSetting.for(user).weekly_summary_for?(unit)
 
     begin
       NotificationsMailer.weekly_staff_summary(self, summary_stats).deliver_now

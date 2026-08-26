@@ -11,6 +11,8 @@ class Notification < ApplicationRecord
     moderation_note_added
     moderation_note_reply
     moderation_note_from_mentee
+    portfolio_ready
+    portfolio_failed
   ].freeze
 
   CHANNELS = %w[in_app email push].freeze
@@ -19,6 +21,7 @@ class Notification < ApplicationRecord
   # failures are not here: they are emailed by their own cron tasks.
   DISCUSS_KINDS = %w[discuss_warning discuss_expired].freeze
   MODERATION_KINDS = %w[moderation_note_added moderation_note_reply moderation_note_from_mentee].freeze
+  PORTFOLIO_KINDS = %w[portfolio_ready portfolio_failed].freeze
 
   belongs_to :recipient, class_name: 'User', inverse_of: :received_notifications
   belongs_to :unit
@@ -131,6 +134,27 @@ class Notification < ApplicationRecord
       unit_role: tutor_note.unit_role,
       deduplication_key: "tutor-note:#{tutor_note.id}"
     )
+  end
+
+  def self.create_for_portfolio(project, success:)
+    recipient = project.student
+    kind = success ? 'portfolio_ready' : 'portfolio_failed'
+    notification = create_event(
+      recipient: recipient,
+      unit: project.unit,
+      project: project,
+      actor: project.main_convenor_user,
+      kind: kind,
+      deduplication_key: "portfolio:#{project.id}:#{project.updated_at.to_f}:#{kind}"
+    )
+    return if notification.nil?
+
+    mark_read(
+      where(recipient: recipient, project: project, kind: PORTFOLIO_KINDS)
+        .where.not(id: notification.id)
+        .unread
+    )
+    notification
   end
 
   def self.create_event(**attributes)

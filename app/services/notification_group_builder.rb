@@ -24,6 +24,7 @@ class NotificationGroupBuilder
   def grouping_key(notification)
     state_key = notification.read_at ? "read:#{notification.read_at.to_f}" : 'unread'
     return "#{state_key}:task:#{notification.task_id}" if notification.task_id.present?
+    return "#{state_key}:portfolio:#{notification.project_id}" if Notification::PORTFOLIO_KINDS.include?(notification.kind)
 
     return "#{state_key}:tutor-notes:#{notification.unit_role_id}" if Notification::MODERATION_KINDS.include?(notification.kind)
 
@@ -52,6 +53,7 @@ class NotificationGroupBuilder
         code: latest.unit.code,
         name: latest.unit.name
       },
+      project_id: latest.project_id,
       task: task_details(task, latest.recipient),
       counts: counts,
       event_count: items.count,
@@ -64,7 +66,7 @@ class NotificationGroupBuilder
       tutor_note_unit_role_id: tutor_notes.first&.unit_role_id,
       overseer_assessment_id: overseer_assessment_id(items),
       detail: detail_for(counts, latest_status),
-      summary: "#{subject_for(task, latest.recipient)} - #{detail_for(counts, latest_status)}"
+      summary: "#{subject_for(task, latest.recipient, counts)} - #{detail_for(counts, latest_status)}"
     }
   end
 
@@ -86,7 +88,7 @@ class NotificationGroupBuilder
 
   def severity_for(items)
     kinds = items.map(&:kind)
-    return 'critical' if kinds.intersect?(%w[discuss_expired pdf_generation_failed])
+    return 'critical' if kinds.intersect?(%w[discuss_expired pdf_generation_failed portfolio_failed])
     return 'warning' if kinds.intersect?(%w[discuss_warning overseer_failed] + Notification::MODERATION_KINDS)
 
     'normal'
@@ -98,7 +100,8 @@ class NotificationGroupBuilder
     items.select { |notification| notification.kind == 'overseer_failed' }.max_by(&:created_at)&.overseer_assessment_id
   end
 
-  def subject_for(task, recipient)
+  def subject_for(task, recipient, counts)
+    return 'Portfolio' if Notification::PORTFOLIO_KINDS.any? { |kind| counts[kind].positive? }
     return 'Unit notification' if task.nil?
 
     return task.task_definition.abbreviation if task.project.student == recipient
@@ -114,6 +117,8 @@ class NotificationGroupBuilder
     details << 'discussion deadline approaching' if counts['discuss_warning'].positive?
     details << 'submission PDF generation failed' if counts['pdf_generation_failed'].positive?
     details << 'overseer assessment failed' if counts['overseer_failed'].positive?
+    details << 'portfolio compilation failed' if counts['portfolio_failed'].positive?
+    details << 'portfolio ready to review' if counts['portfolio_ready'].positive?
     moderation_notes = Notification::MODERATION_KINDS.sum { |kind| counts[kind] }
     details << pluralize(moderation_notes, 'moderation note') if moderation_notes.positive?
     details << pluralize(counts['new_task_comment'], 'new comment') if counts['new_task_comment'].positive?

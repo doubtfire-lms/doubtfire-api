@@ -31,6 +31,13 @@ class AcceptSubmissionJob
       logger.error e
 
       Notification.create_pdf_failure(task)
+      if NotificationSetting.for(task.project.student).delivers?(task.unit, 'pdf_generation_failed', :email)
+        begin
+          PortfolioEvidenceMailer.task_pdf_failed(task.project, [task]).deliver_now
+        rescue StandardError => mail_error
+          logger.error "Failed to send task pdf failed email for project #{task.project.id}!\n#{mail_error.message}"
+        end
+      end
 
       begin
         # Notify system admin

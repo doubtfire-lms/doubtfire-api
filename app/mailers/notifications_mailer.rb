@@ -5,7 +5,7 @@ class NotificationsMailer < ApplicationMailer
   def add_general
     @doubtfire_host = Doubtfire::Application.config.institution[:host]
     @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
-    @unsubscribe_url = "#{@doubtfire_host}/edit_profile"
+    @unsubscribe_url = "#{@doubtfire_host}/notifications/settings"
   end
 
   def weekly_staff_summary(unit_role, summary_stats)

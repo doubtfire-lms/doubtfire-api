@@ -44,6 +44,13 @@ class NotificationSetting < ApplicationRecord
     channels_for_unit_id(unit&.id, kind).include?(channel.to_s)
   end
 
+  def weekly_summary_for?(unit)
+    return false unless weekly_summary
+
+    override = user.notification_unit_overrides.find_by(unit_id: unit&.id)
+    !override&.muted
+  end
+
   # Notifications are always recorded so the digest has something to send, so the
   # in-app list has to filter them out rather than rely on them never existing.
   def shows_in_app?(unit_id, kind)

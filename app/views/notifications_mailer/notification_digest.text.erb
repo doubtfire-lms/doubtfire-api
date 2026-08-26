@@ -7,6 +7,8 @@ You have <%= @notification_count %> new <%= 'notification'.pluralize(@notificati
 - <%= group[:summary] %>
 <% if group[:task] %>
   <%= @doubtfire_host %>/projects/<%= group[:task][:project_id] %>/dashboard/<%= group[:task][:abbreviation] %><%= '?tutor=true' if group[:task][:staff_view] %>
+<% elsif group[:project_id] %>
+  <%= @doubtfire_host %>/projects/<%= group[:project_id] %>/portfolio
 <% end %>
 <% end %>
 <% end %>
