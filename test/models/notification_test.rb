@@ -72,14 +72,16 @@ class NotificationTest < ActiveSupport::TestCase
   def test_group_builder_merges_mixed_task_activity
     3.times { |number| @task.add_text_comment(@tutor, "Feedback #{number}") }
     @task.add_status_comment(@tutor, TaskStatus.fix_and_resubmit)
+    @task.add_status_comment(@tutor, TaskStatus.complete)
 
     groups = NotificationGroupBuilder.new(Notification.where(recipient: @student).unread).groups
 
     assert_equal 1, groups.count
     assert_equal 3, groups.first[:counts]['new_task_comment']
-    assert_equal :fix_and_resubmit, groups.first[:latest_status]
+    assert_equal 1, groups.first[:counts]['task_status_changed']
+    assert_equal :complete, groups.first[:latest_status]
     assert_includes groups.first[:summary], '3 new comments'
-    assert_includes groups.first[:summary], 'task status changed to Fix and Resubmit'
+    assert_includes groups.first[:summary], 'task status changed to Complete'
   end
 
   def test_discuss_expiry_supersedes_warning_without_hiding_feedback
