@@ -372,18 +372,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_25_000645) do
     t.index ["task_id"], name: "index_moderated_tasks_on_task_id"
   end
 
-  create_table "notification_preferences", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
-    t.bigint "user_id", null: false
-    t.bigint "unit_id", null: false
-    t.boolean "muted", default: false, null: false
-    t.text "channels", size: :long, collation: "utf8mb4_bin"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["unit_id"], name: "index_notification_preferences_on_unit_id"
-    t.index ["user_id", "unit_id"], name: "index_notification_preferences_on_user_and_unit", unique: true
-    t.check_constraint "json_valid(`channels`)", name: "channels"
-  end
-
   create_table "notification_settings", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.text "channels", size: :long, null: false, collation: "utf8mb4_bin"
@@ -400,6 +388,18 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_25_000645) do
     t.check_constraint "json_valid(`channels`)", name: "channels"
   end
 
+  create_table "notification_unit_overrides", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "unit_id", null: false
+    t.boolean "muted", default: false, null: false
+    t.text "channels", size: :long, collation: "utf8mb4_bin"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["unit_id"], name: "index_notification_unit_overrides_on_unit_id"
+    t.index ["user_id", "unit_id"], name: "index_notification_unit_overrides_on_user_and_unit", unique: true
+    t.check_constraint "json_valid(`channels`)", name: "channels"
+  end
+
   create_table "notifications", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.bigint "recipient_id", null: false
     t.bigint "unit_id", null: false
@@ -407,13 +407,17 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_25_000645) do
     t.bigint "task_id"
     t.bigint "actor_id"
     t.string "kind", limit: 64, null: false
-    t.string "source_type", limit: 64
-    t.bigint "source_id"
     t.string "deduplication_key", limit: 191, null: false
-    t.text "metadata", size: :long, null: false, collation: "utf8mb4_bin"
+    t.bigint "task_comment_id"
+    t.bigint "overseer_assessment_id"
+    t.bigint "tutor_note_id"
+    t.bigint "task_status_id"
+    t.bigint "unit_role_id"
+    t.date "discuss_deadline"
     t.datetime "read_at"
     t.datetime "email_processed_at"
     t.datetime "email_sent_at"
+    t.datetime "email_not_before"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["actor_id"], name: "index_notifications_on_actor_id"
@@ -422,10 +426,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_25_000645) do
     t.index ["recipient_id", "read_at", "created_at"], name: "index_notifications_on_recipient_read_created"
     t.index ["recipient_id", "task_id", "read_at"], name: "index_notifications_on_recipient_task_read"
     t.index ["recipient_id", "unit_id", "email_processed_at"], name: "index_notifications_for_email_delivery"
-    t.index ["source_type", "source_id"], name: "index_notifications_on_source_type_and_source_id"
+    t.index ["task_comment_id"], name: "index_notifications_on_task_comment_id"
     t.index ["task_id"], name: "index_notifications_on_task_id"
     t.index ["unit_id"], name: "index_notifications_on_unit_id"
-    t.check_constraint "json_valid(`metadata`)", name: "metadata"
   end
 
   create_table "overflow_task_claim_logs", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
