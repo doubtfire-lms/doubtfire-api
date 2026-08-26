@@ -42,14 +42,49 @@ class CommunicationRulesApi < Grape::API
         :tutorial_id,
         :tutorial_stream_id,
         :campus_id,
+        :group_set_id,
+        :group_id,
         :submitted_portfolio,
         task_statuses: []
       ).to_h.compact
     end
 
+    # `project_id` is what clients use to subtract students claimed by earlier rules.
+    def preview_student_payload(project)
+      user = project.user
+
+      {
+        project_id: project.id,
+        first_name: user&.first_name,
+        last_name: user&.last_name,
+        preferred_name: user&.nickname,
+        username: user&.username,
+        student_id: user&.student_id,
+        full_name: [user&.first_name, user&.last_name].compact.join(' '),
+        target_grade: project.target_grade,
+        spec_con_days: project.spec_con_days,
+        has_portfolio: project.portfolio_exists?,
+        last_sign_in_at: user&.last_sign_in_at,
+        last_viewed_at: project.last_viewed_at,
+        campus: project.campus&.name
+      }
+    end
+
     def schedule_params_from_request
       communication_set_params = params[:communication_set] || params['communication_set'] || {}
       communication_set_params[:schedules] || communication_set_params['schedules']
+    end
+
+    def reject_unresolved!(communication_set)
+      return if communication_set.executable?
+
+      error!(
+        {
+          error: 'This communication set references records that do not exist in this unit',
+          unresolved_rules: communication_set.unresolved_rules.map { |rule| { id: rule.id, name: rule.name } }
+        },
+        409
+      )
     end
 
     def sync_set_schedules!(communication_set, raw_schedules)
@@ -97,7 +132,7 @@ class CommunicationRulesApi < Grape::API
             with: Entities::CommunicationSetEntity
   end
 
-  desc 'Get a communication set for a unit with preview data'
+  desc 'Get a communication set for a unit'
   params do
     requires :unit_id, type: Integer
     requires :id, type: Integer
@@ -113,43 +148,17 @@ class CommunicationRulesApi < Grape::API
                             .includes(:communication_set_schedules, communication_rules: [:communication_conditions, :communication_actions])
                             .find(params[:id])
 
-    previews = communication_set.preview_allocations_by_rule
-
+    # Previews are loaded per rule -- running the whole set here times out on
+    # large units.
     present(
       id: communication_set.id,
       unit_id: communication_set.unit_id,
       name: communication_set.name,
       active: communication_set.active,
+      executable: communication_set.executable?,
+      eligible_student_count: communication_set.eligible_project_count,
       schedules: Entities::CommunicationSetScheduleEntity.represent(communication_set.communication_set_schedules),
-      rules: Entities::CommunicationRuleEntity.represent(communication_set.communication_rules),
-      previews: communication_set.communication_rules.map do |rule|
-        {
-          target_rule_id: rule.id,
-          allocations: previews.fetch(rule.id, []).map do |allocation|
-            {
-              rule_id: allocation[:rule].id,
-              rule_name: allocation[:rule].name,
-              position: allocation[:rule].position,
-              students: allocation[:projects].map do |project|
-                {
-                  first_name: project.user&.first_name,
-                  last_name: project.user&.last_name,
-                  preferred_name: project.user&.nickname,
-                  username: project.user&.username,
-                  student_id: project.user&.student_id,
-                  full_name: [project.user&.first_name, project.user&.last_name].compact.join(' '),
-                  target_grade: project.target_grade,
-                  spec_con_days: project.spec_con_days,
-                  has_portfolio: project.portfolio_exists?,
-                  last_sign_in_at: project.user&.last_sign_in_at,
-                  last_viewed_at: project.last_viewed_at,
-                  campus: project.campus&.name
-                }
-              end
-            }
-          end
-        }
-      end
+      rules: Entities::CommunicationRuleEntity.represent(communication_set.communication_rules)
     )
   end
 
@@ -261,6 +270,7 @@ class CommunicationRulesApi < Grape::API
     end
 
     communication_set = unit.communication_sets.find(params[:id])
+    reject_unresolved!(communication_set)
     job_id = ExecuteCommunicationSetJob.perform_async(communication_set.id)
     job = setup_job(job_id)
 
@@ -489,58 +499,38 @@ class CommunicationRulesApi < Grape::API
     end
 
     rule = unit.communication_rules.find(params[:id])
+    reject_unresolved!(rule.communication_set)
     job_id = ExecuteCommunicationSetJob.perform_async(rule.communication_set_id, rule.id)
     job = setup_job(job_id)
 
     present job, with: Entities::SidekiqJobEntity
   end
 
-  desc 'Preview projects matched by a communication rule'
+  # Callers reproduce the set's "first matching rule claims the student"
+  # behaviour by subtracting the students returned for earlier rules.
+  desc 'Preview projects matched by a communication rule, evaluated in isolation'
   params do
     requires :unit_id, type: Integer
     requires :id, type: Integer
   end
-  post '/units/:unit_id/communication_rules/:id/preview' do
+  get '/units/:unit_id/communication_rules/:id/preview' do
     unit = Unit.find(params[:unit_id])
 
     unless authorise? current_user, unit, :get_students
       error!({ error: 'Not authorised to preview unit communications' }, 403)
     end
 
-    # rule = unit.communication_rules.find(params[:id])
-    # job_id = CommunicationRuleJob.perform_async(rule.id)
-    # job = setup_job(job_id)
-
-    # present job, with: Entities::SidekiqJobEntity
-    # rule = unit.communication_rules.find(params[:id])
-
     rule = unit.communication_rules.find(params[:id])
-    allocations = rule.communication_set.preview_allocations_for_rule(rule)
+    communication_set = rule.communication_set
+    matched_projects = communication_set.independent_matches_for_rule(rule)
 
     present(
-      target_rule_id: rule.id,
-      allocations: allocations.map do |allocation|
-        {
-          rule_id: allocation[:rule].id,
-          rule_name: allocation[:rule].name,
-          position: allocation[:rule].position,
-          students: allocation[:projects].map do |project|
-            {
-              first_name: project.user&.first_name,
-              last_name: project.user&.last_name,
-              preferred_name: project.user&.nickname,
-              username: project.user&.username,
-              student_id: project.user&.student_id,
-              full_name: [project.user&.first_name, project.user&.last_name].compact.join(' '),
-              target_grade: project.target_grade,
-              has_portfolio: project.portfolio_exists?,
-              last_sign_in_at: project.user&.last_sign_in_at,
-              last_viewed_at: project.last_viewed_at,
-              campus: project.campus&.name
-            }
-          end
-        }
-      end
+      rule_id: rule.id,
+      rule_name: rule.name,
+      position: rule.position,
+      eligible_student_count: communication_set.eligible_projects.length,
+      evaluated_at: Time.current,
+      students: matched_projects.map { |project| preview_student_payload(project) }
     )
   end
 
@@ -596,6 +586,8 @@ class CommunicationRulesApi < Grape::API
       optional :tutorial_id, type: Integer
       optional :tutorial_stream_id, type: Integer
       optional :campus_id, type: Integer
+      optional :group_set_id, type: Integer
+      optional :group_id, type: Integer
       optional :submitted_portfolio, type: Boolean
     end
   end
@@ -630,6 +622,8 @@ class CommunicationRulesApi < Grape::API
       optional :tutorial_id, type: Integer
       optional :tutorial_stream_id, type: Integer
       optional :campus_id, type: Integer
+      optional :group_set_id, type: Integer
+      optional :group_id, type: Integer
       optional :submitted_portfolio, type: Boolean
     end
   end
@@ -767,5 +761,80 @@ class CommunicationRulesApi < Grape::API
     rule = unit.communication_rules.find(params[:communication_rule_id])
     rule.communication_actions.find(params[:id]).destroy!
     status 204
+  end
+
+  desc 'Copy a communication set as a portable document'
+  params do
+    requires :unit_id, type: Integer
+    requires :id, type: Integer
+  end
+  get '/units/:unit_id/communication_sets/:id/export' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :get_unit
+      error!({ error: 'Not authorised to get unit communications' }, 403)
+    end
+
+    present CommunicationTransfer.export_set(unit.communication_sets.find(params[:id]))
+  end
+
+  desc 'Copy a communication rule as a portable document'
+  params do
+    requires :unit_id, type: Integer
+    requires :id, type: Integer
+  end
+  get '/units/:unit_id/communication_rules/:id/export' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :get_unit
+      error!({ error: 'Not authorised to get unit communications' }, 403)
+    end
+
+    present CommunicationTransfer.export_rule(unit.communication_rules.find(params[:id]))
+  end
+
+  desc 'Import a communication set from a copied document'
+  params do
+    requires :unit_id, type: Integer
+    requires :document, type: Hash
+  end
+  post '/units/:unit_id/communication_sets/import' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :update
+      error!({ error: 'Not authorised to update unit communications' }, 403)
+    end
+
+    begin
+      communication_set = CommunicationTransfer.import_set(params[:document], unit)
+    rescue CommunicationTransfer::InvalidDocument => e
+      error!({ error: e.message }, 400)
+    end
+
+    present communication_set, with: Entities::CommunicationSetEntity
+  end
+
+  desc 'Import a communication rule into an existing set'
+  params do
+    requires :unit_id, type: Integer
+    requires :communication_set_id, type: Integer
+    requires :document, type: Hash
+  end
+  post '/units/:unit_id/communication_sets/:communication_set_id/rules/import' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :update
+      error!({ error: 'Not authorised to update unit communications' }, 403)
+    end
+
+    communication_set = unit.communication_sets.find(params[:communication_set_id])
+
+    begin
+      rule = CommunicationTransfer.import_rule(params[:document], communication_set)
+    rescue CommunicationTransfer::InvalidDocument => e
+      error!({ error: e.message }, 400)
+    end
+
+    present rule, with: Entities::CommunicationRuleEntity
   end
 end

@@ -11,7 +11,9 @@ class BreaksApi < Grape::API
   desc 'Add a new break to the teaching period'
   params do
     requires :start_date, type: Date, desc: 'The start date of the break'
-    requires :number_of_weeks, type: Integer, desc: 'Break duration'
+    requires :number_of_days, type: Integer, desc: 'Break duration in days'
+    optional :label, type: String, desc: 'A label describing the break'
+    optional :campus_ids, type: Array[Integer], desc: 'Campuses this break applies to; empty applies to all campuses'
   end
   post '/teaching_periods/:teaching_period_id/breaks' do
     unless authorise? current_user, User, :handle_teaching_period
@@ -22,16 +24,18 @@ class BreaksApi < Grape::API
     teaching_period = TeachingPeriod.find(params[:teaching_period_id])
 
     start_date = params[:start_date]
-    number_of_weeks = params[:number_of_weeks]
+    number_of_days = params[:number_of_days]
 
-    result = teaching_period.add_break(start_date, number_of_weeks)
+    result = teaching_period.add_break(start_date, number_of_days, params[:campus_ids], params[:label])
     present result, with: Entities::BreakEntity
   end
 
   desc 'Update a break in the teaching period'
   params do
     optional :start_date, type: Date, desc: 'The start date of the break'
-    optional :number_of_weeks, type: Integer, desc: 'Break duration'
+    optional :number_of_days, type: Integer, desc: 'Break duration in days'
+    optional :label, type: String, desc: 'A label describing the break'
+    optional :campus_ids, type: Array[Integer], desc: 'Campuses this break applies to; empty applies to all campuses'
   end
   put '/teaching_periods/:teaching_period_id/breaks/:id' do
     unless authorise? current_user, User, :handle_teaching_period
@@ -43,9 +47,9 @@ class BreaksApi < Grape::API
 
     id = params[:id]
     start_date = params[:start_date]
-    number_of_weeks = params[:number_of_weeks]
+    number_of_days = params[:number_of_days]
 
-    result = teaching_period.update_break(id, start_date, number_of_weeks)
+    result = teaching_period.update_break(id, start_date, number_of_days, params[:campus_ids], params[:label])
     present result, with: Entities::BreakEntity
   end
 

@@ -79,7 +79,11 @@ namespace :maintenance do
     tutor = task.project.tutor_for(task.task_definition)
 
     task.trigger_transition(trigger: 'fix', by_user: tutor)
-    task.add_text_comment(tutor, "**Automated Comment**: Something went wrong with compiling your submission. Please resubmit the task.")
+    task.add_text_comment(
+      tutor,
+      "**Automated Comment**: Something went wrong with compiling your submission. Please resubmit the task.",
+      attention_audience: :student
+    )
   rescue StandardError => e
     Rails.logger.error "Failed to move task #{task.id} to fix and add automated comment!\n#{e.message}"
   end
@@ -88,7 +92,11 @@ namespace :maintenance do
     tutor = task.project.tutor_for(task.task_definition)
 
     task.trigger_transition(trigger: 'fix', by_user: tutor)
-    task.add_text_comment(tutor, "**Automated Comment**: Something went wrong while running the automated tests for this submission. Please resubmit the task.")
+    task.add_text_comment(
+      tutor,
+      "**Automated Comment**: Something went wrong while running the automated tests for this submission. Please resubmit the task.",
+      attention_audience: :student
+    )
   rescue StandardError => e
     Rails.logger.error "Failed to move task #{task.id} to fix and add Overseer automated comment!\n#{e.message}"
   end

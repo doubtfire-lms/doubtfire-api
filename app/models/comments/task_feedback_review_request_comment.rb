@@ -1,10 +1,7 @@
 class TaskFeedbackReviewRequestComment < TaskComment
   before_create do
     self.content_type = :feedback_review_request
-  end
-
-  after_create do
-    mark_as_read(self.recipient)
+    self.attention_audience = :none
   end
 
   def serialize(user)

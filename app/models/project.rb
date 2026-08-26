@@ -83,6 +83,7 @@ class Project < ApplicationRecord
       :get_engagements,
       :create_engagement,
       :edit_engagement,
+      :delete_engagement,
       :comment_engagement
     ]
 
@@ -235,7 +236,7 @@ class Project < ApplicationRecord
   def tutorial_enrolment_for_stream(tutorial_stream)
     tutorial_enrolments
       .joins(:tutorial)
-      .where('tutorials.tutorial_stream_id = :sid OR tutorials.tutorial_stream_id IS NULL', sid: (tutorial_stream.present? ? tutorial_stream.id : nil))
+      .where('tutorials.tutorial_stream_id = :sid OR tutorials.tutorial_stream_id IS NULL', sid: (tutorial_stream.presence&.id))
       .first
   end
 
@@ -280,18 +281,25 @@ class Project < ApplicationRecord
   end
 
   def task_details_for_shallow_serializer(user)
-    teaching_breaks = unit.teaching_period&.breaks.to_a
+    teaching_breaks = unit.teaching_period&.breaks_for(campus) || []
+    attention_audience = TaskComment.attention_audiences.fetch(user == student ? 'student' : 'staff')
+    similarity_stats = TaskSimilarity
+                       .select('task_id', 'COUNT(*) AS similarity_count', 'SUM(flagged) AS flagged_count')
+                       .group(:task_id)
+                       .to_sql
 
     tasks
       .joins(:task_status)
-      .joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment')")
-      .joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}")
-      .joins('LEFT OUTER JOIN task_similarities ON tasks.id = task_similarities.task_id')
+      .joins('LEFT JOIN tasks group_comment_tasks ON tasks.group_submission_id IS NOT NULL ' \
+             'AND group_comment_tasks.group_submission_id = tasks.group_submission_id')
+      .joins("LEFT JOIN comment_read_cursors crc ON crc.task_id = COALESCE(group_comment_tasks.id, tasks.id) AND crc.user_id = #{user.id.to_i}")
+      .joins("LEFT JOIN task_comments ON task_comments.task_id = COALESCE(group_comment_tasks.id, tasks.id) AND (task_comments.attention_audience IS NULL OR task_comments.attention_audience = #{attention_audience}) AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment')")
+      .joins("LEFT JOIN (#{similarity_stats}) task_similarity_stats ON task_similarity_stats.task_id = tasks.id")
       .select(
-        'SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread', 'project_id', 'tasks.id as id',
+        "SUM(case when task_comments.user_id <> #{user.id.to_i} AND (crc.last_read_comment_id IS NULL OR task_comments.id > crc.last_read_comment_id) AND NOT task_comments.id is null then COALESCE(task_similarity_stats.similarity_count, 1) else 0 end) as number_unread", 'project_id', 'tasks.id as id',
         'task_definition_id', 'task_statuses.id as status_id',
         'completion_date', 'times_assessed', 'submission_date', 'tasks.grade as grade', 'quality_pts', 'include_in_portfolio', 'grade',
-        'SUM(case when task_similarities.flagged then 1 else 0 end) as similar_to_count'
+        'COALESCE(MAX(task_similarity_stats.flagged_count), 0) AS similar_to_count'
       )
       .group(
         'task_statuses.id', 'tasks.project_id', 'tasks.id', 'task_definition_id', 'status_id',
