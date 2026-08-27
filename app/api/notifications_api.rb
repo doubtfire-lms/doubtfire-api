@@ -27,10 +27,12 @@ class NotificationsApi < Grape::API
     end
 
     def unread_group_count
-      rows = current_user.received_notifications.unread.pluck(:task_id, :project_id, :unit_id, :kind, :unit_role_id)
-      rows.select { |_task_id, _project_id, unit_id, kind, _unit_role_id| notification_settings.shows_in_app?(unit_id, kind) }.map do |task_id, project_id, unit_id, kind, unit_role_id|
+      rows = current_user.received_notifications.unread.pluck(:id, :task_id, :project_id, :unit_id, :kind, :unit_role_id)
+      rows.select { |_id, _task_id, _project_id, unit_id, kind, _unit_role_id| notification_settings.shows_in_app?(unit_id, kind) }.map do |id, task_id, project_id, unit_id, kind, unit_role_id|
         if task_id.present?
           "task:#{task_id}"
+        elsif Notification::COMMUNICATION_KINDS.include?(kind)
+          "communication-email:#{id}"
         elsif Notification::PORTFOLIO_KINDS.include?(kind)
           "portfolio:#{project_id}"
         elsif Notification::MODERATION_KINDS.include?(kind)
@@ -118,7 +120,9 @@ class NotificationsApi < Grape::API
           group.dig(:unit, :name),
           group.dig(:task, :abbreviation),
           group.dig(:task, :name),
-          group.dig(:task, :student_name)
+          group.dig(:task, :student_name),
+          group[:message_subject],
+          group[:message_body]
         ].compact.any? { |value| value.to_s.downcase.include?(query) }
       end
     end

@@ -54,6 +54,29 @@ class NotificationsApiTest < ActiveSupport::TestCase
     assert_equal({ 'portfolio_ready' => 1 }, last_response_body.dig('groups', 0, 'counts'))
   end
 
+  def test_communication_emails_are_returned_individually_with_their_full_content
+    @student.received_notifications.destroy_all
+    2.times do |index|
+      Notification.create_for_communication_email(
+        recipient: @student,
+        unit: @unit,
+        project: @project,
+        actor: @tutor,
+        subject: "Update #{index}",
+        body: "Full email body #{index}",
+        deduplication_key: "communication-email:api-test:#{index}"
+      )
+    end
+
+    get '/api/notifications', state: 'unread'
+
+    assert_equal 200, last_response.status
+    assert_equal 2, last_response_body['unread_count']
+    assert_equal 2, last_response_body['groups'].count
+    assert_equal ['Update 0', 'Update 1'], last_response_body['groups'].pluck('message_subject').sort
+    assert_equal ['Full email body 0', 'Full email body 1'], last_response_body['groups'].pluck('message_body').sort
+  end
+
   def test_get_filters_groups_by_category_and_search
     get '/api/notifications',
         state: 'unread',

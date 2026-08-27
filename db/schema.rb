@@ -408,6 +408,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_25_000645) do
     t.bigint "actor_id"
     t.string "kind", limit: 64, null: false
     t.string "deduplication_key", limit: 191, null: false
+    t.string "message_subject"
+    t.text "message_body"
     t.bigint "task_comment_id"
     t.bigint "overseer_assessment_id"
     t.bigint "tutor_note_id"

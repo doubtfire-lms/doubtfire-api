@@ -17,6 +17,7 @@ class NotificationGroupBuilder
 
   def grouping_key(notification)
     state_key = notification.read_at ? "read:#{notification.read_at.to_f}" : 'unread'
+    return "#{state_key}:communication-email:#{notification.id}" if notification.kind == 'communication_email'
     return "#{state_key}:task:#{notification.task_id}" if notification.task_id.present?
     return "#{state_key}:portfolio:#{notification.project_id}" if Notification::PORTFOLIO_KINDS.include?(notification.kind)
 
@@ -62,8 +63,10 @@ class NotificationGroupBuilder
       tutor_note_ids: tutor_notes.filter_map(&:tutor_note_id),
       tutor_note_unit_role_id: tutor_notes.first&.unit_role_id,
       overseer_assessment_id: overseer_assessment_id(items),
+      message_subject: latest.message_subject,
+      message_body: latest.message_body,
       detail: detail,
-      summary: "#{subject_for(task, latest.recipient, counts)} - #{detail}"
+      summary: "#{subject_for(task, latest.recipient, counts, latest)} - #{detail}"
     }
   end
 
@@ -97,7 +100,8 @@ class NotificationGroupBuilder
     items.select { |notification| notification.kind == 'overseer_failed' }.max_by(&:created_at)&.overseer_assessment_id
   end
 
-  def subject_for(task, recipient, counts)
+  def subject_for(task, recipient, counts, latest)
+    return latest.message_subject.presence || 'Email message' if counts['communication_email'].positive?
     return 'Portfolio' if Notification::PORTFOLIO_KINDS.any? { |kind| counts[kind].positive? }
     return 'Unit notification' if task.nil?
 
@@ -110,6 +114,10 @@ class NotificationGroupBuilder
   # separately rather than splitting the summary back apart.
   def detail_for(items, counts, latest_status)
     details = []
+    if counts['communication_email'].positive?
+      sender = items.max_by(&:created_at).actor&.name
+      details << (sender.present? ? "Message from #{sender}" : 'Message')
+    end
     details << 'discussion deadline missed' if counts['discuss_expired'].positive?
     details << 'discussion deadline approaching' if counts['discuss_warning'].positive?
     details << 'submission PDF generation failed' if counts['pdf_generation_failed'].positive?

@@ -9,6 +9,7 @@ class NotificationSettingTest < ActiveSupport::TestCase
     assert_equal 1, settings.digest_weekday
     assert settings.weekly_summary
     assert_equal %w[in_app email], settings.channels['new_task_comment']
+    assert_equal ['in_app'], settings.channels['communication_email']
     assert_equal Notification::KINDS.sort, settings.channels.keys.sort
   end
 

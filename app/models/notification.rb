@@ -13,12 +13,14 @@ class Notification < ApplicationRecord
     moderation_note_from_mentee
     portfolio_ready
     portfolio_failed
+    communication_email
   ].freeze
 
   CHANNELS = %w[in_app email push].freeze
 
   MODERATION_KINDS = %w[moderation_note_added moderation_note_reply moderation_note_from_mentee].freeze
   PORTFOLIO_KINDS = %w[portfolio_ready portfolio_failed].freeze
+  COMMUNICATION_KINDS = %w[communication_email].freeze
 
   belongs_to :recipient, class_name: 'User', inverse_of: :received_notifications
   belongs_to :unit
@@ -154,6 +156,31 @@ class Notification < ApplicationRecord
     notification
   end
 
+  # The communications system has already delivered this message as an email.
+  # Record an in-app copy without passing it through the notification email
+  # channel, which would send the recipient the same message twice.
+  def self.create_for_communication_email(
+    recipient:,
+    unit:,
+    project:,
+    actor:,
+    subject:,
+    body:,
+    deduplication_key:
+  )
+    create_event(
+      recipient: recipient,
+      unit: unit,
+      project: project,
+      actor: actor,
+      kind: 'communication_email',
+      message_subject: subject,
+      message_body: body,
+      deduplication_key: deduplication_key,
+      channels: ['in_app']
+    )
+  end
+
   def self.create_event(**attributes)
     recipient = attributes.fetch(:recipient)
     unit = attributes.fetch(:unit)
@@ -162,7 +189,7 @@ class Notification < ApplicationRecord
     return if withdrawn_student?(attributes[:project], recipient)
 
     settings = NotificationSetting.for(recipient)
-    channels = settings.channels_for_unit_id(unit.id, kind)
+    channels = attributes[:channels] || settings.channels_for_unit_id(unit.id, kind)
     return if channels.empty?
 
     notification = find_or_initialize_by(
@@ -183,7 +210,9 @@ class Notification < ApplicationRecord
       task_status: attributes[:task_status],
       unit_role: attributes[:unit_role],
       discuss_deadline: attributes[:discuss_deadline],
-      email_not_before: attributes[:email_not_before]
+      email_not_before: attributes[:email_not_before],
+      message_subject: attributes[:message_subject],
+      message_body: attributes[:message_body]
     )
     notification.save!
 

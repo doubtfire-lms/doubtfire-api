@@ -28,7 +28,9 @@ class NotificationSetting < ApplicationRecord
   end
 
   def self.default_channels
-    Notification::KINDS.index_with { %w[in_app email] }
+    Notification::KINDS.index_with do |kind|
+      Notification::COMMUNICATION_KINDS.include?(kind) ? ['in_app'] : %w[in_app email]
+    end
   end
 
   # The channels a unit delivers a kind on, honouring its override when it has
@@ -36,6 +38,7 @@ class NotificationSetting < ApplicationRecord
   def channels_for_unit_id(unit_id, kind)
     override = override_for(unit_id)
     return [] if override&.muted
+    return ['in_app'] if Notification::COMMUNICATION_KINDS.include?(kind.to_s)
 
     Array((override&.customised? ? override.channels : channels)[kind.to_s])
   end

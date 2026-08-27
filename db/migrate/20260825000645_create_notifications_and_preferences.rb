@@ -11,6 +11,10 @@ class CreateNotificationsAndPreferences < ActiveRecord::Migration[8.0]
       # Identifies the event, so cron re-runs and job retries cannot raise it twice.
       t.string :deduplication_key, null: false, limit: 191
 
+      # Rendered content for messages sent by the communications system.
+      t.string :message_subject
+      t.text :message_body
+
       # What raised the notification
       t.references :task_comment, null: true
       t.references :overseer_assessment, null: true, index: false

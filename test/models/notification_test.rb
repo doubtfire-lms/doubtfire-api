@@ -181,6 +181,41 @@ class NotificationTest < ActiveSupport::TestCase
     assert_equal 'Portfolio - Portfolio ready to review', group[:summary]
   end
 
+  def test_communication_email_keeps_its_rendered_content_as_an_individual_in_app_notification
+    notification = Notification.create_for_communication_email(
+      recipient: @student,
+      unit: @unit,
+      project: @project,
+      actor: @tutor,
+      subject: 'A personalised update',
+      body: "Hello #{@student.first_name},\n\nHere is the full message.",
+      deduplication_key: 'communication-email:test-run:1'
+    )
+    group = NotificationGroupBuilder.new([notification]).groups.first
+
+    assert_equal 'communication_email', notification.kind
+    assert_equal 'A personalised update', group[:message_subject]
+    assert_equal "Hello #{@student.first_name},\n\nHere is the full message.", group[:message_body]
+    assert_equal "A personalised update - Message from #{@tutor.name}", group[:summary]
+    assert_not_nil notification.email_processed_at
+  end
+
+  def test_communication_emails_are_not_grouped_together
+    notifications = 2.times.map do |index|
+      Notification.create_for_communication_email(
+        recipient: @student,
+        unit: @unit,
+        project: @project,
+        actor: @tutor,
+        subject: "Message #{index}",
+        body: "Body #{index}",
+        deduplication_key: "communication-email:test-run:#{index}"
+      )
+    end
+
+    assert_equal 2, NotificationGroupBuilder.new(notifications).groups.count
+  end
+
   def test_a_new_portfolio_result_resolves_the_previous_one
     ready = Notification.create_for_portfolio(@project, success: true)
     @project.update!(updated_at: 1.second.from_now)
