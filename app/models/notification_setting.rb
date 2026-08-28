@@ -38,7 +38,7 @@ class NotificationSetting < ApplicationRecord
   end
 
   def self.default_digest_timezone
-    configured_timezone = ENV['TZ'].presence
+    configured_timezone = ENV.fetch('TZ', nil).presence
     return configured_timezone if ActiveSupport::TimeZone[configured_timezone].present?
 
     Time.zone.tzinfo.name
