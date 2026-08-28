@@ -4,6 +4,7 @@
 # channel defaults every unit follows until it is customised.
 class NotificationSetting < ApplicationRecord
   FREQUENCIES = %w[off hourly daily weekly].freeze
+  DIGEST_INTERVAL_HOURS = [1, 2, 3, 4, 6, 12].freeze
   TIME_FORMAT = /\A(?:[01]\d|2[0-3]):[0-5]\d\z/
 
   attribute :channels, :json
@@ -12,8 +13,11 @@ class NotificationSetting < ApplicationRecord
 
   validates :channels, notification_channels: true
   validates :digest_frequency, inclusion: { in: FREQUENCIES }
+  validates :digest_interval_hours, inclusion: { in: DIGEST_INTERVAL_HOURS }
+  validates :digest_start_time, format: { with: TIME_FORMAT }
   validates :digest_time, format: { with: TIME_FORMAT }
   validates :digest_weekday, inclusion: { in: 1..7 }
+  validate :digest_timezone_supported
 
   before_validation :apply_defaults
   before_save :refresh_next_digest_at, if: :schedule_changed?
@@ -31,6 +35,19 @@ class NotificationSetting < ApplicationRecord
     Notification::KINDS.index_with do |kind|
       Notification::COMMUNICATION_KINDS.include?(kind) ? ['in_app'] : %w[in_app email]
     end
+  end
+
+  def self.default_digest_timezone
+    configured_timezone = ENV['TZ'].presence
+    return configured_timezone if ActiveSupport::TimeZone[configured_timezone].present?
+
+    Time.zone.tzinfo.name
+  end
+
+  # Use the first unit the user enrolled in as their home campus for now.
+  def resolved_digest_timezone
+    first_project = user.projects.where(enrolled: true).order(:id).includes(:campus).first
+    first_project&.campus&.timezone.presence || self.class.default_digest_timezone
   end
 
   # The channels a unit delivers a kind on, honouring its override when it has
@@ -66,14 +83,19 @@ class NotificationSetting < ApplicationRecord
 
   def next_occurrence(from = Time.current)
     return nil if digest_frequency == 'off'
-    return from.beginning_of_hour + 1.hour if digest_frequency == 'hourly'
+
+    local_from = from.in_time_zone(digest_time_zone)
+    if digest_frequency == 'hourly'
+      start_hour, start_minute = digest_start_time.split(':').map(&:to_i)
+      return next_hourly_occurrence(local_from, start_hour, start_minute)
+    end
 
     hour, minute = digest_time.split(':').map(&:to_i)
-    date = from.to_date
+    date = local_from.to_date
     date += (digest_weekday - date.cwday) % 7 if digest_frequency == 'weekly'
 
-    candidate = Time.zone.local(date.year, date.month, date.day, hour, minute)
-    candidate += digest_frequency == 'weekly' ? 1.week : 1.day if candidate <= from
+    candidate = digest_time_zone.local(date.year, date.month, date.day, hour, minute)
+    candidate += digest_frequency == 'weekly' ? 1.week : 1.day if candidate <= local_from
     candidate
   end
 
@@ -88,6 +110,7 @@ class NotificationSetting < ApplicationRecord
 
   def apply_defaults
     self.channels = self.class.default_channels if channels.nil?
+    self.digest_timezone = resolved_digest_timezone
   end
 
   def refresh_next_digest_at
@@ -97,12 +120,43 @@ class NotificationSetting < ApplicationRecord
   def schedule_changed?
     next_digest_at.nil? ||
       will_save_change_to_digest_frequency? ||
+      will_save_change_to_digest_interval_hours? ||
+      will_save_change_to_digest_start_time? ||
       will_save_change_to_digest_time? ||
+      will_save_change_to_digest_timezone? ||
       will_save_change_to_digest_weekday?
   end
 
   def saved_change_to_digest_off?
     digest_frequency == 'off' && saved_change_to_digest_frequency?
+  end
+
+  # The start time anchors the wall-clock slots, which continue across midnight.
+  # Rebuilding them each day avoids job delays and daylight-saving changes
+  # shifting the user's schedule.
+  def next_hourly_occurrence(from, hour, minute)
+    date = from.to_date
+    candidate_hours = (24 / digest_interval_hours).times.map do |offset|
+      (hour + (offset * digest_interval_hours)) % 24
+    end.sort
+    candidates = candidate_hours.map do |candidate_hour|
+      digest_time_zone.local(date.year, date.month, date.day, candidate_hour, minute)
+    end
+
+    candidates.find { |candidate| candidate > from } || begin
+      next_date = date + 1.day
+      digest_time_zone.local(next_date.year, next_date.month, next_date.day, candidate_hours.first, minute)
+    end
+  end
+
+  def digest_time_zone
+    ActiveSupport::TimeZone[resolved_digest_timezone]
+  end
+
+  def digest_timezone_supported
+    return if digest_timezone.present? && digest_time_zone.present?
+
+    errors.add(:digest_timezone, 'must be a valid timezone')
   end
 
   # Nothing is left waiting for a digest that will never run.

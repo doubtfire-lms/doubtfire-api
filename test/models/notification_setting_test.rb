@@ -5,7 +5,10 @@ class NotificationSettingTest < ActiveSupport::TestCase
     settings = NotificationSetting.for(FactoryBot.create(:user))
 
     assert_equal 'weekly', settings.digest_frequency
+    assert_equal 4, settings.digest_interval_hours
+    assert_equal '08:00', settings.digest_start_time
     assert_equal '07:00', settings.digest_time
+    assert_equal NotificationSetting.default_digest_timezone, settings.digest_timezone
     assert_equal 1, settings.digest_weekday
     assert settings.weekly_summary
     assert_equal %w[in_app email], settings.channels['new_task_comment']
@@ -74,13 +77,66 @@ class NotificationSettingTest < ActiveSupport::TestCase
   end
 
   def test_daily_delivery_keeps_its_time_across_a_daylight_saving_transition
-    settings = FactoryBot.build(:notification_setting, digest_frequency: 'daily', digest_time: '09:00')
+    user = FactoryBot.create(:user)
+    campus = FactoryBot.create(:campus, timezone: 'Australia/Melbourne')
+    FactoryBot.create(:project, user: user, campus: campus)
+    settings = FactoryBot.build(
+      :notification_setting,
+      user: user,
+      digest_frequency: 'daily',
+      digest_time: '09:00'
+    )
     from = Time.zone.local(2026, 10, 3, 13, 30, 0)
 
     next_occurrence = settings.next_occurrence(from)
 
     assert_equal Date.new(2026, 10, 4), next_occurrence.to_date
     assert_equal 9, next_occurrence.hour
+  end
+
+  def test_delivery_uses_the_first_enrolled_projects_campus_timezone
+    user = FactoryBot.create(:user)
+    first_campus = FactoryBot.create(:campus, timezone: 'Australia/Melbourne')
+    second_campus = FactoryBot.create(:campus, timezone: 'Pacific/Auckland')
+    FactoryBot.create(:project, user: user, campus: first_campus, enrolled: true)
+    FactoryBot.create(:project, user: user, campus: second_campus, enrolled: true)
+    settings = FactoryBot.build(
+      :notification_setting,
+      user: user,
+      digest_frequency: 'daily',
+      digest_time: '08:00'
+    )
+
+    next_occurrence = settings.next_occurrence(Time.utc(2026, 7, 28, 21, 30))
+
+    assert_equal Time.utc(2026, 7, 28, 22), next_occurrence
+    assert_equal 'Australia/Melbourne', next_occurrence.time_zone.name
+  end
+
+  def test_hourly_delivery_continues_across_midnight_without_drifting
+    settings = FactoryBot.build(
+      :notification_setting,
+      digest_frequency: 'hourly',
+      digest_interval_hours: 4,
+      digest_start_time: '08:00'
+    )
+
+    assert_equal Time.zone.local(2026, 7, 29, 12),
+                 settings.next_occurrence(Time.zone.local(2026, 7, 29, 10, 30))
+    assert_equal Time.zone.local(2026, 7, 30, 0),
+                 settings.next_occurrence(Time.zone.local(2026, 7, 29, 20, 30))
+  end
+
+  def test_three_hourly_delivery_continues_from_its_anchor
+    settings = FactoryBot.build(
+      :notification_setting,
+      digest_frequency: 'hourly',
+      digest_interval_hours: 3,
+      digest_start_time: '08:00'
+    )
+
+    assert_equal Time.zone.local(2026, 7, 30, 2),
+                 settings.next_occurrence(Time.zone.local(2026, 7, 29, 23, 30))
   end
 
   def test_weekly_delivery_lands_on_the_selected_weekday

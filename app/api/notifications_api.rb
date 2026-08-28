@@ -43,28 +43,6 @@ class NotificationsApi < Grape::API
       end.uniq.count
     end
 
-    def serialize_settings(settings)
-      {
-        id: settings.id,
-        channels: settings.channels,
-        digest_frequency: settings.digest_frequency,
-        digest_time: settings.digest_time,
-        digest_weekday: settings.digest_weekday,
-        weekly_summary: settings.weekly_summary,
-        next_digest_at: settings.next_digest_at,
-        last_digest_at: settings.last_digest_at,
-        units: current_user.notification_unit_overrides.order(:unit_id).map { |override| serialize_override(override) }
-      }
-    end
-
-    def serialize_override(override)
-      {
-        unit_id: override.unit_id,
-        muted: override.muted,
-        channels: override.channels
-      }
-    end
-
     # The units sent are the whole set that departs from the settings, so any unit
     # missing from it has been reset and no longer needs an override.
     def replace_unit_overrides(units)
@@ -170,13 +148,15 @@ class NotificationsApi < Grape::API
 
   desc 'Get the notification settings for the current user'
   get '/notification_settings' do
-    serialize_settings(NotificationSetting.for(current_user))
+    present NotificationSetting.for(current_user), with: Entities::NotificationSettingEntity
   end
 
   desc 'Update the notification settings for the current user'
   params do
     optional :channels, type: Hash
     optional :digest_frequency, type: String, values: NotificationSetting::FREQUENCIES
+    optional :digest_interval_hours, type: Integer, values: NotificationSetting::DIGEST_INTERVAL_HOURS
+    optional :digest_start_time, type: String
     optional :digest_time, type: String
     optional :digest_weekday, type: Integer
     optional :weekly_summary, type: Boolean
@@ -195,6 +175,6 @@ class NotificationsApi < Grape::API
       replace_unit_overrides(changes[:units]) if changes.key?(:units)
     end
 
-    serialize_settings(settings)
+    present settings, with: Entities::NotificationSettingEntity
   end
 end

@@ -131,6 +131,9 @@ class NotificationsApiTest < ActiveSupport::TestCase
 
     assert_equal 200, last_response.status
     assert_equal 'weekly', last_response_body['digest_frequency']
+    assert_equal 4, last_response_body['digest_interval_hours']
+    assert_equal '08:00', last_response_body['digest_start_time']
+    assert_equal @project.campus.timezone, last_response_body['digest_timezone']
     assert_equal %w[in_app email], last_response_body.dig('channels', 'new_task_comment')
     assert_empty last_response_body['units']
   end
@@ -139,6 +142,8 @@ class NotificationsApiTest < ActiveSupport::TestCase
     put_json '/api/notification_settings',
              channels: { new_task_comment: ['in_app'] },
              digest_frequency: 'daily',
+             digest_interval_hours: 6,
+             digest_start_time: '09:00',
              digest_time: '10:30',
              digest_weekday: 1,
              weekly_summary: false,
@@ -146,6 +151,9 @@ class NotificationsApiTest < ActiveSupport::TestCase
 
     assert_equal 200, last_response.status
     assert_equal 'daily', last_response_body['digest_frequency']
+    assert_equal 6, last_response_body['digest_interval_hours']
+    assert_equal '09:00', last_response_body['digest_start_time']
+    assert_equal @project.campus.timezone, last_response_body['digest_timezone']
     assert_equal ['in_app'], last_response_body.dig('channels', 'new_task_comment')
     assert_equal [{ 'unit_id' => @unit.id, 'muted' => true, 'channels' => nil }], last_response_body['units']
   end
@@ -182,6 +190,12 @@ class NotificationsApiTest < ActiveSupport::TestCase
 
   def test_updating_settings_rejects_an_unknown_frequency
     put_json '/api/notification_settings', digest_frequency: 'fortnightly'
+
+    assert_equal 400, last_response.status
+  end
+
+  def test_updating_settings_rejects_an_unknown_digest_interval
+    put_json '/api/notification_settings', digest_interval_hours: 5
 
     assert_equal 400, last_response.status
   end
