@@ -50,7 +50,7 @@ class CommunicationRulesApiTest < ActiveSupport::TestCase
 
     assert_equal 200, last_response.status
     assert_equal 1, last_response_body['eligible_student_count']
-    refute last_response_body.key?('previews')
+    assert_not last_response_body.key?('previews')
 
     get "/api/units/#{unit.id}/communication_rules/#{rule.id}/preview"
 
@@ -90,7 +90,7 @@ class CommunicationRulesApiTest < ActiveSupport::TestCase
 
       assert_equal 200, last_response.status
       assert_equal 2, last_response_body['eligible_student_count']
-      assert_equal [matching_project.id], last_response_body['students'].map { |student| student['project_id'] }
+      assert_equal([matching_project.id], last_response_body['students'].map { |student| student['project_id'] })
     end
   end
 
@@ -108,15 +108,15 @@ class CommunicationRulesApiTest < ActiveSupport::TestCase
 
     get "/api/units/#{unit.id}/communication_sets"
     assert_equal 200, last_response.status
-    assert_equal expected, last_response_body.first['rules'].map { |rule| rule['id'] }
+    assert_equal(expected, last_response_body.first['rules'].map { |rule| rule['id'] })
 
     get "/api/units/#{unit.id}/communication_sets/#{communication_set.id}"
     assert_equal 200, last_response.status
-    assert_equal expected, last_response_body['rules'].map { |rule| rule['id'] }
+    assert_equal(expected, last_response_body['rules'].map { |rule| rule['id'] })
 
     get "/api/units/#{unit.id}/communication_sets/#{communication_set.id}/rules"
     assert_equal 200, last_response.status
-    assert_equal expected, last_response_body.map { |rule| rule['id'] }
+    assert_equal(expected, last_response_body.map { |rule| rule['id'] })
 
     # And the order follows position after a drag-and-drop style reorder.
     put_json "/api/units/#{unit.id}/communication_rules/#{third.id}", communication_rule: { position: 0 }
@@ -125,7 +125,7 @@ class CommunicationRulesApiTest < ActiveSupport::TestCase
 
     get "/api/units/#{unit.id}/communication_sets/#{communication_set.id}"
     assert_equal 200, last_response.status
-    assert_equal [third.id, first.id, second.id], last_response_body['rules'].map { |rule| rule['id'] }
+    assert_equal([third.id, first.id, second.id], last_response_body['rules'].map { |rule| rule['id'] })
   end
 
   def test_update_rule_position_reorders_the_set
@@ -143,6 +143,23 @@ class CommunicationRulesApiTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
 
     assert_equal [second_rule.id, first_rule.id], communication_set.reload.communication_rules.map(&:id)
+  end
+
+  def test_delete_rule_removes_it_and_resequences_remaining_rules
+    admin = FactoryBot.create(:user, :admin)
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0)
+    communication_set = unit.communication_sets.create!(name: 'Ordering', active: true)
+    first_rule = communication_set.communication_rules.create!(name: 'First', operator: 'and', position: 0)
+    second_rule = communication_set.communication_rules.create!(name: 'Second', operator: 'and', position: 1)
+    third_rule = communication_set.communication_rules.create!(name: 'Third', operator: 'and', position: 2)
+    add_auth_header_for(user: admin)
+
+    delete "/api/units/#{unit.id}/communication_rules/#{second_rule.id}"
+
+    assert_equal 204, last_response.status
+    assert_not CommunicationRule.exists?(second_rule.id)
+    assert_equal [[first_rule.id, 0], [third_rule.id, 1]],
+                 communication_set.reload.communication_rules.pluck(:id, :position)
   end
 
   def test_create_and_update_portfolio_submitted_condition
@@ -191,7 +208,7 @@ class CommunicationRulesApiTest < ActiveSupport::TestCase
 
     assert_equal 201, last_response.status
     assert_equal true, last_response_body['executable']
-    assert_equal ['Chase T1.1'], last_response_body['rules'].map { |rule| rule['name'] }
+    assert_equal(['Chase T1.1'], last_response_body['rules'].map { |rule| rule['name'] })
   end
 
   def test_importing_without_the_referenced_task_flags_the_rule_and_blocks_execution
@@ -206,14 +223,14 @@ class CommunicationRulesApiTest < ActiveSupport::TestCase
 
     assert_equal 201, last_response.status
     assert_equal false, last_response_body['executable']
-    assert_equal [true], last_response_body['rules'].map { |rule| rule['unresolved'] }
+    assert_equal([true], last_response_body['rules'].map { |rule| rule['unresolved'] })
 
     imported_id = last_response_body['id']
 
     post_json "/api/units/#{target_unit.id}/communication_sets/#{imported_id}/execute", {}
 
     assert_equal 409, last_response.status
-    assert_equal ['Chase T1.1'], last_response_body['unresolved_rules'].map { |rule| rule['name'] }
+    assert_equal(['Chase T1.1'], last_response_body['unresolved_rules'].map { |rule| rule['name'] })
   end
 
   def test_repointing_a_condition_clears_the_unresolved_flag_it_returns
@@ -245,7 +262,7 @@ class CommunicationRulesApiTest < ActiveSupport::TestCase
     get "/api/units/#{target_unit.id}/communication_sets/#{imported_id}"
 
     assert_equal true, last_response_body['executable']
-    assert_equal [false], last_response_body['rules'].map { |item| item['unresolved'] }
+    assert_equal([false], last_response_body['rules'].map { |item| item['unresolved'] })
   end
 
   def test_importing_a_rule_document_as_a_set_is_rejected
