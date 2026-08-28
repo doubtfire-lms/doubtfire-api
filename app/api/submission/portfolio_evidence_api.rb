@@ -181,7 +181,9 @@ module Submission
         error!({ error: "A submission for this task definition have never been created" }, 401)
       end
 
-      result = OverseerAssessment.where(task_id: task.id).order(submission_timestamp: :desc).limit(10)
+      result = OverseerAssessment.where(submission_history_id: task.related_submission_histories.select(:id))
+                                 .order(submission_timestamp: :desc)
+                                 .limit(10)
       present result, with: Entities::OverseerAssessmentEntity
     end
 
@@ -199,7 +201,7 @@ module Submission
         error!({ error: 'A submission for this task definition has never been created' }, 404)
       end
 
-      present task.submission_histories.order(submission_timestamp: :desc),
+      present task.related_submission_histories.order(submission_timestamp: :desc),
               with: Entities::SubmissionHistoryEntity
     end
 
@@ -213,7 +215,7 @@ module Submission
       end
 
       task = project.task_for_task_definition(task_definition)
-      history = task&.submission_histories&.find_by(id: params[:history_id])
+      history = task&.related_submission_histories&.find_by(id: params[:history_id])
       error!({ error: 'Submission history was not found' }, 404) unless history
       error!({ error: 'Submission history files are not available' }, 404) unless history.has_submission_files?
 
@@ -244,7 +246,9 @@ module Submission
 
       oa_id = timestamp = params[:oa_id]
 
-      oa = task.overseer_assessments.find(oa_id)
+      oa = OverseerAssessment
+           .where(submission_history_id: task.related_submission_histories.select(:id))
+           .find(oa_id)
       response = oa.send_to_overseer
       if response[:error].present?
         error!({ error: response[:error] }, 403)
@@ -325,7 +329,7 @@ module Submission
         error!({ error: 'A submission for this task definition have never been created' }, 401)
       end
 
-      history = task.submission_histories.find_by(submission_timestamp: params[:timestamp])
+      history = task.related_submission_histories.find_by(submission_timestamp: params[:timestamp])
       unless history
         error!({ error: "No submission history found for timestamp '#{params[:timestamp]}'" }, 404)
       end

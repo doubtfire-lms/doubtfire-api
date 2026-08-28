@@ -564,7 +564,14 @@ class CommunicationRulesApi < Grape::API
     end
 
     rule = unit.communication_rules.find(params[:id])
-    rule.destroy!
+    communication_set = rule.communication_set
+
+    CommunicationRule.transaction do
+      rule.destroy!
+      communication_set.communication_rules.each_with_index do |remaining_rule, position|
+        remaining_rule.update!(position: position)
+      end
+    end
     status 204
   end
 
