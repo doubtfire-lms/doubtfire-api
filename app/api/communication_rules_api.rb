@@ -569,7 +569,7 @@ class CommunicationRulesApi < Grape::API
     CommunicationRule.transaction do
       rule.destroy!
       communication_set.communication_rules.each_with_index do |remaining_rule, position|
-        remaining_rule.update_column(:position, position)
+        remaining_rule.update!(position: position)
       end
     end
     status 204
