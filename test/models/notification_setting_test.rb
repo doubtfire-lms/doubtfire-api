@@ -128,11 +128,12 @@ class NotificationSettingTest < ActiveSupport::TestCase
       digest_interval_hours: 4,
       digest_start_time: '08:00'
     )
+    digest_zone = ActiveSupport::TimeZone[settings.resolved_digest_timezone]
 
-    assert_equal Time.zone.local(2026, 7, 29, 12),
-                 settings.next_occurrence(Time.zone.local(2026, 7, 29, 10, 30))
-    assert_equal Time.zone.local(2026, 7, 30, 0),
-                 settings.next_occurrence(Time.zone.local(2026, 7, 29, 20, 30))
+    assert_equal digest_zone.local(2026, 7, 29, 12),
+                 settings.next_occurrence(digest_zone.local(2026, 7, 29, 10, 30))
+    assert_equal digest_zone.local(2026, 7, 30, 0),
+                 settings.next_occurrence(digest_zone.local(2026, 7, 29, 20, 30))
   end
 
   def test_three_hourly_delivery_continues_from_its_anchor
@@ -142,9 +143,10 @@ class NotificationSettingTest < ActiveSupport::TestCase
       digest_interval_hours: 3,
       digest_start_time: '08:00'
     )
+    digest_zone = ActiveSupport::TimeZone[settings.resolved_digest_timezone]
 
-    assert_equal Time.zone.local(2026, 7, 30, 2),
-                 settings.next_occurrence(Time.zone.local(2026, 7, 29, 23, 30))
+    assert_equal digest_zone.local(2026, 7, 30, 2),
+                 settings.next_occurrence(digest_zone.local(2026, 7, 29, 23, 30))
   end
 
   def test_weekly_delivery_lands_on_the_selected_weekday

@@ -6,7 +6,9 @@ module Entities
     expose :digest_interval_hours
     expose :digest_start_time
     expose :digest_time
-    expose :digest_timezone, &:resolved_digest_timezone
+    expose :digest_timezone do |settings, _options|
+      settings.resolved_digest_timezone
+    end
     expose :digest_weekday
     expose :weekly_summary
     expose :next_digest_at
