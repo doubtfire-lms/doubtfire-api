@@ -1,6 +1,14 @@
 require 'test_helper'
 
 class NotificationSettingTest < ActiveSupport::TestCase
+  def test_default_digest_timezone_falls_back_when_tz_is_unset
+    original_timezone = ENV.delete('TZ')
+
+    assert_equal Time.zone.tzinfo.name, NotificationSetting.default_digest_timezone
+  ensure
+    ENV['TZ'] = original_timezone if original_timezone
+  end
+
   def test_defaults_to_a_monday_morning_digest_on_every_channel_but_push
     settings = NotificationSetting.for(FactoryBot.create(:user))
 
