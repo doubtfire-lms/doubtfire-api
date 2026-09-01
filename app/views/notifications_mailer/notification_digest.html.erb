@@ -17,11 +17,11 @@
 <body style="margin:0; padding:0; background-color:#ffffff;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; background-color:#ffffff;">
     <tr>
-      <td align="center" style="padding:40px 16px; font-family:'Lucida Grande','Helvetica Neue',Helvetica,Arial,sans-serif; color:#333; font-size:14px;">
+      <td align="center" style="padding:40px 16px; font-family:Roboto,-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Helvetica,Arial,sans-serif; color:#333; font-size:14px;">
         <table role="presentation" width="800" cellpadding="0" cellspacing="0" border="0" style="width:100%; max-width:800px; border-collapse:collapse;">
 
           <tr>
-            <td class="main" style="border:solid 1px rgb(240,240,240); padding:30px 40px;">
+            <td class="main" style="font-family:Roboto,-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Helvetica,Arial,sans-serif; border:solid 1px rgb(240,240,240); padding:30px 40px;">
 
               <!-- Header -->
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
@@ -49,7 +49,7 @@
               <% @units.each do |section| %>
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; margin:0 0 16px 0;">
                   <tr>
-                    <td class="unit-card" style="border:solid 1px rgb(240,240,240); padding:16px 20px;">
+                    <td class="unit-card" style="font-family:Roboto,-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Helvetica,Arial,sans-serif; border:solid 1px rgb(240,240,240); padding:16px 20px;">
 
                       <div style="font-size:0.75em; color:#aaa; letter-spacing:0.8px; text-transform:uppercase; font-weight:bold; line-height:1.4;">
                         <%= section[:unit].code %>
@@ -61,7 +61,7 @@
                       <% section[:groups].each do |group| %>
                         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; margin:0 0 10px 0;">
                           <tr>
-                            <td style="background:#fafafa; border-left:4px solid <%= group[:severity] == 'critical' ? '#c62828' : group[:severity] == 'warning' ? '#ed6c02' : '#1565c0' %>; padding:14px 16px; line-height:1.55;">
+                            <td style="font-family:Roboto,-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Helvetica,Arial,sans-serif; background:#fafafa; border-left:4px solid <%= group[:severity] == 'critical' ? '#c62828' : group[:severity] == 'warning' ? '#ed6c02' : '#1565c0' %>; padding:14px 16px; line-height:1.55;">
                               <div style="font-weight:bold; color:#333; font-size:1.1em; line-height:1.4; padding-bottom:2px;">
                                 <% if group[:task] %>
                                   <%= group[:task][:abbreviation] %> - <%= group[:task][:name] %>
@@ -121,7 +121,7 @@
           </tr>
 
           <tr>
-            <td align="center" style="padding:16px 8px 0 8px; color:#aaa; font-size:0.75em; line-height:1.6;">
+            <td align="center" style="font-family:Roboto,-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Helvetica,Arial,sans-serif; padding:16px 8px 0 8px; color:#aaa; font-size:0.75em; line-height:1.6;">
               <div>You are receiving this because you have email notifications turned on in <%= @doubtfire_product_name %>.</div>
               <div style="padding-top:4px;">
                 <a href="<%= @unsubscribe_url %>" target="_blank" rel="noopener noreferrer" style="color:#aaa; text-decoration:underline;">Unsubscribe or change your settings</a>
