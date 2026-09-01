@@ -343,6 +343,37 @@ class UnitsApi < Grape::API
     present unit.tasks_as_hash(tasks), with: Grape::Presenters::Presenter
   end
 
+  desc 'Get operational workload data for a tutor dashboard'
+  params do
+    requires :id, type: Integer, desc: 'The unit id'
+    requires :unit_role_id, type: Integer, desc: 'The tutor or convenor unit role to view'
+  end
+  get '/units/:id/tutor_dashboard/:unit_role_id' do
+    unit = Unit.find(params[:id])
+
+    unless authorise? current_user, unit, :get_unit
+      error!({ error: 'You do not have permission to access this unit' }, 403)
+    end
+
+    viewer = unit.unit_role_for(current_user)
+    if viewer.nil? || ![Role.tutor, Role.convenor].include?(viewer.role)
+      error!({ error: 'You do not have permission to access tutor dashboards' }, 403)
+    end
+
+    target = unit.staff.find_by(id: params[:unit_role_id])
+    error!({ error: 'Tutor dashboard not found' }, 404) if target.nil?
+
+    unless [Role.tutor, Role.convenor].include?(target.role)
+      error!({ error: 'Tutor dashboard not found' }, 404)
+    end
+
+    unless viewer == target || viewer.role == Role.convenor
+      error!({ error: 'You do not have permission to access this tutor dashboard' }, 403)
+    end
+
+    present target.tutor_dashboard_stats(viewer: viewer), with: Grape::Presenters::Presenter
+  end
+
   desc 'Get tasks ready for moderation'
   get '/units/:id/tasks/moderation' do
     unit = Unit.find(params[:id])
