@@ -4,7 +4,7 @@ You have <%= @notification_count %> new <%= 'notification'.pluralize(@notificati
 <% @units.each do |section| %>
 <%= section[:unit].code %> - <%= section[:unit].name %>
 <% section[:groups].each do |group| %>
-- <% if group[:task] %><%= group[:task][:abbreviation] %> - <%= group[:task][:name] %><% elsif group[:project_id] %>Portfolio<% else %>Unit notification<% end %>
+- <% if group[:task] %><%= group[:task][:abbreviation] %> - <%= group[:task][:name] %><% elsif group[:message_subject].present? %><%= group[:message_subject] %><% elsif group[:project_id] %>Portfolio<% else %>Unit notification<% end %>
   <%= notification_timestamp(group) %>
   <%= group[:detail] %>
 <% if group[:task] %>
@@ -15,8 +15,8 @@ You have <%= @notification_count %> new <%= 'notification'.pluralize(@notificati
 <% end %>
 <% end %>
 
-View all notifications and email settings:
+View all notifications:
 <%= @notification_url %>
 
-Cheers,
-The <%= @doubtfire_product_name %> Team
+Unsubscribe or change your settings:
+<%= @unsubscribe_url %>

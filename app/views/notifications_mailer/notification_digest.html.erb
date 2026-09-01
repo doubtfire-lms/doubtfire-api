@@ -1,129 +1,137 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light" />
+  <title><%= @doubtfire_product_name %> notifications</title>
   <style type="text/css">
-    .main {
-      font-family: "Lucida Grande", "Helvetica Neue", Helvetica, Arial, sans-serif;
-      color: #333;
-      font-size: 14px;
-      width: 100%;
-      max-width: 800px;
-      margin: 100px auto 0px auto;
-      background-image: url('<%= @doubtfire_host %>/assets/images/logo.png');
-      background-size: 3.5em;
-      background-repeat: no-repeat;
-      background-position: top 40px right 45px;
-      padding: 30px 40px;
-      border: solid 1px rgb(240, 240, 240);
-      line-height: 200%;
-      text-align: justify;
-    }
-    footer, .footer {
-      font-family: "Lucida Grande", "Helvetica Neue", Helvetica, Arial, sans-serif;
-      text-align: center;
-      margin-top: 10px;
-      color: #aaa;
-      font-size: 0.7em;
-    }
-    .subtext {
-      color: #aaa;
-      font-size: 0.7em;
-      margin-bottom: 10px;
-      margin-top: -10px;
-    }
-    a, a:visited {
-      color: #6a97d2;
-      text-decoration: none;
-    }
-    a:hover {
-      text-decoration: underline;
-    }
-    h1 {
-      font-size: 1.1em;
-    }
-    h2 {
-      font-size: 1em;
-      margin: 25px 0 10px;
-    }
-    .notification-box {
-      background: #fafafa;
-      border-left: 4px solid #1565c0;
-      margin: 20px 0;
-      padding: 15px 20px;
-    }
-    .notification-box.warning {
-      border-left-color: #ed6c02;
-    }
-    .notification-box.critical {
-      border-left-color: #c62828;
-    }
-    .notification-box p {
-      margin: 8px 0 0;
-    }
-    .notification-detail {
-      margin-top: 2px;
-    }
-    .notification-time {
-      color: #777;
-      font-size: 0.75em;
-      margin: 0 0 4px;
+    a { text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    @media only screen and (max-width: 640px) {
+      .main { padding: 20px 16px !important; }
+      .unit-card { padding: 14px 16px !important; }
     }
   </style>
 </head>
-<body>
-  <div class="main">
-    <h1>Notification Summary</h1>
+<body style="margin:0; padding:0; background-color:#ffffff;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; background-color:#ffffff;">
+    <tr>
+      <td align="center" style="padding:40px 16px; font-family:'Lucida Grande','Helvetica Neue',Helvetica,Arial,sans-serif; color:#333; font-size:14px;">
+        <table role="presentation" width="800" cellpadding="0" cellspacing="0" border="0" style="width:100%; max-width:800px; border-collapse:collapse;">
 
-    <p>Hi <%= @recipient.first_name %>,</p>
+          <tr>
+            <td class="main" style="border:solid 1px rgb(240,240,240); padding:30px 40px;">
 
-    <p>
-      You have <%= @notification_count %> new
-      <%= 'notification'.pluralize(@notification_count) %> in <%= @doubtfire_product_name %>.
-    </p>
+              <!-- Header -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+                <tr>
+                  <td valign="top" style="font-size:1.1em; font-weight:bold; color:#333; line-height:1.4;">
+                    Notification Summary
+                    <div style="color:#aaa; font-size:0.7em; font-weight:normal; padding-top:4px;">
+                      <%= "#{Time.zone.now.day.ordinalize} #{Time.zone.now.strftime('%B %Y')}" %>
+                    </div>
+                  </td>
+                  <td valign="top" align="right" width="60" style="width:60px;">
+                    <img src="<%= @doubtfire_host %>/assets/images/logo.png" width="60" height="35" alt="<%= @doubtfire_product_name %>" style="display:block; width:60px; height:35px; border:0;" />
+                  </td>
+                </tr>
+              </table>
 
-    <% @units.each do |section| %>
-      <h2><%= section[:unit].code %> - <%= section[:unit].name %></h2>
+              <p style="margin:20px 0 0; line-height:1.6;">Hi <%= @recipient.first_name %>,</p>
 
-      <% section[:groups].each do |group| %>
-        <div class="notification-box <%= group[:severity] %>">
-          <% if group[:task] %>
-            <strong><%= group[:task][:abbreviation] %> - <%= group[:task][:name] %></strong>
-          <% elsif group[:project_id] %>
-            <strong>Portfolio</strong>
-          <% else %>
-            <strong>Unit notification</strong>
-          <% end %>
-          <div class="notification-time"><%= notification_timestamp(group) %></div>
-          <div class="notification-detail"><%= group[:detail] %></div>
-          <% if group[:task] %>
-            <p>
-              <a href="<%= @doubtfire_host %>/projects/<%= group[:task][:project_id] %>/dashboard/<%= group[:task][:abbreviation] %><%= '?tutor=true' if group[:task][:staff_view] %>">
-                View this task
-              </a>
-            </p>
-          <% elsif group[:project_id] %>
-            <p>
-              <a href="<%= @doubtfire_host %>/projects/<%= group[:project_id] %>/portfolio">
-                View your portfolio
-              </a>
-            </p>
-          <% end %>
-        </div>
-      <% end %>
-    <% end %>
+              <p style="margin:8px 0 20px; line-height:1.6;">
+                You have <%= @notification_count %> new
+                <%= 'notification'.pluralize(@notification_count) %> in <%= @doubtfire_product_name %>.
+              </p>
 
-    <p>
-      <a href="<%= @notification_url %>">View all notifications and email settings</a>
-    </p>
+              <!-- One card per unit -->
+              <% @units.each do |section| %>
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; margin:0 0 16px 0;">
+                  <tr>
+                    <td class="unit-card" style="border:solid 1px rgb(240,240,240); padding:16px 20px;">
 
-    <p>
-      Cheers,<br />
-      The <%= @doubtfire_product_name %> Team
-    </p>
-  </div>
+                      <div style="font-size:0.75em; color:#aaa; letter-spacing:0.8px; text-transform:uppercase; font-weight:bold; line-height:1.4;">
+                        <%= section[:unit].code %>
+                      </div>
+                      <div style="font-size:1em; color:#333; font-weight:bold; line-height:1.4; padding:2px 0 12px;">
+                        <%= section[:unit].name %>
+                      </div>
 
-  <footer class="footer">
-    <a href="<%= @unsubscribe_url %>">Unsubscribe</a> | Generated with <%= @doubtfire_product_name %>
-  </footer>
+                      <% section[:groups].each do |group| %>
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; margin:0 0 10px 0;">
+                          <tr>
+                            <td style="background:#fafafa; border-left:4px solid <%= group[:severity] == 'critical' ? '#c62828' : group[:severity] == 'warning' ? '#ed6c02' : '#1565c0' %>; padding:14px 16px; line-height:1.55;">
+                              <div style="font-weight:bold; color:#333; font-size:1.1em; line-height:1.4; padding-bottom:2px;">
+                                <% if group[:task] %>
+                                  <%= group[:task][:abbreviation] %> - <%= group[:task][:name] %>
+                                <% elsif group[:message_subject].present? %>
+                                  <%= group[:message_subject] %>
+                                <% elsif group[:project_id] %>
+                                  Portfolio
+                                <% else %>
+                                  Unit notification
+                                <% end %>
+                              </div>
+                              <% if group[:task] && group[:task][:student_name].present? %>
+                                <div style="color:#777; font-size:0.85em;"><%= group[:task][:student_name] %></div>
+                              <% end %>
+                              <div style="color:#555;"><%= group[:detail] %></div>
+                              <div style="color:#aaa; font-size:0.8em; padding-top:2px;"><%= notification_timestamp(group) %></div>
+                              <% if group[:task] %>
+                                <div style="padding-top:4px;">
+                                  <a href="<%= @doubtfire_host %>/projects/<%= group[:task][:project_id] %>/dashboard/<%= group[:task][:abbreviation] %><%= '?tutor=true' if group[:task][:staff_view] %>" target="_blank" rel="noopener noreferrer" style="color:#6a97d2; font-size:0.9em;">
+                                    View this task
+                                  </a>
+                                </div>
+                              <% elsif group[:project_id] %>
+                                <div style="padding-top:4px;">
+                                  <a href="<%= @doubtfire_host %>/projects/<%= group[:project_id] %>/portfolio" target="_blank" rel="noopener noreferrer" style="color:#6a97d2; font-size:0.9em;">
+                                    View your portfolio
+                                  </a>
+                                </div>
+                              <% end %>
+                            </td>
+                          </tr>
+                        </table>
+                      <% end %>
+
+                    </td>
+                  </tr>
+                </table>
+              <% end %>
+
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; margin:20px 0 0;">
+                <tr>
+                  <td align="center">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+                      <tr>
+                        <td align="center" style="border:solid 1px rgb(225,225,225); border-radius:4px; background:#ffffff;">
+                          <a href="<%= @notification_url %>" target="_blank" rel="noopener noreferrer" style="display:inline-block; padding:10px 22px; color:#6a97d2; font-size:0.95em; font-weight:bold; line-height:1.4;">
+                            View all notifications
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <tr>
+            <td align="center" style="padding:16px 8px 0 8px; color:#aaa; font-size:0.75em; line-height:1.6;">
+              <div>You are receiving this because you have email notifications turned on in <%= @doubtfire_product_name %>.</div>
+              <div style="padding-top:4px;">
+                <a href="<%= @unsubscribe_url %>" target="_blank" rel="noopener noreferrer" style="color:#aaa; text-decoration:underline;">Unsubscribe or change your settings</a>
+              </div>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>
