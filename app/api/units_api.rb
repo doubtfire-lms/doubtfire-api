@@ -326,7 +326,9 @@ class UnitsApi < Grape::API
     present unit.tasks_as_hash(tasks), with: Grape::Presenters::Presenter
   end
 
-  desc 'Download the tasks that should be listed under the task inbox'
+  desc 'Download the tasks that should be listed under the task inbox',
+       success: Entities::InboxTaskEntity,
+       is_array: true
   params do
     optional :my_students_only, type: Boolean, desc: 'Show tasks from all tutorials or just the ones you teach'
   end
@@ -340,7 +342,7 @@ class UnitsApi < Grape::API
     my_students_only = params[:my_students_only] || false
 
     tasks = unit.tasks_for_task_inbox(current_user, my_students_only)
-    present unit.tasks_as_hash(tasks), with: Grape::Presenters::Presenter
+    present unit.tasks_as_hash(tasks), with: Entities::InboxTaskEntity
   end
 
   desc 'Get tasks ready for moderation'

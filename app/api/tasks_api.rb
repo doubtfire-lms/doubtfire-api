@@ -12,7 +12,9 @@ class TasksApi < Grape::API
   #
   # Tasks only used for the task summary stats view...
   #
-  desc "Get all the current user's tasks"
+  desc "Get all the current user's tasks",
+       success: Entities::TaskSummaryEntity,
+       is_array: true
   params do
     requires :unit_id, type: Integer, desc: 'Unit to fetch the task details for'
   end
@@ -45,7 +47,8 @@ class TasksApi < Grape::API
       }
     end
 
-    present result, with: Grape::Presenters::Presenter
+    # present result, with: Grape::Presenters::Presenter
+    present result, with: Entities::TaskSummaryEntity
   end
 
   desc 'Refresh the most frequently changed task details for a project - allowing easy refresh of student details'
