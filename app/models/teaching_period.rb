@@ -26,13 +26,14 @@ class TeachingPeriod < ApplicationRecord
     "#{year} #{period}"
   end
 
-  def add_break(start_date, number_of_days, campus_ids = [], label = nil)
+  def add_break(start_date, number_of_days, campus_ids = [], label = nil, pause_week_count = nil)
     break_in_teaching_period = Break.new
     break_in_teaching_period.start_date = start_date
     break_in_teaching_period.number_of_days = number_of_days
     break_in_teaching_period.label = label
     break_in_teaching_period.teaching_period = self
     break_in_teaching_period.campus_ids = campus_ids || []
+    break_in_teaching_period.pause_week_count = pause_week_count unless pause_week_count.nil?
 
     break_in_teaching_period.save!
     # add after save to ensure valid break
@@ -41,7 +42,7 @@ class TeachingPeriod < ApplicationRecord
     break_in_teaching_period
   end
 
-  def update_break(id, start_date, number_of_days, campus_ids = nil, label = nil)
+  def update_break(id, start_date, number_of_days, campus_ids = nil, label = nil, pause_week_count = nil)
     break_in_teaching_period = breaks.find(id)
 
     if start_date.present?
@@ -56,6 +57,8 @@ class TeachingPeriod < ApplicationRecord
 
     break_in_teaching_period.campus_ids = campus_ids if campus_ids.present? || campus_ids == []
 
+    break_in_teaching_period.pause_week_count = pause_week_count unless pause_week_count.nil?
+
     break_in_teaching_period.save!
     break_in_teaching_period
   end
@@ -64,11 +67,18 @@ class TeachingPeriod < ApplicationRecord
     breaks.select { |teaching_break| teaching_break.applies_to?(campus) }
   end
 
+  # The breaks that pause the week count for the teaching period. Breaks without
+  # this flag still extend deadlines, but the week number continues through them
+  # so that it stays aligned across campuses.
+  def week_pausing_breaks
+    breaks.select(&:pause_week_count?)
+  end
+
   def week_number(date)
     # Calcualte date offset, add 2 so 0-week offset is week 1 not week 0
     result = ((date - start_date) / 1.week).floor + 1
 
-    for a_break in breaks.all do
+    for a_break in week_pausing_breaks do
       if date >= a_break.start_date
         # we are in or after the break, so calculated week needs to
         # be reduced by this break
@@ -105,7 +115,7 @@ class TeachingPeriod < ApplicationRecord
     result = start_date + num.weeks
 
     # check breaks
-    for a_break in breaks do
+    for a_break in week_pausing_breaks do
       if result >= a_break.start_date
         # we are in or after the break, so calculated date is
         # extended by the break period
@@ -131,7 +141,7 @@ class TeachingPeriod < ApplicationRecord
 
     result = week_start + day_offset.days
 
-    for a_break in breaks do
+    for a_break in week_pausing_breaks do
       if result >= a_break.start_date && result < a_break.end_date
         # we are in or after the break, so calculated date is
         # extended by the break period
