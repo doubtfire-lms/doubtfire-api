@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [10.0.2](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.1...v10.0.2) (2026-09-02)
+
+
+### Bug Fixes
+
+* allow admins to manage staff in units they are not part of ([84c7e33](https://github.com/b0ink/doubtfire-deploy/commit/84c7e33a43e5de0bf0533985cc6ed1ca04a8a4e0))
+
 ### [10.0.1](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-110...v10.0.1) (2026-07-14)
 
 ## [10.0.0](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.0-110...v10.0.0) (2026-07-14)
