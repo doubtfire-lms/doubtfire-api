@@ -14,6 +14,7 @@ class BreaksApi < Grape::API
     requires :number_of_days, type: Integer, desc: 'Break duration in days'
     optional :label, type: String, desc: 'A label describing the break'
     optional :campus_ids, type: Array[Integer], desc: 'Campuses this break applies to; empty applies to all campuses'
+    optional :pause_week_count, type: Boolean, desc: 'Does this break pause the teaching period week count - only valid for breaks that are a multiple of 7 days'
   end
   post '/teaching_periods/:teaching_period_id/breaks' do
     unless authorise? current_user, User, :handle_teaching_period
@@ -26,7 +27,7 @@ class BreaksApi < Grape::API
     start_date = params[:start_date]
     number_of_days = params[:number_of_days]
 
-    result = teaching_period.add_break(start_date, number_of_days, params[:campus_ids], params[:label])
+    result = teaching_period.add_break(start_date, number_of_days, params[:campus_ids], params[:label], params[:pause_week_count])
     present result, with: Entities::BreakEntity
   end
 
@@ -36,6 +37,7 @@ class BreaksApi < Grape::API
     optional :number_of_days, type: Integer, desc: 'Break duration in days'
     optional :label, type: String, desc: 'A label describing the break'
     optional :campus_ids, type: Array[Integer], desc: 'Campuses this break applies to; empty applies to all campuses'
+    optional :pause_week_count, type: Boolean, desc: 'Does this break pause the teaching period week count - only valid for breaks that are a multiple of 7 days'
   end
   put '/teaching_periods/:teaching_period_id/breaks/:id' do
     unless authorise? current_user, User, :handle_teaching_period
@@ -49,7 +51,7 @@ class BreaksApi < Grape::API
     start_date = params[:start_date]
     number_of_days = params[:number_of_days]
 
-    result = teaching_period.update_break(id, start_date, number_of_days, params[:campus_ids], params[:label])
+    result = teaching_period.update_break(id, start_date, number_of_days, params[:campus_ids], params[:label], params[:pause_week_count])
     present result, with: Entities::BreakEntity
   end
 

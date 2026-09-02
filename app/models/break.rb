@@ -8,6 +8,7 @@ class Break < ApplicationRecord
   validates :number_of_days, presence: true
   validates :teaching_period_id, presence: true
   validate :ensure_campuses_exist
+  validate :ensure_pause_week_count_is_whole_weeks
 
   validate :ensure_start_date_is_within_teaching_period, :ensure_break_end_is_within_teaching_period, :ensure_break_is_not_colliding
 
@@ -76,6 +77,15 @@ class Break < ApplicationRecord
     campus_ids.blank? ||
       other_break.campus_ids.blank? ||
       campus_ids.map(&:to_i).intersect?(other_break.campus_ids.map(&:to_i))
+  end
+
+  def ensure_pause_week_count_is_whole_weeks
+    return unless pause_week_count?
+    return if number_of_days.blank?
+
+    unless (number_of_days % 7).zero?
+      errors.add(:pause_week_count, 'can only be set on breaks that are a multiple of 7 days')
+    end
   end
 
   def ensure_campuses_exist

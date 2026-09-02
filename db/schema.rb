@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_08_20_063400) do
+ActiveRecord::Schema[8.0].define(version: 2026_09_02_030307) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -39,6 +39,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_20_063400) do
     t.text "campus_ids", size: :long, collation: "utf8mb4_bin"
     t.string "label"
     t.integer "number_of_days", null: false
+    t.boolean "pause_week_count", default: true, null: false
     t.index ["teaching_period_id"], name: "index_breaks_on_teaching_period_id"
     t.check_constraint "json_valid(`campus_ids`)", name: "campus_ids"
   end
