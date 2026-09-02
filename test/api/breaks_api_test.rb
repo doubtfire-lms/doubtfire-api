@@ -16,7 +16,8 @@ class BreaksApiTest < ActiveSupport::TestCase
       start_date: start,
       number_of_days: rand(1..3) * 7,
       label: 'Mid semester break',
-      campus_ids: [campus.id]
+      campus_ids: [campus.id],
+      pause_week_count: false
     }
 
     add_auth_header_for user: FactoryBot.create(:user, :admin)
@@ -28,7 +29,7 @@ class BreaksApiTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status
 
     # Check if the details posted match as expected
-    response_keys = %w(start_date number_of_days label campus_ids)
+    response_keys = %w(start_date number_of_days label campus_ids pause_week_count)
     the_break = Break.find(last_response_body['id'])
     assert_json_matches_model(the_break, last_response_body, response_keys)
 
@@ -37,6 +38,7 @@ class BreaksApiTest < ActiveSupport::TestCase
     assert_equal data_to_post[:number_of_days], the_break.number_of_days
     assert_equal data_to_post[:label], the_break.label
     assert_equal data_to_post[:campus_ids], the_break.campus_ids
+    refute the_break.pause_week_count
 
     # check if one more break is created
     assert_equal Break.count, number_of_break + 1
@@ -59,8 +61,8 @@ class BreaksApiTest < ActiveSupport::TestCase
     assert_equal expected_data.count, last_response_body.count
     assert expected_data.count > 0
 
-    response_keys =  %w(id start_date number_of_days label campus_ids)
-    test_keys =  %w(id number_of_days)
+    response_keys =  %w(id start_date number_of_days label campus_ids pause_week_count)
+    test_keys =  %w(id number_of_days pause_week_count)
     last_response_body.each do | data |
       the_break = Break.find(data['id'])
       assert_json_matches_model(the_break, data, test_keys)
@@ -91,5 +93,51 @@ class BreaksApiTest < ActiveSupport::TestCase
 
     # Check if the actual data match as expected
     assert last_response_body
+  end
+
+  def test_post_break_defaults_to_pausing_the_week_count
+    teaching_period = FactoryBot.create(:teaching_period)
+
+    add_auth_header_for user: FactoryBot.create(:user, :admin)
+
+    post "/api/teaching_periods/#{teaching_period.id}/breaks", {
+      start_date: teaching_period.start_date + 4.weeks,
+      number_of_days: 7
+    }
+
+    assert_equal 201, last_response.status
+    assert last_response_body['pause_week_count']
+    assert Break.find(last_response_body['id']).pause_week_count
+  end
+
+  def test_post_break_cannot_pause_the_week_count_over_a_partial_week
+    teaching_period = FactoryBot.create(:teaching_period)
+    number_of_breaks = Break.count
+
+    add_auth_header_for user: FactoryBot.create(:user, :admin)
+
+    post "/api/teaching_periods/#{teaching_period.id}/breaks", {
+      start_date: teaching_period.start_date + 4.weeks,
+      number_of_days: 5,
+      pause_week_count: true
+    }
+
+    refute_equal 201, last_response.status
+    assert_equal number_of_breaks, Break.count
+  end
+
+  def test_put_break_updates_pause_week_count
+    teaching_period = FactoryBot.create(:teaching_period)
+    the_break = teaching_period.add_break(teaching_period.start_date + 4.weeks, 7)
+
+    add_auth_header_for user: FactoryBot.create(:user, :admin)
+
+    put "/api/teaching_periods/#{teaching_period.id}/breaks/#{the_break.id}", {
+      pause_week_count: false
+    }
+
+    assert_equal 200, last_response.status
+    refute last_response_body['pause_week_count']
+    refute the_break.reload.pause_week_count
   end
 end
