@@ -29,14 +29,14 @@ class NotificationsApi < Grape::API
     def unread_group_count
       rows = current_user.received_notifications.unread.pluck(:id, :task_id, :project_id, :unit_id, :kind, :unit_role_id)
       rows.select { |_id, _task_id, _project_id, unit_id, kind, _unit_role_id| notification_settings.shows_in_app?(unit_id, kind) }.map do |id, task_id, project_id, unit_id, kind, unit_role_id|
-        if task_id.present?
+        if Notification::MODERATION_KINDS.include?(kind)
+          "tutor-notes:#{unit_role_id}:#{task_id}"
+        elsif task_id.present?
           "task:#{task_id}"
         elsif Notification::COMMUNICATION_KINDS.include?(kind)
           "communication-email:#{id}"
         elsif Notification::PORTFOLIO_KINDS.include?(kind)
           "portfolio:#{project_id}"
-        elsif Notification::MODERATION_KINDS.include?(kind)
-          "tutor-notes:#{unit_id}:#{unit_role_id}"
         else
           "unit:#{unit_id}:#{kind}"
         end
@@ -129,8 +129,7 @@ class NotificationsApi < Grape::API
   end
   put '/notifications/read' do
     scope = current_user.received_notifications.where(id: params[:notification_ids]).unread
-    count = scope.count
-    Notification.mark_read(scope)
+    count = Notification.mark_read(scope)
     { count: count }
   end
 
@@ -141,8 +140,7 @@ class NotificationsApi < Grape::API
   put '/notifications/read_all' do
     scope = current_user.received_notifications.unread
     scope = scope.where(unit_id: params[:unit_id]) if params[:unit_id]
-    count = scope.count
-    Notification.mark_read(scope)
+    count = Notification.mark_read(scope)
     { count: count }
   end
 

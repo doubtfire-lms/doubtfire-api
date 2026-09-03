@@ -18,10 +18,13 @@ class NotificationGroupBuilder
   def grouping_key(notification)
     state_key = notification.read_at ? "read:#{notification.read_at.to_f}" : 'unread'
     return "#{state_key}:communication-email:#{notification.id}" if notification.kind == 'communication_email'
+
+    # A moderation note belongs to one staff member's thread, so it groups by that
+    # rather than joining the task's other notifications.
+    return "#{state_key}:tutor-notes:#{notification.unit_role_id}:#{notification.task_id}" if Notification::MODERATION_KINDS.include?(notification.kind)
+
     return "#{state_key}:task:#{notification.task_id}" if notification.task_id.present?
     return "#{state_key}:portfolio:#{notification.project_id}" if Notification::PORTFOLIO_KINDS.include?(notification.kind)
-
-    return "#{state_key}:tutor-notes:#{notification.unit_role_id}" if Notification::MODERATION_KINDS.include?(notification.kind)
 
     "#{state_key}:unit:#{notification.unit_id}:#{notification.kind}"
   end
@@ -62,12 +65,23 @@ class NotificationGroupBuilder
       timezone: project&.campus&.timezone || Time.zone.name,
       tutor_note_ids: tutor_notes.filter_map(&:tutor_note_id),
       tutor_note_unit_role_id: tutor_notes.first&.unit_role_id,
+      tutor_note_on_task_tutor: tutor_note_on_task_tutor?(tutor_notes.first, task),
       overseer_assessment_id: overseer_assessment_id(items),
       message_subject: latest.message_subject,
       message_body: latest.message_body,
       detail: detail,
       summary: "#{subject_for(task, latest.recipient, counts, latest)} - #{detail}"
     }
+  end
+
+  # The task's Mod Notes tab shows the notes on its own tutor, so a note about
+  # anyone else - a convenor's thread that happens to name this task - has to be
+  # opened as a thread instead.
+  def tutor_note_on_task_tutor?(notification, task)
+    return false if notification.nil? || task.nil?
+
+    tutor = task.project.tutor_for(task.task_definition)
+    tutor.present? && tutor.id == notification.unit_role&.user_id
   end
 
   def task_details(task, recipient)

@@ -225,7 +225,10 @@ class Notification < ApplicationRecord
     find_by(recipient: recipient, deduplication_key: deduplication_key)
   end
 
-  def self.mark_read(relation, at: Time.current)
+  # Moderation notifications stay unread until their recipient marks the tutor note itself as read.
+  def self.mark_read(relation, at: Time.current, include_moderation: false)
+    relation = relation.where.not(kind: MODERATION_KINDS) unless include_moderation
+
     # A group must share one exact read timestamp so read history can reconstruct the group.
     # rubocop:disable Rails/SkipsModelValidations
     relation.update_all(
@@ -241,6 +244,13 @@ class Notification < ApplicationRecord
 
   def self.mark_task_read(recipient, task)
     mark_read(where(recipient: recipient, task: task).unread)
+  end
+
+  def self.mark_tutor_note_read(recipient, tutor_note)
+    mark_read(
+      where(recipient: recipient, tutor_note: tutor_note).unread,
+      include_moderation: true
+    )
   end
 
   # Marking a comment unread rewinds the task's read cursor to the comment before

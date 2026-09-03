@@ -100,6 +100,16 @@ class NotificationsApiTest < ActiveSupport::TestCase
     assert_nil other_notification.reload.read_at
   end
 
+  def test_mark_read_cannot_clear_a_tutor_note_notification
+    notification, = create_tutor_note_notification(recipient: @student)
+
+    put_json '/api/notifications/read', notification_ids: [notification.id]
+
+    assert_equal 200, last_response.status
+    assert_equal 0, last_response_body['count']
+    assert_nil notification.reload.read_at
+  end
+
   def test_mark_all_read_can_be_scoped_to_a_unit
     own_notification = Notification.find_by!(recipient: @student)
     other_unit = FactoryBot.create(:unit, with_students: false, task_count: 0)
@@ -110,6 +120,39 @@ class NotificationsApiTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
     assert_not_nil own_notification.reload.read_at
     assert_nil other_notification.reload.read_at
+  end
+
+  def test_mark_all_read_leaves_tutor_note_notifications_unread
+    notification, = create_tutor_note_notification(recipient: @student)
+
+    put_json '/api/notifications/read_all', {}
+
+    assert_equal 200, last_response.status
+    assert_nil notification.reload.read_at
+  end
+
+  def test_marking_a_tutor_note_read_clears_its_recipient_notification
+    recipient = FactoryBot.create(:user, :convenor)
+    @unit.employ_staff(recipient, Role.convenor)
+    notification, tutor_note = create_tutor_note_notification(recipient: recipient)
+    add_auth_header_for(user: recipient)
+
+    put_json "/api/unit_roles/#{tutor_note.unit_role_id}/tutor_notes/#{tutor_note.id}/mark_as_read", {}
+
+    assert_equal 200, last_response.status
+    assert_not_nil notification.reload.read_at
+    assert_not tutor_note.reload.read_by_unit_role
+  end
+
+  def test_the_tutor_a_note_is_about_still_marks_it_read_for_their_role
+    notification, tutor_note = create_tutor_note_notification(recipient: @tutor)
+    add_auth_header_for(user: @tutor)
+
+    put_json "/api/unit_roles/#{tutor_note.unit_role_id}/tutor_notes/#{tutor_note.id}/mark_as_read", {}
+
+    assert_equal 200, last_response.status
+    assert_not_nil notification.reload.read_at
+    assert tutor_note.reload.read_by_unit_role
   end
 
   def test_a_kind_switched_off_in_app_is_hidden_but_still_emailed
@@ -211,5 +254,17 @@ class NotificationsApiTest < ActiveSupport::TestCase
     assert_equal 'daily', last_response_body['digest_frequency']
     assert_equal '06:00', last_response_body['digest_time']
     assert_equal 1, @student.notification_unit_overrides.reload.count
+  end
+
+  private
+
+  def create_tutor_note_notification(recipient:)
+    unit_role = @unit.unit_role_for(@tutor)
+    author = FactoryBot.create(:user, :convenor)
+    @unit.employ_staff(author, Role.convenor)
+    tutor_note = unit_role.add_tutor_note(author, 'Please review this moderation note', @task.id)
+    notification = Notification.create_for_tutor_note(tutor_note, recipient, 'moderation_note_added')
+
+    [notification, tutor_note]
   end
 end

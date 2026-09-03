@@ -109,21 +109,67 @@ class NotificationTest < ActiveSupport::TestCase
     assert_includes group[:summary], 'Discussion deadline missed'
   end
 
-  def test_task_tutor_note_and_student_feedback_share_a_group_with_two_actions
+  def test_a_tutor_note_groups_apart_from_the_tasks_own_notifications
     @task.add_text_comment(@student, 'Can you check this change?')
     unit_role = @unit.unit_role_for(@tutor)
     tutor_note = unit_role.add_tutor_note(@unit.main_convenor_user, 'Please follow up', @task.id)
     Notification.create_for_tutor_note(tutor_note, @tutor, 'moderation_note_added')
 
-    group = NotificationGroupBuilder.new(Notification.where(recipient: @tutor).unread).groups.first
+    groups = NotificationGroupBuilder.new(Notification.where(recipient: @tutor).unread).groups
+    moderation = groups.find { |group| group[:counts]['moderation_note_added'].positive? }
+    comments = groups.find { |group| group[:counts]['new_task_comment'].positive? }
 
-    assert_equal 1, group[:counts]['new_task_comment']
-    assert_equal 1, group[:counts]['moderation_note_added']
-    assert_equal [tutor_note.id], group[:tutor_note_ids]
-    assert_equal [Notification.find_by!(tutor_note: tutor_note).id], group[:tutor_note_notification_ids]
-    assert group.dig(:task, :staff_view)
-    assert_equal @student.name, group.dig(:task, :student_name)
-    assert_includes group[:detail], "1 moderation note from #{@unit.main_convenor_user.name}"
+    assert_equal 2, groups.count
+    assert_equal 0, moderation[:counts]['new_task_comment']
+    assert_equal [tutor_note.id], moderation[:tutor_note_ids]
+    assert_equal [Notification.find_by!(tutor_note: tutor_note).id], moderation[:tutor_note_notification_ids]
+    assert_equal unit_role.id, moderation[:tutor_note_unit_role_id]
+    assert moderation[:tutor_note_on_task_tutor]
+    assert_includes moderation[:detail], "1 moderation note from #{@unit.main_convenor_user.name}"
+    assert comments.dig(:task, :staff_view)
+    assert_equal @student.name, comments.dig(:task, :student_name)
+  end
+
+  # A group opens one staff member's thread, so notes about two of them on the same
+  # task cannot share a row - the count would promise more than the thread shows.
+  def test_notes_about_different_staff_on_one_task_group_apart
+    other_staff = FactoryBot.create(:user, :tutor)
+    @unit.employ_staff(other_staff, Role.tutor)
+    author = @unit.main_convenor_user
+    about_tutor = @unit.unit_role_for(@tutor).add_tutor_note(author, 'About the tutor', @task.id)
+    about_other = @unit.unit_role_for(other_staff).add_tutor_note(author, 'About the other tutor', @task.id)
+    Notification.create_for_tutor_note(about_tutor, @tutor, 'moderation_note_added')
+    Notification.create_for_tutor_note(about_other, @tutor, 'moderation_note_reply')
+
+    groups = NotificationGroupBuilder.new(Notification.where(recipient: @tutor).unread).groups
+
+    assert_equal 2, groups.count
+    assert_equal [[about_tutor.id], [about_other.id]].sort, groups.map { |group| group[:tutor_note_ids] }.sort
+    # Only the task's own tutor's thread can be opened from the task's Mod Notes tab.
+    assert_equal [false, true], groups.map { |group| group[:tutor_note_on_task_tutor] }.sort_by(&:to_s)
+  end
+
+  def test_mark_task_read_does_not_clear_a_tutor_note_notification
+    unit_role = @unit.unit_role_for(@tutor)
+    tutor_note = unit_role.add_tutor_note(@unit.main_convenor_user, 'Please follow up', @task.id)
+    notification = Notification.create_for_tutor_note(tutor_note, @tutor, 'moderation_note_added')
+
+    Notification.mark_task_read(@tutor, @task)
+
+    assert_nil notification.reload.read_at
+  end
+
+  def test_mark_tutor_note_read_clears_only_the_named_recipients_notification
+    unit_role = @unit.unit_role_for(@tutor)
+    tutor_note = unit_role.add_tutor_note(@unit.main_convenor_user, 'Please follow up', @task.id)
+    tutor_notification = Notification.create_for_tutor_note(tutor_note, @tutor, 'moderation_note_added')
+    other_recipient = FactoryBot.create(:user)
+    other_notification = Notification.create_for_tutor_note(tutor_note, other_recipient, 'moderation_note_reply')
+
+    Notification.mark_tutor_note_read(@tutor, tutor_note)
+
+    assert_not_nil tutor_notification.reload.read_at
+    assert_nil other_notification.reload.read_at
   end
 
   def test_duplicate_source_event_is_deduplicated_per_recipient
