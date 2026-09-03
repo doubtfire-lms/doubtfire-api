@@ -183,6 +183,8 @@ class Unit < ApplicationRecord
   has_many :communication_set_schedules, through: :communication_sets, class_name: 'CommunicationSetSchedule'
   has_many :unit_content_sites, dependent: :destroy
   has_many :unit_content_links, dependent: :destroy
+  has_many :notifications, dependent: :destroy
+  has_many :notification_unit_overrides, dependent: :destroy
 
   has_many :comments, through: :projects
   has_many :tasks, through: :projects
@@ -372,7 +374,9 @@ class Unit < ApplicationRecord
   def queue_discuss_timeout_email(task, actor, type, expiry_date = nil)
     return unless send_notifications
     return unless task.project.enrolled
-    return unless task.project.student.receive_feedback_notifications
+
+    kind = type == :approaching ? 'discuss_warning' : 'discuss_expired'
+    return unless NotificationSetting.for(task.project.student).delivers?(self, kind, :email)
 
     SendDiscussTimeoutEmailJob.perform_async(task.id, actor.id, type.to_s, expiry_date&.iso8601)
   end
@@ -3220,20 +3224,6 @@ class Unit < ApplicationRecord
         done[task.project] = [] if done[task.project].nil?
         done[task.project] << task
       end
-    end
-
-    # send emails...
-    begin
-      done.each do |project, tasks|
-        logger.info "Checking feedback email for project #{project.id}"
-        next unless project.enrolled
-        next unless project.student.receive_feedback_notifications
-
-        logger.info "Emailing feedback notification to #{project.student.name}"
-        PortfolioEvidenceMailer.task_feedback_ready(project, tasks).deliver
-      end
-    rescue => e
-      logger.error "Failed to send emails from feedback submission. Rescued with error: #{e.message}"
     end
 
     true

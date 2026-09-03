@@ -1,0 +1,22 @@
+Hi <%= @recipient.first_name %>,
+
+You have <%= @notification_count %> new <%= 'notification'.pluralize(@notification_count) %> in <%= @doubtfire_product_name %>.
+<% @units.each do |section| %>
+<%= section[:unit].code %> - <%= section[:unit].name %>
+<% section[:groups].each do |group| %>
+- <% if group[:task] %><%= group[:task][:abbreviation] %> - <%= group[:task][:name] %><% elsif group[:message_subject].present? %><%= group[:message_subject] %><% elsif group[:project_id] %>Portfolio<% else %>Unit notification<% end %>
+  <%= notification_timestamp(group) %>
+  <%= group[:detail] %>
+<% if group[:task] %>
+  <%= @doubtfire_host %>/projects/<%= group[:task][:project_id] %>/dashboard/<%= group[:task][:abbreviation] %><%= '?tutor=true' if group[:task][:staff_view] %>
+<% elsif group[:project_id] %>
+  <%= @doubtfire_host %>/projects/<%= group[:project_id] %>/portfolio
+<% end %>
+<% end %>
+<% end %>
+
+View all notifications:
+<%= @notification_url %>
+
+Unsubscribe or change your settings:
+<%= @unsubscribe_url %>

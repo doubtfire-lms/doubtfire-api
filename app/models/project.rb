@@ -31,6 +31,7 @@ class Project < ApplicationRecord
   has_many :comments, through: :tasks
   has_many :tutorial_enrolments, dependent: :destroy
   has_many :session_activities,  dependent: :destroy
+  has_many :notifications, dependent: :destroy
 
   has_many :staff_notes, dependent: :destroy
   has_many :engagements, dependent: :destroy, inverse_of: :project
@@ -689,7 +690,7 @@ class Project < ApplicationRecord
     #   summary_stats[:revert][main_convenor_user] << self
     # end
 
-    return unless student.receive_feedback_notifications
+    return unless NotificationSetting.for(student).weekly_summary_for?(unit)
     return if portfolio_exists? && !middle_of_unit
 
     begin

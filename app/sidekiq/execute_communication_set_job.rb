@@ -1,4 +1,5 @@
 require 'csv'
+require 'securerandom'
 
 class ExecuteCommunicationSetJob
   include Sidekiq::Job
@@ -170,6 +171,8 @@ class ExecuteCommunicationSetJob
         rule: rule
       ).deliver_now
 
+      create_email_notification(action, project, recipient, unit, subject, body)
+
       {
         action_id: action.id,
         action_type: action.type,
@@ -210,6 +213,8 @@ class ExecuteCommunicationSetJob
           unit: unit,
           rule: rule
         ).deliver_now
+
+        create_email_notification(action, project, recipient, unit, subject, body)
 
         {
           action_id: action.id,
@@ -362,6 +367,31 @@ class ExecuteCommunicationSetJob
     end
 
     recipients.select { |recipient| recipient&.email.present? }.uniq(&:id)
+  end
+
+  def create_email_notification(action, project, recipient, unit, subject, body)
+    Notification.create_for_communication_email(
+      recipient: recipient,
+      unit: unit,
+      project: project,
+      actor: sender_user_for(unit),
+      subject: subject,
+      body: body,
+      deduplication_key: [
+        'communication-email',
+        execution_identifier,
+        action.id,
+        project.id,
+        recipient.id
+      ].join(':')
+    )
+  end
+
+  # Sidekiq keeps a jid across retries, so a retry cannot create a second
+  # notification for the same delivered action. Direct test/job invocation has
+  # no jid and receives a per-run identifier instead.
+  def execution_identifier
+    @execution_identifier ||= (respond_to?(:jid) ? jid : nil).presence || SecureRandom.uuid
   end
 
   def render_template(template, project, unit, rule, affected_students_count, target_grade_override = nil, action_results = [])

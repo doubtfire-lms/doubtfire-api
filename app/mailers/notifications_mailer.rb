@@ -5,7 +5,7 @@ class NotificationsMailer < ApplicationMailer
   def add_general
     @doubtfire_host = Doubtfire::Application.config.institution[:host]
     @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
-    @unsubscribe_url = "#{@doubtfire_host}/edit_profile"
+    @unsubscribe_url = "#{@doubtfire_host}/notifications/settings"
   end
 
   def weekly_staff_summary(unit_role, summary_stats)
@@ -83,6 +83,31 @@ class NotificationsMailer < ApplicationMailer
     mail(to: email_with_name, from: tutor_email, subject: subject)
   end
 
+  def notification_digest(recipient, notifications)
+    return nil if recipient.nil? || notifications.blank?
+
+    add_general
+    @recipient = recipient
+    @notification_url = "#{@doubtfire_host}/notifications"
+    @units = notifications.group_by(&:unit).sort_by { |unit, _| unit.code }.map do |unit, for_unit|
+      { unit: unit, groups: NotificationGroupBuilder.new(for_unit).groups }
+    end
+    # Grouped events, so the count matches the rows the reader can see below.
+    @notification_count = @units.sum { |section| section[:groups].count }
+
+    subject = "#{@notification_count} new #{'notification'.pluralize(@notification_count)}"
+    mail(
+      to: %("#{@recipient.name}" <#{@recipient.email}>),
+      from: %("#{@doubtfire_product_name}" <no-reply@#{Doubtfire::Application.config.institution[:email_domain]}>),
+      subject: subject
+    )
+  end
+
+  def notification_timestamp(group)
+    time = group[:latest_at].in_time_zone(group[:timezone])
+    "#{time.day.ordinalize} #{time.strftime('%B %Y at %H:%M')}"
+  end
+
   def discussion_deadline_approaching(task, sender, expiry_date)
     add_discussion_deadline_details(task, sender)
     @deadline = task.unit.formatted_discuss_timeout_date(expiry_date)
@@ -136,6 +161,7 @@ class NotificationsMailer < ApplicationMailer
   helper_method :were_was
   helper_method :are_is
   helper_method :this_these
+  helper_method :notification_timestamp
 
   private
 

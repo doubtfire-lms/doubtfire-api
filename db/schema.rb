@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_09_02_030307) do
+ActiveRecord::Schema[8.0].define(version: 2026_09_03_013550) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -371,6 +371,70 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_02_030307) do
     t.index ["task_definition_id"], name: "index_moderated_tasks_on_task_definition_id"
     t.index ["task_id", "moderation_type"], name: "uniq_mod_tasks_task_type", unique: true
     t.index ["task_id"], name: "index_moderated_tasks_on_task_id"
+  end
+
+  create_table "notification_settings", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.text "channels", size: :long, null: false, collation: "utf8mb4_bin"
+    t.string "digest_frequency", limit: 16, default: "weekly", null: false
+    t.integer "digest_interval_hours", default: 4, null: false
+    t.string "digest_start_time", limit: 5, default: "08:00", null: false
+    t.string "digest_time", limit: 5, default: "07:00", null: false
+    t.string "digest_timezone", limit: 64, null: false
+    t.integer "digest_weekday", default: 1, null: false
+    t.boolean "weekly_summary", default: true, null: false
+    t.datetime "next_digest_at"
+    t.datetime "last_digest_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["next_digest_at"], name: "index_notification_settings_on_next_digest_at"
+    t.index ["user_id"], name: "index_notification_settings_on_user_id", unique: true
+    t.check_constraint "json_valid(`channels`)", name: "channels"
+  end
+
+  create_table "notification_unit_overrides", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "unit_id", null: false
+    t.boolean "muted", default: false, null: false
+    t.text "channels", size: :long, collation: "utf8mb4_bin"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["unit_id"], name: "index_notification_unit_overrides_on_unit_id"
+    t.index ["user_id", "unit_id"], name: "index_notification_unit_overrides_on_user_and_unit", unique: true
+    t.check_constraint "json_valid(`channels`)", name: "channels"
+  end
+
+  create_table "notifications", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "recipient_id", null: false
+    t.bigint "unit_id", null: false
+    t.bigint "project_id"
+    t.bigint "task_id"
+    t.bigint "actor_id"
+    t.string "kind", limit: 64, null: false
+    t.string "deduplication_key", limit: 191, null: false
+    t.string "message_subject"
+    t.text "message_body"
+    t.bigint "task_comment_id"
+    t.bigint "overseer_assessment_id"
+    t.bigint "tutor_note_id"
+    t.bigint "task_status_id"
+    t.bigint "unit_role_id"
+    t.date "discuss_deadline"
+    t.datetime "read_at"
+    t.datetime "email_processed_at"
+    t.datetime "email_sent_at"
+    t.datetime "email_not_before"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["actor_id"], name: "index_notifications_on_actor_id"
+    t.index ["project_id"], name: "index_notifications_on_project_id"
+    t.index ["recipient_id", "deduplication_key"], name: "index_notifications_on_recipient_and_deduplication_key", unique: true
+    t.index ["recipient_id", "read_at", "created_at"], name: "index_notifications_on_recipient_read_created"
+    t.index ["recipient_id", "task_id", "read_at"], name: "index_notifications_on_recipient_task_read"
+    t.index ["recipient_id", "unit_id", "email_processed_at"], name: "index_notifications_for_email_delivery"
+    t.index ["task_comment_id"], name: "index_notifications_on_task_comment_id"
+    t.index ["task_id"], name: "index_notifications_on_task_id"
+    t.index ["unit_id"], name: "index_notifications_on_unit_id"
   end
 
   create_table "overflow_task_claim_logs", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
