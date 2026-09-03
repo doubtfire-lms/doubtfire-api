@@ -101,6 +101,26 @@ class EngagementsApiTest < ActiveSupport::TestCase
     assert_equal @tutor, engagement.user
   end
 
+  def test_uses_default_timezone_for_tutorial_without_campus
+    tutorial = @unit.tutorials.first
+    tutorial.update!(campus: nil, meeting_day: 'Monday', meeting_time: '10:00')
+    @project.enrol_in(tutorial)
+    add_auth_header_for(user: @tutor)
+
+    travel_to(Time.zone.parse('2026-07-20 10:30:00')) do
+      post_json(
+        "/api/projects/#{@project.id}/engagements/class_discussion",
+        { task_status_updates: [] }
+      )
+    end
+
+    assert_equal 201, last_response.status
+    assert_equal(
+      'Class discussion during tutorial; no task statuses were updated.',
+      @project.engagements.last.note
+    )
+  end
+
   def test_records_class_discussion_without_status_updates_outside_tutorial
     add_auth_header_for(user: @tutor)
 
