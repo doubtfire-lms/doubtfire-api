@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-54](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-53...v11.0.0-54) (2026-09-03)
+
+
+### Features
+
+* ensure rules are reordered when deleted ([ef41d86](https://github.com/b0ink/doubtfire-deploy/commit/ef41d86045f20968f6f0ffc41bf44804afb4e8e2))
+* option to pause week count per teaching period break ([#680](https://github.com/b0ink/doubtfire-deploy/issues/680)) ([07b68ca](https://github.com/b0ink/doubtfire-deploy/commit/07b68cac770cd7d6622de4f781720ee6bd650918))
+* store aggregated task status to serve immediately ([bbab019](https://github.com/b0ink/doubtfire-deploy/commit/bbab0199b51bf83196a7a55f2da3c55fd95018a5))
+
+
+### Bug Fixes
+
+* rubocop ([db2859e](https://github.com/b0ink/doubtfire-deploy/commit/db2859edaed0b2ed567a3c01063a1760964c1b90))
+* show group overseer reports across member tasks ([#669](https://github.com/b0ink/doubtfire-deploy/issues/669)) ([be022d4](https://github.com/b0ink/doubtfire-deploy/commit/be022d40faa1de2d91026996ad01a10bb9fdc112))
+
 ## [11.0.0-53](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-52...v11.0.0-53) (2026-08-24)
 
 ## [11.0.0-52](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-51...v11.0.0-52) (2026-08-21)

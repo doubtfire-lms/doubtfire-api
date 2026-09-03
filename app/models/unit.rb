@@ -3976,7 +3976,60 @@ class Unit < ApplicationRecord
       .tap do |snapshot|
       snapshot.save!
       snapshot.store_stats!(snapshot_payload)
+      refresh_task_completion_snapshot_stats!(snapshot)
     end
+  end
+
+  # Stats for every snapshot, read from the aggregated file so no CSV is parsed per request.
+  # Rebuilt only when that file is missing, unreadable, or no longer matches the snapshots on record.
+  def task_completion_snapshot_stats
+    path = FileHelper.unit_task_status_snapshot_stats_path(self, create: false)
+    cached = File.exist?(path) ? JSON.parse(Zlib::GzipReader.open(path, &:read)) : nil
+
+    if cached.present? &&
+       cached.map { |entry| entry['snapshot_timestamp'] }.sort == TaskCompletionSnapshot.where(unit_id: id).pluck(:snapshot_timestamp).sort
+      return cached
+    end
+
+    refresh_task_completion_snapshot_stats!
+  rescue JSON::ParserError, Zlib::Error
+    refresh_task_completion_snapshot_stats!
+  end
+
+  # Writes the aggregated file. Stats for an already captured snapshot never change, so passing the
+  # snapshot that just changed merges it in rather than re-parsing every other CSV.
+  def refresh_task_completion_snapshot_stats!(changed_snapshot = nil)
+    path = FileHelper.unit_task_status_snapshot_stats_path(self, create: true)
+
+    entries =
+      if changed_snapshot.present? && File.exist?(path)
+        JSON.parse(Zlib::GzipReader.open(path, &:read)).reject { |entry| entry['snapshot_timestamp'] == changed_snapshot.snapshot_timestamp } +
+          [{
+            'snapshot_date' => changed_snapshot.snapshot_date&.iso8601,
+            'snapshot_timestamp' => changed_snapshot.snapshot_timestamp,
+            'stats' => changed_snapshot.load_stats
+          }]
+      else
+        task_completion_snapshots.reload.map do |snapshot|
+          {
+            'snapshot_date' => snapshot.snapshot_date&.iso8601,
+            'snapshot_timestamp' => snapshot.snapshot_timestamp,
+            'stats' => snapshot.load_stats
+          }
+        end
+      end
+
+    entries = entries.sort_by { |entry| -entry['snapshot_timestamp'].to_i }
+
+    tmp_path = "#{path}.tmp"
+    Zlib::GzipWriter.open(tmp_path) { |gz| gz.write(JSON.generate(entries)) }
+    FileUtils.mv(tmp_path, path)
+
+    entries
+  rescue JSON::ParserError, Zlib::Error
+    # An unreadable file cannot be merged into; drop it so the retry does a full rebuild.
+    FileUtils.rm_f(path)
+    refresh_task_completion_snapshot_stats!
   end
 
   private

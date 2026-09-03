@@ -464,6 +464,15 @@ module FileHelper
     File.join(analytics_dir, 'task-status-snapshots.zip')
   end
 
+  # Aggregated stats for every snapshot, kept beside the zip so the analytics endpoint never
+  # has to parse the CSVs. Disposable - it is rebuilt from the zip whenever it goes stale.
+  # Gzipped because the stats repeat the same status keys per task, per tutorial, per campus.
+  def unit_task_status_snapshot_stats_path(unit, create: true, archived: true)
+    analytics_dir = unit_analytics_dir(unit, create: create, archived: archived)
+    FileUtils.mkdir_p(analytics_dir) if create
+    File.join(analytics_dir, 'task-status-snapshots.json.gz')
+  end
+
   def snapshot_csv_filename(snapshot_timestamp)
     return nil if snapshot_timestamp.blank?
     "#{sanitized_filename(snapshot_timestamp.to_s)}.csv"
@@ -1193,6 +1202,7 @@ module FileHelper
   module_function :unit_portfolio_dir
   module_function :unit_analytics_dir
   module_function :unit_task_status_snapshot_path
+  module_function :unit_task_status_snapshot_stats_path
   module_function :snapshot_csv_filename
   module_function :unit_work_root
   module_function :project_work_root

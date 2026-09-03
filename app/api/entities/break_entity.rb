@@ -13,5 +13,6 @@ module Entities
     expose :number_of_days
     expose :label
     expose :campus_ids
+    expose :pause_week_count
   end
 end

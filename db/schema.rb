@@ -39,6 +39,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_25_000645) do
     t.text "campus_ids", size: :long, collation: "utf8mb4_bin"
     t.string "label"
     t.integer "number_of_days", null: false
+    t.boolean "pause_week_count", default: true, null: false
     t.index ["teaching_period_id"], name: "index_breaks_on_teaching_period_id"
     t.check_constraint "json_valid(`campus_ids`)", name: "campus_ids"
   end
