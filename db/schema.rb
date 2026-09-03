@@ -33,11 +33,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_17_013339) do
 
   create_table "breaks", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.datetime "start_date", null: false
-    t.integer "number_of_weeks", null: false
     t.bigint "teaching_period_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.text "campus_ids", size: :long, default: "[]", null: false, collation: "utf8mb4_bin"
+    t.text "campus_ids", size: :long, collation: "utf8mb4_bin"
+    t.string "label"
+    t.integer "number_of_days", null: false
+    t.boolean "pause_week_count", default: true, null: false
     t.index ["teaching_period_id"], name: "index_breaks_on_teaching_period_id"
     t.check_constraint "json_valid(`campus_ids`)", name: "campus_ids"
   end
@@ -63,6 +65,19 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_17_013339) do
     t.datetime "updated_at", null: false
     t.index ["feedback_chip_id"], name: "index_chip_usages_on_feedback_chip_id"
     t.index ["tutor_id"], name: "index_chip_usages_on_tutor_id"
+  end
+
+  create_table "comment_read_cursors", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "task_id", null: false
+    t.bigint "user_id", null: false
+    t.bigint "last_read_comment_id", null: false
+    t.datetime "read_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["last_read_comment_id"], name: "index_comment_read_cursors_on_last_read_comment_id"
+    t.index ["task_id", "user_id"], name: "index_comment_read_cursors_on_task_id_and_user_id", unique: true
+    t.index ["task_id"], name: "index_comment_read_cursors_on_task_id"
+    t.index ["user_id"], name: "index_comment_read_cursors_on_user_id"
   end
 
   create_table "comments_read_receipts", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
@@ -109,8 +124,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_17_013339) do
     t.datetime "updated_at", null: false
     t.integer "activity_days"
     t.boolean "submitted_portfolio"
+    t.bigint "group_set_id"
+    t.bigint "group_id"
     t.index ["campus_id"], name: "index_communication_conditions_on_campus_id"
     t.index ["communication_id"], name: "index_communication_conditions_on_communication_id"
+    t.index ["group_id"], name: "index_communication_conditions_on_group_id"
+    t.index ["group_set_id"], name: "index_communication_conditions_on_group_set_id"
     t.index ["task_definition_id"], name: "index_communication_conditions_on_task_definition_id"
     t.index ["tutorial_id"], name: "index_communication_conditions_on_tutorial_id"
     t.index ["tutorial_stream_id"], name: "index_communication_conditions_on_tutorial_stream_id"
@@ -596,6 +615,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_17_013339) do
     t.bigint "reply_to_id"
     t.bigint "commentable_id"
     t.string "commentable_type"
+    t.integer "attention_audience"
     t.index ["assessor_id"], name: "index_task_comments_on_assessor_id"
     t.index ["commentable_type", "commentable_id"], name: "index_task_comments_on_commentable_type_and_commentable_id"
     t.index ["discussion_comment_id"], name: "index_task_comments_on_discussion_comment_id"
@@ -905,6 +925,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_08_17_013339) do
     t.integer "capacity", default: -1
     t.bigint "campus_id"
     t.bigint "tutorial_stream_id"
+    t.integer "duration_minutes", default: 120, null: false
     t.index ["abbreviation", "unit_id"], name: "index_tutorials_on_abbreviation_and_unit_id", unique: true
     t.index ["campus_id"], name: "index_tutorials_on_campus_id"
     t.index ["tutorial_stream_id"], name: "index_tutorials_on_tutorial_stream_id"

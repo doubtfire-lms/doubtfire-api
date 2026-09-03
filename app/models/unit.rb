@@ -374,6 +374,7 @@ class Unit < ApplicationRecord
 
   def queue_discuss_timeout_email(task, actor, type, expiry_date = nil)
     return unless send_notifications
+    return unless task.project.enrolled
     return unless task.project.student.receive_feedback_notifications
 
     SendDiscussTimeoutEmailJob.perform_async(task.id, actor.id, type.to_s, expiry_date&.iso8601)
@@ -2553,18 +2554,36 @@ class Unit < ApplicationRecord
   # Return all tasks from the database for this unit and given user
   #
   def get_all_tasks_for(user, my_tutorials_only = false)
+    staff_attention = TaskComment.attention_audiences.fetch('staff')
+    unread_comment = '(COALESCE(crc.last_read_comment_id, 0) < task_comments.id ' \
+                     'AND COALESCE(tutor_crc.last_read_comment_id, 0) < task_comments.id ' \
+                     "AND task_comments.user_id <> #{user.id.to_i})"
+    similarity_stats = TaskSimilarity
+                       .select('task_id', 'COUNT(*) AS similarity_count', 'SUM(flagged) AS flagged_count')
+                       .group(:task_id)
+                       .to_sql
     result =  student_tasks.
               joins(:task_status).
               joins("LEFT OUTER JOIN (#{tutorial_enrolment_subquery}) as sq ON sq.project_id = projects.id AND (sq.tutorial_stream_id = task_definitions.tutorial_stream_id OR sq.tutorial_stream_id IS NULL)").
-              joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment') AND (task_comments.content_type IS NULL OR (task_comments.content_type <> 'plan' AND task_comments.content_type <> 'discussed_in_class'))").
-              joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}").
+              joins("LEFT JOIN unit_roles task_tutor_roles ON task_tutor_roles.id = COALESCE(sq.unit_role_id, #{main_convenor_id.to_i})").
+              joins("LEFT JOIN comment_read_cursors crc ON crc.task_id = tasks.id AND crc.user_id = #{user.id.to_i}").
+              joins('LEFT JOIN comment_read_cursors tutor_crc ON tutor_crc.task_id = tasks.id ' \
+                    'AND tutor_crc.user_id = task_tutor_roles.user_id').
+              joins(
+                'LEFT JOIN task_comments ON task_comments.task_id = tasks.id ' \
+                "AND (task_comments.attention_audience IS NULL OR task_comments.attention_audience = #{staff_attention}) " \
+                "AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment') " \
+                "AND (task_comments.content_type IS NULL OR (task_comments.content_type <> 'plan' " \
+                "AND task_comments.content_type <> 'discussed_in_class'))"
+              ).
               joins("LEFT JOIN task_pins ON task_pins.task_id = tasks.id AND task_pins.user_id = #{user.id}").
-              joins('LEFT OUTER JOIN task_similarities ON tasks.id = task_similarities.task_id').
+              joins("LEFT JOIN (#{similarity_stats}) task_similarity_stats ON task_similarity_stats.task_id = tasks.id").
               select(
                 'sq.tutorial_id AS tutorial_id',
                 'sq.tutorial_stream_id AS tutorial_stream_id',
                 'tasks.id',
-                "SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread",
+                "SUM(case when #{unread_comment} AND task_comments.id IS NOT NULL " \
+                'then COALESCE(task_similarity_stats.similarity_count, 1) else 0 end) as number_unread',
                 'COUNT(distinct task_pins.task_id) != 0 as pinned',
                 "SUM(case when task_comments.date_extension_assessed IS NULL AND task_comments.type = 'ExtensionComment' AND NOT task_comments.id IS NULL THEN 1 ELSE 0 END) > 0 as has_extensions",
                 'project_id',
@@ -2577,7 +2596,7 @@ class Unit < ApplicationRecord
                 'submission_date',
                 'tasks.grade as grade',
                 'quality_pts',
-                'SUM(case when task_similarities.flagged then 1 else 0 end) as similar_to_count'
+                'COALESCE(MAX(task_similarity_stats.flagged_count), 0) AS similar_to_count'
               ).
               group(
                 'sq.tutorial_id',
@@ -2620,14 +2639,22 @@ class Unit < ApplicationRecord
   #   - those that have the ready for feedback (rff) state, or
   #   - where new student comments are > 0
   #
-  # They are sorted by a task's "action_date". This defines the last
-  # time a task has been "actioned", either the submission date or latest
-  # student comment -- whichever is newer.
+  # Ready for feedback tasks are sorted by submission date. Tasks included
+  # because of unread comments are sorted by their oldest unread comment so
+  # follow-up comments do not reset how long the task has been waiting.
   #
   def tasks_for_task_inbox(user, my_students_only = false)
+    unread_comment = '(COALESCE(crc.last_read_comment_id, 0) < task_comments.id ' \
+                     'AND COALESCE(tutor_crc.last_read_comment_id, 0) < task_comments.id ' \
+                     "AND task_comments.user_id <> #{user.id.to_i})"
+    oldest_unread_comment_at = "MIN(CASE WHEN #{unread_comment} " \
+                               'AND task_comments.id IS NOT NULL THEN task_comments.created_at END)'
+    inbox_date = "CASE WHEN task_statuses.id = #{TaskStatus.ready_for_feedback.id} " \
+                 "THEN COALESCE(submission_date, #{oldest_unread_comment_at}) " \
+                 "ELSE COALESCE(#{oldest_unread_comment_at}, submission_date) END"
     get_all_tasks_for(user, my_students_only)
-      .having('task_statuses.id IN (:ids) OR COUNT(task_pins.task_id) > 0 OR SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) > 0', ids: [TaskStatus.ready_for_feedback, TaskStatus.need_help])
-      .order('pinned DESC, submission_date ASC, MAX(task_comments.created_at) ASC, task_definition_id ASC')
+      .having("task_statuses.id IN (:ids) OR COUNT(task_pins.task_id) > 0 OR SUM(case when #{unread_comment} AND task_comments.id IS NOT NULL then COALESCE(task_similarity_stats.similarity_count, 1) else 0 end) > 0", ids: [TaskStatus.ready_for_feedback, TaskStatus.need_help])
+      .order(Arel.sql("pinned DESC, #{inbox_date} ASC, task_definition_id ASC, tasks.id ASC"))
   end
 
   #
@@ -3202,10 +3229,11 @@ class Unit < ApplicationRecord
     begin
       done.each do |project, tasks|
         logger.info "Checking feedback email for project #{project.id}"
-        if project.student.receive_feedback_notifications
-          logger.info "Emailing feedback notification to #{project.student.name}"
-          PortfolioEvidenceMailer.task_feedback_ready(project, tasks).deliver
-        end
+        next unless project.enrolled
+        next unless project.student.receive_feedback_notifications
+
+        logger.info "Emailing feedback notification to #{project.student.name}"
+        PortfolioEvidenceMailer.task_feedback_ready(project, tasks).deliver
       end
     rescue => e
       logger.error "Failed to send emails from feedback submission. Rescued with error: #{e.message}"
@@ -3961,7 +3989,60 @@ class Unit < ApplicationRecord
       .tap do |snapshot|
       snapshot.save!
       snapshot.store_stats!(snapshot_payload)
+      refresh_task_completion_snapshot_stats!(snapshot)
     end
+  end
+
+  # Stats for every snapshot, read from the aggregated file so no CSV is parsed per request.
+  # Rebuilt only when that file is missing, unreadable, or no longer matches the snapshots on record.
+  def task_completion_snapshot_stats
+    path = FileHelper.unit_task_status_snapshot_stats_path(self, create: false)
+    cached = File.exist?(path) ? JSON.parse(Zlib::GzipReader.open(path, &:read)) : nil
+
+    if cached.present? &&
+       cached.map { |entry| entry['snapshot_timestamp'] }.sort == TaskCompletionSnapshot.where(unit_id: id).pluck(:snapshot_timestamp).sort
+      return cached
+    end
+
+    refresh_task_completion_snapshot_stats!
+  rescue JSON::ParserError, Zlib::Error
+    refresh_task_completion_snapshot_stats!
+  end
+
+  # Writes the aggregated file. Stats for an already captured snapshot never change, so passing the
+  # snapshot that just changed merges it in rather than re-parsing every other CSV.
+  def refresh_task_completion_snapshot_stats!(changed_snapshot = nil)
+    path = FileHelper.unit_task_status_snapshot_stats_path(self, create: true)
+
+    entries =
+      if changed_snapshot.present? && File.exist?(path)
+        JSON.parse(Zlib::GzipReader.open(path, &:read)).reject { |entry| entry['snapshot_timestamp'] == changed_snapshot.snapshot_timestamp } +
+          [{
+            'snapshot_date' => changed_snapshot.snapshot_date&.iso8601,
+            'snapshot_timestamp' => changed_snapshot.snapshot_timestamp,
+            'stats' => changed_snapshot.load_stats
+          }]
+      else
+        task_completion_snapshots.reload.map do |snapshot|
+          {
+            'snapshot_date' => snapshot.snapshot_date&.iso8601,
+            'snapshot_timestamp' => snapshot.snapshot_timestamp,
+            'stats' => snapshot.load_stats
+          }
+        end
+      end
+
+    entries = entries.sort_by { |entry| -entry['snapshot_timestamp'].to_i }
+
+    tmp_path = "#{path}.tmp"
+    Zlib::GzipWriter.open(tmp_path) { |gz| gz.write(JSON.generate(entries)) }
+    FileUtils.mv(tmp_path, path)
+
+    entries
+  rescue JSON::ParserError, Zlib::Error
+    # An unreadable file cannot be merged into; drop it so the retry does a full rebuild.
+    FileUtils.rm_f(path)
+    refresh_task_completion_snapshot_stats!
   end
 
   private

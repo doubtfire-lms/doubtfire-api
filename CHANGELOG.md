@@ -2,6 +2,59 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-54](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-53...v11.0.0-54) (2026-09-03)
+
+
+### Features
+
+* ensure rules are reordered when deleted ([ef41d86](https://github.com/b0ink/doubtfire-deploy/commit/ef41d86045f20968f6f0ffc41bf44804afb4e8e2))
+* option to pause week count per teaching period break ([#680](https://github.com/b0ink/doubtfire-deploy/issues/680)) ([07b68ca](https://github.com/b0ink/doubtfire-deploy/commit/07b68cac770cd7d6622de4f781720ee6bd650918))
+* store aggregated task status to serve immediately ([bbab019](https://github.com/b0ink/doubtfire-deploy/commit/bbab0199b51bf83196a7a55f2da3c55fd95018a5))
+
+
+### Bug Fixes
+
+* rubocop ([db2859e](https://github.com/b0ink/doubtfire-deploy/commit/db2859edaed0b2ed567a3c01063a1760964c1b90))
+* show group overseer reports across member tasks ([#669](https://github.com/b0ink/doubtfire-deploy/issues/669)) ([be022d4](https://github.com/b0ink/doubtfire-deploy/commit/be022d40faa1de2d91026996ad01a10bb9fdc112))
+
+## [11.0.0-53](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-52...v11.0.0-53) (2026-08-24)
+
+## [11.0.0-52](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-51...v11.0.0-52) (2026-08-21)
+
+
+### Bug Fixes
+
+* ensure discuss timeout emails are not sent to withdrawn students ([569bc55](https://github.com/b0ink/doubtfire-deploy/commit/569bc5595f2660efd14614c60b6cb529f1254966))
+
+## [11.0.0-51](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-50...v11.0.0-51) (2026-08-20)
+
+
+### Features
+
+* allow staff to delete engagement stamps within window ([18bff9e](https://github.com/b0ink/doubtfire-deploy/commit/18bff9e2f9d02591e3ea2e9860d94a77710ffc09))
+* allow staff to delete engagement stamps within window ([#675](https://github.com/b0ink/doubtfire-deploy/issues/675)) ([19ff041](https://github.com/b0ink/doubtfire-deploy/commit/19ff041343cdaad8d7d43a38dddc782ebcbed7f4))
+* track teaching breaks in days with an optional label ([38ee332](https://github.com/b0ink/doubtfire-deploy/commit/38ee332a4164f91f070bf8aa99e5761b99d45105))
+
+
+### Bug Fixes
+
+* allow admins to manage staff in units they are not part of ([cb9af9d](https://github.com/b0ink/doubtfire-deploy/commit/cb9af9d9f07d929241f99a6fed6c4f0149276c0a))
+* avoid creating portfolio path unless intended ([6725f75](https://github.com/b0ink/doubtfire-deploy/commit/6725f750ff873d097d9aba103671177f1ac442f5))
+
+## [11.0.0-50](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-49...v11.0.0-50) (2026-08-17)
+
+
+### Bug Fixes
+
+* remove default json value ([cb959bf](https://github.com/b0ink/doubtfire-deploy/commit/cb959bfea92c98f55e57a7476544da3316f33d71))
+
+## [11.0.0-49](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-48...v11.0.0-49) (2026-08-17)
+
+
+### Features
+
+* tutorial duration ([#672](https://github.com/b0ink/doubtfire-deploy/issues/672)) ([c089777](https://github.com/b0ink/doubtfire-deploy/commit/c089777a67f84479a0ebe4f3502d2c2d6331796e))
+
 ## [11.0.0-48](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-47...v11.0.0-48) (2026-08-17)
 
 

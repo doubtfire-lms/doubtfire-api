@@ -12,6 +12,15 @@ class ExecuteCommunicationSetJob
   def perform(communication_set_id, target_rule_id = nil)
     communication_set = CommunicationSet.find(communication_set_id)
     rules = communication_set.communication_rules.to_a
+
+    # Refuse the whole set, not just the broken rules: allocation is a waterfall,
+    # so a rule that cannot be evaluated sends its students into a later rule and
+    # mails them the wrong thing.
+    unresolved_rules = rules.select(&:unresolved?)
+    if unresolved_rules.any?
+      raise "Communication set #{communication_set.id} cannot run: #{unresolved_rules.map(&:name).join(', ')} " \
+            'reference records that do not exist in this unit'
+    end
     target_rule_id = target_rule_id&.to_i
 
     if target_rule_id.present? && rules.none? { |rule| rule.id == target_rule_id }
@@ -256,7 +265,7 @@ class ExecuteCommunicationSetJob
         }
       end
 
-      comment = task.add_text_comment(comment_author, rendered_comment)
+      comment = task.add_text_comment(comment_author, rendered_comment, attention_audience: :student)
 
       if comment.nil?
         next {

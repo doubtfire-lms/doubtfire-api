@@ -661,26 +661,19 @@ class UnitsApi < Grape::API
       error!({ error: "Not authorised to download stats of student tasks in #{unit.code}" }, 403)
     end
 
-    snapshots = unit.task_completion_snapshots.order(snapshot_timestamp: :desc)
+    # Already aggregated and ordered newest first, so this only has to filter.
+    snapshots = unit.task_completion_snapshot_stats
     if params[:start_date].present?
       start_timestamp = params[:start_date].in_time_zone.beginning_of_day.to_i
-      snapshots = snapshots.where('CAST(snapshot_timestamp AS UNSIGNED) >= ?', start_timestamp)
+      snapshots = snapshots.select { |snapshot| snapshot['snapshot_timestamp'].to_i >= start_timestamp }
     end
     if params[:end_date].present?
       end_timestamp = params[:end_date].in_time_zone.end_of_day.to_i
-      snapshots = snapshots.where('CAST(snapshot_timestamp AS UNSIGNED) <= ?', end_timestamp)
+      snapshots = snapshots.select { |snapshot| snapshot['snapshot_timestamp'].to_i <= end_timestamp }
     end
-    snapshots = snapshots.limit([params[:limit].to_i, 365].min)
+    snapshots = snapshots.first([params[:limit].to_i, 365].min)
 
-    present snapshots.map { |snapshot|
-      stats = snapshot.load_stats
-
-      {
-        snapshot_date: snapshot.snapshot_date,
-        snapshot_timestamp: snapshot.snapshot_timestamp,
-        stats: stats
-      }
-    }, with: Grape::Presenters::Presenter
+    present snapshots, with: Grape::Presenters::Presenter
   end
 
   desc 'Capture task completion snapshot immediately for this unit'

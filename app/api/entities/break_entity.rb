@@ -10,7 +10,9 @@ module Entities
       expose :start_date
     end
 
-    expose :number_of_weeks
+    expose :number_of_days
+    expose :label
     expose :campus_ids
+    expose :pause_week_count
   end
 end

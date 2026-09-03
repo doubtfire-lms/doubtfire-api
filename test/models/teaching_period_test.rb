@@ -147,7 +147,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     tp = TeachingPeriod.find(2)
 
     break_in_cal_week = ((tp.breaks.first.start_date - tp.start_date) / 1.week).ceil + 1 # + 1 as mon break
-    assert_equal tp.breaks.first.start_date + tp.breaks.first.number_of_weeks.week, tp.date_for_week(break_in_cal_week)
+    assert_equal tp.breaks.first.start_date + tp.breaks.first.number_of_days.days, tp.date_for_week(break_in_cal_week)
   end
 
   test 'can map week number to date across breaks starting friday' do
@@ -155,20 +155,92 @@ class TeachingPeriodTest < ActiveSupport::TestCase
 
     break_in_cal_week = ((tp.breaks.first.start_date - tp.start_date) / 1.week).ceil # no +1 as Fri
     assert_equal tp.breaks.first.start_date - 4.days, tp.date_for_week(break_in_cal_week)
-    assert_equal tp.breaks.first.start_date + tp.breaks.first.number_of_weeks.week + 3.days, tp.date_for_week(break_in_cal_week + 1)
+    assert_equal tp.breaks.first.start_date + tp.breaks.first.number_of_days.days + 3.days, tp.date_for_week(break_in_cal_week + 1)
   end
 
   test 'week number works with mult-week breaks' do
     tp = TeachingPeriod.find(3)
 
     assert_equal tp.week_number(tp.breaks.first.start_date) + 1, tp.week_number(tp.breaks.first.end_date)
-    assert_equal 2, tp.breaks.first.number_of_weeks
+    assert_equal 14, tp.breaks.first.number_of_days
   end
 
   test 'check end date' do
     TeachingPeriod.all.each do |tp|
-      assert_equal tp.breaks.first.start_date + tp.breaks.first.number_of_weeks.weeks, tp.breaks.first.end_date
+      assert_equal tp.breaks.first.start_date + tp.breaks.first.number_of_days.days, tp.breaks.first.end_date
     end
+  end
+
+  test 'week number continues through breaks that do not pause the week count' do
+    tp = TeachingPeriod.create!(
+      period: 'PWC1',
+      year: 2025,
+      start_date: Date.parse('2025-03-03'), # a Monday
+      end_date: Date.parse('2025-06-09'),
+      active_until: Date.parse('2025-06-30')
+    )
+
+    teaching_break = tp.add_break(tp.start_date + 4.weeks, 7)
+    monday_after_break = tp.start_date + 5.weeks
+
+    # the break pauses the count, so the week after the break is still week 5
+    assert_equal 5, tp.week_number(monday_after_break)
+
+    teaching_break.update!(pause_week_count: false)
+    tp.reload
+
+    # without pausing, the week count runs straight through the break
+    assert_equal 6, tp.week_number(monday_after_break)
+  end
+
+  test 'date for week ignores breaks that do not pause the week count' do
+    tp = TeachingPeriod.create!(
+      period: 'PWC2',
+      year: 2025,
+      start_date: Date.parse('2025-03-03'), # a Monday
+      end_date: Date.parse('2025-06-09'),
+      active_until: Date.parse('2025-06-30')
+    )
+
+    teaching_break = tp.add_break(tp.start_date + 4.weeks, 7)
+
+    # the break pushes week 6 out by its duration
+    assert_equal tp.start_date + 6.weeks, tp.date_for_week(6)
+
+    teaching_break.update!(pause_week_count: false)
+    tp.reload
+
+    assert_equal tp.start_date + 5.weeks, tp.date_for_week(6)
+  end
+
+  test 'week numbers stay aligned across campuses when a campus break does not pause the week count' do
+    tp = TeachingPeriod.create!(
+      period: 'PWC3',
+      year: 2025,
+      start_date: Date.parse('2025-03-03'), # a Monday
+      end_date: Date.parse('2025-06-09'),
+      active_until: Date.parse('2025-06-30')
+    )
+
+    main_campus = FactoryBot.create(:campus)
+    other_main_campus = FactoryBot.create(:campus)
+    late_campus = FactoryBot.create(:campus)
+
+    # most campuses share a mid semester break, which pauses the week count
+    main_break = tp.add_break(tp.start_date + 4.weeks, 7, [main_campus.id, other_main_campus.id], 'Mid semester break')
+    # this campus takes its break a week later - the week count runs on through
+    # it so that every campus is in the same teaching week
+    late_break = tp.add_break(tp.start_date + 5.weeks, 7, [late_campus.id], 'Late mid semester break', false)
+
+    assert_equal [main_break], tp.week_pausing_breaks
+
+    # only the main break moves the week number, for all campuses
+    assert_equal 5, tp.week_number(tp.start_date + 5.weeks)
+    assert_equal 7, tp.week_number(tp.start_date + 7.weeks)
+
+    # each break still applies to its own campuses, so deadlines are extended
+    assert_equal [main_break], tp.breaks_for(main_campus)
+    assert_equal [late_break], tp.breaks_for(late_campus)
   end
 
   test 'check break next monday' do
@@ -214,7 +286,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
 
     tp = TeachingPeriod.create(data)
 
-    tp.add_break(tp.date_for_week(3), 1)
+    tp.add_break(tp.date_for_week(3), 7)
 
     assert tp.breaks.count > 0
     tp.destroy
@@ -246,10 +318,10 @@ class TeachingPeriodTest < ActiveSupport::TestCase
 
       assert_equal Time.zone.local(2026, 2, 16, 9, 30, 0), schedule.next_run_at
 
-      teaching_break = tp.add_break(Date.parse('2026-02-09'), 1)
+      teaching_break = tp.add_break(Date.parse('2026-02-09'), 7)
       assert_equal Time.zone.local(2026, 2, 23, 9, 30, 0), schedule.reload.next_run_at
 
-      tp.update_break(teaching_break.id, Date.parse('2026-02-23'), 1)
+      tp.update_break(teaching_break.id, Date.parse('2026-02-23'), 7)
       assert_equal Time.zone.local(2026, 2, 16, 9, 30, 0), schedule.reload.next_run_at
 
       teaching_break.destroy
