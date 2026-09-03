@@ -143,5 +143,44 @@ module Admin
     rescue Sys::Filesystem::Error => e
       error!({ error: "Filesystem stat failed", detail: e.message }, 500)
     end
+
+    desc 'Get basic institution statistics'
+    get '/admin/statistics' do
+      unless authorise? current_user, User, :admin_overseer
+        error!({ error: 'Not authorised to view institution statistics' }, 403)
+      end
+
+      now = Time.current
+      activity_windows = {
+        fiveMinutes: 5.minutes,
+        fifteenMinutes: 15.minutes,
+        thirtyMinutes: 30.minutes,
+        oneHour: 1.hour,
+        twentyFourHours: 24.hours,
+        sevenDays: 7.days
+      }
+
+      active_users = activity_windows.transform_values do |duration|
+        User.where(last_access_at: (now - duration)..).count
+      end
+
+      disk_space_gb = nil
+      if Doubtfire::Application.config.disk_space_endpoint_enabled
+        stat = Sys::Filesystem.stat('/')
+        disk_space_gb = (stat.block_size * stat.blocks_available).to_f / 1024 / 1024 / 1024
+      end
+
+      present({
+                activeUsers: active_users,
+                totalUsers: User.count,
+                diskSpaceGb: disk_space_gb&.round(2)
+              }, with: Grape::Presenters::Presenter)
+    rescue Sys::Filesystem::Error
+      present({
+                activeUsers: active_users,
+                totalUsers: User.count,
+                diskSpaceGb: nil
+              }, with: Grape::Presenters::Presenter)
+    end
   end
 end
