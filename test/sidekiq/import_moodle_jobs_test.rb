@@ -53,7 +53,6 @@ class ImportMoodleJobsTest < ActiveSupport::TestCase
   test 'student preview reports configured Moodle group mappings without changing students' do
     unit = FactoryBot.create(:unit, with_students: false, moodle_enabled: true)
     campus = FactoryBot.create(:campus)
-    second_campus = FactoryBot.create(:campus)
     integration = unit.create_moodle_integration!(
       course_id: 42,
       api_key: 'secret-token',
@@ -64,12 +63,6 @@ class ImportMoodleJobsTest < ActiveSupport::TestCase
       moodle_group_name: 'City students',
       target_type: 'campus',
       campus: campus
-    )
-    integration.moodle_group_mappings.create!(
-      moodle_group_id: 31,
-      moodle_group_name: 'City students',
-      target_type: 'campus',
-      campus: second_campus
     )
     moodle = Minitest::Mock.new
     moodle.expect(:course_groups, [{ 'id' => 31, 'name' => 'City students' }])
@@ -102,8 +95,70 @@ class ImportMoodleJobsTest < ActiveSupport::TestCase
     end
 
     result = JSON.parse(stored[:result])
-    assert_equal [campus.name, second_campus.name].join(', '), result['success'].first.dig('row', 'mapped_campus')
+    assert_equal campus.name, result['success'].first.dig('row', 'mapped_campus')
     assert_equal 'City students', result['success'].first.dig('row', 'moodle_groups')
+    moodle.verify
+  end
+
+  test 'student preview reports an error when Moodle groups map to different campuses' do
+    unit = FactoryBot.create(:unit, with_students: false, moodle_enabled: true)
+    campus = FactoryBot.create(:campus)
+    second_campus = FactoryBot.create(:campus)
+    integration = unit.create_moodle_integration!(
+      course_id: 42,
+      api_key: 'secret-token',
+      group_mapping_enabled: true
+    )
+    integration.moodle_group_mappings.create!(
+      moodle_group_id: 31,
+      moodle_group_name: 'City students',
+      target_type: 'campus',
+      campus: campus
+    )
+    integration.moodle_group_mappings.create!(
+      moodle_group_id: 32,
+      moodle_group_name: 'Country students',
+      target_type: 'campus',
+      campus: second_campus
+    )
+    moodle = Minitest::Mock.new
+    moodle.expect(
+      :course_groups,
+      [{ 'id' => 31, 'name' => 'City students' }, { 'id' => 32, 'name' => 'Country students' }]
+    )
+    moodle.expect(
+      :students,
+      [{
+        'id' => 12,
+        'username' => 'group.student',
+        'idnumber' => '654321',
+        'firstname' => 'Group',
+        'lastname' => 'Student',
+        'email' => 'group.student@example.com',
+        'groups' => [{ 'id' => 31, 'name' => 'City students' }, { 'id' => 32, 'name' => 'Country students' }],
+        'roles' => [{ 'shortname' => 'student' }]
+      }]
+    )
+    stored = nil
+    job = ImportMoodleStudentsJob.new
+
+    MoodleApi.stub(:new, moodle) do
+      job.stub(:at, nil) do
+        job.stub(:total, nil) do
+          job.stub(:store, ->(**data) { stored = data }) do
+            assert_no_difference -> { unit.projects.count } do
+              job.perform(unit.id, true)
+            end
+          end
+        end
+      end
+    end
+
+    result = JSON.parse(stored[:result])
+    assert_empty result['success']
+    assert_equal 'Student belongs to multiple mapped campuses', result['errors'].first['message']
+    assert_equal [campus.name, second_campus.name].join(', '), result['errors'].first.dig('row', 'mapped_campus')
+    assert_equal 'City students, Country students', result['errors'].first.dig('row', 'moodle_groups')
     moodle.verify
   end
 
