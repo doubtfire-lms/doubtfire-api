@@ -347,6 +347,9 @@ module Doubtfire
     config.sm_instance = nil
     config.overseer_enabled = ENV['OVERSEER_ENABLED'].present? && ENV['OVERSEER_ENABLED'].to_s.downcase != "false" && ENV['OVERSEER_ENABLED'].to_i != 0
 
+    # Enables endpoints to return available storage on the device hosting the API.
+    config.disk_space_endpoint_enabled = %w[true 1 yes].include?(ENV['DISK_SPACE_ENDPOINT_ENABLED']&.downcase)
+
     config.docker_config = {
       DOCKER_REGISTRY_URL: ENV.fetch('DOCKER_REGISTRY_URL', nil),
       DOCKER_PROXY_URL: ENV.fetch('DOCKER_PROXY_URL', nil),
@@ -388,10 +391,6 @@ module Doubtfire
       if config.overseer_workdir_volume_mount.nil? && config.overseer_fallback_volume_container.nil?
         raise 'Overseer configuration error: you must set either OVERSEER_WORKDIR_VOLUME_MOUNT or OVERSEER_FALLBACK_VOLUME_CONTAINER.'
       end
-
-      # Enables the endpoint to return how much available storage is left on the device the API is hosted on (often docker volume storage)
-      # Used to ensure enough space is available to pull new images for Overseer
-      config.disk_space_endpoint_enabled = %w[true 1 yes].include?(ENV['DISK_SPACE_ENDPOINT_ENABLED']&.downcase)
 
       config.after_initialize do
         if config.docker_config[:DOCKER_TOKEN] && config.docker_config[:DOCKER_PROXY_URL]
