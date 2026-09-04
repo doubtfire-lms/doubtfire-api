@@ -128,6 +128,37 @@ class AuthTest < ActiveSupport::TestCase
     assert actual_auth.key? 'error'
   end
 
+  # Blank passwords must still be authenticated rather than bypassing the
+  # password check because ActiveSupport considers them not present.
+  def test_fail_blank_password_auth
+    user = User.find_by!(username: 'aadmin')
+    original_token_count = user.auth_tokens.count
+
+    ['', ' ', "\t\n"].each do |password|
+      post_json '/api/auth.json', username: user.username, password: password
+      actual_auth = last_response_body
+
+      assert_equal 401, last_response.status, "Expected #{password.inspect} to be rejected"
+      assert_equal 'Invalid email or password.', actual_auth['error']
+      assert_not actual_auth.key?('user')
+      assert_not actual_auth.key?('auth_token')
+    end
+
+    assert_equal original_token_count, user.auth_tokens.reload.count
+  end
+
+  def test_blank_password_does_not_create_unknown_user
+    username = "unknown-blank-password-user-#{SecureRandom.hex(8)}"
+
+    ['', ' ', "\t\n"].each do |password|
+      post_json '/api/auth.json', username: username, password: password
+
+      assert_equal 401, last_response.status, "Expected #{password.inspect} to be rejected"
+      assert_equal 'Invalid email or password.', last_response_body['error']
+      assert_not User.exists?(username: username)
+    end
+  end
+
   # Test auth with empty request body
   def test_fail_empty_request
     data_to_post = ""
