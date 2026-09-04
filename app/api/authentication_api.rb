@@ -40,7 +40,7 @@ class AuthenticationApi < Grape::API
       # User lookup
       username = username.downcase
       institution_email_domain = Doubtfire::Application.config.institution[:email_domain]
-      user = User.find_or_create_by(username: username) do |new_user|
+      user = User.find_or_initialize_by(username: username) do |new_user|
         new_user.first_name = 'First Name'
         new_user.last_name  = 'Surname'
         new_user.email      = "#{username}@#{institution_email_domain}"
@@ -50,10 +50,12 @@ class AuthenticationApi < Grape::API
       end
 
       # Try to authenticate with password
-      if password.present? && !user.authenticate?(password)
+      # A supplied password must always be authenticated. Using `present?` here
+      # allows blank and whitespace-only passwords to skip both credential checks.
+      if password && !user.authenticate?(password)
         error!({ error: 'Invalid email or password.' }, 401)
         return
-      elsif auth_token.present? && !authenticated?(:login)
+      elsif auth_token && !authenticated?(:login)
         error!({ error: 'Invalid user or auth token.' }, 401)
         return
       end
