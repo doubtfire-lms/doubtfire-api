@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'csv'
+require 'set'
 require 'zip'
 
 class TaskCompletionSnapshot < ApplicationRecord
@@ -49,6 +50,31 @@ class TaskCompletionSnapshot < ApplicationRecord
     parse_csv_stats(snapshot_contents)
   rescue CSV::MalformedCSVError
     {}
+  end
+
+  def load_student_counts
+    students = Set.new
+    campus_students = Hash.new { |hash, key| hash[key] = Set.new }
+
+    CSV.parse(snapshot_contents.to_s, headers: true).each do |row|
+      student = row['Username'].presence || row['Student ID'].presence
+      next if student.blank?
+
+      students.add(student)
+
+      campus_abbreviation = row['Campus'].to_s.strip
+      next if campus_abbreviation.blank?
+
+      campus = Campus.find_by(abbreviation: campus_abbreviation)&.name || campus_abbreviation
+      campus_students[campus].add(student)
+    end
+
+    {
+      'student_count' => students.length,
+      'campus_student_counts' => campus_students.transform_values(&:length)
+    }
+  rescue CSV::MalformedCSVError
+    { 'student_count' => 0, 'campus_student_counts' => {} }
   end
 
   def store_stats!(payload)
