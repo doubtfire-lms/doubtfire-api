@@ -1,0 +1,314 @@
+# frozen_string_literal: true
+
+require 'test_helper'
+require 'minitest/mock'
+
+class ImportMoodleJobsTest < ActiveSupport::TestCase
+  test 'student preview reports Moodle data without syncing enrolments' do
+    unit = FactoryBot.create(:unit, with_students: false, moodle_enabled: true)
+    integration = unit.create_moodle_integration!(
+      course_id: 42,
+      api_key: 'secret-token',
+      group_mapping_enabled: true
+    )
+    moodle = Minitest::Mock.new
+    moodle.expect(:course_groups, [])
+    moodle.expect(
+      :students,
+      [{
+        'username' => 'preview.student',
+        'idnumber' => '123456',
+        'firstname' => 'Preview',
+        'lastname' => 'Student',
+        'email' => 'preview.student@example.com',
+        'roles' => [{ 'shortname' => 'student' }]
+      }]
+    )
+    stored = nil
+    job = ImportMoodleStudentsJob.new
+
+    Unit.stub(:find, unit) do
+      MoodleApi.stub(:new, moodle) do
+        job.stub(:at, nil) do
+          job.stub(:total, nil) do
+            job.stub(:store, ->(**data) { stored = data }) do
+              unit.stub(:sync_enrolment_with, ->(*) { flunk 'Preview must not sync enrolments' }) do
+                assert_no_difference -> { unit.projects.count } do
+                  job.perform(unit.id, true)
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+
+    result = JSON.parse(stored[:result])
+    assert_equal 1, result['success'].length
+    assert_equal 'preview.student', result['success'].first.dig('row', 'username')
+    assert_equal '123456', result['success'].first.dig('row', 'student_id')
+    moodle.verify
+  end
+
+  test 'student preview reports configured Moodle group mappings without changing students' do
+    unit = FactoryBot.create(:unit, with_students: false, moodle_enabled: true)
+    campus = FactoryBot.create(:campus)
+    integration = unit.create_moodle_integration!(
+      course_id: 42,
+      api_key: 'secret-token',
+      group_mapping_enabled: true
+    )
+    integration.moodle_group_mappings.create!(
+      moodle_group_id: 31,
+      moodle_group_name: 'City students',
+      target_type: 'campus',
+      campus: campus
+    )
+    moodle = Minitest::Mock.new
+    moodle.expect(:course_groups, [{ 'id' => 31, 'name' => 'City students' }])
+    moodle.expect(
+      :students,
+      [{
+        'id' => 12,
+        'username' => 'group.student',
+        'idnumber' => '654321',
+        'firstname' => 'Group',
+        'lastname' => 'Student',
+        'email' => 'group.student@example.com',
+        'groups' => [{ 'id' => 31, 'name' => 'City students' }],
+        'roles' => [{ 'shortname' => 'student' }]
+      }]
+    )
+    stored = nil
+    job = ImportMoodleStudentsJob.new
+
+    MoodleApi.stub(:new, moodle) do
+      job.stub(:at, nil) do
+        job.stub(:total, nil) do
+          job.stub(:store, ->(**data) { stored = data }) do
+            assert_no_difference -> { unit.projects.count } do
+              job.perform(unit.id, true)
+            end
+          end
+        end
+      end
+    end
+
+    result = JSON.parse(stored[:result])
+    assert_equal campus.name, result['success'].first.dig('row', 'mapped_campus')
+    assert_equal 'City students', result['success'].first.dig('row', 'moodle_groups')
+    moodle.verify
+  end
+
+  test 'student preview reports an error when Moodle groups map to different campuses' do
+    unit = FactoryBot.create(:unit, with_students: false, moodle_enabled: true)
+    campus = FactoryBot.create(:campus)
+    second_campus = FactoryBot.create(:campus)
+    integration = unit.create_moodle_integration!(
+      course_id: 42,
+      api_key: 'secret-token',
+      group_mapping_enabled: true
+    )
+    integration.moodle_group_mappings.create!(
+      moodle_group_id: 31,
+      moodle_group_name: 'City students',
+      target_type: 'campus',
+      campus: campus
+    )
+    integration.moodle_group_mappings.create!(
+      moodle_group_id: 32,
+      moodle_group_name: 'Country students',
+      target_type: 'campus',
+      campus: second_campus
+    )
+    moodle = Minitest::Mock.new
+    moodle.expect(
+      :course_groups,
+      [{ 'id' => 31, 'name' => 'City students' }, { 'id' => 32, 'name' => 'Country students' }]
+    )
+    moodle.expect(
+      :students,
+      [{
+        'id' => 12,
+        'username' => 'group.student',
+        'idnumber' => '654321',
+        'firstname' => 'Group',
+        'lastname' => 'Student',
+        'email' => 'group.student@example.com',
+        'groups' => [{ 'id' => 31, 'name' => 'City students' }, { 'id' => 32, 'name' => 'Country students' }],
+        'roles' => [{ 'shortname' => 'student' }]
+      }]
+    )
+    stored = nil
+    job = ImportMoodleStudentsJob.new
+
+    MoodleApi.stub(:new, moodle) do
+      job.stub(:at, nil) do
+        job.stub(:total, nil) do
+          job.stub(:store, ->(**data) { stored = data }) do
+            assert_no_difference -> { unit.projects.count } do
+              job.perform(unit.id, true)
+            end
+          end
+        end
+      end
+    end
+
+    result = JSON.parse(stored[:result])
+    assert_empty result['success']
+    assert_equal 'Student belongs to multiple mapped campuses', result['errors'].first['message']
+    assert_equal [campus.name, second_campus.name].join(', '), result['errors'].first.dig('row', 'mapped_campus')
+    assert_equal 'City students, Country students', result['errors'].first.dig('row', 'moodle_groups')
+    moodle.verify
+  end
+
+  test 'student group mapping creates a missing group using a unit tutorial' do
+    unit = FactoryBot.create(:unit, with_students: false, moodle_enabled: true)
+    project = FactoryBot.create(:project, unit: unit)
+    tutorial = FactoryBot.create(:tutorial, unit: unit, campus: project.campus)
+    group_set = FactoryBot.create(:group_set, unit: unit)
+    integration = unit.create_moodle_integration!(course_id: 42, api_key: 'secret-token')
+    mapping = integration.moodle_group_mappings.create!(
+      moodle_group_id: 31,
+      moodle_group_name: 'Moodle Group 1',
+      target_type: 'group',
+      group_set: group_set,
+      tutorial: tutorial,
+      create_if_missing: true
+    )
+
+    job = ImportMoodleStudentsJob.new
+    assert_difference -> { group_set.groups.count }, 1 do
+      assert job.send(:apply_mappings, project, [mapping])
+    end
+
+    group = group_set.groups.find_by!(name: 'Moodle Group 1')
+    assert_equal tutorial, group.tutorial
+    assert_equal tutorial, project.reload.tutorial_for_stream(tutorial.tutorial_stream)
+    assert_equal group, project.reload.group_for_groupset(group_set)
+    assert_not job.send(:apply_mappings, project.reload, [mapping])
+  end
+
+  test 'student group mapping creates a matching tutorial and group' do
+    unit = FactoryBot.create(:unit, with_students: false, moodle_enabled: true)
+    project = FactoryBot.create(:project, unit: unit)
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
+    group_set = FactoryBot.create(:group_set, unit: unit)
+    integration = unit.create_moodle_integration!(course_id: 42, api_key: 'secret-token')
+    mapping = integration.moodle_group_mappings.create!(
+      moodle_group_id: 32,
+      moodle_group_name: 'Moodle Group 2',
+      target_type: 'group',
+      group_set: group_set,
+      tutorial_stream: tutorial_stream,
+      create_if_missing: true
+    )
+
+    job = ImportMoodleStudentsJob.new
+    assert_difference -> { group_set.groups.count }, 1 do
+      assert_difference -> { tutorial_stream.tutorials.count }, 1 do
+        assert job.send(:apply_mappings, project, [mapping])
+      end
+    end
+
+    tutorial = tutorial_stream.tutorials.find_by!(abbreviation: 'Moodle Group 2')
+    group = group_set.groups.find_by!(name: 'Moodle Group 2')
+    assert_equal tutorial, group.tutorial
+    assert_equal tutorial, project.reload.tutorial_for_stream(tutorial_stream)
+    assert_equal group, project.group_for_groupset(group_set)
+    assert_not job.send(:apply_mappings, project.reload, [mapping])
+  end
+
+  test 'ignored mappings do nothing and tutorial mappings require an existing tutorial' do
+    unit = FactoryBot.create(:unit, with_students: false, moodle_enabled: true)
+    project = FactoryBot.create(:project, unit: unit)
+    integration = unit.create_moodle_integration!(course_id: 42, api_key: 'secret-token')
+    ignored = integration.moodle_group_mappings.create!(
+      moodle_group_id: 33,
+      moodle_group_name: 'Teaching staff',
+      target_type: 'ignore'
+    )
+    stream = FactoryBot.create(:tutorial_stream, unit: unit)
+    missing_tutorial = integration.moodle_group_mappings.build(
+      moodle_group_id: 34,
+      moodle_group_name: 'Tutorial 1',
+      target_type: 'tutorial',
+      tutorial_stream: stream,
+      create_if_missing: true
+    )
+
+    assert_not ImportMoodleStudentsJob.new.send(:apply_mappings, project, [ignored])
+    assert_not missing_tutorial.valid?
+    assert_includes missing_tutorial.errors[:tutorial], 'must be selected'
+    assert_no_difference -> { stream.tutorials.count } do
+      assert_raises(ActiveRecord::RecordInvalid) { missing_tutorial.save! }
+    end
+  end
+
+  test 'extension preview reports calculated days without updating the project' do
+    unit = FactoryBot.create(:unit, with_students: false, moodle_enabled: true)
+    user = FactoryBot.create(:user, :student, username: 'extension.student')
+    project = FactoryBot.create(:project, unit: unit, user: user, spec_con_days: 0)
+    integration = unit.create_moodle_integration!(
+      course_id: 42,
+      api_key: 'secret-token',
+      assignment_id: 7,
+      assignment_name: 'Portfolio',
+      fetch_extensions: true,
+      group_mapping_enabled: true
+    )
+    due_date = Time.zone.parse('2026-08-01 09:00:00').to_i
+    moodle = Minitest::Mock.new
+    moodle.expect(
+      :assignments,
+      {
+        'courses' => [{
+          'id' => 42,
+          'assignments' => [{ 'id' => 7, 'name' => 'Portfolio', 'duedate' => due_date }]
+        }]
+      }
+    )
+    moodle.expect(:course_groups, [])
+    moodle.expect(
+      :students,
+      [
+        { 'id' => 12, 'username' => user.username },
+        { 'id' => 13, 'username' => 'not.enrolled' }
+      ]
+    )
+    moodle.expect(
+      :user_flags,
+      {
+        'assignments' => [{
+          'assignmentid' => 7,
+          'userflags' => [
+            { 'userid' => 12, 'extensionduedate' => due_date + 2.days.to_i },
+            { 'userid' => 13, 'extensionduedate' => due_date + 3.days.to_i }
+          ]
+        }]
+      }
+    )
+    stored = nil
+    job = ImportMoodleExtensionsJob.new
+
+    MoodleApi.stub(:new, moodle) do
+      job.stub(:at, nil) do
+        job.stub(:total, nil) do
+          job.stub(:store, ->(**data) { stored = data }) do
+            job.perform(unit.id, true)
+          end
+        end
+      end
+    end
+
+    result = JSON.parse(stored[:result])
+    assert_equal 0, project.reload.spec_con_days
+    assert_equal 2, result['success'].first.dig('row', 'spec_con_days')
+    assert_equal '2026-08-03', result['success'].first.dig('row', 'extension_date')
+    assert_equal user.username, result['success'].first.dig('row', 'username')
+    assert_equal 3, result['ignored'].first.dig('row', 'spec_con_days')
+    assert_equal '2026-08-04', result['ignored'].first.dig('row', 'extension_date')
+    assert_equal 'not.enrolled', result['ignored'].first.dig('row', 'username')
+    moodle.verify
+  end
+end

@@ -153,6 +153,9 @@ module Doubtfire
     # LTI.js will send signed JWT tokens using this secret
     config.lti_api_secret = Application.fetch_credential_or_env(:lti, :shared_api_secret, env_key: 'LTI_SHARED_API_SECRET')
 
+    # ==> Moodle settings
+    config.moodle_api_url = ENV.fetch('DF_MOODLE_API_URL', nil)
+
     # ==> Moderation settings
     config.moderation_score_factor = Float(ENV.fetch('MODERATION_SCORE_FACTOR', 1.0))
 
@@ -277,8 +280,11 @@ module Doubtfire
     # Ensure that auth tokens do not appear in log files
     config.filter_parameters += %i(
       auth_token
+      api_key
+      moodle_api_key
       password
       password_confirmation
+      wstoken
     )
     # Grape Serialization
 

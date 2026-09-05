@@ -50,6 +50,7 @@ module Entities
            unless: :summary_only
 
     expose :overseer_image_id, unless: :summary_only, if: lambda { |unit, options| can_read_unit_config?(options[:my_role]) }
+    expose :moodle_enabled, unless: :summary_only, if: lambda { |unit, options| can_read_unit_config?(options[:my_role]) }
     expose :assessment_enabled, unless: :summary_only
 
     expose :auto_apply_extension_before_deadline, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }

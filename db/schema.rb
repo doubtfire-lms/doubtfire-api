@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_09_02_030307) do
+ActiveRecord::Schema[8.0].define(version: 2026_09_03_040547) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -371,6 +371,45 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_02_030307) do
     t.index ["task_definition_id"], name: "index_moderated_tasks_on_task_definition_id"
     t.index ["task_id", "moderation_type"], name: "uniq_mod_tasks_task_type", unique: true
     t.index ["task_id"], name: "index_moderated_tasks_on_task_id"
+  end
+
+  create_table "moodle_group_mappings", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "moodle_integration_id", null: false
+    t.bigint "moodle_group_id", null: false
+    t.string "moodle_group_name", null: false
+    t.string "target_type", null: false
+    t.bigint "group_set_id"
+    t.bigint "group_id"
+    t.bigint "campus_id"
+    t.bigint "tutorial_stream_id"
+    t.bigint "tutorial_id"
+    t.boolean "create_if_missing", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["campus_id"], name: "index_moodle_group_mappings_on_campus_id"
+    t.index ["group_id"], name: "index_moodle_group_mappings_on_group_id"
+    t.index ["group_set_id"], name: "index_moodle_group_mappings_on_group_set_id"
+    t.index ["moodle_integration_id", "moodle_group_id"], name: "index_moodle_group_mappings_on_integration_and_group"
+    t.index ["moodle_integration_id"], name: "index_moodle_group_mappings_on_moodle_integration_id"
+    t.index ["tutorial_id"], name: "index_moodle_group_mappings_on_tutorial_id"
+    t.index ["tutorial_stream_id"], name: "index_moodle_group_mappings_on_tutorial_stream_id"
+  end
+
+  create_table "moodle_integrations", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "unit_id", null: false
+    t.bigint "course_id", null: false
+    t.text "api_key", null: false
+    t.bigint "assignment_id"
+    t.string "assignment_name"
+    t.boolean "fetch_extensions", default: false, null: false
+    t.boolean "auto_sync_students", default: false, null: false
+    t.boolean "auto_sync_extensions", default: false, null: false
+    t.boolean "group_mapping_enabled", default: false, null: false
+    t.boolean "validated", default: false, null: false
+    t.datetime "validated_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["unit_id"], name: "index_moodle_integrations_on_unit_id", unique: true
   end
 
   create_table "overflow_task_claim_logs", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
@@ -972,6 +1011,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_02_030307) do
     t.boolean "discuss_timeout_enabled", default: false, null: false
     t.integer "discuss_timeout_warning_days", default: 7, null: false
     t.integer "discuss_timeout_expire_days", default: 14, null: false
+    t.boolean "moodle_enabled", default: false, null: false
     t.index ["draft_task_definition_id"], name: "index_units_on_draft_task_definition_id"
     t.index ["main_convenor_id"], name: "index_units_on_main_convenor_id"
     t.index ["overseer_image_id"], name: "index_units_on_overseer_image_id"
