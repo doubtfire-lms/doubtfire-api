@@ -4000,6 +4000,7 @@ class Unit < ApplicationRecord
     cached = File.exist?(path) ? JSON.parse(Zlib::GzipReader.open(path, &:read)) : nil
 
     if cached.present? &&
+       cached.all? { |entry| entry.key?('student_count') && entry.key?('campus_student_counts') } &&
        cached.map { |entry| entry['snapshot_timestamp'] }.sort == TaskCompletionSnapshot.where(unit_id: id).pluck(:snapshot_timestamp).sort
       return cached
     end
@@ -4016,18 +4017,24 @@ class Unit < ApplicationRecord
 
     entries =
       if changed_snapshot.present? && File.exist?(path)
+        student_counts = changed_snapshot.load_student_counts
         JSON.parse(Zlib::GzipReader.open(path, &:read)).reject { |entry| entry['snapshot_timestamp'] == changed_snapshot.snapshot_timestamp } +
           [{
             'snapshot_date' => changed_snapshot.snapshot_date&.iso8601,
             'snapshot_timestamp' => changed_snapshot.snapshot_timestamp,
-            'stats' => changed_snapshot.load_stats
+            'stats' => changed_snapshot.load_stats,
+            'student_count' => student_counts['student_count'],
+            'campus_student_counts' => student_counts['campus_student_counts']
           }]
       else
         task_completion_snapshots.reload.map do |snapshot|
+          student_counts = snapshot.load_student_counts
           {
             'snapshot_date' => snapshot.snapshot_date&.iso8601,
             'snapshot_timestamp' => snapshot.snapshot_timestamp,
-            'stats' => snapshot.load_stats
+            'stats' => snapshot.load_stats,
+            'student_count' => student_counts['student_count'],
+            'campus_student_counts' => student_counts['campus_student_counts']
           }
         end
       end

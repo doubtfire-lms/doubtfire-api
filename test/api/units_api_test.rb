@@ -714,6 +714,8 @@ class UnitsApiTest < ActiveSupport::TestCase
 
     latest_stats = last_response_body[0]['stats']
     assert_equal 3, latest_stats[tutorial.campus.name][tutorial.abbreviation][task_definition.abbreviation]['complete']
+    assert_equal 3, last_response_body[0]['student_count']
+    assert_equal 3, last_response_body[0]['campus_student_counts'][tutorial.campus.name]
 
     assert_not_equal older_snapshot.snapshot_date.to_s, last_response_body[1]['snapshot_date'].to_date.to_s
   end

@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-57](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-56...v11.0.0-57) (2026-09-04)
+
+
+### Bug Fixes
+
+* ensure blank passwords do not create empty user ([0338a9d](https://github.com/b0ink/doubtfire-deploy/commit/0338a9da6d4638c85157816ee828e69b9eb1bfd3))
+* ensure blank passwords do not create empty user ([#683](https://github.com/b0ink/doubtfire-deploy/issues/683)) ([fa1da37](https://github.com/b0ink/doubtfire-deploy/commit/fa1da375dd1a03fa7970892bd9cf67149d44cfdc))
+* init disk space endpoint config outside of overseer ([566a6b0](https://github.com/b0ink/doubtfire-deploy/commit/566a6b0eee8fb8219ae30ca6fa7584aefd66739e))
+
 ## [11.0.0-56](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-55...v11.0.0-56) (2026-09-03)
 
 
