@@ -44,6 +44,9 @@ module Entities
     expose :grade_values
     expose :grade_definitions
     expose :has_main_content_site?, as: :has_main_content_site, unless: :summary_only
+    expose :main_content_site_id, unless: :summary_only do |unit|
+      unit.unit_content_sites.find_by(is_main: true)&.id
+    end
     expose :unit_content_links,
            as: :content_links,
            using: UnitContentLinkEntity,
