@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style type="text/css">
+    .main {
+      font-family: "Lucida Grande", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: #333;
+      font-size: 14px;
+      width: 100%;
+      max-width: 800px;
+      margin: 100px auto 0px auto;
+      background-image: url('<%= @doubtfire_host %>/assets/images/logo.png');
+      background-size: 3.5em;
+      background-repeat: no-repeat;
+      background-position: top 40px right 45px;
+      padding: 30px 40px;
+      border: solid 1px rgb(240, 240, 240);
+      line-height: 200%;
+      text-align: justify;
+    }
+    footer, .footer {
+      font-family: "Lucida Grande", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      text-align: center;
+      margin-top: 10px;
+      color: #aaa;
+      font-size: 0.7em;
+    }
+    .subtext {
+      color: #aaa;
+      font-size: 0.7em;
+      margin-bottom: 10px;
+      margin-top: -10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: scroll;
+      margin: 20px 0;
+    }
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    th {
+      background-color: #f8f9fa;
+    }
+    .error {
+      color: #dc3545;
+    }
+    .success {
+      color: #28a745;
+    }
+    a, a:visited {
+      color: #6a97d2;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    h1 {
+      font-size: 1.1em;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="main">
+    <h1>Extension Granted</h1>
+    <% if @is_tutor %>
+      <% unit = @extension&.unit || @extensions.first&.unit %>
+      <p class="subtext">The due date has been changed for a task in <% unit.name%>.</p>
+
+
+      <p>Hi <%= @granted_by.first_name %>,</p>
+      <p>You have granted extensions for the following students:</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Task</th>
+            <th>New Due Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @extensions.each do |extension| %>
+            <tr>
+              <td><%= extension.project.student.name %></td>
+              <td><%= extension.task.task_definition.name %></td>
+              <td><%= extension.task.due_date.strftime("%d %b %Y") %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+
+      <% if @failed_extensions.any? %>
+        <h2>Failed Extensions</h2>
+        <p class="subtext">These extensions could not be processed.</p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Student ID</th>
+              <th>Error</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @failed_extensions.each do |failed| %>
+              <tr>
+                <td><%= failed[:student_id] %></td>
+                <td class="error"><%= failed[:error] %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+
+      <p>Total students selected: <%= @total_selected %></p>
+      <p>Successfully granted: <%= @extensions.count %></p>
+      <% if @failed_extensions.any? %>
+        <p>Failed: <%= @failed_extensions.count %></p>
+      <% end %>
+
+      <p>
+        Cheers,<br />
+        The <%= @doubtfire_product_name %> Team
+      </p>
+
+    <% else %>
+      <p class="subtext">The due date has been changed for a task in <%= @extension.unit.name %></p>
+
+      <p>Hi <%= @student.name %>,</p>
+
+      <p>
+        An extension has been granted for your task:
+        <strong><%= @task.task_definition.name %></strong>.
+      </p>
+
+      <p>Here are the details:</p>
+      <ul>
+        <li>New due date: <%= @task.due_date.strftime("%d %b %Y") %></li>
+        <li>Granted by: <%= @granted_by.name %></li>
+        <% if @extension.comment.present? %>
+          <li>Comment: <%= @extension.comment %></li>
+        <% end %>
+      </ul>
+
+      <p>
+        If you have any questions, please reach out to your tutor or teaching team.
+      </p>
+
+      <p>
+        Cheers,<br />
+        The <%= @doubtfire_product_name %> Team
+      </p>
+    <% end %>
+  </div>
+
+  <footer class="footer">
+    <a href="<%= @unsubscribe_url %>">Unsubscribe</a> |
+    Generated with <%= @doubtfire_product_name %>
+  </footer>
+</body>
+</html>
