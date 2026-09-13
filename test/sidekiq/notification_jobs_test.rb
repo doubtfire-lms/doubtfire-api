@@ -175,6 +175,27 @@ class NotificationJobsTest < ActiveSupport::TestCase
     assert_not_nil notification.reload.email_sent_at
   end
 
+  def test_opted_out_failure_notifications_are_not_carried_by_the_digest
+    settings = create_settings
+    settings.update!(
+      channels: settings.channels.merge(
+        'overseer_failed' => ['in_app'],
+        'pdf_generation_failed' => ['in_app']
+      )
+    )
+    overseer_failure = FactoryBot.create(:notification, recipient: settings.user, kind: 'overseer_failed')
+    pdf_failure = FactoryBot.create(:notification, recipient: settings.user, kind: 'pdf_generation_failed')
+
+    assert_no_emails do
+      SendNotificationDigestJob.new.perform(settings.id)
+    end
+
+    [overseer_failure, pdf_failure].each do |notification|
+      assert_not_nil notification.reload.email_processed_at
+      assert_nil notification.email_sent_at
+    end
+  end
+
   def test_an_unread_discussion_deadline_is_carried_by_the_digest
     settings = create_settings
     notification = FactoryBot.create(:notification, recipient: settings.user, kind: 'discuss_warning')

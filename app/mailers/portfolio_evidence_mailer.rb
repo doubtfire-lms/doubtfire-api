@@ -7,6 +7,7 @@ class PortfolioEvidenceMailer < ApplicationMailer
 
   def task_pdf_failed(project, tasks)
     return nil if project.nil? || tasks.nil? || tasks.empty?
+    return nil unless notification_email_enabled?(project, 'pdf_generation_failed')
 
     add_general
     @student = project.student
@@ -39,6 +40,7 @@ class PortfolioEvidenceMailer < ApplicationMailer
 
   def overseer_assessment_failed(project, tasks)
     return nil if project.nil? || tasks.nil? || tasks.empty?
+    return nil unless notification_email_enabled?(project, 'overseer_failed')
 
     add_general
     @student = project.student
@@ -81,5 +83,11 @@ class PortfolioEvidenceMailer < ApplicationMailer
     convenor_email = %("#{@convenor.name}" <#{@convenor.email}>)
     subject = "#{project.unit.name}: Portfolio failed to compile"
     mail(to: email_with_name, from: convenor_email, subject: subject)
+  end
+
+  private
+
+  def notification_email_enabled?(project, kind)
+    NotificationSetting.for(project.student).delivers?(project.unit, kind, :email)
   end
 end

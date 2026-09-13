@@ -87,6 +87,24 @@ class UnitMailTest < ActionMailer::TestCase
     assert mail.html_part.body.include? "projects/#{project.id}/dashboard/#{task.task_definition.abbreviation}"
   end
 
+  def test_failed_submission_emails_honour_the_students_email_channels
+    unit = FactoryBot.create(:unit)
+    project = unit.active_projects.first
+    task = project.task_for_task_definition(unit.task_definitions.first)
+    settings = NotificationSetting.for(project.student)
+    settings.update!(
+      channels: settings.channels.merge(
+        'overseer_failed' => ['in_app'],
+        'pdf_generation_failed' => ['in_app']
+      )
+    )
+
+    assert_no_emails do
+      PortfolioEvidenceMailer.overseer_assessment_failed(project, [task]).deliver_now
+      PortfolioEvidenceMailer.task_pdf_failed(project, [task]).deliver_now
+    end
+  end
+
   def test_send_discussion_deadline_emails
     unit = FactoryBot.create(:unit)
     project = unit.active_projects.first
