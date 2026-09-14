@@ -8,11 +8,13 @@ class OneTimeDownloadTicket
 
   class << self
     def issue!(scope:, expires_in:)
+      expires_at = Time.current.to_f + expires_in.to_f
+
       MAX_ISSUE_ATTEMPTS.times do
         nonce = SecureRandom.urlsafe_base64(NONCE_BYTES, false)
         stored = Rails.cache.write(
           cache_key(scope, nonce),
-          true,
+          expires_at,
           expires_in: expires_in,
           unless_exist: true
         )
@@ -25,9 +27,17 @@ class OneTimeDownloadTicket
     def consume(scope:, nonce:)
       return false if nonce.blank?
 
+      key = cache_key(scope, nonce)
+
+      # `delete` reports presence, not liveness: in-process stores keep expired
+      # entries until read or pruned. Reading first is expiry aware everywhere.
+      expires_at = Rails.cache.read(key)
+
       # Cache deletion is atomic for the shared Redis store. Exactly one
       # concurrent request can therefore consume a given ticket.
-      Rails.cache.delete(cache_key(scope, nonce))
+      return false unless Rails.cache.delete(key)
+
+      expires_at.is_a?(Numeric) && Time.current.to_f <= expires_at
     end
 
     private
