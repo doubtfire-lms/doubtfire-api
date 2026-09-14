@@ -2325,27 +2325,52 @@ class Unit < ApplicationRecord
 
     # All active projects with a compiled portfolio
     portfolio_projects = active_projects.select(&:portfolio_available)
-    progress_callback.call(message: "Initialising portfolio download", total_rows: portfolio_projects.count, rows_processed: portfolio_projects.count) if progress_callback
+    if File.exist?(portfolio_zip_name)
+      progress_callback&.call(
+        message: "Initialising portfolio download",
+        total_rows: portfolio_projects.count,
+        rows_processed: portfolio_projects.count
+      )
+      return portfolio_zip_name
+    end
 
-    return portfolio_zip_name if File.exist?(portfolio_zip_name)
+    progress_callback&.call(
+      message: "Adding portfolios to archive",
+      total_rows: portfolio_projects.count,
+      rows_processed: 0
+    )
 
-    progress_callback.call(message: "Initialising portfolio download", total_rows: portfolio_projects.count, rows_processed: 0) if progress_callback
-    count = 0
+    partial_result = "#{portfolio_zip_name}.partial-#{SecureRandom.hex(8)}"
+    processed_count = 0
 
-    # Create a new zip
-    Zip::File.open(portfolio_zip_name, Zip::File::CREATE) do |zip|
-      portfolio_projects.each do |project|
-        count += 1
-        progress_callback.call(message: "Compressing portfolios", rows_processed: count) if progress_callback
+    begin
+      Zip::OutputStream.open(partial_result) do |zip|
+        portfolio_projects.each do |project|
+          # Starting the next entry finalises the previous one. Report progress
+          # only after that finalisation, not merely after feeding it data.
+          dst_path = FileHelper.sanitized_path(
+            project.target_grade_desc.to_s,
+            "#{project.student.username}-portfolio (#{project.tutors_and_tutorial})"
+          ) + '.pdf'
+          zip.put_next_entry(dst_path)
 
-        # Add file to zip in grade folder
-        src_path = project.portfolio_path
-        dst_path = FileHelper.sanitized_path(project.target_grade_desc.to_s, "#{project.student.username}-portfolio (#{project.tutors_and_tutorial})") + '.pdf'
+          if processed_count.positive?
+            progress_callback&.call(message: "Adding portfolios to archive", rows_processed: processed_count)
+          end
 
-        # copy into zip
-        zip.add(dst_path, src_path)
-      end # active_projects
-    end # zip
+          File.open(project.portfolio_path, 'rb') { |portfolio| IO.copy_stream(portfolio, zip) }
+          processed_count += 1
+        end
+      end
+
+      # Closing finalises the last PDF and writes the central directory. Publish
+      # the completed archive before reporting 100% to the job monitor.
+      FileUtils.mv(partial_result, portfolio_zip_name)
+      progress_callback&.call(message: "Adding portfolios to archive", rows_processed: processed_count)
+    ensure
+      FileUtils.rm_f(partial_result)
+    end
+
     portfolio_zip_name
   end
 
@@ -2389,85 +2414,150 @@ class Unit < ApplicationRecord
   #
   # Create a temp zip file with all submission PDFs for a task
   #
+  def task_submissions_pdf_zip_path(current_user, td)
+    FileHelper.tmp_file("submissions-#{code}-#{td.abbreviation}-#{current_user.username}-pdfs.zip")
+  end
+
   def get_task_submissions_pdf_zip(current_user, td, progress_callback: nil)
     # Get a temp file path
-    result = FileHelper.tmp_file("submissions-#{code}-#{td.abbreviation}-#{current_user.username}-pdfs.zip")
+    result = task_submissions_pdf_zip_path(current_user, td)
 
     tasks_with_files = td.related_tasks_with_files
-    progress_callback.call(message: "Initialising submission pdfs download", total_rows: tasks_with_files.count, rows_processed: tasks_with_files.count) if progress_callback
+    if File.exist?(result)
+      progress_callback&.call(
+        message: "Initialising submission pdfs download",
+        total_rows: tasks_with_files.count,
+        rows_processed: tasks_with_files.count
+      )
+      return result
+    end
 
-    return result if File.exist?(result)
+    zip_root_path = "#{td.abbreviation}-pdfs"
+    pdf_entries = tasks_with_files.each_with_object({}) do |task, entries|
+      path_part = if td.is_group_task? && task.group
+                    task.group.name.to_s
+                  else
+                    task.student.username.to_s
+                  end
 
-    progress_callback.call(message: "Initialising submission pdfs download", total_rows: tasks_with_files.count, rows_processed: 0) if progress_callback
+      entries[File.join(zip_root_path, "#{path_part}.pdf")] = task.final_pdf_path
+    end
 
-    count = 0
+    total_pdfs = pdf_entries.count
+    progress_callback&.call(
+      message: "Adding submission PDFs to archive",
+      total_rows: total_pdfs,
+      rows_processed: 0
+    )
 
-    # Create a new zip
-    Zip::File.open(result, Zip::File::CREATE) do |zip|
-      Dir.mktmpdir do |dir|
-        # Extract all of the files...
-        tasks_with_files.each do |task|
-          count += 1
-          progress_callback.call(message: "Compressing submission pdfs", rows_processed: count) if progress_callback
+    partial_result = "#{result}.partial-#{SecureRandom.hex(8)}"
+    processed_count = 0
 
-          path_part = if td.is_group_task? && task.group
-                        task.group.name.to_s
-                      else
-                        task.student.username.to_s
-                      end
+    begin
+      Zip::OutputStream.open(partial_result) do |zip|
+        pdf_entries.each do |zip_path, pdf_path|
+          # Starting the next entry finalises the previous one. Report progress
+          # only after that finalisation, not merely after feeding it data.
+          zip.put_next_entry(zip_path)
+          progress_callback&.call(message: "Adding submission PDFs to archive", rows_processed: processed_count) if processed_count.positive?
 
-          FileUtils.cp task.final_pdf_path, File.join(dir, path_part.to_s) + '.pdf'
-        end # each task
+          File.open(pdf_path, 'rb') { |pdf| IO.copy_stream(pdf, zip) }
+          processed_count += 1
+        end
+      end
 
-        # Copy files into zip
-        zip_root_path = "#{td.abbreviation}-pdfs"
-        FileHelper.recursively_add_dir_to_zip(zip, dir, zip_root_path)
-      end # mktmpdir
-    end # zip
+      # Closing the output stream finalises the last entry and writes the
+      # central directory, so 100% now means the archive is genuinely ready.
+      FileUtils.mv(partial_result, result)
+      progress_callback&.call(message: "Adding submission PDFs to archive", rows_processed: processed_count)
+    ensure
+      FileUtils.rm_f(partial_result)
+    end
+
     result
   end
 
   #
   # Create a temp zip file with all submissions for a task
   #
+  def task_submissions_zip_path(current_user, td)
+    FileHelper.tmp_file("submissions-#{code}-#{td.abbreviation}-#{current_user.username}-files.zip")
+  end
+
   def get_task_submissions_zip(current_user, td, progress_callback: nil)
     # Get a temp file path
-    result = FileHelper.tmp_file("submissions-#{code}-#{td.abbreviation}-#{current_user.username}-files.zip")
+    result = task_submissions_zip_path(current_user, td)
 
     tasks_with_files = td.related_tasks_with_files
-    progress_callback.call(message: "Initialising submission files download", total_rows: tasks_with_files.count, rows_processed: tasks_with_files.count) if progress_callback
+    submissions = tasks_with_files.each_with_object({}) do |task, entries|
+      path_part = if td.is_group_task? && task.group
+                    task.group.name.to_s
+                  else
+                    task.student.username.to_s
+                  end
 
-    return result if File.exist?(result)
-    progress_callback.call(message: "Initialising submission files download", total_rows: tasks_with_files.count, rows_processed: 0) if progress_callback
+      # Group tasks can expose the same underlying submission through multiple
+      # student tasks. Match the old extracted-directory behaviour by retaining
+      # one archive per output folder.
+      entries[path_part] = task
+    end
 
-    count = 0
+    if File.exist?(result)
+      progress_callback&.call(
+        message: "Initialising submission files download",
+        total_rows: submissions.count,
+        rows_processed: submissions.count
+      )
+      return result
+    end
 
-    # Create a new zip
-    Zip::File.open(result, Zip::File::CREATE) do |zip|
-      Dir.mktmpdir do |dir|
-        # Extract all of the files...
-        tasks_with_files.each do |task|
-          count += 1
-          progress_callback.call(message: "Compressing submission files", rows_processed: count) if progress_callback
+    progress_callback&.call(
+      message: "Adding submission files to archive",
+      total_rows: submissions.count,
+      rows_processed: 0
+    )
 
-          path_part = if td.is_group_task? && task.group
-                        task.group.name.to_s
-                      else
-                        task.student.username.to_s
-                      end
+    zip_root_path = "#{td.abbreviation}-submissions"
+    partial_result = "#{result}.partial-#{SecureRandom.hex(8)}"
+    processed_count = 0
 
-          task.extract_file_from_done(dir, '*',
-                                      ->(_task, to_path, name) { File.join(to_path.to_s, path_part, name.to_s) }) # call
+    begin
+      Zip::OutputStream.open(partial_result) do |output_zip|
+        submissions.each do |path_part, task|
+          Zip::File.open(task.zip_file_path_for_done_task) do |submission_zip|
+            submission_zip.each do |entry|
+              next if entry.name_is_directory?
 
-          FileUtils.mv Dir.glob("#{dir}/#{path_part}/#{task.id}/*"), File.join(dir, path_part.to_s)
-          FileUtils.rm_r "#{dir}/#{path_part}/#{task.id}" if File.directory?("#{dir}/#{path_part}/#{task.id}")
-        end # each task
+              # Done archives store files below a task-id folder. The aggregate
+              # archive replaces that folder with the student or group name.
+              relative_path = entry.name.split('/', 2).last || entry.name
+              aggregate_entry = entry.dup
+              aggregate_entry.name = File.join(zip_root_path, path_part, relative_path)
+              output_zip.copy_raw_entry(aggregate_entry)
+            end
+          end
 
-        # Copy files into zip
-        zip_root_path = "#{td.abbreviation}-submissions"
-        FileHelper.recursively_add_dir_to_zip(zip, dir, zip_root_path)
-      end # mktmpdir
-    end # zip
+          processed_count += 1
+          if processed_count < submissions.count
+            progress_callback&.call(
+              message: "Adding submission files to archive",
+              rows_processed: processed_count
+            )
+          end
+        end
+      end
+
+      # ZIP entries are copied in their existing compressed form. Closing only
+      # writes headers and the central directory; publish before reporting 100%.
+      FileUtils.mv(partial_result, result)
+      progress_callback&.call(
+        message: "Adding submission files to archive",
+        rows_processed: processed_count
+      )
+    ensure
+      FileUtils.rm_f(partial_result)
+    end
+
     result
   end
 

@@ -446,6 +446,7 @@ class AuthenticationApi < Grape::API
   end
   delete '/auth' do
     user = User.find_by(username: headers['username'] || headers['Username'])
+    signing_out_user = user
     token = user&.token_for_text?(headers['auth-token'] || headers['Auth-Token'], :general)
 
     if token.present?
@@ -458,6 +459,7 @@ class AuthenticationApi < Grape::API
       user_param = cookies['username']
 
       user = User.find_by(username: user_param)
+      signing_out_user ||= user
       token = user&.token_for_text?(auth_param, :refresh_token)
       if token.present?
         logger.info "Destroy refresh token for #{user.username} from #{request.ip}"
@@ -467,6 +469,8 @@ class AuthenticationApi < Grape::API
 
     # Remove the refresh token cookie - if remember is false
     set_refresh_cookie_in_response(false) unless params[:remember]
+    signing_out_user&.auth_tokens&.where(token_type: :content)&.destroy_all
+    set_content_cookie_in_response
     present nil
   end
 
@@ -496,7 +500,8 @@ class AuthenticationApi < Grape::API
         token = current_user.generate_content_authentication_token!
       end
 
-      present :content_auth_token, token.authentication_token
+      set_content_cookie_in_response(token)
+      present :content_access, true
     end
   end
 
