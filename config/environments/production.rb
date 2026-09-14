@@ -7,6 +7,20 @@ Doubtfire::Application.configure do
   config.consider_all_requests_local = false
   config.action_controller.perform_caching = true
 
+  # Use Redis for the shared production cache when configured. Falling back to
+  # an in-process cache avoids FileStore races during concurrent expiry while
+  # keeping production bootable for deployments without Redis.
+  config.cache_store = if ENV['DF_REDIS_CACHE_URL'].present?
+                         [:redis_cache_store, {
+                           url: ENV.fetch('DF_REDIS_CACHE_URL'),
+                           connect_timeout: 1,
+                           read_timeout: 1,
+                           write_timeout: 1
+                         }]
+                       else
+                         :memory_store
+                       end
+
   # Disable Rails's static asset server (Apache or nginx will already do this)
   config.serve_static_files = true
 
