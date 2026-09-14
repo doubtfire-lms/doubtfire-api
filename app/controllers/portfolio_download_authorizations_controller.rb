@@ -81,7 +81,7 @@ class PortfolioDownloadAuthorizationsController < ApplicationController
   end
 
   def download_filename(unit)
-    download_id = "#{Time.zone.now.strftime('%Y-%m-%d %H:%m:%S')}-portfolios-#{unit.code}-#{@download_user.username}"
+    download_id = "#{Time.zone.now.strftime('%Y-%m-%d %H:%M:%S')}-portfolios-#{unit.code}-#{@download_user.username}"
     "#{FileHelper.sanitized_filename(download_id.tr('\\/', '-'))}.zip"
   end
 

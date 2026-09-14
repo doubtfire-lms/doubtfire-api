@@ -95,7 +95,7 @@ class TaskSubmissionFilesDownloadAuthorizationsController < ApplicationControlle
   end
 
   def download_filename(unit, task_definition, user)
-    download_id = "#{Time.zone.now.strftime('%Y-%m-%d %H:%m:%S')}-#{unit.code}-#{task_definition.abbreviation}-#{user.username}-files"
+    download_id = "#{Time.zone.now.strftime('%Y-%m-%d %H:%M:%S')}-#{unit.code}-#{task_definition.abbreviation}-#{user.username}-files"
     "#{FileHelper.sanitized_filename(download_id.tr('\\/', '-'))}.zip"
   end
 
