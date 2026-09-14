@@ -189,7 +189,6 @@ class DownloadAuthorizationBoundaryTest < ActiveSupport::TestCase
 
     assert_equal 200, last_response.status
     assert_safe_relative_file_header(File.join(site.served_dir, 'index.html'))
-    assert_equal site.id.to_s, last_response.headers['X-OnTrack-Content-Site-Id']
 
     Tempfile.create('outside-unit-content') do |outside_file|
       outside_file.write('outside content')

@@ -39,7 +39,6 @@ class UnitContentDownloadAuthorizationsController < ApplicationController
     response.set_header('X-OnTrack-File', result[:relative_path])
     response.set_header('X-OnTrack-Content-Disposition', disposition)
     response.set_header('X-OnTrack-Content-Type', content_type)
-    response.set_header('X-OnTrack-Content-Site-Id', result[:site].id.to_s)
     response.set_header('X-OnTrack-Cache-Control', result[:cache_control])
     head :ok
   end
@@ -63,8 +62,7 @@ class UnitContentDownloadAuthorizationsController < ApplicationController
       {
         'accept-ranges' => 'bytes',
         'cache-control' => result[:cache_control],
-        'content-disposition' => disposition,
-        'x-content-site-id' => result[:site].id.to_s
+        'content-disposition' => disposition
       },
       content_type_for(result[:path])
     )
@@ -120,7 +118,6 @@ class UnitContentDownloadAuthorizationsController < ApplicationController
     return :not_found unless resolved_path
 
     {
-      site: site,
       path: resolved_path,
       relative_path: relative_path,
       cache_control: content_version.present? ? VERSIONED_CACHE_CONTROL : LEGACY_CACHE_CONTROL
