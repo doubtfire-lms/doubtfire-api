@@ -76,8 +76,10 @@ module AuthenticationHelpers
   def get_user_and_token_from(source)
     case source
     when :header
-      user_param = headers['username'] || headers['Username'] || params['username']
-      auth_param = headers['auth-token'] || headers['Auth-Token'] || params['authToken'] || headers['Auth_Token'] || headers['auth_token'] || params['auth_token'] || params['Auth_Token']
+      user_param = request.headers['username'] || request.headers['Username'] || params['username']
+      auth_param = request.headers['auth-token'] || request.headers['Auth-Token'] || params['authToken'] ||
+                   request.headers['Auth_Token'] || request.headers['auth_token'] || params['auth_token'] ||
+                   params['Auth_Token']
     when :cookie
       user_param = cookies['username']
       auth_param = cookies['refresh_token']
@@ -125,7 +127,7 @@ module AuthenticationHelpers
   # Get the current user either from warden or from the header
   #
   def current_user
-    username = headers['username'] || headers['Username'] || params['username'] || cookies['username']
+    username = request.headers['username'] || request.headers['Username'] || params['username'] || cookies['username']
     User.eager_load(:role, :auth_tokens).find_by(username: username)
   end
 
