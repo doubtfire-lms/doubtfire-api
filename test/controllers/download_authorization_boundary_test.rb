@@ -302,6 +302,7 @@ class DownloadAuthorizationBoundaryTest < ActiveSupport::TestCase
       assert_match(/\Aattachment;/, disposition)
       assert_match(/filename="[^"]+\.zip"/, disposition)
       assert_equal 'application/zip', last_response.headers['Content-Type']
+      assert_equal 'rails', last_response.headers['X-OnTrack-Served-By']
     end
   ensure
     unit&.destroy
