@@ -1,4 +1,5 @@
 require 'test_helper'
+require 'minitest/mock'
 
 class OneTimeDownloadTicketTest < ActiveSupport::TestCase
   def test_ticket_can_only_be_consumed_once
