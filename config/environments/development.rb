@@ -2,8 +2,10 @@
 Doubtfire::Application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 
-  # Accept requests forwarded by the local HTTPS Caddy development proxy.
-  config.hosts << 'ontrack.dev'
+  # Accept requests for the configured institution host, so a local HTTPS
+  # development proxy can forward them. Rails otherwise allows only localhost.
+  institution_host = URI.parse(config.institution[:host].to_s).host
+  config.hosts << institution_host if institution_host.present?
 
   # In the development environment your application's code is reloaded any time
   # it changes. This slows down response time but is perfect for development
