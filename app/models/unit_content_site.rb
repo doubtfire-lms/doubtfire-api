@@ -221,6 +221,8 @@ class UnitContentSite < ApplicationRecord
   end
 
   def extract_for_serving!
+    staging_dir = nil
+    backup_dir = nil
     raise Errno::ENOENT, "Unit content archive not found: #{archive_path}" unless File.file?(archive_path)
 
     parent_dir = File.dirname(served_dir)
@@ -237,11 +239,11 @@ class UnitContentSite < ApplicationRecord
     FileUtils.rm_rf(backup_dir)
     served_dir
   rescue StandardError
-    FileUtils.mv(backup_dir, served_dir) if File.exist?(backup_dir) && !File.exist?(served_dir)
+    FileUtils.mv(backup_dir, served_dir) if backup_dir && File.exist?(backup_dir) && !File.exist?(served_dir)
     raise
   ensure
-    FileUtils.rm_rf(staging_dir) if defined?(staging_dir) && File.exist?(staging_dir)
-    FileUtils.rm_rf(backup_dir) if defined?(backup_dir) && File.exist?(backup_dir) && File.exist?(served_dir)
+    FileUtils.rm_rf(staging_dir) if staging_dir && File.exist?(staging_dir)
+    FileUtils.rm_rf(backup_dir) if backup_dir && File.exist?(backup_dir) && File.exist?(served_dir)
   end
 
   private
