@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-58](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-57...v11.0.0-58) (2026-09-14)
+
+
+### Bug Fixes
+
+* handle concurrently cleared submission history markers ([d3c623d](https://github.com/b0ink/doubtfire-deploy/commit/d3c623d675b52393d226ecf311e35cae222f27b3))
+* use redis for production cache ([53695e9](https://github.com/b0ink/doubtfire-deploy/commit/53695e97640eb9e57941726a481511dc1268b96f))
+
 ## [11.0.0-57](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-56...v11.0.0-57) (2026-09-04)
 
 
