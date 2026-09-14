@@ -1,10 +1,10 @@
 require 'mime/types'
-require 'pathname'
 require 'rack/files'
 require 'uri'
 
 class UnitContentDownloadAuthorizationsController < ApplicationController
   include AuthorisationHelpers
+  include DownloadAuthorization
 
   skip_after_action :verify_same_origin_request, only: :serve
 
@@ -13,13 +13,11 @@ class UnitContentDownloadAuthorizationsController < ApplicationController
   VERSIONED_ROUTE = %r{\Av/(?<content_version>#{CONTENT_VERSION})(?<route>/.*)?\z}
   VERSIONED_CACHE_CONTROL = 'private, max-age=604800, immutable'.freeze
   LEGACY_CACHE_CONTROL = 'private, no-cache'.freeze
-  INTERNAL_SECRET_HEADER = 'X-OnTrack-Download-Auth'.freeze
-  ORIGINAL_URI_HEADER = 'X-Forwarded-Uri'.freeze
 
   def show
     return head :not_found unless trusted_caddy_request?
 
-    route_params = CONTENT_PATH.match(request.headers[ORIGINAL_URI_HEADER].to_s)
+    route_params = CONTENT_PATH.match(original_uri)
     return head :not_found unless route_params
 
     result = authorised_content(
@@ -30,17 +28,13 @@ class UnitContentDownloadAuthorizationsController < ApplicationController
     )
     return head result unless result.is_a?(Hash)
 
-    content_type = content_type_for(result[:path])
-    disposition = ActionDispatch::Http::ContentDisposition.format(
+    serve_via_caddy(
+      relative_path: result[:relative_path],
+      filename: result[:path].basename.to_s,
+      content_type: content_type_for(result[:path]),
       disposition: 'inline',
-      filename: result[:path].basename.to_s
+      cache_control: result[:cache_control]
     )
-
-    response.set_header('X-OnTrack-File', result[:relative_path])
-    response.set_header('X-OnTrack-Content-Disposition', disposition)
-    response.set_header('X-OnTrack-Content-Type', content_type)
-    response.set_header('X-OnTrack-Cache-Control', result[:cache_control])
-    head :ok
   end
 
   def serve
@@ -73,12 +67,6 @@ class UnitContentDownloadAuthorizationsController < ApplicationController
   end
 
   private
-
-  def trusted_caddy_request?
-    expected = Doubtfire::Application.config.caddy_download_auth_secret.to_s
-    provided = request.headers[INTERNAL_SECRET_HEADER].to_s
-    expected.present? && provided.present? && ActiveSupport::SecurityUtils.secure_compare(provided, expected)
-  end
 
   def authenticated_content_user
     username = request.cookies['username'].to_s
@@ -114,7 +102,7 @@ class UnitContentDownloadAuthorizationsController < ApplicationController
     return :not_found if content_version.present? && !valid_content_version?(site, content_version)
 
     file_path = site.served_file_path(route.presence || '/')
-    resolved_path, relative_path = authorised_file_path(file_path, site.served_dir)
+    resolved_path, relative_path = authorised_file_path(file_path, within: site.served_dir)
     return :not_found unless resolved_path
 
     {
@@ -137,19 +125,5 @@ class UnitContentDownloadAuthorizationsController < ApplicationController
 
   def content_type_for(path)
     MIME::Types.type_for(path.to_s).first&.content_type || 'application/octet-stream'
-  end
-
-  def authorised_file_path(file_path, site_root)
-    return [nil, nil] if file_path.blank? || !File.file?(file_path)
-
-    student_work_root = Pathname.new(Doubtfire::Application.config.student_work_dir).realpath
-    root = Pathname.new(site_root).realpath
-    resolved = Pathname.new(file_path).realpath
-    return [nil, nil] unless resolved.to_s.start_with?("#{root}#{File::SEPARATOR}")
-    return [nil, nil] unless resolved.to_s.start_with?("#{student_work_root}#{File::SEPARATOR}")
-
-    [resolved, resolved.relative_path_from(student_work_root).to_s]
-  rescue Errno::ENOENT, Errno::EACCES
-    [nil, nil]
   end
 end

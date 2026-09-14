@@ -1,84 +1,61 @@
-require 'pathname'
-
 class SubmissionDownloadAuthorizationsController < ApplicationController
   include AuthenticationHelpers
   include AuthorisationHelpers
+  include DownloadAuthorization
 
   DOWNLOAD_PATH = %r{\A/api/projects/(?<project_id>\d+)/task_def_id/(?<task_definition_id>\d+)/(?<kind>submission|submission_files)(?:\?(?<query>.*))?\z}
-  INTERNAL_SECRET_HEADER = 'X-OnTrack-Download-Auth'.freeze
-  ORIGINAL_URI_HEADER = 'X-Forwarded-Uri'.freeze
 
   def show
     return head :not_found unless trusted_caddy_request?
-    return head :unauthorized unless authenticated_for_download?
+    return head :unauthorized unless download_header_user
 
-    route_params = DOWNLOAD_PATH.match(request.headers[ORIGINAL_URI_HEADER].to_s)
-    return head :not_found unless route_params
+    route = DOWNLOAD_PATH.match(original_uri)
+    return head :not_found unless route
 
-    project = Project.find_by(id: route_params[:project_id])
-    return head :not_found unless project
+    download = locate_download(route)
+    return head download unless download.is_a?(Hash)
 
-    task_definition = project.unit.task_definitions.find_by(id: route_params[:task_definition_id])
-    return head :not_found unless task_definition
-    return head :forbidden unless authorise?(current_user, project, :get_submission)
+    _resolved, relative_path = authorised_file_path(download[:path])
+    return head :not_found unless relative_path
 
-    task = project.task_for_task_definition(task_definition)
-    return head :not_found unless task
-
-    file_path, filename, content_type, disposition_type = download_metadata(task, task_definition, project, route_params)
-    resolved_path, relative_path = authorised_file_path(file_path)
-    return head :not_found unless resolved_path
-
-    disposition = ActionDispatch::Http::ContentDisposition.format(disposition: disposition_type, filename: filename)
-
-    response.set_header('X-OnTrack-File', relative_path)
-    response.set_header('X-OnTrack-Content-Disposition', disposition)
-    response.set_header('X-OnTrack-Content-Type', content_type)
-
-    head :ok
+    serve_via_caddy(relative_path: relative_path, **download.except(:path))
   end
 
   private
 
-  def trusted_caddy_request?
-    expected = Doubtfire::Application.config.caddy_download_auth_secret.to_s
-    provided = request.headers[INTERNAL_SECRET_HEADER].to_s
-    return false if expected.blank? || provided.blank?
+  def locate_download(route)
+    project = Project.find_by(id: route[:project_id])
+    return :not_found unless project
 
-    ActiveSupport::SecurityUtils.secure_compare(provided, expected)
-  end
+    task_definition = project.unit.task_definitions.find_by(id: route[:task_definition_id])
+    return :not_found unless task_definition
+    return :forbidden unless authorise?(current_user, project, :get_submission)
 
-  def authenticated_for_download?
-    username, token = get_user_and_token_from(:header)
-    user_auth_token_type(username, token, :general) == :valid
-  end
+    task = project.task_for_task_definition(task_definition)
+    return :not_found unless task
 
-  def download_metadata(task, task_definition, project, route_params)
-    if route_params[:kind] == 'submission_files'
-      filename = FileHelper.sanitized_filename("#{project.student.username}-#{task_definition.abbreviation}.zip")
-      [FileHelper.zip_file_path_for_done_task(task), filename, 'application/octet-stream', 'attachment']
+    if route[:kind] == 'submission_files'
+      submission_files_download(task, task_definition, project)
     else
-      filename = FileHelper.sanitized_filename("#{task_definition.abbreviation}.pdf")
-      disposition = attachment_requested?(route_params[:query]) ? 'attachment' : 'inline'
-      [task.final_pdf_path, filename, 'application/pdf', disposition]
+      submission_pdf_download(task, task_definition, route[:query])
     end
   end
 
-  def attachment_requested?(query)
-    ActiveModel::Type::Boolean.new.cast(Rack::Utils.parse_nested_query(query.to_s)['as_attachment'])
+  def submission_files_download(task, task_definition, project)
+    {
+      path: FileHelper.zip_file_path_for_done_task(task),
+      filename: FileHelper.sanitized_filename("#{project.student.username}-#{task_definition.abbreviation}.zip"),
+      content_type: 'application/octet-stream',
+      disposition: 'attachment'
+    }
   end
 
-  def authorised_file_path(file_path)
-    return [nil, nil] if file_path.blank? || !File.file?(file_path)
-
-    root = Pathname.new(Doubtfire::Application.config.student_work_dir).realpath
-    resolved = Pathname.new(file_path).realpath
-    root_prefix = "#{root}#{File::SEPARATOR}"
-
-    return [nil, nil] unless resolved.to_s.start_with?(root_prefix)
-
-    [resolved, resolved.relative_path_from(root).to_s]
-  rescue Errno::ENOENT, Errno::EACCES
-    [nil, nil]
+  def submission_pdf_download(task, task_definition, query)
+    {
+      path: task.final_pdf_path,
+      filename: FileHelper.sanitized_filename("#{task_definition.abbreviation}.pdf"),
+      content_type: 'application/pdf',
+      disposition: attachment_requested?(query) ? 'attachment' : 'inline'
+    }
   end
 end

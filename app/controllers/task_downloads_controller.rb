@@ -4,7 +4,8 @@ class TaskDownloadsController < ApplicationController
   include AuthenticationHelpers
   include AuthorisationHelpers
   include LogHelper
-  include TaskSubmissionFilesDownloadAuthentication
+  include DownloadAuthorization
+  include NativeDownloadCookie
 
   class MyException < RuntimeError
     attr_reader :status
@@ -20,9 +21,10 @@ class TaskDownloadsController < ApplicationController
 
   # desc "Retrieve tasks for a unit"
   def index
-    download_user = authenticated_task_submission_files_download_user(
-      unit_id: params[:id],
-      task_definition_id: params[:task_def_id]
+    download_user = native_download_user(
+      :task_submission_files,
+      unit_id: params[:id].to_i,
+      task_definition_id: params[:task_def_id].to_i
     )
 
     unless download_user
@@ -51,7 +53,7 @@ class TaskDownloadsController < ApplicationController
 
     logger.debug "Downloading task for #{td.abbreviation} from #{output_zip}"
 
-    send_file output_zip, content_type: 'application/octet-stream', disposition: "attachment; filename=#{download_id}.zip"
+    send_download output_zip, filename: "#{download_id}.zip", type: 'application/zip'
   rescue MyException => e
     render json: e.message, status: e.status
   end

@@ -4,7 +4,8 @@ class PortfolioDownloadsController < ApplicationController
   include AuthenticationHelpers
   include AuthorisationHelpers
   include LogHelper
-  include PortfolioDownloadAuthentication
+  include DownloadAuthorization
+  include NativeDownloadCookie
 
   class MyException < RuntimeError
     attr_reader :status
@@ -20,7 +21,7 @@ class PortfolioDownloadsController < ApplicationController
 
   # desc "Retrieve portfolios for a unit"
   def index
-    download_user = authenticated_portfolio_download_user(unit_id: params[:id])
+    download_user = native_download_user(:portfolio, unit_id: params[:id].to_i)
 
     unless download_user
       error!({ error: "Not authorised to download portfolios for unit '#{params[:id]}'" }, 401)
@@ -51,7 +52,7 @@ class PortfolioDownloadsController < ApplicationController
     # File.binread output_zip
     # sending_file = true
 
-    send_file output_zip, content_type: 'application/octet-stream', disposition: "attachment; filename=#{download_id}.zip"
+    send_download output_zip, filename: "#{download_id}.zip", type: 'application/zip'
   rescue MyException => e
     render json: e.message, status: e.status
   end

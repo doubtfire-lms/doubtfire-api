@@ -277,6 +277,36 @@ class DownloadAuthorizationBoundaryTest < ActiveSupport::TestCase
     unit&.destroy
   end
 
+  def test_direct_rails_downloads_name_the_file_in_content_disposition
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 1, stream_count: 0)
+    user = unit.main_convenor_user
+    task_definition = unit.task_definitions.first
+
+    native_downloads(unit, task_definition, user).each do |download|
+      write_file(download[:file_path], 'archive')
+      clear_cookies
+      clear_request_headers
+      add_auth_header_for(user: user)
+      post download[:access_path]
+
+      encrypted_cookie = issued_cookie_value(download[:cookie_name])
+      clear_auth_header
+      replay_cookie(download[:cookie_name], encrypted_cookie)
+      get download[:public_path]
+
+      assert_equal 200, last_response.status, "#{download[:public_path]} was not served"
+
+      # Without this the browser falls back to naming the file after the last
+      # URL segment, e.g. "portfolio" with no extension.
+      disposition = last_response.headers['Content-Disposition']
+      assert_match(/\Aattachment;/, disposition)
+      assert_match(/filename="[^"]+\.zip"/, disposition)
+      assert_equal 'application/zip', last_response.headers['Content-Type']
+    end
+  ensure
+    unit&.destroy
+  end
+
   def test_expired_native_download_cookie_is_rejected_without_serving_a_file
     unit = FactoryBot.create(:unit, with_students: false, task_count: 1, stream_count: 0)
     user = unit.main_convenor_user
@@ -349,21 +379,21 @@ class DownloadAuthorizationBoundaryTest < ActiveSupport::TestCase
         access_path: "/api/submission/unit/#{unit.id}/portfolio/access",
         public_path: "/api/submission/unit/#{unit.id}/portfolio",
         internal_path: '/api/internal/downloads/portfolio',
-        cookie_name: PortfolioDownloadAuthentication::PORTFOLIO_DOWNLOAD_COOKIE,
+        cookie_name: NativeDownloadCookie.cookie_name(:portfolio),
         file_path: unit.get_portfolio_zip_filename(user)
       },
       {
         access_path: "/api/submission/unit/#{unit.id}/task_definitions/#{task_definition.id}/download_submissions/access",
         public_path: "/api/submission/unit/#{unit.id}/task_definitions/#{task_definition.id}/download_submissions",
         internal_path: '/api/internal/downloads/task-submission-files',
-        cookie_name: TaskSubmissionFilesDownloadAuthentication::TASK_SUBMISSION_FILES_DOWNLOAD_COOKIE,
+        cookie_name: NativeDownloadCookie.cookie_name(:task_submission_files),
         file_path: unit.task_submissions_zip_path(user, task_definition)
       },
       {
         access_path: "/api/submission/unit/#{unit.id}/task_definitions/#{task_definition.id}/student_pdfs/access",
         public_path: "/api/submission/unit/#{unit.id}/task_definitions/#{task_definition.id}/student_pdfs",
         internal_path: '/api/internal/downloads/task-submission-pdfs',
-        cookie_name: TaskSubmissionPdfsDownloadAuthentication::TASK_SUBMISSION_PDFS_DOWNLOAD_COOKIE,
+        cookie_name: NativeDownloadCookie.cookie_name(:task_submission_pdfs),
         file_path: unit.task_submissions_pdf_zip_path(user, task_definition)
       }
     ]
