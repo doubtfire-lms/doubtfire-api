@@ -4,6 +4,7 @@ class PortfolioDownloadsController < ApplicationController
   include AuthenticationHelpers
   include AuthorisationHelpers
   include LogHelper
+  include PortfolioDownloadAuthentication
 
   class MyException < RuntimeError
     attr_reader :status
@@ -19,22 +20,27 @@ class PortfolioDownloadsController < ApplicationController
 
   # desc "Retrieve portfolios for a unit"
   def index
-    unless authenticated?
+    download_user = authenticated_portfolio_download_user(unit_id: params[:id])
+
+    unless download_user
       error!({ error: "Not authorised to download portfolios for unit '#{params[:id]}'" }, 401)
     end
 
     unit = Unit.find(params[:id])
 
-    unless authorise? current_user, unit, :get_students
+    unless authorise? download_user, unit, :get_students
       error!({ error: "Not authorised to download portfolios for unit '#{params[:id]}'" }, 401)
     end
 
-    output_zip = unit.get_portfolio_zip_filename(current_user)
+    output_zip = unit.get_portfolio_zip_filename(download_user)
     error!({ error: 'No files to download' }, 403) unless File.exist?(output_zip)
+    unless consume_portfolio_download_ticket!(unit_id: unit.id)
+      error!({ error: 'Download access has expired or has already been used' }, 401)
+    end
 
     # Set download headers...
     # content_type "application/octet-stream"
-    download_id = "#{Time.zone.now.strftime('%Y-%m-%d %H:%m:%S')}-portfolios-#{unit.code}-#{current_user.username}"
+    download_id = "#{Time.zone.now.strftime('%Y-%m-%d %H:%m:%S')}-portfolios-#{unit.code}-#{download_user.username}"
     download_id.gsub! /[\\\/]/, '-'
     download_id = FileHelper.sanitized_filename(download_id)
     # header['Content-Disposition'] = "attachment; filename=#{download_id}.zip"

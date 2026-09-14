@@ -3,6 +3,7 @@ require 'pathname'
 class PortfolioDownloadAuthorizationsController < ApplicationController
   include AuthenticationHelpers
   include AuthorisationHelpers
+  include PortfolioDownloadAuthentication
 
   # API authentication for this action is supplied by the Auth-Token header.
   # A cross-origin form cannot forge that custom header.
@@ -11,15 +12,14 @@ class PortfolioDownloadAuthorizationsController < ApplicationController
   DOWNLOAD_PATH = %r{\A/api/submission/unit/(?<unit_id>\d+)/portfolio(?:\?.*)?\z}
   INTERNAL_SECRET_HEADER = 'X-OnTrack-Download-Auth'.freeze
   ORIGINAL_URI_HEADER = 'X-Forwarded-Uri'.freeze
-  DOWNLOAD_COOKIE = 'ontrack_portfolio_download'.freeze
-  DOWNLOAD_COOKIE_LIFETIME = 2.minutes
 
   def show
     return head :not_found unless trusted_caddy_request?
 
     route_params = DOWNLOAD_PATH.match(request.headers[ORIGINAL_URI_HEADER].to_s)
     return head :not_found unless route_params
-    return head :unauthorized unless authenticate_download(route_params[:unit_id])
+    @download_user = authenticated_portfolio_download_user(unit_id: route_params[:unit_id])
+    return head :unauthorized unless @download_user
 
     unit = Unit.find_by(id: route_params[:unit_id])
     return head :not_found unless unit
@@ -27,6 +27,7 @@ class PortfolioDownloadAuthorizationsController < ApplicationController
 
     _resolved_path, relative_path = authorised_file_path(unit.get_portfolio_zip_filename(@download_user))
     return head :not_found unless relative_path
+    return head :unauthorized unless consume_portfolio_download_ticket!(unit_id: unit.id)
 
     disposition = ActionDispatch::Http::ContentDisposition.format(
       disposition: 'attachment',
@@ -44,7 +45,7 @@ class PortfolioDownloadAuthorizationsController < ApplicationController
   # cookie. This allows the browser to start a native streaming download, which
   # cannot attach Angular's custom authentication headers.
   def create
-    @download_user = authenticated_header_user
+    @download_user = authenticated_portfolio_download_header_user
     return head :unauthorized unless @download_user
 
     unit = Unit.find_by(id: params[:id])
@@ -52,9 +53,18 @@ class PortfolioDownloadAuthorizationsController < ApplicationController
     return head :forbidden unless authorise?(@download_user, unit, :get_students)
     return head :not_found unless authorised_file_path(unit.get_portfolio_zip_filename(@download_user)).first
 
-    expires_at = Time.current + DOWNLOAD_COOKIE_LIFETIME
-    cookies.encrypted[DOWNLOAD_COOKIE] = {
-      value: { user_id: @download_user.id, unit_id: unit.id, expires_at: expires_at.to_i }.to_json,
+    expires_at = Time.current + PORTFOLIO_DOWNLOAD_COOKIE_LIFETIME
+    nonce = OneTimeDownloadTicket.issue!(
+      scope: PORTFOLIO_DOWNLOAD_TICKET_SCOPE,
+      expires_in: PORTFOLIO_DOWNLOAD_COOKIE_LIFETIME
+    )
+    cookies.encrypted[PORTFOLIO_DOWNLOAD_COOKIE] = {
+      value: {
+        user_id: @download_user.id,
+        unit_id: unit.id,
+        expires_at: expires_at.to_i,
+        nonce: nonce
+      }.to_json,
       expires: expires_at,
       domain: Doubtfire::Application.config.institution[:cookie_domain],
       path: "/api/submission/unit/#{unit.id}/portfolio",
@@ -74,27 +84,6 @@ class PortfolioDownloadAuthorizationsController < ApplicationController
     return false if expected.blank? || provided.blank?
 
     ActiveSupport::SecurityUtils.secure_compare(provided, expected)
-  end
-
-  def authenticated_header_user
-    username, token = get_user_and_token_from(:header)
-    return unless user_auth_token_type(username, token, :general) == :valid
-
-    current_user
-  end
-
-  def authenticate_download(unit_id)
-    @download_user = authenticated_header_user
-    return true if @download_user
-
-    payload = JSON.parse(cookies.encrypted[DOWNLOAD_COOKIE].to_s)
-    return false unless payload['unit_id'].to_s == unit_id.to_s
-    return false unless payload['expires_at'].to_i > Time.current.to_i
-
-    @download_user = User.find_by(id: payload['user_id'])
-    @download_user.present?
-  rescue JSON::ParserError
-    false
   end
 
   def download_filename(unit)

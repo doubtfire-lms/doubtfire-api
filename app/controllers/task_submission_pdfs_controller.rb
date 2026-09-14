@@ -40,6 +40,9 @@ class TaskSubmissionPdfsController < ApplicationController
     output_zip = unit.get_task_submissions_pdf_zip(download_user, td)
 
     error!({ error: 'No files to download' }, 403) if output_zip.nil?
+    unless consume_task_submission_pdfs_download_ticket!(unit_id: unit.id, task_definition_id: td.id)
+      error!({ error: 'Download access has expired or has already been used' }, 401)
+    end
 
     # Set download headers...
     # content_type "application/octet-stream"
