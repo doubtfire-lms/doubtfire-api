@@ -57,11 +57,17 @@ module DownloadAuthorization
       filename: filename
     )
 
-    response.set_header('X-OnTrack-File', relative_path)
+    response.set_header('X-OnTrack-File', url_encoded_path(relative_path))
     response.set_header('X-OnTrack-Content-Disposition', content_disposition)
     response.set_header('X-OnTrack-Content-Type', content_type)
     response.set_header('X-OnTrack-Cache-Control', cache_control) if cache_control.present?
     head :ok
+  end
+
+  # Caddy rewrites the request to this path, so it is parsed as a URL. Encode
+  # each segment or a '?' truncates the path and a '%' decodes to another file.
+  def url_encoded_path(relative_path)
+    relative_path.to_s.split('/').map { |segment| ERB::Util.url_encode(segment) }.join('/')
   end
 
   def attachment_requested?(query)

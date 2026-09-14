@@ -209,6 +209,32 @@ class DownloadAuthorizationBoundaryTest < ActiveSupport::TestCase
     unit&.destroy
   end
 
+  def test_unit_content_file_paths_are_url_encoded_for_the_file_server
+    unit, site = create_content_site
+    content_token = unit.main_convenor_user.generate_content_authentication_token!
+    set_content_credentials(unit.main_convenor_user, content_token)
+
+    # Caddy rewrites the request to X-OnTrack-File, so an unencoded '?' would
+    # truncate the path and an unencoded '%' would decode to a different file.
+    {
+      'query?name.txt' => 'query%3Fname.txt',
+      '100%20done.txt' => '100%2520done.txt',
+      'with space.txt' => 'with%20space.txt'
+    }.each do |name, expected|
+      write_file(File.join(site.served_dir, name), 'content')
+
+      request_internal_download(
+        '/api/internal/downloads/unit-content',
+        "/api/units/#{unit.id}/content/sites/#{site.id}/files/#{ERB::Util.url_encode(name)}"
+      )
+
+      assert_equal 200, last_response.status, "#{name} was not served"
+      assert_equal expected, last_response.headers['X-OnTrack-File'].split('/').last
+    end
+  ensure
+    unit&.destroy
+  end
+
   def test_native_download_cookies_are_scoped_to_their_own_download
     unit = FactoryBot.create(:unit, with_students: false, task_count: 1, stream_count: 0)
     user = unit.main_convenor_user
@@ -424,8 +450,8 @@ class DownloadAuthorizationBoundaryTest < ActiveSupport::TestCase
 
   def assert_safe_relative_file_header(expected_path)
     relative_path = last_response.headers['X-OnTrack-File']
-    assert_equal Pathname.new(expected_path).realpath.relative_path_from(Pathname.new(@student_work_dir).realpath).to_s,
-                 relative_path
+    expected = Pathname.new(expected_path).realpath.relative_path_from(Pathname.new(@student_work_dir).realpath).to_s
+    assert_equal expected.split('/').map { |segment| ERB::Util.url_encode(segment) }.join('/'), relative_path
     assert_not Pathname.new(relative_path).absolute?
     assert_not_includes Pathname.new(relative_path).each_filename.to_a, '..'
   end
