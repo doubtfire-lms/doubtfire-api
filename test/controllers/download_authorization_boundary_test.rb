@@ -224,19 +224,19 @@ class DownloadAuthorizationBoundaryTest < ActiveSupport::TestCase
       post download[:access_path]
 
       assert_equal 204, last_response.status, "failed to issue #{download[:cookie_name]}"
-      cookie = last_response.cookies.fetch(download[:cookie_name])
-      assert_equal download[:public_path], cookie.path
-      assert_match(/HttpOnly/i, cookie.to_s)
-      assert_match(/SameSite=Strict/i, cookie.to_s)
+      set_cookie = set_cookie_line(download[:cookie_name])
+      assert_match(/path=#{Regexp.escape(download[:public_path])}/i, set_cookie)
+      assert_match(/HttpOnly/i, set_cookie)
+      assert_match(/SameSite=Strict/i, set_cookie)
 
-      encrypted_cookie = cookie.value
+      encrypted_cookie = issued_cookie_value(download[:cookie_name])
       clear_auth_header
       replay_cookie(download[:cookie_name], encrypted_cookie)
       request_internal_download(download[:internal_path], download[:public_path])
 
       assert_equal 200, last_response.status, "first use of #{download[:cookie_name]} was rejected"
       assert_safe_relative_file_header(download[:file_path])
-      assert_empty last_response.cookies.fetch(download[:cookie_name]).value
+      assert_empty issued_cookie_value(download[:cookie_name])
 
       replay_cookie(download[:cookie_name], encrypted_cookie)
       request_internal_download(download[:internal_path], download[:public_path])
@@ -257,7 +257,7 @@ class DownloadAuthorizationBoundaryTest < ActiveSupport::TestCase
 
     add_auth_header_for(user: user)
     post download[:access_path]
-    encrypted_cookie = last_response.cookies.fetch(download[:cookie_name]).value
+    encrypted_cookie = issued_cookie_value(download[:cookie_name])
     clear_auth_header
 
     replay_cookie(download[:cookie_name], encrypted_cookie)
@@ -286,7 +286,7 @@ class DownloadAuthorizationBoundaryTest < ActiveSupport::TestCase
 
     add_auth_header_for(user: user)
     post download[:access_path]
-    encrypted_cookie = last_response.cookies.fetch(download[:cookie_name]).value
+    encrypted_cookie = issued_cookie_value(download[:cookie_name])
     clear_auth_header
 
     travel 31.seconds do
@@ -371,7 +371,20 @@ class DownloadAuthorizationBoundaryTest < ActiveSupport::TestCase
   end
 
   def replay_cookie(name, value)
-    header 'Cookie', "#{name}=#{Rack::Utils.escape(value)}"
+    # `value` is already in Set-Cookie wire form, so replay it verbatim.
+    header 'Cookie', "#{name}=#{value}"
+  end
+
+  def set_cookie_line(name)
+    Array(last_response.headers['Set-Cookie']).join("\n").lines.map(&:strip)
+                                              .find { |line| line.start_with?("#{name}=") }
+  end
+
+  # CGI::Cookie#value is array-like and holds the percent-encoded wire value,
+  # which is what the browser sends back. Rack::Test's own accessors drop the
+  # cookie's flags, so attribute assertions read the raw header instead.
+  def issued_cookie_value(name)
+    last_response.cookies.fetch(name).value.first.to_s
   end
 
   def write_file(path, contents)
