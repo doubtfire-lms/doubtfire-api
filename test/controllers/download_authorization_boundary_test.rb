@@ -210,7 +210,7 @@ class DownloadAuthorizationBoundaryTest < ActiveSupport::TestCase
     unit&.destroy
   end
 
-  def test_native_download_cookies_are_scoped_and_consumed_once
+  def test_native_download_cookies_are_scoped_to_their_own_download
     unit = FactoryBot.create(:unit, with_students: false, task_count: 1, stream_count: 0)
     user = unit.main_convenor_user
     task_definition = unit.task_definitions.first
@@ -231,29 +231,38 @@ class DownloadAuthorizationBoundaryTest < ActiveSupport::TestCase
 
       encrypted_cookie = issued_cookie_value(download[:cookie_name])
       clear_auth_header
-      replay_cookie(download[:cookie_name], encrypted_cookie)
-      request_internal_download(download[:internal_path], download[:public_path])
 
-      assert_equal 200, last_response.status, "first use of #{download[:cookie_name]} was rejected"
-      assert_safe_relative_file_header(download[:file_path])
-      assert_empty issued_cookie_value(download[:cookie_name])
+      # Resumed downloads re-request the same URL, so reuse must work.
+      2.times do |attempt|
+        replay_cookie(download[:cookie_name], encrypted_cookie)
+        request_internal_download(download[:internal_path], download[:public_path])
 
-      replay_cookie(download[:cookie_name], encrypted_cookie)
-      request_internal_download(download[:internal_path], download[:public_path])
+        assert_equal 200, last_response.status,
+                     "use #{attempt + 1} of #{download[:cookie_name]} was rejected"
+        assert_safe_relative_file_header(download[:file_path])
+      end
 
-      assert_equal 401, last_response.status, "#{download[:cookie_name]} was replayable"
-      assert_nil last_response.headers['X-OnTrack-File']
+      downloads.reject { |other| other[:cookie_name] == download[:cookie_name] }.each do |other|
+        replay_cookie(download[:cookie_name], encrypted_cookie)
+        request_internal_download(other[:internal_path], other[:public_path])
+
+        assert_equal 401, last_response.status,
+                     "#{download[:cookie_name]} authorised #{other[:internal_path]}"
+        assert_nil last_response.headers['X-OnTrack-File']
+      end
     end
   ensure
     unit&.destroy
   end
 
-  def test_head_probe_does_not_consume_native_download_cookie
-    unit = FactoryBot.create(:unit, with_students: false, task_count: 1, stream_count: 0)
+  def test_native_download_cookie_does_not_authorise_another_task_definition
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 2, stream_count: 0)
     user = unit.main_convenor_user
-    task_definition = unit.task_definitions.first
-    download = native_downloads(unit, task_definition, user).first
+    issued_for, other = unit.task_definitions.order(:id).first(2)
+    download = native_downloads(unit, issued_for, user).second
+    other_download = native_downloads(unit, other, user).second
     write_file(download[:file_path], 'archive')
+    write_file(other_download[:file_path], 'archive')
 
     add_auth_header_for(user: user)
     post download[:access_path]
@@ -261,18 +270,10 @@ class DownloadAuthorizationBoundaryTest < ActiveSupport::TestCase
     clear_auth_header
 
     replay_cookie(download[:cookie_name], encrypted_cookie)
-    header 'X-Forwarded-Method', 'HEAD'
-    request_internal_download(download[:internal_path], download[:public_path])
-    assert_equal 200, last_response.status
+    request_internal_download(other_download[:internal_path], other_download[:public_path])
 
-    replay_cookie(download[:cookie_name], encrypted_cookie)
-    header 'X-Forwarded-Method', 'GET'
-    request_internal_download(download[:internal_path], download[:public_path])
-    assert_equal 200, last_response.status
-
-    replay_cookie(download[:cookie_name], encrypted_cookie)
-    request_internal_download(download[:internal_path], download[:public_path])
     assert_equal 401, last_response.status
+    assert_nil last_response.headers['X-OnTrack-File']
   ensure
     unit&.destroy
   end
@@ -312,7 +313,6 @@ class DownloadAuthorizationBoundaryTest < ActiveSupport::TestCase
     clear_auth_header
     header 'Cookie', nil
     header 'X-OnTrack-Download-Auth', nil
-    header 'X-Forwarded-Method', nil
     header 'X-Forwarded-Uri', nil
   end
 

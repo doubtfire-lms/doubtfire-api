@@ -27,7 +27,6 @@ class PortfolioDownloadAuthorizationsController < ApplicationController
 
     _resolved_path, relative_path = authorised_file_path(unit.get_portfolio_zip_filename(@download_user))
     return head :not_found unless relative_path
-    return head :unauthorized unless consume_portfolio_download_ticket!(unit_id: unit.id)
 
     disposition = ActionDispatch::Http::ContentDisposition.format(
       disposition: 'attachment',
@@ -54,16 +53,11 @@ class PortfolioDownloadAuthorizationsController < ApplicationController
     return head :not_found unless authorised_file_path(unit.get_portfolio_zip_filename(@download_user)).first
 
     expires_at = Time.current + PORTFOLIO_DOWNLOAD_COOKIE_LIFETIME
-    nonce = OneTimeDownloadTicket.issue!(
-      scope: PORTFOLIO_DOWNLOAD_TICKET_SCOPE,
-      expires_in: PORTFOLIO_DOWNLOAD_COOKIE_LIFETIME
-    )
     cookies.encrypted[PORTFOLIO_DOWNLOAD_COOKIE] = {
       value: {
         user_id: @download_user.id,
         unit_id: unit.id,
-        expires_at: expires_at.to_i,
-        nonce: nonce
+        expires_at: expires_at.to_i
       }.to_json,
       expires: expires_at,
       domain: Doubtfire::Application.config.institution[:cookie_domain],

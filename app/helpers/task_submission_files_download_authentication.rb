@@ -1,7 +1,5 @@
 module TaskSubmissionFilesDownloadAuthentication
   TASK_SUBMISSION_FILES_DOWNLOAD_COOKIE = 'ontrack_task_submission_files_download'.freeze
-  TASK_SUBMISSION_FILES_DOWNLOAD_TICKET_SCOPE = 'task-submission-files'.freeze
-  TASK_SUBMISSION_FILES_DOWNLOAD_TICKET_ENV_KEY = 'ontrack.task_submission_files_download_ticket_nonce'.freeze
   TASK_SUBMISSION_FILES_DOWNLOAD_COOKIE_LIFETIME = 30.seconds
 
   private
@@ -27,33 +25,8 @@ module TaskSubmissionFilesDownloadAuthentication
     return unless payload['task_definition_id'].to_s == task_definition_id.to_s
     return unless payload['expires_at'].to_i > Time.current.to_i
 
-    nonce = payload['nonce'].presence
-    return unless nonce
-
-    request.env[TASK_SUBMISSION_FILES_DOWNLOAD_TICKET_ENV_KEY] = nonce
-
     User.find_by(id: payload['user_id'])
   rescue JSON::ParserError
     nil
-  end
-
-  def consume_task_submission_files_download_ticket!(unit_id:, task_definition_id:)
-    original_method = request.headers['X-Forwarded-Method'].presence || request.request_method
-    return true if original_method == 'HEAD'
-    nonce = request.env[TASK_SUBMISSION_FILES_DOWNLOAD_TICKET_ENV_KEY]
-    return true unless nonce
-
-    cookies.delete(
-      TASK_SUBMISSION_FILES_DOWNLOAD_COOKIE,
-      domain: Doubtfire::Application.config.institution[:cookie_domain],
-      path: "/api/submission/unit/#{unit_id}/task_definitions/#{task_definition_id}/download_submissions",
-      secure: request.ssl? || Rails.env.production?,
-      httponly: true,
-      same_site: :strict
-    )
-    OneTimeDownloadTicket.consume(
-      scope: TASK_SUBMISSION_FILES_DOWNLOAD_TICKET_SCOPE,
-      nonce: nonce
-    )
   end
 end

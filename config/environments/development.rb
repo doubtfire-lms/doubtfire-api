@@ -20,7 +20,6 @@ Doubtfire::Application.configure do
   # Run rails dev:cache to toggle caching.
   if ENV['CACHE'] == 'true' ||
      ENV['DF_REDIS_CACHE_URL'].present? ||
-     config.caddy_download_auth_secret.present? ||
      Rails.root.join('tmp/caching-dev.txt').exist?
     skip_first = true
     ActiveSupport::Reloader.to_prepare do

@@ -34,9 +34,6 @@ class PortfolioDownloadsController < ApplicationController
 
     output_zip = unit.get_portfolio_zip_filename(download_user)
     error!({ error: 'No files to download' }, 403) unless File.exist?(output_zip)
-    unless consume_portfolio_download_ticket!(unit_id: unit.id)
-      error!({ error: 'Download access has expired or has already been used' }, 401)
-    end
 
     # Set download headers...
     # content_type "application/octet-stream"

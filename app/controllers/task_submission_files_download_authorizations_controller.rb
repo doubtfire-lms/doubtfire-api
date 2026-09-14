@@ -31,10 +31,6 @@ class TaskSubmissionFilesDownloadAuthorizationsController < ApplicationControlle
       unit.task_submissions_zip_path(@download_user, task_definition)
     )
     return head :not_found unless relative_path
-    return head :unauthorized unless consume_task_submission_files_download_ticket!(
-      unit_id: unit.id,
-      task_definition_id: task_definition.id
-    )
 
     disposition = ActionDispatch::Http::ContentDisposition.format(
       disposition: 'attachment',
@@ -59,17 +55,12 @@ class TaskSubmissionFilesDownloadAuthorizationsController < ApplicationControlle
     ).first
 
     expires_at = Time.current + TASK_SUBMISSION_FILES_DOWNLOAD_COOKIE_LIFETIME
-    nonce = OneTimeDownloadTicket.issue!(
-      scope: TASK_SUBMISSION_FILES_DOWNLOAD_TICKET_SCOPE,
-      expires_in: TASK_SUBMISSION_FILES_DOWNLOAD_COOKIE_LIFETIME
-    )
     cookies.encrypted[TASK_SUBMISSION_FILES_DOWNLOAD_COOKIE] = {
       value: {
         user_id: @download_user.id,
         unit_id: unit.id,
         task_definition_id: task_definition.id,
-        expires_at: expires_at.to_i,
-        nonce: nonce
+        expires_at: expires_at.to_i
       }.to_json,
       expires: expires_at,
       domain: Doubtfire::Application.config.institution[:cookie_domain],
