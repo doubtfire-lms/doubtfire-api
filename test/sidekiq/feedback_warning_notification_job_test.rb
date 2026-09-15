@@ -37,9 +37,11 @@ class FeedbackWarningNotificationJobTest < ActiveSupport::TestCase
       feedback_warning_threshold_days: 5
     )
     definition = @unit.task_definitions.first
-    @project = @unit.active_projects.find do |project|
-      project.target_grade >= definition.target_grade && project.tutorial_for(definition).present?
-    end
+    # The factory grades the definition and its projects at random, so pin the
+    # definition below every project rather than hoping one was generated above
+    # it. Only the fully enrolled students hold a tutorial.
+    definition.update!(target_grade: 0)
+    @project = @unit.active_projects.find { |project| project.tutorial_for(definition).present? }
     @task = @project.task_for_task_definition(definition)
     @tutor = FactoryBot.create(:user, :tutor)
     @tutor_role = @unit.employ_staff(@tutor, Role.tutor)
