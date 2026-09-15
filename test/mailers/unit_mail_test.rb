@@ -204,6 +204,72 @@ class UnitMailTest < ActionMailer::TestCase
     assert_empty SendDiscussTimeoutEmailJob.jobs
   end
 
+  def test_discuss_expiry_notification_is_created_when_immediate_email_is_off
+    unit = FactoryBot.create(
+      :unit,
+      discuss_timeout_enabled: true,
+      discuss_timeout_warning_days: 7,
+      discuss_timeout_expire_days: 14
+    )
+    project = unit.active_projects.first
+    task = project.task_for_task_definition(unit.task_definitions.first)
+    task.update!(task_status: TaskStatus.discuss)
+    task.update!(moved_to_discuss_at: 15.days.ago)
+    settings = NotificationSetting.for(project.student)
+    settings.update!(channels: settings.channels.merge('discuss_expired' => ['in_app']))
+
+    assert_equal 1, unit.notify_discuss_timeouts!
+
+    notification = Notification.find_by!(recipient: project.student, task: task, kind: 'discuss_expired')
+    assert_nil notification.read_at
+    assert_not_nil notification.email_processed_at
+    assert_empty SendDiscussTimeoutEmailJob.jobs
+  end
+
+  # The job is queued a step ahead of its delivery, so it has to re-read the
+  # setting rather than trust the one that was true when it was queued.
+  def test_discuss_timeout_email_job_rechecks_the_setting_before_sending
+    unit = FactoryBot.create(
+      :unit,
+      discuss_timeout_enabled: true,
+      discuss_timeout_warning_days: 7,
+      discuss_timeout_expire_days: 14
+    )
+    project = unit.active_projects.first
+    task = project.task_for_task_definition(unit.task_definitions.first)
+    task.update!(task_status: TaskStatus.discuss)
+    task.update!(moved_to_discuss_at: 8.days.ago)
+
+    assert_equal 1, unit.notify_discuss_timeouts!
+    queued = SendDiscussTimeoutEmailJob.jobs.shift
+
+    settings = NotificationSetting.for(project.student)
+    settings.update!(channels: settings.channels.merge('discuss_warning' => ['in_app']))
+
+    assert_no_emails do
+      SendDiscussTimeoutEmailJob.new.perform(*queued['args'])
+    end
+  end
+
+  def test_discuss_timeout_emails_stop_for_a_muted_unit
+    unit = FactoryBot.create(
+      :unit,
+      discuss_timeout_enabled: true,
+      discuss_timeout_warning_days: 7,
+      discuss_timeout_expire_days: 14
+    )
+    project = unit.active_projects.first
+    task = project.task_for_task_definition(unit.task_definitions.first)
+    task.update!(task_status: TaskStatus.discuss)
+    task.update!(moved_to_discuss_at: 8.days.ago)
+    NotificationUnitOverride.create!(user: project.student, unit: unit, muted: true)
+
+    assert_equal 1, unit.notify_discuss_timeouts!
+
+    assert_empty Notification.where(recipient: project.student, task: task, kind: 'discuss_warning')
+    assert_empty SendDiscussTimeoutEmailJob.jobs
+  end
+
   def test_batch_feedback_updates_unenrolled_students_without_emailing_them
     unit = FactoryBot.create(:unit)
     project = unit.active_projects.first
