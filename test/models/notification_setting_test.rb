@@ -19,7 +19,7 @@ class NotificationSettingTest < ActiveSupport::TestCase
     assert_equal NotificationSetting.default_digest_timezone, settings.digest_timezone
     assert_equal 1, settings.digest_weekday
     assert_equal %w[in_app email], settings.channels['new_task_comment']
-    assert_empty settings.channels['weekly_summary']
+    assert_equal %w[in_app email], settings.channels['weekly_summary']
     assert_equal ['in_app'], settings.channels['communication_email']
     assert_equal Notification::KINDS.sort, settings.channels.keys.sort
   end
@@ -65,14 +65,14 @@ class NotificationSettingTest < ActiveSupport::TestCase
     assert_not settings.weekly_summary_for?(unit)
   end
 
-  def test_weekly_summary_can_be_opted_into_without_changing_other_notifications
+  def test_weekly_summary_can_be_opted_out_of_without_changing_other_notifications
     settings = NotificationSetting.for(FactoryBot.create(:user))
     unit = FactoryBot.create(:unit, with_students: false, task_count: 0)
 
-    assert_not settings.weekly_summary_for?(unit)
-    settings.update!(channels: settings.channels.merge('weekly_summary' => %w[in_app email]))
-
     assert settings.weekly_summary_for?(unit)
+    settings.update!(channels: settings.channels.merge('weekly_summary' => []))
+
+    assert_not settings.weekly_summary_for?(unit)
     assert settings.delivers?(unit, 'new_task_comment', :email)
   end
 

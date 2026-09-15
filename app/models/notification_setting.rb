@@ -33,13 +33,7 @@ class NotificationSetting < ApplicationRecord
 
   def self.default_channels
     Notification::KINDS.index_with do |kind|
-      if kind == 'weekly_summary'
-        []
-      elsif Notification::COMMUNICATION_KINDS.include?(kind)
-        ['in_app']
-      else
-        %w[in_app email]
-      end
+      Notification::COMMUNICATION_KINDS.include?(kind) ? ['in_app'] : %w[in_app email]
     end
   end
 

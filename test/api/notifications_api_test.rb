@@ -248,7 +248,7 @@ class NotificationsApiTest < ActiveSupport::TestCase
     assert_equal @project.campus.timezone, last_response_body['digest_timezone']
     assert_equal %w[in_app email], last_response_body.dig('channels', 'new_task_comment')
     assert_equal %w[in_app email], last_response_body.dig('channels', 'feedback_warning')
-    assert_empty last_response_body.dig('channels', 'weekly_summary')
+    assert_equal %w[in_app email], last_response_body.dig('channels', 'weekly_summary')
     assert_empty last_response_body['units']
   end
 
