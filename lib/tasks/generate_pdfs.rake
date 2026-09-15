@@ -148,16 +148,17 @@ namespace :submission do
             end
           end
 
-          next unless project.student.receive_portfolio_notifications
+          notification = Notification.create_for_portfolio(project, success: success)
+          next if notification.nil?
+
+          settings = NotificationSetting.for(project.student)
+          next unless settings.delivers?(project.unit, notification.kind, :email)
 
           logger.info "emailing portfolio notification to #{project.student.name}"
 
           begin
-            if success
-              PortfolioEvidenceMailer.portfolio_ready(project).deliver_now
-            else
-              PortfolioEvidenceMailer.portfolio_failed(project).deliver_now
-            end
+            mail = success ? PortfolioEvidenceMailer.portfolio_ready(project) : PortfolioEvidenceMailer.portfolio_failed(project)
+            mail.deliver_now if mail.present?
           rescue StandardError => e
             logger.error "Failed to send portfolio email for project #{project.id}!\n#{e.message}"
           end

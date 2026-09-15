@@ -18,6 +18,7 @@ class TaskComment < ApplicationRecord
   belongs_to :recipient, class_name: 'User', optional: false
 
   has_many :comments_read_receipts, class_name: 'CommentsReadReceipts', dependent: :destroy, inverse_of: :task_comment
+  has_many :notifications, dependent: :destroy
   has_many :comment_read_cursors,
            foreign_key: :last_read_comment_id,
            inverse_of: :last_read_comment,
@@ -40,6 +41,9 @@ class TaskComment < ApplicationRecord
   # After create, mark as read by user creating
   after_create do
     mark_as_read(self.user)
+  end
+  after_create_commit do
+    Notification.create_for_task_comment(self)
   end
 
   # Delete action - before dependent association
@@ -179,11 +183,22 @@ class TaskComment < ApplicationRecord
     requires_attention_for?(user) && !read_by?(user)
   end
 
-  def read_by?(user)
-    return true if self.user == user || !requires_attention_for?(user)
+  # Has this user's read cursor for the task moved past this comment?
+  #
+  # Unlike #read_by? this ignores attention_audience, so comments that never sit
+  # unread in the comment inbox - status changes and other automated comments -
+  # still report whether the user has actually seen them.
+  def seen_by?(user)
+    return true if self.user == user
 
     cursor = CommentReadCursor.find_by(task_id: task_id, user_id: user.id)
     cursor.present? && cursor.last_read_comment_id >= id
+  end
+
+  def read_by?(user)
+    return true unless requires_attention_for?(user)
+
+    seen_by?(user)
   end
 
   def time_read_by(user)
