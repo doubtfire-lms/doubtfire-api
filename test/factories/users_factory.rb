@@ -18,6 +18,12 @@ FactoryBot.define do
       while User.where(student_id: user.student_id).count > 0
         user.student_id = user.student_id.to_i + 1
       end
+
+      # Faker only dedupes within a run, so a seeded database can already hold
+      # the address it hands out.
+      while User.where(email: user.email).count > 0
+        user.email = "#{rand(1000)}-#{user.email}"
+      end
     end
 
     trait :student do
