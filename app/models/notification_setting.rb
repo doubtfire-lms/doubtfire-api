@@ -90,8 +90,19 @@ class NotificationSetting < ApplicationRecord
     channels_for_unit_id(unit_id, kind).include?('in_app')
   end
 
-  def advance_digest!(from: Time.current)
-    update!(last_digest_at: from, next_digest_at: next_occurrence(from))
+  # Move the schedule on before a digest is delivered, so a delivery that raises
+  # cannot leave this setting due for the five minute poll to enqueue again on
+  # every cycle. Returns false when the slot has already been claimed, which is
+  # how a retry of the same digest avoids advancing the schedule a second time.
+  def claim_digest!(from: Time.current)
+    return false unless next_digest_at.nil? || next_digest_at <= from
+
+    update!(next_digest_at: next_occurrence(from))
+    true
+  end
+
+  def record_digest_sent!(at = Time.current)
+    update!(last_digest_at: at)
   end
 
   def next_occurrence(from = Time.current)

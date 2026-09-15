@@ -13,6 +13,11 @@ class SendNotificationDigestJob
     return if setting.digest_frequency == 'off'
 
     now = Time.current
+    # Claim the slot first. Anything that raises after this point leaves the
+    # notifications unprocessed, so they roll into the next digest rather than
+    # this one being enqueued and re-sent every time the poll runs.
+    setting.claim_digest!(from: now)
+
     ready = setting.user
                    .received_notifications
                    .email_pending
@@ -22,12 +27,11 @@ class SendNotificationDigestJob
     deliverable, skipped = ready.partition { |notification| deliverable?(setting, notification, now) }
 
     mark_processed(skipped, now)
-    if deliverable.any?
-      NotificationsMailer.notification_digest(setting.user, deliverable).deliver_now
-      mark_processed(deliverable, now, sent: true)
-    end
+    return if deliverable.empty?
 
-    setting.advance_digest!(from: now)
+    NotificationsMailer.notification_digest(setting.user, deliverable).deliver_now
+    mark_processed(deliverable, now, sent: true)
+    setting.record_digest_sent!(now)
   end
 
   private

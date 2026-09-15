@@ -1,10 +1,17 @@
 require 'test_helper'
+require 'minitest/mock'
 
 class NotificationJobsTest < ActiveSupport::TestCase
   include ActionMailer::TestHelper
 
-  def create_settings(**attributes)
-    FactoryBot.create(:notification_setting, next_digest_at: 1.minute.ago, **attributes)
+  # refresh_next_digest_at rewrites next_digest_at whenever the schedule is
+  # assigned, so the due time has to be forced back past the callback.
+  def create_settings(due_at: 1.minute.ago, **attributes)
+    settings = FactoryBot.create(:notification_setting, **attributes)
+    # rubocop:disable Rails/SkipsModelValidations
+    settings.update_column(:next_digest_at, due_at)
+    # rubocop:enable Rails/SkipsModelValidations
+    settings.reload
   end
 
   def test_digest_sends_only_the_events_enabled_on_the_email_channel
@@ -232,6 +239,73 @@ class NotificationJobsTest < ActiveSupport::TestCase
 
     assert_not_nil notification.reload.email_processed_at
     assert_nil notification.email_sent_at
+  end
+
+  def test_a_failed_digest_leaves_the_setting_scheduled_rather_than_due
+    settings = create_settings
+    notification = FactoryBot.create(:notification, recipient: settings.user)
+
+    NotificationsMailer.stub(:notification_digest, ->(*) { raise Net::SMTPServerBusy, 'mail server unavailable' }) do
+      assert_raises(Net::SMTPServerBusy) do
+        SendNotificationDigestJob.new.perform(settings.id)
+      end
+    end
+
+    # The five minute poll only enqueues settings that are due. Were this one
+    # still due it would be re-enqueued, and every cycle would resend the digest.
+    assert_operator settings.reload.next_digest_at, :>, Time.current
+    assert_not NotificationSetting.due.exists?(id: settings.id)
+
+    # Nothing was delivered, so the notification waits for the next digest.
+    assert_nil notification.reload.email_processed_at
+    assert_nil settings.last_digest_at
+  end
+
+  def test_retrying_a_failed_digest_does_not_advance_the_schedule_again
+    settings = create_settings
+    FactoryBot.create(:notification, recipient: settings.user)
+
+    NotificationsMailer.stub(:notification_digest, ->(*) { raise Net::SMTPServerBusy, 'mail server unavailable' }) do
+      assert_raises(Net::SMTPServerBusy) { SendNotificationDigestJob.new.perform(settings.id) }
+    end
+    after_first_attempt = settings.reload.next_digest_at
+
+    NotificationsMailer.stub(:notification_digest, ->(*) { raise Net::SMTPServerBusy, 'mail server unavailable' }) do
+      assert_raises(Net::SMTPServerBusy) { SendNotificationDigestJob.new.perform(settings.id) }
+    end
+
+    assert_equal after_first_attempt, settings.reload.next_digest_at
+  end
+
+  def test_notifications_held_back_by_a_failed_digest_go_out_on_the_next_one
+    settings = create_settings
+    notification = FactoryBot.create(:notification, recipient: settings.user)
+
+    NotificationsMailer.stub(:notification_digest, ->(*) { raise Net::SMTPServerBusy, 'mail server unavailable' }) do
+      assert_raises(Net::SMTPServerBusy) { SendNotificationDigestJob.new.perform(settings.id) }
+    end
+
+    # rubocop:disable Rails/SkipsModelValidations
+    settings.update_column(:next_digest_at, 1.minute.ago)
+    # rubocop:enable Rails/SkipsModelValidations
+
+    assert_emails 1 do
+      SendNotificationDigestJob.new.perform(settings.id)
+    end
+
+    assert_not_nil notification.reload.email_sent_at
+    assert_not_nil settings.reload.last_digest_at
+  end
+
+  def test_a_digest_with_nothing_to_send_still_moves_the_schedule_on
+    settings = create_settings
+
+    assert_no_emails do
+      SendNotificationDigestJob.new.perform(settings.id)
+    end
+
+    assert_operator settings.reload.next_digest_at, :>, Time.current
+    assert_nil settings.last_digest_at
   end
 
   def test_pruning_removes_old_read_history_but_retains_unread_events
