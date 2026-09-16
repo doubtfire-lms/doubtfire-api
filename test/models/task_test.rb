@@ -1561,6 +1561,88 @@ class TaskTest < ActiveSupport::TestCase
     assert_equal TaskStatus.complete, task_hd.task_status, 'Task status should be complete from tutor assessment'
   end
 
+  def test_student_can_submit_when_assessments_locked_to_tutorial_stream
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
+
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
+
+    tutor = FactoryBot.create(:user, :tutor)
+    unit_role = unit.employ_staff(tutor, Role.tutor)
+    FactoryBot.create(:tutorial, unit: unit, tutorial_stream: tutorial_stream, unit_role: unit_role)
+
+    td = TaskDefinition.new({
+                              unit_id: unit.id,
+                              tutorial_stream: tutorial_stream,
+                              name: 'Test task locked to stream',
+                              description: 'Test task',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: Time.zone.now - 3.weeks,
+                              target_date: Time.zone.now - 2.weeks,
+                              due_date: Time.zone.now + 1.week,
+                              abbreviation: 'ABBR1',
+                              restrict_status_updates: false,
+                              upload_requirements: [],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0,
+                              lock_assessments_to_tutorial_stream: true
+                            })
+    td.save!
+
+    project = unit.active_projects.first
+    task = project.task_for_task_definition(td)
+
+    # The student has no unit role, so the stream lock must not apply to their own submission
+    result = task.trigger_transition(trigger: 'ready_for_feedback', by_user: project.student)
+    assert_not_nil result, 'Student should be able to submit a task locked to a tutorial stream'
+    assert_equal TaskStatus.ready_for_feedback, task.task_status, 'Task status should be ready for feedback'
+
+    # The tutor running a tutorial in the stream can still assess it
+    result = task.trigger_transition(trigger: 'complete', by_user: tutor)
+    assert_not_nil result, 'Tutor in the tutorial stream should be able to mark the task complete'
+    assert_equal TaskStatus.complete, task.task_status, 'Task status should be complete from tutor assessment'
+  end
+
+  def test_assessment_lock_to_tutorial_stream_without_a_stream
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
+
+    tutor = FactoryBot.create(:user, :tutor)
+    unit.employ_staff(tutor, Role.tutor)
+
+    td = TaskDefinition.new({
+                              unit_id: unit.id,
+                              tutorial_stream: nil,
+                              name: 'Test task locked without a stream',
+                              description: 'Test task',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: Time.zone.now - 3.weeks,
+                              target_date: Time.zone.now - 2.weeks,
+                              due_date: Time.zone.now + 1.week,
+                              abbreviation: 'ABBR1',
+                              restrict_status_updates: false,
+                              upload_requirements: [],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0,
+                              lock_assessments_to_tutorial_stream: true
+                            })
+    td.save!
+
+    project = unit.active_projects.first
+    task = project.task_for_task_definition(td)
+
+    # With no stream to lock to there is nothing to restrict, and nothing to raise on
+    result = task.trigger_transition(trigger: 'ready_for_feedback', by_user: project.student)
+    assert_not_nil result, 'Student should be able to submit a task with no tutorial stream'
+    assert_equal TaskStatus.ready_for_feedback, task.task_status, 'Task status should be ready for feedback'
+
+    result = task.trigger_transition(trigger: 'complete', by_user: tutor)
+    assert_not_nil result, 'Tutor should be able to mark a task with no tutorial stream complete'
+    assert_equal TaskStatus.complete, task.task_status, 'Task status should be complete from tutor assessment'
+  end
+
   def test_prerequisite_tasks_change_to_fix_and_resubmit
     unit = FactoryBot.create(:unit, student_count: 1, task_count: 4)
     tutor = FactoryBot.create(:user, :tutor)
