@@ -22,6 +22,9 @@ class Unit < ApplicationRecord
   include MimeCheckHelpers
   include CsvHelper
 
+
+  has_one :moodle_integration, dependent: :destroy
+
   #
   # Permissions around unit data
   #
