@@ -631,10 +631,13 @@ class Task < ApplicationRecord
     claim
   end
 
-  def transition_assignment_allowed?(by_user, system_transition)
+  def transition_assignment_allowed?(by_user, role, system_transition)
     return true if system_transition
 
-    if task_definition.lock_assessments_to_tutorial_stream
+    # Stream locking restricts who may assess the task, not who may submit it
+    if task_definition.lock_assessments_to_tutorial_stream &&
+       !role.in?([:student, :group_member]) &&
+       task_definition.tutorial_stream.present?
       unit_role = unit.unit_role_for(by_user)
       return false unless task_definition.tutorial_stream.tutorials.any? { |tutorial| tutorial.unit_role == unit_role }
     end
@@ -686,7 +689,7 @@ class Task < ApplicationRecord
     # Protect closed states from student changes
     return nil if [:student, :group_member].include?(role) && task_submission_closed?
 
-    return nil unless transition_assignment_allowed?(by_user, system_transition)
+    return nil unless transition_assignment_allowed?(by_user, role, system_transition)
     #
     # State transitions based upon the trigger
     #

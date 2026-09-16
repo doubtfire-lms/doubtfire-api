@@ -878,15 +878,15 @@ class TasksApiTest < ActiveSupport::TestCase
     td1 = unit.task_definitions.first
     project = unit.active_projects.first
 
-    task = project.task_for_task_definition(td1)
-
-    td1.update(
+    td1.update!(
       upload_requirements: [{ "key" => 'file0', "name" => 'Shape Class', "type" => 'code' }],
       target_grade: 0, # Pass
       start_date: Time.zone.now - 2.weeks,
       target_date: Time.zone.now + 1.week,
       assess_in_portfolio_only: false
     )
+
+    task = project.task_for_task_definition(td1)
 
     add_auth_header_for(user: project.user)
 

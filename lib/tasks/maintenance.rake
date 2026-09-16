@@ -174,7 +174,12 @@ namespace :maintenance do
     marker_pattern = File.join(FileHelper.root_submission_history_dir, '**', 'pending', '*', 'submission-history')
 
     Dir.glob(marker_pattern).each do |marker_path|
-      next unless File.mtime(marker_path) < stale_before
+      begin
+        marker_mtime = File.mtime(marker_path)
+      rescue Errno::ENOENT
+        next
+      end
+      next unless marker_mtime < stale_before
 
       task_id = File.basename(File.dirname(marker_path)).to_i
       next if create_submission_history_job_present?(task_id)

@@ -46,6 +46,10 @@ module Doubtfire
     # variable.
     config.student_work_dir = ENV['DF_STUDENT_WORK_DIR'] || Rails.root.join('student_work').to_s
 
+    # Shared secret used to authenticate Caddy's internal file-authorisation
+    # requests. A blank value keeps the internal endpoints disabled.
+    config.caddy_download_auth_secret = ENV.fetch('CADDY_DOWNLOAD_AUTH_SECRET', nil)
+
     # ==> Archive directory
     # File server location for storing archived student work. Defaults to a subfolder of student work
     # Set using DF_ARCHIVE_DIR environment variable.
@@ -165,7 +169,9 @@ module Doubtfire
     config.institution[:name] = ENV['DF_INSTITUTION_NAME'] if ENV['DF_INSTITUTION_NAME']
     config.institution[:email_domain] = ENV['DF_INSTITUTION_EMAIL_DOMAIN'] if ENV['DF_INSTITUTION_EMAIL_DOMAIN']
     config.institution[:host] = ENV['DF_INSTITUTION_HOST'] if ENV['DF_INSTITUTION_HOST']
-    config.institution[:cookie_domain] = ENV.fetch('DF_COOKIE_DOMAIN', URI.parse(Doubtfire::Application.config.institution[:host]).host)
+    # Blank means host-only cookies, scoped to whichever origin set them.
+    config.institution[:cookie_domain] =
+      ENV.fetch('DF_COOKIE_DOMAIN', URI.parse(Doubtfire::Application.config.institution[:host]).host).presence
     config.institution[:product_name] = ENV['DF_INSTITUTION_PRODUCT_NAME'] if ENV['DF_INSTITUTION_PRODUCT_NAME']
 
     config.institution[:has_logo] = (ENV['DF_INSTITUTION_HAS_LOGO'].to_s.downcase == "true" || ENV['DF_INSTITUTION_HAS_LOGO'].to_i == 1) if ENV['DF_INSTITUTION_HAS_LOGO']
