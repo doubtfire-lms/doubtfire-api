@@ -273,12 +273,23 @@ class Unit < ApplicationRecord
     errors.add(:discuss_timeout_warning_days, 'must be less than the expiry days')
   end
 
+  # Mirrors Unit#isActive on the web client: the unit's own active flag, plus its
+  # teaching period still being within its active window. Units without a
+  # teaching period fall back to their own end date.
+  def currently_active?(now = Time.zone.now)
+    return false unless active?
+    return teaching_period.active?(now) if has_teaching_period?
+
+    end_date.present? ? now < end_date : true
+  end
+
   def self.notify_discuss_timeouts!
-    set_active.find_each(&:notify_discuss_timeouts!)
+    set_active.includes(:teaching_period).find_each(&:notify_discuss_timeouts!)
   end
 
   def notify_discuss_timeouts!
     return 0 unless discuss_timeout_enabled
+    return 0 unless currently_active?
 
     discuss_timeout_tasks.find_each.sum do |task|
       notify_discuss_timeout_for(task)
