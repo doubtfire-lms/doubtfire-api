@@ -7,6 +7,7 @@ class PdfFileDownloadAuthorizationsController < ApplicationController
   # returns the file. Handlers receive the MatchData for their own pattern.
   ROUTES = {
     %r{\A/api/units/(?<unit_id>\d+)/task_definitions/(?<task_definition_id>\d+)/task_pdf(?:\.json)?(?:\?(?<query>.*))?\z} => :task_sheet_download,
+    %r{\A/api/units/(?<unit_id>\d+)/task_definitions/(?<task_definition_id>\d+)/jplag_report(?:\?(?<query>.*))?\z} => :jplag_report_download,
     %r{\A/api/submission/project/(?<project_id>\d+)/portfolio(?:\?(?<query>.*))?\z} => :portfolio_download,
     %r{\A/api/tasks/(?<task_id>\d+)/similarities/(?<similarity_id>\d+)/contents/(?<index>\d+)(?:\?(?<query>.*))?\z} => :similarity_download,
     %r{\A/api/projects/(?<project_id>\d+)/task_def_id/(?<task_definition_id>\d+)/comments/(?<comment_id>\d+)(?:\?(?<query>.*))?\z} => :comment_download,
@@ -55,6 +56,22 @@ class PdfFileDownloadAuthorizationsController < ApplicationController
       path: task_definition.task_sheet(false),
       filename: "#{unit.code}-#{task_definition.abbreviation}.pdf",
       content_type: 'application/pdf',
+      query: route[:query]
+    }
+  end
+
+  def jplag_report_download(route)
+    unit = Unit.find_by(id: route[:unit_id])
+    return :not_found unless unit
+
+    task_definition = unit.task_definitions.find_by(id: route[:task_definition_id])
+    return :not_found unless task_definition
+    return :forbidden unless authorise?(current_user, unit, :download_jplag_report)
+
+    {
+      path: FileHelper.task_jplag_report_path(unit, task_definition),
+      filename: "#{task_definition.abbreviation}-jplag-report.jplag",
+      content_type: 'application/octet-stream',
       query: route[:query]
     }
   end

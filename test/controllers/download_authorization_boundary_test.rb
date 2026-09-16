@@ -177,6 +177,30 @@ class DownloadAuthorizationBoundaryTest < ActiveSupport::TestCase
     unit&.destroy
   end
 
+  def test_jplag_report_download_requires_permission_to_download_jplag_reports
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 1, stream_count: 0)
+    task_definition = unit.task_definitions.first
+    report_path = FileHelper.task_jplag_report_path(unit, task_definition)
+    write_file(report_path, 'PK jplag report')
+    report_uri = "/api/units/#{unit.id}/task_definitions/#{task_definition.id}/jplag_report"
+
+    add_auth_header_for(user: unit.main_convenor_user)
+    request_internal_download('/api/internal/downloads/pdf-file', report_uri)
+
+    assert_equal 200, last_response.status
+    assert_safe_relative_file_header(report_path)
+    assert_equal 'application/octet-stream', last_response.headers['X-OnTrack-Content-Type']
+
+    clear_auth_header
+    add_auth_header_for(user: FactoryBot.create(:user, :student))
+    request_internal_download('/api/internal/downloads/pdf-file', report_uri)
+
+    assert_equal 403, last_response.status
+    assert_nil last_response.headers['X-OnTrack-File']
+  ensure
+    unit&.destroy
+  end
+
   def test_unit_content_download_requires_content_cookie_and_confines_the_file
     unit, site = create_content_site
     content_token = unit.main_convenor_user.generate_content_authentication_token!
