@@ -70,7 +70,7 @@ class PdfFileDownloadAuthorizationsController < ApplicationController
 
     {
       path: FileHelper.task_jplag_report_path(unit, task_definition),
-      filename: "#{task_definition.abbreviation}-jplag-report.jplag",
+      filename: "#{unit.code}-#{task_definition.abbreviation}-jplag-report.jplag",
       content_type: 'application/octet-stream',
       query: route[:query]
     }

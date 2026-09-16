@@ -190,6 +190,8 @@ class DownloadAuthorizationBoundaryTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
     assert_safe_relative_file_header(report_path)
     assert_equal 'application/octet-stream', last_response.headers['X-OnTrack-Content-Type']
+    assert_includes last_response.headers['X-OnTrack-Content-Disposition'],
+                    "#{unit.code}-#{task_definition.abbreviation}-jplag-report.jplag"
 
     clear_auth_header
     add_auth_header_for(user: FactoryBot.create(:user, :student))
