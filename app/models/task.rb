@@ -555,10 +555,12 @@ class Task < ApplicationRecord
     # Protect closed states from student changes
     return nil if [:student, :group_member].include?(role) && task_submission_closed?
 
-    if task_definition.lock_assessments_to_tutorial_stream
+    # Stream locking restricts who may assess the task, not who may submit it
+    if task_definition.lock_assessments_to_tutorial_stream &&
+       !role.in?([:student, :group_member]) &&
+       task_definition.tutorial_stream.present?
       unit_role = unit.unit_role_for(by_user)
-      tutorial_stream = task_definition.tutorial_stream
-      tutorials = tutorial_stream.tutorials
+      tutorials = task_definition.tutorial_stream.tutorials
       return nil unless tutorials.any? { |t| t.unit_role == unit_role }
     end
 
