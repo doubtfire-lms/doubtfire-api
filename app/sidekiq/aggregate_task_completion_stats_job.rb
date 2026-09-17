@@ -20,7 +20,7 @@ class AggregateTaskCompletionStatsJob
     if unit_id.present?
       Unit.find(unit_id).capture_task_complete_stats_snapshot!
     else
-      Unit.active_units.find_each(&:capture_task_complete_stats_snapshot!)
+      Unit.within_teaching_dates.find_each(&:capture_task_complete_stats_snapshot!)
     end
 
     at(1)

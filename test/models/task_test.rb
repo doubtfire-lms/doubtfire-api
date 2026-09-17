@@ -1833,6 +1833,7 @@ class TaskTest < ActiveSupport::TestCase
     unit_role = unit.employ_staff(tutor, Role.tutor)
     FactoryBot.create(:tutorial, unit: unit, tutorial_stream: tutorial_stream, unit_role: unit_role)
 
+    # Task#due_date delegates to the definition's target_date, so keep it ahead of the submission
     td = TaskDefinition.new({
                               unit_id: unit.id,
                               tutorial_stream: tutorial_stream,
@@ -1840,9 +1841,9 @@ class TaskTest < ActiveSupport::TestCase
                               description: 'Test task',
                               weighting: 4,
                               target_grade: 0,
-                              start_date: Time.zone.now - 3.weeks,
-                              target_date: Time.zone.now - 2.weeks,
-                              due_date: Time.zone.now + 1.week,
+                              start_date: Time.zone.now - 2.weeks,
+                              target_date: Time.zone.now + 1.week,
+                              due_date: Time.zone.now + 2.weeks,
                               abbreviation: 'ABBR1',
                               restrict_status_updates: false,
                               upload_requirements: [],
@@ -1880,9 +1881,9 @@ class TaskTest < ActiveSupport::TestCase
                               description: 'Test task',
                               weighting: 4,
                               target_grade: 0,
-                              start_date: Time.zone.now - 3.weeks,
-                              target_date: Time.zone.now - 2.weeks,
-                              due_date: Time.zone.now + 1.week,
+                              start_date: Time.zone.now - 2.weeks,
+                              target_date: Time.zone.now + 1.week,
+                              due_date: Time.zone.now + 2.weeks,
                               abbreviation: 'ABBR1',
                               restrict_status_updates: false,
                               upload_requirements: [],

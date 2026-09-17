@@ -63,8 +63,9 @@ class CommunicationSetSchedule < ApplicationRecord
                  end
 
     return nil if occurrence.blank?
+    return nil if unit.present? && !unit.within_teaching_dates?(occurrence)
 
-    occurrence_within_unit_dates?(occurrence) ? occurrence : nil
+    occurrence
   end
 
   def due?(time = Time.zone.now)
@@ -132,12 +133,6 @@ class CommunicationSetSchedule < ApplicationRecord
 
   def active_for_scheduling?
     active? && unit&.active?
-  end
-
-  def occurrence_within_unit_dates?(occurrence)
-    return true if unit&.end_date.blank?
-
-    occurrence.to_date <= unit.end_date
   end
 
   def should_refresh_next_run_at?
