@@ -19,7 +19,8 @@ class LtiApiTest < ActiveSupport::TestCase
       "/api/lti/link",
       "/api/lti/enrol",
       "/api/lti/enrol/bulk",
-      "/api/lti/grades"
+      "/api/lti/grades",
+      "/api/lti/app-handoff"
     ]
 
     # Test tokens without jti or expiration
@@ -595,6 +596,61 @@ class LtiApiTest < ActiveSupport::TestCase
       post url, { ltik: token_member_invalid_email }
       assert_equal 400, last_response.status
       assert last_response_body['error'].start_with?('Missing required fields:'), last_response_body['error']
+    end
+  end
+
+  def app_handoff_token(email:, purpose: 'app_handoff')
+    JWT.encode({
+                 purpose: purpose,
+                 email: email,
+                 exp: Time.now.to_i + 30,
+                 jti: SecureRandom.uuid
+               }, Doubtfire::Application.config.lti_api_secret, 'HS256')
+  end
+
+  def test_app_handoff_issues_single_use_login_token
+    user = FactoryBot.create(:user, :student)
+    add_auth_header_for(user: user)
+
+    post '/api/lti/app-handoff', { ltik: app_handoff_token(email: user.email.upcase) }
+    assert_equal 201, last_response.status, last_response_body
+    assert_equal user.username, last_response_body['username']
+    login_token = last_response_body['auth_token']
+
+    clear_auth_header
+    post '/api/auth', { username: user.username, auth_token: login_token }
+    assert_equal 201, last_response.status, last_response_body
+    assert_equal user.id, last_response_body['user']['id']
+
+    post '/api/auth', { username: user.username, auth_token: login_token }
+    assert_equal 419, last_response.status
+  end
+
+  def test_app_handoff_requires_authentication
+    user = FactoryBot.create(:user, :student)
+
+    post '/api/lti/app-handoff', { ltik: app_handoff_token(email: user.email) }
+    assert_equal 419, last_response.status
+  end
+
+  def test_app_handoff_rejects_other_lti_tokens
+    user = FactoryBot.create(:user, :student)
+    add_auth_header_for(user: user)
+
+    post '/api/lti/app-handoff', { ltik: app_handoff_token(email: user.email, purpose: nil) }
+    assert_equal 403, last_response.status
+    assert_equal 'Invalid LTI token.', last_response_body['error']
+  end
+
+  def test_app_handoff_rejects_a_different_launch_user
+    user = FactoryBot.create(:user, :student)
+    other_user = FactoryBot.create(:user, :student)
+    add_auth_header_for(user: user)
+
+    [other_user.email, ''].each do |email|
+      post '/api/lti/app-handoff', { ltik: app_handoff_token(email: email) }
+      assert_equal 403, last_response.status
+      assert_nil last_response_body['auth_token']
     end
   end
 end
