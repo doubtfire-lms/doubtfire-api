@@ -1,7 +1,7 @@
 require 'test_helper'
 
 class ActiveTeachingPeriodJobsTest < ActiveSupport::TestCase
-  def test_currently_active_scope_matches_currently_active
+  def test_within_teaching_dates_scope_matches_within_teaching_dates
     now = Time.zone.now
     running_period = FactoryBot.create(:teaching_period, start_date: now - 10.weeks, end_date: now + 1.week, active_until: now + 3.weeks)
     marking_period = FactoryBot.create(:teaching_period, start_date: now - 14.weeks, end_date: now - 1.week, active_until: now + 1.week)
@@ -15,9 +15,9 @@ class ActiveTeachingPeriodJobsTest < ActiveSupport::TestCase
       flag_off = create_unit(active: false)
     ]
 
-    scoped_ids = Unit.currently_active.where(id: units.map(&:id)).pluck(:id)
+    scoped_ids = Unit.within_teaching_dates.where(id: units.map(&:id)).pluck(:id)
 
-    assert_equal units.select(&:currently_active?).map(&:id).sort, scoped_ids.sort
+    assert_equal units.select(&:within_teaching_dates?).map(&:id).sort, scoped_ids.sort
     assert_equal [running.id, no_period.id, ends_today.id].sort, scoped_ids.sort
     assert_not_includes scoped_ids, in_marking_window.id
     assert_not_includes scoped_ids, ended_yesterday.id

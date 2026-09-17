@@ -63,7 +63,7 @@ class CommunicationSetSchedule < ApplicationRecord
                  end
 
     return nil if occurrence.blank?
-    return nil if unit.present? && !unit.currently_active?(occurrence)
+    return nil if unit.present? && !unit.within_teaching_dates?(occurrence)
 
     occurrence
   end

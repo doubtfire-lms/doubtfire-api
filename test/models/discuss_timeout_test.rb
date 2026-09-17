@@ -76,7 +76,7 @@ class DiscussTimeoutTest < ActiveSupport::TestCase
 
     # Past end_date but before active_until
     travel_to Time.zone.parse('2026-10-05 12:00:00') do
-      assert_not unit.currently_active?
+      assert_not unit.within_teaching_dates?
       assert_equal 0, unit.notify_discuss_timeouts!
       assert_equal TaskStatus.discuss, task.reload.task_status
       assert_nil task.notified_discuss_warning_at
@@ -104,7 +104,7 @@ class DiscussTimeoutTest < ActiveSupport::TestCase
     task.update!(moved_to_discuss_at: Time.zone.parse('2026-09-15 12:00:00'))
 
     travel_to Time.zone.parse('2026-09-30 12:00:00') do
-      assert unit.currently_active?
+      assert unit.within_teaching_dates?
       assert_equal 1, unit.notify_discuss_timeouts!
       assert_equal TaskStatus.fix_and_resubmit, task.reload.task_status
     end
@@ -123,7 +123,7 @@ class DiscussTimeoutTest < ActiveSupport::TestCase
     task.update!(moved_to_discuss_at: 15.days.ago)
 
     travel_to unit.end_date + 1.day do
-      assert_not unit.currently_active?
+      assert_not unit.within_teaching_dates?
       assert_equal 0, unit.notify_discuss_timeouts!
       assert_equal TaskStatus.discuss, task.reload.task_status
     end
