@@ -250,6 +250,10 @@ class Unit < ApplicationRecord
   scope :not_current_for_date,  ->(date) { where('start_date > ? OR end_date < ?', date, date) }
   scope :set_active,            -> { where('active = ?', true) }
   scope :set_inactive,          -> { where('active = ?', false) }
+  # SQL equivalent of #within_teaching_dates?
+  scope :within_teaching_dates, lambda { |now = Time.zone.now|
+    set_active.where('units.end_date IS NULL OR units.end_date >= ?', now.to_date)
+  }
 
   include UnitTiiModule
 
@@ -273,23 +277,18 @@ class Unit < ApplicationRecord
     errors.add(:discuss_timeout_warning_days, 'must be less than the expiry days')
   end
 
-  # Mirrors Unit#isActive on the web client: the unit's own active flag, plus its
-  # teaching period still being within its active window. Units without a
-  # teaching period fall back to their own end date.
-  def currently_active?(now = Time.zone.now)
-    return false unless active?
-    return teaching_period.active?(now) if has_teaching_period?
-
-    end_date.present? ? now < end_date : true
+  # Active and not past the end date (inclusive), which is kept in sync with the teaching period's.
+  def within_teaching_dates?(now = Time.zone.now)
+    active? && (end_date.blank? || now.to_date <= end_date)
   end
 
   def self.notify_discuss_timeouts!
-    set_active.includes(:teaching_period).find_each(&:notify_discuss_timeouts!)
+    within_teaching_dates.find_each(&:notify_discuss_timeouts!)
   end
 
   def notify_discuss_timeouts!
     return 0 unless discuss_timeout_enabled
-    return 0 unless currently_active?
+    return 0 unless within_teaching_dates?
 
     discuss_timeout_tasks.find_each.sum do |task|
       notify_discuss_timeout_for(task)

@@ -55,7 +55,7 @@ class DiscussTimeoutTest < ActiveSupport::TestCase
     end
   end
 
-  def test_no_notifications_once_the_teaching_period_is_no_longer_active
+  def test_no_notifications_once_the_teaching_period_has_ended
     teaching_period = FactoryBot.create(
       :teaching_period,
       start_date: Time.zone.parse('2026-06-01 00:00:00'),
@@ -74,8 +74,9 @@ class DiscussTimeoutTest < ActiveSupport::TestCase
     task.update!(task_status: TaskStatus.discuss)
     task.update!(moved_to_discuss_at: Time.zone.parse('2026-09-20 12:00:00'))
 
-    travel_to Time.zone.parse('2026-11-05 12:00:00') do
-      assert_not unit.currently_active?
+    # Past end_date but before active_until
+    travel_to Time.zone.parse('2026-10-05 12:00:00') do
+      assert_not unit.within_teaching_dates?
       assert_equal 0, unit.notify_discuss_timeouts!
       assert_equal TaskStatus.discuss, task.reload.task_status
       assert_nil task.notified_discuss_warning_at
@@ -83,7 +84,7 @@ class DiscussTimeoutTest < ActiveSupport::TestCase
     end
   end
 
-  def test_notifications_still_run_between_end_date_and_active_until
+  def test_notifications_still_run_on_the_end_date
     teaching_period = FactoryBot.create(
       :teaching_period,
       start_date: Time.zone.parse('2026-06-01 00:00:00'),
@@ -100,10 +101,10 @@ class DiscussTimeoutTest < ActiveSupport::TestCase
     )
     task = unit.active_projects.first.task_for_task_definition(unit.task_definitions.first)
     task.update!(task_status: TaskStatus.discuss)
-    task.update!(moved_to_discuss_at: Time.zone.parse('2026-09-25 12:00:00'))
+    task.update!(moved_to_discuss_at: Time.zone.parse('2026-09-15 12:00:00'))
 
-    travel_to Time.zone.parse('2026-10-10 12:00:00') do
-      assert unit.currently_active?
+    travel_to Time.zone.parse('2026-09-30 12:00:00') do
+      assert unit.within_teaching_dates?
       assert_equal 1, unit.notify_discuss_timeouts!
       assert_equal TaskStatus.fix_and_resubmit, task.reload.task_status
     end
@@ -122,7 +123,7 @@ class DiscussTimeoutTest < ActiveSupport::TestCase
     task.update!(moved_to_discuss_at: 15.days.ago)
 
     travel_to unit.end_date + 1.day do
-      assert_not unit.currently_active?
+      assert_not unit.within_teaching_dates?
       assert_equal 0, unit.notify_discuss_timeouts!
       assert_equal TaskStatus.discuss, task.reload.task_status
     end
