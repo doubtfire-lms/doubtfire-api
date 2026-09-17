@@ -67,6 +67,12 @@ class TeachingPeriod < ApplicationRecord
     breaks.select { |teaching_break| teaching_break.applies_to?(campus) }
   end
 
+  # Teaching periods stay active past their end date so that end of semester
+  # marking can finish.
+  def active?(date = Time.zone.now)
+    active_until > date
+  end
+
   # The breaks that pause the week count for the teaching period. Breaks without
   # this flag still extend deadlines, but the week number continues through them
   # so that it stays aligned across campuses.
