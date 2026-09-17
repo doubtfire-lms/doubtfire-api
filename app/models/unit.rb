@@ -250,6 +250,11 @@ class Unit < ApplicationRecord
   scope :not_current_for_date,  ->(date) { where('start_date > ? OR end_date < ?', date, date) }
   scope :set_active,            -> { where('active = ?', true) }
   scope :set_inactive,          -> { where('active = ?', false) }
+  scope :currently_active, lambda { |now = Time.zone.now|
+    set_active
+      .left_joins(:teaching_period)
+      .where('teaching_periods.active_until > :now OR (units.teaching_period_id IS NULL AND (units.end_date IS NULL OR units.end_date > :now))', now: now)
+  }
 
   include UnitTiiModule
 
@@ -284,7 +289,7 @@ class Unit < ApplicationRecord
   end
 
   def self.notify_discuss_timeouts!
-    set_active.includes(:teaching_period).find_each(&:notify_discuss_timeouts!)
+    currently_active.includes(:teaching_period).find_each(&:notify_discuss_timeouts!)
   end
 
   def notify_discuss_timeouts!
