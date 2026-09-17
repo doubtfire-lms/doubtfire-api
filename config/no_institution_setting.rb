@@ -1,10 +1,11 @@
 class InstitutionSettings
 
-  def prefill_moodle_group_mappings(_unit, groups)
+  # Suggests how each LMS group should map into OnTrack when a convenor pre-fills group mappings.
+  def prefill_lms_group_mappings(_unit, groups)
     groups.map do |group|
       {
-        moodle_group_id: group[:id],
-        moodle_group_name: group[:name],
+        lms_group_id: group[:id],
+        lms_group_name: group[:name],
         target_type: 'ignore'
       }
     end

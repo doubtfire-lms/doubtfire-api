@@ -1,24 +1,24 @@
 # frozen_string_literal: true
 
-class MoodleGroupMapping < ApplicationRecord
+class LmsGroupMapping < ApplicationRecord
   TARGET_TYPES = %w[group campus tutorial ignore].freeze
 
-  belongs_to :moodle_integration
+  belongs_to :lms_integration
   belongs_to :group_set, optional: true
   belongs_to :group, optional: true
   belongs_to :campus, optional: true
   belongs_to :tutorial_stream, optional: true
   belongs_to :tutorial, optional: true
 
-  validates :moodle_group_id, numericality: { only_integer: true, greater_than: 0 }
-  validates :moodle_group_name, presence: true
+  validates :lms_group_id, numericality: { only_integer: true, greater_than: 0 }
+  validates :lms_group_name, presence: true
   validates :target_type, inclusion: { in: TARGET_TYPES }
   validate :valid_target
 
   private
 
   def valid_target
-    unit = moodle_integration&.unit
+    unit = lms_integration&.unit
 
     case target_type
     when 'group'

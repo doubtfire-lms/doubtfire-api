@@ -25,7 +25,7 @@ class CustomInstitutionSettingTest < ActiveSupport::TestCase
   end
 
   test 'pre-fills local and regional timetable activities' do
-    suggestions = @settings.prefill_moodle_group_mappings(
+    suggestions = @settings.prefill_lms_group_mappings(
       @unit,
       [
         { id: 1, name: 'Allocate+ COS10001 Workshop 07_OnCampus BU_Building.B2.123 Tue 10:00 (24)' },
@@ -52,7 +52,7 @@ class CustomInstitutionSettingTest < ActiveSupport::TestCase
   end
 
   test 'makes repeated activity abbreviations unique and ignores unrelated groups' do
-    suggestions = @settings.prefill_moodle_group_mappings(
+    suggestions = @settings.prefill_lms_group_mappings(
       @unit,
       [
         { id: 1, name: 'Allocate+ COS10001 Seminar 03_OnCampus-P1 OL_Site.Room_5 Mon 09:00' },
@@ -80,7 +80,7 @@ class CustomInstitutionSettingTest < ActiveSupport::TestCase
       campus: @burwood,
       abbreviation: 'workshop-07-bu'
     )
-    suggestion = @settings.prefill_moodle_group_mappings(
+    suggestion = @settings.prefill_lms_group_mappings(
       @unit,
       [{ id: 1, name: 'Allocate+ COS10001 Workshop 07_OnCampus BU_Building.B2.123 Tue 10:00 (24)' }]
     ).first

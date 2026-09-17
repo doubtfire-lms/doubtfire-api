@@ -16,7 +16,7 @@ class TiiCheckProgressJobTest < ActiveSupport::TestCase
     assert_equal 1, AggregateTaskCompletionStatsJob.jobs.count
     assert_equal 1, PollCommunicationSetSchedulesJob.jobs.count
     assert_equal 1, NotifyDiscussTimeoutJob.jobs.count
-    assert_equal 1, SyncMoodleIntegrationsJob.jobs.count
+    assert_equal 1, SyncLmsIntegrationsJob.jobs.count
     # assert_equal 1, ArchiveOldUnitsJob.jobs.count
   end
 

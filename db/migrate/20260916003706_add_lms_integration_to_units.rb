@@ -1,15 +1,14 @@
-class AddMoodleIntegrationToUnits < ActiveRecord::Migration[8.0]
+class AddLmsIntegrationToUnits < ActiveRecord::Migration[8.0]
   def change
-    add_column :units, :moodle_enabled, :boolean, null: false, default: false
-
-    create_table :moodle_integrations do |t|
+    create_table :lms_integrations do |t|
       t.references :unit, null: false, index: { unique: true }
-      t.bigint :course_id, null: false
-      t.text :api_key, null: false
+      # Where course data comes from, so other sources such as a direct Moodle web service can be added later.
+      t.string :source, null: false, default: 'lti'
       t.bigint :assignment_id
       t.string :assignment_name
       t.boolean :fetch_extensions, null: false, default: false
       t.boolean :auto_sync_students, null: false, default: false
+      t.boolean :withdraw_missing_students, null: false, default: false
       t.boolean :auto_sync_extensions, null: false, default: false
       t.boolean :group_mapping_enabled, null: false, default: false
       t.boolean :validated, null: false, default: false
@@ -18,10 +17,10 @@ class AddMoodleIntegrationToUnits < ActiveRecord::Migration[8.0]
       t.timestamps
     end
 
-    create_table :moodle_group_mappings do |t|
-      t.references :moodle_integration, null: false
-      t.bigint :moodle_group_id, null: false
-      t.string :moodle_group_name, null: false
+    create_table :lms_group_mappings do |t|
+      t.references :lms_integration, null: false
+      t.bigint :lms_group_id, null: false
+      t.string :lms_group_name, null: false
       t.string :target_type, null: false
       t.references :group_set
       t.references :group
@@ -33,8 +32,8 @@ class AddMoodleIntegrationToUnits < ActiveRecord::Migration[8.0]
       t.timestamps
     end
 
-    add_index :moodle_group_mappings,
-              [:moodle_integration_id, :moodle_group_id],
-              name: 'index_moodle_group_mappings_on_integration_and_group'
+    add_index :lms_group_mappings,
+              [:lms_integration_id, :lms_group_id],
+              name: 'index_lms_group_mappings_on_integration_and_group'
   end
 end

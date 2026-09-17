@@ -1,8 +1,8 @@
 module Entities
-  class MoodleGroupMappingEntity < Grape::Entity
+  class LmsGroupMappingEntity < Grape::Entity
     expose :id
-    expose :moodle_group_id
-    expose :moodle_group_name
+    expose :lms_group_id
+    expose :lms_group_name
     expose :target_type
     expose :group_set_id
     expose :group_id
