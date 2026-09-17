@@ -199,6 +199,6 @@ class TeachingPeriod < ApplicationRecord
   end
 
   def saved_change_to_teaching_dates?
-    saved_change_to_start_date? || saved_change_to_end_date? || saved_change_to_active_until?
+    saved_change_to_start_date? || saved_change_to_end_date?
   end
 end
