@@ -11,6 +11,8 @@ class AddLmsIntegrationToUnits < ActiveRecord::Migration[8.0]
       t.boolean :withdraw_missing_students, null: false, default: false
       t.boolean :auto_sync_extensions, null: false, default: false
       t.boolean :group_mapping_enabled, null: false, default: false
+      t.boolean :skip_ungraded, null: false, default: true
+      t.boolean :send_grade_rationale, null: false, default: false
       t.boolean :validated, null: false, default: false
       t.datetime :validated_at
 

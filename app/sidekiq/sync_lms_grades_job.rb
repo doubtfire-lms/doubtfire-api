@@ -18,6 +18,9 @@ class SyncLmsGradesJob
     at(0, 'Fetching LMS course members')
 
     unit = Unit.find(unit_id)
+    integration = unit.lms_integration
+    skip_ungraded = integration.nil? || integration.skip_ungraded?
+    send_rationale = integration&.send_grade_rationale? || false
     source = LmsIntegration.data_source_for(unit)
     members = source.members
     server = LtiServer.new(unit.id)
@@ -40,19 +43,26 @@ class SyncLmsGradesJob
 
       if project.nil?
         result[:ignored] << { row: row, message: user ? 'Not enrolled in OnTrack' : 'No matching OnTrack user' }
-      elsif project.grade.nil?
+      elsif project.grade.nil? || (skip_ungraded && project.grade.zero?)
         matched_project_ids << project.id
-        result[:ignored] << { row: row, message: 'No grade in OnTrack' }
+        result[:ignored] << { row: row, message: 'Not graded yet' }
       else
         matched_project_ids << project.id
         row[:grade] = project.grade
         rows_by_user_id[lms_member[:lms_user_id]] = row
-        scores << { userId: lms_member[:lms_user_id], scoreGiven: project.grade }
+        score = { userId: lms_member[:lms_user_id], scoreGiven: project.grade }
+        if send_rationale && project.grade_rationale.present?
+          score[:comment] = project.grade_rationale
+          row[:feedback] = project.grade_rationale
+        end
+        scores << score
       end
     end
 
     # Graded OnTrack students with no LMS member would otherwise be skipped silently
-    unit.projects.where(enrolled: true).where.not(grade: nil).where.not(id: matched_project_ids.to_a).includes(:user).find_each do |project|
+    unmatched = unit.projects.where(enrolled: true).where.not(grade: nil).where.not(id: matched_project_ids.to_a)
+    unmatched = unmatched.where.not(grade: 0) if skip_ungraded
+    unmatched.includes(:user).find_each do |project|
       row = { ontrack_username: project.user.username, ontrack_name: project.user.name, email: project.user.email, grade: project.grade }
       result[:ignored] << { row: row, message: 'Not a student in the LMS course' }
     end

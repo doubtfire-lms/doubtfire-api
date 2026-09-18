@@ -11,6 +11,8 @@ module Entities
     expose :withdraw_missing_students
     expose :auto_sync_extensions
     expose :group_mapping_enabled
+    expose :skip_ungraded
+    expose :send_grade_rationale
     expose :validated
     expose :validated_at
     expose :lms_group_mappings,

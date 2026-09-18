@@ -365,6 +365,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_16_003706) do
     t.boolean "withdraw_missing_students", default: false, null: false
     t.boolean "auto_sync_extensions", default: false, null: false
     t.boolean "group_mapping_enabled", default: false, null: false
+    t.boolean "skip_ungraded", default: true, null: false
+    t.boolean "send_grade_rationale", default: false, null: false
     t.boolean "validated", default: false, null: false
     t.datetime "validated_at"
     t.datetime "created_at", null: false
