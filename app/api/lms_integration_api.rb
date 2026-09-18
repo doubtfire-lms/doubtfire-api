@@ -131,6 +131,37 @@ class LmsIntegrationApi < Grape::API
     present integration, with: Entities::LmsIntegrationEntity
   end
 
+  desc 'Update individual LMS integration settings without replacing the group mappings'
+  params do
+    optional :fetch_extensions, type: Boolean
+    optional :auto_sync_students, type: Boolean
+    optional :withdraw_missing_students, type: Boolean
+    optional :auto_sync_extensions, type: Boolean
+    optional :group_mapping_enabled, type: Boolean
+    optional :skip_ungraded, type: Boolean
+    optional :send_grade_rationale, type: Boolean
+    optional :assignment_id, type: Integer
+    optional :assignment_name, type: String
+    all_or_none_of :assignment_id, :assignment_name
+    at_least_one_of :fetch_extensions, :auto_sync_students, :withdraw_missing_students, :auto_sync_extensions, :group_mapping_enabled, :skip_ungraded, :send_grade_rationale, :assignment_id
+  end
+  patch '/units/:unit_id/lms/settings' do
+    unit = lms_unit!
+
+    integration = unit.lms_integration || unit.build_lms_integration
+    changes = declared(params, include_missing: false).to_h.symbolize_keys.except(:unit_id)
+    integration.assign_attributes(changes)
+    integration.auto_sync_extensions = false unless integration.fetch_extensions?
+    # These change what validation checks, so the integration must be validated again
+    if integration.fetch_extensions_changed? || integration.group_mapping_enabled_changed? || integration.assignment_id_changed?
+      integration.validated = false
+      integration.validated_at = nil
+    end
+    integration.save!
+
+    present integration, with: Entities::LmsIntegrationEntity
+  end
+
   desc 'Get course details, groups and assignments from the LMS course-data plugin'
   get '/units/:unit_id/lms/course_data' do
     unit = lms_unit!

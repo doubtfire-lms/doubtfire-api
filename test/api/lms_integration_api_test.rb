@@ -82,6 +82,59 @@ class LmsIntegrationApiTest < ActiveSupport::TestCase
     assert_empty SyncLmsGradesJob.jobs
   end
 
+  def test_settings_patch_only_changes_the_given_toggles
+    unit = FactoryBot.create(:unit, with_students: false)
+    integration = unit.create_lms_integration!(group_mapping_enabled: true, validated: true, validated_at: Time.zone.now)
+    integration.lms_group_mappings.create!(lms_group_id: 7, lms_group_name: 'Lab 1', target_type: 'ignore')
+    add_auth_header_for(user: unit.main_convenor_user)
+
+    patch "/api/units/#{unit.id}/lms/settings", { auto_sync_students: true }
+
+    assert_equal 200, last_response.status, last_response.inspect
+    integration.reload
+    assert integration.auto_sync_students?
+    assert integration.group_mapping_enabled?
+    assert integration.validated?
+    assert_equal 1, integration.lms_group_mappings.count
+  end
+
+  def test_settings_patch_invalidates_when_extensions_change
+    unit = FactoryBot.create(:unit, with_students: false)
+    integration = unit.create_lms_integration!(fetch_extensions: true, auto_sync_extensions: true, validated: true, validated_at: Time.zone.now)
+    add_auth_header_for(user: unit.main_convenor_user)
+
+    patch "/api/units/#{unit.id}/lms/settings", { fetch_extensions: false }
+
+    assert_equal 200, last_response.status, last_response.inspect
+    integration.reload
+    assert_not integration.fetch_extensions?
+    assert_not integration.auto_sync_extensions?
+    assert_not integration.validated?
+  end
+
+  def test_settings_patch_saves_the_assignment_and_invalidates
+    unit = FactoryBot.create(:unit, with_students: false)
+    integration = unit.create_lms_integration!(fetch_extensions: true, assignment_id: 1, assignment_name: 'Old', validated: true, validated_at: Time.zone.now)
+    add_auth_header_for(user: unit.main_convenor_user)
+
+    patch "/api/units/#{unit.id}/lms/settings", { assignment_id: 2, assignment_name: 'Portfolio' }
+
+    assert_equal 200, last_response.status, last_response.inspect
+    integration.reload
+    assert_equal 2, integration.assignment_id
+    assert_equal 'Portfolio', integration.assignment_name
+    assert_not integration.validated?
+  end
+
+  def test_student_cannot_patch_settings
+    unit = FactoryBot.create(:unit)
+    add_auth_header_for(user: unit.active_projects.first.student)
+
+    patch "/api/units/#{unit.id}/lms/settings", { auto_sync_students: true }
+
+    assert_equal 403, last_response.status, last_response.inspect
+  end
+
   def test_grade_sync_preview_is_queued_without_a_configured_line_item
     unit = FactoryBot.create(:unit, with_students: false)
     add_auth_header_for(user: unit.main_convenor_user)
