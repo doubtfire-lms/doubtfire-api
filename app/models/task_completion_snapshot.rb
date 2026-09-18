@@ -51,6 +51,18 @@ class TaskCompletionSnapshot < ApplicationRecord
     {}
   end
 
+  def load_target_grade_stats
+    snapshot_contents = self.snapshot_contents
+
+    return {} if snapshot_contents.blank?
+
+    unit.grade_values.to_h do |target_grade|
+      [target_grade.to_s, parse_csv_stats(snapshot_contents, target_grade: target_grade)]
+    end
+  rescue CSV::MalformedCSVError
+    {}
+  end
+
   def store_stats!(payload)
     file_path = snapshot_file_path
     raise 'Cannot store stats without a unit' if file_path.blank?
@@ -91,7 +103,7 @@ class TaskCompletionSnapshot < ApplicationRecord
 
   private
 
-  def parse_csv_stats(csv_text)
+  def parse_csv_stats(csv_text, target_grade: nil)
     csv = CSV.parse(csv_text, headers: true)
     return {} if csv.empty?
 
@@ -102,6 +114,13 @@ class TaskCompletionSnapshot < ApplicationRecord
     stats = Hash.new { |hash, key| hash[key] = Hash.new { |tutorial_hash, tutorial_key| tutorial_hash[tutorial_key] = Hash.new { |task_hash, task_key| task_hash[task_key] = Hash.new(0) } } }
 
     csv.each do |row|
+      target_grade_value = row['Target Grade'].to_s.strip
+      if target_grade.present? &&
+         target_grade_value != target_grade.to_s &&
+         target_grade_value != unit.grade_label(target_grade).to_s
+        next
+      end
+
       campus_abbreviation = row['Campus'].to_s.strip
       next if campus_abbreviation.blank?
 

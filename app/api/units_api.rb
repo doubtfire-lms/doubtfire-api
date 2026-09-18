@@ -633,7 +633,8 @@ class UnitsApi < Grape::API
       {
         snapshot_date: snapshot.snapshot_date,
         snapshot_timestamp: snapshot.snapshot_timestamp,
-        stats: stats
+        stats: stats,
+        target_grade_stats: snapshot.load_target_grade_stats
       }
     }, with: Grape::Presenters::Presenter
   end
