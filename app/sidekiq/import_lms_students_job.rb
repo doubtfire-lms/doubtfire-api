@@ -112,7 +112,7 @@ class ImportLmsStudentsJob
       last_name: lms_member[:last_name],
       email: lms_member[:email],
       lms_roles: lms_member[:roles].join(', '),
-      lms_groups: mappings.map(&:lms_group_name).uniq.join(', '),
+      lms_groups: mappings.map(&:lms_group_name).uniq.join("\n"),
       mapped_campus: mappings.filter_map { |mapping| mapping.campus&.name }.uniq.join(', '),
       mapped_tutorial: mappings.select { |mapping| mapping.target_type == 'tutorial' }.map { |mapping| mapping.tutorial&.abbreviation || mapping.lms_group_name }.uniq.join(', '),
       mapped_group: mappings.select { |mapping| mapping.target_type == 'group' }.map { |mapping| mapping.group&.name || mapping.lms_group_name }.uniq.join(', ')
