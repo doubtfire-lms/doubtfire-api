@@ -671,6 +671,16 @@ class UnitsApi < Grape::API
     end
     snapshots = snapshots.first([params[:limit].to_i, 365].min)
 
+    present snapshots.map { |snapshot|
+      stats = snapshot.load_stats
+
+      {
+        snapshot_date: snapshot.snapshot_date,
+        snapshot_timestamp: snapshot.snapshot_timestamp,
+        stats: stats,
+        target_grade_stats: snapshot.load_target_grade_stats
+      }
+    }, with: Grape::Presenters::Presenter
     present snapshots, with: Grape::Presenters::Presenter
   end
 

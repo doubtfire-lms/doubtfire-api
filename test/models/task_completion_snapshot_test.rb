@@ -84,6 +84,23 @@ class TaskCompletionSnapshotTest < ActiveSupport::TestCase
     assert_equal({}, snapshot.load_stats)
   end
 
+  test 'load_target_grade_stats separates students by target grade' do
+    tutorial = @unit.tutorials.first
+    task_definition = @unit.task_definitions_by_grade.first
+    first_grade, second_grade = @unit.grade_values.first(2)
+
+    payload = CSV.generate do |csv|
+      csv << ['Student ID', 'Username', 'Student Name', 'Campus', 'Target Grade', 'Email', 'Portfolio', 'Grade', 'Rationale', 'Assessor', 'Tutorial', task_definition.abbreviation]
+      csv << ['1', 'student-1', 'Student 1', tutorial.campus.abbreviation, @unit.grade_label(first_grade), 'student-1@example.com', 'false', '', '', '', tutorial.abbreviation, TaskStatus.complete.id]
+      csv << ['2', 'student-2', 'Student 2', tutorial.campus.abbreviation, @unit.grade_label(second_grade), 'student-2@example.com', 'false', '', '', '', tutorial.abbreviation, TaskStatus.not_started.id]
+    end
+
+    @snapshot.store_stats!(payload)
+
+    assert_equal 1, @snapshot.load_target_grade_stats[first_grade.to_s][tutorial.campus.name][tutorial.abbreviation][task_definition.abbreviation]['complete']
+    assert_equal 1, @snapshot.load_target_grade_stats[second_grade.to_s][tutorial.campus.name][tutorial.abbreviation][task_definition.abbreviation]['not_started']
+  end
+
   test 'deleting snapshot deletes associated zip file' do
     tutorial = @unit.tutorials.first
     task_definition = @unit.task_definitions_by_grade.first
