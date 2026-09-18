@@ -497,6 +497,9 @@ class UnitsApi < Grape::API
 
     # Actually withdraw...
     response = unit.unenrol_users_from_csv(File.new(path))
+    usernames = response[:success].map { |result| result[:row]['username'] }
+    user_ids = User.where(username: usernames).pluck(:id)
+    logger.info "Bulk withdraw: user=#{current_user.username} unit_id=#{unit.id} count=#{user_ids.count} ids=#{user_ids.inspect}"
     present response, with: Grape::Presenters::Presenter
   end
 
@@ -511,6 +514,7 @@ class UnitsApi < Grape::API
     header['Content-Disposition'] = "attachment; filename=#{unit.code}-Students.csv"
     header['Access-Control-Expose-Headers'] = 'Content-Disposition'
     env['api.format'] = :binary
+    logger.info "Unit CSV download: user=#{current_user.username} unit_id=#{unit.id}"
     unit.export_users_to_csv
   end
 
