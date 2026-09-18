@@ -255,21 +255,27 @@ class LmsIntegrationApi < Grape::API
   end
 
   desc 'Send OnTrack grades to the LMS grade item'
+  params do
+    optional :preview_only, type: Boolean, default: false
+  end
   post '/units/:unit_id/lms/sync_grades' do
     unit = lms_unit!
     require_link!(unit)
 
-    begin
-      grade_line_item = LtiServer.new(unit.id).grade_line_item
-      unless grade_line_item['configured'] == true
-        message = grade_line_item['message'].presence || 'Grade sync is not configured for this LMS course.'
-        error!({ error: message }, 422)
+    # A preview only reads course members, so it does not need the grade item
+    unless params[:preview_only]
+      begin
+        grade_line_item = LtiServer.new(unit.id).grade_line_item
+        unless grade_line_item['configured'] == true
+          message = grade_line_item['message'].presence || 'Grade sync is not configured for this LMS course.'
+          error!({ error: message }, 422)
+        end
+      rescue LtiServer::Error => e
+        lms_error!(e)
       end
-    rescue LtiServer::Error => e
-      lms_error!(e)
     end
 
-    job_id = SyncLmsGradesJob.perform_async(unit.id)
+    job_id = SyncLmsGradesJob.perform_async(unit.id, params[:preview_only])
     present setup_job(job_id), with: Entities::SidekiqJobEntity
   end
 end

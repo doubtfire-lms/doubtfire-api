@@ -82,6 +82,19 @@ class LmsIntegrationApiTest < ActiveSupport::TestCase
     assert_empty SyncLmsGradesJob.jobs
   end
 
+  def test_grade_sync_preview_is_queued_without_a_configured_line_item
+    unit = FactoryBot.create(:unit, with_students: false)
+    add_auth_header_for(user: unit.main_convenor_user)
+    stub_link(unit)
+
+    post "/api/units/#{unit.id}/lms/sync_grades", { preview_only: true }
+
+    assert_equal 201, last_response.status, last_response.inspect
+    assert_equal([[unit.id, true]], SyncLmsGradesJob.jobs.map { |job| job['args'] })
+  ensure
+    SyncLmsGradesJob.clear
+  end
+
   private
 
   def internal_url(unit, path)
