@@ -1,0 +1,13 @@
+<h1><%= @unit.name %> - Discussion Deadline Missed</h1>
+<p class="subtext"><%= @task.task_definition.abbreviation %> - <%= @task.task_definition.name %></p>
+
+<p>Hi <%= @student.first_name %>,</p>
+
+<p>
+  Task <%= @task.task_definition.abbreviation %> moved to
+  <strong>Fix and Resubmit</strong> because it was not discussed by the deadline.
+</p>
+
+<p>Review any feedback and resubmit it when you are ready.</p>
+
+<p><a href="<%= @task_url %>">View this task in <%= @doubtfire_product_name %></a>.</p>

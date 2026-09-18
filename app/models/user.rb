@@ -90,6 +90,18 @@ class User < ApplicationRecord
     end
   end
 
+  # Record a completed interactive sign in. Signing in is also an access event.
+  def record_sign_in!
+    now = Time.current
+    update!(last_sign_in_at: now, last_access_at: now)
+  end
+
+  # Refresh-token exchanges provide a low-write indication that the user is
+  # still accessing OnTrack without updating the user on every API request.
+  def record_access!
+    update!(last_access_at: Time.current)
+  end
+
   #
   # Force-generates a new authentication token, regardless of whether or not
   # it is actually expired
@@ -132,6 +144,13 @@ class User < ApplicationRecord
   end
 
   #
+  # Generate an authentication token for unit content asset retrieval
+  #
+  def generate_content_authentication_token!
+    generate_authentication_token!(token_type: :content)
+  end
+
+  #
   # Returns authentication of the user
   #
   def token_for_text?(a_token, token_type)
@@ -157,6 +176,7 @@ class User < ApplicationRecord
   has_many    :engagements, dependent: :restrict_with_exception, inverse_of: :user
   has_many    :engagement_comments, dependent: :restrict_with_exception, inverse_of: :user
   has_many    :auth_tokens, dependent: :destroy, inverse_of: :user
+  has_many    :comment_read_cursors, dependent: :destroy, inverse_of: :user
   has_many    :user_oauth_tokens, dependent: :destroy, inverse_of: :user
   has_many    :user_oauth_states, dependent: :destroy, inverse_of: :user
   has_one     :webcal, dependent: :destroy, inverse_of: :user
@@ -165,8 +185,9 @@ class User < ApplicationRecord
   has_many    :marking_sessions, dependent: :destroy
 
   # Model validations/constraints
-  validates :first_name,  presence: true
-  validates :last_name,   presence: true
+  validates :first_name,  presence: true, allowed_characters: { type: :first_name }
+  validates :last_name,   presence: true, allowed_characters: { type: :last_name }
+  validates :nickname,    allowed_characters: { type: :preferred_name }, allow_blank: true
   validates :role_id,     presence: true
   validates :username,    presence: true, uniqueness: { case_sensitive: false }
   validates :email,       presence: true, uniqueness: { case_sensitive: false }, format: { with: /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\z/i }
@@ -491,7 +512,7 @@ class User < ApplicationRecord
         end
       end
       User.order('id').each do |user|
-        row << user.attributes.select { |attribute| exportables.include? attribute }.map do |key, value|
+        values = user.attributes.select { |attribute| exportables.include? attribute }.map do |key, value|
           # pass in a blank encrypted_password and the role name instead of just role_id
           if key == 'encrypted_password'
             ''
@@ -501,6 +522,7 @@ class User < ApplicationRecord
             value
           end
         end
+        row << CsvHelper.escape_spreadsheet_formulas(values)
       end
     end
   end

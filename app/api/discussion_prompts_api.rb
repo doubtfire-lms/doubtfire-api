@@ -108,7 +108,7 @@ class DiscussionPromptsApi < Grape::API
       error!({ error: 'You do not have permission to access this project' }, 403)
     end
 
-    tasks_to_discuss = project.tasks.where(task_status: [TaskStatus.discuss, TaskStatus.attention_required, TaskStatus.demonstrate])
+    tasks_to_discuss = project.tasks.where(task_status: [TaskStatus.discuss, TaskStatus.rediscuss, TaskStatus.attention_required, TaskStatus.demonstrate])
     task_definition_ids = tasks_to_discuss.pluck(:task_definition_id)
 
     result = DiscussionPrompt

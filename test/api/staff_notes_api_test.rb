@@ -93,6 +93,83 @@ class StaffNotesApiTest < ActiveSupport::TestCase
     assert_equal response_staff_note.id, second_staff_note.reply_to_id
   end
 
+  def test_only_convenors_and_admins_can_upload_staff_notes_csv
+    unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false)
+    admin_unit = FactoryBot.create(:unit, code: 'COS10002', with_students: false)
+    student = FactoryBot.create(:user, :student, login_id: 'staff-note-student')
+    tutor = FactoryBot.create(:user, :tutor)
+    convenor = FactoryBot.create(:user, :convenor)
+    admin = FactoryBot.create(:user, :admin)
+    unit.enrol_student(student, nil)
+    admin_unit.enrol_student(student, nil)
+    unit.employ_staff(tutor, Role.tutor)
+    unit.employ_staff(convenor, Role.convenor)
+
+    csv_file = Tempfile.new(['staff-notes-permissions', '.csv'])
+    csv_file.write("username,comment\n#{student.username},Permission test note\n")
+    csv_file.rewind
+
+    Sidekiq::Testing.inline! do
+      [[convenor, unit], [admin, admin_unit]].each do |user, upload_unit|
+        add_auth_header_for(user: user)
+        post "/api/csv/units/#{upload_unit.id}/staff_notes", file: Rack::Test::UploadedFile.new(csv_file.path, 'text/csv')
+        assert_equal 201, last_response.status, "#{user.role.name}: #{last_response.body}"
+      end
+
+      [tutor, student].each do |user|
+        add_auth_header_for(user: user)
+        post "/api/csv/units/#{unit.id}/staff_notes", file: Rack::Test::UploadedFile.new(csv_file.path, 'text/csv')
+        assert_equal 403, last_response.status, user.role.name
+      end
+    ensure
+      Sidekiq::Testing.fake!
+    end
+  ensure
+    csv_file&.close
+    csv_file&.unlink
+  end
+
+  def test_staff_notes_csv_imports_by_username_or_login_id
+    unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false)
+    convenor = FactoryBot.create(:user, :convenor)
+    first_student = FactoryBot.create(:user, :student, login_id: 'staff-note-login-1')
+    second_student = FactoryBot.create(:user, :student, login_id: 'staff-note-login-2')
+    first_project = unit.enrol_student(first_student, nil)
+    second_project = unit.enrol_student(second_student, nil)
+    unit.employ_staff(convenor, Role.convenor)
+
+    csv_file = Tempfile.new(['staff-notes-import', '.csv'])
+    csv_file.write(CSV.generate do |csv|
+      csv << %w[username login_id comment]
+      csv << [first_student.username, nil, 'Username note']
+      csv << [nil, second_student.login_id, 'Login ID note']
+      csv << [first_student.username, first_student.login_id, 'Duplicate note']
+      csv << [first_student.username, first_student.login_id, 'Duplicate note']
+      csv << [first_student.username, second_student.login_id, 'Mismatched identifiers note']
+    end)
+    csv_file.rewind
+
+    Sidekiq::Testing.inline! do
+      add_auth_header_for(user: convenor)
+      post "/api/csv/units/#{unit.id}/staff_notes", file: Rack::Test::UploadedFile.new(csv_file.path, 'text/csv')
+
+      assert_equal 201, last_response.status, last_response.body
+      result = JSON.parse(last_response_body['result'])
+      assert_equal 3, result['success'].size
+      assert_equal 1, result['ignored'].size
+      assert_equal 1, result['errors'].size
+      assert_equal 'Staff note already exists', result['ignored'].first['message']
+      assert_equal 'Username and login_id do not match the same user', result['errors'].first['message']
+      assert_equal ['Username note', 'Duplicate note'], first_project.staff_notes.reload.pluck(:note)
+      assert_equal ['Login ID note'], second_project.staff_notes.reload.pluck(:note)
+    ensure
+      Sidekiq::Testing.fake!
+    end
+  ensure
+    csv_file&.close
+    csv_file&.unlink
+  end
+
   def test_tutor_can_edit_staff_notes
     unit = FactoryBot.create(:unit, code: 'COS10001')
 

@@ -2,6 +2,250 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-60](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-59...v11.0.0-60) (2026-09-17)
+
+
+### Features
+
+* authorise jplag report downloads for the caddy file server ([d44acf2](https://github.com/b0ink/doubtfire-deploy/commit/d44acf23cb644ab7db01a00ca18c13c14a748b7a))
+* disable jobs outside of currently active teaching period ([#689](https://github.com/b0ink/doubtfire-deploy/issues/689)) ([b27d9ca](https://github.com/b0ink/doubtfire-deploy/commit/b27d9cad298048468b2fac33b649dca05601522b))
+
+
+### Bug Fixes
+
+* allow students to submit tasks locked to a tutorial stream ([a8ae905](https://github.com/b0ink/doubtfire-deploy/commit/a8ae905643f489bc5a48d5ebc1cfd33cf9e0d4d8))
+* ensure unique email seed ([c4c7a34](https://github.com/b0ink/doubtfire-deploy/commit/c4c7a344e542bbf7529894ddcbad1027eee2a126))
+* prevent discussion timeout notifications outside of active teaching period ([#687](https://github.com/b0ink/doubtfire-deploy/issues/687)) ([e7da860](https://github.com/b0ink/doubtfire-deploy/commit/e7da8607aba8ade853cac8d19b3bef8f0558257c))
+* prioritise unit staff role for owned projects ([238b6a7](https://github.com/b0ink/doubtfire-deploy/commit/238b6a755552c65285d0921abe3c411b43de5c4d))
+* prioritise unit staff role for owned projects ([#688](https://github.com/b0ink/doubtfire-deploy/issues/688)) ([aac3a8c](https://github.com/b0ink/doubtfire-deploy/commit/aac3a8c485c03dea614d372386aeef63442a2152))
+
+## [11.0.0-59](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-58...v11.0.0-59) (2026-09-14)
+
+## [11.0.0-58](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-57...v11.0.0-58) (2026-09-14)
+
+
+### Bug Fixes
+
+* handle concurrently cleared submission history markers ([d3c623d](https://github.com/b0ink/doubtfire-deploy/commit/d3c623d675b52393d226ecf311e35cae222f27b3))
+* use redis for production cache ([53695e9](https://github.com/b0ink/doubtfire-deploy/commit/53695e97640eb9e57941726a481511dc1268b96f))
+
+## [11.0.0-57](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-56...v11.0.0-57) (2026-09-04)
+
+
+### Bug Fixes
+
+* ensure blank passwords do not create empty user ([0338a9d](https://github.com/b0ink/doubtfire-deploy/commit/0338a9da6d4638c85157816ee828e69b9eb1bfd3))
+* ensure blank passwords do not create empty user ([#683](https://github.com/b0ink/doubtfire-deploy/issues/683)) ([fa1da37](https://github.com/b0ink/doubtfire-deploy/commit/fa1da375dd1a03fa7970892bd9cf67149d44cfdc))
+* init disk space endpoint config outside of overseer ([566a6b0](https://github.com/b0ink/doubtfire-deploy/commit/566a6b0eee8fb8219ae30ca6fa7584aefd66739e))
+
+## [11.0.0-56](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-55...v11.0.0-56) (2026-09-03)
+
+
+### Bug Fixes
+
+* catch tutorials with no campus set ([d6fcdef](https://github.com/b0ink/doubtfire-deploy/commit/d6fcdefde456cb5eb103ccb2c76b9b381f920cce))
+
+## [11.0.0-55](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-54...v11.0.0-55) (2026-09-03)
+
+
+### Features
+
+* statistics endpoint ([5359c94](https://github.com/b0ink/doubtfire-deploy/commit/5359c94492bc090caeee0e0bacb9e226c758c887))
+
+## [11.0.0-54](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-53...v11.0.0-54) (2026-09-03)
+
+
+### Features
+
+* ensure rules are reordered when deleted ([ef41d86](https://github.com/b0ink/doubtfire-deploy/commit/ef41d86045f20968f6f0ffc41bf44804afb4e8e2))
+* option to pause week count per teaching period break ([#680](https://github.com/b0ink/doubtfire-deploy/issues/680)) ([07b68ca](https://github.com/b0ink/doubtfire-deploy/commit/07b68cac770cd7d6622de4f781720ee6bd650918))
+* store aggregated task status to serve immediately ([bbab019](https://github.com/b0ink/doubtfire-deploy/commit/bbab0199b51bf83196a7a55f2da3c55fd95018a5))
+
+
+### Bug Fixes
+
+* rubocop ([db2859e](https://github.com/b0ink/doubtfire-deploy/commit/db2859edaed0b2ed567a3c01063a1760964c1b90))
+* show group overseer reports across member tasks ([#669](https://github.com/b0ink/doubtfire-deploy/issues/669)) ([be022d4](https://github.com/b0ink/doubtfire-deploy/commit/be022d40faa1de2d91026996ad01a10bb9fdc112))
+
+## [11.0.0-53](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-52...v11.0.0-53) (2026-08-24)
+
+## [11.0.0-52](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-51...v11.0.0-52) (2026-08-21)
+
+
+### Bug Fixes
+
+* ensure discuss timeout emails are not sent to withdrawn students ([569bc55](https://github.com/b0ink/doubtfire-deploy/commit/569bc5595f2660efd14614c60b6cb529f1254966))
+
+## [11.0.0-51](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-50...v11.0.0-51) (2026-08-20)
+
+
+### Features
+
+* allow staff to delete engagement stamps within window ([18bff9e](https://github.com/b0ink/doubtfire-deploy/commit/18bff9e2f9d02591e3ea2e9860d94a77710ffc09))
+* allow staff to delete engagement stamps within window ([#675](https://github.com/b0ink/doubtfire-deploy/issues/675)) ([19ff041](https://github.com/b0ink/doubtfire-deploy/commit/19ff041343cdaad8d7d43a38dddc782ebcbed7f4))
+* track teaching breaks in days with an optional label ([38ee332](https://github.com/b0ink/doubtfire-deploy/commit/38ee332a4164f91f070bf8aa99e5761b99d45105))
+
+
+### Bug Fixes
+
+* allow admins to manage staff in units they are not part of ([cb9af9d](https://github.com/b0ink/doubtfire-deploy/commit/cb9af9d9f07d929241f99a6fed6c4f0149276c0a))
+* avoid creating portfolio path unless intended ([6725f75](https://github.com/b0ink/doubtfire-deploy/commit/6725f750ff873d097d9aba103671177f1ac442f5))
+
+## [11.0.0-50](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-49...v11.0.0-50) (2026-08-17)
+
+
+### Bug Fixes
+
+* remove default json value ([cb959bf](https://github.com/b0ink/doubtfire-deploy/commit/cb959bfea92c98f55e57a7476544da3316f33d71))
+
+## [11.0.0-49](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-48...v11.0.0-49) (2026-08-17)
+
+
+### Features
+
+* tutorial duration ([#672](https://github.com/b0ink/doubtfire-deploy/issues/672)) ([c089777](https://github.com/b0ink/doubtfire-deploy/commit/c089777a67f84479a0ebe4f3502d2c2d6331796e))
+
+## [11.0.0-48](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-47...v11.0.0-48) (2026-08-17)
+
+
+### Features
+
+* add separate breaks for different campuses ([#670](https://github.com/b0ink/doubtfire-deploy/issues/670)) ([bfa41bf](https://github.com/b0ink/doubtfire-deploy/commit/bfa41bf0ed9fd7fd6b49a98d1a601857d6c3e3ad))
+
+## [11.0.0-47](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-46...v11.0.0-47) (2026-08-17)
+
+
+### Bug Fixes
+
+* support full width commas ([ed719ab](https://github.com/b0ink/doubtfire-deploy/commit/ed719ab5b76a669544a4a55eeb91e432a21d7e7c))
+
+## [11.0.0-46](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-45...v11.0.0-46) (2026-08-17)
+
+
+### Bug Fixes
+
+* extend valid character list ([c3da5be](https://github.com/b0ink/doubtfire-deploy/commit/c3da5be61751a83414cfc0ae6caee2232a00469a))
+
+## [11.0.0-45](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-44...v11.0.0-45) (2026-08-12)
+
+
+### Bug Fixes
+
+* address uri mitigation and cors regressions ([919b6ab](https://github.com/b0ink/doubtfire-deploy/commit/919b6abf2e65ab20dc4d2af4cff6f3b6dfc849d8))
+* ensure correct context is found for learning chips import ([76f3ff1](https://github.com/b0ink/doubtfire-deploy/commit/76f3ff1370a93a8092a5c07bcc4af11043c37308))
+* mitigate URI credential leakage in relative URI merges ([60082f0](https://github.com/b0ink/doubtfire-deploy/commit/60082f00fa86686efcc8e506f28defd8c02b3d7f))
+* tighten API CORS policy to trusted origins ([cdb7eb6](https://github.com/b0ink/doubtfire-deploy/commit/cdb7eb6ec0c8ab73c5e9b79b850382e2327d0726))
+* validate user input ([#668](https://github.com/b0ink/doubtfire-deploy/issues/668)) ([a9649c7](https://github.com/b0ink/doubtfire-deploy/commit/a9649c7a61d1fac5ba8eef63d6102165fb97e15e))
+
+## [11.0.0-44](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-43...v11.0.0-44) (2026-08-08)
+
+
+### Features
+
+* bulk upload staff notes ([6c3b3e0](https://github.com/b0ink/doubtfire-deploy/commit/6c3b3e0b1b67ad3226718e9e7925b849802e0ae3))
+* bulk upload staff notes ([#665](https://github.com/b0ink/doubtfire-deploy/issues/665)) ([3e0f32d](https://github.com/b0ink/doubtfire-deploy/commit/3e0f32d724f3664deddbff8fef55ca10c8fed3b1))
+
+## [11.0.0-43](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-42...v11.0.0-43) (2026-08-03)
+
+
+### Features
+
+* group engagement ([#658](https://github.com/b0ink/doubtfire-deploy/issues/658)) ([6f02a33](https://github.com/b0ink/doubtfire-deploy/commit/6f02a33942ccbd5107eb4a88f9274b848196e3c5))
+
+## [11.0.0-42](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-41...v11.0.0-42) (2026-07-31)
+
+
+### Bug Fixes
+
+* ensure screenshots embedded in markdown compiles correctly ([9b624d6](https://github.com/b0ink/doubtfire-deploy/commit/9b624d68576710e40abe22ffdcac79b6277b9f02))
+
+## [11.0.0-41](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-40...v11.0.0-41) (2026-07-30)
+
+## [11.0.0-40](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-39...v11.0.0-40) (2026-07-30)
+
+
+### Features
+
+* enable unit content download ([1757731](https://github.com/b0ink/doubtfire-deploy/commit/17577319e897641cbc8ba20af029ee448fc61379))
+
+## [11.0.0-39](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-38...v11.0.0-39) (2026-07-28)
+
+
+### Bug Fixes
+
+* only record discussion after successful transition ([c8bd418](https://github.com/b0ink/doubtfire-deploy/commit/c8bd4188c758bb1829c46fb3e076d803329a41a9))
+
+## [11.0.0-38](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-37...v11.0.0-38) (2026-07-28)
+
+
+### Bug Fixes
+
+* ensure feedback templates rollover to new unit ([df3bc30](https://github.com/b0ink/doubtfire-deploy/commit/df3bc306da42d46f7187ff40f0fbc0e9d3f2122d))
+
+## [11.0.0-37](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-36...v11.0.0-37) (2026-07-24)
+
+
+### Features
+
+* automated engagement stamps ([#650](https://github.com/b0ink/doubtfire-deploy/issues/650)) ([59641bd](https://github.com/b0ink/doubtfire-deploy/commit/59641bd390da394b8aff20c21433dc885419c319))
+
+
+### Bug Fixes
+
+* pass saml settings correctly to logout response ([4f60eff](https://github.com/b0ink/doubtfire-deploy/commit/4f60eff0eea770d20cee2226a13b1ad10dfafc0e))
+* pass saml settings correctly to logout response ([#648](https://github.com/b0ink/doubtfire-deploy/issues/648)) ([8df3ea9](https://github.com/b0ink/doubtfire-deploy/commit/8df3ea9a4ec5dd45b7697e6ae11ab88e54fe2b64))
+
+## [11.0.0-36](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-35...v11.0.0-36) (2026-07-24)
+
+
+### Features
+
+* communication condition to check if student has portfolio ([#651](https://github.com/b0ink/doubtfire-deploy/issues/651)) ([90d362e](https://github.com/b0ink/doubtfire-deploy/commit/90d362e4ff2d32d0e3791d0bec3f5f2d6f649ee1))
+
+
+### Bug Fixes
+
+* normalize upload requirement file keys on save ([#653](https://github.com/b0ink/doubtfire-deploy/issues/653)) ([bf457a1](https://github.com/b0ink/doubtfire-deploy/commit/bf457a1a2137e7586b36eb9bc9b14045caad28f4))
+
+## [11.0.0-35](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-34...v11.0.0-35) (2026-07-24)
+
+
+### Bug Fixes
+
+* enable youtube embeds ([a8da36c](https://github.com/b0ink/doubtfire-deploy/commit/a8da36c3fbf64af3fad6bfaf02cd66e9921b903e))
+
+## [11.0.0-34](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-33...v11.0.0-34) (2026-07-24)
+
+
+### Features
+
+* add last sign in and last unit access communication conditions ([50fc821](https://github.com/b0ink/doubtfire-deploy/commit/50fc8215598766fa8927ca480b122a361803d689))
+* discuss timeout ([#646](https://github.com/b0ink/doubtfire-deploy/issues/646)) ([f6dfd80](https://github.com/b0ink/doubtfire-deploy/commit/f6dfd806570f6b30384571210402a3e92c405b2f))
+* track last access to site and unit ([2141fd6](https://github.com/b0ink/doubtfire-deploy/commit/2141fd6876f50c5705f16acdd1f27d9b65152078))
+
+
+### Bug Fixes
+
+* allow unit deletion with task prerequisites ([2b3752a](https://github.com/b0ink/doubtfire-deploy/commit/2b3752ac6b888cffc38cefa86a58bbebfb844aff))
+* iterate sentry exception interface values correctly ([4818049](https://github.com/b0ink/doubtfire-deploy/commit/48180497875529f6ac843a00519a6ce69f4ac4bc))
+* prevent deleting task definitions used as prerequisites ([f26c9c5](https://github.com/b0ink/doubtfire-deploy/commit/f26c9c573894543a50220dc7708fc4540e764aaf))
+
+## [11.0.0-33](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-32...v11.0.0-33) (2026-07-19)
+
+
+### Features
+
+* content management system ([#642](https://github.com/b0ink/doubtfire-deploy/issues/642)) ([a87b250](https://github.com/b0ink/doubtfire-deploy/commit/a87b250303b0aff8a431334e8b19a40f790cbd35))
+
+## [11.0.0-32](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-31...v11.0.0-32) (2026-07-16)
+
+
+### Features
+
+* add rediscuss status ([05a44fa](https://github.com/b0ink/doubtfire-deploy/commit/05a44fa8e9954ed82ea149072288ebc546d5f9e9))
+* prompt for admin password when creating initial account ([7640a36](https://github.com/b0ink/doubtfire-deploy/commit/7640a36f682f6dd7240cb764dea6e46b7d01df35))
+* support word document submission ([#647](https://github.com/b0ink/doubtfire-deploy/issues/647)) ([a21daf8](https://github.com/b0ink/doubtfire-deploy/commit/a21daf846a46557331c3235f86f28a5c8a020786))
+
 ## [11.0.0-31](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-30...v11.0.0-31) (2026-07-08)
 
 

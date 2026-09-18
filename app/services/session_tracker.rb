@@ -59,7 +59,7 @@ class SessionTracker
         tz = ActiveSupport::TimeZone[tutorial.campus&.timezone] if tutorial.campus&.timezone.present?
         tutorial_start = tz.parse("#{now.to_date} #{tutorial.meeting_time}")
 
-        tutorial_end   = tutorial_start + 2.hours
+        tutorial_end   = tutorial_start + tutorial.duration_minutes.minutes
 
         if now >= tutorial_start && now < tutorial_end
           is_during_tutorial = true

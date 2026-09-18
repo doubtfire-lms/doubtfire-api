@@ -653,6 +653,7 @@ class CommentTest < ActiveSupport::TestCase
 
     inbox = unit.tasks_for_task_inbox(unit.tutors.first)
     assert_not_includes inbox.map(&:id), task_new.id, "Task should not be in tutors inbox"
+    assert task_new.comments.last.attention_none?, "Plan comment should not require attention"
     assert_not task_new.comments.last.new_for?(user), "Comment should be marked read by student"
     assert_not task_new.comments.last.new_for?(project.tutor_for(td)), "Comment should be read by tutor"
 

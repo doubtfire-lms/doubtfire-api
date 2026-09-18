@@ -12,6 +12,15 @@ class ExecuteCommunicationSetJob
   def perform(communication_set_id, target_rule_id = nil)
     communication_set = CommunicationSet.find(communication_set_id)
     rules = communication_set.communication_rules.to_a
+
+    # Refuse the whole set, not just the broken rules: allocation is a waterfall,
+    # so a rule that cannot be evaluated sends its students into a later rule and
+    # mails them the wrong thing.
+    unresolved_rules = rules.select(&:unresolved?)
+    if unresolved_rules.any?
+      raise "Communication set #{communication_set.id} cannot run: #{unresolved_rules.map(&:name).join(', ')} " \
+            'reference records that do not exist in this unit'
+    end
     target_rule_id = target_rule_id&.to_i
 
     if target_rule_id.present? && rules.none? { |rule| rule.id == target_rule_id }
@@ -256,7 +265,7 @@ class ExecuteCommunicationSetJob
         }
       end
 
-      comment = task.add_text_comment(comment_author, rendered_comment)
+      comment = task.add_text_comment(comment_author, rendered_comment, attention_audience: :student)
 
       if comment.nil?
         next {
@@ -510,7 +519,9 @@ class ExecuteCommunicationSetJob
       statuses = Array(condition.task_statuses).map { |status| status.to_s.titleize }.join(', ')
       "Students that have #{operator_label(condition.operator)} #{condition.task_status_count} #{grade_label} tasks in [#{statuses}]"
     when 'LoginStatusCondition'
-      "Students whose last sign in is #{condition.operator.to_s.humanize.downcase} #{condition.last_sign_in_at}"
+      relative_activity_summary(condition, 'signed in')
+    when 'UnitViewedStatusCondition'
+      relative_activity_summary(condition, 'viewed this unit')
     when 'SpecConCondition'
       "Students with Special Consideration Days #{operator_label(condition.operator)} #{condition.spec_con_days}"
     when 'TutorialEnrolmentCondition'
@@ -537,6 +548,16 @@ class ExecuteCommunicationSetJob
       "Students #{enrolment_label(condition.operator).downcase} #{campus_label}"
     else
       "#{condition.type.to_s.underscore.humanize} #{condition.operator.to_s.humanize}"
+    end
+  end
+
+  def relative_activity_summary(condition, activity)
+    duration = "#{condition.activity_days} #{'day'.pluralize(condition.activity_days)}"
+
+    if condition.operator == 'more_than'
+      "Students who have not #{activity} for more than #{duration}"
+    else
+      "Students who #{activity} within the last #{duration}"
     end
   end
 

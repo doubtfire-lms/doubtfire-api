@@ -470,6 +470,9 @@ class TaskStatusTest < ActiveSupport::TestCase
     assert_equal TaskStatus.status_for_name('working on it').name, TaskStatus.working_on_it.name
     assert_equal TaskStatus.status_for_name('discuss').name, TaskStatus.discuss.name
     assert_equal TaskStatus.status_for_name('d').name, TaskStatus.discuss.name
+    assert_equal TaskStatus.status_for_name('rediscuss').name, TaskStatus.rediscuss.name
+    assert_equal TaskStatus.status_for_name('re-discuss').name, TaskStatus.rediscuss.name
+    assert_equal TaskStatus.status_for_name('re discuss').name, TaskStatus.rediscuss.name
 
     assert_equal TaskStatus.status_for_name('demonstrate').name, TaskStatus.demonstrate.name
     assert_equal TaskStatus.status_for_name('demo').name, TaskStatus.demonstrate.name
@@ -492,11 +495,11 @@ class TaskStatusTest < ActiveSupport::TestCase
   end
 
   def test_staff_assigned_statuses
-    assert_equal TaskStatus.staff_assigned_statuses.count, 10 # number of staff tasks
+    assert_equal TaskStatus.staff_assigned_statuses.count, 11 # number of staff tasks
   end
 
-  def test_id_to_key_not_started
-    assert_equal TaskStatus.id_to_key(15), :not_started
+  def test_id_to_key_rediscuss
+    assert_equal TaskStatus.id_to_key(15), :rediscuss
   end
 
 end

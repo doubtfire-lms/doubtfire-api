@@ -78,6 +78,24 @@ class TaskTest < ActiveSupport::TestCase
     assert_equal TaskStatus.complete, task.task_status
   end
 
+  def test_trigger_transition_only_allows_rediscuss_from_discuss
+    project = FactoryBot.create(:project)
+    unit = project.unit
+    task_definition = unit.task_definitions.first
+    task = project.task_for_task_definition(task_definition)
+    tutor = unit.main_convenor_user
+
+    task.update!(task_status: TaskStatus.ready_for_feedback)
+
+    assert_nil task.trigger_transition(trigger: 'rediscuss', by_user: tutor)
+    assert_equal TaskStatus.ready_for_feedback, task.task_status
+
+    task.update!(task_status: TaskStatus.discuss)
+
+    assert task.trigger_transition(trigger: 'rediscuss', by_user: tutor)
+    assert_equal TaskStatus.rediscuss, task.task_status
+  end
+
   def test_trigger_transition_requires_manual_feedback_before_assessment_outcomes_when_checking_feedback
     project = FactoryBot.create(:project)
     unit = project.unit
@@ -109,6 +127,21 @@ class TaskTest < ActiveSupport::TestCase
 
     assert task.trigger_transition(trigger: 'complete', by_user: tutor, check_feedback: true)
     assert_equal TaskStatus.complete, task.task_status
+  end
+
+  def test_system_transition_bypasses_manual_feedback_requirement
+    project = FactoryBot.create(:project)
+    task = project.task_for_task_definition(project.unit.task_definitions.first)
+
+    task.update!(task_status: TaskStatus.ready_for_feedback)
+
+    assert task.trigger_transition(
+      trigger: 'fix',
+      by_user: project.student,
+      check_feedback: true,
+      system_transition: true
+    )
+    assert_equal TaskStatus.fix_and_resubmit, task.task_status
   end
 
   def test_trigger_transition_requires_recent_manual_tutor_feedback_for_fix_and_redo_when_checking_feedback
@@ -148,7 +181,7 @@ class TaskTest < ActiveSupport::TestCase
         end_date: Time.zone.parse('2026-04-30 00:00:00 UTC'),
         active_until: Time.zone.parse('2026-05-31 00:00:00 UTC')
       )
-      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 2)
+      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 14)
 
       unit = FactoryBot.create(:unit, teaching_period: teaching_period, with_students: false)
       task = FactoryBot.create(:task, project: FactoryBot.create(:project, unit: unit))
@@ -168,7 +201,7 @@ class TaskTest < ActiveSupport::TestCase
         end_date: Time.zone.parse('2026-04-30 00:00:00 UTC'),
         active_until: Time.zone.parse('2026-05-31 00:00:00 UTC')
       )
-      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 2)
+      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 14)
 
       unit = FactoryBot.create(:unit, teaching_period: teaching_period, with_students: false)
       task = FactoryBot.create(:task, project: FactoryBot.create(:project, unit: unit))
@@ -187,13 +220,37 @@ class TaskTest < ActiveSupport::TestCase
         end_date: Time.zone.parse('2026-04-30 00:00:00 UTC'),
         active_until: Time.zone.parse('2026-05-31 00:00:00 UTC')
       )
-      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 2)
+      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 14)
 
       unit = FactoryBot.create(:unit, teaching_period: teaching_period, with_students: false)
       task = FactoryBot.create(:task, project: FactoryBot.create(:project, unit: unit))
       task.update!(submission_date: Time.zone.parse('2026-04-05 00:00:00 UTC'))
 
       assert_equal 0.0, task.days_awaiting_feedback
+    end
+    travel_back
+  end
+
+  def test_days_awaiting_feedback_uses_breaks_for_the_students_campus
+    travel_to Time.zone.parse('2026-04-10 00:00:00 UTC') do
+      teaching_period = FactoryBot.create(
+        :teaching_period,
+        start_date: Time.zone.parse('2026-03-01 00:00:00 UTC'),
+        end_date: Time.zone.parse('2026-05-31 00:00:00 UTC'),
+        active_until: Time.zone.parse('2026-06-30 00:00:00 UTC')
+      )
+      special_campus = FactoryBot.create(:campus)
+      default_campus = FactoryBot.create(:campus)
+      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 7, [default_campus.id])
+      teaching_period.add_break(Time.zone.parse('2026-04-08 00:00:00 UTC'), 7, [special_campus.id])
+      unit = FactoryBot.create(:unit, teaching_period: teaching_period, with_students: false)
+      special_task = FactoryBot.create(:task, project: FactoryBot.create(:project, unit: unit, campus: special_campus))
+      default_task = FactoryBot.create(:task, project: FactoryBot.create(:project, unit: unit, campus: default_campus))
+      special_task.update!(submission_date: Time.zone.parse('2026-04-05 00:00:00 UTC'))
+      default_task.update!(submission_date: Time.zone.parse('2026-04-05 00:00:00 UTC'))
+
+      assert_equal 3, special_task.days_awaiting_feedback
+      assert_equal 2, default_task.days_awaiting_feedback
     end
     travel_back
   end
@@ -588,6 +645,21 @@ class TaskTest < ActiveSupport::TestCase
       assert_not page.text.include?('ERROR when parsing'), page.text
     end
 
+    # test an image pasted into a Markdown cell and stored in the notebook's
+    # attachments MIME bundle
+    data_to_post = with_file('test_files/submissions/embedded_markdown_image.ipynb', 'application/json', data_to_post)
+
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
+
+    assert_equal 201, last_response.status, last_response_body
+    assert task.convert_submission_to_pdf(log_to_stdout: true)
+
+    reader = PDF::Reader.new(task.final_pdf_path)
+    reader.pages.each do |page|
+      assert_not page.text.include?('ERROR when parsing'), page.text
+      assert_not page.text.include?('Image attachment unavailable'), page.text
+    end
+
     # test line wrapping in jupynotex
     data_to_post = with_file('test_files/submissions/long.ipynb', 'application/json', data_to_post)
 
@@ -918,6 +990,126 @@ class TaskTest < ActiveSupport::TestCase
     td.destroy
     assert_not File.exist? path
     unit.destroy!
+  end
+
+  def test_docx_submission_preserves_original_and_stores_pdf_history_preview
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
+    task_definition = TaskDefinition.create!(
+      unit_id: unit.id,
+      tutorial_stream: unit.tutorial_streams.first,
+      name: 'Word Document Test Task',
+      description: 'Test task',
+      weighting: 4,
+      target_grade: 0,
+      start_date: unit.start_date + 1.week,
+      target_date: unit.start_date + 2.weeks,
+      abbreviation: 'WordDocTestTask',
+      restrict_status_updates: false,
+      upload_requirements: [
+        {
+          'key' => 'file0',
+          'name' => 'A Word document',
+          'type' => 'document',
+          'submission_history' => true
+        }
+      ],
+      plagiarism_warn_pct: 0.8,
+      is_graded: false,
+      max_quality_pts: 0
+    )
+
+    data_to_post = with_file(
+      'test_files/TestWordDoc.docx',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      { trigger: 'ready_for_feedback' }
+    )
+    project = unit.active_projects.first
+    add_auth_header_for user: unit.main_convenor_user
+
+    post "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/submission", data_to_post
+
+    assert_equal 201, last_response.status, last_response_body
+
+    task = project.task_for_task_definition(task_definition)
+    conversion_work_id = nil
+    converter = lambda do |_source_path, destination_path, work_id:|
+      conversion_work_id = work_id
+      FileUtils.cp(Rails.root.join('test_files/submissions/valid.pdf'), destination_path)
+      destination_path
+    end
+    original_converter = FileHelper.method(:convert_word_document_to_pdf)
+    FileHelper.define_singleton_method(:convert_word_document_to_pdf, converter)
+    begin
+      converted = task.convert_submission_to_pdf(log_to_stdout: true)
+    ensure
+      FileHelper.define_singleton_method(:convert_word_document_to_pdf, original_converter)
+    end
+
+    assert converted
+    assert_match(/\Atask-#{task.id}-/, conversion_work_id)
+    assert FileHelper.validate_pdf(task.final_pdf_path)[:valid]
+
+    Zip::File.open(task.zip_file_path_for_done_task) do |archive|
+      assert archive.find_entry("#{task.id}/000-document.docx")
+      assert_nil archive.find_entry("#{task.id}/000-document.pdf")
+    end
+
+    history = SubmissionHistory.create_archive!(task, '12345')
+    Zip::File.open(history.archive_file_name) do |archive|
+      assert archive.find_entry("12345/#{task.id}/000-document.pdf")
+      assert_nil archive.find_entry("12345/#{task.id}/000-document.docx")
+    end
+  ensure
+    task_definition&.destroy!
+    unit&.destroy!
+  end
+
+  def test_docx_submission_text_is_included_in_final_pdf
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
+    task_definition = TaskDefinition.create!(
+      unit_id: unit.id,
+      tutorial_stream: unit.tutorial_streams.first,
+      name: 'Word Document PDF Text Test Task',
+      description: 'Test task',
+      weighting: 4,
+      target_grade: 0,
+      start_date: unit.start_date + 1.week,
+      target_date: unit.start_date + 2.weeks,
+      abbreviation: 'WordDocPdfText',
+      restrict_status_updates: false,
+      upload_requirements: [
+        {
+          'key' => 'file0',
+          'name' => 'A Word document',
+          'type' => 'document'
+        }
+      ],
+      plagiarism_warn_pct: 0.8,
+      is_graded: false,
+      max_quality_pts: 0
+    )
+
+    data_to_post = with_file(
+      'test_files/TestWordDoc.docx',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      { trigger: 'ready_for_feedback' }
+    )
+    project = unit.active_projects.first
+    add_auth_header_for user: unit.main_convenor_user
+
+    post "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/submission", data_to_post
+
+    assert_equal 201, last_response.status, last_response_body
+
+    task = project.task_for_task_definition(task_definition)
+    assert task.convert_submission_to_pdf(log_to_stdout: true)
+    assert File.exist?(task.final_pdf_path)
+
+    pdf_text = PDF::Reader.new(task.final_pdf_path).pages.map(&:text).join(' ').gsub(/\s+/, ' ')
+    assert_includes pdf_text, 'This is a test word document, with at least six words.'
+  ensure
+    task_definition&.destroy!
+    unit&.destroy!
   end
 
   def test_pdf_creation_fails_on_invalid_pdf
@@ -1632,6 +1824,89 @@ class TaskTest < ActiveSupport::TestCase
     assert_equal TaskStatus.complete, task_hd.task_status, 'Task status should be complete from tutor assessment'
   end
 
+  def test_student_can_submit_when_assessments_locked_to_tutorial_stream
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
+
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
+
+    tutor = FactoryBot.create(:user, :tutor)
+    unit_role = unit.employ_staff(tutor, Role.tutor)
+    FactoryBot.create(:tutorial, unit: unit, tutorial_stream: tutorial_stream, unit_role: unit_role)
+
+    # Task#due_date delegates to the definition's target_date, so keep it ahead of the submission
+    td = TaskDefinition.new({
+                              unit_id: unit.id,
+                              tutorial_stream: tutorial_stream,
+                              name: 'Test task locked to stream',
+                              description: 'Test task',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: Time.zone.now - 2.weeks,
+                              target_date: Time.zone.now + 1.week,
+                              due_date: Time.zone.now + 2.weeks,
+                              abbreviation: 'ABBR1',
+                              restrict_status_updates: false,
+                              upload_requirements: [],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0,
+                              lock_assessments_to_tutorial_stream: true
+                            })
+    td.save!
+
+    project = unit.active_projects.first
+    task = project.task_for_task_definition(td)
+
+    # The student has no unit role, so the stream lock must not apply to their own submission
+    result = task.trigger_transition(trigger: 'ready_for_feedback', by_user: project.student)
+    assert_not_nil result, 'Student should be able to submit a task locked to a tutorial stream'
+    assert_equal TaskStatus.ready_for_feedback, task.task_status, 'Task status should be ready for feedback'
+
+    # The tutor running a tutorial in the stream can still assess it
+    result = task.trigger_transition(trigger: 'complete', by_user: tutor)
+    assert_not_nil result, 'Tutor in the tutorial stream should be able to mark the task complete'
+    assert_equal TaskStatus.complete, task.task_status, 'Task status should be complete from tutor assessment'
+  end
+
+  def test_assessment_lock_to_tutorial_stream_without_a_stream
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
+
+    tutor = FactoryBot.create(:user, :tutor)
+    unit.employ_staff(tutor, Role.tutor)
+
+    td = TaskDefinition.new({
+                              unit_id: unit.id,
+                              tutorial_stream: nil,
+                              name: 'Test task locked without a stream',
+                              description: 'Test task',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: Time.zone.now - 2.weeks,
+                              target_date: Time.zone.now + 1.week,
+                              due_date: Time.zone.now + 2.weeks,
+                              abbreviation: 'ABBR1',
+                              restrict_status_updates: false,
+                              upload_requirements: [],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0,
+                              lock_assessments_to_tutorial_stream: true
+                            })
+    td.save!
+
+    project = unit.active_projects.first
+    task = project.task_for_task_definition(td)
+
+    # With no stream to lock to there is nothing to restrict, and nothing to raise on
+    result = task.trigger_transition(trigger: 'ready_for_feedback', by_user: project.student)
+    assert_not_nil result, 'Student should be able to submit a task with no tutorial stream'
+    assert_equal TaskStatus.ready_for_feedback, task.task_status, 'Task status should be ready for feedback'
+
+    result = task.trigger_transition(trigger: 'complete', by_user: tutor)
+    assert_not_nil result, 'Tutor should be able to mark a task with no tutorial stream complete'
+    assert_equal TaskStatus.complete, task.task_status, 'Task status should be complete from tutor assessment'
+  end
+
   def test_prerequisite_tasks_change_to_fix_and_resubmit
     unit = FactoryBot.create(:unit, student_count: 1, task_count: 4)
     tutor = FactoryBot.create(:user, :tutor)
@@ -1698,7 +1973,7 @@ class TaskTest < ActiveSupport::TestCase
     task3.trigger_transition(trigger: 'ready_for_feedback', by_user: unit.main_convenor_user)
     task4.trigger_transition(trigger: 'ready_for_feedback', by_user: unit.main_convenor_user)
 
-    task2.comments.delete_all
+    task2.comments.destroy_all
 
     task1.reload
     task2.reload

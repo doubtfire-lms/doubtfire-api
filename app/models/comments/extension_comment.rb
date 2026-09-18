@@ -19,11 +19,8 @@ class ExtensionComment < TaskComment
   # Make sure we can access super's version of mark_as_read for assess extension
   alias :super_mark_as_read :mark_as_read
 
-  # Allow individual staff and the student to read this... but stop
-  # the main tutor reading without assessing. As only the main tutor
-  # propagates reads, this will work as required - other staff cant
-  # make it read for the main tutor.
-  def mark_as_read(user, unit = self.unit)
+  # Do not let the recipient tutor mark the request as read before assessing it.
+  def mark_as_read(user)
     super if assessed? || user == project.student || user != recipient
   end
 

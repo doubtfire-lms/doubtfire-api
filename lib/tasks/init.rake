@@ -1,4 +1,39 @@
+require 'io/console'
+
 namespace :db do
+  def prompt_for_admin_password
+    password = ENV.fetch('DF_INITIAL_ADMIN_PASSWORD', nil)
+    if password.present?
+      unless Devise.password_length.cover?(password.length)
+        raise "DF_INITIAL_ADMIN_PASSWORD must be #{Devise.password_length} characters long"
+      end
+
+      return password
+    end
+
+    console = IO.console
+    if console.nil?
+      raise 'An interactive terminal is required to set the initial admin password. ' \
+            'Set DF_INITIAL_ADMIN_PASSWORD for non-interactive setup.'
+    end
+
+    loop do
+      password = console.getpass('Enter password for the initial admin account: ')
+      confirmation = console.getpass('Confirm password: ')
+
+      raise 'Password entry was cancelled' if password.nil? || confirmation.nil?
+
+      unless Devise.password_length.cover?(password.length)
+        puts "Password must be #{Devise.password_length} characters long."
+        next
+      end
+
+      return password if password == confirmation
+
+      puts 'Passwords do not match. Try again.'
+    end
+  end
+
   #
   # Generate roles
   #
@@ -42,7 +77,8 @@ namespace :db do
       Fail: "You did not successfully demonstrate the required learning in this task.",
       "Time Exceeded": "You did not submit or complete the task before the appropriate deadline.",
       "Assess in Portfolio": "This task will not be signed off as complete by your tutor, and will be marked directly in your portfolio.",
-      "Attention Required": "This task needs to be discussed with your tutor so that you can get back on track."
+      "Attention Required": "This task needs to be discussed with your tutor so that you can get back on track.",
+      Rediscuss: "You attempted to discuss this task, but it was not adequate. Brush up your knowledge and return for another discussion to get the task signed off."
     }
     statuses.each do |name, desc|
       print "."
@@ -73,8 +109,9 @@ namespace :db do
       profile[:login_id]  ||= username
 
       if AuthenticationHelpers.db_auth?
-        profile[:password] = 'password'
-        profile[:password_confirmation] = 'password'
+        password = Rails.env.production? ? prompt_for_admin_password : 'password'
+        profile[:password] = password
+        profile[:password_confirmation] = password
       end
 
       user = User.create!(profile)

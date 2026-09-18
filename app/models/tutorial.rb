@@ -17,6 +17,8 @@ class Tutorial < ApplicationRecord
   validates :abbreviation, uniqueness: { scope: :unit,
                                          message: 'must be unique within the unit' }
 
+  validates :duration_minutes, presence: true, numericality: { only_integer: true, greater_than: 0 }
+
   # Make sure that unit in tutorial and tutorial stream are consistent
   validate :unit_must_be_same
 
@@ -33,8 +35,13 @@ class Tutorial < ApplicationRecord
     tutorial.meeting_day      = 'Enter a regular meeting day.'
     tutorial.meeting_time     = 'Enter a regular meeting time.'
     tutorial.meeting_location = 'Enter a location.'
+    tutorial.duration_minutes = 120
 
     tutorial
+  end
+
+  def duration_hours
+    duration_minutes.to_f / 60
   end
 
   def self.find_by_user(user)

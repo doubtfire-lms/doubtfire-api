@@ -2,6 +2,7 @@ require 'test_helper'
 
 class AuthTest < ActiveSupport::TestCase
   include Rack::Test::Methods
+  include ActiveSupport::Testing::TimeHelpers
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
 
@@ -62,6 +63,19 @@ class AuthTest < ActiveSupport::TestCase
     assert_match(/username=#{User.first.username};/, last_response.cookies['username'].to_s, 'Expect username to be set')
   end
 
+  def test_auth_records_sign_in_and_access_time
+    user = User.find_by!(username: 'aadmin')
+    sign_in_time = Time.zone.parse('2026-07-21 10:00:00 UTC')
+
+    travel_to sign_in_time do
+      post_json '/api/auth.json', username: user.username, password: 'password'
+    end
+
+    assert_equal 201, last_response.status
+    assert_equal sign_in_time, user.reload.last_sign_in_at
+    assert_equal sign_in_time, user.last_access_at
+  end
+
   def test_auth_no_remember
     data_to_post = {
       username: 'aadmin',
@@ -112,6 +126,37 @@ class AuthTest < ActiveSupport::TestCase
     refute actual_auth.key?('auth_token'), 'Auth token not expected if auth fails'
 
     assert actual_auth.key? 'error'
+  end
+
+  # Blank passwords must still be authenticated rather than bypassing the
+  # password check because ActiveSupport considers them not present.
+  def test_fail_blank_password_auth
+    user = User.find_by!(username: 'aadmin')
+    original_token_count = user.auth_tokens.count
+
+    ['', ' ', "\t\n"].each do |password|
+      post_json '/api/auth.json', username: user.username, password: password
+      actual_auth = last_response_body
+
+      assert_equal 401, last_response.status, "Expected #{password.inspect} to be rejected"
+      assert_equal 'Invalid email or password.', actual_auth['error']
+      assert_not actual_auth.key?('user')
+      assert_not actual_auth.key?('auth_token')
+    end
+
+    assert_equal original_token_count, user.auth_tokens.reload.count
+  end
+
+  def test_blank_password_does_not_create_unknown_user
+    username = "unknown-blank-password-user-#{SecureRandom.hex(8)}"
+
+    ['', ' ', "\t\n"].each do |password|
+      post_json '/api/auth.json', username: username, password: password
+
+      assert_equal 401, last_response.status, "Expected #{password.inspect} to be rejected"
+      assert_equal 'Invalid email or password.', last_response_body['error']
+      assert_not User.exists?(username: username)
+    end
   end
 
   # Test auth with empty request body
@@ -229,6 +274,22 @@ class AuthTest < ActiveSupport::TestCase
 
     assert_not_equal last_response_body['auth_token'], new_token.authentication_token
     assert_equal last_response_body['auth_token'], new_new_token.authentication_token
+  end
+
+  def test_refresh_token_updates_access_but_not_sign_in_time
+    user = FactoryBot.create(:user, last_sign_in_at: 1.day.ago, last_access_at: 1.hour.ago)
+    original_sign_in_time = user.last_sign_in_at
+    token = user.generate_authentication_token!(token_type: :refresh_token)
+    access_time = Time.zone.parse('2026-07-21 11:00:00 UTC')
+
+    set_cookie "username=#{user.username}"
+    set_cookie "refresh_token=#{token.authentication_token}"
+
+    travel_to(access_time) { post '/api/auth/access-token' }
+
+    assert_equal 201, last_response.status
+    assert_equal original_sign_in_time, user.reload.last_sign_in_at
+    assert_equal access_time, user.last_access_at
   end
 
   def test_token_signout_works_with_multiple

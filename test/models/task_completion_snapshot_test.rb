@@ -69,6 +69,8 @@ class TaskCompletionSnapshotTest < ActiveSupport::TestCase
 
     assert File.exist?(@snapshot.snapshot_file_path)
     assert_equal expected, @snapshot.load_stats
+    assert_equal 4, @snapshot.load_student_counts['student_count']
+    assert_equal({ tutorial.campus.name => 4 }, @snapshot.load_student_counts['campus_student_counts'])
   end
 
   test 'load_stats returns empty hash if file missing' do

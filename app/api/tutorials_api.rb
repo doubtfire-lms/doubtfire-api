@@ -19,6 +19,7 @@ class TutorialsApi < Grape::API
       optional :campus_id, type: Integer, desc: 'Id of the campus'
       optional :capacity, type: Integer, desc: 'Capacity of the tutorial'
       optional :meeting_time, type: String, desc: 'Time of the tutorial'
+      optional :duration_minutes, type: Integer, desc: 'Duration of the tutorial, in minutes'
     end
   end
   put '/tutorials/:id' do
@@ -38,7 +39,8 @@ class TutorialsApi < Grape::API
                                                         :meeting_day,
                                                         :meeting_time,
                                                         :campus_id,
-                                                        :capacity
+                                                        :capacity,
+                                                        :duration_minutes
                                                       )
 
     if tut_params[:tutor_id]
@@ -66,6 +68,7 @@ class TutorialsApi < Grape::API
       requires :meeting_day,          type: String,   desc: 'Day of the tutorial',                            allow_blank: false
       requires :meeting_time,         type: String,   desc: 'Time of the tutorial',                           allow_blank: false
       requires :tutorial_stream_abbr, type: String,   desc: 'Abbreviation of the associated tutorial stream', allow_blank: false
+      optional :duration_minutes,     type: Integer,  desc: 'Duration of the tutorial, in minutes (defaults to 120)', allow_blank: true
     end
   end
   post '/tutorials' do
@@ -88,6 +91,9 @@ class TutorialsApi < Grape::API
     end
 
     tutorial = unit.add_tutorial(tut_params[:meeting_day], tut_params[:meeting_time], tut_params[:meeting_location], tutor, campus, tut_params[:capacity], tut_params[:abbreviation], tutorial_stream)
+
+    # Duration defaults to 120 minutes (2 hours) at the database level - only override it if the caller supplied one.
+    tutorial&.update!(duration_minutes: tut_params[:duration_minutes]) if tut_params[:duration_minutes].present?
 
     present tutorial, with: Entities::TutorialEntity
   end

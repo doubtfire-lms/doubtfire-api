@@ -2,7 +2,7 @@ class CommunicationRule < ApplicationRecord
   LOGICAL_OPERATORS = %w[and or].freeze
 
   belongs_to :communication_set, class_name: 'CommunicationSet'
-  delegate :unit, to: :communication_set
+  delegate :unit, :unit_id, to: :communication_set
 
   has_many :communication_conditions,
            class_name: 'CommunicationCondition',
@@ -15,12 +15,25 @@ class CommunicationRule < ApplicationRecord
   validates :operator, presence: true, inclusion: { in: LOGICAL_OPERATORS }
   validates :position, presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 
+  def unresolved_records
+    (communication_conditions.to_a + communication_actions.to_a).select(&:unresolved?)
+  end
+
+  def unresolved?
+    unresolved_records.any?
+  end
+
   def matching_projects(projects = nil)
+    # Only reached by the editor preview -- ExecuteCommunicationSetJob refuses
+    # the whole set before any rule runs, so nothing is sent on the back of this.
+    return [] if unresolved?
+
     projects ||= communication_set.eligible_projects
     return projects if communication_conditions.empty?
 
+    evaluated_at = Time.current
     projects.select do |project|
-      matches = communication_conditions.map { |condition| condition_match?(project, condition) }
+      matches = communication_conditions.map { |condition| condition_match?(project, condition, evaluated_at) }
 
       operator == 'or' ? matches.any? : matches.all?
     end
@@ -28,7 +41,7 @@ class CommunicationRule < ApplicationRecord
 
   private
 
-  def condition_match?(project, condition)
+  def condition_match?(project, condition, evaluated_at)
     case condition.type
     when 'TargetGradeCondition'
       target_grade_condition_match?(project, condition)
@@ -37,7 +50,9 @@ class CommunicationRule < ApplicationRecord
     when 'TaskStatusCountCondition'
       task_status_count_condition_match?(project, condition)
     when 'LoginStatusCondition'
-      login_status_condition_match?(project, condition)
+      activity_condition_match?(project.user&.last_sign_in_at, condition, evaluated_at)
+    when 'UnitViewedStatusCondition'
+      activity_condition_match?(project.last_viewed_at, condition, evaluated_at)
     when 'SpecConCondition'
       spec_con_condition_match?(project, condition)
     when 'TutorialEnrolmentCondition'
@@ -46,6 +61,12 @@ class CommunicationRule < ApplicationRecord
       tutorial_stream_enrolment_condition_match?(project, condition)
     when 'CampusCondition'
       campus_condition_match?(project, condition)
+    when 'GroupSetEnrolmentCondition'
+      group_set_enrolment_condition_match?(project, condition)
+    when 'GroupEnrolmentCondition'
+      group_enrolment_condition_match?(project, condition)
+    when 'PortfolioSubmittedCondition'
+      portfolio_submitted_condition_match?(project, condition)
     else
       false
     end
@@ -86,12 +107,13 @@ class CommunicationRule < ApplicationRecord
     compare_value(count, condition.task_status_count, condition.operator)
   end
 
-  def login_status_condition_match?(project, condition)
-    last_sign_in_at = project.user&.last_sign_in_at
+  def activity_condition_match?(last_activity_at, condition, evaluated_at)
+    return false if condition.activity_days.blank?
 
+    threshold = evaluated_at - condition.activity_days.days
     case condition.operator
-    when 'before' then last_sign_in_at.present? && last_sign_in_at < condition.last_sign_in_at
-    when 'after' then last_sign_in_at.present? && last_sign_in_at > condition.last_sign_in_at
+    when 'more_than' then last_activity_at.nil? || last_activity_at < threshold
+    when 'within_last' then last_activity_at.present? && last_activity_at >= threshold
     else false
     end
   end
@@ -118,6 +140,31 @@ class CommunicationRule < ApplicationRecord
     enrolled = project.campus_id == condition.campus_id
 
     condition.operator == 'not_enrolled_in' ? !enrolled : enrolled
+  end
+
+  # A student belongs to a group set when they are in any of its groups.
+  def group_set_enrolment_condition_match?(project, condition)
+    enrolled = active_group_memberships(project).any? do |membership|
+      membership.group&.group_set_id == condition.group_set_id
+    end
+
+    condition.operator == 'not_enrolled_in' ? !enrolled : enrolled
+  end
+
+  def group_enrolment_condition_match?(project, condition)
+    enrolled = active_group_memberships(project).any? { |membership| membership.group_id == condition.group_id }
+
+    condition.operator == 'not_enrolled_in' ? !enrolled : enrolled
+  end
+
+  # Memberships are kept after a student leaves a group, so only the active ones
+  # say where they are now.
+  def active_group_memberships(project)
+    project.group_memberships.select(&:active?)
+  end
+
+  def portfolio_submitted_condition_match?(project, condition)
+    project.portfolio_exists? == condition.submitted_portfolio
   end
 
   def compare_value(left, right, operator)

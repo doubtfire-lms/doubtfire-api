@@ -79,7 +79,11 @@ namespace :maintenance do
     tutor = task.project.tutor_for(task.task_definition)
 
     task.trigger_transition(trigger: 'fix', by_user: tutor)
-    task.add_text_comment(tutor, "**Automated Comment**: Something went wrong with compiling your submission. Please resubmit the task.")
+    task.add_text_comment(
+      tutor,
+      "**Automated Comment**: Something went wrong with compiling your submission. Please resubmit the task.",
+      attention_audience: :student
+    )
   rescue StandardError => e
     Rails.logger.error "Failed to move task #{task.id} to fix and add automated comment!\n#{e.message}"
   end
@@ -88,7 +92,11 @@ namespace :maintenance do
     tutor = task.project.tutor_for(task.task_definition)
 
     task.trigger_transition(trigger: 'fix', by_user: tutor)
-    task.add_text_comment(tutor, "**Automated Comment**: Something went wrong while running the automated tests for this submission. Please resubmit the task.")
+    task.add_text_comment(
+      tutor,
+      "**Automated Comment**: Something went wrong while running the automated tests for this submission. Please resubmit the task.",
+      attention_audience: :student
+    )
   rescue StandardError => e
     Rails.logger.error "Failed to move task #{task.id} to fix and add Overseer automated comment!\n#{e.message}"
   end
@@ -166,7 +174,12 @@ namespace :maintenance do
     marker_pattern = File.join(FileHelper.root_submission_history_dir, '**', 'pending', '*', 'submission-history')
 
     Dir.glob(marker_pattern).each do |marker_path|
-      next unless File.mtime(marker_path) < stale_before
+      begin
+        marker_mtime = File.mtime(marker_path)
+      rescue Errno::ENOENT
+        next
+      end
+      next unless marker_mtime < stale_before
 
       task_id = File.basename(File.dirname(marker_path)).to_i
       next if create_submission_history_job_present?(task_id)

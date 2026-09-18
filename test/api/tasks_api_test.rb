@@ -832,20 +832,61 @@ class TasksApiTest < ActiveSupport::TestCase
     assert_equal TaskStatus.complete, task.task_status
   end
 
+  def test_complete_with_discussed_only_keeps_comment_when_transition_succeeds
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
+    td = TaskDefinition.create!({
+                                  unit_id: unit.id,
+                                  tutorial_stream: unit.tutorial_streams.first,
+                                  name: 'Discussion required task',
+                                  description: 'Task that requires discussion before complete',
+                                  weighting: 4,
+                                  target_grade: 0,
+                                  start_date: Time.zone.now - 2.weeks,
+                                  target_date: Time.zone.now + 1.week,
+                                  abbreviation: 'DiscussReqAtomicTask',
+                                  restrict_status_updates: false,
+                                  requires_discussion: true,
+                                  upload_requirements: [],
+                                  plagiarism_warn_pct: 0.8,
+                                  is_graded: false,
+                                  max_quality_pts: 0
+                                })
+
+    project = unit.active_projects.first
+    task = project.task_for_task_definition(td)
+    tutor = unit.tutors.first
+
+    add_auth_header_for(user: tutor)
+
+    put "/api/projects/#{project.id}/task_def_id/#{td.id}", { trigger: 'complete', discussed: true }
+    assert_equal 403, last_response.status
+    task.reload
+    assert_not_equal TaskStatus.complete, task.task_status
+    assert_not task.has_discussed_in_class_comment?
+
+    task.add_text_comment(tutor, 'Manual tutor feedback')
+
+    put "/api/projects/#{project.id}/task_def_id/#{td.id}", { trigger: 'complete', discussed: true }
+    assert_equal 200, last_response.status
+    task.reload
+    assert_equal TaskStatus.complete, task.task_status
+    assert task.has_discussed_in_class_comment?
+  end
+
   def test_require_comment_for_feedback_submission_assess_in_portfolio
     unit = FactoryBot.create(:unit, student_count: 1, task_count: 2)
     td1 = unit.task_definitions.first
     project = unit.active_projects.first
 
-    task = project.task_for_task_definition(td1)
-
-    td1.update(
+    td1.update!(
       upload_requirements: [{ "key" => 'file0', "name" => 'Shape Class', "type" => 'code' }],
       target_grade: 0, # Pass
       start_date: Time.zone.now - 2.weeks,
       target_date: Time.zone.now + 1.week,
       assess_in_portfolio_only: false
     )
+
+    task = project.task_for_task_definition(td1)
 
     add_auth_header_for(user: project.user)
 
@@ -1058,12 +1099,14 @@ class TasksApiTest < ActiveSupport::TestCase
     task.reload
     assert_equal new_start_date, task.target_start_date
     assert_equal new_end_date, task.target_due_date
+    assert task.comments.last.attention_none?
 
     put "/api/projects/#{project1.id}/reset_target_dates"
     assert_equal 200, last_response.status
     task.reload
     assert_nil task.target_start_date
     assert_nil task.target_due_date
+    assert task.comments.last.attention_none?
 
     unit.update!(allow_flexible_dates: false)
   end

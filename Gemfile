@@ -52,6 +52,7 @@ gem 'puma'
 
 gem 'bootsnap', require: false
 gem 'csv'
+gem 'uri', '>= 1.1.1' # CVE-2025-61594
 
 # Extend irb for better output
 gem 'hirb'

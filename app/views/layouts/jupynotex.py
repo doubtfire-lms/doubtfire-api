@@ -9,6 +9,7 @@
 """
 
 import base64
+import binascii
 import json
 import os
 import re
@@ -17,6 +18,7 @@ import sys
 import tempfile
 import textwrap
 import traceback
+import urllib.parse
 
 
 # basic verbatim start/end
@@ -26,6 +28,13 @@ VERBATIM_END = [r"\end{minted}"]
 # markdown start/end
 MARKDOWN_BEGIN = [r"\begin{markdown}"]
 MARKDOWN_END = [r"\end{markdown}"+"\n"]
+
+ATTACHMENT_MIMETYPES = (
+    ('image/png', '.png'),
+    ('image/jpeg', '.jpg'),
+    ('image/gif', '.gif'),
+    ('image/bmp', '.bmp'),
+)
 
 # highlighers for different languages (block beginning and ending)
 HIGHLIGHTERS = {
@@ -125,17 +134,18 @@ class ItemProcessor:
 
     def process_png(self, image_data):
         """Process a PNG: just save the received b64encoded data to a temp file."""
-        _, fname = tempfile.mkstemp(suffix='.png')
-        with open(fname, 'wb') as fh:
+        descriptor, fname = tempfile.mkstemp(suffix='.png')
+        with os.fdopen(descriptor, 'wb') as fh:
             fh.write(base64.b64decode(image_data))
         return fname
 
     def process_svg(self, image_data):
         """Process a SVG: save the data, transform to PDF, and then use that."""
-        _, svg_fname = tempfile.mkstemp(suffix='.svg')
-        _, pdf_fname = tempfile.mkstemp(suffix='.pdf')
+        svg_descriptor, svg_fname = tempfile.mkstemp(suffix='.svg')
+        pdf_descriptor, pdf_fname = tempfile.mkstemp(suffix='.pdf')
+        os.close(pdf_descriptor)
         raw_svg = ''.join(image_data).encode('utf8')
-        with open(svg_fname, 'wb') as fh:
+        with os.fdopen(svg_descriptor, 'wb') as fh:
             fh.write(raw_svg)
 
         cmd = ['rsvg-convert', '--format=pdf', '--output={}'.format(pdf_fname), svg_fname]
@@ -192,6 +202,70 @@ class Notebook:
             config[key] = new_value
         return config
 
+    def _save_markdown_attachment(self, mime_bundle):
+        """Save a supported attachment MIME bundle and return its temporary path."""
+        for mimetype, suffix in ATTACHMENT_MIMETYPES:
+            if mimetype not in mime_bundle:
+                continue
+
+            image_data = mime_bundle[mimetype]
+            if isinstance(image_data, list):
+                image_data = ''.join(image_data)
+
+            descriptor, fname = tempfile.mkstemp(suffix=suffix)
+            try:
+                with os.fdopen(descriptor, 'wb') as fh:
+                    fh.write(base64.b64decode(image_data))
+            except Exception:
+                os.unlink(fname)
+                raise
+            return fname
+
+        if 'image/svg+xml' in mime_bundle:
+            return ItemProcessor(self.cell_options, self.config_options).process_svg(
+                mime_bundle['image/svg+xml']
+            )
+
+        return None
+
+    def _process_markdown_attachments(self, content, source):
+        """Extract embedded notebook images and rewrite their attachment URLs."""
+        source_text = '\n'.join(source)
+
+        # Use the longest names first so one attachment name cannot partially
+        # replace another, for example image.png and my-image.png.
+        attachments = content.get('attachments') or {}
+        for name in sorted(attachments, key=len, reverse=True):
+            try:
+                attachment_path = self._save_markdown_attachment(attachments[name])
+            except (OSError, TypeError, ValueError, binascii.Error):
+                attachment_path = None
+
+            if not attachment_path:
+                continue
+
+            # Notebook editors may leave spaces literal or URL-encode them.
+            references = {
+                f'attachment:{name}',
+                f'attachment:{urllib.parse.quote(name)}',
+                f'attachment:{urllib.parse.quote(name, safe="")}',
+            }
+            for reference in references:
+                source_text = source_text.replace(reference, attachment_path)
+
+        # A missing, corrupt, or unsupported embedded image should not make the
+        # whole submission PDF fail. Keep a visible marker in its place.
+        source_text = re.sub(
+            r'!\[([^\]]*)\]\(attachment:([^)]+)\)',
+            lambda match: (
+                f'**[Image attachment unavailable: '
+                f'{match.group(1) or match.group(2)}]**'
+            ),
+            source_text,
+        )
+
+        return source_text.splitlines()
+
     def _proc_src(self, content):
         """Process the source of a cell."""
         source = _as_lines(content['source'])
@@ -202,6 +276,7 @@ class Notebook:
             result.extend(textwrap.fill(line[:1000] + ' [The rest of this line has been truncated by the system to improve readability.] ' * (len(line) > 1000), width=90, subsequent_indent='    ') for line in source)
             result.extend(end)
         elif content['cell_type'] == 'markdown':
+            source = self._process_markdown_attachments(content, source)
             result.extend(MARKDOWN_BEGIN)
             result.extend(line.replace('```markdown', '```md').strip() for line in source)
             result.extend(MARKDOWN_END)

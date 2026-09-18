@@ -25,7 +25,8 @@ class CommunicationRuleJob
           username: project.user&.username,
           student_id: project.user&.student_id,
           target_grade: project.target_grade,
-          last_sign_in_at: project.user&.last_sign_in_at
+          last_sign_in_at: project.user&.last_sign_in_at,
+          last_viewed_at: project.last_viewed_at
         }
       end
     )

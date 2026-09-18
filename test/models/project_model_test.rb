@@ -5,6 +5,41 @@ require "test_helper"
 class ProjectModelTest < ActiveSupport::TestCase
   include TestHelpers::TestFileHelper
 
+  def test_unit_staff_role_takes_precedence_when_staff_owns_project
+    unit = FactoryBot.create(:unit, with_students: false)
+    staff = FactoryBot.create(:user, :tutor)
+    unit.employ_staff(staff, Role.tutor)
+    project = unit.enrol_student(staff, Campus.first)
+    task = FactoryBot.create(:task, project: project)
+
+    assert_equal :tutor, project.role_for(staff)
+    assert_equal :tutor, task.role_for(staff)
+
+    expected_permissions = %i[
+      get
+      trigger_week_end
+      change_tutorial
+      make_submission
+      get_submission
+      change
+      assess
+      change_campus
+      get_staff_note
+      create_staff_note
+      reprocess_submission
+      get_discussion_prompt
+      get_engagements
+      create_engagement
+      edit_engagement
+      delete_engagement
+      comment_engagement
+    ]
+
+    expected_permissions.each do |permission|
+      assert AuthorisationHelpers.authorise?(staff, project, permission), "Expected staff owner to have #{permission} permission"
+    end
+  end
+
   def test_tutor_for_task_def_when_tutorial_stream_is_present
     unit = FactoryBot.create(:unit, with_students: false)
     campus = FactoryBot.create(:campus)

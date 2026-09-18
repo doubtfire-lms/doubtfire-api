@@ -7,6 +7,7 @@ require 'onelogin/ruby-saml'
 # This is used by the grape api.
 #
 module AuthenticationHelpers
+  CONTENT_TOKEN_COOKIE = 'content_token'.freeze
   # private functions
 
   # Check that the user and token are valid
@@ -73,12 +74,18 @@ module AuthenticationHelpers
   #   :cookie - from the request cookie
   # @return [String, String] The username and token
   def get_user_and_token_from(source)
-    if source == :header
-      user_param = headers['username'] || headers['Username'] || params['username']
-      auth_param = headers['auth-token'] || headers['Auth-Token'] || params['authToken'] || headers['Auth_Token'] || headers['auth_token'] || params['auth_token'] || params['Auth_Token']
-    elsif source == :cookie
+    case source
+    when :header
+      user_param = request.headers['username'] || request.headers['Username'] || params['username']
+      auth_param = request.headers['auth-token'] || request.headers['Auth-Token'] || params['authToken'] ||
+                   request.headers['Auth_Token'] || request.headers['auth_token'] || params['auth_token'] ||
+                   params['Auth_Token']
+    when :cookie
       user_param = cookies['username']
       auth_param = cookies['refresh_token']
+    when :content_cookie
+      user_param = cookies['username']
+      auth_param = cookies[CONTENT_TOKEN_COOKIE]
     else
       # Default to nil
       user_param = nil
@@ -98,6 +105,7 @@ module AuthenticationHelpers
       user_param, auth_param = get_user_and_token_from(:cookie)
     else
       user_param, auth_param = get_user_and_token_from(:header)
+      auth_param = params['content_token'] if token_type == :content
     end
 
     case user_auth_token_type(user_param, auth_param, token_type)
@@ -119,8 +127,33 @@ module AuthenticationHelpers
   # Get the current user either from warden or from the header
   #
   def current_user
-    username = headers['username'] || headers['Username'] || params['username'] || cookies['username']
+    username = request.headers['username'] || request.headers['Username'] || params['username'] || cookies['username']
     User.eager_load(:role, :auth_tokens).find_by(username: username)
+  end
+
+  def set_content_cookie_in_response(token = nil)
+    domain = Doubtfire::Application.config.institution[:cookie_domain]
+    common_options = {
+      domain: domain,
+      path: '/api/units/',
+      secure: request.ssl? || Rails.env.production?,
+      same_site: :strict,
+      httponly: true
+    }
+
+    if token.present?
+      cookies['username'] = common_options.merge(
+        value: current_user.username,
+        expires: token.auth_token_expiry
+      )
+      cookies[CONTENT_TOKEN_COOKIE] = common_options.merge(
+        value: token.authentication_token,
+        expires: token.auth_token_expiry
+      )
+    else
+      cookies.delete('username', **common_options)
+      cookies.delete(CONTENT_TOKEN_COOKIE, **common_options)
+    end
   end
 
   #

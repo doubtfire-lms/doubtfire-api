@@ -32,11 +32,11 @@ class LectureResourceDownloadsController < ApplicationController
 
     error!({ error: 'No files to download' }, 403) if output_zip.nil?
 
-    download_id = "#{Time.zone.now.strftime('%Y-%m-%d %H:%m:%S')}-resources-#{unit.code}"
+    download_id = "#{Time.zone.now.strftime('%Y-%m-%d %H:%M:%S')}-resources-#{unit.code}"
     download_id.gsub! /[\\\/]/, '-'
     download_id = FileHelper.sanitized_filename(download_id)
 
-    send_file output_zip, content_type: 'application/octet-stream', disposition: "attachment; filename=#{download_id}.zip"
+    send_download output_zip, filename: "#{download_id}.zip", type: 'application/zip'
   rescue MyException => e
     render json: e.message, status: e.status
   end

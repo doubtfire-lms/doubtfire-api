@@ -46,6 +46,10 @@ module Doubtfire
     # variable.
     config.student_work_dir = ENV['DF_STUDENT_WORK_DIR'] || Rails.root.join('student_work').to_s
 
+    # Shared secret used to authenticate Caddy's internal file-authorisation
+    # requests. A blank value keeps the internal endpoints disabled.
+    config.caddy_download_auth_secret = ENV.fetch('CADDY_DOWNLOAD_AUTH_SECRET', nil)
+
     # ==> Archive directory
     # File server location for storing archived student work. Defaults to a subfolder of student work
     # Set using DF_ARCHIVE_DIR environment variable.
@@ -62,6 +66,20 @@ module Doubtfire
 
     # Limit number of pdf generators to run at once
     config.pdfgen_max_processes = ENV['DF_MAX_PDF_GEN_PROCESSES'] || 2
+
+    # Each Word document conversion runs a short-lived, network-isolated
+    # Gotenberg container. The image includes the conversion entrypoint.
+    config.gotenberg_image = ENV.fetch('GOTENBERG_IMAGE', nil)
+
+    # Absolute host path to tmp/gotenberg. Production uses this to mount only
+    # the current conversion's work directory into its one-shot container.
+    config.gotenberg_workdir_volume_mount = ENV.fetch('GOTENBERG_WORKDIR_VOLUME_MOUNT', nil)
+
+    # Development fallback matching Overseer. This exposes the fallback
+    # container's entire tmp/gotenberg mount to each conversion container.
+    config.gotenberg_fallback_volume_container = ENV.fetch('GOTENBERG_FALLBACK_VOLUME_CONTAINER', nil)
+    config.word_document_build_path = ENV.fetch('WORD_DOCUMENT_BUILD_PATH', '/gotenberg/word_document_build.sh')
+    config.word_document_conversion_timeout_seconds = ENV.fetch('WORD_DOCUMENT_CONVERSION_TIMEOUT_SECONDS', 120)
 
     # Date range for auditors to view
     config.auditor_unit_access_years = ENV.fetch('DF_AUDITOR_UNIT_ACCESS_YEARS', 2).to_f * 1.year
@@ -81,6 +99,13 @@ module Doubtfire
         end
 
       credential_value.nil? ? ENV.fetch(env_key, default) : credential_value
+    end
+
+    def self.cors_origin_for(host)
+      host = host.to_s.strip
+      return host if host.start_with?('http://', 'https://')
+
+      "https://#{host}"
     end
 
     # ==> Log to stdout
@@ -141,7 +166,9 @@ module Doubtfire
     config.institution[:name] = ENV['DF_INSTITUTION_NAME'] if ENV['DF_INSTITUTION_NAME']
     config.institution[:email_domain] = ENV['DF_INSTITUTION_EMAIL_DOMAIN'] if ENV['DF_INSTITUTION_EMAIL_DOMAIN']
     config.institution[:host] = ENV['DF_INSTITUTION_HOST'] if ENV['DF_INSTITUTION_HOST']
-    config.institution[:cookie_domain] = ENV.fetch('DF_COOKIE_DOMAIN', URI.parse(Doubtfire::Application.config.institution[:host]).host)
+    # Blank means host-only cookies, scoped to whichever origin set them.
+    config.institution[:cookie_domain] =
+      ENV.fetch('DF_COOKIE_DOMAIN', URI.parse(Doubtfire::Application.config.institution[:host]).host).presence
     config.institution[:product_name] = ENV['DF_INSTITUTION_PRODUCT_NAME'] if ENV['DF_INSTITUTION_PRODUCT_NAME']
 
     config.institution[:has_logo] = (ENV['DF_INSTITUTION_HAS_LOGO'].to_s.downcase == "true" || ENV['DF_INSTITUTION_HAS_LOGO'].to_i == 1) if ENV['DF_INSTITUTION_HAS_LOGO']
@@ -282,12 +309,29 @@ module Doubtfire
       Rails.root.join('app/models/d2l')
 
     # CORS config
+    # Configure a strict allowlist. Override per environment via:
+    # CORS_ALLOWED_ORIGINS="http://localhost:4200,https://frontend.example.edu"
+    default_cors_origins = [
+      'http://localhost:4200',
+      Application.cors_origin_for(config.institution[:host])
+    ].uniq
+    allowed_cors_origins = ENV.fetch('CORS_ALLOWED_ORIGINS', default_cors_origins.join(','))
+                              .split(',')
+                              .map(&:strip)
+                              .reject(&:empty?)
+                              .uniq
+
     config.middleware.insert_before Rack::MethodOverride, SentryTunnelMiddleware
 
     config.middleware.insert_before Warden::Manager, Rack::Cors do
       allow do
-        origins '*'
-        resource '*', headers: :any, methods: %i(get post put delete options)
+        origins do |source, _env|
+          allowed_cors_origins.include?(source)
+        end
+
+        resource '*',
+                 headers: :any,
+                 methods: %i[get post put patch delete options head]
       end
     end
 
@@ -308,6 +352,9 @@ module Doubtfire
 
     config.sm_instance = nil
     config.overseer_enabled = ENV['OVERSEER_ENABLED'].present? && ENV['OVERSEER_ENABLED'].to_s.downcase != "false" && ENV['OVERSEER_ENABLED'].to_i != 0
+
+    # Enables endpoints to return available storage on the device hosting the API.
+    config.disk_space_endpoint_enabled = %w[true 1 yes].include?(ENV['DISK_SPACE_ENDPOINT_ENABLED']&.downcase)
 
     config.docker_config = {
       DOCKER_REGISTRY_URL: ENV.fetch('DOCKER_REGISTRY_URL', nil),
@@ -350,10 +397,6 @@ module Doubtfire
       if config.overseer_workdir_volume_mount.nil? && config.overseer_fallback_volume_container.nil?
         raise 'Overseer configuration error: you must set either OVERSEER_WORKDIR_VOLUME_MOUNT or OVERSEER_FALLBACK_VOLUME_CONTAINER.'
       end
-
-      # Enables the endpoint to return how much available storage is left on the device the API is hosted on (often docker volume storage)
-      # Used to ensure enough space is available to pull new images for Overseer
-      config.disk_space_endpoint_enabled = %w[true 1 yes].include?(ENV['DISK_SPACE_ENDPOINT_ENABLED']&.downcase)
 
       config.after_initialize do
         if config.docker_config[:DOCKER_TOKEN] && config.docker_config[:DOCKER_PROXY_URL]

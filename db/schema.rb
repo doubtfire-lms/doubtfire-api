@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_06_25_055323) do
+ActiveRecord::Schema[8.0].define(version: 2026_09_09_002511) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -33,11 +33,15 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_25_055323) do
 
   create_table "breaks", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.datetime "start_date", null: false
-    t.integer "number_of_weeks", null: false
     t.bigint "teaching_period_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "campus_ids", size: :long, collation: "utf8mb4_bin"
+    t.string "label"
+    t.integer "number_of_days", null: false
+    t.boolean "pause_week_count", default: true, null: false
     t.index ["teaching_period_id"], name: "index_breaks_on_teaching_period_id"
+    t.check_constraint "json_valid(`campus_ids`)", name: "campus_ids"
   end
 
   create_table "campuses", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
@@ -61,6 +65,19 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_25_055323) do
     t.datetime "updated_at", null: false
     t.index ["feedback_chip_id"], name: "index_chip_usages_on_feedback_chip_id"
     t.index ["tutor_id"], name: "index_chip_usages_on_tutor_id"
+  end
+
+  create_table "comment_read_cursors", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "task_id", null: false
+    t.bigint "user_id", null: false
+    t.bigint "last_read_comment_id", null: false
+    t.datetime "read_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["last_read_comment_id"], name: "index_comment_read_cursors_on_last_read_comment_id"
+    t.index ["task_id", "user_id"], name: "index_comment_read_cursors_on_task_id_and_user_id", unique: true
+    t.index ["task_id"], name: "index_comment_read_cursors_on_task_id"
+    t.index ["user_id"], name: "index_comment_read_cursors_on_user_id"
   end
 
   create_table "comments_read_receipts", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
@@ -105,8 +122,14 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_25_055323) do
     t.string "operator", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "activity_days"
+    t.boolean "submitted_portfolio"
+    t.bigint "group_set_id"
+    t.bigint "group_id"
     t.index ["campus_id"], name: "index_communication_conditions_on_campus_id"
     t.index ["communication_id"], name: "index_communication_conditions_on_communication_id"
+    t.index ["group_id"], name: "index_communication_conditions_on_group_id"
+    t.index ["group_set_id"], name: "index_communication_conditions_on_group_set_id"
     t.index ["task_definition_id"], name: "index_communication_conditions_on_task_definition_id"
     t.index ["tutorial_id"], name: "index_communication_conditions_on_tutorial_id"
     t.index ["tutorial_stream_id"], name: "index_communication_conditions_on_tutorial_stream_id"
@@ -195,6 +218,16 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_25_055323) do
     t.index ["engagement_id"], name: "index_engagement_comments_on_engagement_id"
     t.index ["reply_to_id"], name: "index_engagement_comments_on_reply_to_id"
     t.index ["user_id"], name: "index_engagement_comments_on_user_id"
+  end
+
+  create_table "engagement_projects", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "engagement_id", null: false
+    t.bigint "project_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["engagement_id", "project_id"], name: "index_engagement_projects_on_engagement_id_and_project_id", unique: true
+    t.index ["engagement_id"], name: "index_engagement_projects_on_engagement_id"
+    t.index ["project_id"], name: "index_engagement_projects_on_project_id"
   end
 
   create_table "engagements", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
@@ -467,6 +500,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_25_055323) do
     t.integer "spec_con_days", default: 0, null: false
     t.bigint "assessor_id"
     t.datetime "portfolio_submission_date"
+    t.datetime "last_viewed_at"
     t.index ["assessor_id"], name: "index_projects_on_assessor_id"
     t.index ["campus_id"], name: "index_projects_on_campus_id"
     t.index ["enrolled"], name: "index_projects_on_enrolled"
@@ -542,6 +576,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_25_055323) do
     t.bigint "reply_to_id"
     t.bigint "commentable_id"
     t.string "commentable_type"
+    t.integer "attention_audience"
     t.index ["assessor_id"], name: "index_task_comments_on_assessor_id"
     t.index ["commentable_type", "commentable_id"], name: "index_task_comments_on_commentable_type_and_commentable_id"
     t.index ["discussion_comment_id"], name: "index_task_comments_on_discussion_comment_id"
@@ -702,10 +737,16 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_25_055323) do
     t.datetime "target_start_date"
     t.datetime "target_due_date"
     t.datetime "last_tutor_feedback_at"
+    t.datetime "moved_to_discuss_at"
+    t.datetime "notified_discuss_warning_at"
+    t.datetime "notified_discuss_expiry_at"
     t.index ["group_submission_id"], name: "index_tasks_on_group_submission_id"
     t.index ["project_id", "task_definition_id"], name: "tasks_uniq_proj_task_def", unique: true
     t.index ["project_id"], name: "index_tasks_on_project_id"
     t.index ["task_definition_id"], name: "index_tasks_on_task_definition_id"
+    t.index ["task_status_id", "moved_to_discuss_at"], name: "index_tasks_on_task_status_id_and_moved_to_discuss_at"
+    t.index ["task_status_id", "notified_discuss_expiry_at"], name: "index_tasks_on_task_status_id_and_notified_discuss_expiry_at"
+    t.index ["task_status_id", "notified_discuss_warning_at"], name: "index_tasks_on_task_status_id_and_notified_discuss_warning_at"
     t.index ["task_status_id"], name: "index_tasks_on_task_status_id"
   end
 
@@ -845,11 +886,39 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_25_055323) do
     t.integer "capacity", default: -1
     t.bigint "campus_id"
     t.bigint "tutorial_stream_id"
+    t.integer "duration_minutes", default: 120, null: false
     t.index ["abbreviation", "unit_id"], name: "index_tutorials_on_abbreviation_and_unit_id", unique: true
     t.index ["campus_id"], name: "index_tutorials_on_campus_id"
     t.index ["tutorial_stream_id"], name: "index_tutorials_on_tutorial_stream_id"
     t.index ["unit_id"], name: "index_tutorials_on_unit_id"
     t.index ["unit_role_id"], name: "index_tutorials_on_unit_role_id"
+  end
+
+  create_table "unit_content_links", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "unit_id", null: false
+    t.bigint "unit_content_site_id", null: false
+    t.string "context_type", null: false
+    t.string "context_key", null: false
+    t.string "route", default: "/", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["unit_content_site_id"], name: "index_unit_content_links_on_unit_content_site_id"
+    t.index ["unit_id", "context_type", "context_key"], name: "index_unit_content_links_on_context", unique: true
+    t.index ["unit_id"], name: "index_unit_content_links_on_unit_id"
+  end
+
+  create_table "unit_content_sites", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "unit_id", null: false
+    t.string "name", null: false
+    t.string "original_filename", null: false
+    t.string "archive_path", null: false
+    t.string "root_dir", default: "/", null: false
+    t.boolean "is_main", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "content_version", limit: 64
+    t.index ["unit_id", "name"], name: "index_unit_content_sites_on_unit_id_and_name", unique: true
+    t.index ["unit_id"], name: "index_unit_content_sites_on_unit_id"
   end
 
   create_table "unit_roles", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
@@ -901,6 +970,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_25_055323) do
     t.integer "feedback_overflow_threshold_days", default: 7
     t.boolean "enforce_feedback_before_discussed_in_class", default: false, null: false
     t.text "grade_values", size: :long, collation: "utf8mb4_bin"
+    t.boolean "discuss_timeout_enabled", default: false, null: false
+    t.integer "discuss_timeout_warning_days", default: 7, null: false
+    t.integer "discuss_timeout_expire_days", default: 14, null: false
     t.index ["draft_task_definition_id"], name: "index_units_on_draft_task_definition_id"
     t.index ["main_convenor_id"], name: "index_units_on_main_convenor_id"
     t.index ["overseer_image_id"], name: "index_units_on_overseer_image_id"
@@ -956,6 +1028,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_25_055323) do
     t.string "tii_eula_version"
     t.datetime "tii_eula_date"
     t.boolean "tii_eula_version_confirmed", default: false, null: false
+    t.datetime "last_access_at"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["login_id"], name: "index_users_on_login_id", unique: true
     t.index ["role_id"], name: "index_users_on_role_id"

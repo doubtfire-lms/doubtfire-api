@@ -40,7 +40,7 @@ class AuthenticationApi < Grape::API
       # User lookup
       username = username.downcase
       institution_email_domain = Doubtfire::Application.config.institution[:email_domain]
-      user = User.find_or_create_by(username: username) do |new_user|
+      user = User.find_or_initialize_by(username: username) do |new_user|
         new_user.first_name = 'First Name'
         new_user.last_name  = 'Surname'
         new_user.email      = "#{username}@#{institution_email_domain}"
@@ -50,10 +50,12 @@ class AuthenticationApi < Grape::API
       end
 
       # Try to authenticate with password
-      if password.present? && !user.authenticate?(password)
+      # A supplied password must always be authenticated. Using `present?` here
+      # allows blank and whitespace-only passwords to skip both credential checks.
+      if password && !user.authenticate?(password)
         error!({ error: 'Invalid email or password.' }, 401)
         return
-      elsif auth_token.present? && !authenticated?(:login)
+      elsif auth_token && !authenticated?(:login)
         error!({ error: 'Invalid user or auth token.' }, 401)
         return
       end
@@ -77,6 +79,7 @@ class AuthenticationApi < Grape::API
 
       token&.destroy!
       token = user.generate_authentication_token!
+      user.record_sign_in!
 
       # Return user details
       present :user, user, with: Entities::UserEntity
@@ -163,8 +166,10 @@ class AuthenticationApi < Grape::API
       requires :SAMLResponse, type: String, desc: 'SAML logout response data.'
     end
     post '/auth/saml_logout' do
-      response = OneLogin::RubySaml::Logoutresponse.new(params[:SAMLResponse], allowed_clock_drift: 1.second,
-                                                                               settings: AuthenticationHelpers.saml_settings)
+      response = OneLogin::RubySaml::Logoutresponse.new(
+        params[:SAMLResponse],
+        AuthenticationHelpers.saml_settings
+      )
 
       # Check if the SAML response is valid - if not log an error
       unless response.is_valid?
@@ -371,6 +376,7 @@ class AuthenticationApi < Grape::API
         # Invalidate the token and regenrate a new one
         token.destroy!
         token = user.generate_authentication_token!
+        user.record_sign_in!
 
         logger.info "Login #{params[:username]} from #{request.ip}"
 
@@ -440,6 +446,7 @@ class AuthenticationApi < Grape::API
   end
   delete '/auth' do
     user = User.find_by(username: headers['username'] || headers['Username'])
+    signing_out_user = user
     token = user&.token_for_text?(headers['auth-token'] || headers['Auth-Token'], :general)
 
     if token.present?
@@ -452,6 +459,7 @@ class AuthenticationApi < Grape::API
       user_param = cookies['username']
 
       user = User.find_by(username: user_param)
+      signing_out_user ||= user
       token = user&.token_for_text?(auth_param, :refresh_token)
       if token.present?
         logger.info "Destroy refresh token for #{user.username} from #{request.ip}"
@@ -461,6 +469,8 @@ class AuthenticationApi < Grape::API
 
     # Remove the refresh token cookie - if remember is false
     set_refresh_cookie_in_response(false) unless params[:remember]
+    signing_out_user&.auth_tokens&.where(token_type: :content)&.destroy_all
+    set_content_cookie_in_response
     present nil
   end
 
@@ -481,12 +491,28 @@ class AuthenticationApi < Grape::API
     end
   end
 
+  desc 'Get unit content authentication token'
+  get '/auth/content' do
+    if authenticated?(:general)
+      token = current_user.auth_tokens.find_by(token_type: :content)
+      if token.nil? || token.auth_token_expiry <= Time.zone.now
+        token&.destroy
+        token = current_user.generate_content_authentication_token!
+      end
+
+      set_content_cookie_in_response(token)
+      present :content_access, true
+    end
+  end
+
   desc 'Get access token from the refresh token cookie'
   params do
     optional :delete_auth_token, type: Boolean, desc: 'Delete the auth token if also provided', default: true
   end
   post '/auth/access-token' do
     if authenticated_via_refresh_token?
+      current_user.record_access!
+
       # Check if we have a auth token as well
       if params[:delete_auth_token]
         user_param, auth_param = get_user_and_token_from(:header)

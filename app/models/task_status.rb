@@ -72,6 +72,10 @@ class TaskStatus < ApplicationRecord
     TaskStatus.find(14)
   end
 
+  def self.rediscuss
+    TaskStatus.find(15)
+  end
+
   class << self
     # Provide access to the count from the database via a new db_count method
     alias_method :db_count, :count
@@ -84,7 +88,7 @@ class TaskStatus < ApplicationRecord
   # Keep this hard coded! Saves cache load time.
   # Important: count must equal the largest id in the database
   def self.count
-    14
+    15
   end
 
   def self.status_for_name(name)
@@ -103,6 +107,8 @@ class TaskStatus < ApplicationRecord
       TaskStatus.working_on_it
     when 'discuss', 'd'
       TaskStatus.discuss
+    when 'rediscuss', 're-discuss', 're discuss'
+      TaskStatus.rediscuss
     when 'demonstrate', 'demo'
       TaskStatus.demonstrate
     when 'ready for feedback', 'ready_for_feedback', 'ready to mark', 'ready_to_mark', 'rtm', 'rff'
@@ -142,6 +148,7 @@ class TaskStatus < ApplicationRecord
     when 12 then :time_exceeded
     when 13 then :assess_in_portfolio
     when 14 then :attention_required
+    when 15 then :rediscuss
     else :not_started
     end
   end
@@ -161,6 +168,7 @@ class TaskStatus < ApplicationRecord
     return :time_exceeded if self == TaskStatus.time_exceeded
     return :assess_in_portfolio if self == TaskStatus.assess_in_portfolio
     return :attention_required if self == TaskStatus.attention_required
+    return :rediscuss if self == TaskStatus.rediscuss
 
     return :not_started
   end
