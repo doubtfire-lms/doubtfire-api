@@ -58,6 +58,10 @@ class LtiServer
     request(:get, 'grade-line-item')
   end
 
+  def ensure_grade_line_item
+    request(:post, 'grade-line-item')
+  end
+
   def submit_scores(scores)
     request(:post, 'scores', { scores: scores })
   end

@@ -243,10 +243,31 @@ class LmsIntegrationApi < Grape::API
     end
   end
 
+  desc 'Find or create the LMS grade item linked to a unit'
+  post '/units/:unit_id/lms/grade_line_item' do
+    unit = lms_unit!
+    require_link!(unit)
+    begin
+      LtiServer.new(unit.id).ensure_grade_line_item
+    rescue LtiServer::Error => e
+      lms_error!(e)
+    end
+  end
+
   desc 'Send OnTrack grades to the LMS grade item'
   post '/units/:unit_id/lms/sync_grades' do
     unit = lms_unit!
     require_link!(unit)
+
+    begin
+      grade_line_item = LtiServer.new(unit.id).grade_line_item
+      unless grade_line_item['configured'] == true
+        message = grade_line_item['message'].presence || 'Grade sync is not configured for this LMS course.'
+        error!({ error: message }, 422)
+      end
+    rescue LtiServer::Error => e
+      lms_error!(e)
+    end
 
     job_id = SyncLmsGradesJob.perform_async(unit.id)
     present setup_job(job_id), with: Entities::SidekiqJobEntity
