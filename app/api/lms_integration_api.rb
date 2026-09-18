@@ -152,8 +152,9 @@ class LmsIntegrationApi < Grape::API
     changes = declared(params, include_missing: false).to_h.symbolize_keys.except(:unit_id)
     integration.assign_attributes(changes)
     integration.auto_sync_extensions = false unless integration.fetch_extensions?
-    # These change what validation checks, so the integration must be validated again
-    if integration.fetch_extensions_changed? || integration.group_mapping_enabled_changed? || integration.assignment_id_changed?
+    # Turning a feature on or changing the assignment adds something to check; turning one off does not
+    turned_on = %i[fetch_extensions group_mapping_enabled].any? { |setting| integration.will_save_change_to_attribute?(setting, to: true) }
+    if turned_on || integration.assignment_id_changed?
       integration.validated = false
       integration.validated_at = nil
     end

@@ -98,7 +98,7 @@ class LmsIntegrationApiTest < ActiveSupport::TestCase
     assert_equal 1, integration.lms_group_mappings.count
   end
 
-  def test_settings_patch_invalidates_when_extensions_change
+  def test_settings_patch_keeps_validation_when_extensions_turn_off
     unit = FactoryBot.create(:unit, with_students: false)
     integration = unit.create_lms_integration!(fetch_extensions: true, auto_sync_extensions: true, validated: true, validated_at: Time.zone.now)
     add_auth_header_for(user: unit.main_convenor_user)
@@ -109,7 +109,18 @@ class LmsIntegrationApiTest < ActiveSupport::TestCase
     integration.reload
     assert_not integration.fetch_extensions?
     assert_not integration.auto_sync_extensions?
-    assert_not integration.validated?
+    assert integration.validated?
+  end
+
+  def test_settings_patch_invalidates_when_extensions_turn_on
+    unit = FactoryBot.create(:unit, with_students: false)
+    integration = unit.create_lms_integration!(validated: true, validated_at: Time.zone.now)
+    add_auth_header_for(user: unit.main_convenor_user)
+
+    patch "/api/units/#{unit.id}/lms/settings", { fetch_extensions: true }
+
+    assert_equal 200, last_response.status, last_response.inspect
+    assert_not integration.reload.validated?
   end
 
   def test_settings_patch_saves_the_assignment_and_invalidates
