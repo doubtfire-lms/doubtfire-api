@@ -170,6 +170,7 @@ for `DF_SECRET_KEY_BASE`, `DF_SECRET_KEY_ATTR`, `DF_SECRET_KEY_DEVISE`,
 | `TII_REGISTER_WEBHOOK`           | Register the Turnitin webhook.                                  | `false` |
 | `TCA_API_KEY`                    | Turnitin Core API key.                                          | Unset   |
 | `TCA_HOST`                       | Turnitin institution host.                                      | Unset   |
+| `DF_MOODLE_API_URL`              | Moodle base URL used by unit integrations.                      | Unset   |
 | `DF_JPLAG_MIN_TOKENS`            | Minimum matching-token threshold used by JPlag.                 | `-1`    |
 | `DF_JPLAG_SKIP_CLUSTER_CHECK`    | Skip JPlag cluster calculation.                                 | `false` |
 | `DF_JPLAG_MAX_SHOWN_COMPARISONS` | Maximum comparisons retained in a JPlag report; `-1` means all. | `2500`  |
