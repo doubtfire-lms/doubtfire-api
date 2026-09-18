@@ -41,8 +41,8 @@ class LtiCourseDataSource
     plugin_users = {}
     group_ids_by_user = Hash.new { |hash, key| hash[key] = [] }
 
-    if course_data_available?
-      data = @server.course_data(include: %w[users groups])
+    data = optional_course_data(%w[users groups])
+    if data
       Array(data['users']).each { |user| plugin_users[user['id'].to_s] = user }
       Array(data['groups']).each do |group|
         Array(group['member_user_ids']).each { |user_id| group_ids_by_user[user_id.to_s] << group['id'].to_i }
@@ -91,9 +91,10 @@ class LtiCourseDataSource
       start_date: nil,
       end_date: nil
     }
-    return details unless course_data_available?
+    data = optional_course_data(%w[groups])
+    return details unless data
 
-    context = @server.course_data(include: %w[groups])['context'] || {}
+    context = data['context'] || {}
     details.merge(
       label: context['label'].presence || details[:label],
       title: context['title'].presence || details[:title],
@@ -138,10 +139,23 @@ class LtiCourseDataSource
     raise Error, 'The Moodle OnTrack course-data plugin is not available for this course.'
   end
 
+  # Plugin data, or nil so callers fall back to Names and Roles when the plugin has been removed.
+  def optional_course_data(include)
+    return nil unless course_data_available?
+
+    @server.course_data(include: include)
+  rescue LtiServer::Error => e
+    raise unless e.status == 422
+
+    link['courseDataAvailable'] = false
+    nil
+  end
+
   def course_data_snapshot(include, assignment_id: nil)
     require_course_data!
     @server.course_data(include: include, assignment_id: assignment_id)
   rescue LtiServer::Error => e
+    link['courseDataAvailable'] = false if e.status == 422
     raise Error, e.message
   end
 

@@ -88,12 +88,7 @@ class ImportLmsStudentsJob
   private
 
   def student_mappings(integration, source)
-    return {} unless integration&.group_mapping_enabled?
-
-    unless source.course_data_available?
-      raise LtiCourseDataSource::Error,
-            'Group mapping needs the Moodle OnTrack course-data plugin. Disable group mapping or enable the plugin.'
-    end
+    return {} unless integration&.group_mapping_enabled? && source.course_data_available?
 
     at(0, 'Validating LMS group mappings')
     LmsIntegrationValidator.new(integration).validate!(
@@ -102,6 +97,10 @@ class ImportLmsStudentsJob
     )
     integration.lms_group_mappings.includes(:group_set, :group, :campus, :tutorial_stream, :tutorial)
                .group_by(&:lms_group_id)
+  rescue LtiCourseDataSource::Error
+    raise if source.course_data_available?
+
+    {}
   end
 
   def display_row(unit, lms_member, mappings)
