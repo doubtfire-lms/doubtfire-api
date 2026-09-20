@@ -231,6 +231,7 @@ class Task < ApplicationRecord
 
     comments.each do |comment|
       next unless comment.requires_attention_for?(user)
+      next if comment.user_id == user.id
 
       current = latest_comment_by_task[comment.task_id]
       latest_comment_by_task[comment.task_id] = comment if current.nil? || current.id < comment.id
