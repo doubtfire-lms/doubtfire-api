@@ -2630,6 +2630,8 @@ class Unit < ApplicationRecord
         status: TaskStatus.id_to_key(t.status_id),
         completion_date: t.completion_date,
         submission_date: t.submission_date,
+        # Only the inbox query computes this -- other callers fall back to the raw date
+        waiting_since: t.has_attribute?('waiting_since') ? t.waiting_since : t.submission_date,
         times_assessed: t.times_assessed,
         grade: t.grade,
         quality_pts: t.quality_pts,
@@ -2750,6 +2752,7 @@ class Unit < ApplicationRecord
                  "THEN COALESCE(submission_date, #{oldest_unread_comment_at}) " \
                  "ELSE COALESCE(#{oldest_unread_comment_at}, submission_date) END"
     get_all_tasks_for(user, my_students_only)
+      .select(Arel.sql("#{inbox_date} AS waiting_since"))
       .having("task_statuses.id IN (:ids) OR COUNT(task_pins.task_id) > 0 OR SUM(case when #{unread_comment} AND task_comments.id IS NOT NULL then COALESCE(task_similarity_stats.similarity_count, 1) else 0 end) > 0", ids: [TaskStatus.ready_for_feedback, TaskStatus.need_help])
       .order(Arel.sql("pinned DESC, #{inbox_date} ASC, task_definition_id ASC, tasks.id ASC"))
   end
