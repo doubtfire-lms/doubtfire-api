@@ -154,6 +154,30 @@ class CommentReadCursorTest < ActiveSupport::TestCase
     assert_equal 0, unread_count(project, task_definition)
   end
 
+  def test_authored_comment_does_not_prevent_advancing_past_older_unread_comment
+    project = FactoryBot.create(:project)
+    task_definition = project.unit.task_definitions.first
+    task = project.task_for_task_definition(task_definition)
+    tutor = project.tutor_for(task_definition)
+    former_tutor = FactoryBot.create(:user, :tutor)
+    project.unit.employ_staff(former_tutor, Role.tutor)
+
+    unread_comment = task.add_text_comment(former_tutor, 'Feedback from the former tutor')
+    unread_comment.update_column(:attention_audience, nil) # rubocop:disable Rails/SkipsModelValidations
+    authored_comment = task.add_status_comment(tutor, TaskStatus.complete)
+    authored_comment.update_column(:attention_audience, nil) # rubocop:disable Rails/SkipsModelValidations
+
+    assert unread_comment.new_for?(tutor)
+    assert_not authored_comment.new_for?(tutor)
+    assert_includes project.unit.tasks_for_task_inbox(tutor).map(&:task_id), task.id
+
+    task.mark_comments_as_read(tutor, task.comments)
+
+    cursor = CommentReadCursor.find_by!(task: task, user: tutor)
+    assert_equal unread_comment.id, cursor.last_read_comment_id
+    assert_not_includes project.unit.tasks_for_task_inbox(tutor).map(&:task_id), task.id
+  end
+
   def test_plan_comment_does_not_advance_tutor_cursor_past_unread_comment
     project = FactoryBot.create(:project)
     task_definition = project.unit.task_definitions.first
