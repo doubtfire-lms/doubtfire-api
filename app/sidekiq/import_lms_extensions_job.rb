@@ -65,7 +65,7 @@ class ImportLmsExtensionsJob
       rescue StandardError => e
         result[:errors] << { row: row, message: e.message }
       ensure
-        at(2 + index + 1, "Processing extension for #{row[:username] || row[:email] || 'unknown student'}")
+        at(2 + index + 1, 'Importing extensions')
       end
     end
 

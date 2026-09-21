@@ -36,7 +36,7 @@ class ImportLmsStudentsJob
     incomplete_member_count = 0
 
     members.each_with_index do |lms_member, index|
-      at(index, "Processing #{lms_member[:email] || lms_member[:lms_user_id]}")
+      at(index, 'Importing members')
       member_mappings = lms_member[:group_ids].flat_map { |group_id| mappings.fetch(group_id, []) }
       row = display_row(unit, lms_member, member_mappings)
 
