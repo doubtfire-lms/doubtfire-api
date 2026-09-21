@@ -235,10 +235,11 @@ class LmsIntegrationApi < Grape::API
   end
   post '/units/:unit_id/lms/import_students' do
     unit = lms_unit!(:upload_csv)
-    require_link!(unit)
+    link = require_link!(unit)
 
     integration = unit.lms_integration
-    if integration&.group_mapping_enabled? && !integration.validated?
+    # Without the course-data plugin there are no groups, so mappings are not applied
+    if integration&.group_mapping_enabled? && !integration.validated? && link['courseDataAvailable'] == true
       error!({ error: 'Validate the LMS group mappings before importing students' }, 422)
     end
 

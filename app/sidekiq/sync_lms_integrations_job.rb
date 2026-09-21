@@ -17,7 +17,7 @@ class SyncLmsIntegrationsJob
       unit = integration.unit
       next unless unit.active?
 
-      mappings_ready = !integration.group_mapping_enabled? || integration.validated?
+      mappings_ready = !integration.group_mapping_enabled? || integration.validated? || !course_data_available?(integration)
       if integration.auto_sync_students? && mappings_ready && today.between?(unit.start_date.to_date, unit.end_date.to_date)
         ImportLmsStudentsJob.perform_async(unit.id, false, integration.withdraw_missing_students)
       end
@@ -28,5 +28,14 @@ class SyncLmsIntegrationsJob
 
       ImportLmsExtensionsJob.perform_async(unit.id, false)
     end
+  end
+
+  private
+
+  # Mappings are skipped when the plugin is unavailable, so they do not need validating
+  def course_data_available?(integration)
+    integration.data_source.course_data_available?
+  rescue LtiServer::Error, LtiCourseDataSource::Error
+    true
   end
 end

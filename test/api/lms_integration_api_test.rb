@@ -159,16 +159,42 @@ class LmsIntegrationApiTest < ActiveSupport::TestCase
     SyncLmsGradesJob.clear
   end
 
+  def test_student_import_needs_validated_mappings_when_the_plugin_is_available
+    unit = FactoryBot.create(:unit, with_students: false)
+    unit.create_lms_integration!(group_mapping_enabled: true)
+    add_auth_header_for(user: unit.main_convenor_user)
+    stub_link(unit, course_data_available: true)
+
+    post "/api/units/#{unit.id}/lms/import_students", { preview_only: true }
+
+    assert_equal 422, last_response.status, last_response.inspect
+    assert_empty ImportLmsStudentsJob.jobs
+  end
+
+  def test_student_import_ignores_unvalidated_mappings_without_the_plugin
+    unit = FactoryBot.create(:unit, with_students: false)
+    unit.create_lms_integration!(group_mapping_enabled: true)
+    add_auth_header_for(user: unit.main_convenor_user)
+    stub_link(unit, course_data_available: false)
+
+    post "/api/units/#{unit.id}/lms/import_students", { preview_only: true }
+
+    assert_equal 201, last_response.status, last_response.inspect
+    assert_equal 1, ImportLmsStudentsJob.jobs.length
+  ensure
+    ImportLmsStudentsJob.clear
+  end
+
   private
 
   def internal_url(unit, path)
     "http://lti.test/lti/api/internal/units/#{unit.id}/#{path}"
   end
 
-  def stub_link(unit)
+  def stub_link(unit, course_data_available: false)
     stub_request(:get, internal_url(unit, 'link')).to_return(
       status: 200,
-      body: { linked: true, contextId: 'course-1' }.to_json,
+      body: { linked: true, contextId: 'course-1', courseDataAvailable: course_data_available }.to_json,
       headers: { 'Content-Type' => 'application/json' }
     )
   end
