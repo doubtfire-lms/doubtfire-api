@@ -34,8 +34,8 @@ class AcceptSubmissionJob
       if task.project.student.receive_task_notifications
         begin
           PortfolioEvidenceMailer.task_pdf_failed(task.project, [task]).deliver
-        rescue StandardError => e
-          logger.error "Failed to send task pdf failed email for project #{task.project.id}!\n#{e.message}"
+        rescue StandardError => mail_error
+          logger.error "Failed to send task pdf failed email for project #{task.project.id}!\n#{mail_error.message}"
         end
       end
 
