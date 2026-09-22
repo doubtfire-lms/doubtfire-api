@@ -1,5 +1,14 @@
 module LtiHelper
-  def decode_lti_token(token)
+  # The LTI service signs tokens that expire after 30 seconds
+  LTI_TOKEN_MAX_LIFETIME = 60
+
+  # Records a token id, returning false if it was already used. One SET NX, so concurrent replays can't both pass
+  def self.first_use?(jti, ttl)
+    Sidekiq.redis { |redis| redis.call('SET', "lti:jti:#{jti}", '1', 'NX', 'EX', ttl) } == 'OK'
+  end
+
+  # Verifies a token the LTI service signed for this purpose, and rejects one that was already used
+  def decode_lti_token(token, purpose:)
     begin
       secret_key = Doubtfire::Application.config.lti_api_secret
       response = JWT.decode(token, secret_key, true, algorithm: 'HS256').first
@@ -9,12 +18,20 @@ module LtiHelper
 
       raise "Missing jti" if jti.nil?
       raise "Missing exp" if exp.nil?
+      raise "Expires more than #{LTI_TOKEN_MAX_LIFETIME}s ahead" if exp.to_i > Time.now.to_i + LTI_TOKEN_MAX_LIFETIME
+      raise "Signed for #{response['purpose'].inspect}, not #{purpose}" unless response['purpose'] == purpose
     rescue JWT::DecodeError => e
       logger.debug "Failed to validate Lti Token: #{e}"
       return error!({ error: 'Invalid LTI token.' }, 403)
     rescue StandardError => e
-      logger.debug "Missing token properties: #{e}"
+      logger.debug "Invalid token properties: #{e}"
       return error!({ error: 'Invalid LTI token.' }, 403)
+    end
+
+    # Kept a little past expiry, after which JWT.decode rejects the token anyway
+    unless LtiHelper.first_use?(jti, exp.to_i - Time.now.to_i + 5)
+      logger.warn "Rejected a replayed LTI token from #{request.ip}"
+      error!({ error: 'Invalid LTI token.' }, 403)
     end
     response
   end

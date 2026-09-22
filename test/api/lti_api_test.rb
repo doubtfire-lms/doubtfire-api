@@ -7,6 +7,20 @@ class LtiApiTest < ActiveSupport::TestCase
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
 
+  LTI_ROUTE_PURPOSES = {
+    '/api/auth/lti' => 'auth',
+    '/api/lti/link' => 'link',
+    '/api/lti/enrol' => 'enrol',
+    '/api/lti/enrol/bulk' => 'enrol_bulk',
+    '/api/lti/grades' => 'grades',
+    '/api/lti/app-handoff' => 'app_handoff'
+  }.freeze
+
+  # A fresh token, as the LTI service signs one per request
+  def lti_token(purpose, exp: Time.now.to_i + 30, **claims)
+    JWT.encode({ purpose: purpose, exp: exp, jti: SecureRandom.uuid, **claims }, Doubtfire::Application.config.lti_api_secret, 'HS256')
+  end
+
   def test_ensure_jwt_secret_is_valid
     # Simply validate that our ENV var is not nil
     secret_key = Doubtfire::Application.config.lti_api_secret
@@ -70,8 +84,6 @@ class LtiApiTest < ActiveSupport::TestCase
   end
 
   def test_invalid_unit
-    secret_key = Doubtfire::Application.config.lti_api_secret
-
     routes_expecting_unit = [
       "/api/lti/link",
       "/api/lti/enrol",
@@ -79,39 +91,22 @@ class LtiApiTest < ActiveSupport::TestCase
       "/api/lti/grades"
     ]
 
-    payload_missing_unit_id = {
-      exp: Time.now.to_i + 30,
-      jti: SecureRandom.uuid
-    }
-    token_missing_unit_id = JWT.encode(payload_missing_unit_id, secret_key, 'HS256')
-
     add_auth_header_for(user: FactoryBot.create(:user, :convenor))
 
-    # Ensure we get a 401 error if unit_id is missing from the token
     routes_expecting_unit.each do |url|
-      post url, { ltik: token_missing_unit_id }
+      # Ensure we get a 400 error if unit_id is missing from the token
+      post url, { ltik: lti_token(LTI_ROUTE_PURPOSES[url]) }
       assert_equal 400, last_response.status, "Expected 400 from #{url} with missing unit_id #{last_response_body}"
       assert_equal "Invalid LTI token.", last_response_body['error']
-    end
 
-    # Ensure we get a 404 if the unit (id) does not exist
-    payload_invalid_unit_id = {
-      unit_id: 9_999_999, # Unit should not exist
-      exp: Time.now.to_i + 30,
-      jti: SecureRandom.uuid
-    }
-    token_invalid_unit_id = JWT.encode(payload_invalid_unit_id, secret_key, 'HS256')
-
-    routes_expecting_unit.each do |url|
-      post url, { ltik: token_invalid_unit_id }
+      # Ensure we get a 404 if the unit (id) does not exist
+      post url, { ltik: lti_token(LTI_ROUTE_PURPOSES[url], unit_id: 9_999_999) }
       assert_equal 404, last_response.status, "Expected 404 from #{url} with invalid unit #{last_response_body}"
       assert_equal "Unit does not exist.", last_response_body['error']
     end
   end
 
   def test_lti_authentication
-    secret_key = Doubtfire::Application.config.lti_api_secret
-
     username = 'user12345'
     member = {
       user_id: '3',
@@ -122,14 +117,8 @@ class LtiApiTest < ActiveSupport::TestCase
       ext_user_username: 'student_test_lti3',
       roles: ['Learner']
     }
-    token = JWT.encode({
-                         member: member,
-                         exp: Time.now.to_i + 30,
-                         jti: SecureRandom.uuid
-                       }, secret_key, 'HS256')
-
     #  Retrieve the temporary auth token and username
-    post '/api/auth/lti', { ltik: token }
+    post '/api/auth/lti', { ltik: lti_token('auth', member: member) }
     assert_equal 201, last_response.status
     assert last_response_body.key?('username')
     assert last_response_body.key?('auth_token')
@@ -192,13 +181,13 @@ class LtiApiTest < ActiveSupport::TestCase
     # Test to ensure convenor and admins can link the unit
     users_can.each do |user|
       add_auth_header_for(user: user)
-      post '/api/lti/link', { ltik: unit_link_token(unit_id: unit.id, email: user.email) }
+      post '/api/lti/link', { ltik: lti_token('link', unit_id: unit.id, email: user.email) }
       assert_equal 200, last_response.status, last_response_body
     end
 
     # Test to ensure that convenors cant link a unit they can not already enrol students in
     add_auth_header_for(user: convenor)
-    post '/api/lti/link', { ltik: unit_link_token(unit_id: Unit.first.id, email: convenor.email) }
+    post '/api/lti/link', { ltik: lti_token('link', unit_id: Unit.first.id, email: convenor.email) }
     assert_equal 403, last_response.status, last_response_body
     assert_equal "Not authorised to link this unit.", last_response_body['error'], last_response_body
 
@@ -210,7 +199,7 @@ class LtiApiTest < ActiveSupport::TestCase
     # Ensure that students and tutors cant link the unit
     users_cant.each do |user|
       add_auth_header_for(user: user)
-      post '/api/lti/link', { ltik: unit_link_token(unit_id: unit.id, email: user.email) }
+      post '/api/lti/link', { ltik: lti_token('link', unit_id: unit.id, email: user.email) }
       assert_equal 403, last_response.status, last_response_body
     end
     unit.destroy
@@ -219,7 +208,7 @@ class LtiApiTest < ActiveSupport::TestCase
   def test_lti_routes_reject_requests_not_from_the_lti_service
     convenor = FactoryBot.create(:user, :convenor)
     add_auth_header_for(user: convenor)
-    token = unit_link_token(unit_id: 1, email: convenor.email)
+    token = lti_token('link', unit_id: 1, email: convenor.email)
 
     # X-Forwarded-For is what request.ip trusts from private peers, so it must not help
     [{}, { 'HTTP_X_FORWARDED_FOR' => '127.0.0.1' }].each do |forwarded|
@@ -231,15 +220,6 @@ class LtiApiTest < ActiveSupport::TestCase
     end
   end
 
-  def unit_link_token(unit_id:, email:)
-    JWT.encode({
-                 unit_id: unit_id,
-                 email: email,
-                 exp: Time.now.to_i + 30,
-                 jti: SecureRandom.uuid
-               }, Doubtfire::Application.config.lti_api_secret, 'HS256')
-  end
-
   def test_link_rejects_a_different_launch_user
     convenor = FactoryBot.create(:user, :convenor)
     unit = FactoryBot.create(:unit, with_students: false)
@@ -247,12 +227,12 @@ class LtiApiTest < ActiveSupport::TestCase
     add_auth_header_for(user: convenor)
 
     [FactoryBot.create(:user, :student).email, ''].each do |email|
-      post '/api/lti/link', { ltik: unit_link_token(unit_id: unit.id, email: email) }
+      post '/api/lti/link', { ltik: lti_token('link', unit_id: unit.id, email: email) }
       assert_equal 403, last_response.status, last_response_body
       assert_equal 'This OnTrack session does not belong to the LMS user who launched OnTrack. Relaunch OnTrack from the LMS.', last_response_body['error']
     end
 
-    post '/api/lti/link', { ltik: unit_link_token(unit_id: unit.id, email: convenor.email.upcase) }
+    post '/api/lti/link', { ltik: lti_token('link', unit_id: unit.id, email: convenor.email.upcase) }
     assert_equal 200, last_response.status, last_response_body
   ensure
     unit&.destroy
@@ -279,42 +259,28 @@ class LtiApiTest < ActiveSupport::TestCase
 
     unit = FactoryBot.create(:unit, with_students: false)
 
-    payload = {
-      unit_id: unit.id,
-      member: {
-        user_id: '2',
-        name: 'Nickname',
-        given_name: 'First name',
-        family_name: 'Last name',
-        email: 'email@doubtfire.com',
-        ext_user_username: 'student_test_lti',
-        roles: ['Learner']
-      },
-      exp: Time.now.to_i + 30,
-      jti: SecureRandom.uuid
+    member = {
+      user_id: '2',
+      name: 'Nickname',
+      given_name: 'First name',
+      family_name: 'Last name',
+      email: 'email@doubtfire.com',
+      ext_user_username: 'student_test_lti',
+      roles: ['Learner']
     }
 
-    secret_key = Doubtfire::Application.config.lti_api_secret
-    token = JWT.encode(payload, secret_key, 'HS256')
-
     roles_cant_be_enrolled.each do |role|
-      payload[:member][:roles] = [role]
-
-      token = JWT.encode(payload, secret_key, 'HS256')
-
-      add_auth_header_for(user: users.sample)
-      post '/api/lti/enrol', { ltik: token }
+      user = users.sample
+      add_auth_header_for(user: user)
+      post '/api/lti/enrol', { ltik: lti_token('enrol', unit_id: unit.id, email: user.email, member: member.merge(roles: [role])) }
 
       assert_equal 204, last_response.status
     end
 
     roles_can_be_enrolled.each do |role|
-      payload[:member][:roles] = [role]
-
-      token = JWT.encode(payload, secret_key, 'HS256')
-
-      add_auth_header_for(user: users.sample) # or whichever user you want as caller
-      post '/api/lti/enrol', { ltik: token }
+      user = users.sample
+      add_auth_header_for(user: user)
+      post '/api/lti/enrol', { ltik: lti_token('enrol', unit_id: unit.id, email: user.email, member: member.merge(roles: [role])) }
 
       assert_equal 201, last_response.status
       id = last_response_body['id']
@@ -382,13 +348,8 @@ class LtiApiTest < ActiveSupport::TestCase
             email: 'email5@doubtfire.com',
             ext_user_username: 'student_test_lti4'
           }
-        ],
-        exp: Time.now.to_i + 30,
-        jti: SecureRandom.uuid
+        ]
       }
-
-      secret_key = Doubtfire::Application.config.lti_api_secret
-      token = JWT.encode(payload, secret_key, 'HS256')
 
       convenor = FactoryBot.create(:user, :convenor)
       unit.employ_staff(convenor, Role.convenor)
@@ -401,7 +362,7 @@ class LtiApiTest < ActiveSupport::TestCase
       expected_ignore_count = 2
       assert_equal expected_enrolled_projects_count + expected_error_count + expected_ignore_count, payload[:members].count
 
-      post '/api/lti/enrol/bulk', { ltik: token }
+      post '/api/lti/enrol/bulk', { ltik: lti_token('enrol_bulk', **payload) }
       assert_equal 201, last_response.status
 
       job = last_response_body
@@ -420,7 +381,7 @@ class LtiApiTest < ActiveSupport::TestCase
 
       # Ensure students cant access this route
       add_auth_header_for(user: student)
-      post '/api/lti/enrol/bulk', { ltik: token }
+      post '/api/lti/enrol/bulk', { ltik: lti_token('enrol_bulk', **payload) }
       assert_equal 403, last_response.status
       Sidekiq::Testing.fake!
     end
@@ -488,34 +449,16 @@ class LtiApiTest < ActiveSupport::TestCase
       convenor
     ]
 
-    secret_key = Doubtfire::Application.config.lti_api_secret
-
-    # Ensure we get an error if we dont pass student_emails fiel
-    token_missing_emails = JWT.encode({
-                                        unit_id: unit.id,
-                                        exp: Time.now.to_i + 30,
-                                        jti: SecureRandom.uuid
-                                      }, secret_key, 'HS256')
-
     users_can.each do |user|
       add_auth_header_for(user: user)
-      post '/api/lti/grades', { ltik: token_missing_emails }
+
+      # Ensure we get an error if we dont pass student_emails fiel
+      post '/api/lti/grades', { ltik: lti_token('grades', unit_id: unit.id) }
       assert_equal 400, last_response.status
       assert_equal "Student emails field does not exist.", last_response_body['error']
-    end
 
-    # Ensure we get an error if we dont pass in an array
-
-    token_non_array = JWT.encode({
-                                   unit_id: unit.id,
-                                   student_emails: "not-an-array",
-                                   exp: Time.now.to_i + 30,
-                                   jti: SecureRandom.uuid
-                                 }, secret_key, 'HS256')
-
-    users_can.each do |user|
-      add_auth_header_for(user: user)
-      post '/api/lti/grades', { ltik: token_non_array }
+      # Ensure we get an error if we dont pass in an array
+      post '/api/lti/grades', { ltik: lti_token('grades', unit_id: unit.id, student_emails: 'not-an-array') }
       assert_equal 400, last_response.status
       assert_equal "Student emails must be an array.", last_response_body['error']
     end
@@ -528,22 +471,18 @@ class LtiApiTest < ActiveSupport::TestCase
         student3.email,
         student4.email,
         student5.email
-      ],
-      exp: Time.now.to_i + 30,
-      jti: SecureRandom.uuid
+      ]
     }
-
-    token = JWT.encode(payload, secret_key, 'HS256')
 
     users_cant.each do |user|
       add_auth_header_for(user: user)
-      post '/api/lti/grades', { ltik: token }
+      post '/api/lti/grades', { ltik: lti_token('grades', **payload) }
       assert_equal 403, last_response.status
     end
 
     users_can.each do |user|
       add_auth_header_for(user: user)
-      post '/api/lti/grades', { ltik: token }
+      post '/api/lti/grades', { ltik: lti_token('grades', **payload) }
       assert_equal 201, last_response.status
       assert_equal unit.projects.count, last_response_body.count
       last_response_body.each do |email, grade|
@@ -562,44 +501,15 @@ class LtiApiTest < ActiveSupport::TestCase
     convenor = FactoryBot.create(:user, :convenor)
     unit.employ_staff(convenor, Role.convenor)
 
-    secret_key = Doubtfire::Application.config.lti_api_secret
-
-    token_missing_member = JWT.encode({
-                                        unit_id: unit.id,
-                                        exp: Time.now.to_i + 30,
-                                        jti: SecureRandom.uuid
-                                      }, secret_key, 'HS256')
-
-    token_invalid_member_object = JWT.encode({
-                                               unit_id: unit.id,
-                                               member: "not-a-hash",
-                                               exp: Time.now.to_i + 30,
-                                               jti: SecureRandom.uuid
-                                             }, secret_key, 'HS256')
-
-    token_missing_member_fields = JWT.encode({
-                                               unit_id: unit.id,
-                                               member: {
-                                                 user_id: nil
-                                               },
-                                               exp: Time.now.to_i + 30,
-                                               jti: SecureRandom.uuid
-                                             }, secret_key, 'HS256')
-
-    token_member_invalid_email = JWT.encode({
-                                              unit_id: unit.id,
-                                              member: {
-                                                user_id: '3',
-                                                name: 'Nickname 2',
-                                                given_name: 'First name 2',
-                                                family_name: 'Last name 2',
-                                                email: nil,
-                                                ext_user_username: 'student_test_lti3',
-                                                roles: ['Learner']
-                                              },
-                                              exp: Time.now.to_i + 30,
-                                              jti: SecureRandom.uuid
-                                            }, secret_key, 'HS256')
+    member_invalid_email = {
+      user_id: '3',
+      name: 'Nickname 2',
+      given_name: 'First name 2',
+      family_name: 'Last name 2',
+      email: nil,
+      ext_user_username: 'student_test_lti3',
+      roles: ['Learner']
+    }
     add_auth_header_for(user: convenor)
 
     urls = [
@@ -608,38 +518,31 @@ class LtiApiTest < ActiveSupport::TestCase
     ]
 
     urls.each do |url|
-      post url, { ltik: token_missing_member }
+      purpose = LTI_ROUTE_PURPOSES[url]
+
+      post url, { ltik: lti_token(purpose, unit_id: unit.id) }
       assert_equal 400, last_response.status
       assert last_response_body['error'].start_with?('Invalid LTI token.'), last_response_body['error']
 
-      post url, { ltik: token_invalid_member_object }
+      post url, { ltik: lti_token(purpose, unit_id: unit.id, member: 'not-a-hash') }
       assert_equal 400, last_response.status
       assert last_response_body['error'].start_with?('Missing required fields:'), last_response_body['error']
 
-      post url, { ltik: token_missing_member_fields }
+      post url, { ltik: lti_token(purpose, unit_id: unit.id, member: { user_id: nil }) }
       assert_equal 400, last_response.status
       assert last_response_body['error'].start_with?('Missing required fields:'), last_response_body['error']
 
-      post url, { ltik: token_member_invalid_email }
+      post url, { ltik: lti_token(purpose, unit_id: unit.id, member: member_invalid_email) }
       assert_equal 400, last_response.status
       assert last_response_body['error'].start_with?('Missing required fields:'), last_response_body['error']
     end
-  end
-
-  def app_handoff_token(email:, purpose: 'app_handoff')
-    JWT.encode({
-                 purpose: purpose,
-                 email: email,
-                 exp: Time.now.to_i + 30,
-                 jti: SecureRandom.uuid
-               }, Doubtfire::Application.config.lti_api_secret, 'HS256')
   end
 
   def test_app_handoff_issues_single_use_login_token
     user = FactoryBot.create(:user, :student)
     add_auth_header_for(user: user)
 
-    post '/api/lti/app-handoff', { ltik: app_handoff_token(email: user.email.upcase) }
+    post '/api/lti/app-handoff', { ltik: lti_token('app_handoff', email: user.email.upcase) }
     assert_equal 201, last_response.status, last_response_body
     assert_equal user.username, last_response_body['username']
     login_token = last_response_body['auth_token']
@@ -656,7 +559,7 @@ class LtiApiTest < ActiveSupport::TestCase
   def test_app_handoff_requires_authentication
     user = FactoryBot.create(:user, :student)
 
-    post '/api/lti/app-handoff', { ltik: app_handoff_token(email: user.email) }
+    post '/api/lti/app-handoff', { ltik: lti_token('app_handoff', email: user.email) }
     assert_equal 419, last_response.status
   end
 
@@ -664,7 +567,7 @@ class LtiApiTest < ActiveSupport::TestCase
     user = FactoryBot.create(:user, :student)
     add_auth_header_for(user: user)
 
-    post '/api/lti/app-handoff', { ltik: app_handoff_token(email: user.email, purpose: nil) }
+    post '/api/lti/app-handoff', { ltik: lti_token(nil, email: user.email) }
     assert_equal 403, last_response.status
     assert_equal 'Invalid LTI token.', last_response_body['error']
   end
@@ -675,9 +578,57 @@ class LtiApiTest < ActiveSupport::TestCase
     add_auth_header_for(user: user)
 
     [other_user.email, ''].each do |email|
-      post '/api/lti/app-handoff', { ltik: app_handoff_token(email: email) }
+      post '/api/lti/app-handoff', { ltik: lti_token('app_handoff', email: email) }
       assert_equal 403, last_response.status
       assert_nil last_response_body['auth_token']
     end
+  end
+
+  def test_lti_tokens_cannot_be_replayed
+    user = FactoryBot.create(:user, :student)
+    add_auth_header_for(user: user)
+    token = lti_token('app_handoff', email: user.email)
+
+    post '/api/lti/app-handoff', { ltik: token }
+    assert_equal 201, last_response.status, last_response_body
+
+    post '/api/lti/app-handoff', { ltik: token }
+    assert_equal 403, last_response.status
+    assert_equal 'Invalid LTI token.', last_response_body['error']
+  end
+
+  def test_lti_tokens_only_work_for_their_purpose
+    convenor = FactoryBot.create(:user, :convenor)
+    add_auth_header_for(user: convenor)
+    member = { user_id: '9', name: 'Staff', given_name: 'Staff', family_name: 'Member', email: convenor.email, roles: ['Instructor'] }
+
+    # e.g. an enrolment token carries a member, so it must not also work as a sign in
+    LTI_ROUTE_PURPOSES.each do |url, purpose|
+      (LTI_ROUTE_PURPOSES.values - [purpose]).each do |other_purpose|
+        post url, { ltik: lti_token(other_purpose, unit_id: 1, email: convenor.email, member: member) }
+        assert_equal 403, last_response.status, "#{other_purpose} token at #{url}: #{last_response_body}"
+        assert_equal 'Invalid LTI token.', last_response_body['error']
+      end
+    end
+  end
+
+  def test_lti_tokens_must_expire_within_a_minute
+    user = FactoryBot.create(:user, :student)
+    add_auth_header_for(user: user)
+
+    post '/api/lti/app-handoff', { ltik: lti_token('app_handoff', email: user.email, exp: Time.now.to_i + 3600) }
+    assert_equal 403, last_response.status
+    assert_equal 'Invalid LTI token.', last_response_body['error']
+  end
+
+  def test_enrol_rejects_a_different_launch_user
+    unit = FactoryBot.create(:unit, with_students: false)
+    user = FactoryBot.create(:user, :student)
+    add_auth_header_for(user: user)
+    instructor = { user_id: '9', name: 'Staff', given_name: 'Staff', family_name: 'Member', email: 'staff@doubtfire.com', roles: ['Instructor'] }
+
+    post '/api/lti/enrol', { ltik: lti_token('enrol', unit_id: unit.id, email: instructor[:email], member: instructor) }
+    assert_equal 403, last_response.status, last_response_body
+    assert_nil unit.unit_role_for(user), 'The signed-in user must not be employed from another launch'
   end
 end

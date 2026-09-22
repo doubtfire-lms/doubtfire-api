@@ -22,7 +22,7 @@ class LtiApi < Grape::API
       error!({ error: "Not authorised to link this unit." }, 403)
     end
 
-    token = decode_lti_token(params[:ltik])
+    token = decode_lti_token(params[:ltik], purpose: 'link')
 
     unit_id = token["unit_id"]
     if unit_id.nil?
@@ -51,7 +51,7 @@ class LtiApi < Grape::API
   post '/lti/enrol' do
     authenticated?
 
-    token = decode_lti_token(params[:ltik])
+    token = decode_lti_token(params[:ltik], purpose: 'enrol')
 
     unit_id = token["unit_id"]
     if unit_id.nil?
@@ -72,6 +72,9 @@ class LtiApi < Grape::API
     unless valid_member
       error!({ error: "Missing required fields:  #{missing.join(', ')}" }, 400)
     end
+
+    # The member's LMS roles decide the staff role given to current_user, so they must be the same person
+    ensure_lti_launch_user!(token)
 
     # if current_user.role_id != Role.student_id
     #   return status 204
@@ -114,7 +117,7 @@ class LtiApi < Grape::API
   post '/lti/enrol/bulk' do
     authenticated?
 
-    token = decode_lti_token(params[:ltik])
+    token = decode_lti_token(params[:ltik], purpose: 'enrol_bulk')
 
     unit_id = token["unit_id"]
     if unit_id.nil?
@@ -142,7 +145,7 @@ class LtiApi < Grape::API
   post '/lti/grades' do
     authenticated?
 
-    token = decode_lti_token(params[:ltik])
+    token = decode_lti_token(params[:ltik], purpose: 'grades')
 
     unless authorise? current_user, User, :convene_units
       error!({ error: "Not authorised to sync grades." }, 403)
@@ -191,13 +194,7 @@ class LtiApi < Grape::API
   post '/lti/app-handoff' do
     authenticated?
 
-    token = decode_lti_token(params[:ltik])
-
-    # Stops other LTI tokens, such as enrolment requests, being replayed here.
-    unless token['purpose'] == 'app_handoff'
-      error!({ error: 'Invalid LTI token.' }, 403)
-    end
-
+    token = decode_lti_token(params[:ltik], purpose: 'app_handoff')
     ensure_lti_launch_user!(token)
 
     onetime_token = current_user.generate_temporary_authentication_token!

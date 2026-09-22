@@ -201,7 +201,7 @@ class AuthenticationApi < Grape::API
     end
     post '/auth/lti' do
       ensure_lti_service_request!
-      token = decode_lti_token(params[:ltik])
+      token = decode_lti_token(params[:ltik], purpose: 'auth')
 
       member = token['member']
       if member.nil?
