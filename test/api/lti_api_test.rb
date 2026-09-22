@@ -184,36 +184,21 @@ class LtiApiTest < ActiveSupport::TestCase
       assert_equal the_unit.id, unit.id
     end
 
-    payload = {
-      unit_id: unit.id,
-      exp: Time.now.to_i + 30,
-      jti: SecureRandom.uuid
-    }
-
-    secret_key = Doubtfire::Application.config.lti_api_secret
-    token = JWT.encode(payload, secret_key, 'HS256')
-
     users_can = [
       convenor,
       FactoryBot.create(:user, :admin)
     ]
 
     # Test to ensure convenor and admins can link the unit
-    users_can.each do |_user|
-      post '/api/lti/link', { ltik: token }
+    users_can.each do |user|
+      add_auth_header_for(user: user)
+      post '/api/lti/link', { ltik: unit_link_token(unit_id: unit.id, email: user.email) }
       assert_equal 200, last_response.status, last_response_body
     end
 
     # Test to ensure that convenors cant link a unit they can not already enrol students in
-    payload_invalid_unit = {
-      unit_id: Unit.first.id,
-      exp: Time.now.to_i + 30,
-      jti: SecureRandom.uuid
-    }
-
-    token_invalid_unit = JWT.encode(payload_invalid_unit, secret_key, 'HS256')
-
-    post '/api/lti/link', { ltik: token_invalid_unit }
+    add_auth_header_for(user: convenor)
+    post '/api/lti/link', { ltik: unit_link_token(unit_id: Unit.first.id, email: convenor.email) }
     assert_equal 403, last_response.status, last_response_body
     assert_equal "Not authorised to link this unit.", last_response_body['error'], last_response_body
 
@@ -225,10 +210,37 @@ class LtiApiTest < ActiveSupport::TestCase
     # Ensure that students and tutors cant link the unit
     users_cant.each do |user|
       add_auth_header_for(user: user)
-      post '/api/lti/link', { ltik: token }
+      post '/api/lti/link', { ltik: unit_link_token(unit_id: unit.id, email: user.email) }
       assert_equal 403, last_response.status, last_response_body
     end
     unit.destroy
+  end
+
+  def unit_link_token(unit_id:, email:)
+    JWT.encode({
+                 unit_id: unit_id,
+                 email: email,
+                 exp: Time.now.to_i + 30,
+                 jti: SecureRandom.uuid
+               }, Doubtfire::Application.config.lti_api_secret, 'HS256')
+  end
+
+  def test_link_rejects_a_different_launch_user
+    convenor = FactoryBot.create(:user, :convenor)
+    unit = FactoryBot.create(:unit, with_students: false)
+    unit.employ_staff(convenor, Role.convenor)
+    add_auth_header_for(user: convenor)
+
+    [FactoryBot.create(:user, :student).email, ''].each do |email|
+      post '/api/lti/link', { ltik: unit_link_token(unit_id: unit.id, email: email) }
+      assert_equal 403, last_response.status, last_response_body
+      assert_equal 'This OnTrack session does not belong to the LMS user who launched OnTrack. Relaunch OnTrack from the LMS.', last_response_body['error']
+    end
+
+    post '/api/lti/link', { ltik: unit_link_token(unit_id: unit.id, email: convenor.email.upcase) }
+    assert_equal 200, last_response.status, last_response_body
+  ensure
+    unit&.destroy
   end
 
   def test_correct_roles_are_enrolled

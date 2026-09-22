@@ -35,6 +35,8 @@ class LtiApi < Grape::API
       error!({ error: 'Unit does not exist.' }, 404)
     end
 
+    ensure_lti_launch_user!(token)
+
     unless authorise? current_user, unit, :enrol_student
       error!({ error: "Not authorised to link this unit." }, 403)
     end
@@ -196,11 +198,7 @@ class LtiApi < Grape::API
       error!({ error: 'Invalid LTI token.' }, 403)
     end
 
-    launch_email = token['email'].to_s.strip
-    if launch_email.empty? || !current_user.email.to_s.casecmp?(launch_email)
-      logger.warn "Rejected LTI app handoff for #{current_user.username} from #{request.ip}"
-      error!({ error: 'This OnTrack session does not belong to the LMS user who launched OnTrack. Relaunch OnTrack from the LMS.' }, 403)
-    end
+    ensure_lti_launch_user!(token)
 
     onetime_token = current_user.generate_temporary_authentication_token!
     logger.info "LTI app handoff for #{current_user.username} from #{request.ip}"
