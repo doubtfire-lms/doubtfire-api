@@ -31,7 +31,7 @@ env:
   LATEX_BUILD_PATH: /texlive/shell/latex_build.sh
   GOTENBERG_IMAGE: doubtfire-gotenberg-development:local
   GOTENBERG_FALLBACK_VOLUME_CONTAINER: doubtfire-gotenberg-volumes
-  LTI_SHARED_API_SECRET: "abc123"
+  LTI_SHARED_API_SECRET: "3e46c34bd730233ac1d503059f3aa92ef5e2dc15614f5cc9ba6bb2a9196476a9"
   LTI_ENABLED: true
   DF_INITIAL_ADMIN_PASSWORD: "password"
 

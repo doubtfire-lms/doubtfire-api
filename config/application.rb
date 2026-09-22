@@ -108,6 +108,19 @@ module Doubtfire
       "https://#{host}"
     end
 
+    LTI_SECRET_MIN_BYTES = 32
+    LTI_SECRET_PLACEHOLDERS = %w[your-secret-lti-shared-api-secret].freeze
+
+    # Returns why the LTI shared secret is unsafe, or nil when it can be used
+    def self.lti_api_secret_problem(secret)
+      secret = secret.to_s
+      return 'is not set' if secret.blank?
+      return 'is still the example value' if LTI_SECRET_PLACEHOLDERS.include?(secret)
+      return "must be at least #{LTI_SECRET_MIN_BYTES} bytes" if secret.bytesize < LTI_SECRET_MIN_BYTES
+
+      nil
+    end
+
     # ==> Log to stdout
     config.log_to_stdout = Application.fetch_boolean_env('DF_LOG_TO_STDOUT')
 
@@ -156,6 +169,10 @@ module Doubtfire
     # Shared secret between Ruby on Rails API and the LTI.js API
     # LTI.js will send signed JWT tokens using this secret
     config.lti_api_secret = Application.fetch_credential_or_env(:lti, :shared_api_secret, env_key: 'LTI_SHARED_API_SECRET')
+    # Anyone holding this secret can sign in as any user through /api/auth/lti
+    if config.lti_enabled && (problem = Application.lti_api_secret_problem(config.lti_api_secret))
+      raise "LTI_SHARED_API_SECRET #{problem}. Generate one with `openssl rand -hex 32`, or set LTI_ENABLED=false."
+    end
 
     # Server-to-server access to the LTI service, used by the unit LMS tab and scheduled LMS syncs
     config.lti_internal_url = ENV.fetch('LTI_INTERNAL_URL', nil)
