@@ -62,6 +62,7 @@ class Unit < ApplicationRecord
       :add_task_def,
       :provide_feedback,
       :provide_bulk_feedback,
+      :view_staff_inbox,
       :change_project_enrolment,
       :download_stats,
       :download_overflow_stats,
