@@ -21,6 +21,7 @@ INPUT_FILE="$WORK_DIR/input.docx"
 OUTPUT_FILE="$WORK_DIR/output.pdf"
 TEMP_OUTPUT="$WORK_DIR/output.pdf.tmp"
 GOTENBERG_URL="http://localhost:3000"
+GOTENBERG_LOG="/tmp/gotenberg.log"
 GOTENBERG_PID=
 
 if [ ! -f "$INPUT_FILE" ]; then
@@ -44,9 +45,11 @@ cleanup() {
 start_gotenberg() {
   # Docker replaces the image's normal command with this script, so start the
   # bundled API before making the local conversion request.
-  gotenberg --gotenberg-graceful-shutdown-duration=0s &
+  # Keep the startup banner out of stdout so failures show the real error
+  gotenberg --gotenberg-graceful-shutdown-duration=0s >"$GOTENBERG_LOG" 2>&1 &
   GOTENBERG_PID=$!
 
+  health_status=0
   curl \
     --fail \
     --silent \
@@ -57,10 +60,17 @@ start_gotenberg() {
     --connect-timeout 1 \
     --max-time 30 \
     "$GOTENBERG_URL/health" \
-    >/dev/null
+    >/dev/null 2>&1 || health_status=$?
+
+  if [ "$health_status" -ne 0 ]; then
+    echo "Gotenberg failed to start" >&2
+    tail -n 20 "$GOTENBERG_LOG" >&2 || true
+    exit "$health_status"
+  fi
 }
 
 convert_document() {
+  convert_status=0
   curl \
     --fail-with-body \
     --silent \
@@ -70,7 +80,17 @@ convert_document() {
     --request POST \
     --form "files=@$INPUT_FILE" \
     --output "$TEMP_OUTPUT" \
-    "$GOTENBERG_URL/forms/libreoffice/convert"
+    "$GOTENBERG_URL/forms/libreoffice/convert" || convert_status=$?
+
+  if [ "$convert_status" -ne 0 ]; then
+    # --fail-with-body writes Gotenberg's error response to the output file
+    if [ -s "$TEMP_OUTPUT" ]; then
+      cat "$TEMP_OUTPUT" >&2
+      echo >&2
+    fi
+    grep '"level":"error"' "$GOTENBERG_LOG" >&2 || true
+    exit "$convert_status"
+  fi
 
   if [ ! -s "$TEMP_OUTPUT" ]; then
     echo "Gotenberg did not produce a PDF" >&2
