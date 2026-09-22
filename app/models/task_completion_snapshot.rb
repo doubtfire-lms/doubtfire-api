@@ -66,6 +66,10 @@ class TaskCompletionSnapshot < ApplicationRecord
   def load_student_counts
     students = Set.new
     campus_students = Hash.new { |hash, key| hash[key] = Set.new }
+    target_grade_students = Hash.new { |hash, key| hash[key] = Set.new }
+    target_grade_campus_students = Hash.new do |hash, key|
+      hash[key] = Hash.new { |campus_hash, campus| campus_hash[campus] = Set.new }
+    end
 
     CSV.parse(snapshot_contents.to_s, headers: true).each do |row|
       student = row['Username'].presence || row['Student ID'].presence
@@ -73,19 +77,32 @@ class TaskCompletionSnapshot < ApplicationRecord
 
       students.add(student)
 
+      target_grade = unit.grade_values.find { |value| unit.grade_label(value) == row['Target Grade'].to_s.strip }
+      target_grade_students[target_grade].add(student) if target_grade
+
       campus_abbreviation = row['Campus'].to_s.strip
       next if campus_abbreviation.blank?
 
       campus = Campus.find_by(abbreviation: campus_abbreviation)&.name || campus_abbreviation
       campus_students[campus].add(student)
+      target_grade_campus_students[target_grade][campus].add(student) if target_grade
     end
 
     {
       'student_count' => students.length,
-      'campus_student_counts' => campus_students.transform_values(&:length)
+      'campus_student_counts' => campus_students.transform_values(&:length),
+      'target_grade_student_counts' => target_grade_students.transform_keys(&:to_s).transform_values(&:length),
+      'target_grade_campus_student_counts' => target_grade_campus_students.transform_keys(&:to_s).transform_values do |campuses|
+        campuses.transform_values(&:length)
+      end
     }
   rescue CSV::MalformedCSVError
-    { 'student_count' => 0, 'campus_student_counts' => {} }
+    {
+      'student_count' => 0,
+      'campus_student_counts' => {},
+      'target_grade_student_counts' => {},
+      'target_grade_campus_student_counts' => {}
+    }
   end
 
   def store_stats!(payload)
