@@ -12,7 +12,7 @@ class ImportLmsExtensionsJob
                   on_conflict: :reject,
                   retry: false
 
-  def perform(unit_id, preview_only)
+  def perform(unit_id, preview_only, scheduled)
     total(2)
     at(0, 'Validating LMS integration')
 
@@ -70,5 +70,9 @@ class ImportLmsExtensionsJob
     end
 
     store(result: result.to_json)
+    integration&.auto_sync_succeeded! if scheduled
+  rescue StandardError => e
+    LmsIntegration.find_by(unit_id: unit_id)&.auto_sync_failed!(:extensions, e) if scheduled
+    raise
   end
 end

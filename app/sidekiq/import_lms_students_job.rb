@@ -18,7 +18,7 @@ class ImportLmsStudentsJob
                   on_conflict: :reject,
                   retry: false
 
-  def perform(unit_id, preview_only, withdraw_missing)
+  def perform(unit_id, preview_only, withdraw_missing, scheduled)
     at(0, 'Fetching LMS course members')
     total(0)
 
@@ -83,6 +83,10 @@ class ImportLmsStudentsJob
     end
 
     store(result: result.to_json)
+    integration&.auto_sync_succeeded! if scheduled
+  rescue StandardError => e
+    LmsIntegration.find_by(unit_id: unit_id)&.auto_sync_failed!(:students, e) if scheduled
+    raise
   end
 
   private

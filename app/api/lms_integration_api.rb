@@ -244,7 +244,7 @@ class LmsIntegrationApi < Grape::API
     end
 
     withdraw_missing = params[:withdraw_missing].nil? ? integration&.withdraw_missing_students == true : params[:withdraw_missing]
-    job_id = ImportLmsStudentsJob.perform_async(unit.id, params[:preview_only], withdraw_missing)
+    job_id = ImportLmsStudentsJob.perform_async(unit.id, params[:preview_only], withdraw_missing, false)
     present setup_job(job_id), with: Entities::SidekiqJobEntity
   end
 
@@ -262,7 +262,7 @@ class LmsIntegrationApi < Grape::API
     end
     error!({ error: 'Validate the LMS integration before importing extensions' }, 422) unless integration.validated?
 
-    job_id = ImportLmsExtensionsJob.perform_async(unit.id, params[:preview_only])
+    job_id = ImportLmsExtensionsJob.perform_async(unit.id, params[:preview_only], false)
     present setup_job(job_id), with: Entities::SidekiqJobEntity
   end
 

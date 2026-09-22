@@ -15,6 +15,9 @@ module Entities
     expose :send_grade_rationale
     expose :validated
     expose :validated_at
+    expose :auto_sync_failing_since
+    expose :auto_sync_last_error
+    expose :auto_sync_turn_off_date
     expose :lms_group_mappings,
            as: :group_mappings,
            using: Entities::LmsGroupMappingEntity

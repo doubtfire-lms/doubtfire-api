@@ -369,6 +369,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_16_003706) do
     t.boolean "send_grade_rationale", default: false, null: false
     t.boolean "validated", default: false, null: false
     t.datetime "validated_at"
+    t.datetime "auto_sync_failing_since"
+    t.text "auto_sync_last_error"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["unit_id"], name: "index_lms_integrations_on_unit_id", unique: true

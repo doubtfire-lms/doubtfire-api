@@ -5,6 +5,15 @@
 # never apply mappings for groups or assignments that were renamed or deleted in the LMS.
 #
 class LmsIntegrationValidator
+  class ValidationError < LtiCourseDataSource::Error
+    attr_reader :issues
+
+    def initialize(issues)
+      @issues = issues
+      super("LMS integration requires review: #{issues.pluck(:message).join('; ')}")
+    end
+  end
+
   def initialize(integration)
     @integration = integration
   end
@@ -35,7 +44,7 @@ class LmsIntegrationValidator
     result = validate(groups: groups, assignments: assignments)
     return result if result[:valid]
 
-    raise LtiCourseDataSource::Error, "LMS integration requires review: #{result[:issues].pluck(:message).join('; ')}"
+    raise ValidationError, result[:issues]
   end
 
   private

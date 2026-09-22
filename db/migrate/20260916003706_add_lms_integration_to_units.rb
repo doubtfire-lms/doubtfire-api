@@ -15,6 +15,9 @@ class AddLmsIntegrationToUnits < ActiveRecord::Migration[8.0]
       t.boolean :send_grade_rationale, null: false, default: false
       t.boolean :validated, null: false, default: false
       t.datetime :validated_at
+      # Set by the first failed scheduled sync and cleared by the next one that succeeds
+      t.datetime :auto_sync_failing_since
+      t.text :auto_sync_last_error
 
       t.timestamps
     end

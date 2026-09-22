@@ -26,6 +26,50 @@ class LtiServer
     config.lti_internal_url.present? && config.lti_internal_key.present?
   end
 
+  # Raises when the LTI service or its database is unavailable
+  def self.check_health!
+    internal_request(:get, 'health')
+  end
+
+  def self.internal_request(method, path, body = nil)
+    config = Doubtfire::Application.config
+    unless configured?
+      raise Error.new('The LTI service is not configured (LTI_INTERNAL_URL and LTI_INTERNAL_SYNC_KEY)', status: 503)
+    end
+
+    uri = URI.parse("#{config.lti_internal_url.sub(%r{/+\z}, '')}/lti/api/internal/#{path}")
+    request = case method
+              when :get then Net::HTTP::Get.new(uri)
+              when :post then Net::HTTP::Post.new(uri)
+              when :delete then Net::HTTP::Delete.new(uri)
+              end
+    request['Accept'] = 'application/json'
+    request['X-Internal-Key'] = config.lti_internal_key
+    if body
+      request['Content-Type'] = 'application/json'
+      request.body = body.to_json
+    end
+
+    response = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https',
+                                                   open_timeout: OPEN_TIMEOUT, read_timeout: READ_TIMEOUT) do |http|
+      http.request(request)
+    end
+
+    payload = response.body.present? ? JSON.parse(response.body) : nil
+    unless response.is_a?(Net::HTTPSuccess)
+      message = payload.is_a?(Hash) && payload['error'].is_a?(String) ? payload['error'] : "The LTI service responded #{response.code}"
+      raise Error.new(message, status: response.code.to_i)
+    end
+
+    payload
+  rescue JSON::ParserError
+    raise Error, 'The LTI service returned an invalid response'
+  rescue URI::InvalidURIError
+    raise Error.new('LTI_INTERNAL_URL is invalid', status: 503)
+  rescue Timeout::Error, SocketError, SystemCallError, OpenSSL::SSL::SSLError => e
+    raise Error.new("Unable to reach the LTI service: #{e.message}", status: 503)
+  end
+
   def initialize(unit_id)
     @unit_id = Integer(unit_id)
   end
@@ -69,41 +113,6 @@ class LtiServer
   private
 
   def request(method, path, body = nil)
-    config = Doubtfire::Application.config
-    unless LtiServer.configured?
-      raise Error.new('The LTI service is not configured (LTI_INTERNAL_URL and LTI_INTERNAL_SYNC_KEY)', status: 503)
-    end
-
-    uri = URI.parse("#{config.lti_internal_url.sub(%r{/+\z}, '')}/lti/api/internal/units/#{@unit_id}/#{path}")
-    request = case method
-              when :get then Net::HTTP::Get.new(uri)
-              when :post then Net::HTTP::Post.new(uri)
-              when :delete then Net::HTTP::Delete.new(uri)
-              end
-    request['Accept'] = 'application/json'
-    request['X-Internal-Key'] = config.lti_internal_key
-    if body
-      request['Content-Type'] = 'application/json'
-      request.body = body.to_json
-    end
-
-    response = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https',
-                                                   open_timeout: OPEN_TIMEOUT, read_timeout: READ_TIMEOUT) do |http|
-      http.request(request)
-    end
-
-    payload = response.body.present? ? JSON.parse(response.body) : nil
-    unless response.is_a?(Net::HTTPSuccess)
-      message = payload.is_a?(Hash) && payload['error'].is_a?(String) ? payload['error'] : "The LTI service responded #{response.code}"
-      raise Error.new(message, status: response.code.to_i)
-    end
-
-    payload
-  rescue JSON::ParserError
-    raise Error, 'The LTI service returned an invalid response'
-  rescue URI::InvalidURIError
-    raise Error.new('LTI_INTERNAL_URL is invalid', status: 503)
-  rescue Timeout::Error, SocketError, SystemCallError, OpenSSL::SSL::SSLError => e
-    raise Error.new("Unable to reach the LTI service: #{e.message}", status: 503)
+    LtiServer.internal_request(method, "units/#{@unit_id}/#{path}", body)
   end
 end
