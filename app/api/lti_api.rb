@@ -181,4 +181,31 @@ class LtiApi < Grape::API
 
     projects_hash
   end
+
+  desc 'Issue a one-time login token so an embedded LTI session can open OnTrack in its own tab'
+  params do
+    requires :ltik, type: String, desc: 'LtiKey asserting the launch user of an active LTI session'
+  end
+  post '/lti/app-handoff' do
+    authenticated?
+
+    token = decode_lti_token(params[:ltik])
+
+    # Stops other LTI tokens, such as enrolment requests, being replayed here.
+    unless token['purpose'] == 'app_handoff'
+      error!({ error: 'Invalid LTI token.' }, 403)
+    end
+
+    launch_email = token['email'].to_s.strip
+    if launch_email.empty? || !current_user.email.to_s.casecmp?(launch_email)
+      logger.warn "Rejected LTI app handoff for #{current_user.username} from #{request.ip}"
+      error!({ error: 'This OnTrack session does not belong to the LMS user who launched OnTrack. Relaunch OnTrack from the LMS.' }, 403)
+    end
+
+    onetime_token = current_user.generate_temporary_authentication_token!
+    logger.info "LTI app handoff for #{current_user.username} from #{request.ip}"
+
+    present :username, current_user.username
+    present :auth_token, onetime_token.authentication_token
+  end
 end
