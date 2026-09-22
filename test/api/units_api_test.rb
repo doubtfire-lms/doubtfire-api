@@ -834,7 +834,7 @@ class UnitsApiTest < ActiveSupport::TestCase
           "student-#{index + 1}",
           "Student #{index + 1}",
           tutorial.campus.abbreviation,
-          '0',
+          tutorial.unit.grade_label(0),
           "student-#{index + 1}@example.com",
           'false',
           '',
