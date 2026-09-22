@@ -140,7 +140,7 @@ class TaskCompletionSnapshot < ApplicationRecord
 
     csv.each do |row|
       stored_target_grade = row['Target Grade'].to_s.strip
-      next if target_grade.present? && stored_target_grade.to_s != target_grade.to_s
+      next if target_grade.present? && stored_target_grade.to_s != unit.grade_label(target_grade)
 
       campus_abbreviation = row['Campus'].to_s.strip
       next if campus_abbreviation.blank?
