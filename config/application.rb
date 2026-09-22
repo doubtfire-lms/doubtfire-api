@@ -173,6 +173,11 @@ module Doubtfire
     if config.lti_enabled && (problem = Application.lti_api_secret_problem(config.lti_api_secret))
       raise "LTI_SHARED_API_SECRET #{problem}. Generate one with `openssl rand -hex 32`, or set LTI_ENABLED=false."
     end
+    # Where the LTI service connects from: hostnames, IPs or CIDR ranges. Only these can call /api/auth/lti and /api/lti/*
+    config.lti_service_hosts = ENV.fetch('LTI_SERVICE_HOSTS', 'lti').split(',').map(&:strip).reject(&:empty?)
+    if config.lti_enabled && config.lti_service_hosts.empty?
+      raise 'LTI_SERVICE_HOSTS must list where the LTI service connects from when LTI_ENABLED is true, e.g. lti.'
+    end
 
     # Server-to-server access to the LTI service, used by the unit LMS tab and scheduled LMS syncs
     config.lti_internal_url = ENV.fetch('LTI_INTERNAL_URL', nil)

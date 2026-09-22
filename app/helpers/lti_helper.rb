@@ -19,6 +19,15 @@ module LtiHelper
     response
   end
 
+  # Checks the connecting address, not request.ip, which trusts X-Forwarded-For from any private address
+  def ensure_lti_service_request!
+    remote_addr = request.env['REMOTE_ADDR']
+    return if LtiServiceAddresses.allowed?(remote_addr)
+
+    logger.warn "Rejected LTI service request from #{remote_addr}; it is not listed in LTI_SERVICE_HOSTS"
+    error!({ error: 'Only the LTI service can make this request.' }, 403)
+  end
+
   # Rejects a token whose LMS launch user is not the signed-in OnTrack user
   def ensure_lti_launch_user!(token)
     launch_email = token['email'].to_s.strip

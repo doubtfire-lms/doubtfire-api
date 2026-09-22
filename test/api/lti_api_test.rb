@@ -216,6 +216,21 @@ class LtiApiTest < ActiveSupport::TestCase
     unit.destroy
   end
 
+  def test_lti_routes_reject_requests_not_from_the_lti_service
+    convenor = FactoryBot.create(:user, :convenor)
+    add_auth_header_for(user: convenor)
+    token = unit_link_token(unit_id: 1, email: convenor.email)
+
+    # X-Forwarded-For is what request.ip trusts from private peers, so it must not help
+    [{}, { 'HTTP_X_FORWARDED_FOR' => '127.0.0.1' }].each do |forwarded|
+      %w[/api/auth/lti /api/lti/link /api/lti/enrol /api/lti/enrol/bulk /api/lti/grades /api/lti/app-handoff].each do |url|
+        post url, { ltik: token }, { 'REMOTE_ADDR' => '172.20.0.9' }.merge(forwarded)
+        assert_equal 403, last_response.status, "#{url} #{forwarded} #{last_response_body}"
+        assert_equal 'Only the LTI service can make this request.', last_response_body['error']
+      end
+    end
+  end
+
   def unit_link_token(unit_id:, email:)
     JWT.encode({
                  unit_id: unit_id,

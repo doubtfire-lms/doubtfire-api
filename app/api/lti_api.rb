@@ -7,9 +7,9 @@ class LtiApi < Grape::API
   helpers SidekiqHelper
   include LogHelper
 
-  # before do
-  #   authenticated?
-  # end
+  before do
+    ensure_lti_service_request!
+  end
 
   desc 'Returns success if current user is allowed to link requested unit'
   params do
