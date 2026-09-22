@@ -49,6 +49,39 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     assert_equal actual_tp['end_date'].to_date, expected_tp.end_date.to_date
   end
 
+  def test_get_teaching_period_details_with_units_without_user
+    tp = FactoryBot.create(:teaching_period)
+    unit = FactoryBot.create(:unit, teaching_period: tp, with_students: false, stream_count: 0, tutorials: 0)
+
+    get "/api/teaching_periods/#{tp.id}"
+
+    assert_equal 200, last_response.status
+    assert_equal [unit.id], last_response_body['units'].map { |u| u['id'] }
+    assert_nil last_response_body['units'].first['my_role']
+  end
+
+  def test_get_teaching_period_details_ignores_username_without_token
+    tp = FactoryBot.create(:teaching_period)
+    unit = FactoryBot.create(:unit, teaching_period: tp, with_students: false, stream_count: 0, tutorials: 0)
+
+    header 'username', unit.main_convenor_user.username
+    get "/api/teaching_periods/#{tp.id}"
+
+    assert_equal 200, last_response.status
+    assert_nil last_response_body['units'].first['my_role']
+  end
+
+  def test_get_teaching_period_details_includes_role_when_authenticated
+    tp = FactoryBot.create(:teaching_period)
+    unit = FactoryBot.create(:unit, teaching_period: tp, with_students: false, stream_count: 0, tutorials: 0)
+
+    add_auth_header_for(user: unit.main_convenor_user)
+    get "/api/teaching_periods/#{tp.id}"
+
+    assert_equal 200, last_response.status
+    assert_equal 'Convenor', last_response_body['units'].first['my_role']
+  end
+
   # PUT tests
   # Update break from teaching period
   def test_update_break_from_teaching_period
