@@ -1664,7 +1664,7 @@ class Task < ApplicationRecord
       trigger_transition trigger: 'fix', by_user: project.tutor_for(task_definition)
       add_text_comment(
         project.tutor_for(task_definition),
-        "**Automated Comment**: Something went wrong with your submission. Check the files and resubmit this task. #{e.message}",
+        "**Automated Comment**: Something went wrong with your submission. Check that code files do not contain invalid characters, documents are valid PDF or DOCX files, images are valid, and zip files are valid, then resubmit this task.",
         attention_audience: :student
       )
       raise e
