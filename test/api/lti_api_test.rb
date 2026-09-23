@@ -185,11 +185,18 @@ class LtiApiTest < ActiveSupport::TestCase
       assert_equal 200, last_response.status, last_response_body
     end
 
-    # Test to ensure that convenors cant link a unit they can not already enrol students in
+    # Test to ensure that convenors cant link a unit they do not manage
     add_auth_header_for(user: convenor)
     post '/api/lti/link', { ltik: lti_token('link', unit_id: Unit.first.id, email: convenor.email) }
     assert_equal 403, last_response.status, last_response_body
     assert_equal "Not authorised to link this unit.", last_response_body['error'], last_response_body
+
+    # Tutoring the unit is not enough, even with a system convenor role
+    unit_tutor = FactoryBot.create(:user, :convenor)
+    unit.employ_staff(unit_tutor, Role.tutor)
+    add_auth_header_for(user: unit_tutor)
+    post '/api/lti/link', { ltik: lti_token('link', unit_id: unit.id, email: unit_tutor.email) }
+    assert_equal 403, last_response.status, last_response_body
 
     users_cant = [
       FactoryBot.create(:user, :student),

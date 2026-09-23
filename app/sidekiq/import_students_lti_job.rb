@@ -38,6 +38,7 @@ class ImportStudentsLtiJob
       end
 
       user_id_data = {
+        # TODO: use member["lis_person_sourcedid"] for the correct student/login id?
         login_id: member["user_id"],
         email: member["email"],
         username: member["email"][/(.*)@/, 1]

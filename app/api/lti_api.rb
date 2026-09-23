@@ -37,7 +37,8 @@ class LtiApi < Grape::API
 
     ensure_lti_launch_user!(token)
 
-    unless authorise? current_user, unit, :enrol_student
+    # The link decides where scheduled syncs read the roster from, so it needs the same permission as the LMS tab
+    unless authorise? current_user, unit, :update
       error!({ error: "Not authorised to link this unit." }, 403)
     end
 
