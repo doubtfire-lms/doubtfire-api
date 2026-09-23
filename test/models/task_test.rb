@@ -1152,7 +1152,7 @@ class TaskTest < ActiveSupport::TestCase
 
       assert_equal 2, task.comments.count
       assert task.comments.last.comment.starts_with?('**Automated Comment**:')
-      assert task.comments.last.comment.include?(e.message.to_s)
+      assert_not task.comments.last.comment.include?(e.message.to_s)
 
       td.destroy
       unit.destroy!

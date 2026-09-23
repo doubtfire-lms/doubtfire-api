@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-62](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-61...v11.0.0-62) (2026-09-22)
+
+
+### Features
+
+* expose waiting_since date on inbox tasks ([a49205e](https://github.com/b0ink/doubtfire-deploy/commit/a49205e4a411f7c5f9a8418e38b20cd74bf28286))
+* view inbox as another tutor ([2627ac8](https://github.com/b0ink/doubtfire-deploy/commit/2627ac8bcc6b4f0cfc73057cac37f5e96e9e3a1e))
+
 ## [11.0.0-61](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-60...v11.0.0-61) (2026-09-21)
 
 
