@@ -112,6 +112,7 @@ class ImportLmsStudentsJob
       unit_code: unit.code,
       username: lms_member[:login_id],
       student_id: lms_member[:student_id],
+      lis_person_sourcedid: lms_member[:lis_person_sourcedid],
       first_name: lms_member[:first_name],
       last_name: lms_member[:last_name],
       email: lms_member[:email],

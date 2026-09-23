@@ -60,6 +60,7 @@ class LtiCourseDataSource
         first_name: member['given_name'].presence || plugin_user&.fetch('first_name', nil),
         last_name: member['family_name'].presence || plugin_user&.fetch('last_name', nil),
         student_id: plugin_user&.fetch('idnumber', nil).presence,
+        lis_person_sourcedid: member['lis_person_sourcedid'].presence,
         roles: Array(member['roles']),
         active: member_active?(member, plugin_user),
         group_ids: group_ids_by_user[user_id],

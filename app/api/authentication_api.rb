@@ -213,6 +213,9 @@ class AuthenticationApi < Grape::API
         error!({ error: "Missing required fields:  #{missing.join(', ')}" }, 400)
       end
 
+      lti_identity = %w[user_id ext_user_username lis_person_sourcedid email].index_with { |key| member[key] }
+      logger.info "LTI user is logging in: #{lti_identity.to_json}"
+
       user_id_data = {
         login_id: member['ext_user_username'] || member['user_id'],
         email: member['email'],
