@@ -57,4 +57,7 @@ Doubtfire::Application.configure do
   ENV.store('D2L_OAUTH_SITE_TOKEN_URL', 'core/connect/token')
   ENV.store('D2L_API_HOST', 'https://api.brightspace.com')
   ENV.store('D2L_API_VERSION', '1.47')
+
+  # Rack::Test requests connect from 127.0.0.1
+  config.lti_service_hosts = %w[127.0.0.1]
 end

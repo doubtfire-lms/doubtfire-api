@@ -22,6 +22,8 @@ class Unit < ApplicationRecord
   include MimeCheckHelpers
   include CsvHelper
 
+  has_one :lms_integration, dependent: :destroy
+
   #
   # Permissions around unit data
   #
