@@ -28,7 +28,7 @@ class AddLmsIntegrationToUnits < ActiveRecord::Migration[8.0]
       t.string :lms_group_name, null: false
       t.string :target_type, null: false
       t.references :group_set
-      t.references :group
+      t.bigint :group_id, index: true
       t.references :campus
       t.references :tutorial_stream
       t.references :tutorial
