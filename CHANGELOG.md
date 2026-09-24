@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-65](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-64...v11.0.0-65) (2026-09-24)
+
+
+### Bug Fixes
+
+* store batch feedback chunks as separate files instead of locking ([68530ee](https://github.com/b0ink/doubtfire-deploy/commit/68530ee020c89ffb87e501f296aa8e6e9aa4d5f4))
+
 ## [11.0.0-64](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-63...v11.0.0-64) (2026-09-24)
 
 
