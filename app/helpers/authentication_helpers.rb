@@ -258,12 +258,9 @@ module AuthenticationHelpers
     # rubocop:enable Naming/AccessorMethodName
 
     if remember
-      token = current_user.auth_tokens.where(token_type: :refresh_token).last
-
-      # Generate a new token when the old one is absent or getting close to expiring
-      if token.nil? || token.auth_token_expiry <= Time.zone.now - 12.hours
-        token = current_user.generate_authentication_token!(token_type: :refresh_token)
-      end
+      # Reuse a recent refresh token, but rotate it once it is past 75% of its lifetime (or
+      # expired) so that signing in again always yields a cookie with most of its life left.
+      token = current_user.generate_authentication_token!(token_type: :refresh_token, force_new: false)
 
       domain = Doubtfire::Application.config.institution[:cookie_domain]
 
