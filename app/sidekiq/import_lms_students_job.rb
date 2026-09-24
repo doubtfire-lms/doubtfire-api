@@ -65,6 +65,12 @@ class ImportLmsStudentsJob
         active_student_count += 1 if enrol
         active_student_user_ids << user.id if enrol && user
 
+        # Still counted as active above, so an account we cannot trust is never withdrawn
+        if user && UserIdentity.blocked?(user, login_id: lms_member[:login_id], email: lms_member[:email], source: 'lms_import')
+          result[:errors] << { row: row, message: "#{user.username} is linked to a different login id" }
+          next
+        end
+
         mapping_errors = enrol ? LmsGroupMappingApplier.mapping_errors(member_mappings) : []
         if preview_only
           record_preview(result, unit, row, user, staff_role, enrol, mapping_errors)

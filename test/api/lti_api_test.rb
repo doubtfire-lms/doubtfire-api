@@ -147,41 +147,49 @@ class LtiApiTest < ActiveSupport::TestCase
   def test_lti_launch_links_login_id_without_renaming_an_existing_user
     user = FactoryBot.create(:user, :student)
     username = user.username
-    member = {
+    login_id = SecureRandom.uuid
+
+    post '/api/auth/lti', { ltik: lti_token('auth', member: launch_member(user, login_id)) }
+    assert_equal 201, last_response.status
+    assert_equal username, last_response_body['username']
+
+    user.reload
+    assert_equal login_id, user.login_id
+    assert_equal username, user.username
+  end
+
+  def test_lti_launch_keeps_an_existing_login_id
+    login_id = SecureRandom.uuid
+    user = FactoryBot.create(:user, :student, login_id: login_id)
+
+    post '/api/auth/lti', { ltik: lti_token('auth', member: launch_member(user, SecureRandom.uuid)) }
+    assert_equal 201, last_response.status
+
+    assert_equal login_id, user.reload.login_id
+  end
+
+  def test_lti_launch_refuses_a_different_login_id_when_enforced
+    user = FactoryBot.create(:user, :student, login_id: SecureRandom.uuid)
+    config = Doubtfire::Application.config
+    config.enforce_login_id_match = true
+
+    post '/api/auth/lti', { ltik: lti_token('auth', member: launch_member(user, SecureRandom.uuid)) }
+    assert_equal 403, last_response.status
+    assert_nil last_response_body['auth_token']
+  ensure
+    config.enforce_login_id_match = false
+  end
+
+  def launch_member(user, login_id)
+    {
       user_id: '31',
       name: user.name,
       given_name: user.first_name,
       family_name: user.last_name,
       email: user.email,
-      ext_user_username: 'moid-launch-link',
+      ext_user_username: login_id,
       roles: ['Learner']
     }
-
-    post '/api/auth/lti', { ltik: lti_token('auth', member: member) }
-    assert_equal 201, last_response.status
-    assert_equal username, last_response_body['username']
-
-    user.reload
-    assert_equal 'moid-launch-link', user.login_id
-    assert_equal username, user.username
-  end
-
-  def test_lti_launch_keeps_an_existing_login_id
-    user = FactoryBot.create(:user, :student, login_id: 'moid-already-stored')
-    member = {
-      user_id: '32',
-      name: user.name,
-      given_name: user.first_name,
-      family_name: user.last_name,
-      email: user.email,
-      ext_user_username: 'moid-different',
-      roles: ['Learner']
-    }
-
-    post '/api/auth/lti', { ltik: lti_token('auth', member: member) }
-    assert_equal 201, last_response.status
-
-    assert_equal 'moid-already-stored', user.reload.login_id
   end
 
   def test_convenor_can_link_requested_unit

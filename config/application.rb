@@ -163,6 +163,10 @@ module Doubtfire
     credentials.secret_key_aaf = Application.fetch_credential_or_env(:aaf, :secret_key, env_key: 'DF_SECRET_KEY_AAF', default: Rails.env.production? ? nil : 'secretsecret12345')
     credentials.secret_key_moss = Application.fetch_credential_or_env(:moss, :secret_key, env_key: 'DF_SECRET_KEY_MOSS')
 
+    # ==> User identity
+    # Refuse accounts matched by username or email that already belong to a different login id. When off, these are only logged.
+    config.enforce_login_id_match = ENV['DF_ENFORCE_LOGIN_ID_MATCH'].to_s.downcase == 'true'
+
     # ==> LTI settings
     # If enabled, mounts the LTI routes and enables LTI authentication.
     config.lti_enabled = ENV.fetch('LTI_ENABLED', false).to_s.downcase == "true"

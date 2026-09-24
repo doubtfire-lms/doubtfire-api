@@ -41,6 +41,12 @@ class SyncLmsGradesJob
         row[:ontrack_name] = user.name
       end
 
+      if user && UserIdentity.blocked?(user, login_id: lms_member[:login_id], email: lms_member[:email], source: 'lms_grade_sync')
+        matched_project_ids << project.id if project
+        result[:ignored] << { row: row, message: 'OnTrack account is linked to a different login id' }
+        next
+      end
+
       if project.nil?
         result[:ignored] << { row: row, message: user ? 'Not enrolled in OnTrack' : 'No matching OnTrack user' }
       elsif project.grade.nil? || (skip_ungraded && project.grade.zero?)

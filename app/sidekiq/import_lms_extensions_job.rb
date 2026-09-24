@@ -49,6 +49,11 @@ class ImportLmsExtensionsJob
         row[:spec_con_days] = days
 
         user = UserIdentity.find_user(login_id: extension[:login_id], email: extension[:email])
+        if user && UserIdentity.blocked?(user, login_id: extension[:login_id], email: extension[:email], source: 'lms_extensions')
+          result[:errors] << { row: row, message: "#{user.username} is linked to a different login id" }
+          next
+        end
+
         project = user && unit.projects.find_by(user_id: user.id)
         if project.blank?
           result[:ignored] << { row: row, message: 'Student is not enrolled in OnTrack' }

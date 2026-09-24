@@ -48,6 +48,10 @@ class ImportStudentsLtiJob
                  member
                )
              end
+      if UserIdentity.blocked?(user, login_id: user_id_data[:login_id], email: user_id_data[:email], source: 'lti_bulk_enrol')
+        result[:errors] << { row: member, message: "#{user.username} is linked to a different login id" }
+        next
+      end
       UserIdentity.link_identity(user, login_id: user_id_data[:login_id], username: user_id_data[:username])
 
       if user.valid?

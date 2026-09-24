@@ -124,6 +124,10 @@ class AuthenticationApi < Grape::API
                )
              end
 
+      if UserIdentity.blocked?(user, login_id: user_id_data[:login_id], email: user_id_data[:email], source: 'saml')
+        error!({ error: 'This account is linked to a different login. ' \
+                        'Please get in contact with the system administrators.' }, 403)
+      end
       UserIdentity.link_identity(user, login_id: user_id_data[:login_id], username: user_id_data[:username])
 
       # Try and save the user once authenticated if new
@@ -225,6 +229,10 @@ class AuthenticationApi < Grape::API
                )
              end
 
+      if UserIdentity.blocked?(user, login_id: user_id_data[:login_id], email: user_id_data[:email], source: 'lti_launch')
+        error!({ error: 'This account is linked to a different login. ' \
+                        'Please get in contact with your unit convenor or the system administrators.' }, 403)
+      end
       UserIdentity.link_identity(user, login_id: user_id_data[:login_id], username: user_id_data[:username])
 
       # Try and save the user once authenticated if new

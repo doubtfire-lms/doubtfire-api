@@ -14,11 +14,12 @@ class ImportLmsStudentsJobTest < ActiveSupport::TestCase
     unit = FactoryBot.create(:unit, with_students: false)
     student = FactoryBot.create(:user, :student)
     username = student.username
+    login_id = SecureRandom.uuid
 
-    result = run_job(unit, FakeSource.new([lms_member('10', 'moid-import-link', student)]), preview_only: false)
+    result = run_job(unit, FakeSource.new([lms_member('10', login_id, student)]), preview_only: false)
 
     assert_empty result['errors']
-    assert_equal 'moid-import-link', student.reload.login_id
+    assert_equal login_id, student.reload.login_id
     assert_equal username, student.username
     assert unit.projects.find_by(user_id: student.id).enrolled
   end
@@ -27,9 +28,23 @@ class ImportLmsStudentsJobTest < ActiveSupport::TestCase
     unit = FactoryBot.create(:unit, with_students: false)
     student = FactoryBot.create(:user, :student)
 
-    run_job(unit, FakeSource.new([lms_member('10', 'moid-preview-only', student)]), preview_only: true)
+    run_job(unit, FakeSource.new([lms_member('10', SecureRandom.uuid, student)]), preview_only: true)
 
     assert_nil student.reload.login_id
+  end
+
+  def test_student_linked_to_a_different_login_id_is_not_imported_when_enforced
+    unit = FactoryBot.create(:unit, with_students: false)
+    student = FactoryBot.create(:user, :student, login_id: SecureRandom.uuid)
+    config = Doubtfire::Application.config
+    config.enforce_login_id_match = true
+
+    result = run_job(unit, FakeSource.new([lms_member('10', SecureRandom.uuid, student)]), preview_only: false)
+
+    assert_equal(["#{student.username} is linked to a different login id"], result['errors'].map { |row| row['message'] })
+    assert_nil unit.projects.find_by(user_id: student.id)
+  ensure
+    config.enforce_login_id_match = false
   end
 
   private

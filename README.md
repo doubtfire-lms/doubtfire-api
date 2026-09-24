@@ -175,6 +175,7 @@ for `DF_SECRET_KEY_BASE`, `DF_SECRET_KEY_ATTR`, `DF_SECRET_KEY_DEVISE`,
 | `DF_JPLAG_MAX_SHOWN_COMPARISONS` | Maximum comparisons retained in a JPlag report; `-1` means all. | `2500`  |
 | `LTI_ENABLED`                    | Enable LTI routes and authentication.                           | `false` |
 | `LTI_SHARED_API_SECRET`          | Shared secret between the Rails and LTI APIs.                   | Unset   |
+| `DF_ENFORCE_LOGIN_ID_MATCH`      | Refuse accounts that already belong to a different login id.    | `false` |
 | `MODERATION_SCORE_FACTOR`        | Multiplier applied to moderation score changes.                 | `1.0`   |
 
 ### Overseer and container access

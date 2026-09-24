@@ -143,6 +143,11 @@ class InstitutionSettings
     }
   end
 
+  # Whether a stored login_id is a real institution id. Ids that are not are replaced on the next match.
+  def institution_login_id?(_login_id)
+    true
+  end
+
   def update_user_from_lti_response(user, user_id_data, member)
     user.login_id = user_id_data[:login_id]
     user.email = user_id_data[:email]
