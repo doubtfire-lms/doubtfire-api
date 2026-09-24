@@ -219,6 +219,7 @@ namespace :maintenance do
       .find_each(&:destroy!)
 
     AuthToken.destroy_old_tokens
+    BatchFeedbackUpload.remove_expired
     clear_abandoned_submissions!
     clear_abandoned_submission_history_markers!
     clear_abandoned_overseer_assessments!
