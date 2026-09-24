@@ -1,8 +1,13 @@
 # A batch feedback zip received in chunks, so slow connections never outlast a proxy's request timeout.
+#
+# Each chunk is stored as its own file named "<offset>-<sha256>". A chunk is linked into place, which
+# fails if the name exists, so a request retried while the original is still running can't store the
+# same chunk twice. No locks are needed, which matters because file locks hang on some NFS mounts.
 class BatchFeedbackUpload
   CHUNK_SIZE = 50.megabytes
   EXPIRES_AFTER = 24.hours
   ID_PATTERN = /\A\h{32}\z/
+  CHUNK_NAME_PATTERN = /\A(\d{20})-(\h{64})\z/
 
   class Error < StandardError; end
   class NotFound < Error; end
@@ -34,10 +39,8 @@ class BatchFeedbackUpload
       size: size.to_i
     )
 
-    FileUtils.mkdir_p(upload.dir)
+    FileUtils.mkdir_p(upload.chunks_dir)
     File.write(upload.metadata_path, upload.metadata.to_json)
-    FileUtils.touch(upload.data_path)
-    FileUtils.touch(upload.chunks_path)
     upload
   end
 
@@ -52,8 +55,8 @@ class BatchFeedbackUpload
 
   def self.remove_expired
     Dir.glob(File.join(root, '*')).each do |dir|
-      data_path = File.join(dir, 'data.part')
-      last_activity = File.exist?(data_path) ? File.mtime(data_path) : File.mtime(dir)
+      # Storing a chunk updates the chunks directory, not the upload's own directory
+      last_activity = [dir, File.join(dir, 'chunks')].select { |path| File.exist?(path) }.map { |path| File.mtime(path) }.max
       FileUtils.rm_rf(dir) if last_activity < EXPIRES_AFTER.ago
     end
   end
@@ -75,81 +78,79 @@ class BatchFeedbackUpload
     File.join(dir, 'upload.json')
   end
 
-  def data_path
-    File.join(dir, 'data.part')
-  end
-
-  # One "size sha256" line per accepted chunk, so a resumed upload can check it is the same file.
-  def chunks_path
-    File.join(dir, 'chunks.txt')
+  def chunks_dir
+    File.join(dir, 'chunks')
   end
 
   def metadata
     { id: id, unit_id: unit_id, task_definition_id: task_definition_id, user_id: user_id, filename: filename, size: size }
   end
 
+  # The chunks received so far, in order from the start of the file.
   def chunks
-    File.readlines(chunks_path, chomp: true).map do |line|
-      chunk_size, sha256 = line.split
-      { size: chunk_size.to_i, sha256: sha256 }
-    end
-  rescue Errno::ENOENT
-    raise NotFound
+    received_chunks.map { |chunk| chunk.slice(:size, :sha256) }
   end
 
-  # Bytes received in accepted chunks.
   def offset
-    chunks.sum { |chunk| chunk[:size] }
+    received_chunks.sum { |chunk| chunk[:size] }
   end
 
   def status
-    { id: id, offset: offset, size: size, chunk_size: CHUNK_SIZE, chunks: chunks }
+    received = chunks
+    { id: id, offset: received.sum { |chunk| chunk[:size] }, size: size, chunk_size: CHUNK_SIZE, chunks: received }
   end
 
-  # Appends a chunk that starts at offset, after checking it arrived intact.
+  # Stores a chunk that starts at offset, after checking it arrived intact.
   def append(offset, chunk_path, sha256)
+    sha256 = sha256.to_s.downcase
     chunk_size = File.size(chunk_path)
     raise Error, 'Chunk is empty.' if chunk_size.zero?
     raise Error, "Chunk exceeds the #{CHUNK_SIZE / 1.megabyte}MB chunk limit." if chunk_size > CHUNK_SIZE
-    raise Error, 'Chunk does not match its checksum.' unless Digest::SHA256.file(chunk_path).hexdigest == sha256.to_s.downcase
+    raise Error, 'Chunk does not match its checksum.' unless Digest::SHA256.file(chunk_path).hexdigest == sha256
 
-    raise NotFound unless File.exist?(data_path)
+    received = self.offset
+    raise OffsetMismatch, received unless offset == received
+    raise Error, 'Chunk extends past the end of the upload.' if received + chunk_size > size
 
-    File.open(data_path, 'ab') do |file|
-      file.flock(File::LOCK_EX)
-      received = offset_under_lock(file)
-      raise OffsetMismatch, received unless offset == received
-      raise Error, 'Chunk extends past the end of the upload.' if received + chunk_size > size
-
-      IO.copy_stream(chunk_path, file)
-      file.flush
-      File.open(chunks_path, 'a') { |f| f.puts("#{chunk_size} #{sha256.downcase}") }
-    end
+    # Copy beside the chunks first, as the request's tempfile may be on another filesystem
+    temp_path = File.join(chunks_dir, ".tmp-#{SecureRandom.hex(8)}")
+    FileUtils.cp(chunk_path, temp_path)
+    File.link(temp_path, File.join(chunks_dir, format('%020d-%s', offset, sha256)))
+  rescue Errno::EEXIST
+    # Another request stored this chunk first
+    raise OffsetMismatch, self.offset
+  rescue Errno::ENOENT
+    raise NotFound
+  ensure
+    FileUtils.rm_f(temp_path) if temp_path
   end
 
-  # Moves the finished file to where the import job reads it, then yields that path to enqueue the job.
-  # The upload is kept if no job is enqueued, so the caller can complete it again later.
+  # Joins the chunks into the file the import job reads, then yields its path to enqueue the job.
+  # The chunks are kept if no job is enqueued, so the caller can complete the upload again later.
   def complete!
-    File.open(data_path, 'rb') do |file|
-      file.flock(File::LOCK_EX)
-      received = offset_under_lock(file)
-      raise Error, "Upload is incomplete: received #{received} of #{size} bytes." unless received == size
+    received = received_chunks
+    total = received.sum { |chunk| chunk[:size] }
+    raise Error, "Upload is incomplete: received #{total} of #{size} bytes." unless total == size
 
-      path = import_path
-      FileUtils.mv(data_path, path)
-      job_id = yield path
-
-      if job_id.nil?
-        FileUtils.mv(path, data_path)
-      else
-        FileUtils.rm_rf(dir)
-      end
-
-      job_id
+    path = import_path
+    temp_path = "#{path}.tmp-#{SecureRandom.hex(8)}"
+    File.open(temp_path, 'wb') do |file|
+      received.each { |chunk| IO.copy_stream(chunk[:path], file) }
     end
-  rescue Errno::ENOENT
-    # Another request completed or cancelled this upload first.
+    # Linking fails if another request already completed this upload
+    File.link(temp_path, path)
+
+    job_id = yield path
+    if job_id.nil?
+      FileUtils.rm_f(path)
+    else
+      FileUtils.rm_rf(dir)
+    end
+    job_id
+  rescue Errno::EEXIST, Errno::ENOENT
     raise NotFound
+  ensure
+    FileUtils.rm_f(temp_path) if temp_path
   end
 
   def destroy
@@ -158,11 +159,27 @@ class BatchFeedbackUpload
 
   private
 
-  # Drops any bytes a failed request wrote without recording their chunk.
-  def offset_under_lock(file)
-    received = offset
-    file.truncate(received) if file.size > received
-    received
+  # The stored chunks that run on from each other from the start of the file.
+  def received_chunks
+    received = 0
+    stored_chunks.filter_map do |chunk_offset, sha256, path|
+      raise Error, 'Upload has conflicting chunks, please start it again.' if chunk_offset < received
+      next if chunk_offset > received
+
+      chunk_size = File.size(path)
+      received += chunk_size
+      { size: chunk_size, sha256: sha256, path: path }
+    end
+  end
+
+  # [offset, sha256, path] for each stored chunk, sorted by offset.
+  def stored_chunks
+    Dir.children(chunks_dir).filter_map do |name|
+      match = CHUNK_NAME_PATTERN.match(name)
+      [match[1].to_i, match[2], File.join(chunks_dir, name)] if match
+    end.sort
+  rescue Errno::ENOENT
+    raise NotFound
   end
 
   def import_path
