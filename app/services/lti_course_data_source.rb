@@ -52,9 +52,11 @@ class LtiCourseDataSource
     Array(membership['members']).map do |member|
       user_id = member['user_id'].to_s
       plugin_user = plugin_users[user_id]
+      # The plugin's username is the same LMS username, for platforms that leave it out of Names and Roles
+      lms_username = member['ext_user_username'].presence || plugin_user&.fetch('username', nil)
       {
         lms_user_id: user_id,
-        login_id: member['ext_user_username'].presence || plugin_user&.fetch('username', nil).presence || user_id,
+        login_id: UserIdentity.lti_user_id_data(member.merge('ext_user_username' => lms_username))[:login_id],
         email: member['email'].presence || plugin_user&.fetch('email', nil),
         name: member['name'],
         first_name: member['given_name'].presence || plugin_user&.fetch('first_name', nil),
