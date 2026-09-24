@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-64](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-63...v11.0.0-64) (2026-09-24)
+
+
+### Features
+
+* resumable uploads ([c9c5d9a](https://github.com/b0ink/doubtfire-deploy/commit/c9c5d9a663adaa6380b0aa11cfc28e6c63d3e73e))
+
+
+### Bug Fixes
+
+* teaching period authentication ([bb7571c](https://github.com/b0ink/doubtfire-deploy/commit/bb7571cf05e1efe0fcaad1b822c826a04a529896))
+* teaching period authentication ([#697](https://github.com/b0ink/doubtfire-deploy/issues/697)) ([80ca5b0](https://github.com/b0ink/doubtfire-deploy/commit/80ca5b018940f9ddbcbd8451edfaf8d298e761bf))
+
 ## [11.0.0-63](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-62...v11.0.0-63) (2026-09-23)
 
 
