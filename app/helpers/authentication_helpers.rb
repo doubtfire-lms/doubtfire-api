@@ -131,6 +131,14 @@ module AuthenticationHelpers
     User.eager_load(:role, :auth_tokens).find_by(username: username)
   end
 
+  #
+  # Get the current user for routes that do not require authentication - nil unless the auth token is valid
+  #
+  def authenticated_user
+    user_param, auth_param = get_user_and_token_from(:header)
+    current_user if user_auth_token_type(user_param, auth_param, :general) == :valid
+  end
+
   def set_content_cookie_in_response(token = nil)
     domain = Doubtfire::Application.config.institution[:cookie_domain]
     common_options = {
