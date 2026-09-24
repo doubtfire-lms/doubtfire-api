@@ -99,16 +99,36 @@ class BatchFeedbackUploadsApiTest < ActiveSupport::TestCase
     assert_equal 0, BatchFeedbackUpload.find(id).offset
   end
 
-  def test_drops_bytes_written_without_a_recorded_chunk
+  def test_stores_a_chunk_once_when_two_requests_race
     id = start_upload(size: 10)
     send_chunk(id, 0, 'abc')
     upload = BatchFeedbackUpload.find(id)
-    # As if a request died after writing its chunk but before recording it
-    File.open(upload.data_path, 'ab') { |f| f.write('zz') }
 
-    send_chunk(id, 3, 'defghij')
-    assert_equal 200, last_response.status
-    assert_equal 'abcdefghij', File.read(upload.data_path)
+    # A retry that checked the offset before the original request stored its chunk
+    chunk = Tempfile.new('chunk')
+    chunk.write('abc')
+    chunk.flush
+    offset_calls = 0
+    upload.define_singleton_method(:offset) { (offset_calls += 1) == 1 ? 0 : super() }
+    error = assert_raises(BatchFeedbackUpload::OffsetMismatch) do
+      upload.append(0, chunk.path, Digest::SHA256.hexdigest('abc'))
+    end
+
+    assert_equal 3, error.offset
+    assert_equal [{ size: 3, sha256: Digest::SHA256.hexdigest('abc') }], upload.chunks
+    assert_equal 1, Dir.children(upload.chunks_dir).count
+  ensure
+    chunk&.close!
+  end
+
+  def test_rejects_an_upload_with_conflicting_chunks
+    id = start_upload(size: 10)
+    send_chunk(id, 0, 'abc')
+    upload = BatchFeedbackUpload.find(id)
+    File.write(File.join(upload.chunks_dir, format('%020d-%s', 0, Digest::SHA256.hexdigest('xyz'))), 'xyz')
+
+    get "/api/submission/batch_feedback_uploads/#{id}"
+    assert_equal 422, last_response.status
   end
 
   def test_rejects_chunk_past_end_of_upload
@@ -154,7 +174,7 @@ class BatchFeedbackUploadsApiTest < ActiveSupport::TestCase
     stale_id = start_upload(size: 10)
     fresh_id = start_upload(size: 10)
     stale = BatchFeedbackUpload.find(stale_id)
-    FileUtils.touch(stale.data_path, mtime: 2.days.ago.to_time)
+    FileUtils.touch([stale.dir, stale.chunks_dir], mtime: 2.days.ago.to_time)
 
     BatchFeedbackUpload.remove_expired
 
