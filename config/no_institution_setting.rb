@@ -133,6 +133,16 @@ class InstitutionSettings
     user
   end
 
+  # The LTI member field stored as the user's login_id, which should never change for a person
+  def map_lti_member_to_user_id(member)
+    email = member['email']
+    {
+      login_id: member['ext_user_username'].presence || member['user_id'],
+      email: email,
+      username: email.to_s[/(.*)@/, 1]
+    }
+  end
+
   def update_user_from_lti_response(user, user_id_data, member)
     user.login_id = user_id_data[:login_id]
     user.email = user_id_data[:email]

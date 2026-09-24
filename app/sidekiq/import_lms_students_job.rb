@@ -61,7 +61,7 @@ class ImportLmsStudentsJob
           next
         end
 
-        user = LmsUserMatcher.find_user(login_id: lms_member[:login_id], email: lms_member[:email])
+        user = UserIdentity.find_user(login_id: lms_member[:login_id], email: lms_member[:email])
         active_student_count += 1 if enrol
         active_student_user_ids << user.id if enrol && user
 
@@ -70,6 +70,7 @@ class ImportLmsStudentsJob
           record_preview(result, unit, row, user, staff_role, enrol, mapping_errors)
         else
           user ||= create_user(settings, lms_member)
+          UserIdentity.link_identity(user, login_id: lms_member[:login_id])
           active_student_user_ids << user.id if enrol
           import_member(result, unit, row, user, staff_role, enrol, member_mappings, mapping_errors)
         end
@@ -110,7 +111,7 @@ class ImportLmsStudentsJob
   def display_row(unit, lms_member, mappings)
     {
       unit_code: unit.code,
-      username: lms_member[:login_id],
+      lms_username: lms_member[:login_id],
       student_id: lms_member[:student_id],
       lis_person_sourcedid: lms_member[:lis_person_sourcedid],
       first_name: lms_member[:first_name],
@@ -125,7 +126,7 @@ class ImportLmsStudentsJob
   end
 
   def create_user(settings, lms_member)
-    user_id_data = LmsUserMatcher.user_id_data(login_id: lms_member[:login_id], email: lms_member[:email])
+    user_id_data = UserIdentity.user_id_data(login_id: lms_member[:login_id], email: lms_member[:email])
     user = User.create! do |new_user|
       settings.update_user_from_lti_response(new_user, user_id_data, lms_member[:member])
     end

@@ -31,10 +31,10 @@ class SyncLmsGradesJob
     matched_project_ids = Set.new
 
     members.each do |lms_member|
-      row = { lms_user_id: lms_member[:lms_user_id], username: lms_member[:login_id], email: lms_member[:email], name: lms_member[:name] }
+      row = { lms_user_id: lms_member[:lms_user_id], lms_username: lms_member[:login_id], email: lms_member[:email], name: lms_member[:name] }
       next unless Doubtfire::Application.config.institution_settings.should_enrol_lti_member(lms_member[:member])
 
-      user = LmsUserMatcher.find_user(login_id: lms_member[:login_id], email: lms_member[:email])
+      user = UserIdentity.find_user(login_id: lms_member[:login_id], email: lms_member[:email])
       project = user && unit.projects.find_by(user_id: user.id, enrolled: true)
       if user
         row[:ontrack_username] = user.username

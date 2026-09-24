@@ -112,11 +112,9 @@ class AuthenticationApi < Grape::API
       logger.info "Authenticate #{user_id_data[:email]} from #{request.ip}"
 
       # Lookup using login_id if it exists
-      # Lookup using email otherwise and set login_id
+      # Lookup using username or email otherwise and set login_id
       # Otherwise create new
-      user = User.find_by(login_id: user_id_data[:login_id]) ||
-             User.find_by(username: user_id_data[:username]) ||
-             User.find_by(email: user_id_data[:email]) ||
+      user = UserIdentity.find_user(login_id: user_id_data[:login_id], email: user_id_data[:email], username: user_id_data[:username]) ||
              User.create do |new_user|
                # Update new user with details from the SAML response
                Doubtfire::Application.config.institution_settings.update_user_from_saml_response(
@@ -126,13 +124,7 @@ class AuthenticationApi < Grape::API
                )
              end
 
-      # Set login id + username if not yet specified
-      if user.login_id.nil? || user.username.nil?
-        user.update(
-          login_id: user_id_data[:login_id],
-          username: user_id_data[:username]
-        )
-      end
+      UserIdentity.link_identity(user, login_id: user_id_data[:login_id], username: user_id_data[:username])
 
       # Try and save the user once authenticated if new
       if user.new_record?
@@ -216,20 +208,14 @@ class AuthenticationApi < Grape::API
       lti_identity = %w[user_id ext_user_username lis_person_sourcedid email].index_with { |key| member[key] }
       logger.info "LTI user is logging in: #{lti_identity.to_json}"
 
-      user_id_data = {
-        login_id: member['ext_user_username'] || member['user_id'],
-        email: member['email'],
-        username: member['email']&.split('@')&.first
-      }
+      user_id_data = UserIdentity.lti_user_id_data(member)
 
       logger.info "Authenticate #{user_id_data[:email]} from #{request.ip}"
 
       # Lookup using login_id if it exists
-      # Lookup using email otherwise and set login_id
+      # Lookup using username or email otherwise and set login_id
       # Otherwise create new
-      user = User.find_by(login_id: user_id_data[:login_id]) ||
-             User.find_by(username: user_id_data[:username]) ||
-             User.find_by(email: user_id_data[:email]) ||
+      user = UserIdentity.find_user(login_id: user_id_data[:login_id], email: user_id_data[:email], username: user_id_data[:username]) ||
              User.create do |new_user|
                # Update new user with details from the LTI response
                Doubtfire::Application.config.institution_settings.update_user_from_lti_response(
@@ -239,13 +225,7 @@ class AuthenticationApi < Grape::API
                )
              end
 
-      # Set login id + username if not yet specified
-      if user.login_id.nil? || user.username.nil?
-        user.update(
-          login_id: user_id_data[:login_id],
-          username: user_id_data[:username]
-        )
-      end
+      UserIdentity.link_identity(user, login_id: user_id_data[:login_id], username: user_id_data[:username])
 
       # Try and save the user once authenticated if new
       if user.new_record?
