@@ -44,6 +44,10 @@ prune_notifications:
   cron: "every day at 2am"
   class: "PruneNotificationsJob"
 
+sync_lms_integrations:
+  cron: "every day at 3am"
+  class: "SyncLmsIntegrationsJob"
+
 # archive_old_units:
 #   cron: "every 6 months"
 #   class: "ArchiveOldUnitsJob"

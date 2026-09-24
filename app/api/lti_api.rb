@@ -7,9 +7,9 @@ class LtiApi < Grape::API
   helpers SidekiqHelper
   include LogHelper
 
-  # before do
-  #   authenticated?
-  # end
+  before do
+    ensure_lti_service_request!
+  end
 
   desc 'Returns success if current user is allowed to link requested unit'
   params do
@@ -22,7 +22,7 @@ class LtiApi < Grape::API
       error!({ error: "Not authorised to link this unit." }, 403)
     end
 
-    token = decode_lti_token(params[:ltik])
+    token = decode_lti_token(params[:ltik], purpose: 'link')
 
     unit_id = token["unit_id"]
     if unit_id.nil?
@@ -35,7 +35,10 @@ class LtiApi < Grape::API
       error!({ error: 'Unit does not exist.' }, 404)
     end
 
-    unless authorise? current_user, unit, :enrol_student
+    ensure_lti_launch_user!(token)
+
+    # The link decides where scheduled syncs read the roster from, so it needs the same permission as the LMS tab
+    unless authorise? current_user, unit, :update
       error!({ error: "Not authorised to link this unit." }, 403)
     end
 
@@ -49,7 +52,7 @@ class LtiApi < Grape::API
   post '/lti/enrol' do
     authenticated?
 
-    token = decode_lti_token(params[:ltik])
+    token = decode_lti_token(params[:ltik], purpose: 'enrol')
 
     unit_id = token["unit_id"]
     if unit_id.nil?
@@ -70,6 +73,9 @@ class LtiApi < Grape::API
     unless valid_member
       error!({ error: "Missing required fields:  #{missing.join(', ')}" }, 400)
     end
+
+    # The member's LMS roles decide the staff role given to current_user, so they must be the same person
+    ensure_lti_launch_user!(token)
 
     # if current_user.role_id != Role.student_id
     #   return status 204
@@ -112,7 +118,7 @@ class LtiApi < Grape::API
   post '/lti/enrol/bulk' do
     authenticated?
 
-    token = decode_lti_token(params[:ltik])
+    token = decode_lti_token(params[:ltik], purpose: 'enrol_bulk')
 
     unit_id = token["unit_id"]
     if unit_id.nil?
@@ -140,7 +146,7 @@ class LtiApi < Grape::API
   post '/lti/grades' do
     authenticated?
 
-    token = decode_lti_token(params[:ltik])
+    token = decode_lti_token(params[:ltik], purpose: 'grades')
 
     unless authorise? current_user, User, :convene_units
       error!({ error: "Not authorised to sync grades." }, 403)
@@ -180,5 +186,22 @@ class LtiApi < Grape::API
     end
 
     projects_hash
+  end
+
+  desc 'Issue a one-time login token so an embedded LTI session can open OnTrack in its own tab'
+  params do
+    requires :ltik, type: String, desc: 'LtiKey asserting the launch user of an active LTI session'
+  end
+  post '/lti/app-handoff' do
+    authenticated?
+
+    token = decode_lti_token(params[:ltik], purpose: 'app_handoff')
+    ensure_lti_launch_user!(token)
+
+    onetime_token = current_user.generate_temporary_authentication_token!
+    logger.info "LTI app handoff for #{current_user.username} from #{request.ip}"
+
+    present :username, current_user.username
+    present :auth_token, onetime_token.authentication_token
   end
 end

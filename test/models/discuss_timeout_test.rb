@@ -55,6 +55,80 @@ class DiscussTimeoutTest < ActiveSupport::TestCase
     end
   end
 
+  def test_no_notifications_once_the_teaching_period_has_ended
+    teaching_period = FactoryBot.create(
+      :teaching_period,
+      start_date: Time.zone.parse('2026-06-01 00:00:00'),
+      end_date: Time.zone.parse('2026-09-30 23:59:59'),
+      active_until: Time.zone.parse('2026-10-31 23:59:59')
+    )
+    unit = FactoryBot.create(
+      :unit,
+      teaching_period: teaching_period,
+      discuss_timeout_enabled: true,
+      discuss_timeout_warning_days: 7,
+      discuss_timeout_expire_days: 14,
+      send_notifications: false
+    )
+    task = unit.active_projects.first.task_for_task_definition(unit.task_definitions.first)
+    task.update!(task_status: TaskStatus.discuss)
+    task.update!(moved_to_discuss_at: Time.zone.parse('2026-09-20 12:00:00'))
+
+    # Past end_date but before active_until
+    travel_to Time.zone.parse('2026-10-05 12:00:00') do
+      assert_not unit.within_teaching_dates?
+      assert_equal 0, unit.notify_discuss_timeouts!
+      assert_equal TaskStatus.discuss, task.reload.task_status
+      assert_nil task.notified_discuss_warning_at
+      assert_nil task.notified_discuss_expiry_at
+    end
+  end
+
+  def test_notifications_still_run_on_the_end_date
+    teaching_period = FactoryBot.create(
+      :teaching_period,
+      start_date: Time.zone.parse('2026-06-01 00:00:00'),
+      end_date: Time.zone.parse('2026-09-30 23:59:59'),
+      active_until: Time.zone.parse('2026-10-31 23:59:59')
+    )
+    unit = FactoryBot.create(
+      :unit,
+      teaching_period: teaching_period,
+      discuss_timeout_enabled: true,
+      discuss_timeout_warning_days: 7,
+      discuss_timeout_expire_days: 14,
+      send_notifications: false
+    )
+    task = unit.active_projects.first.task_for_task_definition(unit.task_definitions.first)
+    task.update!(task_status: TaskStatus.discuss)
+    task.update!(moved_to_discuss_at: Time.zone.parse('2026-09-15 12:00:00'))
+
+    travel_to Time.zone.parse('2026-09-30 12:00:00') do
+      assert unit.within_teaching_dates?
+      assert_equal 1, unit.notify_discuss_timeouts!
+      assert_equal TaskStatus.fix_and_resubmit, task.reload.task_status
+    end
+  end
+
+  def test_no_notifications_once_a_unit_without_a_teaching_period_has_ended
+    unit = FactoryBot.create(
+      :unit,
+      discuss_timeout_enabled: true,
+      discuss_timeout_warning_days: 7,
+      discuss_timeout_expire_days: 14,
+      send_notifications: false
+    )
+    task = unit.active_projects.first.task_for_task_definition(unit.task_definitions.first)
+    task.update!(task_status: TaskStatus.discuss)
+    task.update!(moved_to_discuss_at: 15.days.ago)
+
+    travel_to unit.end_date + 1.day do
+      assert_not unit.within_teaching_dates?
+      assert_equal 0, unit.notify_discuss_timeouts!
+      assert_equal TaskStatus.discuss, task.reload.task_status
+    end
+  end
+
   def test_expiry_forces_fix_and_resubmit_without_feedback_and_adds_comments_in_order
     unit = FactoryBot.create(
       :unit,

@@ -52,7 +52,7 @@ class AcceptSubmissionJob
           )
         end
         mail = ErrorLogMailer.error_message('Accept Submission', "Failed to convert submission to PDF for task #{task.log_details}", e)
-        mail.deliver if mail.present?
+        mail.presence&.deliver
       rescue StandardError => e
         logger.error "Failed to send error log to admin"
       end

@@ -2,6 +2,71 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-65](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-64...v11.0.0-65) (2026-09-24)
+
+
+### Bug Fixes
+
+* store batch feedback chunks as separate files instead of locking ([68530ee](https://github.com/b0ink/doubtfire-deploy/commit/68530ee020c89ffb87e501f296aa8e6e9aa4d5f4))
+
+## [11.0.0-64](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-63...v11.0.0-64) (2026-09-24)
+
+
+### Features
+
+* resumable uploads ([c9c5d9a](https://github.com/b0ink/doubtfire-deploy/commit/c9c5d9a663adaa6380b0aa11cfc28e6c63d3e73e))
+
+
+### Bug Fixes
+
+* teaching period authentication ([bb7571c](https://github.com/b0ink/doubtfire-deploy/commit/bb7571cf05e1efe0fcaad1b822c826a04a529896))
+* teaching period authentication ([#697](https://github.com/b0ink/doubtfire-deploy/issues/697)) ([80ca5b0](https://github.com/b0ink/doubtfire-deploy/commit/80ca5b018940f9ddbcbd8451edfaf8d298e761bf))
+
+## [11.0.0-63](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-62...v11.0.0-63) (2026-09-23)
+
+
+### Features
+
+* automate lti syncing and add moodle course data ([#690](https://github.com/b0ink/doubtfire-deploy/issues/690)) ([e4b4db6](https://github.com/b0ink/doubtfire-deploy/commit/e4b4db6b307ff8a792620a0f0fa897b11bbcaa0a))
+
+
+### Bug Fixes
+
+* avoid sending full error message in task comments ([#695](https://github.com/b0ink/doubtfire-deploy/issues/695)) ([caa8fa1](https://github.com/b0ink/doubtfire-deploy/commit/caa8fa14a55f097b2f43dd9c3d951e2a2179d473))
+
+## [11.0.0-62](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-61...v11.0.0-62) (2026-09-22)
+
+
+### Features
+
+* expose waiting_since date on inbox tasks ([a49205e](https://github.com/b0ink/doubtfire-deploy/commit/a49205e4a411f7c5f9a8418e38b20cd74bf28286))
+* view inbox as another tutor ([2627ac8](https://github.com/b0ink/doubtfire-deploy/commit/2627ac8bcc6b4f0cfc73057cac37f5e96e9e3a1e))
+
+## [11.0.0-61](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-60...v11.0.0-61) (2026-09-21)
+
+
+### Bug Fixes
+
+* advance comment cursor past authored comments ([06a8b48](https://github.com/b0ink/doubtfire-deploy/commit/06a8b48ba61e114a54fe6a00319dc3b0088e4e05))
+* advance comment cursor past authored comments ([#693](https://github.com/b0ink/doubtfire-deploy/issues/693)) ([caaa1ac](https://github.com/b0ink/doubtfire-deploy/commit/caaa1acf9c6523f72e9178e89b83d931cc06ce80))
+
+## [11.0.0-60](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-59...v11.0.0-60) (2026-09-17)
+
+
+### Features
+
+* authorise jplag report downloads for the caddy file server ([d44acf2](https://github.com/b0ink/doubtfire-deploy/commit/d44acf23cb644ab7db01a00ca18c13c14a748b7a))
+* disable jobs outside of currently active teaching period ([#689](https://github.com/b0ink/doubtfire-deploy/issues/689)) ([b27d9ca](https://github.com/b0ink/doubtfire-deploy/commit/b27d9cad298048468b2fac33b649dca05601522b))
+
+
+### Bug Fixes
+
+* allow students to submit tasks locked to a tutorial stream ([a8ae905](https://github.com/b0ink/doubtfire-deploy/commit/a8ae905643f489bc5a48d5ebc1cfd33cf9e0d4d8))
+* ensure unique email seed ([c4c7a34](https://github.com/b0ink/doubtfire-deploy/commit/c4c7a344e542bbf7529894ddcbad1027eee2a126))
+* prevent discussion timeout notifications outside of active teaching period ([#687](https://github.com/b0ink/doubtfire-deploy/issues/687)) ([e7da860](https://github.com/b0ink/doubtfire-deploy/commit/e7da8607aba8ade853cac8d19b3bef8f0558257c))
+* prioritise unit staff role for owned projects ([238b6a7](https://github.com/b0ink/doubtfire-deploy/commit/238b6a755552c65285d0921abe3c411b43de5c4d))
+* prioritise unit staff role for owned projects ([#688](https://github.com/b0ink/doubtfire-deploy/issues/688)) ([aac3a8c](https://github.com/b0ink/doubtfire-deploy/commit/aac3a8c485c03dea614d372386aeef63442a2152))
+
 ## [11.0.0-59](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-58...v11.0.0-59) (2026-09-14)
 
 ## [11.0.0-58](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-57...v11.0.0-58) (2026-09-14)

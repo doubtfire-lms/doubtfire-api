@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title><%= @unit.code %>: Daily LMS <%= @sync_name %> failed and has been turned off</title>
+  <style type="text/css">
+    .main {
+      font-family: "Lucida Grande", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: #333;
+      font-size: 14px;
+      width: 100%;
+      max-width: 800px;
+      margin: 100px auto 0px auto;
+      background-image: url('<%= @doubtfire_host %>/assets/images/logo.png');
+      background-size: 3.5em;
+      background-repeat: no-repeat;
+      background-position: top 40px right 45px;
+      padding: 30px 40px;
+      border: solid 1px rgb(240, 240, 240);
+      line-height: 200%;
+      text-align: justify;
+    }
+    footer, .footer {
+      font-family: "Lucida Grande", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      text-align: center;
+      margin-top: 10px;
+      color: #aaa;
+      font-size: 0.7em;
+    }
+    .subtext {
+      color: #aaa;
+      font-size: 0.7em;
+      margin-bottom: 10px;
+      margin-top: -10px;
+    }
+    a, a:visited {
+      color: #6a97d2;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    ul {
+      list-style: none;
+    }
+    h1 {
+      font-size: 1.1em;
+    }
+  </style>
+</head>
+<body>
+  <div class="main">
+    <h1><%= @unit.name %> - Daily LMS Sync Turned Off</h1>
+    <p class="subtext"><%= @unit.code %></p>
+
+    <p>Hi <%= @convenor.first_name %>,</p>
+
+    <% if @failing_since %>
+    <p>
+      The daily LMS <%= @sync_name %> for <%= @unit.code %> has failed every night since
+      <strong><%= @failing_since.strftime('%A %-d %B') %></strong>, so <%= @doubtfire_product_name %> has stopped syncing the unit with the LMS.
+    </p>
+    <p>
+      This is usually an outage of the LMS or of <%= @doubtfire_product_name %>'s LMS connection rather than a problem with the unit's settings.
+      The last error was: <em><%= @error_message %></em>
+    </p>
+    <% else %>
+    <p>
+      The daily LMS <%= @sync_name %> for <%= @unit.code %> failed, so <%= @doubtfire_product_name %> has stopped syncing the unit with the LMS until you review it.
+    </p>
+    <% if @issues.any? %>
+    <p>
+      The LMS integration no longer matches the LMS course:
+      <ul>
+        <% @issues.each do |issue| %>
+        <li>
+          <% if issue[:lms_group_name].present? %><strong><%= issue[:lms_group_name] %>:</strong><% end %>
+          <%= issue[:message] %>
+        </li>
+        <% end %>
+      </ul>
+    </p>
+    <% else %>
+    <p>The error was: <em><%= @error_message %></em></p>
+    <% end %>
+    <% end %>
+
+    <p>
+      These settings have been turned off:
+      <ul>
+        <% @turned_off.each do |setting| %>
+        <li><strong><%= setting %></strong></li>
+        <% end %>
+      </ul>
+    </p>
+
+    <% if @failing_since %>
+    <p>
+      Once the LMS is working again, run a preview import to check what will change, then turn these settings back on in the
+      <a href="<%= @lms_url %>">unit's LMS tab</a>.
+    </p>
+    <% else %>
+    <p>Fix the integration in the <a href="<%= @lms_url %>">unit's LMS tab</a>, then turn these settings back on.</p>
+    <% end %>
+
+    <p>
+      Cheers, <br />
+      The <%= @doubtfire_product_name %> Team
+    </p>
+  </div>
+  <footer class="footer">
+    Generated with <%= @doubtfire_product_name %>
+  </footer>
+</body>
+</html>

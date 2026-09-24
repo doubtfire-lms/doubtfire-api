@@ -258,8 +258,8 @@ class Project < ApplicationRecord
   delegate :main_convenor_user, to: :unit
 
   def user_role(user)
-    if user == student then :student
-    elsif user.present? && unit.tutors.where(id: user.id).count != 0 then :tutor
+    if user.present? && unit.tutors.where(id: user.id).count != 0 then :tutor
+    elsif user == student then :student
     elsif user.present? && user.role.id == Role.admin_id then :admin
     elsif user.present? && user.role.id == Role.auditor_id then :auditor
     else nil

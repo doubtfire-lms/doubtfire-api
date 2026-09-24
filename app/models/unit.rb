@@ -22,6 +22,8 @@ class Unit < ApplicationRecord
   include MimeCheckHelpers
   include CsvHelper
 
+  has_one :lms_integration, dependent: :destroy
+
   #
   # Permissions around unit data
   #
@@ -62,6 +64,7 @@ class Unit < ApplicationRecord
       :add_task_def,
       :provide_feedback,
       :provide_bulk_feedback,
+      :view_staff_inbox,
       :change_project_enrolment,
       :download_stats,
       :download_overflow_stats,
@@ -138,6 +141,8 @@ class Unit < ApplicationRecord
   end
 
   def role_for(user)
+    return nil if user.nil?
+
     if convenors.where('unit_roles.user_id=:id', id: user.id).count == 1
       Role.convenor
     elsif tutors.where('unit_roles.user_id=:id', id: user.id).count == 1
@@ -252,6 +257,10 @@ class Unit < ApplicationRecord
   scope :not_current_for_date,  ->(date) { where('start_date > ? OR end_date < ?', date, date) }
   scope :set_active,            -> { where('active = ?', true) }
   scope :set_inactive,          -> { where('active = ?', false) }
+  # SQL equivalent of #within_teaching_dates?
+  scope :within_teaching_dates, lambda { |now = Time.zone.now|
+    set_active.where('units.end_date IS NULL OR units.end_date >= ?', now.to_date)
+  }
 
   include UnitTiiModule
 
@@ -275,12 +284,18 @@ class Unit < ApplicationRecord
     errors.add(:discuss_timeout_warning_days, 'must be less than the expiry days')
   end
 
+  # Active and not past the end date (inclusive), which is kept in sync with the teaching period's.
+  def within_teaching_dates?(now = Time.zone.now)
+    active? && (end_date.blank? || now.to_date <= end_date)
+  end
+
   def self.notify_discuss_timeouts!
-    set_active.find_each(&:notify_discuss_timeouts!)
+    within_teaching_dates.find_each(&:notify_discuss_timeouts!)
   end
 
   def notify_discuss_timeouts!
     return 0 unless discuss_timeout_enabled
+    return 0 unless within_teaching_dates?
 
     discuss_timeout_tasks.find_each.sum do |task|
       notify_discuss_timeout_for(task)
@@ -2624,6 +2639,8 @@ class Unit < ApplicationRecord
         status: TaskStatus.id_to_key(t.status_id),
         completion_date: t.completion_date,
         submission_date: t.submission_date,
+        # Only the inbox query computes this -- other callers fall back to the raw date
+        waiting_since: t.has_attribute?('waiting_since') ? t.waiting_since : t.submission_date,
         times_assessed: t.times_assessed,
         grade: t.grade,
         quality_pts: t.quality_pts,
@@ -2744,6 +2761,7 @@ class Unit < ApplicationRecord
                  "THEN COALESCE(submission_date, #{oldest_unread_comment_at}) " \
                  "ELSE COALESCE(#{oldest_unread_comment_at}, submission_date) END"
     get_all_tasks_for(user, my_students_only)
+      .select(Arel.sql("#{inbox_date} AS waiting_since"))
       .having("task_statuses.id IN (:ids) OR COUNT(task_pins.task_id) > 0 OR SUM(case when #{unread_comment} AND task_comments.id IS NOT NULL then COALESCE(task_similarity_stats.similarity_count, 1) else 0 end) > 0", ids: [TaskStatus.ready_for_feedback, TaskStatus.need_help])
       .order(Arel.sql("pinned DESC, #{inbox_date} ASC, task_definition_id ASC, tasks.id ASC"))
   end
@@ -4087,7 +4105,7 @@ class Unit < ApplicationRecord
     cached = File.exist?(path) ? JSON.parse(Zlib::GzipReader.open(path, &:read)) : nil
 
     if cached.present? &&
-       cached.all? { |entry| entry.key?('student_count') && entry.key?('campus_student_counts') } &&
+        cached.all? { |entry| entry.key?('student_count') && entry.key?('campus_student_counts') && entry.key?('target_grade_student_counts') && entry.key?('target_grade_campus_student_counts') && entry.key?('target_grade_stats') } &&
        cached.map { |entry| entry['snapshot_timestamp'] }.sort == TaskCompletionSnapshot.where(unit_id: id).pluck(:snapshot_timestamp).sort
       return cached
     end
@@ -4110,8 +4128,11 @@ class Unit < ApplicationRecord
             'snapshot_date' => changed_snapshot.snapshot_date&.iso8601,
             'snapshot_timestamp' => changed_snapshot.snapshot_timestamp,
             'stats' => changed_snapshot.load_stats,
+            'target_grade_stats' => changed_snapshot.load_target_grade_stats,
             'student_count' => student_counts['student_count'],
-            'campus_student_counts' => student_counts['campus_student_counts']
+            'campus_student_counts' => student_counts['campus_student_counts'],
+            'target_grade_student_counts' => student_counts['target_grade_student_counts'],
+            'target_grade_campus_student_counts' => student_counts['target_grade_campus_student_counts']
           }]
       else
         task_completion_snapshots.reload.map do |snapshot|
@@ -4120,8 +4141,11 @@ class Unit < ApplicationRecord
             'snapshot_date' => snapshot.snapshot_date&.iso8601,
             'snapshot_timestamp' => snapshot.snapshot_timestamp,
             'stats' => snapshot.load_stats,
+            'target_grade_stats' => snapshot.load_target_grade_stats,
             'student_count' => student_counts['student_count'],
-            'campus_student_counts' => student_counts['campus_student_counts']
+            'campus_student_counts' => student_counts['campus_student_counts'],
+            'target_grade_student_counts' => student_counts['target_grade_student_counts'],
+            'target_grade_campus_student_counts' => student_counts['target_grade_campus_student_counts']
           }
         end
       end

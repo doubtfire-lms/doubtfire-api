@@ -329,6 +329,7 @@ class UnitsApi < Grape::API
   desc 'Download the tasks that should be listed under the task inbox'
   params do
     optional :my_students_only, type: Boolean, desc: 'Show tasks from all tutorials or just the ones you teach'
+    optional :view_as_unit_role_id, type: Integer, desc: 'Show the inbox of another staff member in this unit'
   end
   get '/units/:id/tasks/inbox' do
     unit = Unit.find(params[:id])
@@ -337,9 +338,18 @@ class UnitsApi < Grape::API
       error!({ error: 'Not authorised to provide feedback for this unit' }, 403)
     end
 
+    inbox_user = current_user
+    if params[:view_as_unit_role_id].present?
+      unless authorise? current_user, unit, :view_staff_inbox
+        error!({ error: 'Not authorised to view the inbox of other staff' }, 403)
+      end
+
+      inbox_user = unit.staff.find(params[:view_as_unit_role_id]).user
+    end
+
     my_students_only = params[:my_students_only] || false
 
-    tasks = unit.tasks_for_task_inbox(current_user, my_students_only)
+    tasks = unit.tasks_for_task_inbox(inbox_user, my_students_only)
     present unit.tasks_as_hash(tasks), with: Grape::Presenters::Presenter
   end
 

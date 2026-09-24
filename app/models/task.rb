@@ -232,6 +232,7 @@ class Task < ApplicationRecord
 
     comments.each do |comment|
       next unless comment.requires_attention_for?(user)
+      next if comment.user_id == user.id
 
       current = latest_comment_by_task[comment.task_id]
       latest_comment_by_task[comment.task_id] = comment if current.nil? || current.id < comment.id
@@ -632,10 +633,13 @@ class Task < ApplicationRecord
     claim
   end
 
-  def transition_assignment_allowed?(by_user, system_transition)
+  def transition_assignment_allowed?(by_user, role, system_transition)
     return true if system_transition
 
-    if task_definition.lock_assessments_to_tutorial_stream
+    # Stream locking restricts who may assess the task, not who may submit it
+    if task_definition.lock_assessments_to_tutorial_stream &&
+       !role.in?([:student, :group_member]) &&
+       task_definition.tutorial_stream.present?
       unit_role = unit.unit_role_for(by_user)
       return false unless task_definition.tutorial_stream.tutorials.any? { |tutorial| tutorial.unit_role == unit_role }
     end
@@ -687,7 +691,7 @@ class Task < ApplicationRecord
     # Protect closed states from student changes
     return nil if [:student, :group_member].include?(role) && task_submission_closed?
 
-    return nil unless transition_assignment_allowed?(by_user, system_transition)
+    return nil unless transition_assignment_allowed?(by_user, role, system_transition)
     #
     # State transitions based upon the trigger
     #
@@ -1661,7 +1665,7 @@ class Task < ApplicationRecord
       trigger_transition trigger: 'fix', by_user: project.tutor_for(task_definition)
       add_text_comment(
         project.tutor_for(task_definition),
-        "**Automated Comment**: Something went wrong with your submission. Check the files and resubmit this task. #{e.message}",
+        "**Automated Comment**: Something went wrong with your submission. Check that code files do not contain invalid characters, documents are valid PDF or DOCX files, images are valid, and zip files are valid, then resubmit this task.",
         attention_audience: :student
       )
       raise e
