@@ -91,6 +91,7 @@ class AcceptOverseerJob
 
     if steps_attempted == steps_passed && assessment_pass
       oa.update!(status: :passed)
+      Notification.resolve_task_kinds(task, 'overseer_failed')
       unless success_status.nil?
         # TODO: have an override status setting for the step? eg. if the task is overdue, let it remain overdue, otherwise use this task status
         task.update!(task_status: success_status)

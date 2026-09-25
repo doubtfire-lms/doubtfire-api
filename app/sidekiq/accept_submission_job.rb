@@ -30,10 +30,10 @@ class AcceptSubmissionJob
     rescue StandardError => e
       logger.error e
 
-      # Send email to student if task pdf failed
-      if task.project.student.receive_task_notifications
+      Notification.create_pdf_failure(task)
+      if NotificationSetting.for(task.project.student).delivers?(task.unit, 'pdf_generation_failed', :email)
         begin
-          PortfolioEvidenceMailer.task_pdf_failed(task.project, [task]).deliver
+          PortfolioEvidenceMailer.task_pdf_failed(task.project, [task]).deliver_now
         rescue StandardError => mail_error
           logger.error "Failed to send task pdf failed email for project #{task.project.id}!\n#{mail_error.message}"
         end
@@ -52,13 +52,15 @@ class AcceptSubmissionJob
           )
         end
         mail = ErrorLogMailer.error_message('Accept Submission', "Failed to convert submission to PDF for task #{task.log_details}", e)
-        mail.deliver if mail.present?
+        mail.presence&.deliver
       rescue StandardError => e
         logger.error "Failed to send error log to admin"
       end
 
       return
     end
+
+    Notification.resolve_task_kinds(task, 'pdf_generation_failed')
 
     # Mark this task for moderation
     tutor_user = task.project.tutor_for(task.task_definition)
