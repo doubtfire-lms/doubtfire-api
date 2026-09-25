@@ -249,7 +249,7 @@ class Notification < ApplicationRecord
     find_by(recipient: recipient, deduplication_key: deduplication_key)
   end
 
-  def self.refresh_task_deadline_notifications!(now: Time.current)
+  def self.refresh_task_deadline_notifications!(now: Time.current, started_at: nil)
     stale = where(kind: TASK_DEADLINE_KINDS).unread.includes(task: [:task_definition, { project: %i[unit campus user] }])
     stale.find_each do |notification|
       mark_read(where(id: notification.id)) unless notification.current_task_deadline?(now: now)
@@ -259,6 +259,8 @@ class Notification < ApplicationRecord
     each_task_deadline_candidate(now: now) do |task|
       kind = task_deadline_kind(task, now: now)
       next if kind.nil?
+      # Already in this state when deadline notifications rolled out, so there is nothing new to announce.
+      next if started_at && task_deadline_kind(task, now: started_at) == kind
 
       notification = create_event(
         recipient: task.student,

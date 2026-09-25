@@ -3,6 +3,25 @@ require 'test_helper'
 class TaskDeadlineNotificationJobTest < ActiveSupport::TestCase
   include ActionMailer::TestHelper
 
+  class FakeRedis
+    attr_reader :store
+
+    def initialize
+      @store = {}
+    end
+
+    def get(key)
+      store[key]
+    end
+
+    def set(key, value, **options)
+      return if options[:nx] && store.key?(key)
+
+      store[key] = value
+      'OK'
+    end
+  end
+
   def setup
     @now = Time.zone.local(2026, 9, 7, 9)
     @unit = FactoryBot.create(
@@ -179,5 +198,53 @@ class TaskDeadlineNotificationJobTest < ActiveSupport::TestCase
 
     task = @project.tasks.find_by!(task_definition: @definition)
     assert @student.received_notifications.exists?(task: task, kind: 'task_start_now')
+  end
+
+  def test_first_job_run_only_sets_the_rollout_boundary
+    redis = FakeRedis.new
+
+    with_sidekiq_redis(redis) do
+      travel_to(@now) { NotifyTaskDeadlinesJob.new.perform }
+    end
+
+    assert_not @student.received_notifications.exists?
+    assert redis.store.key?(NotifyTaskDeadlinesJob::ROLLOUT_KEY)
+  end
+
+  def test_job_only_notifies_deadline_states_reached_after_rollout
+    redis = FakeRedis.new
+
+    with_sidekiq_redis(redis) do
+      travel_to(@now) { NotifyTaskDeadlinesJob.new.perform }
+      travel_to(@now + 1.hour) { NotifyTaskDeadlinesJob.new.perform }
+      assert_not @student.received_notifications.exists?
+
+      travel_to(@now + 5.days) { NotifyTaskDeadlinesJob.new.perform }
+      travel_to(@now + 11.days) { NotifyTaskDeadlinesJob.new.perform }
+    end
+
+    assert_equal %w[task_due_soon task_overdue], @student.received_notifications.order(:created_at).pluck(:kind)
+  end
+
+  def test_job_does_not_backfill_a_task_already_overdue_at_rollout
+    @task.update!(target_due_date: (@now - 1.day).to_date)
+    redis = FakeRedis.new
+
+    with_sidekiq_redis(redis) do
+      travel_to(@now) { NotifyTaskDeadlinesJob.new.perform }
+      travel_to(@now + 1.day) { NotifyTaskDeadlinesJob.new.perform }
+    end
+
+    assert_not @student.received_notifications.exists?
+  end
+
+  private
+
+  def with_sidekiq_redis(redis)
+    original = Sidekiq.method(:redis)
+    Sidekiq.define_singleton_method(:redis) { |&redis_block| redis_block.call(redis) }
+    yield
+  ensure
+    Sidekiq.define_singleton_method(:redis, original)
   end
 end
