@@ -735,6 +735,15 @@ class Unit < ApplicationRecord
       communication_set.copy_to(new_unit)
     end
 
+    # Duplicate content sites and their links (grade, task sheet and task resource pages)
+    site_mapping = unit_content_sites.to_h { |site| [site.id, site.copy_to(new_unit)] }
+    unit_content_links.each do |link|
+      new_link = link.dup
+      new_link.unit = new_unit
+      new_link.unit_content_site = site_mapping.fetch(link.unit_content_site_id)
+      new_link.save!
+    end
+
     # Now duplicate all feedback chips
     chip_mapping = {}
 
