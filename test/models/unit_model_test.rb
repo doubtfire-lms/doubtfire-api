@@ -194,6 +194,38 @@ class UnitModelTest < ActiveSupport::TestCase
     unit2.destroy
   end
 
+  def test_rollover_of_unit_content
+    unit = FactoryBot.create(:unit, with_students: false, stream_count: 0, task_count: 0)
+    FactoryBot.create(:task_definition, unit: unit, abbreviation: 'P1', outcome_count: 0)
+
+    Tempfile.create(['unit-content', '.zip']) do |archive|
+      Zip::File.open(archive.path, Zip::File::CREATE) do |zip|
+        zip.get_output_stream('dist/index.html') { |s| s.write('<html><head></head></html>') }
+        zip.get_output_stream('dist/P1.docx') { |s| s.write('worksheet') }
+      end
+      site = unit.unit_content_sites.create!(name: 'Content', original_filename: 'content.zip', archive_path: archive.path, root_dir: '/dist', is_main: true)
+      unit.unit_content_links.create!(unit_content_site: site, context_type: 'task_definition', context_key: 'P1', route: '/')
+      unit.unit_content_links.create!(unit_content_site: site, context_type: 'task_definition_resource', context_key: 'P1', route: '/P1.docx')
+
+      unit2 = unit.rollover TeachingPeriod.find(2), nil, nil, nil
+
+      new_site = unit2.unit_content_sites.sole
+      assert new_site.is_main
+      assert_not_equal site.archive_path, new_site.archive_path
+      assert File.file?(new_site.served_file_path('/'))
+      assert_equal 2, unit2.unit_content_links.where(unit_content_site: new_site).count
+
+      new_td = unit2.task_definitions.find_by(abbreviation: 'P1')
+      assert new_td.has_content_link?
+      assert new_td.has_task_resource_link?
+
+      unit2.destroy
+      assert File.file?(site.archive_path), 'rolled over unit destroy removed original archive'
+    end
+  ensure
+    unit&.destroy
+  end
+
   def test_rollover_of_learning_summary
     lsr = FactoryBot.create(:task_definition, unit: @unit, upload_requirements: [{'key' => 'file0','name' => 'LSR','type' => 'document'}])
     assert lsr.valid?, lsr.errors.full_messages
