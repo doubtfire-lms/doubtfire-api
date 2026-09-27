@@ -55,6 +55,7 @@ may override that default with an empty string.
 | `DF_ZIP_ENTRY_LIMIT`                  | Maximum number of entries in an uploaded ZIP.                    | `1000`                          |
 | `DF_ZIP_COMPRESSION_RATIO_LIMIT`      | Maximum permitted ZIP compression ratio.                         | `100`                           |
 | `DF_ZIP_UNCOMPRESSED_SIZE_MULTIPLIER` | Maximum expanded ZIP size as a multiple of `DF_MAX_FILE_SIZE`.   | `10`                            |
+| `BATCH_FEEDBACK_CHUNK_SIZE_MB`        | Chunk size in MB for batch feedback uploads.                     | `50`                            |
 | `DF_AUDITOR_UNIT_ACCESS_YEARS`        | Number of years of units visible to auditors.                    | `2`                             |
 | `DF_IMPORT_STUDENTS_WEEKS_BEFPRE`     | Weeks before a teaching period that student imports are allowed. | `1`                             |
 | `DF_FFMPEG_PATH`                      | Path to FFmpeg for audio processing.                             | `ffmpeg`                        |
