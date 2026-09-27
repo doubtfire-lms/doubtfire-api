@@ -1,5 +1,5 @@
 require 'test_helper'
-
+require 'minitest/mock'
 class CsvTest < ActiveSupport::TestCase
   include Rack::Test::Methods
   include TestHelpers::AuthHelper
@@ -616,9 +616,14 @@ class CsvTest < ActiveSupport::TestCase
     add_auth_header_for(auth_token: auth_token(unit.main_convenor_user), username: unit.main_convenor_user.username)
 
     user_id_check = unit.projects.last.user_id
+    expected_log = "Bulk withdraw: user=#{unit.main_convenor_user.username} unit_id=#{unit.id} count=1 ids=[#{user_id_check}]"
+    logged_messages = []
 
-    # perform the POST to withdraw user from the unit
-    post "/api/csv/units/#{unit.id}/withdraw", data_to_post
+    Rails.logger.stub(:info, ->(message = nil, &block) { logged_messages << (message || block&.call) }) do
+      post "/api/csv/units/#{unit.id}/withdraw", data_to_post
+    end
+
+    assert_includes logged_messages, expected_log
 
     # Check for response
     assert_equal 201, last_response.status
