@@ -67,6 +67,9 @@ module Doubtfire
     # Limit number of pdf generators to run at once
     config.pdfgen_max_processes = ENV['DF_MAX_PDF_GEN_PROCESSES'] || 2
 
+    # Size of each chunk in a batch feedback upload; keep under the proxy's request body limit
+    config.batch_feedback_chunk_size = ENV.fetch('BATCH_FEEDBACK_CHUNK_SIZE_MB', 50).to_i.megabytes
+
     # Each Word document conversion runs a short-lived, network-isolated
     # Gotenberg container. The image includes the conversion entrypoint.
     config.gotenberg_image = ENV.fetch('GOTENBERG_IMAGE', nil)
