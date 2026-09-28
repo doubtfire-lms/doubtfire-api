@@ -38,7 +38,7 @@ class ImportLmsExtensionsJob
     extensions.each_with_index do |extension, index|
       extension_date = Time.zone.at(extension[:extension_due_date]).to_date
       row = {
-        username: extension[:login_id],
+        lms_username: extension[:login_id],
         email: extension[:email],
         extension_date: extension_date.iso8601,
         spec_con_days: nil
@@ -48,7 +48,12 @@ class ImportLmsExtensionsJob
         days = [(extension_date - due_date).to_i, 0].max
         row[:spec_con_days] = days
 
-        user = LmsUserMatcher.find_user(login_id: extension[:login_id], email: extension[:email])
+        user = UserIdentity.find_user(login_id: extension[:login_id], email: extension[:email])
+        if user && UserIdentity.blocked?(user, login_id: extension[:login_id], email: extension[:email], source: 'lms_extensions')
+          result[:errors] << { row: row, message: "#{user.username} is linked to a different login id" }
+          next
+        end
+
         project = user && unit.projects.find_by(user_id: user.id)
         if project.blank?
           result[:ignored] << { row: row, message: 'Student is not enrolled in OnTrack' }

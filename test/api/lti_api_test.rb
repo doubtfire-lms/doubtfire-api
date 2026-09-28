@@ -144,6 +144,54 @@ class LtiApiTest < ActiveSupport::TestCase
     assert_equal username, user.username
   end
 
+  def test_lti_launch_links_login_id_without_renaming_an_existing_user
+    user = FactoryBot.create(:user, :student)
+    username = user.username
+    login_id = SecureRandom.uuid
+
+    post '/api/auth/lti', { ltik: lti_token('auth', member: launch_member(user, login_id)) }
+    assert_equal 201, last_response.status
+    assert_equal username, last_response_body['username']
+
+    user.reload
+    assert_equal login_id, user.login_id
+    assert_equal username, user.username
+  end
+
+  def test_lti_launch_keeps_an_existing_login_id
+    login_id = SecureRandom.uuid
+    user = FactoryBot.create(:user, :student, login_id: login_id)
+
+    post '/api/auth/lti', { ltik: lti_token('auth', member: launch_member(user, SecureRandom.uuid)) }
+    assert_equal 201, last_response.status
+
+    assert_equal login_id, user.reload.login_id
+  end
+
+  def test_lti_launch_refuses_a_different_login_id_when_enforced
+    user = FactoryBot.create(:user, :student, login_id: SecureRandom.uuid)
+    config = Doubtfire::Application.config
+    config.enforce_login_id_match = true
+
+    post '/api/auth/lti', { ltik: lti_token('auth', member: launch_member(user, SecureRandom.uuid)) }
+    assert_equal 403, last_response.status
+    assert_nil last_response_body['auth_token']
+  ensure
+    config.enforce_login_id_match = false
+  end
+
+  def launch_member(user, login_id)
+    {
+      user_id: '31',
+      name: user.name,
+      given_name: user.first_name,
+      family_name: user.last_name,
+      email: user.email,
+      ext_user_username: login_id,
+      roles: ['Learner']
+    }
+  end
+
   def test_convenor_can_link_requested_unit
     # Create convenor
     convenor = FactoryBot.create(:user, :convenor)
@@ -382,6 +430,7 @@ class LtiApiTest < ActiveSupport::TestCase
       assert_equal expected_success_count, results['success'].count, results
       assert_equal expected_error_count, results['errors'].count, results
       assert_equal expected_ignore_count, results['ignored'].count, results
+      assert_equal 'student_test_lti1', User.find_by(email: 'email1@doubtfire.com').login_id
 
       student = FactoryBot.create(:user, :student)
       unit.enrol_student(student, nil)
