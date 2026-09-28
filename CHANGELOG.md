@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-66](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-65...v11.0.0-66) (2026-09-28)
+
+
+### Features
+
+* configure batch feedback chunk size ([bebbb1a](https://github.com/b0ink/doubtfire-deploy/commit/bebbb1a6324ff641724dcc3688c5519f96a211fb))
+* rollover per-grade target dates and include them in task csv ([aab3256](https://github.com/b0ink/doubtfire-deploy/commit/aab3256036381444f5469040ea655ec2f738bcb5))
+
+
+### Bug Fixes
+
+* rollover unit content ([a82b291](https://github.com/b0ink/doubtfire-deploy/commit/a82b291e1c4e71bebd9a1ff531f8f5a2230478bd))
+* rotate refresh token when signing in near expiry ([55cef4d](https://github.com/b0ink/doubtfire-deploy/commit/55cef4dd06cee5a409b2d4996d357ef103fab4d7))
+
 ## [11.0.0-65](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-64...v11.0.0-65) (2026-09-24)
 
 
