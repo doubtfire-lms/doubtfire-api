@@ -1957,7 +1957,7 @@ class Unit < ApplicationRecord
   end
 
   def task_definitions_csv
-    TaskDefinition.to_csv(task_definitions)
+    TaskDefinition.to_csv(self, task_definitions)
   end
 
   def task_definitions_by_grade
