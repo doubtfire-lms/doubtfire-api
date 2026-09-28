@@ -61,7 +61,30 @@ module UserIdentity
     if email.present? && user.email.present? && !user.email.casecmp?(email)
       log_identity_event('login_id_email_changed', user, login_id: login_id, email: email, source: source)
     end
+    alert_username_changed(user, login_id: login_id, email: email, source: source) if username_changed?(user, login_id, email)
     false
+  end
+
+  # Same person by login id, but their email now derives a different username
+  def username_changed?(user, login_id, email)
+    incoming = institution_login_id(login_id)
+    username = email.to_s[/(.*)@/, 1]
+    incoming.present? && user.login_id.to_s.casecmp?(incoming) &&
+      username.present? && user.username.present? && !user.username.casecmp?(username)
+  end
+
+  # Emails the details to the error address and sends Sentry a message without user details, once a day per change
+  def alert_username_changed(user, login_id:, email:, source:)
+    username = email.to_s[/(.*)@/, 1]
+    return unless Rails.cache.write("user_identity/username_changed/#{user.id}/#{username.downcase}", true, expires_in: 1.day, unless_exist: true)
+
+    Sentry.capture_message('User matched by login id has a changed username', level: :warning, extra: { source: source }) if defined?(Sentry)
+
+    message = "User #{user.id} (#{user.username}) matched login id #{login_id} during #{source}, " \
+              "but their email #{email} now gives the username #{username}. The username may need to be changed manually."
+    ErrorLogMailer.error_message('Username changed', message, StandardError.new(message))&.deliver_now
+  rescue StandardError => e
+    Rails.logger.error "Failed to send username change alert for user #{user.id}: #{e.message}"
   end
 
   # Fills in a missing login id or username on a matched account, never replacing either. A stored

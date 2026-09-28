@@ -86,6 +86,22 @@ class UserIdentityTest < ActiveSupport::TestCase
     end
   end
 
+  def test_changed_username_for_the_same_login_id_emails_the_error_address
+    user = FactoryBot.create(:user, login_id: SecureRandom.uuid)
+    config = Doubtfire::Application.config
+    original = config.email_errors_to
+    config.email_errors_to = 'errors@example.com'
+
+    assert UserIdentity.username_changed?(user, user.login_id, 'renamed-person@example.com')
+    assert_not UserIdentity.username_changed?(user, SecureRandom.uuid, 'renamed-person@example.com')
+    assert_not UserIdentity.username_changed?(user, user.login_id, "#{user.username}@elsewhere.com")
+
+    assert_not UserIdentity.blocked?(user, login_id: user.login_id, email: 'renamed-person@example.com', source: 'test')
+    assert_includes ActionMailer::Base.deliveries.last.subject, 'Username changed'
+  ensure
+    config.email_errors_to = original
+  end
+
   def test_lti_user_id_data_falls_back_to_the_lti_user_id_without_an_institution_hook
     with_settings(Object.new) do
       data = UserIdentity.lti_user_id_data('user_id' => '42', 'email' => 'student@example.com')
