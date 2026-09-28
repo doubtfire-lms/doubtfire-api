@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-67](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-66...v11.0.0-67) (2026-09-28)
+
+
+### Features
+
+* detect accounts linked to a different login id ([0f34f4e](https://github.com/b0ink/doubtfire-deploy/commit/0f34f4e9cad0d4e86d4426e77dd6f4c81c04f634))
+
 ## [11.0.0-66](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-65...v11.0.0-66) (2026-09-28)
 
 
