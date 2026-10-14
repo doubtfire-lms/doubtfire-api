@@ -7,6 +7,7 @@ Doubtfire::Application.routes.draw do
   get 'api/units/:id/all_resources', to: 'lecture_resource_downloads#index'
 
   mount ApiRoot => '/'
+  mount ActionCable.server => '/cable'
   mount GrapeSwaggerRails::Engine => '/api/docs'
   mount Sidekiq::Web => "/sidekiq" # mount Sidekiq::Web in your Rails app
 

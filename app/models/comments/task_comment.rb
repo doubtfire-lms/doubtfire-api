@@ -34,8 +34,14 @@ class TaskComment < ApplicationRecord
     mark_as_read(self.user)
   end
 
+  after_commit :broadcast_comment_created, on: :create
+
   # Delete action - before dependent association
   before_destroy :delete_associated_files
+
+  def broadcast_comment_created
+    TaskChannel.broadcast_to(task, event: 'comment_created')
+  end
 
   def valid_reply_to?
     if reply_to_id.present?
