@@ -31,6 +31,7 @@ class Project < ApplicationRecord
   has_many :comments, through: :tasks
   has_many :tutorial_enrolments, dependent: :destroy
   has_many :session_activities,  dependent: :destroy
+  has_many :notifications, dependent: :destroy
 
   has_many :staff_notes, dependent: :destroy
   has_many :engagements, dependent: :destroy, inverse_of: :project
@@ -677,7 +678,7 @@ class Project < ApplicationRecord
     group_memberships.joins(:group).where('groups.group_set_id = :id', id: gs).first
   end
 
-  def send_weekly_status_email(summary_stats, middle_of_unit)
+  def create_weekly_summary_notification(summary_stats, middle_of_unit)
     did_revert_to_pass = false
     # TODO: refactor automatic target grade reset
     # if middle_of_unit && should_revert_to_pass && !portfolio_exists?
@@ -689,14 +690,15 @@ class Project < ApplicationRecord
     #   summary_stats[:revert][main_convenor_user] << self
     # end
 
-    return unless student.receive_feedback_notifications
+    return unless NotificationSetting.for(student).weekly_summary_for?(unit)
     return if portfolio_exists? && !middle_of_unit
 
-    begin
-      NotificationsMailer.weekly_student_summary(self, summary_stats, did_revert_to_pass).deliver_now
-    rescue StandardError => e
-      logger.error "Failed to send weekly status email for project #{id}!\n#{e.message}"
-    end
+    data = WeeklySummaryNotificationBuilder.for_student(
+      self,
+      summary_stats,
+      did_revert_to_pass: did_revert_to_pass
+    )
+    Notification.create_weekly_summary(recipient: student, unit: unit, project: self, data: data)
   end
 
   def archive_submissions(out)

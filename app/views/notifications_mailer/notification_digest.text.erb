@@ -1,0 +1,87 @@
+Hi <%= @recipient.first_name %>,
+
+You have <%= @notification_count %> new <%= 'notification'.pluralize(@notification_count) %> in <%= @doubtfire_product_name %>.
+<% @units.each do |section| %>
+<%= section[:unit].code %> - <%= section[:unit].name %>
+<% section[:group_sections].each do |group_section| %>
+<% if group_section[:divider] %>
+-------------------
+<% end %>
+<% if group_section[:heading] %>
+<%= group_section[:heading] %>
+<% end %>
+<% group_section[:groups].each do |group| %>
+- <% if group[:task] %><%= group[:task][:abbreviation] %> - <%= group[:task][:name] %><% elsif group.dig(:destination, :type) == 'unit_inbox' %>Feedback required<% elsif group[:message_subject].present? %><%= group[:message_subject] %><% elsif group[:project_id] %>Portfolio<% else %>Unit notification<% end %><% if group_section[:kind] && group.dig(:task, :due_date) %> — <%= notification_due_date(group) %><% end %>
+<% unless group_section[:kind] %>
+  <%= notification_timestamp(group) %>
+<% end %>
+<% unless group_section[:kind] && group[:event_count] == group[:counts][group_section[:kind]] %>
+  <%= group[:detail] %>
+<% end %>
+<% if group[:weekly_summary] %>
+<% summary = group[:weekly_summary] %>
+  <%= weekly_summary_period(summary) %>
+<% if summary['audience'] == 'staff' %>
+  Assessed: <%= summary['assessed_tasks'] %>
+  Awaiting feedback: <%= summary['awaiting_feedback'] %><% if summary['awaiting_feedback'].to_i.positive? %> (oldest: <%= pluralize(summary['oldest_task_days'], 'day') %>)<% end %>
+  Comments sent: <%= summary['sent_comments'] %>
+  Comments received: <%= summary['received_comments'] %>
+  Tasks discussed: <%= summary['discussed_tasks'] %>
+  Across the unit: <%= pluralize(summary['unit_comments'], 'comment') %> and <%= pluralize(summary['unit_task_activity'], 'task status change') %>.
+  Your students' tasks changed state <%= pluralize(summary['student_task_activity'], 'time') %> and you received <%= pluralize(summary['received_comments'], 'comment') %>.
+<% else %>
+  Comments received: <%= summary['received_comments'] %>
+  Comments posted: <%= summary['sent_comments'] %>
+  Your task activity: <%= summary['task_activity'] %>
+  Unit task activity: <%= summary['unit_task_activity'] %>
+  Your own progress accounted for <%= pluralize(summary['student_task_activity'], 'change') %>; across the unit there were <%= pluralize(summary['unit_comments'], 'comment') %>.
+<% unless summary['tutor_allocated'] %>
+  Warning: You are not currently allocated to a tutor. Please check your tutorial allocation.
+<% end %>
+<% if summary['top_tasks'].any? %>
+  What to focus on next:
+<% summary['top_tasks'].each do |task| %>
+  - <%= task['abbreviation'] %> — <%= task['name'] %> (<%= task['reason_label'] %>)
+    <%= @doubtfire_host %>/projects/<%= group[:project_id] %>/dashboard/<%= task['abbreviation'] %>
+<% end %>
+<% else %>
+  <%= summary['portfolio_exists'] ? 'You have completed your tasks and prepared your portfolio.' : 'You have completed your tasks—make sure you log in and prepare your portfolio.' %>
+<% end %>
+<% if summary['did_revert_to_pass'] %>
+  Your target grade was reset to Pass so you can focus on catching up with your Pass tasks.
+<% end %>
+<% end %>
+<% if summary['reverted_students'].present? %>
+  Students advised to focus on their Pass tasks: <%= summary['reverted_students'].to_sentence %>.
+<% end %>
+<% if summary['is_convenor'] && summary['tutorial_streams'].present? %>
+  Tutor progress:
+<% summary['tutorial_streams'].each do |stream| %>
+  <%= stream['name'] %>
+<% if stream['unallocated_students'].to_i.positive? %>
+  Warning: <%= pluralize(stream['unallocated_students'], 'student') %> not allocated to a tutorial in this stream.
+<% end %>
+<% stream['tutors'].each do |tutor| %>
+  - <%= tutor['tutor_name'] %>: <%= tutor['students'] %> students; assessments <%= tutor['weekly_assessments'] %> this week / <%= tutor['total_assessments'] %> total; comments <%= tutor['weekly_comments'] %> / <%= tutor['total_comments'] %>; awaiting <%= tutor['awaiting_feedback'] %> (oldest <%= tutor['oldest_task_days'] %>d); discussed <%= tutor['weekly_discussions'] %> / <%= tutor['total_discussions'] %>
+<% end %>
+<% end %>
+<% end %>
+<% end %>
+<% if group[:task] %>
+  <%= @doubtfire_host %>/projects/<%= group[:task][:project_id] %>/dashboard/<%= group[:task][:abbreviation] %><%= '?tutor=true' if group[:task][:staff_view] %>
+<% elsif group.dig(:destination, :type) == 'unit_inbox' %>
+  <%= @doubtfire_host %>/units/<%= group.dig(:destination, :unit_id) %>/tasks/inbox
+<% elsif group[:weekly_summary] && group[:project_id] %>
+  <%= @doubtfire_host %>/projects/<%= group[:project_id] %>/dashboard
+<% elsif group[:project_id] %>
+  <%= @doubtfire_host %>/projects/<%= group[:project_id] %>/portfolio
+<% end %>
+<% end %>
+<% end %>
+<% end %>
+
+View all notifications:
+<%= @notification_url %>
+
+Unsubscribe or change your settings:
+<%= @unsubscribe_url %>

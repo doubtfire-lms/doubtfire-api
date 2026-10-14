@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light" />
+  <title><%= @doubtfire_product_name %> notifications</title>
+  <style type="text/css">
+    a { text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    @media only screen and (max-width: 640px) {
+      .main { padding: 20px 16px !important; }
+      .unit-card { padding: 14px 16px !important; }
+      .notification-heading { align-items: flex-start !important; flex-direction: column !important; gap: 2px !important; }
+    }
+  </style>
+</head>
+<body style="margin:0; padding:0; background-color:#ffffff;">
+  <div style="padding:40px 16px; font-family:Roboto,-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Helvetica,Arial,sans-serif; color:#333; font-size:14px;">
+    <div style="width:100%; max-width:800px; margin:0 auto;">
+      <main class="main" style="font-family:Roboto,-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Helvetica,Arial,sans-serif; border:solid 1px rgb(240,240,240); padding:30px 40px;">
+        <header style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px;">
+          <div style="font-size:1.1em; font-weight:bold; color:#333; line-height:1.4;">
+            Notification Summary
+            <div style="color:#aaa; font-size:0.7em; font-weight:normal; padding-top:4px;">
+              <%= "#{Time.zone.now.day.ordinalize} #{Time.zone.now.strftime('%B %Y')}" %>
+            </div>
+          </div>
+          <img src="<%= @doubtfire_host %>/assets/images/logo.png" alt="<%= @doubtfire_product_name %>" style="display:block; width:60px; height:35px; border:0; flex:none;" />
+        </header>
+
+        <p style="margin:20px 0 0; line-height:1.6;">Hi <%= @recipient.first_name %>,</p>
+
+        <p style="margin:8px 0 20px; line-height:1.6;">
+          You have <%= @notification_count %> new
+          <%= 'notification'.pluralize(@notification_count) %> in <%= @doubtfire_product_name %>.
+        </p>
+
+        <% @units.each do |section| %>
+          <section class="unit-card" style="font-family:Roboto,-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Helvetica,Arial,sans-serif; border:solid 1px rgb(240,240,240); padding:16px 20px; margin:0 0 16px;">
+            <div style="font-size:0.75em; color:#aaa; letter-spacing:0.8px; text-transform:uppercase; font-weight:bold; line-height:1.4;">
+              <%= section[:unit].code %>
+            </div>
+            <div style="font-size:1em; color:#333; font-weight:bold; line-height:1.4; padding:2px 0 12px;">
+              <%= section[:unit].name %>
+            </div>
+
+            <% section[:group_sections].each do |group_section| %>
+              <% if group_section[:divider] %>
+                <hr style="border:0; border-top:solid 1px rgb(225,225,225); margin:20px 0 10px;" />
+              <% end %>
+              <% if group_section[:heading] %>
+                <div style="font-size:0.95em; color:#333; font-weight:bold; line-height:1.4; padding:8px 0;">
+                  <%= group_section[:heading] %>
+                </div>
+              <% end %>
+              <% group_section[:groups].each do |group| %>
+                <article class="notification-box" style="font-family:Roboto,-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Helvetica,Arial,sans-serif; background:#fafafa; border-left:4px solid <%= group[:severity] == 'critical' ? '#c62828' : group[:severity] == 'warning' ? '#ed6c02' : '#1565c0' %>; padding:14px 16px; margin:0 0 10px; line-height:1.55;">
+                  <div class="notification-heading" style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding-bottom:2px;">
+                    <div style="min-width:0; font-weight:bold; color:#333; font-size:1.1em; line-height:1.4;">
+                      <% if group[:task] %>
+                        <%= group[:task][:abbreviation] %> - <%= group[:task][:name] %>
+                      <% elsif group.dig(:destination, :type) == 'unit_inbox' %>
+                        Feedback required
+                      <% elsif group[:message_subject].present? %>
+                        <%= group[:message_subject] %>
+                      <% elsif group[:project_id] %>
+                        Portfolio
+                      <% else %>
+                        Unit notification
+                      <% end %>
+                    </div>
+                    <% if group_section[:kind] && group.dig(:task, :due_date) %>
+                      <div style="flex:none; font-weight:bold; color:#333; font-size:1.1em; line-height:1.4; white-space:nowrap;">
+                        <%= notification_due_date(group) %>
+                      </div>
+                    <% end %>
+                  </div>
+                  <% if group[:task] && group[:task][:student_name].present? %>
+                    <div style="color:#777; font-size:0.85em;"><%= group[:task][:student_name] %></div>
+                  <% end %>
+                  <% unless group_section[:kind] && group[:event_count] == group[:counts][group_section[:kind]] %>
+                    <div style="color:#555;"><%= group[:detail] %></div>
+                  <% end %>
+                  <% if group[:weekly_summary] %>
+                    <% summary = group[:weekly_summary] %>
+                    <div style="color:#888; font-size:0.8em; padding-top:3px;"><%= weekly_summary_period(summary) %></div>
+                    <table role="presentation" style="width:100%; border-collapse:separate; border-spacing:6px; margin:10px -6px 2px;">
+                      <tr>
+                        <% if summary['audience'] == 'staff' %>
+                          <% [['Assessed', summary['assessed_tasks']], ['Awaiting feedback', summary['awaiting_feedback']], ['Comments sent', summary['sent_comments']], ['Tasks discussed', summary['discussed_tasks']]].each do |label, value| %>
+                            <td style="width:25%; background:#fff; border:1px solid #eee; padding:9px; vertical-align:top;">
+                              <div style="font-size:1.25em; font-weight:bold; color:#333;"><%= value %></div>
+                              <div style="font-size:0.75em; color:#777;"><%= label %></div>
+                            </td>
+                          <% end %>
+                        <% else %>
+                          <% [['Comments received', summary['received_comments']], ['Comments posted', summary['sent_comments']], ['Your task activity', summary['task_activity']], ['Unit task activity', summary['unit_task_activity']]].each do |label, value| %>
+                            <td style="width:25%; background:#fff; border:1px solid #eee; padding:9px; vertical-align:top;">
+                              <div style="font-size:1.25em; font-weight:bold; color:#333;"><%= value %></div>
+                              <div style="font-size:0.75em; color:#777;"><%= label %></div>
+                            </td>
+                          <% end %>
+                        <% end %>
+                      </tr>
+                    </table>
+
+                    <% if summary['audience'] == 'staff' %>
+                      <div style="color:#555; padding-top:6px;">Across the unit there were <strong><%= pluralize(summary['unit_comments'], 'comment') %></strong> and <strong><%= pluralize(summary['unit_task_activity'], 'task status change') %></strong>. Your students' tasks changed state <strong><%= pluralize(summary['student_task_activity'], 'time') %></strong>, and you received <strong><%= pluralize(summary['received_comments'], 'comment') %></strong>.</div>
+                    <% else %>
+                      <div style="color:#555; padding-top:6px;">Across the unit there were <strong><%= pluralize(summary['unit_comments'], 'comment') %></strong>. Of your task activity, <strong><%= pluralize(summary['student_task_activity'], 'change') %></strong> came from your own progress.</div>
+                    <% end %>
+
+                    <% if summary['audience'] == 'staff' && summary['awaiting_feedback'].to_i.positive? %>
+                      <div style="color:#555; padding-top:6px;">The oldest task awaiting feedback has waited <strong><%= pluralize(summary['oldest_task_days'], 'day') %></strong>.</div>
+                    <% elsif summary['audience'] == 'student' %>
+                      <% unless summary['tutor_allocated'] %>
+                        <div style="margin-top:10px; padding:9px 11px; background:#fff4e5; color:#8a4b08;">You are not currently allocated to a tutor. Please check your tutorial allocation.</div>
+                      <% end %>
+                      <% if summary['top_tasks'].any? %>
+                        <div style="font-weight:bold; color:#333; padding-top:10px;">What to focus on next</div>
+                        <ul style="margin:5px 0 0; padding:0; color:#555; list-style:none;">
+                          <% summary['top_tasks'].each do |task| %>
+                            <li style="margin-top:6px; border:1px solid #e5e7eb; border-radius:4px; background:#fff;">
+                              <a href="<%= @doubtfire_host %>/projects/<%= group[:project_id] %>/dashboard/<%= task['abbreviation'] %>" target="_blank" rel="noopener noreferrer" style="display:block; padding:9px 11px; color:#444; text-decoration:none;">
+                                <strong><%= task['abbreviation'] %></strong> — <%= task['name'] %> <span style="color:#777; font-size:0.85em;">(<%= task['reason_label'] %>)</span>
+                              </a>
+                            </li>
+                          <% end %>
+                        </ul>
+                      <% else %>
+                        <div style="color:#555; padding-top:10px;"><%= summary['portfolio_exists'] ? 'You have completed your tasks and prepared your portfolio.' : 'You have completed your tasks—make sure you log in and prepare your portfolio.' %></div>
+                      <% end %>
+                    <% end %>
+
+                    <% if summary['did_revert_to_pass'] %>
+                      <div style="margin-top:10px; padding:9px 11px; background:#fff4e5; color:#8a4b08;">Your target grade was reset to Pass so you can focus on catching up with your Pass tasks.</div>
+                    <% end %>
+
+                    <% if summary['reverted_students'].present? %>
+                      <div style="margin-top:10px; padding:9px 11px; background:#fff4e5; color:#8a4b08;">The following students were advised to focus on their Pass tasks: <%= summary['reverted_students'].to_sentence %>.</div>
+                    <% end %>
+
+                    <% if summary['is_convenor'] && summary['tutorial_streams'].present? %>
+                      <div style="font-weight:bold; color:#333; padding-top:14px;">Tutor progress</div>
+                      <% summary['tutorial_streams'].each do |stream| %>
+                        <div style="font-weight:bold; color:#555; padding:10px 0 4px;"><%= stream['name'] %></div>
+                        <% if stream['unallocated_students'].to_i.positive? %>
+                          <div style="margin-bottom:7px; padding:8px 10px; background:#fff4e5; color:#8a4b08;"><%= pluralize(stream['unallocated_students'], 'student') %> not allocated to a tutorial in this stream.</div>
+                        <% end %>
+                        <% if stream['tutors'].any? %>
+                          <div style="overflow-x:auto;">
+                            <table style="width:100%; border-collapse:collapse; font-size:0.78em; color:#444;">
+                              <thead>
+                                <tr style="background:#f1f3f5;">
+                                  <th style="padding:7px; text-align:left;">Tutor</th>
+                                  <th style="padding:7px; text-align:right;">Students</th>
+                                  <th style="padding:7px; text-align:right;">Assessments<br />week / total</th>
+                                  <th style="padding:7px; text-align:right;">Comments<br />week / total</th>
+                                  <th style="padding:7px; text-align:right;">Awaiting<br />count / oldest</th>
+                                  <th style="padding:7px; text-align:right;">Discussed<br />week / total</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <% stream['tutors'].each do |tutor| %>
+                                  <tr>
+                                    <td style="padding:7px; border-top:1px solid #e5e7eb;"><%= tutor['tutor_name'] %></td>
+                                    <td style="padding:7px; border-top:1px solid #e5e7eb; text-align:right;"><%= tutor['students'] %></td>
+                                    <td style="padding:7px; border-top:1px solid #e5e7eb; text-align:right;"><%= tutor['weekly_assessments'] %> / <%= tutor['total_assessments'] %></td>
+                                    <td style="padding:7px; border-top:1px solid #e5e7eb; text-align:right;"><%= tutor['weekly_comments'] %> / <%= tutor['total_comments'] %></td>
+                                    <td style="padding:7px; border-top:1px solid #e5e7eb; text-align:right;"><%= tutor['awaiting_feedback'] %> / <%= tutor['oldest_task_days'] %>d</td>
+                                    <td style="padding:7px; border-top:1px solid #e5e7eb; text-align:right;"><%= tutor['weekly_discussions'] %> / <%= tutor['total_discussions'] %></td>
+                                  </tr>
+                                <% end %>
+                              </tbody>
+                            </table>
+                          </div>
+                        <% end %>
+                      <% end %>
+                    <% end %>
+                  <% end %>
+                  <% unless group_section[:kind] %>
+                    <div style="color:#aaa; font-size:0.8em; padding-top:2px;"><%= notification_timestamp(group) %></div>
+                  <% end %>
+                  <% if group[:task] %>
+                    <div style="padding-top:4px;">
+                      <a href="<%= @doubtfire_host %>/projects/<%= group[:task][:project_id] %>/dashboard/<%= group[:task][:abbreviation] %><%= '?tutor=true' if group[:task][:staff_view] %>" target="_blank" rel="noopener noreferrer" style="color:#6a97d2; font-size:0.9em;">
+                        View this task
+                      </a>
+                    </div>
+                  <% elsif group.dig(:destination, :type) == 'unit_inbox' %>
+                    <div style="padding-top:4px;">
+                      <a href="<%= @doubtfire_host %>/units/<%= group.dig(:destination, :unit_id) %>/tasks/inbox" target="_blank" rel="noopener noreferrer" style="color:#6a97d2; font-size:0.9em;">
+                        Open inbox
+                      </a>
+                    </div>
+                  <% elsif group[:weekly_summary] && group[:project_id] %>
+                    <div style="padding-top:4px;">
+                      <a href="<%= @doubtfire_host %>/projects/<%= group[:project_id] %>/dashboard" target="_blank" rel="noopener noreferrer" style="color:#6a97d2; font-size:0.9em;">
+                        Open your unit
+                      </a>
+                    </div>
+                  <% elsif group[:project_id] %>
+                    <div style="padding-top:4px;">
+                      <a href="<%= @doubtfire_host %>/projects/<%= group[:project_id] %>/portfolio" target="_blank" rel="noopener noreferrer" style="color:#6a97d2; font-size:0.9em;">
+                        View your portfolio
+                      </a>
+                    </div>
+                  <% end %>
+                </article>
+              <% end %>
+            <% end %>
+          </section>
+        <% end %>
+
+        <div style="margin:20px 0 0; text-align:center;">
+          <a href="<%= @notification_url %>" target="_blank" rel="noopener noreferrer" style="display:inline-block; padding:10px 22px; color:#6a97d2; font-size:0.95em; font-weight:bold; line-height:1.4; border:solid 1px rgb(225,225,225); border-radius:4px; background:#ffffff;">
+            View all notifications
+          </a>
+        </div>
+      </main>
+
+      <footer style="font-family:Roboto,-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Helvetica,Arial,sans-serif; padding:16px 8px 0; color:#aaa; font-size:0.75em; line-height:1.6; text-align:center;">
+        <div>You are receiving this because you have email notifications turned on in <%= @doubtfire_product_name %>.</div>
+        <div style="padding-top:4px;">
+          <a href="<%= @unsubscribe_url %>" target="_blank" rel="noopener noreferrer" style="color:#aaa; text-decoration:underline;">Unsubscribe or change your settings</a>
+        </div>
+      </footer>
+    </div>
+  </div>
+</body>
+</html>

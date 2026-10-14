@@ -28,6 +28,22 @@ notify_discuss_timeout:
   cron: "every day at 8am"
   class: "NotifyDiscussTimeoutJob"
 
+notify_task_deadlines:
+  cron: "every hour"
+  class: "NotifyTaskDeadlinesJob"
+
+notify_feedback_warnings:
+  cron: "every hour"
+  class: "NotifyFeedbackWarningsJob"
+
+poll_notification_digests:
+  cron: "every 5 minutes"
+  class: "PollNotificationDigestsJob"
+
+prune_notifications:
+  cron: "every day at 2am"
+  class: "PruneNotificationsJob"
+
 sync_lms_integrations:
   cron: "every day at 3am"
   class: "SyncLmsIntegrationsJob"

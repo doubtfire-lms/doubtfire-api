@@ -6,15 +6,21 @@ namespace :overseer_notifications do
 
     assessments.group_by(&:project).each do |project, project_assessments|
       tasks = project_assessments.map(&:task).uniq
+      mark_notified = -> { project_assessments.each { |assessment| assessment.update!(student_notified_at: Time.current) } }
+
+      # The student may have switched this email off, or muted the unit. Mark them
+      # notified anyway, so they are not reconsidered every ten minutes.
+      unless NotificationSetting.for(project.student).delivers?(project.unit, 'overseer_failed', :email)
+        mark_notified.call
+        next
+      end
 
       begin
         mail = PortfolioEvidenceMailer.overseer_assessment_failed(project, tasks)
         next if mail.blank?
 
         mail.deliver_now
-        project_assessments.each do |assessment|
-          assessment.update!(student_notified_at: Time.current)
-        end
+        mark_notified.call
       rescue StandardError => e
         Rails.logger.error "Failed to send overseer assessment email for project #{project.id}!\n#{e.message}"
       end

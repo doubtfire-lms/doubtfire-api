@@ -1,0 +1,200 @@
+# frozen_string_literal: true
+
+require 'grape'
+
+class NotificationsApi < Grape::API
+  helpers AuthenticationHelpers
+
+  before do
+    authenticated?
+  end
+
+  helpers do
+    def notification_settings
+      @notification_settings ||= NotificationSetting.for(current_user)
+    end
+
+    def notification_scope
+      current_user
+        .received_notifications
+        .includes(:recipient, :actor, :unit, { project: :campus }, task: [:task_definition, { project: :user }])
+    end
+
+    # Kinds the user has switched off in the app stay in the ledger for the
+    # digest, so they are dropped here rather than never recorded.
+    def shown_in_app(notifications)
+      notifications.select { |notification| notification_settings.shows_in_app?(notification.unit_id, notification.kind) }
+    end
+
+    def unread_group_keys_by_unit
+      @unread_group_keys_by_unit ||= current_user.received_notifications.unread.pluck(
+        :id, :task_id, :project_id, :unit_id, :kind, :unit_role_id, :email_sent_at
+      ).filter_map do |id, task_id, project_id, unit_id, kind, unit_role_id, email_sent_at|
+        next unless notification_settings.shows_in_app?(unit_id, kind)
+
+        key =
+          if Notification::MODERATION_KINDS.include?(kind)
+            "tutor-notes:#{unit_role_id}:#{task_id}"
+          elsif kind == 'feedback_warning'
+            batch = email_sent_at ? "emailed:#{email_sent_at.to_f}" : 'not-emailed'
+            "unit:#{unit_id}:feedback-warning:#{batch}"
+          elsif kind == 'weekly_summary'
+            "weekly-summary:#{id}"
+          elsif task_id.present?
+            "task:#{task_id}"
+          elsif Notification::COMMUNICATION_KINDS.include?(kind)
+            "communication-email:#{id}"
+          elsif Notification::PORTFOLIO_KINDS.include?(kind)
+            "portfolio:#{project_id}"
+          else
+            "unit:#{unit_id}:#{kind}"
+          end
+
+        [unit_id, key]
+      end.uniq
+    end
+
+    def unread_group_count
+      unread_group_keys_by_unit.count
+    end
+
+    def unread_group_counts_by_unit
+      unread_group_keys_by_unit.each_with_object(Hash.new(0)) do |(unit_id, _key), counts|
+        counts[unit_id] += 1
+      end
+    end
+
+    # The units sent are the whole set that departs from the settings, so any unit
+    # missing from it has been reset and no longer needs an override.
+    def replace_unit_overrides(units)
+      accessible = accessible_unit_ids
+      wanted = Array(units).select { |unit| accessible.include?(unit[:unit_id]) }
+
+      current_user.notification_unit_overrides.where.not(unit_id: wanted.map { |unit| unit[:unit_id] }).destroy_all
+      wanted.each do |unit|
+        override = current_user.notification_unit_overrides.find_or_initialize_by(unit_id: unit[:unit_id])
+        override.update!(muted: unit[:muted], channels: unit[:channels])
+      end
+    end
+
+    def accessible_unit_ids
+      project_units = current_user.projects.where(enrolled: true).select(:unit_id)
+      role_units = current_user.unit_roles.select(:unit_id)
+
+      Unit.where(id: project_units).or(Unit.where(id: role_units)).pluck(:id)
+    end
+  end
+
+  desc 'Get grouped notifications for the current user'
+  params do
+    optional :state, type: String, values: %w[all unread read], default: 'all'
+    optional :unit_id, type: Integer
+    optional :kinds, type: Array[String], values: Notification::KINDS
+    optional :query, type: String
+    optional :page, type: Integer, default: 1, values: ->(value) { value.positive? }
+    optional :per_page, type: Integer, default: 25, values: 1..50
+  end
+  get '/notifications' do
+    scope = notification_scope
+    scope = scope.where(unit_id: params[:unit_id]) if params[:unit_id]
+    scope = scope.where(kind: params[:kinds]) if params[:kinds].present?
+
+    scope =
+      case params[:state]
+      when 'unread'
+        scope.unread
+      when 'read'
+        scope.recently_read
+      else
+        scope.where('notifications.read_at IS NULL OR notifications.read_at >= ?', 30.days.ago)
+      end
+
+    groups = NotificationGroupBuilder.new(shown_in_app(scope)).groups
+    if params[:query].present?
+      query = params[:query].downcase
+      groups.select! do |group|
+        [
+          group[:summary],
+          group.dig(:unit, :code),
+          group.dig(:unit, :name),
+          group.dig(:task, :abbreviation),
+          group.dig(:task, :name),
+          group.dig(:task, :student_name),
+          group[:message_subject],
+          group[:message_body],
+          group[:weekly_summary]&.to_json
+        ].compact.any? { |value| value.to_s.downcase.include?(query) }
+      end
+    end
+
+    page = params[:page]
+    per_page = params[:per_page]
+    total = groups.count
+
+    {
+      groups: groups.slice((page - 1) * per_page, per_page) || [],
+      page: page,
+      per_page: per_page,
+      total: total,
+      unread_count: unread_group_count,
+      unread_counts_by_unit: unread_group_counts_by_unit
+    }
+  end
+
+  desc 'Get the grouped unread notification count for the current user'
+  get '/notifications/unread_count' do
+    { count: unread_group_count, unread_counts_by_unit: unread_group_counts_by_unit }
+  end
+
+  desc 'Mark selected notifications as read'
+  params do
+    requires :notification_ids, type: Array[Integer]
+  end
+  put '/notifications/read' do
+    scope = current_user.received_notifications.where(id: params[:notification_ids]).unread
+    count = Notification.mark_read(scope)
+    { count: count }
+  end
+
+  desc 'Mark all notifications as read'
+  params do
+    optional :unit_id, type: Integer
+  end
+  put '/notifications/read_all' do
+    scope = current_user.received_notifications.unread
+    scope = scope.where(unit_id: params[:unit_id]) if params[:unit_id]
+    count = Notification.mark_read(scope)
+    { count: count }
+  end
+
+  desc 'Get the notification settings for the current user'
+  get '/notification_settings' do
+    present NotificationSetting.for(current_user), with: Entities::NotificationSettingEntity
+  end
+
+  desc 'Update the notification settings for the current user'
+  params do
+    optional :channels, type: Hash
+    optional :digest_frequency, type: String, values: NotificationSetting::FREQUENCIES
+    optional :digest_interval_hours, type: Integer, values: NotificationSetting::DIGEST_INTERVAL_HOURS
+    optional :digest_start_time, type: String
+    optional :digest_time, type: String
+    optional :digest_weekday, type: Integer
+    optional :units, type: Array do
+      requires :unit_id, type: Integer
+      requires :muted, type: Boolean
+      optional :channels, type: Hash
+    end
+  end
+  put '/notification_settings' do
+    settings = NotificationSetting.for(current_user)
+    changes = declared(params, include_missing: false)
+
+    NotificationSetting.transaction do
+      settings.update!(changes.except(:units))
+      replace_unit_overrides(changes[:units]) if changes.key?(:units)
+    end
+
+    present settings, with: Entities::NotificationSettingEntity
+  end
+end

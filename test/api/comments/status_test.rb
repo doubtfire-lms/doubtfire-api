@@ -10,9 +10,18 @@ class StatusTest < ActiveSupport::TestCase
   end
 
   def test_status_comments
-    project = Project.first
+    unit = FactoryBot.create(
+      :unit,
+      task_count: 0,
+      student_count: 1,
+      unenrolled_student_count: 0,
+      part_enrolled_student_count: 0,
+      inactive_student_count: 0,
+      allow_flexible_dates: false,
+      mark_late_submissions_as_assess_in_portfolio: false
+    )
+    project = unit.active_projects.first
     user = project.student
-    unit = project.unit
 
     td = TaskDefinition.new({
         unit_id: unit.id,

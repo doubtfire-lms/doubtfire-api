@@ -17,5 +17,8 @@ module Entities
 
     expose :read_by_unit_role
 
+    expose :requires_current_user_read do |tutor_note, options|
+      tutor_note.requires_read_by?(options[:user])
+    end
   end
 end

@@ -62,6 +62,7 @@ class PortfolioEvidence
         if success
           done[task.project] = [] if done[task.project].nil?
           done[task.project] << task
+          Notification.resolve_task_kinds(task, 'pdf_generation_failed')
         else
           add_error.call('Failed to convert your submission to pdf.')
         end
@@ -71,12 +72,13 @@ class PortfolioEvidence
     end
 
     errors.each do |project, tasks|
-      logger.debug "checking email for project #{project.id}"
-      next unless project.student.receive_task_notifications
+      tasks.each { |task| Notification.create_pdf_failure(task) }
+
+      next unless NotificationSetting.for(project.student).delivers?(project.unit, 'pdf_generation_failed', :email)
 
       logger.info "emailing task notification to #{project.student.name}"
       begin
-        PortfolioEvidenceMailer.task_pdf_failed(project, tasks).deliver
+        PortfolioEvidenceMailer.task_pdf_failed(project, tasks).deliver_now
       rescue StandardError => e
         logger.error "Failed to send task pdf failed email for project #{project.id}!\n#{e.message}"
       end
