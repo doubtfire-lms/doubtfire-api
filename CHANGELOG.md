@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-68](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-67...v11.0.0-68) (2026-10-15)
+
+
+### Bug Fixes
+
+* handle large jpeg submissions ([61e8ba9](https://github.com/b0ink/doubtfire-deploy/commit/61e8ba99006a93715aabfa675378917c8e137bcf))
+
 ## [11.0.0-67](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-66...v11.0.0-67) (2026-09-28)
 
 
