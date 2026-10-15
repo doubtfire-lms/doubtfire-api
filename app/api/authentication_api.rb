@@ -247,6 +247,17 @@ class AuthenticationApi < Grape::API
         user.save
       end
 
+      # Fill a missing student ID from the LMS person identifier when it is available and unused.
+      sourced_id = member['lis_person_sourcedid'].to_s.strip.presence
+      if user.role_id == Role.student_id && user.student_id.blank? && sourced_id.present? &&
+         !User.exists?(student_id: sourced_id)
+        begin
+          user.update(student_id: sourced_id)
+        rescue ActiveRecord::RecordNotUnique
+          # Another launch claimed this ID between the lookup and update.
+        end
+      end
+
       # Generate a temporary auth_token for future requests
       onetime_token = user.generate_temporary_authentication_token!
 

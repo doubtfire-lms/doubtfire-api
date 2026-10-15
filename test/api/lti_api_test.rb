@@ -115,6 +115,7 @@ class LtiApiTest < ActiveSupport::TestCase
       family_name: 'Last name 2',
       email: "#{username}@doubtfire.com",
       ext_user_username: 'student_test_lti3',
+      lis_person_sourcedid: 'student-source-12345',
       roles: ['Learner']
     }
     #  Retrieve the temporary auth token and username
@@ -142,6 +143,35 @@ class LtiApiTest < ActiveSupport::TestCase
     assert_equal member[:name], user.nickname
     assert_equal member[:email], user.email
     assert_equal username, user.username
+    assert_equal member[:lis_person_sourcedid], user.student_id
+  end
+
+  def test_lti_launch_fills_only_a_missing_student_id
+    user = FactoryBot.create(:user, :student)
+    user.update!(student_id: nil)
+    member = launch_member(user, SecureRandom.uuid).merge(lis_person_sourcedid: 'student-source-67890')
+
+    post '/api/auth/lti', { ltik: lti_token('auth', member: member) }
+    assert_equal 201, last_response.status
+    assert_equal 'student-source-67890', user.reload.student_id
+
+    member[:lis_person_sourcedid] = 'student-source-changed'
+    post '/api/auth/lti', { ltik: lti_token('auth', member: member) }
+    assert_equal 201, last_response.status
+    assert_equal 'student-source-67890', user.reload.student_id
+  end
+
+  def test_lti_launch_does_not_claim_another_users_student_id
+    existing_id = FactoryBot.create(:user, :student).student_id
+    user = FactoryBot.create(:user, :student)
+    user.update!(student_id: nil)
+
+    post '/api/auth/lti', {
+      ltik: lti_token('auth', member: launch_member(user, SecureRandom.uuid).merge(lis_person_sourcedid: existing_id))
+    }
+
+    assert_equal 201, last_response.status
+    assert_nil user.reload.student_id
   end
 
   def test_lti_launch_links_login_id_without_renaming_an_existing_user
