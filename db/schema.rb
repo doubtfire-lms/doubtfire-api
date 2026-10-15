@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_09_16_003706) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_15_040755) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -101,6 +101,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_16_003706) do
     t.bigint "task_definition_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "plain_text", default: false, null: false
     t.index ["communication_rule_id"], name: "index_communication_actions_on_communication_rule_id"
     t.index ["task_definition_id"], name: "index_communication_actions_on_task_definition_id"
     t.index ["type"], name: "index_communication_actions_on_type"
