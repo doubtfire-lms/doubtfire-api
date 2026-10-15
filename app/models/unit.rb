@@ -2505,7 +2505,7 @@ class Unit < ApplicationRecord
   # Create a temp zip file with all submissions for a task
   #
   def task_submissions_zip_path(current_user, td)
-    FileHelper.tmp_file("submissions-#{code}-#{td.abbreviation}-#{current_user.username}-files.zip")
+    FileHelper.tmp_file("submissions-#{code}-#{td.abbreviation}-#{current_user.username}-named-files.zip")
   end
 
   def get_task_submissions_zip(current_user, td, progress_callback: nil)
@@ -2526,7 +2526,14 @@ class Unit < ApplicationRecord
       entries[path_part] = task
     end
 
-    if File.exist?(result)
+    cache_current = File.file?(result) &&
+                    File.mtime(result) >= td.updated_at &&
+                    submissions.values.all? do |task|
+                      source = task.zip_file_path_for_done_task
+                      File.file?(source) && File.mtime(result) >= File.mtime(source)
+                    end
+
+    if cache_current
       progress_callback&.call(
         message: "Initialising submission files download",
         total_rows: submissions.count,
@@ -2554,7 +2561,7 @@ class Unit < ApplicationRecord
 
               # Done archives store files below a task-id folder. The aggregate
               # archive replaces that folder with the student or group name.
-              relative_path = entry.name.split('/', 2).last || entry.name
+              relative_path = task.download_filename_for(entry.name)
               aggregate_entry = entry.dup
               aggregate_entry.name = File.join(zip_root_path, path_part, relative_path)
               output_zip.copy_raw_entry(aggregate_entry)

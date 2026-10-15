@@ -345,7 +345,7 @@ class TasksApi < Grape::API
     )
 
     # Find the file
-    file_loc = FileHelper.zip_file_path_for_done_task(task)
+    file_loc = task.downloadable_submission_zip_path
 
     if file_loc.nil? || !File.exist?(file_loc)
       file_loc = Rails.root.join('public/resources/FileNotFound.pdf')

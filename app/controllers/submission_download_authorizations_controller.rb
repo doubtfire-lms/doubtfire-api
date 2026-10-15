@@ -43,7 +43,7 @@ class SubmissionDownloadAuthorizationsController < ApplicationController
 
   def submission_files_download(task, task_definition, project)
     {
-      path: FileHelper.zip_file_path_for_done_task(task),
+      path: task.downloadable_submission_zip_path,
       filename: FileHelper.sanitized_filename("#{project.student.username}-#{task_definition.abbreviation}.zip"),
       content_type: 'application/octet-stream',
       disposition: 'attachment'
