@@ -27,7 +27,7 @@ class CommunicationsMailerTest < ActionMailer::TestCase
       subject: 'Reminder',
       body: body,
       recipient: nil,
-      sender: nil,
+      sender: Struct.new(:name).new('Convenor'),
       plain_text: plain_text
     )
   end
