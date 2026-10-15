@@ -2442,12 +2442,19 @@ class Unit < ApplicationRecord
     FileHelper.tmp_file("submissions-#{code}-#{td.abbreviation}-#{current_user.username}-pdfs.zip")
   end
 
+  def task_submissions_cache_current?(path, td)
+    return false unless File.file?(path)
+
+    latest_project_update = td.tasks.joins(:project).maximum('projects.updated_at')
+    File.mtime(path) >= [td.updated_at, latest_project_update].compact.max
+  end
+
   def get_task_submissions_pdf_zip(current_user, td, progress_callback: nil)
     # Get a temp file path
     result = task_submissions_pdf_zip_path(current_user, td)
 
     tasks_with_files = td.related_tasks_with_files
-    if File.exist?(result)
+    if task_submissions_cache_current?(result, td)
       progress_callback&.call(
         message: "Initialising submission pdfs download",
         total_rows: tasks_with_files.count,
@@ -2534,8 +2541,7 @@ class Unit < ApplicationRecord
     end
     logger.warn "Skipping missing submission archives: #{missing_submissions.join(', ')}" if missing_submissions.any?
 
-    cache_current = missing_submissions.empty? && File.file?(result) &&
-                    File.mtime(result) >= td.updated_at &&
+    cache_current = missing_submissions.empty? && task_submissions_cache_current?(result, td) &&
                     submissions.values.all? do |task|
                       source = task.zip_file_path_for_done_task
                       File.file?(source) && File.mtime(result) >= File.mtime(source)
