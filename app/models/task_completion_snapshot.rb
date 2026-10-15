@@ -63,6 +63,53 @@ class TaskCompletionSnapshot < ApplicationRecord
     {}
   end
 
+  # Count each CSV row once for the whole campus, even when the student belongs
+  # to multiple tutorial streams. Tutorial buckets remain available for filtering.
+  def load_status_population_stats
+    csv_text = snapshot_contents
+    return { 'all' => {}, 'target_grades' => {} } if csv_text.blank?
+
+    stream_headers = unit.tutorial_streams.pluck(:abbreviation)
+    stream_headers = ['Tutorial'] if stream_headers.empty?
+    task_definitions = unit.task_definitions_by_grade
+    grade_labels = unit.grade_values.to_h { |grade| [unit.grade_label(grade), grade.to_s] }
+    campus_names = Campus.pluck(:abbreviation, :name).to_h
+    result = { 'all' => {}, 'target_grades' => {} }
+    seen = Set.new
+
+    CSV.parse(csv_text, headers: true).each do |row|
+      student = row['Username'].presence || row['Student ID'].presence
+      campus_abbreviation = row['Campus'].to_s.strip
+      next if student.blank? || campus_abbreviation.blank?
+
+      campus = campus_names[campus_abbreviation] || campus_abbreviation
+      tutorial_names = stream_headers.filter_map { |header| row[header].to_s.strip.presence }.uniq
+      grade = grade_labels[row['Target Grade'].to_s.strip]
+      scopes = [result['all']]
+      scopes << (result['target_grades'][grade] ||= {}) if grade
+
+      scopes.each do |scope|
+        campus_stats = scope[campus] ||= {}
+        ['__all__', *tutorial_names].each do |tutorial|
+          task_stats = campus_stats[tutorial] ||= {}
+          task_definitions.each do |task_definition|
+            status_id = row[task_definition.abbreviation].to_s.strip.to_i
+            status = (TaskStatus.id_to_key(status_id) || :not_started).to_s
+            key = [scope.object_id, student, campus, tutorial, task_definition.abbreviation]
+            next unless seen.add?(key)
+
+            counts = task_stats[task_definition.abbreviation] ||= {}
+            counts[status] = (counts[status] || 0) + 1
+          end
+        end
+      end
+    end
+
+    result
+  rescue CSV::MalformedCSVError
+    { 'all' => {}, 'target_grades' => {} }
+  end
+
   def load_student_counts
     students = Set.new
     campus_students = Hash.new { |hash, key| hash[key] = Set.new }
