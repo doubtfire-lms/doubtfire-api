@@ -28,8 +28,6 @@ class CommunicationsMailerTest < ActionMailer::TestCase
       body: body,
       recipient: nil,
       sender: nil,
-      unit: nil,
-      rule: nil,
       plain_text: plain_text
     )
   end

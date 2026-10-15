@@ -166,9 +166,7 @@ class ExecuteCommunicationSetJob
         body: body,
         plain_text: action.plain_text,
         recipient: recipient,
-        sender: sender_user_for(unit),
-        unit: unit,
-        rule: rule
+        sender: sender_user_for(unit)
       ).deliver_now
 
       {
@@ -208,9 +206,7 @@ class ExecuteCommunicationSetJob
           body: body,
           plain_text: action.plain_text,
           recipient: recipient,
-          sender: sender_user_for(unit),
-          unit: unit,
-          rule: rule
+          sender: sender_user_for(unit)
         ).deliver_now
 
         {

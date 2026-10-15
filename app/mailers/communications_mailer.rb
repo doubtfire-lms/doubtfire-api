@@ -1,5 +1,5 @@
 class CommunicationsMailer < ApplicationMailer
-  def communication_email(to:, from:, subject:, body:, recipient:, sender:, unit:, rule:, plain_text: false)
+  def communication_email(to:, from:, subject:, body:, recipient:, sender:, plain_text: false)
     if plain_text
       @body = body.to_s
       return mail(to: to, from: from, subject: subject) do |format|
@@ -9,8 +9,6 @@ class CommunicationsMailer < ApplicationMailer
 
     @recipient = recipient
     @sender = sender
-    @unit = unit
-    @rule = rule
     @body = body.to_s
     @body_paragraphs = @body.split(/\r?\n/).map(&:strip).reject(&:blank?)
 
