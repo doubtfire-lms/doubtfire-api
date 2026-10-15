@@ -2526,7 +2526,15 @@ class Unit < ApplicationRecord
       entries[path_part] = task
     end
 
-    cache_current = File.file?(result) &&
+    missing_submissions = []
+    submissions.reject! do |path_part, task|
+      missing = !File.file?(task.zip_file_path_for_done_task)
+      missing_submissions << "#{path_part} (task #{task.id})" if missing
+      missing
+    end
+    logger.warn "Skipping missing submission archives: #{missing_submissions.join(', ')}" if missing_submissions.any?
+
+    cache_current = missing_submissions.empty? && File.file?(result) &&
                     File.mtime(result) >= td.updated_at &&
                     submissions.values.all? do |task|
                       source = task.zip_file_path_for_done_task
@@ -2575,6 +2583,11 @@ class Unit < ApplicationRecord
               rows_processed: processed_count
             )
           end
+        end
+
+        if missing_submissions.any?
+          output_zip.put_next_entry(File.join(zip_root_path, 'missing-submissions.txt'))
+          output_zip.write("Submission files were unavailable for:\n#{missing_submissions.join("\n")}\n")
         end
       end
 

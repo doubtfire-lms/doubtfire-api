@@ -31,6 +31,21 @@ class TaskSubmissionDownloadTest < ActiveSupport::TestCase
       "#{task_definition.abbreviation}-submissions/#{project.student.username}/000-Design_report.pdf",
       "#{task_definition.abbreviation}-submissions/#{project.student.username}/001-source.py"
     ]
+
+    missing_project = FactoryBot.create(:project, unit: unit)
+    missing_task = missing_project.task_for_task_definition(task_definition)
+    bulk = task_definition.stub(:related_tasks_with_files, [task, missing_task]) do
+      unit.get_task_submissions_zip(unit.main_convenor_user, task_definition)
+    end
+    manifest = "#{task_definition.abbreviation}-submissions/missing-submissions.txt"
+    assert_archive_entries bulk, [
+      "#{task_definition.abbreviation}-submissions/#{project.student.username}/000-Design_report.pdf",
+      "#{task_definition.abbreviation}-submissions/#{project.student.username}/001-source.py",
+      manifest
+    ]
+    Zip::File.open(bulk) do |zip|
+      assert_includes zip.read(manifest), missing_project.student.username
+    end
   ensure
     FileUtils.rm_f(source) if source
     FileUtils.rm_f(individual) if individual
