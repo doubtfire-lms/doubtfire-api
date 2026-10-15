@@ -1258,6 +1258,8 @@ class Task < ApplicationRecord
   #
   # Compress the done files for a student - includes cover page and work uploaded
   #
+  class ImageProcessingError < StandardError; end
+
   def compress_new_to_done(task_dir: student_work_dir(:new, false), zip_file_path: nil, rm_task_dir: true, rename_files: false)
     begin
       # Ensure that this task is the submitter task for a  group_task... otherwise
@@ -1272,7 +1274,10 @@ class Task < ApplicationRecord
       image_files.each do |img|
         # Ensure all images in submissions are jpg
         dest_file = "#{task_dir}#{File.basename(img, ".*")}.jpg"
-        raise 'Failed to compress an image. Ensure all images are valid.' unless FileHelper.compress_image_to_dest("#{task_dir}#{img}", dest_file, true)
+        unless FileHelper.compress_image_to_dest("#{task_dir}#{img}", dest_file, true)
+          upload_name = upload_requirements[img.to_i]&.dig('name') || 'image'
+          raise ImageProcessingError, "The image for '#{upload_name}' could not be processed. Export it as a smaller JPEG or PNG and resubmit the task."
+        end
 
         # Cleanup unless the output was the same as the input
         FileUtils.rm("#{task_dir}#{img}") unless dest_file == "#{task_dir}#{img}"
@@ -1590,12 +1595,12 @@ class Task < ApplicationRecord
   def convert_submission_to_pdf(source_folder: FileHelper.student_work_dir(:new), log_to_stdout: true)
     logger.info "Converting task #{self.id} to pdf"
 
-    unless move_files_to_in_process(source_folder)
-      logger.error("Failed to move files for #{log_details} to in process")
-      return false
-    end
-
     begin
+      unless move_files_to_in_process(source_folder)
+        logger.error("Failed to move files for #{log_details} to in process")
+        return false
+      end
+
       converted_word_documents = convert_word_documents_to_pdf
 
       tac = TaskAppController.new
@@ -1662,9 +1667,14 @@ class Task < ApplicationRecord
     rescue => e
       SubmissionHistory.clear_document_previews(self)
       trigger_transition trigger: 'fix', by_user: project.tutor_for(task_definition)
+      comment = if e.is_a?(ImageProcessingError)
+                  "**Automated Comment**: #{e.message}"
+                else
+                  "**Automated Comment**: Something went wrong with your submission. Check that code files do not contain invalid characters, documents are valid PDF or DOCX files, images are valid, and zip files are valid, then resubmit this task."
+                end
       add_text_comment(
         project.tutor_for(task_definition),
-        "**Automated Comment**: Something went wrong with your submission. Check that code files do not contain invalid characters, documents are valid PDF or DOCX files, images are valid, and zip files are valid, then resubmit this task.",
+        comment,
         attention_audience: :student
       )
       raise e

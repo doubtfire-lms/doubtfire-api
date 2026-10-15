@@ -543,7 +543,7 @@ module FileHelper
   end
 
   def compress_image_to_dest(source, dest, delete_frames = false)
-    exec = "convert -quiet \
+    exec = "convert -quiet -define jpeg:size=2048x2048 \
             \"#{source}\" \
             #{delete_frames ? '-delete 1--1' : ''} -auto-orient -strip -density 72 -quality 85% -resize 2048x2048\\> -resize 48x48\\< \
             \"#{dest}\" >>/dev/null 2>>/dev/null"
