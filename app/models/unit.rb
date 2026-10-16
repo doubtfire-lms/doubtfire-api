@@ -2442,12 +2442,19 @@ class Unit < ApplicationRecord
     FileHelper.tmp_file("submissions-#{code}-#{td.abbreviation}-#{current_user.username}-pdfs.zip")
   end
 
+  def task_submissions_cache_current?(path, td)
+    return false unless File.file?(path)
+
+    latest_project_update = td.tasks.joins(:project).maximum('projects.updated_at')
+    File.mtime(path) >= [td.updated_at, latest_project_update].compact.max
+  end
+
   def get_task_submissions_pdf_zip(current_user, td, progress_callback: nil)
     # Get a temp file path
     result = task_submissions_pdf_zip_path(current_user, td)
 
     tasks_with_files = td.related_tasks_with_files
-    if File.exist?(result)
+    if task_submissions_cache_current?(result, td)
       progress_callback&.call(
         message: "Initialising submission pdfs download",
         total_rows: tasks_with_files.count,
@@ -2505,7 +2512,7 @@ class Unit < ApplicationRecord
   # Create a temp zip file with all submissions for a task
   #
   def task_submissions_zip_path(current_user, td)
-    FileHelper.tmp_file("submissions-#{code}-#{td.abbreviation}-#{current_user.username}-files.zip")
+    FileHelper.tmp_file("submissions-#{code}-#{td.abbreviation}-#{current_user.username}-named-files.zip")
   end
 
   def get_task_submissions_zip(current_user, td, progress_callback: nil)
@@ -2526,7 +2533,21 @@ class Unit < ApplicationRecord
       entries[path_part] = task
     end
 
-    if File.exist?(result)
+    missing_submissions = []
+    submissions.reject! do |path_part, task|
+      missing = !File.file?(task.zip_file_path_for_done_task)
+      missing_submissions << "#{path_part} (task #{task.id})" if missing
+      missing
+    end
+    logger.warn "Skipping missing submission archives: #{missing_submissions.join(', ')}" if missing_submissions.any?
+
+    cache_current = missing_submissions.empty? && task_submissions_cache_current?(result, td) &&
+                    submissions.values.all? do |task|
+                      source = task.zip_file_path_for_done_task
+                      File.file?(source) && File.mtime(result) >= File.mtime(source)
+                    end
+
+    if cache_current
       progress_callback&.call(
         message: "Initialising submission files download",
         total_rows: submissions.count,
@@ -2554,7 +2575,7 @@ class Unit < ApplicationRecord
 
               # Done archives store files below a task-id folder. The aggregate
               # archive replaces that folder with the student or group name.
-              relative_path = entry.name.split('/', 2).last || entry.name
+              relative_path = task.download_filename_for(entry.name)
               aggregate_entry = entry.dup
               aggregate_entry.name = File.join(zip_root_path, path_part, relative_path)
               output_zip.copy_raw_entry(aggregate_entry)
@@ -2568,6 +2589,11 @@ class Unit < ApplicationRecord
               rows_processed: processed_count
             )
           end
+        end
+
+        if missing_submissions.any?
+          output_zip.put_next_entry(File.join(zip_root_path, 'missing-submissions.txt'))
+          output_zip.write("Submission files were unavailable for:\n#{missing_submissions.join("\n")}\n")
         end
       end
 

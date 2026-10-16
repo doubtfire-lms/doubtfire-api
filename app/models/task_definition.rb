@@ -1056,7 +1056,7 @@ class TaskDefinition < ApplicationRecord
   end
 
   def related_tasks_with_files(consolidate_groups = true)
-    tasks_with_files = tasks.select(&:has_pdf)
+    tasks_with_files = tasks.joins(:project).where(projects: { enrolled: true }).select(&:has_pdf)
 
     if is_group_task? && consolidate_groups
       # group task so only select one member of each group

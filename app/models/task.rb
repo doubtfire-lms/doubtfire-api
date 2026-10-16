@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'date'
+require 'securerandom'
 
 class Task < ApplicationRecord
   include ApplicationHelper
@@ -1880,6 +1881,57 @@ class Task < ApplicationRecord
   def filename_for_upload(idx)
     return nil unless idx >= 0 && idx < upload_requirements.length
     "#{upload_requirements[idx]['name']}#{extension_for_upload(idx)}"
+  end
+
+  # Keep the stored archive's numbered filenames for internal processing, but
+  # expose the upload requirement names when staff download its contents.
+  def download_filename_for(entry_name)
+    relative_path = entry_name.split('/', 2).last || entry_name
+    filename = File.basename(relative_path)
+    match = /\A(?<index>\d{3})-(?<type>document|code|image|zip|archive)(?<extension>\..+)\z/.match(filename)
+    return relative_path unless match
+
+    requirement = upload_requirements[match[:index].to_i]
+    return relative_path unless requirement && requirement['type'] == match[:type]
+
+    extension = match[:extension]
+    name = requirement['name'].to_s.strip
+    return relative_path if name.empty?
+
+    name = name[0...-extension.length] if name.downcase.end_with?(extension.downcase)
+    renamed_file = "#{match[:index]}-#{FileHelper.sanitized_filename(name)}#{extension}"
+    directory = File.dirname(relative_path)
+    directory == '.' ? renamed_file : File.join(directory, renamed_file)
+  end
+
+  def downloadable_submission_zip_path
+    source = zip_file_path_for_done_task
+    return source unless source && File.file?(source)
+
+    result = FileHelper.tmp_file("submission-#{id}-named.zip")
+    if File.file?(result) && File.mtime(result) >= [File.mtime(source), task_definition.updated_at].max
+      return result
+    end
+
+    partial_result = "#{result}.partial-#{SecureRandom.hex(8)}"
+    begin
+      Zip::OutputStream.open(partial_result) do |output_zip|
+        Zip::File.open(source) do |submission_zip|
+          submission_zip.each do |entry|
+            next if entry.name_is_directory?
+
+            renamed_entry = entry.dup
+            renamed_entry.name = File.join(entry.name.split('/', 2).first, download_filename_for(entry.name))
+            output_zip.copy_raw_entry(renamed_entry)
+          end
+        end
+      end
+      FileUtils.mv(partial_result, result)
+    ensure
+      FileUtils.rm_f(partial_result)
+    end
+
+    result
   end
 
   def extension_for_upload(idx)
