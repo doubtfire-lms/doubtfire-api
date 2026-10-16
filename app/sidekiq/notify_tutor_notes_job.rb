@@ -1,6 +1,8 @@
 class NotifyTutorNotesJob
   include Sidekiq::Job
 
+  sidekiq_options queue: 'parallel'
+
   def perform(tutor_note_id, recipient_user_id)
     tutor_note = TutorNote.find(tutor_note_id)
     recipient = User.find(recipient_user_id)

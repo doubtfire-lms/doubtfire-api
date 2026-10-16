@@ -6,7 +6,8 @@ class LoginDockerJob
   include LogHelper
   include ApplicationHelper
 
-  sidekiq_options lock: :until_executed,
+  sidekiq_options queue: 'parallel',
+                  lock: :until_executed,
                   lock_args_method: ->(args) { args },
                   on_conflict: :reject,
                   retry: 1

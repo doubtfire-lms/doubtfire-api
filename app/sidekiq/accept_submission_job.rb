@@ -2,7 +2,8 @@ class AcceptSubmissionJob
   include Sidekiq::Job
   include LogHelper
 
-  sidekiq_options lock: :until_executed,
+  sidekiq_options queue: 'default',
+                  lock: :until_executed,
                   lock_args_method: ->(args) { [args.first] },
                   on_conflict: :reject,
                   retry: false

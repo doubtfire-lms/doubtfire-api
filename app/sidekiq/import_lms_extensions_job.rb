@@ -7,7 +7,8 @@ class ImportLmsExtensionsJob
   include Sidekiq::Job
   include Sidekiq::Status::Worker
 
-  sidekiq_options lock: :until_executed,
+  sidekiq_options queue: 'parallel',
+                  lock: :until_executed,
                   lock_args_method: ->(args) { [args.first] },
                   on_conflict: :reject,
                   retry: false

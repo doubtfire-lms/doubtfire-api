@@ -4,7 +4,8 @@ class ExecuteCommunicationSetJob
   include Sidekiq::Job
   include Sidekiq::Status::Worker
 
-  sidekiq_options lock: :until_executed,
+  sidekiq_options queue: 'parallel',
+                  lock: :until_executed,
                   lock_args_method: ->(args) { [args[0], args[1], 'communication-set'] },
                   on_conflict: :reject,
                   retry: 1
