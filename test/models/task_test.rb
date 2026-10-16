@@ -290,11 +290,16 @@ class TaskTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status, last_response_body
 
     task = project.task_for_task_definition(td)
+    submission_time = task.file_uploaded_at
+    assert submission_time
+    task.update_column(:submission_date, nil)
     assert task.convert_submission_to_pdf(log_to_stdout: true)
     path = task.zip_file_path_for_done_task
     assert path
     assert File.exist? path
     assert File.exist? task.final_pdf_path
+    assert_includes PDF::Reader.new(task.final_pdf_path).pages.first.text,
+                    submission_time.localtime.strftime('%Y/%m/%d %H:%M')
 
     td.destroy
     assert_not File.exist? path

@@ -1468,6 +1468,7 @@ class Task < ApplicationRecord
     include LatexHelper
 
     attr_accessor :task
+    attr_accessor :submission_date
     attr_accessor :files
     attr_accessor :base_path
     attr_accessor :image_path
@@ -1476,6 +1477,7 @@ class Task < ApplicationRecord
 
     def init(task, is_retry)
       @task = task
+      @submission_date = task.submission_date || task.file_uploaded_at || task.task_submissions.maximum(:submission_time)
       @files = task.in_process_files_for_task(is_retry)
       @base_path = task.student_work_dir(:in_process, false)
       @image_path = Rails.root.join('public/assets/images')
@@ -1748,7 +1750,7 @@ class Task < ApplicationRecord
       reverse_jplag_similarities(&:destroy)
       reverse_moss_similarities(&:destroy)
 
-      save
+      save!
     end
   end
 
