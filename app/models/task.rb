@@ -7,6 +7,16 @@ class Task < ApplicationRecord
   include ApplicationHelper
   include GradeHelper
 
+  PREREQUISITE_STATUS_LEVELS = {
+    ready_for_feedback: 1,
+    assess_in_portfolio: 1,
+    discuss: 2,
+    rediscuss: 2,
+    attention_required: 0,
+    demonstrate: 2,
+    complete: 3
+  }.freeze
+
   attr_accessor :discussion_confirmed_for_transition
 
   #
@@ -548,6 +558,29 @@ class Task < ApplicationRecord
 
   def ready_or_complete?
     [:complete, :discuss, :rediscuss, :demonstrate, :ready_for_feedback, :assess_in_portfolio].include? status
+  end
+
+  def unmet_prerequisite_error
+    task_definition.task_prerequisites.each do |prerequisite|
+      prereq_td = prerequisite.prerequisite
+      minimum_status = TaskStatus.find(prerequisite.task_status_id)
+      prereq_task = project.task_for_task_definition(prereq_td)
+
+      next if prereq_task.ready_or_complete? &&
+              PREREQUISITE_STATUS_LEVELS[prereq_task.status] >= PREREQUISITE_STATUS_LEVELS[minimum_status.status_key]
+
+      verb = case minimum_status
+             when TaskStatus.complete then 'completed'
+             when TaskStatus.discuss then 'discussed'
+             when TaskStatus.rediscuss then 'rediscussed'
+             when TaskStatus.demonstrate then 'demonstrated'
+             when TaskStatus.ready_for_feedback then 'submitted'
+             end
+
+      return "Cannot submit this task until prerequisite '#{prereq_td.abbreviation}' has been #{verb}"
+    end
+
+    nil
   end
 
   def submitted_status?
