@@ -4,6 +4,8 @@
 class ArchiveOldUnitsJob
   include Sidekiq::Job
 
+  sidekiq_options queue: 'parallel'
+
   def perform
     return unless Doubtfire::Application.config.archive_units
 

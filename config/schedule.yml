@@ -3,35 +3,44 @@
 register_webhooks:
   cron: "every day at 5"
   class: "TiiRegisterWebHookJob"
+  queue: parallel
 
 progress_turn_it_in_jobs:
   cron: "every 30 minutes"
   class: "TiiCheckProgressJob"
+  queue: parallel
 
 clean_up_auth_tokens:
   cron: "every 30 minutes"
   class: "ClearAccessTokensJob"
+  queue: parallel
 
 refresh_moderation_feedback_timestamps:
   cron: "every 60 minutes"
   class: "RefreshModerationFeedbackTimestampsJob"
+  queue: parallel
 
 aggregate_task_completion_stats:
   cron: "every day at 11:55pm"
   class: "AggregateTaskCompletionStatsJob"
+  queue: parallel
 
 poll_communication_set_schedules:
   cron: "every 5 minutes"
   class: "PollCommunicationSetSchedulesJob"
+  queue: parallel
 
 notify_discuss_timeout:
   cron: "every day at 8am"
   class: "NotifyDiscussTimeoutJob"
+  queue: parallel
 
 sync_lms_integrations:
   cron: "every day at 3am"
   class: "SyncLmsIntegrationsJob"
+  queue: parallel
 
 # archive_old_units:
 #   cron: "every 6 months"
 #   class: "ArchiveOldUnitsJob"
+#   queue: parallel

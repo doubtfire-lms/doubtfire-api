@@ -1,7 +1,8 @@
 class SendDiscussTimeoutEmailJob
   include Sidekiq::Job
 
-  sidekiq_options retry: 5
+  sidekiq_options queue: 'parallel',
+                  retry: 5
 
   def perform(task_id, sender_id, notification_type, expiry_date = nil)
     task = Task.find_by(id: task_id)

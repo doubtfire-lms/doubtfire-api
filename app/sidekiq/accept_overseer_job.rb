@@ -8,7 +8,8 @@ class AcceptOverseerJob
   include ApplicationHelper
   include FileHelper
 
-  sidekiq_options lock: :until_executed,
+  sidekiq_options queue: 'default',
+                  lock: :until_executed,
                   lock_args_method: ->(args) { [args.first, args.last, 'overseer-assessment'] },
                   on_conflict: :reject,
                   retry: 1
