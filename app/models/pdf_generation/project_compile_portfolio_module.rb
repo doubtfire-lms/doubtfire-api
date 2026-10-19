@@ -146,6 +146,10 @@ module PdfGeneration
         save!
         true
       rescue StandardError => e
+        # A partially written output is not an available portfolio. Removing it
+        # ensures a failed compilation releases the submission lock.
+        FileUtils.rm_f(portfolio_path)
+        self.portfolio_production_date = nil
         self.compile_portfolio = false
         save!
 

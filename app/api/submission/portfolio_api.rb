@@ -24,6 +24,10 @@ module Submission
         error!({ error: "Not authorised to submit portfolio for project '#{params[:id]}'" }, 401)
       end
 
+      if project.portfolio_locked?
+        error!({ error: 'Portfolio evidence is frozen because the portfolio has already been submitted.' }, 403)
+      end
+
       file = params[:file0]
       name = params[:name]
       kind = params[:kind]
@@ -55,12 +59,20 @@ module Submission
 
       # Remove file or portfolio?
       if params[:idx].nil? && params[:name].nil? && params[:kind].nil?
+        # Deleting the whole portfolio is how a locked project gets unlocked again,
+        # so it is intentionally still allowed once a portfolio has been submitted.
+        # compile_portfolio is cleared too so a delete performed mid-compile still unlocks the project.
         project.update!({
                           portfolio_submission_date: nil,
-                          portfolio_production_date: nil
+                          portfolio_production_date: nil,
+                          compile_portfolio: false
                         })
         project.remove_portfolio # returns details of file
       elsif !(params[:idx].nil? || params[:name].nil? || params[:kind].nil?)
+        if project.portfolio_locked?
+          error!({ error: 'Portfolio evidence is frozen because the portfolio has already been submitted.' }, 403)
+        end
+
         idx = params[:idx]
         name = params[:name]
         kind = params[:kind]

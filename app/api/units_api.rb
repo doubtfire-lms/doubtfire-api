@@ -85,6 +85,7 @@ class UnitsApi < Grape::API
       optional :enable_sync_enrolments, type: Boolean, desc: 'Sync student enrolments automatically if supported by deployment'
       optional :draft_task_definition_id, type: Integer, desc: 'Indicates the ID of the task definition used as the "draft learning summary task"'
       optional :portfolio_auto_generation_date, type: Date, desc: 'Indicates a date where student portfolio will automatically compile'
+      optional :lock_project_on_portfolio_submission, type: Boolean, desc: 'Freeze task statuses, comments, and portfolio evidence while a portfolio is compiling or available'
       optional :allow_flexible_dates, type: Boolean, desc: 'Can turn on/off flexible dates for tasks in this unit'
       optional :allow_student_extension_requests, type: Boolean, desc: 'Can turn on/off student extension requests'
       optional :allow_student_change_tutorial, type: Boolean, desc: 'Can turn on/off student ability to change tutorials'
@@ -130,6 +131,7 @@ class UnitsApi < Grape::API
                                                           :enable_sync_enrolments,
                                                           :draft_task_definition_id,
                                                           :portfolio_auto_generation_date,
+                                                          :lock_project_on_portfolio_submission,
                                                           :allow_flexible_dates,
                                                           :allow_student_extension_requests,
                                                           :extension_weeks_on_resubmit_request,
@@ -187,6 +189,7 @@ class UnitsApi < Grape::API
       optional :allow_student_extension_requests, type: Boolean, desc: 'Can turn on/off student extension requests', default: true
       optional :extension_weeks_on_resubmit_request, type: Integer, desc: 'Determines the number of weeks extension on a resubmit request', default: 1
       optional :portfolio_auto_generation_date, type: Date, desc: 'Indicates a date where student portfolio will automatically compile'
+      optional :lock_project_on_portfolio_submission, type: Boolean, desc: 'Freeze task statuses, comments, and portfolio evidence while a portfolio is compiling or available', default: false
       optional :allow_student_change_tutorial, type: Boolean, desc: 'Can turn on/off student ability to change tutorials', default: true
       optional :feedback_warning_threshold_days, type: Integer, desc: 'Number of days since a submission without feedback before its highlighted in the tutors inbox'
       optional :feedback_overflow_threshold_days, type: Integer, desc: 'Number of days since a submission without feedback before its added to overflow marking'
@@ -229,6 +232,7 @@ class UnitsApi < Grape::API
                                                     :allow_student_extension_requests,
                                                     :extension_weeks_on_resubmit_request,
                                                     :portfolio_auto_generation_date,
+                                                    :lock_project_on_portfolio_submission,
                                                     :allow_student_change_tutorial,
                                                     :feedback_warning_threshold_days,
                                                     :feedback_overflow_threshold_days,

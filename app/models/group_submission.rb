@@ -17,10 +17,13 @@ class GroupSubmission < ApplicationRecord
     begin
       FileHelper.delete_group_submission(group_submission)
 
-      # also remove evidence from group members
-      # rubocop:disable Rails/SkipsModelValidations
-      tasks.where('portfolio_evidence IS NOT NULL').update_all(portfolio_evidence: nil)
-      # rubocop:enable Rails/SkipsModelValidations
+      # also remove evidence from group members - skip anyone whose portfolio
+      # is locked so their task state stays exactly as submitted
+      tasks.where('portfolio_evidence IS NOT NULL').find_each do |task|
+        next if task.project.portfolio_locked?
+
+        task.update(portfolio_evidence: nil)
+      end
     rescue => e
       logger.error "Failed to delete group submission #{group_submission.id}. Error: #{e.message}"
     end
@@ -29,6 +32,7 @@ class GroupSubmission < ApplicationRecord
   def propagate_transition(initial_task, trigger, by_user, quality)
     tasks.each do |task|
       next if [TaskStatus.complete.id, TaskStatus.feedback_exceeded.id, TaskStatus.fail.id].include? task.task_status_id
+      next if task.project.portfolio_locked?
 
       if task != initial_task
         task.extensions = initial_task.extensions unless initial_task.extensions < task.extensions
@@ -39,6 +43,8 @@ class GroupSubmission < ApplicationRecord
 
   def propagate_grade(initial_task, new_grade, ui)
     tasks.each do |task|
+      next if task.project.portfolio_locked?
+
       if task != initial_task
         task.grade_task new_grade, ui, grading_group = true
       end

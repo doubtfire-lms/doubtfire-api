@@ -42,7 +42,7 @@ class RefreshModerationFeedbackTimestampsJob
 
       next if task.last_tutor_feedback_at == latest_feedback_time
 
-      task.update!(last_tutor_feedback_at: latest_feedback_time)
+      task.update!(last_tutor_feedback_at: latest_feedback_time) unless task.project.portfolio_locked?
     rescue StandardError
       next
     end
