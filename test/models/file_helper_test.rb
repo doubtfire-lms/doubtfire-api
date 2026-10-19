@@ -28,6 +28,27 @@ class FileHelperTest < ActiveSupport::TestCase
     end
   end
 
+  def test_convert_large_jpeg_with_small_file_size
+    in_file = Rails.root.join('test_files/submissions/large-low-detail.jpg')
+    assert_operator File.size(in_file), :<, 2_000_000
+    source_dimensions, source_status = Open3.capture2('identify', '-ping', '-format', '%w %h', in_file.to_s)
+    assert source_status.success?
+    assert_equal '15000 17000', source_dimensions
+
+    Dir.mktmpdir do |dir|
+      dest_file = File.join(dir, 'large-low-detail.jpg')
+      assert FileHelper.compress_image_to_dest(in_file.to_s, dest_file, true)
+      assert File.exist?(dest_file)
+
+      dimensions, status = Open3.capture2('identify', '-format', '%w %h', dest_file)
+      assert status.success?
+      width, height = dimensions.split.map(&:to_i)
+      assert_operator width, :<=, 2048
+      assert_operator height, :<=, 2048
+      assert_equal 2048, [width, height].max
+    end
+  end
+
   def test_accepts_docx_as_a_document
     with_word_document_conversion_configured do
       Tempfile.create(['submission', '.docx']) do |docx_file|

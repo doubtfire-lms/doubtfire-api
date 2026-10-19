@@ -36,6 +36,15 @@ class UnitContentsApiTest < ActiveSupport::TestCase
     assert_equal File.binread(@archive.path), last_response.body
   end
 
+  def test_content_site_response_includes_the_cache_version
+    add_auth_header_for(user: @unit.main_convenor_user)
+
+    get "/api/units/#{@unit.id}/content/sites"
+
+    assert_equal 200, last_response.status
+    assert_equal @site.content_version, JSON.parse(last_response.body).first['content_version']
+  end
+
   def test_student_cannot_download_content_site_archive
     student = FactoryBot.create(:user, :student)
     @unit.enrol_student(student, nil)

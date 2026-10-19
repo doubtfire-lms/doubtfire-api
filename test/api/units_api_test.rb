@@ -719,6 +719,11 @@ class UnitsApiTest < ActiveSupport::TestCase
 
     latest_stats = last_response_body[0]['stats']
     assert_equal 3, latest_stats[tutorial.campus.name][tutorial.abbreviation][task_definition.abbreviation]['complete']
+    assert_equal 3, last_response_body[0]['student_count']
+    assert_equal 3, last_response_body[0]['campus_student_counts'][tutorial.campus.name]
+    assert_equal 3, last_response_body[0]['target_grade_student_counts']['0']
+    assert_equal 3, last_response_body[0]['target_grade_campus_student_counts']['0'][tutorial.campus.name]
+    assert_equal 3, last_response_body[0]['status_population_stats']['all'][tutorial.campus.name]['__all__'][task_definition.abbreviation]['complete']
 
     assert_not_equal older_snapshot.snapshot_date.to_s, last_response_body[1]['snapshot_date'].to_date.to_s
   end
@@ -835,7 +840,7 @@ class UnitsApiTest < ActiveSupport::TestCase
           "student-#{index + 1}",
           "Student #{index + 1}",
           tutorial.campus.abbreviation,
-          '0',
+          tutorial.unit.grade_label(0),
           "student-#{index + 1}@example.com",
           'false',
           '',

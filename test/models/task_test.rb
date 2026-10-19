@@ -181,7 +181,7 @@ class TaskTest < ActiveSupport::TestCase
         end_date: Time.zone.parse('2026-04-30 00:00:00 UTC'),
         active_until: Time.zone.parse('2026-05-31 00:00:00 UTC')
       )
-      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 2)
+      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 14)
 
       unit = FactoryBot.create(:unit, teaching_period: teaching_period, with_students: false)
       task = FactoryBot.create(:task, project: FactoryBot.create(:project, unit: unit))
@@ -201,7 +201,7 @@ class TaskTest < ActiveSupport::TestCase
         end_date: Time.zone.parse('2026-04-30 00:00:00 UTC'),
         active_until: Time.zone.parse('2026-05-31 00:00:00 UTC')
       )
-      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 2)
+      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 14)
 
       unit = FactoryBot.create(:unit, teaching_period: teaching_period, with_students: false)
       task = FactoryBot.create(:task, project: FactoryBot.create(:project, unit: unit))
@@ -220,7 +220,7 @@ class TaskTest < ActiveSupport::TestCase
         end_date: Time.zone.parse('2026-04-30 00:00:00 UTC'),
         active_until: Time.zone.parse('2026-05-31 00:00:00 UTC')
       )
-      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 2)
+      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 14)
 
       unit = FactoryBot.create(:unit, teaching_period: teaching_period, with_students: false)
       task = FactoryBot.create(:task, project: FactoryBot.create(:project, unit: unit))
@@ -241,8 +241,8 @@ class TaskTest < ActiveSupport::TestCase
       )
       special_campus = FactoryBot.create(:campus)
       default_campus = FactoryBot.create(:campus)
-      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 1, [default_campus.id])
-      teaching_period.add_break(Time.zone.parse('2026-04-08 00:00:00 UTC'), 1, [special_campus.id])
+      teaching_period.add_break(Time.zone.parse('2026-04-01 00:00:00 UTC'), 7, [default_campus.id])
+      teaching_period.add_break(Time.zone.parse('2026-04-08 00:00:00 UTC'), 7, [special_campus.id])
       unit = FactoryBot.create(:unit, teaching_period: teaching_period, with_students: false)
       special_task = FactoryBot.create(:task, project: FactoryBot.create(:project, unit: unit, campus: special_campus))
       default_task = FactoryBot.create(:task, project: FactoryBot.create(:project, unit: unit, campus: default_campus))
@@ -290,11 +290,16 @@ class TaskTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status, last_response_body
 
     task = project.task_for_task_definition(td)
+    submission_time = task.file_uploaded_at
+    assert submission_time
+    task.update_column(:submission_date, nil)
     assert task.convert_submission_to_pdf(log_to_stdout: true)
     path = task.zip_file_path_for_done_task
     assert path
     assert File.exist? path
     assert File.exist? task.final_pdf_path
+    assert_includes PDF::Reader.new(task.final_pdf_path).pages.first.text,
+                    submission_time.localtime.strftime('%Y/%m/%d %H:%M')
 
     td.destroy
     assert_not File.exist? path
@@ -1152,7 +1157,7 @@ class TaskTest < ActiveSupport::TestCase
 
       assert_equal 2, task.comments.count
       assert task.comments.last.comment.starts_with?('**Automated Comment**:')
-      assert task.comments.last.comment.include?(e.message.to_s)
+      assert_not task.comments.last.comment.include?(e.message.to_s)
 
       td.destroy
       unit.destroy!
@@ -1824,6 +1829,89 @@ class TaskTest < ActiveSupport::TestCase
     assert_equal TaskStatus.complete, task_hd.task_status, 'Task status should be complete from tutor assessment'
   end
 
+  def test_student_can_submit_when_assessments_locked_to_tutorial_stream
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
+
+    tutorial_stream = FactoryBot.create(:tutorial_stream, unit: unit)
+
+    tutor = FactoryBot.create(:user, :tutor)
+    unit_role = unit.employ_staff(tutor, Role.tutor)
+    FactoryBot.create(:tutorial, unit: unit, tutorial_stream: tutorial_stream, unit_role: unit_role)
+
+    # Task#due_date delegates to the definition's target_date, so keep it ahead of the submission
+    td = TaskDefinition.new({
+                              unit_id: unit.id,
+                              tutorial_stream: tutorial_stream,
+                              name: 'Test task locked to stream',
+                              description: 'Test task',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: Time.zone.now - 2.weeks,
+                              target_date: Time.zone.now + 1.week,
+                              due_date: Time.zone.now + 2.weeks,
+                              abbreviation: 'ABBR1',
+                              restrict_status_updates: false,
+                              upload_requirements: [],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0,
+                              lock_assessments_to_tutorial_stream: true
+                            })
+    td.save!
+
+    project = unit.active_projects.first
+    task = project.task_for_task_definition(td)
+
+    # The student has no unit role, so the stream lock must not apply to their own submission
+    result = task.trigger_transition(trigger: 'ready_for_feedback', by_user: project.student)
+    assert_not_nil result, 'Student should be able to submit a task locked to a tutorial stream'
+    assert_equal TaskStatus.ready_for_feedback, task.task_status, 'Task status should be ready for feedback'
+
+    # The tutor running a tutorial in the stream can still assess it
+    result = task.trigger_transition(trigger: 'complete', by_user: tutor)
+    assert_not_nil result, 'Tutor in the tutorial stream should be able to mark the task complete'
+    assert_equal TaskStatus.complete, task.task_status, 'Task status should be complete from tutor assessment'
+  end
+
+  def test_assessment_lock_to_tutorial_stream_without_a_stream
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
+
+    tutor = FactoryBot.create(:user, :tutor)
+    unit.employ_staff(tutor, Role.tutor)
+
+    td = TaskDefinition.new({
+                              unit_id: unit.id,
+                              tutorial_stream: nil,
+                              name: 'Test task locked without a stream',
+                              description: 'Test task',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: Time.zone.now - 2.weeks,
+                              target_date: Time.zone.now + 1.week,
+                              due_date: Time.zone.now + 2.weeks,
+                              abbreviation: 'ABBR1',
+                              restrict_status_updates: false,
+                              upload_requirements: [],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0,
+                              lock_assessments_to_tutorial_stream: true
+                            })
+    td.save!
+
+    project = unit.active_projects.first
+    task = project.task_for_task_definition(td)
+
+    # With no stream to lock to there is nothing to restrict, and nothing to raise on
+    result = task.trigger_transition(trigger: 'ready_for_feedback', by_user: project.student)
+    assert_not_nil result, 'Student should be able to submit a task with no tutorial stream'
+    assert_equal TaskStatus.ready_for_feedback, task.task_status, 'Task status should be ready for feedback'
+
+    result = task.trigger_transition(trigger: 'complete', by_user: tutor)
+    assert_not_nil result, 'Tutor should be able to mark a task with no tutorial stream complete'
+    assert_equal TaskStatus.complete, task.task_status, 'Task status should be complete from tutor assessment'
+  end
+
   def test_prerequisite_tasks_change_to_fix_and_resubmit
     unit = FactoryBot.create(:unit, student_count: 1, task_count: 4)
     tutor = FactoryBot.create(:user, :tutor)
@@ -1890,7 +1978,7 @@ class TaskTest < ActiveSupport::TestCase
     task3.trigger_transition(trigger: 'ready_for_feedback', by_user: unit.main_convenor_user)
     task4.trigger_transition(trigger: 'ready_for_feedback', by_user: unit.main_convenor_user)
 
-    task2.comments.delete_all
+    task2.comments.destroy_all
 
     task1.reload
     task2.reload

@@ -38,14 +38,17 @@ class OverseerAssessment < ApplicationRecord
          AND assessment_comments.type = 'AssessmentComment'
       SQL
       .joins(<<~SQL.squish)
-        LEFT JOIN comments_read_receipts student_read_receipts
-          ON student_read_receipts.task_comment_id = assessment_comments.id
-         AND student_read_receipts.user_id = projects.user_id
+        LEFT JOIN comment_read_cursors student_read_cursor
+          ON student_read_cursor.task_id = assessment_comments.task_id
+         AND student_read_cursor.user_id = projects.user_id
       SQL
       .where(status: statuses[:failed], student_notified_at: nil)
       .where(users: { receive_task_notifications: true })
       .where('overseer_assessments.updated_at <= ?', notification_cutoff)
-      .where('student_read_receipts.id IS NULL')
+      .where(
+        'student_read_cursor.last_read_comment_id IS NULL ' \
+        'OR student_read_cursor.last_read_comment_id < assessment_comments.id'
+      )
       .where(<<~SQL.squish)
         assessment_comments.id = (
           SELECT latest_comment.id

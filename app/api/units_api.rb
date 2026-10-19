@@ -333,6 +333,7 @@ class UnitsApi < Grape::API
   desc 'Download the tasks that should be listed under the task inbox'
   params do
     optional :my_students_only, type: Boolean, desc: 'Show tasks from all tutorials or just the ones you teach'
+    optional :view_as_unit_role_id, type: Integer, desc: 'Show the inbox of another staff member in this unit'
   end
   get '/units/:id/tasks/inbox' do
     unit = Unit.find(params[:id])
@@ -341,9 +342,18 @@ class UnitsApi < Grape::API
       error!({ error: 'Not authorised to provide feedback for this unit' }, 403)
     end
 
+    inbox_user = current_user
+    if params[:view_as_unit_role_id].present?
+      unless authorise? current_user, unit, :view_staff_inbox
+        error!({ error: 'Not authorised to view the inbox of other staff' }, 403)
+      end
+
+      inbox_user = unit.staff.find(params[:view_as_unit_role_id]).user
+    end
+
     my_students_only = params[:my_students_only] || false
 
-    tasks = unit.tasks_for_task_inbox(current_user, my_students_only)
+    tasks = unit.tasks_for_task_inbox(inbox_user, my_students_only)
     present unit.tasks_as_hash(tasks), with: Grape::Presenters::Presenter
   end
 
@@ -663,26 +673,19 @@ class UnitsApi < Grape::API
       error!({ error: "Not authorised to download stats of student tasks in #{unit.code}" }, 403)
     end
 
-    snapshots = unit.task_completion_snapshots.order(snapshot_timestamp: :desc)
+    # Already aggregated and ordered newest first, so this only has to filter.
+    snapshots = unit.task_completion_snapshot_stats
     if params[:start_date].present?
       start_timestamp = params[:start_date].in_time_zone.beginning_of_day.to_i
-      snapshots = snapshots.where('CAST(snapshot_timestamp AS UNSIGNED) >= ?', start_timestamp)
+      snapshots = snapshots.select { |snapshot| snapshot['snapshot_timestamp'].to_i >= start_timestamp }
     end
     if params[:end_date].present?
       end_timestamp = params[:end_date].in_time_zone.end_of_day.to_i
-      snapshots = snapshots.where('CAST(snapshot_timestamp AS UNSIGNED) <= ?', end_timestamp)
+      snapshots = snapshots.select { |snapshot| snapshot['snapshot_timestamp'].to_i <= end_timestamp }
     end
-    snapshots = snapshots.limit([params[:limit].to_i, 365].min)
+    snapshots = snapshots.first([params[:limit].to_i, 365].min)
 
-    present snapshots.map { |snapshot|
-      stats = snapshot.load_stats
-
-      {
-        snapshot_date: snapshot.snapshot_date,
-        snapshot_timestamp: snapshot.snapshot_timestamp,
-        stats: stats
-      }
-    }, with: Grape::Presenters::Presenter
+    present snapshots, with: Grape::Presenters::Presenter
   end
 
   desc 'Capture task completion snapshot immediately for this unit'

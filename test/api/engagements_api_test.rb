@@ -101,6 +101,26 @@ class EngagementsApiTest < ActiveSupport::TestCase
     assert_equal @tutor, engagement.user
   end
 
+  def test_uses_default_timezone_for_tutorial_without_campus
+    tutorial = @unit.tutorials.first
+    tutorial.update!(campus: nil, meeting_day: 'Monday', meeting_time: '10:00')
+    @project.enrol_in(tutorial)
+    add_auth_header_for(user: @tutor)
+
+    travel_to(Time.zone.parse('2026-07-20 10:30:00')) do
+      post_json(
+        "/api/projects/#{@project.id}/engagements/class_discussion",
+        { task_status_updates: [] }
+      )
+    end
+
+    assert_equal 201, last_response.status
+    assert_equal(
+      'Class discussion during tutorial; no task statuses were updated.',
+      @project.engagements.last.note
+    )
+  end
+
   def test_records_class_discussion_without_status_updates_outside_tutorial
     add_auth_header_for(user: @tutor)
 
@@ -211,17 +231,69 @@ class EngagementsApiTest < ActiveSupport::TestCase
     assert_equal 'Corrected note.', engagement.reload.note
   end
 
-  def test_only_convenor_can_delete
+  def test_tutor_can_delete_their_own_engagement
     engagement = create_engagement
 
     add_auth_header_for(user: @tutor)
     delete "/api/projects/#{@project.id}/engagements/#{engagement.id}"
+    assert_equal 200, last_response.status
+    assert_nil Engagement.find_by(id: engagement.id)
+  end
+
+  def test_tutor_cannot_delete_another_staff_members_engagement
+    engagement = create_engagement(user: @convenor)
+
+    add_auth_header_for(user: @tutor)
+    delete "/api/projects/#{@project.id}/engagements/#{engagement.id}"
     assert_equal 403, last_response.status
+    assert Engagement.exists?(engagement.id)
+  end
+
+  def test_convenor_can_delete_any_engagement
+    engagement = create_engagement
 
     add_auth_header_for(user: @convenor)
     delete "/api/projects/#{@project.id}/engagements/#{engagement.id}"
     assert_equal 200, last_response.status
     assert_nil Engagement.find_by(id: engagement.id)
+  end
+
+  def test_student_cannot_delete_an_engagement
+    engagement = create_engagement
+
+    add_auth_header_for(user: @student)
+    delete "/api/projects/#{@project.id}/engagements/#{engagement.id}"
+    assert_equal 403, last_response.status
+    assert Engagement.exists?(engagement.id)
+  end
+
+  def test_tutor_cannot_delete_an_engagement_after_the_delete_window
+    engagement = create_engagement
+
+    travel_to (Engagement::DELETE_WINDOW + 1.minute).from_now do
+      add_auth_header_for(user: @tutor)
+      delete "/api/projects/#{@project.id}/engagements/#{engagement.id}"
+      assert_equal 403, last_response.status
+      assert Engagement.exists?(engagement.id)
+
+      # The convenor has a longer window, so they can still delete it
+      add_auth_header_for(user: @convenor)
+      delete "/api/projects/#{@project.id}/engagements/#{engagement.id}"
+      assert_equal 200, last_response.status
+      assert_nil Engagement.find_by(id: engagement.id)
+    end
+  end
+
+  def test_convenor_cannot_delete_an_engagement_after_the_convenor_delete_window
+    engagement = create_engagement
+
+    travel_to (Engagement::CONVENOR_DELETE_WINDOW + 1.minute).from_now do
+      add_auth_header_for(user: @convenor)
+      delete "/api/projects/#{@project.id}/engagements/#{engagement.id}"
+      assert_equal 403, last_response.status
+    end
+
+    assert Engagement.exists?(engagement.id)
   end
 
   def test_student_and_teaching_staff_can_comment

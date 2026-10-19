@@ -83,7 +83,8 @@ class EngagementTracker
   def self.during_enrolled_tutorial?(project, occurred_at)
     project.tutorial_enrolments.includes(tutorial: :campus).any? do |enrolment|
       tutorial = enrolment.tutorial
-      timezone = ActiveSupport::TimeZone[tutorial.campus&.timezone] || Time.zone
+      timezone = Time.zone
+      timezone = ActiveSupport::TimeZone[tutorial.campus&.timezone] if tutorial.campus&.timezone.present?
       local_time = occurred_at.in_time_zone(timezone)
 
       next false unless tutorial.meeting_day == local_time.strftime('%A')

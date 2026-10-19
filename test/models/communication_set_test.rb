@@ -39,6 +39,14 @@ class CommunicationSetTest < ActiveSupport::TestCase
 
     assert_equal 2, first_rule_matches.length
     assert_empty second_rule_matches
+
+    # In isolation both rules match everyone; subtracting the first reproduces the cascade.
+    first_independent = communication_set.independent_matches_for_rule(first_rule)
+    second_independent = communication_set.independent_matches_for_rule(second_rule)
+
+    assert_equal 2, first_independent.length
+    assert_equal 2, second_independent.length
+    assert_empty second_independent - first_independent
   end
 
   def test_preview_projects_for_rule_matches_spec_con_days
@@ -162,7 +170,156 @@ class CommunicationSetTest < ActiveSupport::TestCase
     assert_equal 'more_than', copied_conditions.fetch('UnitViewedStatusCondition').operator
   end
 
+  def test_group_set_enrolment_condition_matches_students_in_any_group_of_the_set
+    unit, rule = unit_with_groups
+    marked_set = unit.group_sets.first
+    other_set = FactoryBot.create(:group_set, unit: unit)
+    tutorial = unit.tutorials.first
+
+    in_first_group = join_group(unit, FactoryBot.create(:group, group_set: marked_set, tutorial: tutorial))
+    in_second_group = join_group(unit, FactoryBot.create(:group, group_set: marked_set, tutorial: tutorial))
+    in_other_set = join_group(unit, FactoryBot.create(:group, group_set: other_set, tutorial: tutorial))
+    ungrouped = FactoryBot.create(:project, unit: unit)
+
+    rule.communication_conditions.create!(
+      type: 'GroupSetEnrolmentCondition',
+      operator: 'enrolled_in',
+      group_set: marked_set
+    )
+
+    matches = rule.communication_set.independent_matches_for_rule(rule)
+
+    assert_equal [in_first_group.id, in_second_group.id].sort, matches.map(&:id).sort
+    assert_not_includes matches.map(&:id), in_other_set.id
+    assert_not_includes matches.map(&:id), ungrouped.id
+  end
+
+  def test_group_set_enrolment_condition_can_select_students_outside_the_set
+    unit, rule = unit_with_groups
+    group_set = unit.group_sets.first
+    grouped = join_group(unit, FactoryBot.create(:group, group_set: group_set, tutorial: unit.tutorials.first))
+    ungrouped = FactoryBot.create(:project, unit: unit)
+
+    rule.communication_conditions.create!(
+      type: 'GroupSetEnrolmentCondition',
+      operator: 'not_enrolled_in',
+      group_set: group_set
+    )
+
+    matches = rule.communication_set.independent_matches_for_rule(rule)
+
+    assert_equal [ungrouped.id], matches.map(&:id)
+    assert_not_includes matches.map(&:id), grouped.id
+  end
+
+  def test_group_enrolment_condition_matches_only_the_named_group
+    unit, rule = unit_with_groups
+    group_set = unit.group_sets.first
+    tutorial = unit.tutorials.first
+    wanted_group = FactoryBot.create(:group, group_set: group_set, tutorial: tutorial)
+    other_group = FactoryBot.create(:group, group_set: group_set, tutorial: tutorial)
+
+    member = join_group(unit, wanted_group)
+    other_member = join_group(unit, other_group)
+
+    rule.communication_conditions.create!(
+      type: 'GroupEnrolmentCondition',
+      operator: 'enrolled_in',
+      group: wanted_group
+    )
+
+    matches = rule.communication_set.independent_matches_for_rule(rule)
+
+    assert_equal [member.id], matches.map(&:id)
+    assert_not_includes matches.map(&:id), other_member.id
+  end
+
+  def test_group_conditions_ignore_memberships_a_student_has_left
+    unit, rule = unit_with_groups
+    group_set = unit.group_sets.first
+    group = FactoryBot.create(:group, group_set: group_set, tutorial: unit.tutorials.first)
+    departed = join_group(unit, group)
+    departed.group_memberships.first.update!(active: false)
+
+    rule.communication_conditions.create!(
+      type: 'GroupSetEnrolmentCondition',
+      operator: 'enrolled_in',
+      group_set: group_set
+    )
+
+    assert_empty rule.communication_set.independent_matches_for_rule(rule)
+  end
+
+  def test_copy_to_repoints_group_conditions_by_name
+    unit, rule = unit_with_groups
+    group_set = unit.group_sets.first
+    group = FactoryBot.create(:group, group_set: group_set, tutorial: unit.tutorials.first)
+
+    rule.communication_conditions.create!(
+      type: 'GroupSetEnrolmentCondition',
+      operator: 'enrolled_in',
+      group_set: group_set
+    )
+    rule.communication_conditions.create!(
+      type: 'GroupEnrolmentCondition',
+      operator: 'enrolled_in',
+      group: group
+    )
+
+    destination_unit = FactoryBot.create(:unit, with_students: false, task_count: 0, tutorials: 1, outcome_count: 0, staff_count: 0)
+    destination_set = FactoryBot.create(:group_set, unit: destination_unit, name: group_set.name)
+    destination_group = FactoryBot.create(:group, group_set: destination_set, name: group.name, tutorial: destination_unit.tutorials.first)
+
+    copied = rule.communication_set.copy_to(destination_unit)
+    conditions = copied.communication_rules.first.communication_conditions.index_by(&:type)
+
+    assert_equal destination_set.id, conditions.fetch('GroupSetEnrolmentCondition').group_set_id
+    assert_equal destination_group.id, conditions.fetch('GroupEnrolmentCondition').group_id
+    assert_predicate copied, :executable?
+  end
+
+  def test_copy_to_leaves_group_conditions_unresolved_when_the_set_is_missing
+    unit, rule = unit_with_groups
+    group_set = unit.group_sets.first
+
+    rule.communication_conditions.create!(
+      type: 'GroupSetEnrolmentCondition',
+      operator: 'enrolled_in',
+      group_set: group_set
+    )
+
+    destination_unit = FactoryBot.create(:unit, with_students: false, task_count: 0, tutorials: 1, outcome_count: 0, staff_count: 0)
+    copied = rule.communication_set.copy_to(destination_unit)
+
+    assert_nil copied.communication_rules.first.communication_conditions.first.group_set_id
+    assert_not copied.executable?
+  end
+
   private
+
+  def unit_with_groups
+    unit = FactoryBot.create(
+      :unit,
+      with_students: false,
+      task_count: 0,
+      stream_count: 0,
+      tutorials: 1,
+      outcome_count: 0,
+      staff_count: 0,
+      group_sets: 1
+    )
+    set = unit.communication_sets.create!(name: 'Group nudges', active: true)
+    rule = set.communication_rules.create!(name: 'Group nudges', operator: 'and', position: 0)
+
+    [unit, rule]
+  end
+
+  def join_group(unit, group)
+    project = FactoryBot.create(:project, unit: unit)
+    group.group_memberships.create!(project: project, active: true)
+
+    project
+  end
 
   def unit_and_rule(name)
     unit = FactoryBot.create(

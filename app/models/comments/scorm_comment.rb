@@ -1,6 +1,7 @@
 class ScormComment < TaskComment
   before_create do
     self.content_type = :scorm
+    self.attention_audience = :student
   end
 
   def serialize(user)

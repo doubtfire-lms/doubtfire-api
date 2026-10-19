@@ -6,6 +6,7 @@ module Entities
     expose :operator
     expose :target_grade
     expose :task_definition_id
+    expose :unresolved?, as: :unresolved
     expose :task_statuses
     expose :task_status_count
     expose :task_target_grade
@@ -15,6 +16,8 @@ module Entities
     expose :tutorial_id
     expose :tutorial_stream_id
     expose :campus_id
+    expose :group_set_id
+    expose :group_id
     expose :submitted_portfolio
   end
 end

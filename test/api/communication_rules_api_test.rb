@@ -49,11 +49,117 @@ class CommunicationRulesApiTest < ActiveSupport::TestCase
     get "/api/units/#{unit.id}/communication_sets/#{communication_set.id}"
 
     assert_equal 200, last_response.status
-    student = last_response_body['previews'].first['allocations'].first['students'].first
+    assert_equal 1, last_response_body['eligible_student_count']
+    assert_not last_response_body.key?('previews')
+
+    get "/api/units/#{unit.id}/communication_rules/#{rule.id}/preview"
+
+    assert_equal 200, last_response.status
+    assert_equal rule.id, last_response_body['rule_id']
+    assert_equal 1, last_response_body['eligible_student_count']
+    student = last_response_body['students'].first
+    assert_equal project.id, student['project_id']
     assert_equal project.user.username, student['username']
     assert_equal false, student['has_portfolio']
     assert_equal viewed_at.iso8601(3), Time.zone.parse(student['last_viewed_at']).iso8601(3)
     assert_equal project.user.last_sign_in_at.iso8601(3), Time.zone.parse(student['last_sign_in_at']).iso8601(3)
+  end
+
+  def test_rule_preview_ignores_earlier_rules_in_the_set
+    admin = FactoryBot.create(:user, :admin)
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0)
+    communication_set = unit.communication_sets.create!(name: 'Spec con', active: true)
+    first_rule = communication_set.communication_rules.create!(name: 'First', operator: 'and', position: 0)
+    second_rule = communication_set.communication_rules.create!(name: 'Second', operator: 'and', position: 1)
+
+    [first_rule, second_rule].each do |rule|
+      rule.communication_conditions.create!(
+        type: 'SpecConCondition',
+        operator: 'greater_than_or_equal_to',
+        spec_con_days: 3
+      )
+    end
+
+    matching_project = FactoryBot.create(:project, unit: unit, spec_con_days: 4)
+    FactoryBot.create(:project, unit: unit, spec_con_days: 1)
+    add_auth_header_for(user: admin)
+
+    # Both rules report the same student -- the second is no longer filtered by the first.
+    [first_rule, second_rule].each do |rule|
+      get "/api/units/#{unit.id}/communication_rules/#{rule.id}/preview"
+
+      assert_equal 200, last_response.status
+      assert_equal 2, last_response_body['eligible_student_count']
+      assert_equal([matching_project.id], last_response_body['students'].map { |student| student['project_id'] })
+    end
+  end
+
+  def test_rules_are_returned_ordered_by_position
+    admin = FactoryBot.create(:user, :admin)
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0)
+    communication_set = unit.communication_sets.create!(name: 'Ordering', active: true)
+
+    # Created out of order on purpose -- id order must not decide the response order.
+    third = communication_set.communication_rules.create!(name: 'Third', operator: 'and', position: 2)
+    first = communication_set.communication_rules.create!(name: 'First', operator: 'and', position: 0)
+    second = communication_set.communication_rules.create!(name: 'Second', operator: 'and', position: 1)
+    expected = [first.id, second.id, third.id]
+    add_auth_header_for(user: admin)
+
+    get "/api/units/#{unit.id}/communication_sets"
+    assert_equal 200, last_response.status
+    assert_equal(expected, last_response_body.first['rules'].map { |rule| rule['id'] })
+
+    get "/api/units/#{unit.id}/communication_sets/#{communication_set.id}"
+    assert_equal 200, last_response.status
+    assert_equal(expected, last_response_body['rules'].map { |rule| rule['id'] })
+
+    get "/api/units/#{unit.id}/communication_sets/#{communication_set.id}/rules"
+    assert_equal 200, last_response.status
+    assert_equal(expected, last_response_body.map { |rule| rule['id'] })
+
+    # And the order follows position after a drag-and-drop style reorder.
+    put_json "/api/units/#{unit.id}/communication_rules/#{third.id}", communication_rule: { position: 0 }
+    put_json "/api/units/#{unit.id}/communication_rules/#{first.id}", communication_rule: { position: 1 }
+    put_json "/api/units/#{unit.id}/communication_rules/#{second.id}", communication_rule: { position: 2 }
+
+    get "/api/units/#{unit.id}/communication_sets/#{communication_set.id}"
+    assert_equal 200, last_response.status
+    assert_equal([third.id, first.id, second.id], last_response_body['rules'].map { |rule| rule['id'] })
+  end
+
+  def test_update_rule_position_reorders_the_set
+    admin = FactoryBot.create(:user, :admin)
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0)
+    communication_set = unit.communication_sets.create!(name: 'Ordering', active: true)
+    first_rule = communication_set.communication_rules.create!(name: 'First', operator: 'and', position: 0)
+    second_rule = communication_set.communication_rules.create!(name: 'Second', operator: 'and', position: 1)
+    add_auth_header_for(user: admin)
+
+    put_json "/api/units/#{unit.id}/communication_rules/#{second_rule.id}", communication_rule: { position: 0 }
+    assert_equal 200, last_response.status
+
+    put_json "/api/units/#{unit.id}/communication_rules/#{first_rule.id}", communication_rule: { position: 1 }
+    assert_equal 200, last_response.status
+
+    assert_equal [second_rule.id, first_rule.id], communication_set.reload.communication_rules.map(&:id)
+  end
+
+  def test_delete_rule_removes_it_and_resequences_remaining_rules
+    admin = FactoryBot.create(:user, :admin)
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0)
+    communication_set = unit.communication_sets.create!(name: 'Ordering', active: true)
+    first_rule = communication_set.communication_rules.create!(name: 'First', operator: 'and', position: 0)
+    second_rule = communication_set.communication_rules.create!(name: 'Second', operator: 'and', position: 1)
+    third_rule = communication_set.communication_rules.create!(name: 'Third', operator: 'and', position: 2)
+    add_auth_header_for(user: admin)
+
+    delete "/api/units/#{unit.id}/communication_rules/#{second_rule.id}"
+
+    assert_equal 204, last_response.status
+    assert_not CommunicationRule.exists?(second_rule.id)
+    assert_equal [[first_rule.id, 0], [third_rule.id, 1]],
+                 communication_set.reload.communication_rules.pluck(:id, :position)
   end
 
   def test_create_and_update_portfolio_submitted_condition
@@ -82,5 +188,140 @@ class CommunicationRulesApiTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
     assert_equal false, last_response_body['submitted_portfolio']
     assert_equal false, rule.communication_conditions.find(condition_response['id']).submitted_portfolio
+  end
+
+  def test_copying_a_set_and_importing_it_into_another_unit
+    admin = FactoryBot.create(:user, :admin)
+    source_unit = transferable_unit('T1.1')
+    target_unit = transferable_unit('T1.1')
+    communication_set = transferable_set(source_unit)
+    add_auth_header_for(user: admin)
+
+    get "/api/units/#{source_unit.id}/communication_sets/#{communication_set.id}/export"
+
+    assert_equal 200, last_response.status
+    document = last_response_body
+
+    assert_equal 'ontrack.communication_set', document['format']
+
+    post_json "/api/units/#{target_unit.id}/communication_sets/import", document: document
+
+    assert_equal 201, last_response.status
+    assert_equal true, last_response_body['executable']
+    assert_equal(['Chase T1.1'], last_response_body['rules'].map { |rule| rule['name'] })
+  end
+
+  def test_importing_without_the_referenced_task_flags_the_rule_and_blocks_execution
+    admin = FactoryBot.create(:user, :admin)
+    source_unit = transferable_unit('T1.1')
+    target_unit = transferable_unit('Different')
+    communication_set = transferable_set(source_unit)
+    add_auth_header_for(user: admin)
+
+    get "/api/units/#{source_unit.id}/communication_sets/#{communication_set.id}/export"
+    post_json "/api/units/#{target_unit.id}/communication_sets/import", document: last_response_body
+
+    assert_equal 201, last_response.status
+    assert_equal false, last_response_body['executable']
+    assert_equal([true], last_response_body['rules'].map { |rule| rule['unresolved'] })
+
+    imported_id = last_response_body['id']
+
+    post_json "/api/units/#{target_unit.id}/communication_sets/#{imported_id}/execute", {}
+
+    assert_equal 409, last_response.status
+    assert_equal(['Chase T1.1'], last_response_body['unresolved_rules'].map { |rule| rule['name'] })
+  end
+
+  def test_repointing_a_condition_clears_the_unresolved_flag_it_returns
+    admin = FactoryBot.create(:user, :admin)
+    source_unit = transferable_unit('T1.1')
+    target_unit = transferable_unit('Different')
+    add_auth_header_for(user: admin)
+
+    get "/api/units/#{source_unit.id}/communication_sets/#{transferable_set(source_unit).id}/export"
+    post_json "/api/units/#{target_unit.id}/communication_sets/import", document: last_response_body
+
+    imported_id = last_response_body['id']
+    rule = last_response_body['rules'].first
+    condition = rule['conditions'].first
+
+    assert_equal true, condition['unresolved']
+
+    put_json "/api/units/#{target_unit.id}/communication_rules/#{rule['id']}/conditions/#{condition['id']}",
+             communication_condition: {
+               type: 'TaskDefinitionStatusCondition',
+               operator: 'equal_to',
+               task_definition_id: target_unit.task_definitions.first.id,
+               task_statuses: ['not_started']
+             }
+
+    assert_equal 200, last_response.status
+    assert_equal false, last_response_body['unresolved']
+
+    get "/api/units/#{target_unit.id}/communication_sets/#{imported_id}"
+
+    assert_equal true, last_response_body['executable']
+    assert_equal([false], last_response_body['rules'].map { |item| item['unresolved'] })
+  end
+
+  def test_importing_a_rule_document_as_a_set_is_rejected
+    admin = FactoryBot.create(:user, :admin)
+    unit = transferable_unit('T1.1')
+    rule = transferable_set(unit).communication_rules.first
+    add_auth_header_for(user: admin)
+
+    get "/api/units/#{unit.id}/communication_rules/#{rule.id}/export"
+
+    assert_equal 'ontrack.communication_rule', last_response_body['format']
+
+    post_json "/api/units/#{unit.id}/communication_sets/import", document: last_response_body
+
+    assert_equal 400, last_response.status
+    assert_match 'ontrack.communication_set', last_response_body['error']
+  end
+
+  private
+
+  def transferable_unit(abbreviation)
+    unit = FactoryBot.create(
+      :unit,
+      with_students: false,
+      task_count: 0,
+      stream_count: 0,
+      tutorials: 0,
+      outcome_count: 0,
+      staff_count: 1,
+      campus_count: 1
+    )
+
+    unit.task_definitions.create!(
+      name: "Task #{abbreviation}",
+      abbreviation: abbreviation,
+      description: 'Test task',
+      weighting: 1,
+      target_grade: 0,
+      start_date: unit.start_date,
+      target_date: unit.start_date + 1.week,
+      upload_requirements: []
+    )
+
+    unit.reload
+  end
+
+  def transferable_set(unit)
+    communication_set = unit.communication_sets.create!(name: 'Nudges', active: true)
+    rule = communication_set.communication_rules.create!(name: 'Chase T1.1', operator: 'and', position: 0)
+
+    rule.communication_conditions.create!(
+      type: 'TaskDefinitionStatusCondition',
+      operator: 'equal_to',
+      task_definition: unit.task_definitions.first,
+      task_statuses: ['not_started']
+    )
+
+    rule.communication_actions.create!(type: 'EmailStudentAction', subject: 'Get started', body: 'Hi')
+
+    communication_set
   end
 end

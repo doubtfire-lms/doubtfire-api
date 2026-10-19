@@ -795,7 +795,7 @@ class TaskDefinitionsApi < Grape::API
     logger.debug "This is the has_jplag_report? #{task_def.has_jplag_report?}"
     if task_def.has_jplag_report?
       path = FileHelper.task_jplag_report_path(unit, task_def)
-      header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}-jplag-report.jplag"
+      header['Content-Disposition'] = "attachment; filename=#{unit.code}-#{task_def.abbreviation}-jplag-report.jplag"
     else
       path = Rails.root.join("public/resources/FileNotFound.pdf")
       content_type 'application/pdf'

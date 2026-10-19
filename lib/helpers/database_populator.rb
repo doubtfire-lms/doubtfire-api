@@ -77,7 +77,7 @@ class DatabasePopulator
     }
     tp = TeachingPeriod.create!(data)
 
-    tp.add_break Date.parse('2018-03-30'), 1
+    tp.add_break Date.parse('2018-03-30'), 7
 
     data = {
       period: 'T2',
@@ -88,7 +88,7 @@ class DatabasePopulator
     }
     tp = TeachingPeriod.create! data
 
-    tp.add_break Date.parse('2018-08-13'), 1
+    tp.add_break Date.parse('2018-08-13'), 7
 
     data = {
       period: 'T3',
@@ -99,7 +99,7 @@ class DatabasePopulator
     }
     tp = TeachingPeriod.create! data
 
-    tp.add_break Date.parse('2018-12-24'), 2
+    tp.add_break Date.parse('2018-12-24'), 14
   end
 
   def generate_global_learning_outcomes

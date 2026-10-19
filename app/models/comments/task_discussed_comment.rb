@@ -1,10 +1,7 @@
 class TaskDiscussedComment < TaskComment
   before_create do
     self.content_type = :discussed_in_class
-  end
-
-  after_create do
-    mark_as_read(self.recipient)
+    self.attention_audience = :none
   end
 
   def serialize(user)

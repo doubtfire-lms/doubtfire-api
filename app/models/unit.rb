@@ -22,6 +22,8 @@ class Unit < ApplicationRecord
   include MimeCheckHelpers
   include CsvHelper
 
+  has_one :lms_integration, dependent: :destroy
+
   #
   # Permissions around unit data
   #
@@ -62,6 +64,7 @@ class Unit < ApplicationRecord
       :add_task_def,
       :provide_feedback,
       :provide_bulk_feedback,
+      :view_staff_inbox,
       :change_project_enrolment,
       :download_stats,
       :download_overflow_stats,
@@ -138,6 +141,8 @@ class Unit < ApplicationRecord
   end
 
   def role_for(user)
+    return nil if user.nil?
+
     if convenors.where('unit_roles.user_id=:id', id: user.id).count == 1
       Role.convenor
     elsif tutors.where('unit_roles.user_id=:id', id: user.id).count == 1
@@ -250,6 +255,10 @@ class Unit < ApplicationRecord
   scope :not_current_for_date,  ->(date) { where('start_date > ? OR end_date < ?', date, date) }
   scope :set_active,            -> { where('active = ?', true) }
   scope :set_inactive,          -> { where('active = ?', false) }
+  # SQL equivalent of #within_teaching_dates?
+  scope :within_teaching_dates, lambda { |now = Time.zone.now|
+    set_active.where('units.end_date IS NULL OR units.end_date >= ?', now.to_date)
+  }
 
   include UnitTiiModule
 
@@ -273,12 +282,18 @@ class Unit < ApplicationRecord
     errors.add(:discuss_timeout_warning_days, 'must be less than the expiry days')
   end
 
+  # Active and not past the end date (inclusive), which is kept in sync with the teaching period's.
+  def within_teaching_dates?(now = Time.zone.now)
+    active? && (end_date.blank? || now.to_date <= end_date)
+  end
+
   def self.notify_discuss_timeouts!
-    set_active.find_each(&:notify_discuss_timeouts!)
+    within_teaching_dates.find_each(&:notify_discuss_timeouts!)
   end
 
   def notify_discuss_timeouts!
     return 0 unless discuss_timeout_enabled
+    return 0 unless within_teaching_dates?
 
     discuss_timeout_tasks.find_each.sum do |task|
       notify_discuss_timeout_for(task)
@@ -372,6 +387,7 @@ class Unit < ApplicationRecord
 
   def queue_discuss_timeout_email(task, actor, type, expiry_date = nil)
     return unless send_notifications
+    return unless task.project.enrolled
     return unless task.project.student.receive_feedback_notifications
 
     SendDiscussTimeoutEmailJob.perform_async(task.id, actor.id, type.to_s, expiry_date&.iso8601)
@@ -718,6 +734,15 @@ class Unit < ApplicationRecord
 
     communication_sets.each do |communication_set|
       communication_set.copy_to(new_unit)
+    end
+
+    # Duplicate content sites and their links (grade, task sheet and task resource pages)
+    site_mapping = unit_content_sites.to_h { |site| [site.id, site.copy_to(new_unit)] }
+    unit_content_links.each do |link|
+      new_link = link.dup
+      new_link.unit = new_unit
+      new_link.unit_content_site = site_mapping.fetch(link.unit_content_site_id)
+      new_link.save!
     end
 
     # Now duplicate all feedback chips
@@ -1933,7 +1958,7 @@ class Unit < ApplicationRecord
   end
 
   def task_definitions_csv
-    TaskDefinition.to_csv(task_definitions)
+    TaskDefinition.to_csv(self, task_definitions)
   end
 
   def task_definitions_by_grade
@@ -2325,27 +2350,52 @@ class Unit < ApplicationRecord
 
     # All active projects with a compiled portfolio
     portfolio_projects = active_projects.select(&:portfolio_available)
-    progress_callback.call(message: "Initialising portfolio download", total_rows: portfolio_projects.count, rows_processed: portfolio_projects.count) if progress_callback
+    if File.exist?(portfolio_zip_name)
+      progress_callback&.call(
+        message: "Initialising portfolio download",
+        total_rows: portfolio_projects.count,
+        rows_processed: portfolio_projects.count
+      )
+      return portfolio_zip_name
+    end
 
-    return portfolio_zip_name if File.exist?(portfolio_zip_name)
+    progress_callback&.call(
+      message: "Adding portfolios to archive",
+      total_rows: portfolio_projects.count,
+      rows_processed: 0
+    )
 
-    progress_callback.call(message: "Initialising portfolio download", total_rows: portfolio_projects.count, rows_processed: 0) if progress_callback
-    count = 0
+    partial_result = "#{portfolio_zip_name}.partial-#{SecureRandom.hex(8)}"
+    processed_count = 0
 
-    # Create a new zip
-    Zip::File.open(portfolio_zip_name, Zip::File::CREATE) do |zip|
-      portfolio_projects.each do |project|
-        count += 1
-        progress_callback.call(message: "Compressing portfolios", rows_processed: count) if progress_callback
+    begin
+      Zip::OutputStream.open(partial_result) do |zip|
+        portfolio_projects.each do |project|
+          # Starting the next entry finalises the previous one. Report progress
+          # only after that finalisation, not merely after feeding it data.
+          dst_path = FileHelper.sanitized_path(
+            project.target_grade_desc.to_s,
+            "#{project.student.username}-portfolio (#{project.tutors_and_tutorial})"
+          ) + '.pdf'
+          zip.put_next_entry(dst_path)
 
-        # Add file to zip in grade folder
-        src_path = project.portfolio_path
-        dst_path = FileHelper.sanitized_path(project.target_grade_desc.to_s, "#{project.student.username}-portfolio (#{project.tutors_and_tutorial})") + '.pdf'
+          if processed_count.positive?
+            progress_callback&.call(message: "Adding portfolios to archive", rows_processed: processed_count)
+          end
 
-        # copy into zip
-        zip.add(dst_path, src_path)
-      end # active_projects
-    end # zip
+          File.open(project.portfolio_path, 'rb') { |portfolio| IO.copy_stream(portfolio, zip) }
+          processed_count += 1
+        end
+      end
+
+      # Closing finalises the last PDF and writes the central directory. Publish
+      # the completed archive before reporting 100% to the job monitor.
+      FileUtils.mv(partial_result, portfolio_zip_name)
+      progress_callback&.call(message: "Adding portfolios to archive", rows_processed: processed_count)
+    ensure
+      FileUtils.rm_f(partial_result)
+    end
+
     portfolio_zip_name
   end
 
@@ -2389,85 +2439,176 @@ class Unit < ApplicationRecord
   #
   # Create a temp zip file with all submission PDFs for a task
   #
+  def task_submissions_pdf_zip_path(current_user, td)
+    FileHelper.tmp_file("submissions-#{code}-#{td.abbreviation}-#{current_user.username}-pdfs.zip")
+  end
+
+  def task_submissions_cache_current?(path, td)
+    return false unless File.file?(path)
+
+    latest_project_update = td.tasks.joins(:project).maximum('projects.updated_at')
+    File.mtime(path) >= [td.updated_at, latest_project_update].compact.max
+  end
+
   def get_task_submissions_pdf_zip(current_user, td, progress_callback: nil)
     # Get a temp file path
-    result = FileHelper.tmp_file("submissions-#{code}-#{td.abbreviation}-#{current_user.username}-pdfs.zip")
+    result = task_submissions_pdf_zip_path(current_user, td)
 
     tasks_with_files = td.related_tasks_with_files
-    progress_callback.call(message: "Initialising submission pdfs download", total_rows: tasks_with_files.count, rows_processed: tasks_with_files.count) if progress_callback
+    if task_submissions_cache_current?(result, td)
+      progress_callback&.call(
+        message: "Initialising submission pdfs download",
+        total_rows: tasks_with_files.count,
+        rows_processed: tasks_with_files.count
+      )
+      return result
+    end
 
-    return result if File.exist?(result)
+    zip_root_path = "#{td.abbreviation}-pdfs"
+    pdf_entries = tasks_with_files.each_with_object({}) do |task, entries|
+      path_part = if td.is_group_task? && task.group
+                    task.group.name.to_s
+                  else
+                    task.student.username.to_s
+                  end
 
-    progress_callback.call(message: "Initialising submission pdfs download", total_rows: tasks_with_files.count, rows_processed: 0) if progress_callback
+      entries[File.join(zip_root_path, "#{path_part}.pdf")] = task.final_pdf_path
+    end
 
-    count = 0
+    total_pdfs = pdf_entries.count
+    progress_callback&.call(
+      message: "Adding submission PDFs to archive",
+      total_rows: total_pdfs,
+      rows_processed: 0
+    )
 
-    # Create a new zip
-    Zip::File.open(result, Zip::File::CREATE) do |zip|
-      Dir.mktmpdir do |dir|
-        # Extract all of the files...
-        tasks_with_files.each do |task|
-          count += 1
-          progress_callback.call(message: "Compressing submission pdfs", rows_processed: count) if progress_callback
+    partial_result = "#{result}.partial-#{SecureRandom.hex(8)}"
+    processed_count = 0
 
-          path_part = if td.is_group_task? && task.group
-                        task.group.name.to_s
-                      else
-                        task.student.username.to_s
-                      end
+    begin
+      Zip::OutputStream.open(partial_result) do |zip|
+        pdf_entries.each do |zip_path, pdf_path|
+          # Starting the next entry finalises the previous one. Report progress
+          # only after that finalisation, not merely after feeding it data.
+          zip.put_next_entry(zip_path)
+          progress_callback&.call(message: "Adding submission PDFs to archive", rows_processed: processed_count) if processed_count.positive?
 
-          FileUtils.cp task.final_pdf_path, File.join(dir, path_part.to_s) + '.pdf'
-        end # each task
+          File.open(pdf_path, 'rb') { |pdf| IO.copy_stream(pdf, zip) }
+          processed_count += 1
+        end
+      end
 
-        # Copy files into zip
-        zip_root_path = "#{td.abbreviation}-pdfs"
-        FileHelper.recursively_add_dir_to_zip(zip, dir, zip_root_path)
-      end # mktmpdir
-    end # zip
+      # Closing the output stream finalises the last entry and writes the
+      # central directory, so 100% now means the archive is genuinely ready.
+      FileUtils.mv(partial_result, result)
+      progress_callback&.call(message: "Adding submission PDFs to archive", rows_processed: processed_count)
+    ensure
+      FileUtils.rm_f(partial_result)
+    end
+
     result
   end
 
   #
   # Create a temp zip file with all submissions for a task
   #
+  def task_submissions_zip_path(current_user, td)
+    FileHelper.tmp_file("submissions-#{code}-#{td.abbreviation}-#{current_user.username}-named-files.zip")
+  end
+
   def get_task_submissions_zip(current_user, td, progress_callback: nil)
     # Get a temp file path
-    result = FileHelper.tmp_file("submissions-#{code}-#{td.abbreviation}-#{current_user.username}-files.zip")
+    result = task_submissions_zip_path(current_user, td)
 
     tasks_with_files = td.related_tasks_with_files
-    progress_callback.call(message: "Initialising submission files download", total_rows: tasks_with_files.count, rows_processed: tasks_with_files.count) if progress_callback
+    submissions = tasks_with_files.each_with_object({}) do |task, entries|
+      path_part = if td.is_group_task? && task.group
+                    task.group.name.to_s
+                  else
+                    task.student.username.to_s
+                  end
 
-    return result if File.exist?(result)
-    progress_callback.call(message: "Initialising submission files download", total_rows: tasks_with_files.count, rows_processed: 0) if progress_callback
+      # Group tasks can expose the same underlying submission through multiple
+      # student tasks. Match the old extracted-directory behaviour by retaining
+      # one archive per output folder.
+      entries[path_part] = task
+    end
 
-    count = 0
+    missing_submissions = []
+    submissions.reject! do |path_part, task|
+      missing = !File.file?(task.zip_file_path_for_done_task)
+      missing_submissions << "#{path_part} (task #{task.id})" if missing
+      missing
+    end
+    logger.warn "Skipping missing submission archives: #{missing_submissions.join(', ')}" if missing_submissions.any?
 
-    # Create a new zip
-    Zip::File.open(result, Zip::File::CREATE) do |zip|
-      Dir.mktmpdir do |dir|
-        # Extract all of the files...
-        tasks_with_files.each do |task|
-          count += 1
-          progress_callback.call(message: "Compressing submission files", rows_processed: count) if progress_callback
+    cache_current = missing_submissions.empty? && task_submissions_cache_current?(result, td) &&
+                    submissions.values.all? do |task|
+                      source = task.zip_file_path_for_done_task
+                      File.file?(source) && File.mtime(result) >= File.mtime(source)
+                    end
 
-          path_part = if td.is_group_task? && task.group
-                        task.group.name.to_s
-                      else
-                        task.student.username.to_s
-                      end
+    if cache_current
+      progress_callback&.call(
+        message: "Initialising submission files download",
+        total_rows: submissions.count,
+        rows_processed: submissions.count
+      )
+      return result
+    end
 
-          task.extract_file_from_done(dir, '*',
-                                      ->(_task, to_path, name) { File.join(to_path.to_s, path_part, name.to_s) }) # call
+    progress_callback&.call(
+      message: "Adding submission files to archive",
+      total_rows: submissions.count,
+      rows_processed: 0
+    )
 
-          FileUtils.mv Dir.glob("#{dir}/#{path_part}/#{task.id}/*"), File.join(dir, path_part.to_s)
-          FileUtils.rm_r "#{dir}/#{path_part}/#{task.id}" if File.directory?("#{dir}/#{path_part}/#{task.id}")
-        end # each task
+    zip_root_path = "#{td.abbreviation}-submissions"
+    partial_result = "#{result}.partial-#{SecureRandom.hex(8)}"
+    processed_count = 0
 
-        # Copy files into zip
-        zip_root_path = "#{td.abbreviation}-submissions"
-        FileHelper.recursively_add_dir_to_zip(zip, dir, zip_root_path)
-      end # mktmpdir
-    end # zip
+    begin
+      Zip::OutputStream.open(partial_result) do |output_zip|
+        submissions.each do |path_part, task|
+          Zip::File.open(task.zip_file_path_for_done_task) do |submission_zip|
+            submission_zip.each do |entry|
+              next if entry.name_is_directory?
+
+              # Done archives store files below a task-id folder. The aggregate
+              # archive replaces that folder with the student or group name.
+              relative_path = task.download_filename_for(entry.name)
+              aggregate_entry = entry.dup
+              aggregate_entry.name = File.join(zip_root_path, path_part, relative_path)
+              output_zip.copy_raw_entry(aggregate_entry)
+            end
+          end
+
+          processed_count += 1
+          if processed_count < submissions.count
+            progress_callback&.call(
+              message: "Adding submission files to archive",
+              rows_processed: processed_count
+            )
+          end
+        end
+
+        if missing_submissions.any?
+          output_zip.put_next_entry(File.join(zip_root_path, 'missing-submissions.txt'))
+          output_zip.write("Submission files were unavailable for:\n#{missing_submissions.join("\n")}\n")
+        end
+      end
+
+      # ZIP entries are copied in their existing compressed form. Closing only
+      # writes headers and the central directory; publish before reporting 100%.
+      FileUtils.mv(partial_result, result)
+      progress_callback&.call(
+        message: "Adding submission files to archive",
+        rows_processed: processed_count
+      )
+    ensure
+      FileUtils.rm_f(partial_result)
+    end
+
     result
   end
 
@@ -2530,6 +2671,8 @@ class Unit < ApplicationRecord
         status: TaskStatus.id_to_key(t.status_id),
         completion_date: t.completion_date,
         submission_date: t.submission_date,
+        # Only the inbox query computes this -- other callers fall back to the raw date
+        waiting_since: t.has_attribute?('waiting_since') ? t.waiting_since : t.submission_date,
         times_assessed: t.times_assessed,
         grade: t.grade,
         quality_pts: t.quality_pts,
@@ -2551,18 +2694,36 @@ class Unit < ApplicationRecord
   # Return all tasks from the database for this unit and given user
   #
   def get_all_tasks_for(user, my_tutorials_only = false)
+    staff_attention = TaskComment.attention_audiences.fetch('staff')
+    unread_comment = '(COALESCE(crc.last_read_comment_id, 0) < task_comments.id ' \
+                     'AND COALESCE(tutor_crc.last_read_comment_id, 0) < task_comments.id ' \
+                     "AND task_comments.user_id <> #{user.id.to_i})"
+    similarity_stats = TaskSimilarity
+                       .select('task_id', 'COUNT(*) AS similarity_count', 'SUM(flagged) AS flagged_count')
+                       .group(:task_id)
+                       .to_sql
     result =  student_tasks.
               joins(:task_status).
               joins("LEFT OUTER JOIN (#{tutorial_enrolment_subquery}) as sq ON sq.project_id = projects.id AND (sq.tutorial_stream_id = task_definitions.tutorial_stream_id OR sq.tutorial_stream_id IS NULL)").
-              joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment') AND (task_comments.content_type IS NULL OR (task_comments.content_type <> 'plan' AND task_comments.content_type <> 'discussed_in_class'))").
-              joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}").
+              joins("LEFT JOIN unit_roles task_tutor_roles ON task_tutor_roles.id = COALESCE(sq.unit_role_id, #{main_convenor_id.to_i})").
+              joins("LEFT JOIN comment_read_cursors crc ON crc.task_id = tasks.id AND crc.user_id = #{user.id.to_i}").
+              joins('LEFT JOIN comment_read_cursors tutor_crc ON tutor_crc.task_id = tasks.id ' \
+                    'AND tutor_crc.user_id = task_tutor_roles.user_id').
+              joins(
+                'LEFT JOIN task_comments ON task_comments.task_id = tasks.id ' \
+                "AND (task_comments.attention_audience IS NULL OR task_comments.attention_audience = #{staff_attention}) " \
+                "AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment') " \
+                "AND (task_comments.content_type IS NULL OR (task_comments.content_type <> 'plan' " \
+                "AND task_comments.content_type <> 'discussed_in_class'))"
+              ).
               joins("LEFT JOIN task_pins ON task_pins.task_id = tasks.id AND task_pins.user_id = #{user.id}").
-              joins('LEFT OUTER JOIN task_similarities ON tasks.id = task_similarities.task_id').
+              joins("LEFT JOIN (#{similarity_stats}) task_similarity_stats ON task_similarity_stats.task_id = tasks.id").
               select(
                 'sq.tutorial_id AS tutorial_id',
                 'sq.tutorial_stream_id AS tutorial_stream_id',
                 'tasks.id',
-                "SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread",
+                "SUM(case when #{unread_comment} AND task_comments.id IS NOT NULL " \
+                'then COALESCE(task_similarity_stats.similarity_count, 1) else 0 end) as number_unread',
                 'COUNT(distinct task_pins.task_id) != 0 as pinned',
                 "SUM(case when task_comments.date_extension_assessed IS NULL AND task_comments.type = 'ExtensionComment' AND NOT task_comments.id IS NULL THEN 1 ELSE 0 END) > 0 as has_extensions",
                 'project_id',
@@ -2575,7 +2736,7 @@ class Unit < ApplicationRecord
                 'submission_date',
                 'tasks.grade as grade',
                 'quality_pts',
-                'SUM(case when task_similarities.flagged then 1 else 0 end) as similar_to_count'
+                'COALESCE(MAX(task_similarity_stats.flagged_count), 0) AS similar_to_count'
               ).
               group(
                 'sq.tutorial_id',
@@ -2618,14 +2779,23 @@ class Unit < ApplicationRecord
   #   - those that have the ready for feedback (rff) state, or
   #   - where new student comments are > 0
   #
-  # They are sorted by a task's "action_date". This defines the last
-  # time a task has been "actioned", either the submission date or latest
-  # student comment -- whichever is newer.
+  # Ready for feedback tasks are sorted by submission date. Tasks included
+  # because of unread comments are sorted by their oldest unread comment so
+  # follow-up comments do not reset how long the task has been waiting.
   #
   def tasks_for_task_inbox(user, my_students_only = false)
+    unread_comment = '(COALESCE(crc.last_read_comment_id, 0) < task_comments.id ' \
+                     'AND COALESCE(tutor_crc.last_read_comment_id, 0) < task_comments.id ' \
+                     "AND task_comments.user_id <> #{user.id.to_i})"
+    oldest_unread_comment_at = "MIN(CASE WHEN #{unread_comment} " \
+                               'AND task_comments.id IS NOT NULL THEN task_comments.created_at END)'
+    inbox_date = "CASE WHEN task_statuses.id = #{TaskStatus.ready_for_feedback.id} " \
+                 "THEN COALESCE(submission_date, #{oldest_unread_comment_at}) " \
+                 "ELSE COALESCE(#{oldest_unread_comment_at}, submission_date) END"
     get_all_tasks_for(user, my_students_only)
-      .having('task_statuses.id IN (:ids) OR COUNT(task_pins.task_id) > 0 OR SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) > 0', ids: [TaskStatus.ready_for_feedback, TaskStatus.need_help])
-      .order('pinned DESC, submission_date ASC, MAX(task_comments.created_at) ASC, task_definition_id ASC')
+      .select(Arel.sql("#{inbox_date} AS waiting_since"))
+      .having("task_statuses.id IN (:ids) OR COUNT(task_pins.task_id) > 0 OR SUM(case when #{unread_comment} AND task_comments.id IS NOT NULL then COALESCE(task_similarity_stats.similarity_count, 1) else 0 end) > 0", ids: [TaskStatus.ready_for_feedback, TaskStatus.need_help])
+      .order(Arel.sql("pinned DESC, #{inbox_date} ASC, task_definition_id ASC, tasks.id ASC"))
   end
 
   #
@@ -3200,10 +3370,11 @@ class Unit < ApplicationRecord
     begin
       done.each do |project, tasks|
         logger.info "Checking feedback email for project #{project.id}"
-        if project.student.receive_feedback_notifications
-          logger.info "Emailing feedback notification to #{project.student.name}"
-          PortfolioEvidenceMailer.task_feedback_ready(project, tasks).deliver
-        end
+        next unless project.enrolled
+        next unless project.student.receive_feedback_notifications
+
+        logger.info "Emailing feedback notification to #{project.student.name}"
+        PortfolioEvidenceMailer.task_feedback_ready(project, tasks).deliver
       end
     rescue => e
       logger.error "Failed to send emails from feedback submission. Rescued with error: #{e.message}"
@@ -3959,7 +4130,75 @@ class Unit < ApplicationRecord
       .tap do |snapshot|
       snapshot.save!
       snapshot.store_stats!(snapshot_payload)
+      refresh_task_completion_snapshot_stats!(snapshot)
     end
+  end
+
+  # Stats for every snapshot, read from the aggregated file so no CSV is parsed per request.
+  # Rebuilt only when that file is missing, unreadable, or no longer matches the snapshots on record.
+  def task_completion_snapshot_stats
+    path = FileHelper.unit_task_status_snapshot_stats_path(self, create: false)
+    cached = File.exist?(path) ? JSON.parse(Zlib::GzipReader.open(path, &:read)) : nil
+
+    if cached.present? &&
+        cached.all? { |entry| entry.key?('student_count') && entry.key?('campus_student_counts') && entry.key?('target_grade_student_counts') && entry.key?('target_grade_campus_student_counts') && entry.key?('target_grade_stats') && entry.key?('status_population_stats') } &&
+       cached.map { |entry| entry['snapshot_timestamp'] }.sort == TaskCompletionSnapshot.where(unit_id: id).pluck(:snapshot_timestamp).sort
+      return cached
+    end
+
+    refresh_task_completion_snapshot_stats!
+  rescue JSON::ParserError, Zlib::Error
+    refresh_task_completion_snapshot_stats!
+  end
+
+  # Writes the aggregated file. Stats for an already captured snapshot never change, so passing the
+  # snapshot that just changed merges it in rather than re-parsing every other CSV.
+  def refresh_task_completion_snapshot_stats!(changed_snapshot = nil)
+    path = FileHelper.unit_task_status_snapshot_stats_path(self, create: true)
+
+    entries =
+      if changed_snapshot.present? && File.exist?(path)
+        student_counts = changed_snapshot.load_student_counts
+        JSON.parse(Zlib::GzipReader.open(path, &:read)).reject { |entry| entry['snapshot_timestamp'] == changed_snapshot.snapshot_timestamp } +
+          [{
+            'snapshot_date' => changed_snapshot.snapshot_date&.iso8601,
+            'snapshot_timestamp' => changed_snapshot.snapshot_timestamp,
+            'stats' => changed_snapshot.load_stats,
+            'target_grade_stats' => changed_snapshot.load_target_grade_stats,
+            'status_population_stats' => changed_snapshot.load_status_population_stats,
+            'student_count' => student_counts['student_count'],
+            'campus_student_counts' => student_counts['campus_student_counts'],
+            'target_grade_student_counts' => student_counts['target_grade_student_counts'],
+            'target_grade_campus_student_counts' => student_counts['target_grade_campus_student_counts']
+          }]
+      else
+        task_completion_snapshots.reload.map do |snapshot|
+          student_counts = snapshot.load_student_counts
+          {
+            'snapshot_date' => snapshot.snapshot_date&.iso8601,
+            'snapshot_timestamp' => snapshot.snapshot_timestamp,
+            'stats' => snapshot.load_stats,
+            'target_grade_stats' => snapshot.load_target_grade_stats,
+            'status_population_stats' => snapshot.load_status_population_stats,
+            'student_count' => student_counts['student_count'],
+            'campus_student_counts' => student_counts['campus_student_counts'],
+            'target_grade_student_counts' => student_counts['target_grade_student_counts'],
+            'target_grade_campus_student_counts' => student_counts['target_grade_campus_student_counts']
+          }
+        end
+      end
+
+    entries = entries.sort_by { |entry| -entry['snapshot_timestamp'].to_i }
+
+    tmp_path = "#{path}.tmp"
+    Zlib::GzipWriter.open(tmp_path) { |gz| gz.write(JSON.generate(entries)) }
+    FileUtils.mv(tmp_path, path)
+
+    entries
+  rescue JSON::ParserError, Zlib::Error
+    # An unreadable file cannot be merged into; drop it so the retry does a full rebuild.
+    FileUtils.rm_f(path)
+    refresh_task_completion_snapshot_stats!
   end
 
   private

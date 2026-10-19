@@ -206,8 +206,12 @@ class OverseerStepsApi < Grape::API
     end
 
     unit = project.unit
+    task_definition = unit.task_definitions.find(params[:task_def_id])
+    task = project.task_for_task_definition(task_definition)
 
-    overseer_assessment = OverseerAssessment.find(params[:id])
+    overseer_assessment = OverseerAssessment
+                          .where(submission_history_id: task.related_submission_histories.select(:id))
+                          .find(params[:id])
     present overseer_assessment.overseer_step_results, with: Entities::OverseerStepResultEntity, my_role: unit.role_for(current_user)
   end
 end

@@ -211,6 +211,50 @@ class UnitRolesTest < ActiveSupport::TestCase
     assert UnitRole.exists?(replacement_role.id)
   end
 
+  def test_admin_not_in_unit_can_update_unit_role
+    unit = FactoryBot.create :unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0, campus_count: 0
+
+    admin_user = FactoryBot.create :user, :admin
+    tutor_user = FactoryBot.create :user, :convenor
+    tutor_role = unit.employ_staff tutor_user, Role.tutor
+
+    # The admin is not employed within the unit
+    assert_nil unit.unit_role_for(admin_user)
+
+    add_auth_header_for(user: admin_user)
+
+    # Promote the staff member to convenor
+    put_json "/api/unit_roles/#{tutor_role.id}", { unit_role: { role_id: Role.convenor.id } }
+
+    assert_equal 200, last_response.status, last_response.inspect
+    assert_equal Role.convenor.id, tutor_role.reload.role_id
+
+    # ... and mark them as observer only
+    put_json "/api/unit_roles/#{tutor_role.id}", { unit_role: { role_id: Role.convenor.id, observer_only: true } }
+
+    assert_equal 200, last_response.status, last_response.inspect
+    assert tutor_role.reload.observer_only
+
+    unit.destroy
+  end
+
+  def test_tutor_not_in_unit_cannot_update_unit_role
+    unit = FactoryBot.create :unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0, campus_count: 0
+
+    other_tutor_user = FactoryBot.create :user, :tutor
+    tutor_user = FactoryBot.create :user, :convenor
+    tutor_role = unit.employ_staff tutor_user, Role.tutor
+
+    add_auth_header_for(user: other_tutor_user)
+
+    put_json "/api/unit_roles/#{tutor_role.id}", { unit_role: { role_id: Role.convenor.id } }
+
+    assert_equal 403, last_response.status, last_response.inspect
+    assert_equal Role.tutor.id, tutor_role.reload.role_id
+
+    unit.destroy
+  end
+
   def test_observer_unit_role
     unit = FactoryBot.create(:unit, with_students: true, task_count: 2, tutorials: 1, outcome_count: 0, staff_count: 0, campus_count: 0)
 

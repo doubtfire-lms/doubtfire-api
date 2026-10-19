@@ -6,6 +6,12 @@ class Engagement < ApplicationRecord
   include FileHelper
   include MimeCheckHelpers
 
+  # Engagements can only be deleted for a short period after they are created.
+  # Staff can delete their own engagements within this window...
+  DELETE_WINDOW = 1.hour
+  # ... while convenors can delete any engagement in their unit within this window.
+  CONVENOR_DELETE_WINDOW = 1.week
+
   belongs_to :project, optional: false, inverse_of: :engagements
   belongs_to :user, optional: false, inverse_of: :engagements
 
@@ -27,6 +33,11 @@ class Engagement < ApplicationRecord
 
   before_validation :normalise_text
   before_destroy :delete_attachment
+
+  # Can this engagement still be deleted, or has the delete window passed?
+  def within_delete_window?(window = DELETE_WINDOW)
+    created_at.present? && created_at > window.ago
+  end
 
   def attachment?
     content_type.present? && attachment_extension.present?

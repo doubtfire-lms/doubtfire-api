@@ -63,6 +63,39 @@ class AuthTest < ActiveSupport::TestCase
     assert_match(/username=#{User.first.username};/, last_response.cookies['username'].to_s, 'Expect username to be set')
   end
 
+  # Signing in again shortly before the refresh token expires must issue a new one, rather than
+  # handing back the old cookie that will expire within hours.
+  def test_auth_post_rotates_refresh_token_near_expiry
+    data_to_post = { username: 'aadmin', password: 'password', remember: true }
+    user = User.find_by!(username: 'aadmin')
+    lifetime = Doubtfire::Application.config.refresh_token_expiry
+    first_sign_in = Time.zone.parse('2026-07-21 10:00:00 UTC')
+
+    first_token = travel_to(first_sign_in) do
+      post_json '/api/auth.json', data_to_post
+      user.auth_tokens.where(token_type: :refresh_token).last
+    end
+
+    # Early in its life, the same refresh token is reused
+    travel_to(first_sign_in + 1.day) do
+      post_json '/api/auth.json', data_to_post
+      assert_equal 201, last_response.status
+      assert_match(/refresh_token=#{first_token.authentication_token};/, last_response.cookies['refresh_token'].to_s)
+    end
+
+    # Hours before it expires, a new refresh token with a full lifetime is issued
+    near_expiry = first_token.auth_token_expiry - 6.hours
+    travel_to(near_expiry) do
+      post_json '/api/auth.json', data_to_post
+      assert_equal 201, last_response.status
+
+      new_token = user.auth_tokens.where(token_type: :refresh_token).last
+      assert_not_equal first_token.authentication_token, new_token.authentication_token
+      assert_in_delta((near_expiry + lifetime).to_i, new_token.auth_token_expiry.to_i, 5)
+      assert_match(/refresh_token=#{new_token.authentication_token};/, last_response.cookies['refresh_token'].to_s)
+    end
+  end
+
   def test_auth_records_sign_in_and_access_time
     user = User.find_by!(username: 'aadmin')
     sign_in_time = Time.zone.parse('2026-07-21 10:00:00 UTC')
@@ -126,6 +159,37 @@ class AuthTest < ActiveSupport::TestCase
     refute actual_auth.key?('auth_token'), 'Auth token not expected if auth fails'
 
     assert actual_auth.key? 'error'
+  end
+
+  # Blank passwords must still be authenticated rather than bypassing the
+  # password check because ActiveSupport considers them not present.
+  def test_fail_blank_password_auth
+    user = User.find_by!(username: 'aadmin')
+    original_token_count = user.auth_tokens.count
+
+    ['', ' ', "\t\n"].each do |password|
+      post_json '/api/auth.json', username: user.username, password: password
+      actual_auth = last_response_body
+
+      assert_equal 401, last_response.status, "Expected #{password.inspect} to be rejected"
+      assert_equal 'Invalid email or password.', actual_auth['error']
+      assert_not actual_auth.key?('user')
+      assert_not actual_auth.key?('auth_token')
+    end
+
+    assert_equal original_token_count, user.auth_tokens.reload.count
+  end
+
+  def test_blank_password_does_not_create_unknown_user
+    username = "unknown-blank-password-user-#{SecureRandom.hex(8)}"
+
+    ['', ' ', "\t\n"].each do |password|
+      post_json '/api/auth.json', username: username, password: password
+
+      assert_equal 401, last_response.status, "Expected #{password.inspect} to be rejected"
+      assert_equal 'Invalid email or password.', last_response_body['error']
+      assert_not User.exists?(username: username)
+    end
   end
 
   # Test auth with empty request body

@@ -49,6 +49,39 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     assert_equal actual_tp['end_date'].to_date, expected_tp.end_date.to_date
   end
 
+  def test_get_teaching_period_details_with_units_without_user
+    tp = FactoryBot.create(:teaching_period)
+    unit = FactoryBot.create(:unit, teaching_period: tp, with_students: false, stream_count: 0, tutorials: 0)
+
+    get "/api/teaching_periods/#{tp.id}"
+
+    assert_equal 200, last_response.status
+    assert_equal [unit.id], last_response_body['units'].map { |u| u['id'] }
+    assert_nil last_response_body['units'].first['my_role']
+  end
+
+  def test_get_teaching_period_details_ignores_username_without_token
+    tp = FactoryBot.create(:teaching_period)
+    unit = FactoryBot.create(:unit, teaching_period: tp, with_students: false, stream_count: 0, tutorials: 0)
+
+    header 'username', unit.main_convenor_user.username
+    get "/api/teaching_periods/#{tp.id}"
+
+    assert_equal 200, last_response.status
+    assert_nil last_response_body['units'].first['my_role']
+  end
+
+  def test_get_teaching_period_details_includes_role_when_authenticated
+    tp = FactoryBot.create(:teaching_period)
+    unit = FactoryBot.create(:unit, teaching_period: tp, with_students: false, stream_count: 0, tutorials: 0)
+
+    add_auth_header_for(user: unit.main_convenor_user)
+    get "/api/teaching_periods/#{tp.id}"
+
+    assert_equal 200, last_response.status
+    assert_equal 'Convenor', last_response_body['units'].first['my_role']
+  end
+
   # PUT tests
   # Update break from teaching period
   def test_update_break_from_teaching_period
@@ -63,12 +96,12 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     # The api call we are testing
     put_json "/api/teaching_periods/#{tp.id}/breaks/#{to_update.id}", {
       start_date: new_start_date,
-      number_of_weeks: 5,
+      number_of_days: 35,
       campus_ids: [campus.id]
     }
 
     to_update.reload
-    assert_equal 5, to_update.number_of_weeks
+    assert_equal 35, to_update.number_of_days
     assert_equal [campus.id], to_update.campus_ids
     assert_equal new_start_date.to_date, to_update.start_date.to_date
   end
@@ -76,18 +109,18 @@ class TeachingPeriodTest < ActiveSupport::TestCase
   def test_update_break_must_be_from_teaching_period
     tp = TeachingPeriod.first
     to_update = TeachingPeriod.last.breaks.first
-    num_weeks = to_update.number_of_weeks
+    num_days = to_update.number_of_days
 
     # Add username and auth_token to Header
     add_auth_header_for(user: User.first)
 
     # The api call we are testing
-    put_json "/api/teaching_periods/#{tp.id}/breaks/#{to_update.id}", { number_of_weeks: num_weeks + 1 }
+    put_json "/api/teaching_periods/#{tp.id}/breaks/#{to_update.id}", { number_of_days: num_days + 7 }
 
     assert_equal 404, last_response.status
 
     to_update.reload
-    assert_equal num_weeks, to_update.number_of_weeks
+    assert_equal num_days, to_update.number_of_days
   end
 
   # Replace a teaching period

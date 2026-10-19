@@ -18,16 +18,6 @@ module Submission
       authenticated?
     end
 
-    TASK_STATES = {
-      ready_for_feedback: 1,
-      assess_in_portfolio: 1,
-      discuss: 2,
-      rediscuss: 2,
-      attention_required: 0,
-      demonstrate: 2,
-      complete: 3
-    }.freeze
-
     desc 'Upload and generate doubtfire-task-specific submission document'
     params do
       optional :file0, type: File, desc: 'file 0.'
@@ -53,32 +43,8 @@ module Submission
         error!({ error: "This task requires a group submission. Ensure you are in a group for the unit's #{task_definition.group_set.name}" }, 403)
       end
 
-      # Check that prerequisite tasks are in the required minimum submitted state
-      prerequisites = task_definition.task_prerequisites
-      prerequisites.each do |prerequisite|
-        prereq_td = prerequisite.prerequisite
-        minimum_status = TaskStatus.find(prerequisite.task_status_id)
-
-
-        prereq_task = project.task_for_task_definition(prereq_td)
-
-        verb =
-          case minimum_status
-          when TaskStatus.complete
-            'completed'
-          when TaskStatus.discuss
-            'discussed'
-          when TaskStatus.rediscuss
-            'rediscussed'
-          when TaskStatus.demonstrate
-            'demonstrated'
-          when TaskStatus.ready_for_feedback
-            'submitted'
-          end
-
-        if !prereq_task.ready_or_complete? || TASK_STATES[prereq_task.status] < TASK_STATES[minimum_status.status_key]
-          error!({ error: "Cannot submit this task until prerequisite '#{prereq_td.abbreviation}' has been #{verb}" }, 409)
-        end
+      if (prerequisite_error = task.unmet_prerequisite_error)
+        error!({ error: prerequisite_error }, 409)
       end
 
       trigger = if params[:trigger] && params[:trigger].tr('"\'', '') == 'need_help'
@@ -114,6 +80,9 @@ module Submission
       optional :as_attachment, type: Boolean, desc: 'Whether or not to download file as attachment. Default is false.'
     end
     get '/projects/:id/task_def_id/:task_definition_id/submission' do
+      # Requests through Caddy are intercepted before the general /api proxy.
+      # Rails authorises those requests via SubmissionDownloadAuthorizationsController,
+      # then Caddy serves the PDF. This remains the direct-Rails fallback path.
       project = Project.eager_load(:unit).find(params[:id])
       task_definition = project.unit.task_definitions.select(:id, :name, :abbreviation).find(params[:task_definition_id])
 
@@ -181,7 +150,9 @@ module Submission
         error!({ error: "A submission for this task definition have never been created" }, 401)
       end
 
-      result = OverseerAssessment.where(task_id: task.id).order(submission_timestamp: :desc).limit(10)
+      result = OverseerAssessment.where(submission_history_id: task.related_submission_histories.select(:id))
+                                 .order(submission_timestamp: :desc)
+                                 .limit(10)
       present result, with: Entities::OverseerAssessmentEntity
     end
 
@@ -199,7 +170,7 @@ module Submission
         error!({ error: 'A submission for this task definition has never been created' }, 404)
       end
 
-      present task.submission_histories.order(submission_timestamp: :desc),
+      present task.related_submission_histories.order(submission_timestamp: :desc),
               with: Entities::SubmissionHistoryEntity
     end
 
@@ -213,7 +184,7 @@ module Submission
       end
 
       task = project.task_for_task_definition(task_definition)
-      history = task&.submission_histories&.find_by(id: params[:history_id])
+      history = task&.related_submission_histories&.find_by(id: params[:history_id])
       error!({ error: 'Submission history was not found' }, 404) unless history
       error!({ error: 'Submission history files are not available' }, 404) unless history.has_submission_files?
 
@@ -244,7 +215,9 @@ module Submission
 
       oa_id = timestamp = params[:oa_id]
 
-      oa = task.overseer_assessments.find(oa_id)
+      oa = OverseerAssessment
+           .where(submission_history_id: task.related_submission_histories.select(:id))
+           .find(oa_id)
       response = oa.send_to_overseer
       if response[:error].present?
         error!({ error: response[:error] }, 403)
@@ -325,7 +298,7 @@ module Submission
         error!({ error: 'A submission for this task definition have never been created' }, 401)
       end
 
-      history = task.submission_histories.find_by(submission_timestamp: params[:timestamp])
+      history = task.related_submission_histories.find_by(submission_timestamp: params[:timestamp])
       unless history
         error!({ error: "No submission history found for timestamp '#{params[:timestamp]}'" }, 404)
       end
