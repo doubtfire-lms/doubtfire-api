@@ -196,15 +196,23 @@ module Feedback
       # Find unit - which contains task definition if present
       unit_code = row['unit_code']
       if unit_code.present?
-        unit = Unit.find_by(code: unit_code)
+        unit = if context_type == 'TaskDefinition'
+                 context.unit
+               elsif context_type == 'LearningOutcome' && context.context_type == 'TaskDefinition'
+                 context.context.unit
+               elsif context_type == 'LearningOutcome'
+                 context.context
+               else
+                 context
+               end
         if unit.nil?
           return { success: false, message: "Unit #{unit_code} not found" }
-        elsif (context_type == 'Unit' && context.id != unit.id) || (context_type == 'TaskDefinition' && context.unit_id != unit.id)
-          return { success: false, message: "Is not for unit #{context.code}" }
+        elsif unit_code != unit.code
+          return { success: false, message: "Unit #{unit_code} does not match unit #{unit.code}" }
         end
       elsif %w[Unit TaskDefinition].include? context_type
         # the unit code is not present, but the context is a unit or task definition
-        return { success: false, message: "Is not for unit #{context.code}" }
+        return { success: false, message: "Is not for unit #{context_type == 'Unit' ? context.code : context.unit.code}" }
       end
 
       task_abbreviation = row['task_abbreviation']
@@ -230,16 +238,8 @@ module Feedback
         return { success: false, message: 'Missing learning outcome abbreviation' }
       end
 
-      search_context = if context_type == 'LearningOutcome'
-                         context.context
-                       else
-                         context
-                       end
-
+      search_context = task_definition || (context_type == 'LearningOutcome' ? context.context : context)
       learning_outcome = LearningOutcome.find_by(abbreviation: learning_outcome_abbreviation, context: search_context)
-      if learning_outcome.nil? && task_definition.present? && context_type == 'Unit'
-        learning_outcome = LearningOutcome.find_by(abbreviation: learning_outcome_abbreviation, context: task_definition)
-      end
 
       if learning_outcome.nil?
         return { success: false, message: "Learning outcome #{learning_outcome_abbreviation} not found" }

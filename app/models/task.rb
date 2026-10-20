@@ -1,10 +1,23 @@
 # frozen_string_literal: true
 
 require 'date'
+require 'securerandom'
 
 class Task < ApplicationRecord
   include ApplicationHelper
   include GradeHelper
+
+  PREREQUISITE_STATUS_LEVELS = {
+    ready_for_feedback: 1,
+    assess_in_portfolio: 1,
+    discuss: 2,
+    rediscuss: 2,
+    attention_required: 0,
+    demonstrate: 2,
+    complete: 3
+  }.freeze
+
+  attr_accessor :discussion_confirmed_for_transition
 
   #
   # Permissions around task data
@@ -129,6 +142,7 @@ class Task < ApplicationRecord
   has_one :overflow_task_claim, dependent: :destroy
 
   has_many :comments, class_name: 'TaskComment', dependent: :destroy, inverse_of: :task
+  has_many :comment_read_cursors, dependent: :destroy, inverse_of: :task
   has_many :task_similarities, class_name: 'TaskSimilarity', dependent: :destroy, inverse_of: :task
   has_many :reverse_jplag_similarities, class_name: 'JplagTaskSimilarity', dependent: :destroy, inverse_of: :other_task, foreign_key: 'other_task_id'
   has_many :reverse_moss_similarities, class_name: 'MossTaskSimilarity', dependent: :destroy, inverse_of: :other_task, foreign_key: 'other_task_id'
@@ -147,6 +161,7 @@ class Task < ApplicationRecord
   delegate :target_date, to: :task_definition
   delegate :update_task_stats, to: :project
 
+  before_save :set_discuss_timeout_tracking, if: :will_save_change_to_task_status_id?
   after_update :update_task_stats, if: :saved_change_to_task_status_id? # TODO: consider moving to async task
 
   validates :task_definition_id, uniqueness: { scope: :project,
@@ -170,7 +185,8 @@ class Task < ApplicationRecord
   end
 
   def prevent_complete_if_requires_discussion
-    if task_definition&.requires_discussion && task_status == TaskStatus.complete && !has_discussed_in_class_comment?
+    if task_definition&.requires_discussion && task_status == TaskStatus.complete &&
+       !has_discussed_in_class_comment? && !discussion_confirmed_for_transition
       errors.add(:task_status, "cannot be 'complete' until task has been discussed in class")
     end
   end
@@ -222,8 +238,18 @@ class Task < ApplicationRecord
   end
 
   def mark_comments_as_read(user, comments)
+    latest_comment_by_task = {}
+
     comments.each do |comment|
-      comment.mark_as_read(user, unit)
+      next unless comment.requires_attention_for?(user)
+      next if comment.user_id == user.id
+
+      current = latest_comment_by_task[comment.task_id]
+      latest_comment_by_task[comment.task_id] = comment if current.nil? || current.id < comment.id
+    end
+
+    latest_comment_by_task.each_value do |comment|
+      comment.mark_as_read(user)
     end
   end
 
@@ -237,16 +263,25 @@ class Task < ApplicationRecord
     TaskComment
       .joins('JOIN users AS authors ON authors.id = task_comments.user_id')
       .joins('JOIN users AS recipients ON recipients.id = task_comments.recipient_id')
-      .joins("LEFT JOIN comments_read_receipts u_crr ON u_crr.task_comment_id = task_comments.id AND u_crr.user_id = #{user.id}")
-      .joins("LEFT JOIN comments_read_receipts r_crr ON r_crr.task_comment_id = task_comments.id AND r_crr.user_id = recipients.id")
+      .joins(
+        "LEFT JOIN comment_read_cursors user_cursor " \
+        "ON user_cursor.task_id = task_comments.task_id AND user_cursor.user_id = #{user.id.to_i}"
+      )
+      .joins(
+        'LEFT JOIN comment_read_cursors recipient_cursor ' \
+        'ON recipient_cursor.task_id = task_comments.task_id ' \
+        'AND recipient_cursor.user_id = recipients.id'
+      )
       .where('task_comments.task_id = :task_id', task_id: self.id)
       .order('created_at ASC')
       .select(
         'task_comments.id AS id',
         'task_comments.comment AS comment',
         'task_comments.content_type AS content_type',
-        "case when u_crr.created_at IS NULL then 1 else 0 end AS is_new",
-        'r_crr.created_at AS recipient_read_time',
+        'CASE WHEN user_cursor.last_read_comment_id IS NULL ' \
+        'OR task_comments.id > user_cursor.last_read_comment_id THEN 1 ELSE 0 END AS is_new',
+        'CASE WHEN task_comments.id <= recipient_cursor.last_read_comment_id ' \
+        'THEN recipient_cursor.read_at ELSE NULL END AS recipient_read_time',
         'task_comments.created_at AS created_at',
         'authors.id AS author_id',
         'authors.first_name AS author_first_name',
@@ -258,6 +293,12 @@ class Task < ApplicationRecord
         'recipients.email AS recipient_email',
         'task_comments.reply_to_id AS reply_to_id'
       )
+  end
+
+  def set_discuss_timeout_tracking
+    self.moved_to_discuss_at = task_status_id == TaskStatus.discuss.id ? Time.zone.now : nil
+    self.notified_discuss_warning_at = nil
+    self.notified_discuss_expiry_at = nil
   end
 
   def current_task_similarities
@@ -440,10 +481,40 @@ class Task < ApplicationRecord
     current_time = now_time.to_f
     return 0 if current_time <= submission_time
 
-    teaching_breaks = unit&.teaching_period&.breaks || []
+    teaching_breaks = effective_teaching_breaks
     paused_seconds = break_overlap_seconds(submission_time, current_time, teaching_breaks)
 
     ([0, current_time - submission_time - paused_seconds].max / 1.day).floor
+  end
+
+  def discuss_timeout_elapsed_days(now_time = Time.zone.now, teaching_breaks: nil)
+    return 0 if moved_to_discuss_at.blank?
+
+    discussion_time = moved_to_discuss_at.to_f
+    current_time = now_time.to_f
+    return 0 if current_time <= discussion_time
+
+    teaching_breaks ||= effective_teaching_breaks
+    paused_seconds = break_overlap_seconds(discussion_time, current_time, teaching_breaks)
+
+    ([0, current_time - discussion_time - paused_seconds].max / 1.day).floor
+  end
+
+  def discuss_timeout_expiry_at(timeout_days = unit.discuss_timeout_expire_days, teaching_breaks: nil)
+    return nil if moved_to_discuss_at.blank?
+
+    deadline = moved_to_discuss_at + timeout_days.days
+    teaching_breaks ||= effective_teaching_breaks
+
+    teaching_breaks.sort_by(&:start_date).each do |teaching_break|
+      break_start = teaching_break.start_date
+      break_end = break_start + teaching_break.number_of_days.to_i.days
+      next if break_end <= moved_to_discuss_at || break_start >= deadline
+
+      deadline += break_end - [break_start, moved_to_discuss_at].max
+    end
+
+    deadline
   end
 
   # Excludes any breaks that would otherwise "pause" feedback
@@ -453,16 +524,20 @@ class Task < ApplicationRecord
     [0, (now_time.to_date - submission_date.to_date).to_i].max
   end
 
+  def effective_teaching_breaks
+    unit&.teaching_period&.breaks_for(project&.campus) || []
+  end
+
   def complete?
     status == :complete
   end
 
   def discuss_or_demonstrate?
-    [:discuss, :demonstrate].include?(status)
+    [:discuss, :rediscuss, :demonstrate].include?(status)
   end
 
   def discuss?
-    status == :discuss
+    [:discuss, :rediscuss].include?(status)
   end
 
   def demonstrate?
@@ -482,7 +557,30 @@ class Task < ApplicationRecord
   end
 
   def ready_or_complete?
-    [:complete, :discuss, :demonstrate, :ready_for_feedback, :assess_in_portfolio].include? status
+    [:complete, :discuss, :rediscuss, :demonstrate, :ready_for_feedback, :assess_in_portfolio].include? status
+  end
+
+  def unmet_prerequisite_error
+    task_definition.task_prerequisites.each do |prerequisite|
+      prereq_td = prerequisite.prerequisite
+      minimum_status = TaskStatus.find(prerequisite.task_status_id)
+      prereq_task = project.task_for_task_definition(prereq_td)
+
+      next if prereq_task.ready_or_complete? &&
+              PREREQUISITE_STATUS_LEVELS[prereq_task.status] >= PREREQUISITE_STATUS_LEVELS[minimum_status.status_key]
+
+      verb = case minimum_status
+             when TaskStatus.complete then 'completed'
+             when TaskStatus.discuss then 'discussed'
+             when TaskStatus.rediscuss then 'rediscussed'
+             when TaskStatus.demonstrate then 'demonstrated'
+             when TaskStatus.ready_for_feedback then 'submitted'
+             end
+
+      return "Cannot submit this task until prerequisite '#{prereq_td.abbreviation}' has been #{verb}"
+    end
+
+    nil
   end
 
   def submitted_status?
@@ -529,6 +627,22 @@ class Task < ApplicationRecord
     !group_submission.nil? || !task_definition.group_set.nil?
   end
 
+  def related_submission_histories
+    return submission_histories unless group_submission
+
+    SubmissionHistory.where(task_id: group_submission.tasks.select(:id))
+  end
+
+  def student_participant_ids
+    return [project.user_id] if group_submission.nil?
+
+    group_submission.projects.distinct.pluck(:user_id)
+  end
+
+  def student_participant?(user)
+    user.present? && student_participant_ids.include?(user.id)
+  end
+
   def active_overflow_task_claim
     claim = overflow_task_claim
     return nil unless claim
@@ -552,6 +666,28 @@ class Task < ApplicationRecord
     claim
   end
 
+  def transition_assignment_allowed?(by_user, role, system_transition)
+    return true if system_transition
+
+    # Stream locking restricts who may assess the task, not who may submit it
+    if task_definition.lock_assessments_to_tutorial_stream &&
+       !role.in?([:student, :group_member]) &&
+       task_definition.tutorial_stream.present?
+      unit_role = unit.unit_role_for(by_user)
+      return false unless task_definition.tutorial_stream.tutorials.any? { |tutorial| tutorial.unit_role == unit_role }
+    end
+
+    claim = active_overflow_task_claim
+    return true if claim.blank?
+
+    unit_role = unit.unit_role_for(by_user)
+    unit_role.nil? || unit_role.id == claim.claimed_by_unit_role_id
+  end
+
+  def transition_feedback_check_required?(check_feedback, system_transition)
+    check_feedback && !system_transition
+  end
+
   def group
     return nil unless group_task?
 
@@ -568,11 +704,12 @@ class Task < ApplicationRecord
   end
 
   def trigger_transition(trigger: '', by_user: nil, bulk: false, group_transition: false, quality: 1, recursive_fix: false,
-                         check_feedback: false)
+                         check_feedback: false, system_transition: false)
     #
     # Ensure that assessor is allowed to update the task in the indicated way
     #
     role = role_for(by_user)
+    role = :tutor if system_transition && by_user.present?
 
     return nil if role.nil?
 
@@ -587,20 +724,7 @@ class Task < ApplicationRecord
     # Protect closed states from student changes
     return nil if [:student, :group_member].include?(role) && task_submission_closed?
 
-    if task_definition.lock_assessments_to_tutorial_stream
-      unit_role = unit.unit_role_for(by_user)
-      tutorial_stream = task_definition.tutorial_stream
-      tutorials = tutorial_stream.tutorials
-      return nil unless tutorials.any? { |t| t.unit_role == unit_role }
-    end
-
-    # Check to see if another tutor has claimed this task from overflow
-    if active_overflow_task_claim
-      unit_role = unit.unit_role_for(by_user)
-      if unit_role && unit_role.id != active_overflow_task_claim.claimed_by_unit_role_id
-        return nil
-      end
-    end
+    return nil unless transition_assignment_allowed?(by_user, role, system_transition)
     #
     # State transitions based upon the trigger
     #
@@ -618,11 +742,16 @@ class Task < ApplicationRecord
     else
       # Only tutors can perform these actions
       if role == :tutor
-        if status == TaskStatus.complete && task_definition.requires_discussion && !has_discussed_in_class_comment?
+        if status == TaskStatus.complete && task_definition.requires_discussion &&
+           !has_discussed_in_class_comment? && !discussion_confirmed_for_transition
           return nil
         end
 
-        if check_feedback
+        if status == TaskStatus.rediscuss && task_status != TaskStatus.discuss
+          return nil
+        end
+
+        if transition_feedback_check_required?(check_feedback, system_transition)
           if status == TaskStatus.complete && !has_manual_feedback_since_first_ready_for_feedback?
             errors.add(:task_status, "cannot be moved to '#{status.name}' until feedback has been given")
             return nil
@@ -644,7 +773,7 @@ class Task < ApplicationRecord
           # Can only be graded if task_def is not assess_in_portfolio_only
           if task_definition.max_quality_pts > 0
             case status
-            when TaskStatus.complete, TaskStatus.discuss, TaskStatus.demonstrate, TaskStatus.attention_required
+            when TaskStatus.complete, TaskStatus.discuss, TaskStatus.rediscuss, TaskStatus.demonstrate, TaskStatus.attention_required
               update(quality_pts: quality)
             end
           end
@@ -779,7 +908,7 @@ class Task < ApplicationRecord
 
       # Grant an extension on fix if due date is within 1 week
       case task_status
-      when TaskStatus.fix_and_resubmit, TaskStatus.discuss, TaskStatus.demonstrate
+      when TaskStatus.fix_and_resubmit, TaskStatus.discuss, TaskStatus.rediscuss, TaskStatus.demonstrate
         if to_same_day_anywhere_on_earth(due_date) < Time.zone.now + 7.days && can_apply_for_extension? && unit.extension_weeks_on_resubmit_request > 0
           grant_extension(assessor, unit.extension_weeks_on_resubmit_request)
         end
@@ -822,7 +951,11 @@ class Task < ApplicationRecord
           # Since we are calling this assess method again, we recursively check for more dependent tasks that need to be updated
           task.assess(TaskStatus.fix_and_resubmit, assessor, assess_date, recursive_fix)
           task.add_status_comment(assessor, TaskStatus.fix_and_resubmit)
-          task.add_text_comment(assessor, "**Automated comment**: A prerequisite task was updated to Fix and Resubmit, so this task was updated as well. You may need to review and update the prerequisite before resubmitting.")
+          task.add_text_comment(
+            assessor,
+            "**Automated comment**: A prerequisite task was updated to Fix and Resubmit, so this task was updated as well. You may need to review and update the prerequisite before resubmitting.",
+            attention_audience: :student
+          )
         end
       end
 
@@ -922,7 +1055,7 @@ class Task < ApplicationRecord
     task_definition.weighting.to_f
   end
 
-  def add_text_comment(user, text, reply_to_id = nil)
+  def add_text_comment(user, text, reply_to_id = nil, attention_audience: nil)
     text = text.strip
     return nil if user.nil? || text.nil? || text.empty?
 
@@ -940,6 +1073,7 @@ class Task < ApplicationRecord
     comment.content_type = :text
     comment.recipient = user == project.student ? project.tutor_for(task_definition) : project.student
     comment.reply_to_id = reply_to_id
+    comment.attention_audience = attention_audience if attention_audience.present?
     comment.save!
 
     comment
@@ -983,6 +1117,20 @@ class Task < ApplicationRecord
     discussed
   end
 
+  def add_discuss_timeout_comment(current_user, content_type, text)
+    return nil unless individual_task_or_submitter_of_group_task?
+
+    comment = DiscussTimeoutComment.create
+    comment.task = self
+    comment.user = current_user
+    comment.comment = text
+    comment.content_type = content_type
+    comment.recipient = project.student
+    comment.save!
+
+    comment
+  end
+
   def add_checked_in_comment(current_user)
     discussed = TaskCheckedInComment.create
     discussed.task = self
@@ -1009,7 +1157,7 @@ class Task < ApplicationRecord
       raise "Error attaching uploaded file." unless discussion.add_prompt(prompt, index)
     end
 
-    discussion.mark_as_read(user, unit)
+    discussion.mark_as_read(user)
 
     logger.info(discussion)
     return discussion
@@ -1144,6 +1292,8 @@ class Task < ApplicationRecord
   #
   # Compress the done files for a student - includes cover page and work uploaded
   #
+  class ImageProcessingError < StandardError; end
+
   def compress_new_to_done(task_dir: student_work_dir(:new, false), zip_file_path: nil, rm_task_dir: true, rename_files: false)
     begin
       # Ensure that this task is the submitter task for a  group_task... otherwise
@@ -1158,7 +1308,10 @@ class Task < ApplicationRecord
       image_files.each do |img|
         # Ensure all images in submissions are jpg
         dest_file = "#{task_dir}#{File.basename(img, ".*")}.jpg"
-        raise 'Failed to compress an image. Ensure all images are valid.' unless FileHelper.compress_image_to_dest("#{task_dir}#{img}", dest_file, true)
+        unless FileHelper.compress_image_to_dest("#{task_dir}#{img}", dest_file, true)
+          upload_name = upload_requirements[img.to_i]&.dig('name') || 'image'
+          raise ImageProcessingError, "The image for '#{upload_name}' could not be processed. Export it as a smaller JPEG or PNG and resubmit the task."
+        end
 
         # Cleanup unless the output was the same as the input
         FileUtils.rm("#{task_dir}#{img}") unless dest_file == "#{task_dir}#{img}"
@@ -1348,6 +1501,7 @@ class Task < ApplicationRecord
     include LatexHelper
 
     attr_accessor :task
+    attr_accessor :submission_date
     attr_accessor :files
     attr_accessor :base_path
     attr_accessor :image_path
@@ -1356,6 +1510,7 @@ class Task < ApplicationRecord
 
     def init(task, is_retry)
       @task = task
+      @submission_date = task.submission_date || task.file_uploaded_at || task.task_submissions.maximum(:submission_time)
       @files = task.in_process_files_for_task(is_retry)
       @base_path = task.student_work_dir(:in_process, false)
       @image_path = Rails.root.join('public/assets/images')
@@ -1476,12 +1631,14 @@ class Task < ApplicationRecord
   def convert_submission_to_pdf(source_folder: FileHelper.student_work_dir(:new), log_to_stdout: true)
     logger.info "Converting task #{self.id} to pdf"
 
-    unless move_files_to_in_process(source_folder)
-      logger.error("Failed to move files for #{log_details} to in process")
-      return false
-    end
-
     begin
+      unless move_files_to_in_process(source_folder)
+        logger.error("Failed to move files for #{log_details} to in process")
+        return false
+      end
+
+      converted_word_documents = convert_word_documents_to_pdf
+
       tac = TaskAppController.new
       tac.init(self, false)
 
@@ -1519,7 +1676,7 @@ class Task < ApplicationRecord
             end
           end
 
-          raise LatexError.new(log_message), 'Failed to convert your submission to PDF. Check code files submitted for invalid characters, that documents are valid pdfs, images are valid, and zip files are valid.'
+          raise LatexError.new(log_message), 'Failed to convert your submission to PDF. Check code files submitted for invalid characters, that documents are valid PDFs or DOCX files, images are valid, and zip files are valid.'
         end
       end
 
@@ -1540,17 +1697,60 @@ class Task < ApplicationRecord
         end
       end
 
+      stage_word_document_previews(converted_word_documents)
       save
       return true
     rescue => e
+      SubmissionHistory.clear_document_previews(self)
       trigger_transition trigger: 'fix', by_user: project.tutor_for(task_definition)
-      add_text_comment project.tutor_for(task_definition), "**Automated Comment**: Something went wrong with your submission. Check the files and resubmit this task. #{e.message}"
+      comment = if e.is_a?(ImageProcessingError)
+                  "**Automated Comment**: #{e.message}"
+                else
+                  "**Automated Comment**: Something went wrong with your submission. Check that code files do not contain invalid characters, documents are valid PDF or DOCX files, images are valid, and zip files are valid, then resubmit this task."
+                end
+      add_text_comment(
+        project.tutor_for(task_definition),
+        comment,
+        attention_audience: :student
+      )
       raise e
     ensure
       # Ensure latex aux file is removed - if broken will cause issues for next submission in sidekiq
       # Dir.glob(Rails.root.join('tmp/rails-latex/**/input.aux')).each { |f| File.delete(f) }
 
       clear_in_process
+    end
+  end
+
+  def convert_word_documents_to_pdf
+    in_process_dir = student_work_dir(:in_process, false)
+    return [] unless Dir.exist?(in_process_dir)
+
+    converted_documents = []
+
+    Dir.glob(File.join(in_process_dir, '*-document.*')).each do |source_path|
+      next unless FileHelper.word_document?(source_path)
+
+      upload_index = File.basename(source_path).to_i
+      destination_path = source_path.sub(/\.docx\z/i, '.pdf')
+      FileHelper.convert_word_document_to_pdf(
+        source_path,
+        destination_path,
+        work_id: "task-#{id}-#{SecureRandom.uuid}"
+      )
+      FileUtils.rm_f(source_path)
+      converted_documents << { upload_index: upload_index, path: destination_path }
+    end
+
+    converted_documents
+  end
+
+  def stage_word_document_previews(converted_documents)
+    converted_documents.each do |document|
+      requirement = upload_requirements[document[:upload_index]]
+      next unless requirement&.dig('submission_history') == true
+
+      SubmissionHistory.stage_document_preview!(self, document[:upload_index], document[:path])
     end
   end
 
@@ -1583,7 +1783,7 @@ class Task < ApplicationRecord
       reverse_jplag_similarities(&:destroy)
       reverse_moss_similarities(&:destroy)
 
-      save
+      save!
     end
   end
 
@@ -1718,6 +1918,57 @@ class Task < ApplicationRecord
     "#{upload_requirements[idx]['name']}#{extension_for_upload(idx)}"
   end
 
+  # Keep the stored archive's numbered filenames for internal processing, but
+  # expose the upload requirement names when staff download its contents.
+  def download_filename_for(entry_name)
+    relative_path = entry_name.split('/', 2).last || entry_name
+    filename = File.basename(relative_path)
+    match = /\A(?<index>\d{3})-(?<type>document|code|image|zip|archive)(?<extension>\..+)\z/.match(filename)
+    return relative_path unless match
+
+    requirement = upload_requirements[match[:index].to_i]
+    return relative_path unless requirement && requirement['type'] == match[:type]
+
+    extension = match[:extension]
+    name = requirement['name'].to_s.strip
+    return relative_path if name.empty?
+
+    name = name[0...-extension.length] if name.downcase.end_with?(extension.downcase)
+    renamed_file = "#{match[:index]}-#{FileHelper.sanitized_filename(name)}#{extension}"
+    directory = File.dirname(relative_path)
+    directory == '.' ? renamed_file : File.join(directory, renamed_file)
+  end
+
+  def downloadable_submission_zip_path
+    source = zip_file_path_for_done_task
+    return source unless source && File.file?(source)
+
+    result = FileHelper.tmp_file("submission-#{id}-named.zip")
+    if File.file?(result) && File.mtime(result) >= [File.mtime(source), task_definition.updated_at].max
+      return result
+    end
+
+    partial_result = "#{result}.partial-#{SecureRandom.hex(8)}"
+    begin
+      Zip::OutputStream.open(partial_result) do |output_zip|
+        Zip::File.open(source) do |submission_zip|
+          submission_zip.each do |entry|
+            next if entry.name_is_directory?
+
+            renamed_entry = entry.dup
+            renamed_entry.name = File.join(entry.name.split('/', 2).first, download_filename_for(entry.name))
+            output_zip.copy_raw_entry(renamed_entry)
+          end
+        end
+      end
+      FileUtils.mv(partial_result, result)
+    ensure
+      FileUtils.rm_f(partial_result)
+    end
+
+    result
+  end
+
   def extension_for_upload(idx)
     filename = filename_in_zip(idx)
     return nil if filename.nil?
@@ -1802,7 +2053,7 @@ class Task < ApplicationRecord
   def break_overlap_seconds(start_time, end_time, teaching_breaks)
     teaching_breaks.sum do |teaching_break|
       break_start = teaching_break.start_date.to_f
-      break_duration = teaching_break.number_of_weeks.to_i.weeks
+      break_duration = teaching_break.number_of_days.to_i.days
       break_end = break_start + break_duration
 
       next 0 unless break_start.finite? && break_duration.positive?

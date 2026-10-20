@@ -145,6 +145,34 @@ class FeedbackTest < ActiveSupport::TestCase
     unit.destroy
   end
 
+  def test_convenor_can_view_inbox_as_tutor
+    unit = FactoryBot.create(:unit, perform_submissions: true, unenrolled_student_count: 0, part_enrolled_student_count: 0, tutorials: 2, staff_count: 2, student_count: 2)
+
+    convenor = unit.main_convenor_user
+    tutor = FactoryBot.create(:user, :tutor)
+    tutor_role = unit.employ_staff(tutor, Role.tutor)
+    unit.tutorials.first.assign_tutor(tutor)
+
+    add_auth_header_for(user: convenor)
+    get "/api/units/#{unit.id}/tasks/inbox?my_students_only=true&view_as_unit_role_id=#{tutor_role.id}"
+
+    assert_equal 200, last_response.status, last_response_body
+    expected_ids = unit.tasks_for_task_inbox(tutor, true).map(&:task_id)
+    assert_equal expected_ids, last_response_body.pluck('id')
+
+    add_auth_header_for(user: tutor)
+    get "/api/units/#{unit.id}/tasks/inbox?view_as_unit_role_id=#{unit.unit_role_for(convenor).id}"
+    assert_equal 403, last_response.status
+
+    other_unit = FactoryBot.create(:unit, unenrolled_student_count: 0, part_enrolled_student_count: 0, student_count: 0)
+    add_auth_header_for(user: convenor)
+    get "/api/units/#{unit.id}/tasks/inbox?view_as_unit_role_id=#{other_unit.unit_roles.first.id}"
+    assert_equal 404, last_response.status
+  ensure
+    unit&.destroy
+    other_unit&.destroy
+  end
+
   def test_task_similarity_inbox
     unit = FactoryBot.create(:unit, perform_submissions: true, unenrolled_student_count: 0, part_enrolled_student_count: 0, tutorials: 2, staff_count: 2)
 

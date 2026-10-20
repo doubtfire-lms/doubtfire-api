@@ -404,6 +404,17 @@ class LearningOutcomeApiTest < ActiveSupport::TestCase
       assert_equal chip.learning_outcome_id, new_td_lo.id, 'Each feedback chip should have the correct learning outcome id'
     end
 
+    copied_group_chip = new_td_lo.feedback_group_chips.find_by(chip_text: group_chip_td_lo.chip_text)
+    copied_template_chip = new_td_lo.feedback_template_chips.find_by(chip_text: template_chip_td_lo.chip_text)
+
+    assert_not_nil copied_group_chip, 'The task learning outcome feedback group should be copied'
+    assert_not_nil copied_template_chip, 'The task learning outcome feedback template should be copied'
+    assert_equal copied_group_chip, copied_template_chip.parent_chip
+    assert_equal template_chip_td_lo.description, copied_template_chip.description
+    assert_equal template_chip_td_lo.task_status, copied_template_chip.task_status
+    assert_equal template_chip_td_lo.summary_text, copied_template_chip.summary_text
+    assert_equal template_chip_td_lo.comment_text, copied_template_chip.comment_text
+
     new_link = LearningOutcomeLink.find_by(source_id: new_lo1.id, target_id: global_learning_outcome.id)
     assert_not_nil new_link, 'New learning outcome 1 should be linked to the global learning outcome'
 

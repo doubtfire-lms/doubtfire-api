@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'csv'
+require 'set'
 require 'zip'
 
 class TaskCompletionSnapshot < ApplicationRecord
@@ -51,6 +52,106 @@ class TaskCompletionSnapshot < ApplicationRecord
     {}
   end
 
+  def load_target_grade_stats
+    csv_text = snapshot_contents
+    return {} if csv_text.blank?
+
+    unit.grade_values.to_h do |target_grade|
+      [target_grade.to_s, parse_csv_stats(csv_text, target_grade: target_grade)]
+    end
+  rescue CSV::MalformedCSVError
+    {}
+  end
+
+  # Count each CSV row once for the whole campus, even when the student belongs
+  # to multiple tutorial streams. Tutorial buckets remain available for filtering.
+  def load_status_population_stats
+    csv_text = snapshot_contents
+    return { 'all' => {}, 'target_grades' => {} } if csv_text.blank?
+
+    stream_headers = unit.tutorial_streams.pluck(:abbreviation)
+    stream_headers = ['Tutorial'] if stream_headers.empty?
+    task_definitions = unit.task_definitions_by_grade
+    grade_labels = unit.grade_values.to_h { |grade| [unit.grade_label(grade), grade.to_s] }
+    campus_names = Campus.pluck(:abbreviation, :name).to_h
+    result = { 'all' => {}, 'target_grades' => {} }
+    seen = Set.new
+
+    CSV.parse(csv_text, headers: true).each do |row|
+      student = row['Username'].presence || row['Student ID'].presence
+      campus_abbreviation = row['Campus'].to_s.strip
+      next if student.blank? || campus_abbreviation.blank?
+
+      campus = campus_names[campus_abbreviation] || campus_abbreviation
+      tutorial_names = stream_headers.filter_map { |header| row[header].to_s.strip.presence }.uniq
+      grade = grade_labels[row['Target Grade'].to_s.strip]
+      scopes = [result['all']]
+      scopes << (result['target_grades'][grade] ||= {}) if grade
+
+      scopes.each do |scope|
+        campus_stats = scope[campus] ||= {}
+        ['__all__', *tutorial_names].each do |tutorial|
+          task_stats = campus_stats[tutorial] ||= {}
+          task_definitions.each do |task_definition|
+            status_id = row[task_definition.abbreviation].to_s.strip.to_i
+            status = (TaskStatus.id_to_key(status_id) || :not_started).to_s
+            key = [scope.object_id, student, campus, tutorial, task_definition.abbreviation]
+            next unless seen.add?(key)
+
+            counts = task_stats[task_definition.abbreviation] ||= {}
+            counts[status] = (counts[status] || 0) + 1
+          end
+        end
+      end
+    end
+
+    result
+  rescue CSV::MalformedCSVError
+    { 'all' => {}, 'target_grades' => {} }
+  end
+
+  def load_student_counts
+    students = Set.new
+    campus_students = Hash.new { |hash, key| hash[key] = Set.new }
+    target_grade_students = Hash.new { |hash, key| hash[key] = Set.new }
+    target_grade_campus_students = Hash.new do |hash, key|
+      hash[key] = Hash.new { |campus_hash, campus| campus_hash[campus] = Set.new }
+    end
+
+    CSV.parse(snapshot_contents.to_s, headers: true).each do |row|
+      student = row['Username'].presence || row['Student ID'].presence
+      next if student.blank?
+
+      students.add(student)
+
+      target_grade = unit.grade_values.find { |value| unit.grade_label(value) == row['Target Grade'].to_s.strip }
+      target_grade_students[target_grade].add(student) if target_grade
+
+      campus_abbreviation = row['Campus'].to_s.strip
+      next if campus_abbreviation.blank?
+
+      campus = Campus.find_by(abbreviation: campus_abbreviation)&.name || campus_abbreviation
+      campus_students[campus].add(student)
+      target_grade_campus_students[target_grade][campus].add(student) if target_grade
+    end
+
+    {
+      'student_count' => students.length,
+      'campus_student_counts' => campus_students.transform_values(&:length),
+      'target_grade_student_counts' => target_grade_students.transform_keys(&:to_s).transform_values(&:length),
+      'target_grade_campus_student_counts' => target_grade_campus_students.transform_keys(&:to_s).transform_values do |campuses|
+        campuses.transform_values(&:length)
+      end
+    }
+  rescue CSV::MalformedCSVError
+    {
+      'student_count' => 0,
+      'campus_student_counts' => {},
+      'target_grade_student_counts' => {},
+      'target_grade_campus_student_counts' => {}
+    }
+  end
+
   def store_stats!(payload)
     file_path = snapshot_file_path
     raise 'Cannot store stats without a unit' if file_path.blank?
@@ -91,7 +192,7 @@ class TaskCompletionSnapshot < ApplicationRecord
 
   private
 
-  def parse_csv_stats(csv_text)
+  def parse_csv_stats(csv_text, target_grade: nil)
     csv = CSV.parse(csv_text, headers: true)
     return {} if csv.empty?
 
@@ -102,6 +203,9 @@ class TaskCompletionSnapshot < ApplicationRecord
     stats = Hash.new { |hash, key| hash[key] = Hash.new { |tutorial_hash, tutorial_key| tutorial_hash[tutorial_key] = Hash.new { |task_hash, task_key| task_hash[task_key] = Hash.new(0) } } }
 
     csv.each do |row|
+      stored_target_grade = row['Target Grade'].to_s.strip
+      next if target_grade.present? && stored_target_grade.to_s != unit.grade_label(target_grade)
+
       campus_abbreviation = row['Campus'].to_s.strip
       next if campus_abbreviation.blank?
 

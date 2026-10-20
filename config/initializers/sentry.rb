@@ -30,7 +30,8 @@ module OnTrackSentryRedaction
   end
 
   def scrub_exception(exception)
-    exception&.each_value do |value|
+    exception_values = exception&.values
+    exception_values&.each do |value|
       value.value = scrub_string(value.value) if value.respond_to?(:value) && value.respond_to?(:value=)
 
       next unless value.respond_to?(:stacktrace)

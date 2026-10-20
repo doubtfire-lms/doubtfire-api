@@ -2,6 +2,7 @@ require 'test_helper'
 
 class EngagementsApiTest < ActiveSupport::TestCase
   include Rack::Test::Methods
+  include ActiveSupport::Testing::TimeHelpers
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
   include TestHelpers::TestFileHelper
@@ -47,6 +48,147 @@ class EngagementsApiTest < ActiveSupport::TestCase
     assert_equal @tutor.id, last_response_body.first.dig('user', 'id')
   end
 
+  def test_tutor_can_create_one_engagement_for_multiple_students
+    other_student = FactoryBot.create(:user, :student)
+    other_project = @unit.enrol_student(other_student, nil)
+
+    engagement = create_engagement(
+      overrides: { project_ids: [@project.id, other_project.id] }
+    )
+
+    assert_equal [engagement.id], @project.engagements.pluck(:id)
+    assert_equal [engagement.id], other_project.shared_engagements.pluck(:id)
+    assert_equal [other_project.id], engagement.additional_projects.pluck(:id)
+
+    add_auth_header_for(user: other_student)
+    get "/api/projects/#{other_project.id}/engagements/#{engagement.id}"
+    assert_equal [@student.id, other_student.id].sort,
+                 last_response_body['students'].pluck('id').sort
+  end
+
+  def test_records_automatic_class_discussion_with_tutorial_context
+    tutorial = @unit.tutorials.first
+    tutorial.campus.update!(timezone: 'UTC')
+    @project.enrol_in(tutorial)
+    tutorial.update!(meeting_day: 'Monday', meeting_time: '10:00')
+    add_auth_header_for(user: @tutor)
+    task_definition = @unit.task_definitions.first
+
+    assert_difference 'Engagement.count', 1 do
+      travel_to(Time.zone.parse('2026-07-20 10:30:00 UTC')) do
+        post_json(
+          "/api/projects/#{@project.id}/engagements/class_discussion",
+          {
+            task_status_updates: [
+              {
+                task_definition_id: task_definition.id,
+                from_status: 'ready_for_feedback',
+                to_status: 'complete'
+              }
+            ]
+          }
+        )
+      end
+    end
+
+    assert_equal 201, last_response.status
+    engagement = @project.engagements.last
+    assert_equal 'Discussion', engagement.engagement_type
+    assert_equal(
+      "Updated task statuses during tutorial. #{task_definition.abbreviation}: Ready for Feedback → Complete.",
+      engagement.note
+    )
+    assert_equal @tutor, engagement.user
+  end
+
+  def test_uses_default_timezone_for_tutorial_without_campus
+    tutorial = @unit.tutorials.first
+    tutorial.update!(campus: nil, meeting_day: 'Monday', meeting_time: '10:00')
+    @project.enrol_in(tutorial)
+    add_auth_header_for(user: @tutor)
+
+    travel_to(Time.zone.parse('2026-07-20 10:30:00')) do
+      post_json(
+        "/api/projects/#{@project.id}/engagements/class_discussion",
+        { task_status_updates: [] }
+      )
+    end
+
+    assert_equal 201, last_response.status
+    assert_equal(
+      'Class discussion during tutorial; no task statuses were updated.',
+      @project.engagements.last.note
+    )
+  end
+
+  def test_records_class_discussion_without_status_updates_outside_tutorial
+    add_auth_header_for(user: @tutor)
+
+    assert_difference 'Engagement.count', 1 do
+      post_json(
+        "/api/projects/#{@project.id}/engagements/class_discussion",
+        { task_status_updates: [] }
+      )
+    end
+
+    assert_equal 201, last_response.status
+    assert_equal(
+      'Class discussion outside of tutorial; no task statuses were updated.',
+      @project.engagements.last.note
+    )
+  end
+
+  def test_debounces_automatic_class_discussion_engagements
+    add_auth_header_for(user: @tutor)
+    path = "/api/projects/#{@project.id}/engagements/class_discussion"
+    task_definitions = @unit.task_definitions.first(2)
+
+    assert_difference 'Engagement.count', 1 do
+      post_json(
+        path,
+        {
+          task_status_updates: [
+            {
+              task_definition_id: task_definitions.first.id,
+              from_status: 'ready_for_feedback',
+              to_status: 'complete'
+            }
+          ]
+        }
+      )
+      post_json(
+        path,
+        {
+          task_status_updates: [
+            {
+              task_definition_id: task_definitions.second.id,
+              from_status: 'discuss',
+              to_status: 'rediscuss'
+            }
+          ]
+        }
+      )
+    end
+
+    assert_equal false, last_response_body['recorded']
+    note = @project.engagements.last.note
+    assert_includes note, "#{task_definitions.first.abbreviation}: Ready for Feedback → Complete."
+    assert_includes note, "#{task_definitions.second.abbreviation}: Discuss → Rediscuss."
+  end
+
+  def test_student_cannot_record_automatic_class_discussion
+    add_auth_header_for(user: @student)
+
+    assert_no_difference 'Engagement.count' do
+      post_json(
+        "/api/projects/#{@project.id}/engagements/class_discussion",
+        { task_status_updates: [] }
+      )
+    end
+
+    assert_equal 403, last_response.status
+  end
+
   def test_student_and_unrelated_tutor_cannot_create_engagements
     add_auth_header_for(user: @student)
     post_json "/api/projects/#{@project.id}/engagements", engagement_params
@@ -89,17 +231,69 @@ class EngagementsApiTest < ActiveSupport::TestCase
     assert_equal 'Corrected note.', engagement.reload.note
   end
 
-  def test_only_convenor_can_delete
+  def test_tutor_can_delete_their_own_engagement
     engagement = create_engagement
 
     add_auth_header_for(user: @tutor)
     delete "/api/projects/#{@project.id}/engagements/#{engagement.id}"
+    assert_equal 200, last_response.status
+    assert_nil Engagement.find_by(id: engagement.id)
+  end
+
+  def test_tutor_cannot_delete_another_staff_members_engagement
+    engagement = create_engagement(user: @convenor)
+
+    add_auth_header_for(user: @tutor)
+    delete "/api/projects/#{@project.id}/engagements/#{engagement.id}"
     assert_equal 403, last_response.status
+    assert Engagement.exists?(engagement.id)
+  end
+
+  def test_convenor_can_delete_any_engagement
+    engagement = create_engagement
 
     add_auth_header_for(user: @convenor)
     delete "/api/projects/#{@project.id}/engagements/#{engagement.id}"
     assert_equal 200, last_response.status
     assert_nil Engagement.find_by(id: engagement.id)
+  end
+
+  def test_student_cannot_delete_an_engagement
+    engagement = create_engagement
+
+    add_auth_header_for(user: @student)
+    delete "/api/projects/#{@project.id}/engagements/#{engagement.id}"
+    assert_equal 403, last_response.status
+    assert Engagement.exists?(engagement.id)
+  end
+
+  def test_tutor_cannot_delete_an_engagement_after_the_delete_window
+    engagement = create_engagement
+
+    travel_to (Engagement::DELETE_WINDOW + 1.minute).from_now do
+      add_auth_header_for(user: @tutor)
+      delete "/api/projects/#{@project.id}/engagements/#{engagement.id}"
+      assert_equal 403, last_response.status
+      assert Engagement.exists?(engagement.id)
+
+      # The convenor has a longer window, so they can still delete it
+      add_auth_header_for(user: @convenor)
+      delete "/api/projects/#{@project.id}/engagements/#{engagement.id}"
+      assert_equal 200, last_response.status
+      assert_nil Engagement.find_by(id: engagement.id)
+    end
+  end
+
+  def test_convenor_cannot_delete_an_engagement_after_the_convenor_delete_window
+    engagement = create_engagement
+
+    travel_to (Engagement::CONVENOR_DELETE_WINDOW + 1.minute).from_now do
+      add_auth_header_for(user: @convenor)
+      delete "/api/projects/#{@project.id}/engagements/#{engagement.id}"
+      assert_equal 403, last_response.status
+    end
+
+    assert Engagement.exists?(engagement.id)
   end
 
   def test_student_and_teaching_staff_can_comment

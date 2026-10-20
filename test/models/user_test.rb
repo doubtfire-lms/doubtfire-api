@@ -40,6 +40,64 @@ class UserTest < ActiveSupport::TestCase
     refute user.valid?
   end
 
+  test 'profile names allow commas, periods, slashes, hyphens, parentheses, and apostrophes' do
+    user = FactoryBot.build(
+      :user,
+      first_name: "Dr./Prof. Mary-Jane O'Neil",
+      last_name: 'O’Hara/Jones, Jr.',
+      nickname: 'D’Angelo/Student (Ph.D.)'
+    )
+
+    assert user.valid?
+  end
+
+  test 'profile name fields allow fullwidth commas' do
+    %i[first_name last_name nickname].each do |attribute|
+      user = FactoryBot.build(:user, attribute => '王，名字')
+
+      assert user.valid?, attribute
+    end
+  end
+
+  test 'profile name fields reject hash characters' do
+    {
+      first_name: 'First#Name',
+      last_name: 'Last#Name',
+      nickname: 'Preferred#Name'
+    }.each do |attribute, value|
+      user = FactoryBot.build(:user, attribute => value)
+
+      assert_not user.valid?, attribute
+      assert_includes user.errors[attribute], 'contains unsupported characters'
+    end
+  end
+
+  test 'profile names reject spreadsheet formulas and unsupported punctuation' do
+    ['=2+2', '+SUM(A1:A2)', '@command', 'Name=Value', 'Name+Value', 'Name@Value'].each do |value|
+      user = FactoryBot.build(:user, first_name: value)
+
+      assert_not user.valid?, value
+      assert_includes user.errors[:first_name], 'contains unsupported characters'
+    end
+  end
+
+  test 'CSV formula escaping neutralises spreadsheet control prefixes' do
+    ['=2+2', '+SUM(A1:A2)', '-1+2', '@command', "\tcommand", "\rcommand", "\ncommand"].each do |value|
+      assert_equal "'#{value}", CsvHelper.escape_spreadsheet_formula(value)
+    end
+
+    assert_equal 'Mary-Jane', CsvHelper.escape_spreadsheet_formula('Mary-Jane')
+  end
+
+  test 'system user export neutralises formulas from existing data' do
+    @user.first_name = '=2+2'
+    @user.save!(validate: false)
+
+    entry = CSV.parse(User.export_to_csv, headers: true).find { |row| row['username'] == @user.username }
+
+    assert_equal "'=2+2", entry['first_name']
+  end
+
   def test_can_create_multiple_auth_tokens
     user = FactoryBot.create(:user)
     t1 = user.generate_authentication_token!

@@ -10,6 +10,6 @@ FactoryBot.define do
   end
   factory :breaks do
     start_date {start_date.Time.zone.now}
-    number_of_weeks {number_of_weeks.rand(1..3)}
+    number_of_days {number_of_days.rand(1..3) * 7}
   end 
 end

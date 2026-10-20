@@ -11,9 +11,6 @@ class ApiRoot < Grape::API
   format :json
 
   before do
-    header['Access-Control-Allow-Origin'] = '*'
-    header['Access-Control-Request-Method'] = '*'
-
     Thread.current.thread_variable_set(:ip, request.ip)
   end
 
@@ -63,6 +60,7 @@ class ApiRoot < Grape::API
   mount DiscussionCommentApi
   mount EngagementsApi
   mount ExtensionCommentsApi
+  mount LmsIntegrationApi
   mount ScormExtensionCommentsApi
   mount GroupSetsApi
   mount LearningOutcomesApi
@@ -97,6 +95,7 @@ class ApiRoot < Grape::API
   mount TutorialStreamsApi
   mount TutorialEnrolmentsApi
   mount UnitRolesApi
+  mount UnitContentsApi
   mount UnitsApi
   mount TutorNotesApi
 
@@ -122,6 +121,7 @@ class ApiRoot < Grape::API
   AuthenticationHelpers.add_auth_to DiscussionCommentApi
   AuthenticationHelpers.add_auth_to EngagementsApi
   AuthenticationHelpers.add_auth_to ExtensionCommentsApi
+  AuthenticationHelpers.add_auth_to LmsIntegrationApi
   AuthenticationHelpers.add_auth_to ScormExtensionCommentsApi
   AuthenticationHelpers.add_auth_to GroupSetsApi
   AuthenticationHelpers.add_auth_to LearningOutcomesApi

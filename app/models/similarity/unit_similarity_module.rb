@@ -252,13 +252,21 @@ module UnitSimilarityModule
     use_base_code = false
     if task_definition.has_task_resources? && task_definition.use_resources_for_jplag_base_code
       use_base_code = true
-      path = task_definition.task_resources
+      linked_resource = task_definition.linked_task_resource
 
-      Zip::File.open(path) do |zip_file|
-        zip_file.each do |entry|
-          dest = File.join(tasks_dir, 'base', entry.name)
-          FileUtils.mkdir_p(File.dirname(dest))
-          entry.extract(dest) { true }
+      if linked_resource && !task_definition.task_resource_zip?(linked_resource)
+        base_dir = File.join(tasks_dir, 'base')
+        FileUtils.mkdir_p(base_dir)
+        FileUtils.cp(linked_resource[:path], File.join(base_dir, linked_resource[:filename]))
+      else
+        path = linked_resource ? linked_resource[:path] : task_definition.task_resources
+
+        Zip::File.open(path) do |zip_file|
+          zip_file.each do |entry|
+            dest = File.join(tasks_dir, 'base', entry.name)
+            FileUtils.mkdir_p(File.dirname(dest))
+            entry.extract(dest) { true }
+          end
         end
       end
     end

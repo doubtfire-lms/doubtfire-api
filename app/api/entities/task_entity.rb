@@ -18,6 +18,9 @@ module Entities
       expose :target_start_date, expose_nil: false
     end
 
+    expose :moved_to_discuss_at, expose_nil: false
+    expose :discuss_timeout_expiry_at, expose_nil: false
+
     expose :extensions
     expose :scorm_extensions
 

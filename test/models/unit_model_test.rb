@@ -194,6 +194,38 @@ class UnitModelTest < ActiveSupport::TestCase
     unit2.destroy
   end
 
+  def test_rollover_of_unit_content
+    unit = FactoryBot.create(:unit, with_students: false, stream_count: 0, task_count: 0)
+    FactoryBot.create(:task_definition, unit: unit, abbreviation: 'P1', outcome_count: 0)
+
+    Tempfile.create(['unit-content', '.zip']) do |archive|
+      Zip::File.open(archive.path, Zip::File::CREATE) do |zip|
+        zip.get_output_stream('dist/index.html') { |s| s.write('<html><head></head></html>') }
+        zip.get_output_stream('dist/P1.docx') { |s| s.write('worksheet') }
+      end
+      site = unit.unit_content_sites.create!(name: 'Content', original_filename: 'content.zip', archive_path: archive.path, root_dir: '/dist', is_main: true)
+      unit.unit_content_links.create!(unit_content_site: site, context_type: 'task_definition', context_key: 'P1', route: '/')
+      unit.unit_content_links.create!(unit_content_site: site, context_type: 'task_definition_resource', context_key: 'P1', route: '/P1.docx')
+
+      unit2 = unit.rollover TeachingPeriod.find(2), nil, nil, nil
+
+      new_site = unit2.unit_content_sites.sole
+      assert new_site.is_main
+      assert_not_equal site.archive_path, new_site.archive_path
+      assert File.file?(new_site.served_file_path('/'))
+      assert_equal 2, unit2.unit_content_links.where(unit_content_site: new_site).count
+
+      new_td = unit2.task_definitions.find_by(abbreviation: 'P1')
+      assert new_td.has_content_link?
+      assert new_td.has_task_resource_link?
+
+      unit2.destroy
+      assert File.file?(site.archive_path), 'rolled over unit destroy removed original archive'
+    end
+  ensure
+    unit&.destroy
+  end
+
   def test_rollover_of_learning_summary
     lsr = FactoryBot.create(:task_definition, unit: @unit, upload_requirements: [{'key' => 'file0','name' => 'LSR','type' => 'document'}])
     assert lsr.valid?, lsr.errors.full_messages
@@ -804,6 +836,54 @@ class UnitModelTest < ActiveSupport::TestCase
     assert_equal unit.active_projects.count, rows, "Expected number or rows in csv - #{csv_str}"
   end
 
+  test 'unit and task titles allow common teaching title punctuation' do
+    assert FactoryBot.build(:unit, name: 'C# for Beginners (Part 1)').valid?
+    assert FactoryBot.build(:task_definition, unit: @unit, name: 'Hyphenated-Task #1 (Core)').valid?
+    assert FactoryBot.build(:task_definition, unit: @unit, name: 'P1.1 - Hello World').valid?
+    assert FactoryBot.build(:task_definition, unit: @unit, name: "Student's Task").valid?
+  end
+
+  test 'unit and task titles reject equals, plus, and at characters anywhere' do
+    ['={', '=2+2', '+command', '@command', 'Unit=Name', 'Unit+Name', 'Unit@Name'].each do |value|
+      unit = FactoryBot.build(:unit, name: value)
+      task_definition = FactoryBot.build(:task_definition, unit: @unit, name: value)
+
+      assert_not unit.valid?, value
+      assert_includes unit.errors[:name], 'contains unsupported characters'
+      assert_not task_definition.valid?, value
+      assert_includes task_definition.errors[:name], 'contains unsupported characters'
+    end
+  end
+
+  test 'unit codes allow hyphens and slashes but reject unsupported characters' do
+    assert FactoryBot.build(:unit, code: 'ABC1001-ABC1002').valid?
+    assert FactoryBot.build(:unit, code: 'ABC1001-ABC1002C#').valid?
+    assert FactoryBot.build(:unit, code: 'ABC1001/ABC1002').valid?
+
+    ['ABC1001-ABC1002=', 'ABC1001+ABC1002', 'ABC1001@ABC1002'].each do |value|
+      unit = FactoryBot.build(:unit, code: value)
+
+      assert_not unit.valid?, value
+      assert_includes unit.errors[:code], 'contains unsupported characters'
+    end
+  end
+
+  test 'student export neutralises formulas from existing data' do
+    unit = FactoryBot.create(:unit, student_count: 1, unenrolled_student_count: 0, part_enrolled_student_count: 0, inactive_student_count: 0)
+    student = unit.active_projects.first.user
+    student.assign_attributes(first_name: '=2+2', last_name: '+SUM(A1:A2)', nickname: '@command', student_id: '-1+2')
+    student.save!(validate: false)
+
+    entry = CSV.parse(unit.export_users_to_csv, headers: true).first
+
+    assert_equal "'=2+2", entry['first_name']
+    assert_equal "'+SUM(A1:A2)", entry['last_name']
+    assert_equal "'@command", entry['preferred_name']
+    assert_equal "'-1+2", entry['student_id']
+  ensure
+    unit&.destroy
+  end
+
   def test_import_users
     unit = FactoryBot.create(:unit, code: 'SIT101', stream_count: 0, with_students: false, tutorials: 0)
     t1 = unit.add_tutorial(
@@ -1262,8 +1342,8 @@ class UnitModelTest < ActiveSupport::TestCase
     task1 = student.task_for_task_definition(td1)
     task2 = student.task_for_task_definition(td2)
 
-    task1.comments.delete_all
-    task2.comments.delete_all
+    task1.comments.destroy_all
+    task2.comments.destroy_all
 
     task1.update(task_status_id: TaskStatus.time_exceeded.id)
 

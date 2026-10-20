@@ -49,10 +49,10 @@ class TaskCompletionSnapshotTest < ActiveSupport::TestCase
 
     payload = CSV.generate do |csv|
       csv << ['Student ID', 'Username', 'Student Name', 'Campus', 'Target Grade', 'Email', 'Portfolio', 'Grade', 'Rationale', 'Assessor', 'Tutorial', task_definition.abbreviation]
-      csv << ['1', 'student-1', 'Student 1', tutorial.campus.abbreviation, '0', 'student-1@example.com', 'false', '', '', '', tutorial.abbreviation, TaskStatus.complete.id]
-      csv << ['2', 'student-2', 'Student 2', tutorial.campus.abbreviation, '0', 'student-2@example.com', 'false', '', '', '', tutorial.abbreviation, TaskStatus.complete.id]
-      csv << ['3', 'student-3', 'Student 3', tutorial.campus.abbreviation, '0', 'student-3@example.com', 'false', '', '', '', tutorial.abbreviation, TaskStatus.complete.id]
-      csv << ['4', 'student-4', 'Student 4', tutorial.campus.abbreviation, '0', 'student-4@example.com', 'false', '', '', '', tutorial.abbreviation, TaskStatus.complete.id]
+      csv << ['1', 'student-1', 'Student 1', tutorial.campus.abbreviation, @unit.grade_label(0), 'student-1@example.com', 'false', '', '', '', tutorial.abbreviation, TaskStatus.complete.id]
+      csv << ['2', 'student-2', 'Student 2', tutorial.campus.abbreviation, @unit.grade_label(0), 'student-2@example.com', 'false', '', '', '', tutorial.abbreviation, TaskStatus.complete.id]
+      csv << ['3', 'student-3', 'Student 3', tutorial.campus.abbreviation, @unit.grade_label(0), 'student-3@example.com', 'false', '', '', '', tutorial.abbreviation, TaskStatus.complete.id]
+      csv << ['4', 'student-4', 'Student 4', tutorial.campus.abbreviation, @unit.grade_label(0), 'student-4@example.com', 'false', '', '', '', tutorial.abbreviation, TaskStatus.complete.id]
     end
 
     expected = {
@@ -69,6 +69,13 @@ class TaskCompletionSnapshotTest < ActiveSupport::TestCase
 
     assert File.exist?(@snapshot.snapshot_file_path)
     assert_equal expected, @snapshot.load_stats
+    assert_equal 4, @snapshot.load_student_counts['student_count']
+    assert_equal({ tutorial.campus.name => 4 }, @snapshot.load_student_counts['campus_student_counts'])
+    assert_equal({ '0' => 4 }, @snapshot.load_student_counts['target_grade_student_counts'])
+    assert_equal(
+      { '0' => { tutorial.campus.name => 4 } },
+      @snapshot.load_student_counts['target_grade_campus_student_counts']
+    )
   end
 
   test 'load_stats returns empty hash if file missing' do
@@ -82,13 +89,37 @@ class TaskCompletionSnapshotTest < ActiveSupport::TestCase
     assert_equal({}, snapshot.load_stats)
   end
 
+  test 'status population counts each student once across tutorial streams' do
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 1, stream_count: 2, tutorials: 1, campus_count: 1)
+    snapshot = FactoryBot.create(:task_completion_snapshot, unit: unit)
+    campus = unit.tutorials.first.campus
+    task = unit.task_definitions_by_grade.first.abbreviation
+    first_stream, second_stream = unit.tutorial_streams.pluck(:abbreviation)
+
+    payload = CSV.generate do |csv|
+      csv << ['Student ID', 'Username', 'Campus', 'Target Grade', first_stream, second_stream, task]
+      csv << ['1', 'student-1', campus.abbreviation, unit.grade_label(0), 'T1', 'T2', TaskStatus.complete.id]
+      csv << ['2', 'student-2', campus.abbreviation, unit.grade_label(0), 'T1', '', TaskStatus.not_started.id]
+      csv << ['1', 'student-1', campus.abbreviation, unit.grade_label(0), 'T1', 'T2', TaskStatus.complete.id]
+    end
+    snapshot.store_stats!(payload)
+
+    population = snapshot.load_status_population_stats
+    all_tutorials = population['all'][campus.name]
+
+    assert_equal({ 'complete' => 1, 'not_started' => 1 }, all_tutorials['__all__'][task])
+    assert_equal({ 'complete' => 1, 'not_started' => 1 }, all_tutorials['T1'][task])
+    assert_equal({ 'complete' => 1 }, all_tutorials['T2'][task])
+    assert_equal all_tutorials, population['target_grades']['0'][campus.name]
+  end
+
   test 'deleting snapshot deletes associated zip file' do
     tutorial = @unit.tutorials.first
     task_definition = @unit.task_definitions_by_grade.first
 
     payload = CSV.generate do |csv|
       csv << ['Student ID', 'Username', 'Student Name', 'Target Grade', 'Email', 'Portfolio', 'Grade', 'Rationale', 'Assessor', 'Tutorial', task_definition.abbreviation]
-      csv << ['1', 'student-1', 'Student 1', '0', 'student-1@example.com', 'false', '', '', '', tutorial.abbreviation, TaskStatus.complete.id]
+      csv << ['1', 'student-1', 'Student 1', @unit.grade_label(0), 'student-1@example.com', 'false', '', '', '', tutorial.abbreviation, TaskStatus.complete.id]
     end
 
     @snapshot.store_stats!(payload)

@@ -1,4 +1,5 @@
 require 'grape'
+require 'mime/types'
 
 class TaskDefinitionsApi < Grape::API
   helpers AuthenticationHelpers
@@ -321,7 +322,8 @@ class TaskDefinitionsApi < Grape::API
     end
 
     task_def.destroy
-    task_def.destroyed?
+    error!({ error: task_def.errors.full_messages.last }, 403) unless task_def.destroyed?
+    true
   end
 
   desc 'Upload the task sheet for a given task'
@@ -658,7 +660,14 @@ class TaskDefinitionsApi < Grape::API
       error!({ error: 'Not authorised to download task details of unit' }, 403)
     end
 
-    if task_def.has_task_resources?
+    resource = task_def.linked_task_resource
+
+    if resource
+      path = resource[:path]
+      filename = File.basename(resource[:filename]).gsub(/[\r\n"]/, '_')
+      content_type MIME::Types.type_for(filename).first&.content_type || 'application/octet-stream'
+      header['Content-Disposition'] = "attachment; filename=\"#{filename}\""
+    elsif task_def.has_uploaded_task_resources?
       path = task_def.task_resources
       content_type 'application/octet-stream'
       header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}-resources.zip"
@@ -786,7 +795,7 @@ class TaskDefinitionsApi < Grape::API
     logger.debug "This is the has_jplag_report? #{task_def.has_jplag_report?}"
     if task_def.has_jplag_report?
       path = FileHelper.task_jplag_report_path(unit, task_def)
-      header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}-jplag-report.jplag"
+      header['Content-Disposition'] = "attachment; filename=#{unit.code}-#{task_def.abbreviation}-jplag-report.jplag"
     else
       path = Rails.root.join("public/resources/FileNotFound.pdf")
       content_type 'application/pdf'

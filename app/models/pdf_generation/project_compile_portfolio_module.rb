@@ -338,8 +338,8 @@ module PdfGeneration
       end
     end
 
-    def portfolio_path
-      FileHelper.student_portfolio_path(self.unit, self.student.username, create: true)
+    def portfolio_path(create: true)
+      FileHelper.student_portfolio_path(self.unit, self.student.username, create: create)
     end
 
     def portfolio_exists?
@@ -357,7 +357,9 @@ module PdfGeneration
     end
 
     def portfolio_available
-      (File.exist? portfolio_path) && !compile_portfolio
+      # Checking must not create the directory -- this runs once per student in
+      # bulk reports and communication previews.
+      (File.exist? portfolio_path(create: false)) && !compile_portfolio
     end
 
     def remove_portfolio

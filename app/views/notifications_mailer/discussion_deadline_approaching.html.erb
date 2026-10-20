@@ -1,0 +1,16 @@
+<h1><%= @unit.name %> - Discussion Deadline Approaching</h1>
+<p class="subtext"><%= @task.task_definition.abbreviation %> - <%= @task.task_definition.name %></p>
+
+<p>Hi <%= @student.first_name %>,</p>
+
+<p>
+  You must discuss task <%= @task.task_definition.abbreviation %> with your tutor before
+  <strong><%= @deadline %></strong>.
+</p>
+
+<p>
+  If it is not discussed by then, it will move to <strong>Fix and Resubmit</strong>, and you will
+  need to resubmit your work.
+</p>
+
+<p><a href="<%= @task_url %>">View this task in <%= @doubtfire_product_name %></a>.</p>
