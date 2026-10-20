@@ -172,11 +172,7 @@ class LmsIntegrationApi < Grape::API
     begin
       error!({ error: 'The Moodle OnTrack course-data plugin is not available for this course.' }, 422) unless source.course_data_available?
 
-      {
-        course: source.course,
-        groups: source.groups,
-        assignments: source.assignments
-      }
+      source.course_data
     rescue LtiCourseDataSource::Error => e
       lms_error!(e)
     end
