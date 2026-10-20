@@ -17,7 +17,7 @@ class DiscussTimeoutTest < ActiveSupport::TestCase
     task.project.update!(campus: campus)
     task.update!(moved_to_discuss_at: Time.zone.parse('2026-07-06 12:00:00'))
 
-    assert_equal Time.zone.parse('2026-07-20 23:59:59.999999'), task.discuss_timeout_expiry_at(14)
+    assert_equal Time.zone.parse('2026-07-20 23:59:59.999999999'), task.discuss_timeout_expiry_at(14)
   end
 
   def test_teaching_period_break_pauses_warning_and_expiry
@@ -42,7 +42,7 @@ class DiscussTimeoutTest < ActiveSupport::TestCase
       task.update!(moved_to_discuss_at: Time.zone.parse('2026-07-06 12:00:00'))
 
       assert_equal 10, task.discuss_timeout_elapsed_days
-      assert_equal Time.zone.parse('2026-07-27 23:59:59.999999'), task.discuss_timeout_expiry_at
+      assert_equal Time.zone.parse('2026-07-27 23:59:59.999999999'), task.discuss_timeout_expiry_at
       assert_equal 1, unit.notify_discuss_timeouts!
       assert_equal TaskStatus.discuss, task.reload.task_status
       assert task.notified_discuss_warning_at.present?
@@ -69,11 +69,12 @@ class DiscussTimeoutTest < ActiveSupport::TestCase
         discuss_timeout_expire_days: 14,
         send_notifications: false
       )
-      tasks = unit.active_projects.first.tasks.first(2)
+      project = unit.active_projects.first
+      tasks = unit.task_definitions.first(2).map { |definition| project.task_for_task_definition(definition) }
       tasks.zip(['07:00:00', '09:00:00']).each do |task, time|
         task.update!(task_status: TaskStatus.discuss)
         task.update!(moved_to_discuss_at: Time.zone.parse("2026-10-08 #{time}"))
-        assert_equal Time.zone.parse('2026-10-22 23:59:59.999999'), task.discuss_timeout_expiry_at
+        assert_equal Time.zone.parse('2026-10-22 23:59:59.999999999'), task.discuss_timeout_expiry_at
         assert_equal Date.new(2026, 10, 22), task.discuss_timeout_expiry_date
       end
 
