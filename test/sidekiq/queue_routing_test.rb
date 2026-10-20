@@ -63,4 +63,13 @@ class QueueRoutingTest < ActiveSupport::TestCase
       assert_equal 'parallel', job_name.constantize.get_sidekiq_options['queue'], job_name
     end
   end
+
+  def test_one_process_runs_parallel_jobs_and_serial_submission_jobs
+    config = YAML.safe_load(Rails.root.join('config/sidekiq.yml').read, permitted_classes: [Symbol])
+
+    assert_equal ['parallel'], config[:queues]
+    assert_equal 4, config[:concurrency]
+    assert_equal ['default'], config.dig(:capsules, :submission, :queues)
+    assert_equal 1, config.dig(:capsules, :submission, :concurrency)
+  end
 end
