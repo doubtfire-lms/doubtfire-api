@@ -13,6 +13,7 @@ module OnTrackSentryRedaction
     event.message = scrub_string(event.message) if event.respond_to?(:message) && event.respond_to?(:message=)
     event.user.replace(scrub_hash(event.user)) if event.respond_to?(:user) && event.user.respond_to?(:replace)
     event.extra.replace(scrub_hash(event.extra)) if event.respond_to?(:extra) && event.extra.respond_to?(:replace)
+    scrub_contexts(event.contexts) if event.respond_to?(:contexts)
 
     scrub_exception(event.exception) if event.respond_to?(:exception)
     scrub_breadcrumbs(event.breadcrumbs) if event.respond_to?(:breadcrumbs)
@@ -27,6 +28,15 @@ module OnTrackSentryRedaction
     request.headers&.each_key do |key|
       request.headers[key] = FILTERED if key.casecmp("Username").zero?
     end
+  end
+
+  def scrub_contexts(contexts)
+    sidekiq = contexts&.[](:sidekiq)
+    return unless sidekiq.respond_to?(:key?)
+
+    # Job args are positional, so PII_KEY_PATTERN cannot tell which ones hold user details.
+    %w[args wrapped_args].each { |key| sidekiq[key] = FILTERED if sidekiq.key?(key) }
+    contexts[:sidekiq] = scrub_hash(sidekiq)
   end
 
   def scrub_exception(exception)
