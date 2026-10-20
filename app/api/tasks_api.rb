@@ -178,6 +178,11 @@ class TasksApi < Grape::API
           error!({ error: 'Cannot set this task status to ready to mark without uploading documents.' }, 403)
         end
 
+        if !needs_upload_docs && %w[ready_for_feedback assess_in_portfolio].include?(params[:trigger]) &&
+           (prerequisite_error = task.unmet_prerequisite_error)
+          error!({ error: prerequisite_error }, 409)
+        end
+
         if params[:trigger] == 'assess_in_portfolio' && !authorise?(current_user, project, :assess)
           # Prevent students from upading status if task definition doesn't enable it
           if !task_definition.assess_in_portfolio_only
@@ -345,7 +350,7 @@ class TasksApi < Grape::API
     )
 
     # Find the file
-    file_loc = FileHelper.zip_file_path_for_done_task(task)
+    file_loc = task.downloadable_submission_zip_path
 
     if file_loc.nil? || !File.exist?(file_loc)
       file_loc = Rails.root.join('public/resources/FileNotFound.pdf')

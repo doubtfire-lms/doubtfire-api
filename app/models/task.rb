@@ -1,10 +1,21 @@
 # frozen_string_literal: true
 
 require 'date'
+require 'securerandom'
 
 class Task < ApplicationRecord
   include ApplicationHelper
   include GradeHelper
+
+  PREREQUISITE_STATUS_LEVELS = {
+    ready_for_feedback: 1,
+    assess_in_portfolio: 1,
+    discuss: 2,
+    rediscuss: 2,
+    attention_required: 0,
+    demonstrate: 2,
+    complete: 3
+  }.freeze
 
   attr_accessor :discussion_confirmed_for_transition
 
@@ -503,7 +514,11 @@ class Task < ApplicationRecord
       deadline += break_end - [break_start, moved_to_discuss_at].max
     end
 
-    deadline
+    deadline.end_of_day
+  end
+
+  def discuss_timeout_expiry_date(timeout_days = unit.discuss_timeout_expire_days, teaching_breaks: nil)
+    discuss_timeout_expiry_at(timeout_days, teaching_breaks: teaching_breaks)&.to_date
   end
 
   # Excludes any breaks that would otherwise "pause" feedback
@@ -547,6 +562,29 @@ class Task < ApplicationRecord
 
   def ready_or_complete?
     [:complete, :discuss, :rediscuss, :demonstrate, :ready_for_feedback, :assess_in_portfolio].include? status
+  end
+
+  def unmet_prerequisite_error
+    task_definition.task_prerequisites.each do |prerequisite|
+      prereq_td = prerequisite.prerequisite
+      minimum_status = TaskStatus.find(prerequisite.task_status_id)
+      prereq_task = project.task_for_task_definition(prereq_td)
+
+      next if prereq_task.ready_or_complete? &&
+              PREREQUISITE_STATUS_LEVELS[prereq_task.status] >= PREREQUISITE_STATUS_LEVELS[minimum_status.status_key]
+
+      verb = case minimum_status
+             when TaskStatus.complete then 'completed'
+             when TaskStatus.discuss then 'discussed'
+             when TaskStatus.rediscuss then 'rediscussed'
+             when TaskStatus.demonstrate then 'demonstrated'
+             when TaskStatus.ready_for_feedback then 'submitted'
+             end
+
+      return "Cannot submit this task until prerequisite '#{prereq_td.abbreviation}' has been #{verb}"
+    end
+
+    nil
   end
 
   def submitted_status?
@@ -1467,6 +1505,7 @@ class Task < ApplicationRecord
     include LatexHelper
 
     attr_accessor :task
+    attr_accessor :submission_date
     attr_accessor :files
     attr_accessor :base_path
     attr_accessor :image_path
@@ -1475,6 +1514,7 @@ class Task < ApplicationRecord
 
     def init(task, is_retry)
       @task = task
+      @submission_date = task.submission_date || task.file_uploaded_at || task.task_submissions.maximum(:submission_time)
       @files = task.in_process_files_for_task(is_retry)
       @base_path = task.student_work_dir(:in_process, false)
       @image_path = Rails.root.join('public/assets/images')
@@ -1747,7 +1787,7 @@ class Task < ApplicationRecord
       reverse_jplag_similarities(&:destroy)
       reverse_moss_similarities(&:destroy)
 
-      save
+      save!
     end
   end
 
@@ -1880,6 +1920,57 @@ class Task < ApplicationRecord
   def filename_for_upload(idx)
     return nil unless idx >= 0 && idx < upload_requirements.length
     "#{upload_requirements[idx]['name']}#{extension_for_upload(idx)}"
+  end
+
+  # Keep the stored archive's numbered filenames for internal processing, but
+  # expose the upload requirement names when staff download its contents.
+  def download_filename_for(entry_name)
+    relative_path = entry_name.split('/', 2).last || entry_name
+    filename = File.basename(relative_path)
+    match = /\A(?<index>\d{3})-(?<type>document|code|image|zip|archive)(?<extension>\..+)\z/.match(filename)
+    return relative_path unless match
+
+    requirement = upload_requirements[match[:index].to_i]
+    return relative_path unless requirement && requirement['type'] == match[:type]
+
+    extension = match[:extension]
+    name = requirement['name'].to_s.strip
+    return relative_path if name.empty?
+
+    name = name[0...-extension.length] if name.downcase.end_with?(extension.downcase)
+    renamed_file = "#{match[:index]}-#{FileHelper.sanitized_filename(name)}#{extension}"
+    directory = File.dirname(relative_path)
+    directory == '.' ? renamed_file : File.join(directory, renamed_file)
+  end
+
+  def downloadable_submission_zip_path
+    source = zip_file_path_for_done_task
+    return source unless source && File.file?(source)
+
+    result = FileHelper.tmp_file("submission-#{id}-named.zip")
+    if File.file?(result) && File.mtime(result) >= [File.mtime(source), task_definition.updated_at].max
+      return result
+    end
+
+    partial_result = "#{result}.partial-#{SecureRandom.hex(8)}"
+    begin
+      Zip::OutputStream.open(partial_result) do |output_zip|
+        Zip::File.open(source) do |submission_zip|
+          submission_zip.each do |entry|
+            next if entry.name_is_directory?
+
+            renamed_entry = entry.dup
+            renamed_entry.name = File.join(entry.name.split('/', 2).first, download_filename_for(entry.name))
+            output_zip.copy_raw_entry(renamed_entry)
+          end
+        end
+      end
+      FileUtils.mv(partial_result, result)
+    ensure
+      FileUtils.rm_f(partial_result)
+    end
+
+    result
   end
 
   def extension_for_upload(idx)

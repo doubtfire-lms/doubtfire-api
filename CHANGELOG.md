@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-70](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-69...v11.0.0-70) (2026-10-20)
+
+## [11.0.0-69](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-68...v11.0.0-69) (2026-10-16)
+
+
+### Features
+
+* name downloaded submission files after upload requirements ([a065b0e](https://github.com/b0ink/doubtfire-deploy/commit/a065b0e8af8879f38bc52ca2eb0f9aec52087817))
+* name downloaded submission files after upload requirements ([#707](https://github.com/b0ink/doubtfire-deploy/issues/707)) ([86614eb](https://github.com/b0ink/doubtfire-deploy/commit/86614eb2300c30dba644dc918c16a93b2ed21e77))
+
+
+### Bug Fixes
+
+* check prerequisites for tasks with no upload requirement ([446a303](https://github.com/b0ink/doubtfire-deploy/commit/446a3038c3c18fadf7ae8cdd21a1b31c89f2289e))
+* count students once per task status across tutorial streams ([50a36ab](https://github.com/b0ink/doubtfire-deploy/commit/50a36abdfb85e5a262af547046dde0758516961a))
+* ensure submission date is saved correctly ([5ddf9bd](https://github.com/b0ink/doubtfire-deploy/commit/5ddf9bdcb3c124e9f6f042d412612cba8bf88093))
+* skip missing submissions ([7887181](https://github.com/b0ink/doubtfire-deploy/commit/7887181ff5d393693c5d7f9881e1f29d016212f7))
+* skip withdrawn projects ([43e11e7](https://github.com/b0ink/doubtfire-deploy/commit/43e11e72f79af4c8a2aff88b2a54b3d32aa4aba2))
+
 ## [11.0.0-68](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-67...v11.0.0-68) (2026-10-15)
 
 
