@@ -7,6 +7,7 @@ require 'moss_ruby'
 require 'csv_helper'
 require 'grade_helper'
 require 'securerandom'
+require 'tmpdir'
 
 class Unit < ApplicationRecord
   DEFAULT_GRADE_DEFINITIONS = [
@@ -3381,17 +3382,11 @@ class Unit < ApplicationRecord
       update_task_status_from_csv(user, File.read(file["tempfile"].path), success, ignored, errors)
     else
       # files are extracted to a temp dir first
-      i = 0
-      tmp_dir = File.join(Dir.tmpdir, 'doubtfire', 'batch', i.to_s)
-
-      while Dir.exist? tmp_dir
-        i += 1
-        tmp_dir = File.join(Dir.tmpdir, 'doubtfire', 'batch', i.to_s)
-      end
+      batch_tmp_root = File.join(Dir.tmpdir, 'doubtfire', 'batch')
+      FileUtils.mkdir_p(batch_tmp_root)
+      tmp_dir = Dir.mktmpdir('batch-', batch_tmp_root)
 
       logger.debug "Created temp directory for batch zip at #{tmp_dir}"
-
-      FileUtils.mkdir_p(tmp_dir)
 
       Zip::File.open(file["tempfile"].path) do |zip|
         # Find the marking file within the directory tree
@@ -3493,9 +3488,6 @@ class Unit < ApplicationRecord
           end
         end
       end
-
-      # Remove the extract dir
-      FileUtils.rm_rf tmp_dir
     end
 
     {
@@ -3503,6 +3495,8 @@ class Unit < ApplicationRecord
       ignored: ignored,
       errors: errors
     }
+  ensure
+    FileUtils.rm_rf(tmp_dir) if tmp_dir
   end
 
   def batch_feedback_csv_required_headers
