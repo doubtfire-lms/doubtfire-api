@@ -10,9 +10,6 @@ class DownloadTaskAssessmentCountsCsvJob
   include CsvHelper
 
   sidekiq_options queue: 'parallel',
-                  lock: :until_executed,
-                  lock_args_method: ->(args) { [args.first] },
-                  on_conflict: :reject,
                   retry: false
 
   def perform(unit_id)
