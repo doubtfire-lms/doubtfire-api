@@ -514,7 +514,11 @@ class Task < ApplicationRecord
       deadline += break_end - [break_start, moved_to_discuss_at].max
     end
 
-    deadline
+    deadline.end_of_day
+  end
+
+  def discuss_timeout_expiry_date(timeout_days = unit.discuss_timeout_expire_days, teaching_breaks: nil)
+    discuss_timeout_expiry_at(timeout_days, teaching_breaks: teaching_breaks)&.to_date
   end
 
   # Excludes any breaks that would otherwise "pause" feedback

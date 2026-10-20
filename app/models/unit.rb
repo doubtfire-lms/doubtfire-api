@@ -315,7 +315,8 @@ class Unit < ApplicationRecord
     return 0 if actor.blank?
 
     elapsed_days = task.discuss_timeout_elapsed_days(now_time, teaching_breaks: teaching_breaks)
-    if elapsed_days >= discuss_timeout_expire_days
+    expiry_at = task.discuss_timeout_expiry_at(discuss_timeout_expire_days, teaching_breaks: teaching_breaks)
+    if now_time.in_time_zone(expiry_at.time_zone).to_date > expiry_at.to_date
       expire_discuss_timeout_task(task, actor)
     elsif elapsed_days >= discuss_timeout_warning_days
       warn_discuss_timeout_task(task, actor, teaching_breaks: teaching_breaks)
@@ -333,7 +334,7 @@ class Unit < ApplicationRecord
       comment = task.add_discuss_timeout_comment(
         actor,
         DiscussTimeoutComment.warning,
-        "You must discuss this task with your tutor before #{formatted_discuss_timeout_date(expiry_date)}. If it has not been discussed by then, it will move to Fix and Resubmit, and you will need to resubmit your work."
+        "You must discuss this task with your tutor on or before #{formatted_discuss_timeout_date(expiry_date)}. If it has not been discussed by then, it will move to Fix and Resubmit, and you will need to resubmit your work."
       )
       raise ActiveRecord::Rollback if comment.blank?
 
@@ -372,9 +373,7 @@ class Unit < ApplicationRecord
   end
 
   def discuss_timeout_expiry_date(task, teaching_breaks: nil)
-    task
-      .discuss_timeout_expiry_at(discuss_timeout_expire_days, teaching_breaks: teaching_breaks)
-      &.to_date
+    task.discuss_timeout_expiry_date(discuss_timeout_expire_days, teaching_breaks: teaching_breaks)
   end
 
   def formatted_discuss_timeout_date(date)
