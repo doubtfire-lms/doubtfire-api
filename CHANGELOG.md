@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-71](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-70...v11.0.0-71) (2026-10-21)
+
+
+### Features
+
+* resolve template variable for main convenor name ([6b0b18e](https://github.com/b0ink/doubtfire-deploy/commit/6b0b18e9e0e3d48760170058e7dca70e87f43351))
+
+
+### Bug Fixes
+
+* define \lt and \gt for notebook pdf compilation ([2ce78de](https://github.com/b0ink/doubtfire-deploy/commit/2ce78de65ecb9cdc82951efd92cc97e9ccf6e1e5))
+* support docx files in learning summary report uploads ([#714](https://github.com/b0ink/doubtfire-deploy/issues/714)) ([d6d3e6d](https://github.com/b0ink/doubtfire-deploy/commit/d6d3e6dc02e275470ee3d5d2eff4a980c4392a1c))
+
 ## [11.0.0-70](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-69...v11.0.0-70) (2026-10-20)
 
 ## [11.0.0-69](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-68...v11.0.0-69) (2026-10-16)
