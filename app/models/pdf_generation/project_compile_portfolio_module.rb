@@ -299,7 +299,10 @@ module PdfGeneration
           FileHelper.convert_word_document_to_pdf(
             file['tempfile'].path,
             converted_path,
-            work_id: "portfolio-#{id}-#{SecureRandom.uuid}"
+            work_id: FileHelper.gotenberg_work_id(
+              kind: 'portfolio', username: student.username,
+              label: name == 'LearningSummaryReport' ? 'lsr' : 'document'
+            )
           )
           File.rename(converted_path, dest_path)
         end

@@ -195,6 +195,12 @@ module FileHelper
     false
   end
 
+  def gotenberg_work_id(kind:, username:, label:)
+    [Time.current.to_i, kind, username, label, SecureRandom.uuid]
+      .map { |part| part.to_s.gsub(/[^A-Za-z0-9_-]/, '_') }
+      .join('-')
+  end
+
   def convert_word_document_to_pdf(source_path, destination_path, work_id: SecureRandom.uuid)
     work_id = work_id.to_s
     unless work_id.match?(/\A[A-Za-z0-9_-]+\z/)
@@ -1185,6 +1191,7 @@ module FileHelper
   module_function :word_document?
   module_function :word_document_conversion_configured?
   module_function :encrypted_word_document?
+  module_function :gotenberg_work_id
   module_function :convert_word_document_to_pdf
   module_function :run_word_document_conversion
   module_function :word_document_conversion_command

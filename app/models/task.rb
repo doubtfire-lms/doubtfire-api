@@ -1740,7 +1740,9 @@ class Task < ApplicationRecord
       FileHelper.convert_word_document_to_pdf(
         source_path,
         destination_path,
-        work_id: "task-#{id}-#{SecureRandom.uuid}"
+        work_id: FileHelper.gotenberg_work_id(
+          kind: 'task', username: project.student.username, label: task_definition.abbreviation
+        )
       )
       FileUtils.rm_f(source_path)
       converted_documents << { upload_index: upload_index, path: destination_path }
