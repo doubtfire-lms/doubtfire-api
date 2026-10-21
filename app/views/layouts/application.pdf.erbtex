@@ -44,6 +44,9 @@
 \usepackage{pdfpages}
 \usepackage{epstopdf}
 \usepackage{amssymb}
+% Notebook Markdown may use these comparison commands in inline maths.
+\providecommand{\lt}{\mathrel{<}}
+\providecommand{\gt}{\mathrel{>}}
 \usepackage{colortbl}
 \usepackage{lastpage}
 \usepackage{multirow}
