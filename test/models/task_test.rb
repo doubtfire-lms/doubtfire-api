@@ -1057,7 +1057,9 @@ class TaskTest < ActiveSupport::TestCase
     end
 
     assert converted
-    assert_match(/\Atask-#{task.id}-/, conversion_work_id)
+    username = task.project.student.username.gsub(/[^A-Za-z0-9_-]/, '_')
+    abbreviation = task.task_definition.abbreviation.gsub(/[^A-Za-z0-9_-]/, '_')
+    assert_match(/\A\d+-task-#{Regexp.escape(username)}-#{Regexp.escape(abbreviation)}-[0-9a-f-]{36}\z/, conversion_work_id)
     assert FileHelper.validate_pdf(task.final_pdf_path)[:valid]
 
     Zip::File.open(task.zip_file_path_for_done_task) do |archive|
