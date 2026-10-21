@@ -701,6 +701,12 @@ class TaskTest < ActiveSupport::TestCase
 
     assert_equal 4, reader.pages.count
 
+    data_to_post = with_file('test_files/submissions/inline_lt.ipynb', 'application/json', data_to_post)
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
+
+    assert_equal 201, last_response.status, last_response_body
+    assert task.convert_submission_to_pdf(log_to_stdout: false)
+
     td.destroy
     assert_not File.exist? path
     unit.destroy!
