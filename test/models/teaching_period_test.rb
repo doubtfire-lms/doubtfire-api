@@ -2,6 +2,28 @@ require 'test_helper'
 
 class TeachingPeriodTest < ActiveSupport::TestCase
 
+  def test_last_teaching_date_defaults_to_end_date_and_propagates_to_units
+    teaching_period = FactoryBot.create(:teaching_period)
+    unit = FactoryBot.create(:unit, teaching_period: teaching_period, with_students: false)
+
+    assert_equal teaching_period.end_date.to_date, teaching_period.last_teaching_date
+    assert_equal teaching_period.last_teaching_date, unit.last_teaching_date
+
+    last_teaching_date = teaching_period.end_date.to_date - 1.week
+    teaching_period.update!(last_teaching_date: last_teaching_date)
+
+    assert_equal last_teaching_date, unit.reload.last_teaching_date
+    assert_equal teaching_period.end_date, unit.end_date
+  end
+
+  def test_last_teaching_date_must_be_within_the_teaching_period
+    teaching_period = FactoryBot.build(:teaching_period)
+    teaching_period.last_teaching_date = teaching_period.end_date.to_date + 1.day
+
+    assert_not teaching_period.valid?
+    assert_includes teaching_period.errors.attribute_names, :last_teaching_date
+  end
+
   # Ensure that at the start there are 3 teaching periods
   def test_check_periods_are_created
     assert_equal 3, TeachingPeriod.count, 'There are 3 teaching periods initially'

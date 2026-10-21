@@ -13,9 +13,12 @@ class TeachingPeriod < ApplicationRecord
                    inclusion: { in: 2000..2999, message: "%{value} is not a valid year" }
   validates :start_date, presence: true
   validates :end_date, presence: true
+  validates :last_teaching_date, presence: true
   validates :active_until, presence: true
 
-  validate :validate_end_date_after_start_date, :validate_active_until_after_end_date
+  before_validation :default_last_teaching_date, on: :create
+
+  validate :validate_end_date_after_start_date, :validate_last_teaching_date, :validate_active_until_after_end_date
 
   after_update :propogate_date_changes
   after_update :refresh_communication_schedule_caches, if: :saved_change_to_teaching_dates?
@@ -190,11 +193,22 @@ class TeachingPeriod < ApplicationRecord
     end
   end
 
+  def default_last_teaching_date
+    self.last_teaching_date ||= end_date&.to_date
+  end
+
+  def validate_last_teaching_date
+    return if start_date.blank? || end_date.blank? || last_teaching_date.blank?
+    return if last_teaching_date.between?(start_date.to_date, end_date.to_date)
+
+    errors.add(:last_teaching_date, 'must be between the start and end dates')
+  end
+
   def propogate_date_changes
-    return unless saved_change_to_start_date? || saved_change_to_end_date?
+    return unless saved_change_to_start_date? || saved_change_to_end_date? || saved_change_to_last_teaching_date?
 
     units.each do |u|
-      u.update(start_date: self.start_date, end_date: self.end_date)
+      u.update!(start_date: start_date, end_date: end_date, last_teaching_date: last_teaching_date)
     end
   end
 

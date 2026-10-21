@@ -1,6 +1,33 @@
 require 'test_helper'
 
 class DiscussTimeoutTest < ActiveSupport::TestCase
+  def test_discussion_timeout_stops_after_last_teaching_date
+    travel_to Time.zone.parse('2026-09-21 08:00:00') do
+      unit = FactoryBot.create(
+        :unit,
+        start_date: Time.zone.parse('2026-06-01 00:00:00'),
+        end_date: Time.zone.parse('2026-09-30 00:00:00'),
+        last_teaching_date: Date.new(2026, 9, 20),
+        discuss_timeout_enabled: true,
+        send_notifications: false
+      )
+      task = unit.active_projects.first.task_for_task_definition(unit.task_definitions.first)
+      task.update!(task_status: TaskStatus.discuss, moved_to_discuss_at: Time.zone.parse('2026-09-01 12:00:00'))
+
+      assert unit.within_teaching_dates?
+      assert_not unit.within_last_teaching_date?
+      assert_not_includes Unit.within_last_teaching_date, unit
+      assert_equal 0, unit.notify_discuss_timeouts!
+      assert_equal TaskStatus.discuss, task.reload.task_status
+    end
+  end
+
+  def test_custom_unit_defaults_last_teaching_date_to_end_date
+    unit = FactoryBot.create(:unit, with_students: false)
+
+    assert_equal unit.end_date.to_date, unit.last_teaching_date
+  end
+
   def test_discussion_deadline_uses_breaks_for_the_students_campus
     teaching_period = FactoryBot.create(
       :teaching_period,
