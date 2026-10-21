@@ -231,6 +231,75 @@ class ProjectModelTest < ActiveSupport::TestCase
     unit.destroy!
   end
 
+  def test_portfolio_upload_converts_docx_to_pdf
+    project = FactoryBot.create(:project)
+    source = File.open(test_file_path('TestWordDoc.docx'))
+    pdf_fixture = test_file_path('submissions/valid.pdf')
+    original_converter = FileHelper.method(:convert_word_document_to_pdf)
+    conversion_calls = []
+    converter = lambda do |source_path, destination_path, work_id:|
+      conversion_calls << [source_path, work_id]
+      FileUtils.cp(pdf_fixture, destination_path)
+      destination_path
+    end
+    FileHelper.define_singleton_method(:convert_word_document_to_pdf, converter)
+
+    project.update!(uses_draft_learning_summary: true)
+    report = project.move_to_portfolio(
+      { filename: 'LearningSummaryReport.docx', 'tempfile' => source },
+      'LearningSummaryReport', 'document'
+    )
+
+    assert_equal 'LearningSummaryReport.pdf', report[:name]
+    assert FileHelper.validate_pdf(project.learning_summary_report_path)[:valid]
+    refute project.reload.uses_draft_learning_summary
+
+    evidence = project.move_to_portfolio(
+      { filename: 'Evidence.docx', 'tempfile' => source },
+      'Evidence', 'document'
+    )
+
+    assert_equal 'Evidence.pdf', evidence[:name]
+    assert FileHelper.validate_pdf(project.portfolio_tmp_file_path(evidence))[:valid]
+    assert_equal [source.path, source.path], conversion_calls.map(&:first)
+    assert conversion_calls.all? { |_path, work_id| work_id.start_with?("portfolio-#{project.id}-") }
+  ensure
+    FileHelper.define_singleton_method(:convert_word_document_to_pdf, original_converter) if original_converter
+    source&.close
+    project&.unit&.destroy!
+  end
+
+  def test_failed_portfolio_docx_conversion_keeps_existing_report
+    project = FactoryBot.create(:project)
+    source = File.open(test_file_path('TestWordDoc.docx'))
+    existing_path = project.portfolio_tmp_file_path(
+      kind: 'document', name: 'LearningSummaryReport.pdf', idx: 0
+    )
+    FileUtils.mkdir_p(project.portfolio_temp_path)
+    FileUtils.cp(test_file_path('submissions/valid.pdf'), existing_path)
+    existing_contents = File.binread(existing_path)
+    project.update!(uses_draft_learning_summary: true)
+
+    original_converter = FileHelper.method(:convert_word_document_to_pdf)
+    FileHelper.define_singleton_method(:convert_word_document_to_pdf, lambda do |*_args, **_kwargs|
+      raise FileHelper::DocumentConversionError, 'conversion failed'
+    end)
+
+    assert_raises(FileHelper::DocumentConversionError) do
+      project.move_to_portfolio(
+        { filename: 'LearningSummaryReport.docx', 'tempfile' => source },
+        'LearningSummaryReport', 'document'
+      )
+    end
+
+    assert_equal existing_contents, File.binread(existing_path)
+    assert project.reload.uses_draft_learning_summary
+  ensure
+    FileHelper.define_singleton_method(:convert_word_document_to_pdf, original_converter) if original_converter
+    source&.close
+    project&.unit&.destroy!
+  end
+
   def test_create_portfolio_with_additional_files
     project = FactoryBot.create(:project)
     unit = project.unit

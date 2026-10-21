@@ -270,15 +270,15 @@ module PdfGeneration
         kind: kind,
         name: file[:filename]
       }
+      word_document = kind == 'document' && FileHelper.word_document?(file[:filename])
+      if word_document
+        result[:name] = "#{File.basename(file[:filename], File.extname(file[:filename]))}.pdf"
+      end
 
       # copy up the learning summary report as first -- otherwise use files to determine idx
       if name == 'LearningSummaryReport' && kind == 'document'
         result[:idx] = 0
         result[:name] = 'LearningSummaryReport.pdf'
-
-        # set uses_draft_learning_summary to false, since we uploaded a new learning summary
-        self.uses_draft_learning_summary = false
-        save
       else
         Dir.chdir(portfolio_tmp_dir)
         files = Dir.glob('*')
@@ -292,7 +292,26 @@ module PdfGeneration
       end
 
       dest_file = portfolio_tmp_file_name(result)
-      FileUtils.cp file["tempfile"].path, File.join(portfolio_tmp_dir, dest_file)
+      dest_path = File.join(portfolio_tmp_dir, dest_file)
+      if word_document
+        Dir.mktmpdir('portfolio-document-', portfolio_tmp_dir) do |conversion_dir|
+          converted_path = File.join(conversion_dir, dest_file)
+          FileHelper.convert_word_document_to_pdf(
+            file['tempfile'].path,
+            converted_path,
+            work_id: "portfolio-#{id}-#{SecureRandom.uuid}"
+          )
+          File.rename(converted_path, dest_path)
+        end
+      else
+        FileUtils.cp file['tempfile'].path, dest_path
+      end
+
+      if name == 'LearningSummaryReport' && kind == 'document'
+        self.uses_draft_learning_summary = false
+        save
+      end
+
       result
     end
 
