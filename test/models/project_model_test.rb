@@ -236,9 +236,9 @@ class ProjectModelTest < ActiveSupport::TestCase
     source = File.open(test_file_path('TestWordDoc.docx'))
     pdf_fixture = test_file_path('submissions/valid.pdf')
     original_converter = FileHelper.method(:convert_word_document_to_pdf)
+    conversion_calls = []
     converter = lambda do |source_path, destination_path, work_id:|
-      assert_equal source.path, source_path
-      assert_match(/\Aportfolio-#{project.id}-/, work_id)
+      conversion_calls << [source_path, work_id]
       FileUtils.cp(pdf_fixture, destination_path)
       destination_path
     end
@@ -261,6 +261,8 @@ class ProjectModelTest < ActiveSupport::TestCase
 
     assert_equal 'Evidence.pdf', evidence[:name]
     assert FileHelper.validate_pdf(project.portfolio_tmp_file_path(evidence))[:valid]
+    assert_equal [source.path, source.path], conversion_calls.map(&:first)
+    assert conversion_calls.all? { |_path, work_id| work_id.start_with?("portfolio-#{project.id}-") }
   ensure
     FileHelper.define_singleton_method(:convert_word_document_to_pdf, original_converter) if original_converter
     source&.close
