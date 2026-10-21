@@ -209,6 +209,8 @@ module FileHelper
     FileUtils.mkdir_p(work_dir)
     FileUtils.chmod(0o777, work_dir)
     FileUtils.cp(source_path, input_path)
+    # Uploaded tempfiles can be 0600; Gotenberg reads this copy as a different user.
+    FileUtils.chmod(0o644, input_path)
 
     stdout, stderr, status = run_word_document_conversion(work_id)
     unless status.success?
