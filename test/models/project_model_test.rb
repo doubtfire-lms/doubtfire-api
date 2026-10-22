@@ -201,6 +201,41 @@ class ProjectModelTest < ActiveSupport::TestCase
     unit&.destroy!
   end
 
+  def test_create_portfolio_with_empty_task_description
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0)
+    project = FactoryBot.create(:project, unit: unit)
+    task_definition = FactoryBot.create(
+      :task_definition,
+      unit: unit,
+      name: "Task definition with empty description",
+      description: "",
+      abbreviation: "HD2",
+      outcome_count: 0,
+      upload_requirements: [],
+      target_grade: 0,
+      requires_discussion: false
+    )
+    task = FactoryBot.create(
+      :task,
+      project: project,
+      task_definition: task_definition,
+      task_status: TaskStatus.ready_for_feedback
+    )
+
+    assert_empty task_definition.description
+    assert_includes project.portfolio_tasks, task
+
+    project.update!(compile_portfolio: true)
+    assert project.create_portfolio
+    assert project.portfolio_exists?
+
+    pdf_text = PDF::Reader.new(project.portfolio_path).pages.map(&:text).join(" ")
+    assert_includes pdf_text, task_definition.name
+    assert_includes pdf_text, "no task description"
+  ensure
+    unit&.destroy!
+  end
+
   def test_portfolio_tasks_excludes_tasks_until_pdf_processing_finishes
     unit = FactoryBot.create(:unit, with_students: false, task_count: 0)
     project = FactoryBot.create(:project, unit: unit)
