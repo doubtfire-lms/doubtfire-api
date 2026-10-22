@@ -169,7 +169,7 @@ module PdfGeneration
           end
         end
 
-        raise LatexError.new(log_message), "Failed to convert portfolio to PDF - #{log_details}"
+        raise LatexError.new(log_message), "Failed to convert portfolio to PDF - #{id} - #{unit.code}"
       end
     end
 
