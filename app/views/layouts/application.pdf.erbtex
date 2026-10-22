@@ -115,10 +115,12 @@ end
 \definecolor{dnr}{rgb}{0.831, 0.42, 0.329}
 \definecolor{redo}{rgb}{0.502, 0.251, 0}
 \definecolor{discuss}{rgb}{0.192, 0.69, 0.835}
+\definecolor{rediscuss}{HTML}{126352}
 \definecolor{demo}{rgb}{0.259, 0.545, 0.792}
 \definecolor{fail}{rgb}{0.851, 0.216, 0.075}
 \definecolor{timeexceeded}{rgb}{0.851, 0.216, 0.075}
 \definecolor{assessinportfolio}{rgb}{0.568, 0.721, 0.568}
+\definecolor{attentionrequired}{HTML}{F1814D}
 
 \begin{document}
 
