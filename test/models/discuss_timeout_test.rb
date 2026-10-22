@@ -51,15 +51,13 @@ class DiscussTimeoutTest < ActiveSupport::TestCase
       assert(tasks.all? { |task| task.reload.notified_discuss_warning_at.nil? })
       assert(tasks.all? { |task| task.comments.where(content_type: DiscussTimeoutComment.warning).none? })
 
-      travel_to Time.zone.parse('2026-09-20 08:00:00') do
-        assert_equal 0, unit.notify_discuss_timeouts!
-      end
+      travel_to Time.zone.parse('2026-09-20 08:00:00')
+      assert_equal 0, unit.notify_discuss_timeouts!
 
-      travel_to Time.zone.parse('2026-09-22 08:00:00') do
-        assert_equal 0, unit.notify_discuss_timeout_for(tasks.first)
-        assert(tasks.all? { |task| task.reload.task_status == TaskStatus.discuss })
-        assert(tasks.all? { |task| task.notified_discuss_expiry_at.nil? })
-      end
+      travel_to Time.zone.parse('2026-09-22 08:00:00')
+      assert_equal 0, unit.notify_discuss_timeout_for(tasks.first)
+      assert(tasks.all? { |task| task.reload.task_status == TaskStatus.discuss })
+      assert(tasks.all? { |task| task.notified_discuss_expiry_at.nil? })
     end
   end
 
