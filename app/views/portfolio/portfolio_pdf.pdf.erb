@@ -13,10 +13,13 @@ def latex_color_for_status(task)
     when :need_help           then 'needhelp'
     when :working_on_it       then 'workingonit'
     when :discuss             then 'discuss'
+    when :rediscuss           then 'rediscuss'
     when :ready_for_feedback  then 'rff'
     when :demonstrate         then 'demo'
     when :fail                then 'fail'
     when :assess_in_portfolio then 'assessinportfolio'
+    when :attention_required  then 'attentionrequired'
+    else raise ArgumentError, "No portfolio PDF color for task status #{task.status}"
     end
   end
 end

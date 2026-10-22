@@ -166,6 +166,41 @@ class ProjectModelTest < ActiveSupport::TestCase
     unit.destroy!
   end
 
+  def test_create_portfolio_with_every_task_status
+    statuses = TaskStatus.order(:id).to_a
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0)
+    project = FactoryBot.create(:project, unit: unit)
+
+    statuses.each_with_index do |status, index|
+      unless status == TaskStatus.not_started
+        assert_not_equal :not_started, status.status_key, "No status key for #{status.name}"
+      end
+
+      task_definition = FactoryBot.create(
+        :task_definition,
+        unit: unit,
+        outcome_count: 0,
+        abbreviation: "STATUS#{index + 1}",
+        target_grade: 0,
+        requires_discussion: false
+      )
+      FactoryBot.create(:task, project: project, task_definition: task_definition, task_status: status)
+    end
+
+    assert_equal statuses.map(&:id).sort, project.tasks.pluck(:task_status_id).sort
+
+    project.update!(compile_portfolio: true)
+    assert project.create_portfolio
+    assert project.portfolio_exists?
+
+    pdf_text = PDF::Reader.new(project.portfolio_path).pages.map(&:text).join(' ')
+    statuses.each do |status|
+      assert_includes pdf_text, status.name
+    end
+  ensure
+    unit&.destroy!
+  end
+
   def test_portfolio_tasks_excludes_tasks_until_pdf_processing_finishes
     unit = FactoryBot.create(:unit, with_students: false, task_count: 0)
     project = FactoryBot.create(:project, unit: unit)
