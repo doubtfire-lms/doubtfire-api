@@ -42,7 +42,7 @@ class ErrorLogMailerTest < ActionMailer::TestCase
     )
 
     assert_includes mail.subject, details
-    assert_includes mail.body.to_s, details
+    assert_includes mail.text_part.body.decoded, details
     assert_equal 'full portfolio latex log', mail.attachments['log.txt'].body.decoded
   end
 
