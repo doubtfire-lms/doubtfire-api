@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-74](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-73...v11.0.0-74) (2026-10-22)
+
+
+### Bug Fixes
+
+* remove obsolete hash fragments from notification links ([63ef0cc](https://github.com/b0ink/doubtfire-deploy/commit/63ef0cc90fa19432b905bc731b1f740c9c9572da))
+* show placeholder for empty task descriptions in portfolio pdfs ([a2745ea](https://github.com/b0ink/doubtfire-deploy/commit/a2745ea767d28d6419d34ef3169aaa4e4ec65603))
+
 ## [11.0.0-73](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-72...v11.0.0-73) (2026-10-22)
 
 
