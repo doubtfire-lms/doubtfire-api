@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-73](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-72...v11.0.0-73) (2026-10-22)
+
+
+### Bug Fixes
+
+* add missing task status colors for pdf gen ([598639e](https://github.com/b0ink/doubtfire-deploy/commit/598639e5a2e257b2c9b27ebe3832715782b20005))
+
 ## [11.0.0-72](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-71...v11.0.0-72) (2026-10-21)
 
 
