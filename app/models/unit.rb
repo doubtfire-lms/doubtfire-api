@@ -238,6 +238,7 @@ class Unit < ApplicationRecord
   validate :discuss_timeout_warning_before_expiry
 
   before_validation :default_last_teaching_date, on: :create
+  before_validation :sync_last_teaching_date_with_end_date, on: :update
 
   validate :validate_end_date_after_start_date
   validate :validate_last_teaching_date
@@ -643,6 +644,13 @@ class Unit < ApplicationRecord
 
   def default_last_teaching_date
     self.last_teaching_date ||= teaching_period&.last_teaching_date || end_date&.to_date
+  end
+
+  def sync_last_teaching_date_with_end_date
+    return unless will_save_change_to_end_date? && !will_save_change_to_last_teaching_date?
+    return unless last_teaching_date == end_date_change_to_be_saved.first&.to_date
+
+    self.last_teaching_date = end_date&.to_date
   end
 
   def validate_last_teaching_date

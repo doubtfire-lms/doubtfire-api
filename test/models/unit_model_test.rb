@@ -34,6 +34,20 @@ class UnitModelTest < ActiveSupport::TestCase
     end
   end
 
+  def test_default_last_teaching_date_follows_end_date_changes
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0)
+    original_end_date = unit.end_date
+    earlier_end_date = original_end_date - 1.week
+
+    unit.update!(end_date: earlier_end_date)
+    assert_equal earlier_end_date.to_date, unit.last_teaching_date
+
+    custom_last_teaching_date = earlier_end_date.to_date - 1.week
+    unit.update!(last_teaching_date: custom_last_teaching_date)
+    unit.update!(end_date: original_end_date)
+    assert_equal custom_last_teaching_date, unit.last_teaching_date
+  end
+
   def test_sync_unit
     import_settings = {
       replace_existing_campus: false,

@@ -17,6 +17,7 @@ class TeachingPeriod < ApplicationRecord
   validates :active_until, presence: true
 
   before_validation :default_last_teaching_date, on: :create
+  before_validation :sync_last_teaching_date_with_end_date, on: :update
 
   validate :validate_end_date_after_start_date, :validate_last_teaching_date, :validate_active_until_after_end_date
 
@@ -195,6 +196,13 @@ class TeachingPeriod < ApplicationRecord
 
   def default_last_teaching_date
     self.last_teaching_date ||= end_date&.to_date
+  end
+
+  def sync_last_teaching_date_with_end_date
+    return unless will_save_change_to_end_date? && !will_save_change_to_last_teaching_date?
+    return unless last_teaching_date == end_date_change_to_be_saved.first&.to_date
+
+    self.last_teaching_date = end_date&.to_date
   end
 
   def validate_last_teaching_date
