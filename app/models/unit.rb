@@ -324,12 +324,15 @@ class Unit < ApplicationRecord
 
   def notify_discuss_timeout_for(task, teaching_breaks: nil, now_time: Time.zone.now)
     return 0 if task.moved_to_discuss_at.blank?
+    return 0 if now_time.to_date > last_teaching_date
+
+    expiry_at = task.discuss_timeout_expiry_at(discuss_timeout_expire_days, teaching_breaks: teaching_breaks)
+    return 0 if expiry_at.to_date >= last_teaching_date
 
     actor = task.project.tutor_for(task.task_definition) || main_convenor&.user
     return 0 if actor.blank?
 
     elapsed_days = task.discuss_timeout_elapsed_days(now_time, teaching_breaks: teaching_breaks)
-    expiry_at = task.discuss_timeout_expiry_at(discuss_timeout_expire_days, teaching_breaks: teaching_breaks)
     if now_time.in_time_zone(expiry_at.time_zone).to_date > expiry_at.to_date
       expire_discuss_timeout_task(task, actor)
     elsif elapsed_days >= discuss_timeout_warning_days
