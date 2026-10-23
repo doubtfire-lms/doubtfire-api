@@ -93,9 +93,23 @@ class CreateSubmissionHistories < ActiveRecord::Migration[8.0]
 
     # Replace each task's timestamp directories with one history.zip. Every
     # directory and filename is preserved inside the archive.
-    MigrationSubmissionHistory.distinct.pluck(:task_id).each do |task_id|
-      task = MigrationTask.find_by(id: task_id)
-      archive_existing_history_directories(task) if task
+    task_ids_by_unit = MigrationTask.left_joins(project: :unit)
+                                    .where(id: MigrationSubmissionHistory.select(:task_id))
+                                    .order('units.code, units.id, tasks.id')
+                                    .pluck('units.id', 'units.code', 'tasks.id')
+                                    .group_by { |unit_id, unit_code, _task_id| [unit_id, unit_code] }
+    total_units = task_ids_by_unit.size
+    say "Archiving submission histories across #{total_units} units"
+
+    task_ids_by_unit.each_with_index do |((unit_id, unit_code), task_rows), index|
+      unit_label = "#{unit_code.presence || 'unknown'} (ID #{unit_id || 'unknown'})"
+      say_with_time "Archiving submission histories for unit #{unit_label} (#{index + 1}/#{total_units} units, #{task_rows.size} tasks)" do
+        task_rows.each do |_, _, task_id|
+          task = MigrationTask.find_by(id: task_id)
+          archive_existing_history_directories(task) if task
+        end
+      end
+      say "Completed #{index + 1}/#{total_units} units (#{((index + 1) * 100.0 / total_units).round}%)"
     end
 
     # Once all existing rows are linked, make the association required and
