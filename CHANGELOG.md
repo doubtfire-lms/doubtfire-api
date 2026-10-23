@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-75](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-74...v11.0.0-75) (2026-10-23)
+
+
+### Bug Fixes
+
+* ensure authentication for tii group attachment api ([1fc7cf0](https://github.com/b0ink/doubtfire-deploy/commit/1fc7cf0de66f27ac66fcfbd4567736730b37f629))
+* ensure authentication for tii group attachment api ([#722](https://github.com/b0ink/doubtfire-deploy/issues/722)) ([2b7ee3c](https://github.com/b0ink/doubtfire-deploy/commit/2b7ee3c2428cc76007b49b95aa9d2bfafd7e0968))
+* restrict global learning outcome changes to admins ([f4e402f](https://github.com/b0ink/doubtfire-deploy/commit/f4e402fc8750404b84fed7f66d0da0a4b36c5c6a))
+* restrict global learning outcome changes to admins ([#721](https://github.com/b0ink/doubtfire-deploy/issues/721)) ([a7ad239](https://github.com/b0ink/doubtfire-deploy/commit/a7ad239adec3c8e38f5b365ac1b6663d9696c242))
+
 ## [11.0.0-74](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-73...v11.0.0-74) (2026-10-22)
 
 
