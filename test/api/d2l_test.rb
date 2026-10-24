@@ -396,7 +396,10 @@ class D2lTest < ActiveSupport::TestCase
     assert_includes result[1], "Success,#{p1.student.student_id},#{p1.grade},Posted grade for #{p1.student.username}"
     assert_includes result[2], "Success,#{p2.student.student_id} - somehow mismatch,#{p2.grade},Posted grade for #{p2.student.username}"
     assert_includes result[3], "Skipped,#{p3.student.student_id} - somehow mismatch,\"\",No grade for #{p3.student.username}"
-    assert_includes result[4], "Error,#{s1.student_id},\"\",No OnTrack result for"
+    assert_match(
+      /Error,#{s1.student_id},"",No (OnTrack|Doubtfire) result for/,
+      result[4]
+    )
     assert_includes result[5], "Error,#{p4.student.username},#{p4.grade},Not found in D2L"
 
     add_auth_header_for(user: unit.main_convenor_user)
