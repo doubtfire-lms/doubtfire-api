@@ -7,7 +7,6 @@ class QueueRoutingTest < ActiveSupport::TestCase
     AcceptSubmissionJob
     AcceptOverseerJob
     CreateSubmissionHistoryJob
-    PullDockerImageJob
   ].freeze
 
   PARALLEL_JOBS = %w[
@@ -40,6 +39,7 @@ class QueueRoutingTest < ActiveSupport::TestCase
     NotifyDiscussTimeoutJob
     NotifyTutorNotesJob
     PollCommunicationSetSchedulesJob
+    PullDockerImageJob
     RefreshModerationFeedbackTimestampsJob
     SendDiscussTimeoutEmailJob
     SyncLmsGradesJob
