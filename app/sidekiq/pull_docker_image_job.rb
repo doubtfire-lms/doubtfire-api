@@ -5,7 +5,7 @@ class PullDockerImageJob
   include ApplicationHelper
   include FileHelper
 
-  sidekiq_options queue: 'default',
+  sidekiq_options queue: 'parallel',
                   lock: :until_executed,
                   lock_args_method: ->(args) { [args.first] },
                   on_conflict: :reject,
