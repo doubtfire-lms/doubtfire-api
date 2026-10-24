@@ -166,6 +166,76 @@ class ProjectModelTest < ActiveSupport::TestCase
     unit.destroy!
   end
 
+  def test_create_portfolio_with_every_task_status
+    statuses = TaskStatus.order(:id).to_a
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0)
+    project = FactoryBot.create(:project, unit: unit)
+
+    statuses.each_with_index do |status, index|
+      unless status == TaskStatus.not_started
+        assert_not_equal :not_started, status.status_key, "No status key for #{status.name}"
+      end
+
+      task_definition = FactoryBot.create(
+        :task_definition,
+        unit: unit,
+        outcome_count: 0,
+        abbreviation: "STATUS#{index + 1}",
+        target_grade: 0,
+        requires_discussion: false
+      )
+      FactoryBot.create(:task, project: project, task_definition: task_definition, task_status: status)
+    end
+
+    assert_equal statuses.map(&:id).sort, project.tasks.pluck(:task_status_id).sort
+
+    project.update!(compile_portfolio: true)
+    assert project.create_portfolio
+    assert project.portfolio_exists?
+
+    pdf_text = PDF::Reader.new(project.portfolio_path).pages.map(&:text).join(' ')
+    statuses.each do |status|
+      assert_includes pdf_text, status.name
+    end
+  ensure
+    unit&.destroy!
+  end
+
+  def test_create_portfolio_with_empty_task_description
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0)
+    project = FactoryBot.create(:project, unit: unit)
+    task_definition = FactoryBot.create(
+      :task_definition,
+      unit: unit,
+      name: "Task definition with empty description",
+      description: "",
+      abbreviation: "HD2",
+      outcome_count: 0,
+      upload_requirements: [],
+      target_grade: 0,
+      requires_discussion: false
+    )
+    task = FactoryBot.create(
+      :task,
+      project: project,
+      task_definition: task_definition,
+      task_status: TaskStatus.ready_for_feedback
+    )
+
+    assert_empty task_definition.description
+    assert_includes project.portfolio_tasks, task
+
+    project.update!(compile_portfolio: true)
+    assert project.create_portfolio
+    assert project.portfolio_exists?
+
+    pdf_text = PDF::Reader.new(project.portfolio_path).pages.map(&:text).join(" ")
+    assert_includes pdf_text, task_definition.name
+    assert_includes pdf_text, "no task description"
+  ensure
+    unit&.destroy!
+  end
+
   def test_portfolio_tasks_excludes_tasks_until_pdf_processing_finishes
     unit = FactoryBot.create(:unit, with_students: false, task_count: 0)
     project = FactoryBot.create(:project, unit: unit)
@@ -229,6 +299,77 @@ class ProjectModelTest < ActiveSupport::TestCase
     assert File.exist?(project.portfolio_path)
 
     unit.destroy!
+  end
+
+  def test_portfolio_upload_converts_docx_to_pdf
+    project = FactoryBot.create(:project)
+    source = File.open(test_file_path('TestWordDoc.docx'))
+    pdf_fixture = test_file_path('submissions/valid.pdf')
+    original_converter = FileHelper.method(:convert_word_document_to_pdf)
+    conversion_calls = []
+    converter = lambda do |source_path, destination_path, work_id:|
+      conversion_calls << [source_path, work_id]
+      FileUtils.cp(pdf_fixture, destination_path)
+      destination_path
+    end
+    FileHelper.define_singleton_method(:convert_word_document_to_pdf, converter)
+
+    project.update!(uses_draft_learning_summary: true)
+    report = project.move_to_portfolio(
+      { filename: 'LearningSummaryReport.docx', 'tempfile' => source },
+      'LearningSummaryReport', 'document'
+    )
+
+    assert_equal 'LearningSummaryReport.pdf', report[:name]
+    assert FileHelper.validate_pdf(project.learning_summary_report_path)[:valid]
+    refute project.reload.uses_draft_learning_summary
+
+    evidence = project.move_to_portfolio(
+      { filename: 'Evidence.docx', 'tempfile' => source },
+      'Evidence', 'document'
+    )
+
+    assert_equal 'Evidence.pdf', evidence[:name]
+    assert FileHelper.validate_pdf(project.portfolio_tmp_file_path(evidence))[:valid]
+    assert_equal [source.path, source.path], conversion_calls.map(&:first)
+    username = project.student.username.gsub(/[^A-Za-z0-9_-]/, '_')
+    assert_match(/\A\d+-portfolio-#{Regexp.escape(username)}-lsr-[0-9a-f-]{36}\z/, conversion_calls[0][1])
+    assert_match(/\A\d+-portfolio-#{Regexp.escape(username)}-document-[0-9a-f-]{36}\z/, conversion_calls[1][1])
+  ensure
+    FileHelper.define_singleton_method(:convert_word_document_to_pdf, original_converter) if original_converter
+    source&.close
+    project&.unit&.destroy!
+  end
+
+  def test_failed_portfolio_docx_conversion_keeps_existing_report
+    project = FactoryBot.create(:project)
+    source = File.open(test_file_path('TestWordDoc.docx'))
+    existing_path = project.portfolio_tmp_file_path(
+      kind: 'document', name: 'LearningSummaryReport.pdf', idx: 0
+    )
+    FileUtils.mkdir_p(project.portfolio_temp_path)
+    FileUtils.cp(test_file_path('submissions/valid.pdf'), existing_path)
+    existing_contents = File.binread(existing_path)
+    project.update!(uses_draft_learning_summary: true)
+
+    original_converter = FileHelper.method(:convert_word_document_to_pdf)
+    FileHelper.define_singleton_method(:convert_word_document_to_pdf, lambda do |*_args, **_kwargs|
+      raise FileHelper::DocumentConversionError, 'conversion failed'
+    end)
+
+    assert_raises(FileHelper::DocumentConversionError) do
+      project.move_to_portfolio(
+        { filename: 'LearningSummaryReport.docx', 'tempfile' => source },
+        'LearningSummaryReport', 'document'
+      )
+    end
+
+    assert_equal existing_contents, File.binread(existing_path)
+    assert project.reload.uses_draft_learning_summary
+  ensure
+    FileHelper.define_singleton_method(:convert_word_document_to_pdf, original_converter) if original_converter
+    source&.close
+    project&.unit&.destroy!
   end
 
   def test_create_portfolio_with_additional_files

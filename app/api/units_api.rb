@@ -14,7 +14,7 @@ class UnitsApi < Grape::API
     authenticated?
 
     if params[:unit]
-      for key in [:start_date, :end_date] do
+      for key in [:start_date, :end_date, :last_teaching_date] do
         if params[:unit][key].present?
           date_val = DateTime.parse(params[:unit][key])
           params[:unit][key] = date_val
@@ -77,6 +77,7 @@ class UnitsApi < Grape::API
       optional :teaching_period_id, type: Integer
       optional :start_date, type: Date
       optional :end_date, type: Date
+      optional :last_teaching_date, type: Date
       optional :main_convenor_id, type: Integer
       optional :auto_apply_extension_before_deadline, type: Boolean, desc: 'Indicates if extensions before the deadline should be automatically applied'
       optional :mark_late_submissions_as_assess_in_portfolio, type: Boolean, desc: 'Indicates if late submissions should be set Time Exceeded or Assess in Portfolio'
@@ -106,6 +107,7 @@ class UnitsApi < Grape::API
 
       mutually_exclusive :teaching_period_id, :start_date
       mutually_exclusive :teaching_period_id, :end_date
+      mutually_exclusive :teaching_period_id, :last_teaching_date
     end
   end
   put '/units/:id' do
@@ -120,6 +122,7 @@ class UnitsApi < Grape::API
                                                           :description,
                                                           :start_date,
                                                           :end_date,
+                                                          :last_teaching_date,
                                                           :teaching_period_id,
                                                           :active,
                                                           :main_convenor_id,
@@ -177,6 +180,7 @@ class UnitsApi < Grape::API
       optional :teaching_period_id, type: Integer
       optional :start_date, type: Date
       optional :end_date, type: Date
+      optional :last_teaching_date, type: Date
       optional :main_convenor_user_id, type: Integer
       optional :auto_apply_extension_before_deadline, type: Boolean, desc: 'Indicates if extensions before the deadline should be automatically applied', default: true
       optional :mark_late_submissions_as_assess_in_portfolio, type: Boolean, desc: 'Indicates if late submissions should be set to Time Exceeded or Assess in Portfolio', default: true
@@ -203,6 +207,7 @@ class UnitsApi < Grape::API
 
       mutually_exclusive :teaching_period_id, :start_date
       mutually_exclusive :teaching_period_id, :end_date
+      mutually_exclusive :teaching_period_id, :last_teaching_date
       all_or_none_of :start_date, :end_date
     end
   end
@@ -220,6 +225,7 @@ class UnitsApi < Grape::API
                                                     :description,
                                                     :start_date,
                                                     :end_date,
+                                                    :last_teaching_date,
                                                     :auto_apply_extension_before_deadline,
                                                     :mark_late_submissions_as_assess_in_portfolio,
                                                     :send_notifications,
@@ -288,10 +294,12 @@ class UnitsApi < Grape::API
     optional :teaching_period_id, type: Integer, desc: 'The teaching period to rollover to'
     optional :start_date, type: Date, desc: 'The start date of the new unit'
     optional :end_date, type: Date, desc: 'The end date of the new unit'
+    optional :last_teaching_date, type: Date, desc: 'The final day of teaching for a unit without a teaching period'
     optional :new_unit_code, type: String, desc: 'The unit code for the new unit'
 
     exactly_one_of :teaching_period_id, :start_date
     all_or_none_of :start_date, :end_date
+    mutually_exclusive :teaching_period_id, :last_teaching_date
   end
   post '/units/:id/rollover' do
     unit = Unit.find(params[:id])
@@ -306,7 +314,7 @@ class UnitsApi < Grape::API
       tp = TeachingPeriod.find(teaching_period_id)
       result = unit.rollover(tp, nil, nil, params[:new_unit_code])
     else
-      result = unit.rollover(nil, params[:start_date], params[:end_date], params[:new_unit_code])
+      result = unit.rollover(nil, params[:start_date], params[:end_date], params[:new_unit_code], params[:last_teaching_date])
     end
 
     my_role = result.role_for(current_user)

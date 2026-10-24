@@ -34,6 +34,26 @@ class TiiGroupAttachmentApiTest < ActiveSupport::TestCase
     )
   end
 
+  def test_group_attachments_require_authentication
+    clear_auth_header
+    path = "/api/units/#{@unit.id}/task_definitions/#{@task_def.id}/tii_group_attachments"
+    attachment = @task_def.tii_group_attachments.first
+
+    get path
+    assert_equal 419, last_response.status, last_response_body
+
+    put_json "#{path}/#{attachment.id}", { action: 'upload' }
+    assert_equal 419, last_response.status, last_response_body
+
+    delete "#{path}/#{attachment.id}"
+    assert_equal 419, last_response.status, last_response_body
+    assert TiiGroupAttachment.exists?(attachment.id)
+
+    add_auth_header_for(user: @unit.main_convenor_user, auth_token: 'invalid')
+    get path
+    assert_equal 419, last_response.status, last_response_body
+  end
+
   def test_only_main_convenor_can_access_group_attachments_for_task_definition
     tutor = FactoryBot.create(:user, :tutor)
     @unit.employ_staff tutor, Role.tutor

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_15_040755) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_23_034838) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -802,6 +802,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_15_040755) do
     t.datetime "active_until", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.date "last_teaching_date", null: false
     t.index ["period", "year"], name: "index_teaching_periods_on_period_and_year", unique: true
   end
 
@@ -1017,6 +1018,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_15_040755) do
     t.boolean "discuss_timeout_enabled", default: false, null: false
     t.integer "discuss_timeout_warning_days", default: 7, null: false
     t.integer "discuss_timeout_expire_days", default: 14, null: false
+    t.date "last_teaching_date", null: false
     t.index ["draft_task_definition_id"], name: "index_units_on_draft_task_definition_id"
     t.index ["main_convenor_id"], name: "index_units_on_main_convenor_id"
     t.index ["overseer_image_id"], name: "index_units_on_overseer_image_id"

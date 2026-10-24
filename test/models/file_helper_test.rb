@@ -153,7 +153,9 @@ class FileHelperTest < ActiveSupport::TestCase
         true
       end
     end.new(0)
+    input_mode = nil
     runner = lambda do |work_id|
+      input_mode = File.stat(Rails.root.join('tmp/gotenberg', work_id, 'input.docx')).mode & 0o777
       FileUtils.cp(
         Rails.root.join('test_files/submissions/valid.pdf'),
         Rails.root.join('tmp/gotenberg', work_id, 'output.pdf')
@@ -165,6 +167,7 @@ class FileHelperTest < ActiveSupport::TestCase
       source_path = File.join(dir, 'submission.docx')
       destination_path = File.join(dir, 'submission.pdf')
       FileUtils.cp(Rails.root.join('test_files/TestWordDoc.docx'), source_path)
+      FileUtils.chmod(0o600, source_path)
 
       original_runner = FileHelper.method(:run_word_document_conversion)
       FileHelper.define_singleton_method(:run_word_document_conversion, runner)
@@ -179,6 +182,7 @@ class FileHelperTest < ActiveSupport::TestCase
       end
 
       assert_equal destination_path, result
+      assert_equal 0o644, input_mode
       assert FileHelper.validate_pdf(destination_path)[:valid]
     end
   end

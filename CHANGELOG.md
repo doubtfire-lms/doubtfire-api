@@ -2,6 +2,51 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-75](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-74...v11.0.0-75) (2026-10-23)
+
+
+### Bug Fixes
+
+* ensure authentication for tii group attachment api ([1fc7cf0](https://github.com/b0ink/doubtfire-deploy/commit/1fc7cf0de66f27ac66fcfbd4567736730b37f629))
+* ensure authentication for tii group attachment api ([#722](https://github.com/b0ink/doubtfire-deploy/issues/722)) ([2b7ee3c](https://github.com/b0ink/doubtfire-deploy/commit/2b7ee3c2428cc76007b49b95aa9d2bfafd7e0968))
+* restrict global learning outcome changes to admins ([f4e402f](https://github.com/b0ink/doubtfire-deploy/commit/f4e402fc8750404b84fed7f66d0da0a4b36c5c6a))
+* restrict global learning outcome changes to admins ([#721](https://github.com/b0ink/doubtfire-deploy/issues/721)) ([a7ad239](https://github.com/b0ink/doubtfire-deploy/commit/a7ad239adec3c8e38f5b365ac1b6663d9696c242))
+
+## [11.0.0-74](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-73...v11.0.0-74) (2026-10-22)
+
+
+### Bug Fixes
+
+* remove obsolete hash fragments from notification links ([63ef0cc](https://github.com/b0ink/doubtfire-deploy/commit/63ef0cc90fa19432b905bc731b1f740c9c9572da))
+* show placeholder for empty task descriptions in portfolio pdfs ([a2745ea](https://github.com/b0ink/doubtfire-deploy/commit/a2745ea767d28d6419d34ef3169aaa4e4ec65603))
+
+## [11.0.0-73](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-72...v11.0.0-73) (2026-10-22)
+
+
+### Bug Fixes
+
+* add missing task status colors for pdf gen ([598639e](https://github.com/b0ink/doubtfire-deploy/commit/598639e5a2e257b2c9b27ebe3832715782b20005))
+
+## [11.0.0-72](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-71...v11.0.0-72) (2026-10-21)
+
+
+### Bug Fixes
+
+* file permissions ([690d1ff](https://github.com/b0ink/doubtfire-deploy/commit/690d1fff2c6ca2bce18516c06fc2cffd25807fd7))
+
+## [11.0.0-71](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-70...v11.0.0-71) (2026-10-21)
+
+
+### Features
+
+* resolve template variable for main convenor name ([6b0b18e](https://github.com/b0ink/doubtfire-deploy/commit/6b0b18e9e0e3d48760170058e7dca70e87f43351))
+
+
+### Bug Fixes
+
+* define \lt and \gt for notebook pdf compilation ([2ce78de](https://github.com/b0ink/doubtfire-deploy/commit/2ce78de65ecb9cdc82951efd92cc97e9ccf6e1e5))
+* support docx files in learning summary report uploads ([#714](https://github.com/b0ink/doubtfire-deploy/issues/714)) ([d6d3e6d](https://github.com/b0ink/doubtfire-deploy/commit/d6d3e6dc02e275470ee3d5d2eff4a980c4392a1c))
+
 ## [11.0.0-70](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-69...v11.0.0-70) (2026-10-20)
 
 ## [11.0.0-69](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-68...v11.0.0-69) (2026-10-16)

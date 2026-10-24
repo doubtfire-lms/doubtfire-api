@@ -554,6 +554,57 @@ class TaskTest < ActiveSupport::TestCase
     assert_not File.exist? path
   end
 
+  def test_docx_draft_learning_summary_is_pdf_in_generated_portfolio
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
+    task_definition = FactoryBot.create(
+      :task_definition,
+      unit: unit,
+      upload_requirements: [
+        { 'key' => 'file0', 'name' => 'Draft learning summary', 'type' => 'document' }
+      ]
+    )
+    unit.update!(draft_task_definition: task_definition)
+    project = unit.active_projects.first
+    data_to_post = with_file(
+      'test_files/TestWordDoc.docx',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      { trigger: 'ready_for_feedback' }
+    )
+
+    add_auth_header_for user: project.user
+    post "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/submission", data_to_post
+
+    assert_equal 201, last_response.status, last_response_body
+
+    task = project.task_for_task_definition(task_definition)
+    assert task.convert_submission_to_pdf(log_to_stdout: false)
+
+    report_path = project.learning_summary_report_path
+    assert project.reload.uses_draft_learning_summary
+    assert_equal '000-document-LearningSummaryReport.pdf', File.basename(report_path)
+    assert FileHelper.validate_pdf(report_path)[:valid]
+    assert_equal File.binread(task.final_pdf_path), File.binread(report_path)
+
+    Zip::File.open(task.zip_file_path_for_done_task) do |archive|
+      assert archive.find_entry("#{task.id}/000-document.docx")
+    end
+
+    assert project.auto_generate_portfolio
+    assert project.create_portfolio
+    assert FileHelper.validate_pdf(project.portfolio_path)[:valid]
+
+    pages = PDF::Reader.new(project.portfolio_path).pages.map do |page|
+      page.text.gsub(/\s+/, ' ')
+    end
+    report_page = pages.index { |text| text.include?('This is a test word document, with at least six words.') }
+    title_page = pages.index { |text| text.include?('Portfolio Submission') }
+    assert report_page, 'Expected the converted draft report in the portfolio PDF'
+    assert title_page, 'Expected the portfolio title page'
+    assert_operator report_page, :<, title_page
+  ensure
+    unit&.destroy!
+  end
+
   def test_draft_learning_summary_wont_copy
     unit = FactoryBot.create :unit, student_count:1, task_count:0
     task_def = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [{'key' => 'file0','name' => 'Draft learning summary','type' => 'document'}])
@@ -700,6 +751,12 @@ class TaskTest < ActiveSupport::TestCase
     reader = PDF::Reader.new(task.final_pdf_path)
 
     assert_equal 4, reader.pages.count
+
+    data_to_post = with_file('test_files/submissions/inline_lt.ipynb', 'application/json', data_to_post)
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data_to_post
+
+    assert_equal 201, last_response.status, last_response_body
+    assert task.convert_submission_to_pdf(log_to_stdout: false)
 
     td.destroy
     assert_not File.exist? path
@@ -1051,7 +1108,9 @@ class TaskTest < ActiveSupport::TestCase
     end
 
     assert converted
-    assert_match(/\Atask-#{task.id}-/, conversion_work_id)
+    username = task.project.student.username.gsub(/[^A-Za-z0-9_-]/, '_')
+    abbreviation = task.task_definition.abbreviation.gsub(/[^A-Za-z0-9_-]/, '_')
+    assert_match(/\A\d+-task-#{Regexp.escape(username)}-#{Regexp.escape(abbreviation)}-[0-9a-f-]{36}\z/, conversion_work_id)
     assert FileHelper.validate_pdf(task.final_pdf_path)[:valid]
 
     Zip::File.open(task.zip_file_path_for_done_task) do |archive|

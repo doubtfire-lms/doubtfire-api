@@ -195,6 +195,29 @@ class LearningOutcomeApiTest < ActiveSupport::TestCase
     assert_json_matches_model learning_outcome, last_response_body, %w[id context_id context_type abbreviation short_description full_outcome_description]
   end
 
+  def test_tutors_and_convenors_cannot_manage_global_outcomes
+    learning_outcome = FactoryBot.create(:learning_outcome, context_id: nil, context_type: nil,
+                                                            short_description: 'Original')
+    new_abbreviation = FactoryBot.build(:learning_outcome).abbreviation
+    new_outcome = { abbreviation: new_abbreviation, short_description: 'New outcome' }
+
+    [FactoryBot.create(:user, :tutor), FactoryBot.create(:user, :convenor)].each do |user|
+      add_auth_header_for user: user
+
+      post_json 'api/global/outcomes', new_outcome
+      assert_equal 403, last_response.status
+      assert_nil LearningOutcome.global_outcomes.find_by(abbreviation: new_abbreviation)
+
+      put_json "api/global/outcomes/#{learning_outcome.id}", short_description: 'Changed'
+      assert_equal 403, last_response.status
+      assert_equal 'Original', learning_outcome.reload.short_description
+
+      delete "api/global/outcomes/#{learning_outcome.id}"
+      assert_equal 403, last_response.status
+      assert LearningOutcome.exists?(learning_outcome.id)
+    end
+  end
+
   def test_create_task_definition_learning_outcome
     task_definition = FactoryBot.create(:task_definition, outcome_count: 0)
     data_to_post = {
