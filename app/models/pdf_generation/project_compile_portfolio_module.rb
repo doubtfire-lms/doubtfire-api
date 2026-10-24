@@ -280,8 +280,7 @@ module PdfGeneration
         result[:idx] = 0
         result[:name] = 'LearningSummaryReport.pdf'
       else
-        Dir.chdir(portfolio_tmp_dir)
-        files = Dir.glob('*')
+        files = Dir.glob('*', base: portfolio_tmp_dir)
         idx = files.map { |a_file| a_file.split('-').first.to_i }.max
         if idx.nil? || idx < 1
           idx = 1
@@ -325,8 +324,8 @@ module PdfGeneration
 
       result = []
 
-      Dir.chdir(portfolio_tmp_dir)
-      files = Dir.glob('*').select { |f| (f =~ /^\d{3}-(cover|document|code|image|zip|archive)/) == 0 }
+      files = Dir.glob('*', base: portfolio_tmp_dir)
+                 .select { |f| (f =~ /^\d{3}-(cover|document|code|image|zip|archive)/) == 0 }
       files.each do |file|
         parts = file.split('-')
         idx = parts[0].to_i
@@ -334,7 +333,7 @@ module PdfGeneration
         name = parts.drop(2).join('-')
         result << { kind: kind, name: name, idx: idx }
 
-        FileHelper.ensure_utf8_code(file, force_ascii) if ensure_valid && kind == "code"
+        FileHelper.ensure_utf8_code(File.join(portfolio_tmp_dir, file), force_ascii) if ensure_valid && kind == "code"
       end
 
       result

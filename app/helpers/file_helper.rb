@@ -832,34 +832,17 @@ module FileHelper
   # - retain_from = true if you want to keep from, otherwise it is deleted
   # - only_before = date for files to move (only if retain from is true)
   def move_files(from_path, to_path, retain_from = false, only_before = nil)
-    # move into the new dir - and mv files to the in_process_dir
-    begin
-      pwd = FileUtils.pwd
-    rescue
-      # if no pwd, reset to the root
-      pwd = Rails.root
+    FileUtils.mkdir_p(to_path)
+    files = Dir.glob('*', base: from_path).map { |name| File.join(from_path, name) }.filter do |path|
+      !retain_from || only_before.nil? || File.ctime(path) < only_before
     end
+    FileUtils.mv(files, to_path, force: true)
 
     begin
-      FileUtils.mkdir_p(to_path)
-      Dir.chdir(from_path)
-      FileUtils.mv Dir.glob('*').filter{|fn| !retain_from || only_before.nil? || File.ctime(fn) < only_before}, to_path, force: true
-      Dir.chdir(to_path)
-      begin
-        # remove from_path as files are now "in process"
-        # these can be retained when the old folder wants to be kept
-        FileUtils.rm_rf(from_path) unless retain_from
-      rescue
-        logger.warn "failed to rm #{from_path}"
-      end
-    ensure
-      if FileUtils.pwd != pwd
-        if Dir.exist? pwd
-          FileUtils.chdir(pwd)
-        else
-          FileUtils.chdir(student_work_dir)
-        end
-      end
+      # Remove from_path as files are now "in process" unless retained.
+      FileUtils.rm_rf(from_path) unless retain_from
+    rescue StandardError
+      logger.warn "failed to rm #{from_path}"
     end
   end
 

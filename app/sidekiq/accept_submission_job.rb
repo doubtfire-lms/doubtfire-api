@@ -10,13 +10,6 @@ class AcceptSubmissionJob
 
   def perform(task_id, user_id, accepted_tii_eula, test_submission)
     begin
-      # Ensure cwd is valid...
-      FileUtils.cd(Rails.root)
-    rescue StandardError => e
-      logger.error e
-    end
-
-    begin
       task = Task.find(task_id)
       user = User.find(user_id)
     rescue StandardError => e

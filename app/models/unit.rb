@@ -4246,8 +4246,6 @@ class Unit < ApplicationRecord
     FileUtils.rm_rf unit_portfolio_path
     FileUtils.rm_rf submission_history_path
     FileUtils.rm_rf jplag_report_path
-
-    FileUtils.cd FileHelper.student_work_dir
   end
 
   def update_overdue_tasks_aip
