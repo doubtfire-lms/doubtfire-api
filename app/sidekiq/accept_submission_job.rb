@@ -2,19 +2,13 @@ class AcceptSubmissionJob
   include Sidekiq::Job
   include LogHelper
 
-  sidekiq_options lock: :until_executed,
+  sidekiq_options queue: 'default',
+                  lock: :until_executed,
                   lock_args_method: ->(args) { [args.first] },
                   on_conflict: :reject,
                   retry: false
 
   def perform(task_id, user_id, accepted_tii_eula, test_submission)
-    begin
-      # Ensure cwd is valid...
-      FileUtils.cd(Rails.root)
-    rescue StandardError => e
-      logger.error e
-    end
-
     begin
       task = Task.find(task_id)
       user = User.find(user_id)

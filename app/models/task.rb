@@ -1365,7 +1365,6 @@ class Task < ApplicationRecord
   def clear_in_process
     in_process_dir = student_work_dir(:in_process, false)
     if Dir.exist? in_process_dir
-      Dir.chdir(FileHelper.student_work_root) if FileUtils.pwd == in_process_dir
       FileUtils.rm_rf in_process_dir
     end
 
@@ -1402,11 +1401,8 @@ class Task < ApplicationRecord
     return false if in_process_dir.nil?
 
     if Dir.exist? in_process_dir
-      pwd = FileUtils.pwd
-      Dir.chdir(in_process_dir)
       # move all files to the enq dir
-      FileUtils.rm Dir.glob('*')
-      Dir.chdir(pwd)
+      FileUtils.rm Dir.glob('*', base: in_process_dir).map { |name| File.join(in_process_dir, name) }
     end
 
     # Zip new submission and store in done files (will remove from_dir) - ensure trailing /
@@ -1444,23 +1440,15 @@ class Task < ApplicationRecord
   end
 
   def __output_filename__(in_dir, idx, type)
-    pwd = FileUtils.pwd
-    Dir.chdir(in_dir)
-    begin
-      # Rename files with 000.type.* to 000-type-*
-      result = Dir.glob("#{idx.to_s.rjust(3, '0')}.#{type}.*").first
+    prefix = idx.to_s.rjust(3, '0')
+    # Rename files with 000.type.* to 000-type-*
+    result = Dir.glob("#{prefix}.#{type}.*", base: in_dir).first
 
-      if !result.nil? && File.exist?(result)
-        FileUtils.mv result, "#{idx.to_s.rjust(3, '0')}-#{type}#{File.extname(result)}"
-      end
-      result = Dir.glob("#{idx.to_s.rjust(3, '0')}-#{type}.*").first
-    ensure
-      Dir.chdir(pwd)
+    if !result.nil? && File.exist?(File.join(in_dir, result))
+      FileUtils.mv File.join(in_dir, result), File.join(in_dir, "#{prefix}-#{type}#{File.extname(result)}")
     end
-
-    return File.join(in_dir, result) unless result.nil?
-
-    nil
+    result = Dir.glob("#{prefix}-#{type}.*", base: in_dir).first
+    File.join(in_dir, result) unless result.nil?
   end
 
   def in_process_files_for_task(is_retry)
