@@ -97,6 +97,7 @@ class ApiRoot < Grape::API
   mount Courseflow::CourseMapUnitApi
   mount Courseflow::SpecializationApi
   mount Courseflow::RequirementSetApi
+  mount Courseflow::RequirementApi
   mount UnitDefinitionApi
 
   #
