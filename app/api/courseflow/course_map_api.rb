@@ -14,12 +14,13 @@ module Courseflow
     params do
       requires :userId, type: Integer, desc: "User ID"
     end
-    get '/coursemap/userId/:userId' do
-      course_map = CourseMap.find_by(userId: params[:userId])
+      get '/coursemap/userId/:userId' do
+      course_map = CourseMap.find_by(userId: params[:userId]) || CourseMap.find_by(userId: nil)
+      
       if course_map
         present course_map, with: Entities::CourseMapEntity
       else
-        error!({ error: "Course map #{params[:userId]} not found" }, 404)
+        error!({ error: "Course map for user #{params[:userId]} not found" }, 404)
       end
     end
 
