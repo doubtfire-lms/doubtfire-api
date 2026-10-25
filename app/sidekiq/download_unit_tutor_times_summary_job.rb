@@ -9,9 +9,7 @@ class DownloadUnitTutorTimesSummaryJob
   include MimeCheckHelpers
   include CsvHelper
 
-  sidekiq_options lock: :until_executed,
-                  lock_args_method: ->(args) { [args.first] },
-                  on_conflict: :reject,
+  sidekiq_options queue: 'parallel',
                   retry: false
 
   def perform(unit_id, start_date, end_date, timezone, ignore_sessions_during_tutorials)
