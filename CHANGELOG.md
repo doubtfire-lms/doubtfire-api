@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-76](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-75...v11.0.0-76) (2026-10-25)
+
+
+### Features
+
+* split submission processing and other jobs into parallel serial queues ([#711](https://github.com/b0ink/doubtfire-deploy/issues/711)) ([e97bc27](https://github.com/b0ink/doubtfire-deploy/commit/e97bc27ba53fe3d4f1012eca1b36071662babbec))
+
+
+### Bug Fixes
+
+* prevent students from grading their own tasks ([6bbfbb4](https://github.com/b0ink/doubtfire-deploy/commit/6bbfbb4225cb6109ab445c0b548f425106ff57d1))
+* prevent students from grading their own tasks ([#724](https://github.com/b0ink/doubtfire-deploy/issues/724)) ([9c1f74e](https://github.com/b0ink/doubtfire-deploy/commit/9c1f74e85229208f69094b43ec111592e60ba926))
+* restrict tutor feedback moderation to mentors, convenors and admins ([#723](https://github.com/b0ink/doubtfire-deploy/issues/723)) ([161450a](https://github.com/b0ink/doubtfire-deploy/commit/161450adc76e670f188b144e01a0cb6a8bcae1f6))
+
 ## [11.0.0-75](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-74...v11.0.0-75) (2026-10-23)
 
 
