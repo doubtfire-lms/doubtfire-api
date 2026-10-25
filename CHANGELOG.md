@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-77](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-76...v11.0.0-77) (2026-10-25)
+
+
+### Bug Fixes
+
+* bump ruby-saml to 1.18.1 ([0a2ee1c](https://github.com/b0ink/doubtfire-deploy/commit/0a2ee1ccd8b5a5f663324f86f41494e407facbdf))
+
 ## [11.0.0-76](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-75...v11.0.0-76) (2026-10-25)
 
 
