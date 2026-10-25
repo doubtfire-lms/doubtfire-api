@@ -380,6 +380,21 @@ class FileHelperTest < ActiveSupport::TestCase
     end
   end
 
+  def test_ensure_utf8_code_does_not_interpret_uploaded_filename_as_shell
+    uploaded_filename = 'solution.rb$(true)'
+    stored_filename = "000-code#{File.extname(uploaded_filename)}"
+    contents = "puts 'safe'\n"
+
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, stored_filename)
+      File.write(path, contents)
+
+      FileHelper.ensure_utf8_code(path, false)
+
+      assert_equal contents, File.read(path)
+    end
+  end
+
   def test_process_audio_converts_webm_audio
     Dir.mktmpdir("audio path ") do |dir|
       source_wav = File.join(dir, "source tone.wav")
