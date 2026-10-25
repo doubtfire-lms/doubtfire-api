@@ -167,6 +167,10 @@ class TasksApi < Grape::API
 
     # check the user can put this task
     if authorise? current_user, project, :make_submission
+      if !grade.nil? && !authorise?(current_user, project, :assess)
+        error!({ error: 'Not authorised to grade this task' }, 403)
+      end
+
       task = project.task_for_task_definition(task_definition)
       mark_as_discussed = params[:discussed] == true && authorise?(current_user, project, :assess)
       needs_discussed_comment = mark_as_discussed && !task.has_discussed_in_class_comment?

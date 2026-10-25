@@ -1197,4 +1197,34 @@ class TasksApiTest < ActiveSupport::TestCase
     end
   end
 
+  def test_student_cannot_grade_own_task
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
+    td = TaskDefinition.create!({
+                                  unit_id: unit.id,
+                                  tutorial_stream: unit.tutorial_streams.first,
+                                  name: 'Graded task',
+                                  description: 'Task graded by staff',
+                                  weighting: 4,
+                                  target_grade: 0,
+                                  start_date: Time.zone.now - 2.weeks,
+                                  target_date: Time.zone.now + 1.week,
+                                  abbreviation: 'GradedTask',
+                                  restrict_status_updates: false,
+                                  upload_requirements: [],
+                                  plagiarism_warn_pct: 0.8,
+                                  is_graded: true,
+                                  max_quality_pts: 0
+                                })
+
+    project = unit.active_projects.first
+    top_grade = unit.grade_definitions.map { |definition| definition['value'] }.max
+
+    add_auth_header_for(user: project.student)
+
+    put "/api/projects/#{project.id}/task_def_id/#{td.id}", { grade: top_grade }
+
+    assert_equal 403, last_response.status, last_response_body
+    assert_nil Task.find_by(project: project, task_definition: td)&.grade
+  end
+
 end
