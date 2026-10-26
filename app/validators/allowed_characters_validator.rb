@@ -7,14 +7,18 @@ class AllowedCharactersValidator < ActiveModel::EachValidator
     last_name: " -()_/,，.'’",
     preferred_name: " -()_/,，.'’",
     unit_name: " -#()",
-    title: " -#()&/:_.'\"",
+    title: " -#()&/:_.'\"*+",
     unit_code: "-#/_"
   }.freeze
 
   def validate_each(record, attribute, value)
     return if value.blank?
 
-    whitelist = CHARACTER_WHITELISTS.fetch(options.fetch(:type))
+    type = options.fetch(:type)
+    whitelist = CHARACTER_WHITELISTS.fetch(type)
+    if type == :title && !alphanumeric?(value[0])
+      record.errors.add(attribute, 'must begin with an alphanumeric character')
+    end
     return if value.each_char.all? { |character| alphanumeric?(character) || whitelist.include?(character) }
 
     record.errors.add(attribute, 'contains unsupported characters')

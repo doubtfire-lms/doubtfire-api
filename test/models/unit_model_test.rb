@@ -872,10 +872,13 @@ class UnitModelTest < ActiveSupport::TestCase
     assert FactoryBot.build(:task_definition, unit: @unit, name: 'Hyphenated-Task #1 (Core)').valid?
     assert FactoryBot.build(:task_definition, unit: @unit, name: 'P1.1 - Hello World').valid?
     assert FactoryBot.build(:task_definition, unit: @unit, name: "Student's Task").valid?
+    assert FactoryBot.build(:task_definition, unit: @unit, name: 'A* with Admissible Heuristic').valid?
+    assert FactoryBot.build(:task_definition, unit: @unit, name: 'C++ Starter Pack').valid?
+    assert FactoryBot.build(:task_definition, unit: @unit, name: '2+2').valid?
   end
 
-  test 'unit and task titles reject equals, plus, and at characters anywhere' do
-    ['={', '=2+2', '+command', '@command', 'Unit=Name', 'Unit+Name', 'Unit@Name'].each do |value|
+  test 'unit and task titles reject unsupported punctuation' do
+    ['={', '=2+2', '@command', 'Unit=Name', 'Unit@Name'].each do |value|
       unit = FactoryBot.build(:unit, name: value)
       task_definition = FactoryBot.build(:task_definition, unit: @unit, name: value)
 
@@ -883,6 +886,19 @@ class UnitModelTest < ActiveSupport::TestCase
       assert_includes unit.errors[:name], 'contains unsupported characters'
       assert_not task_definition.valid?, value
       assert_includes task_definition.errors[:name], 'contains unsupported characters'
+    end
+
+    unit = FactoryBot.build(:unit, name: 'Unit+Name')
+    assert_not unit.valid?
+    assert_includes unit.errors[:name], 'contains unsupported characters'
+  end
+
+  test 'task titles must start with an alphanumeric character' do
+    ['* Star', ' Task', '(Intro)', '+command', ' +command', '=2+2'].each do |value|
+      task_definition = FactoryBot.build(:task_definition, unit: @unit, name: value)
+
+      assert_not task_definition.valid?, value
+      assert_includes task_definition.errors[:name], 'must begin with an alphanumeric character'
     end
   end
 
