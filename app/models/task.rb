@@ -1512,7 +1512,7 @@ class Task < ApplicationRecord
       @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
       @include_pax = !is_retry
       @work_id = FileHelper.sanitized_path(
-        "task-#{Time.current.strftime('%Y%m%d-%H%M')}-#{task.project.student.username}-#{task.task_definition.abbreviation}-#{task.id}-#{Process.pid}#{'-retry' if is_retry}"
+        "task-#{Time.current.strftime('%Y%m%d-%H%M')}-#{task.unit.code}-#{task.project.student.username}-#{task.task_definition.abbreviation}-#{task.id}-#{Process.pid}#{'-retry' if is_retry}"
       )
       host = Doubtfire::Application.config.institution[:host].to_s
       host = "http://#{host}" unless host.match?(%r{\Ahttps?://})
@@ -1731,7 +1731,7 @@ class Task < ApplicationRecord
         source_path,
         destination_path,
         work_id: FileHelper.gotenberg_work_id(
-          kind: 'task', username: project.student.username, label: task_definition.abbreviation
+          unit_code: unit.code, kind: 'task', username: project.student.username, label: task_definition.abbreviation
         )
       )
       FileUtils.rm_f(source_path)

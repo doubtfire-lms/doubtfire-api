@@ -195,8 +195,8 @@ module FileHelper
     false
   end
 
-  def gotenberg_work_id(kind:, username:, label:)
-    [Time.current.to_i, kind, username, label, SecureRandom.uuid]
+  def gotenberg_work_id(unit_code:, kind:, username:, label:)
+    [Time.current.to_i, unit_code, kind, username, label, SecureRandom.uuid]
       .map { |part| part.to_s.gsub(/[^A-Za-z0-9_-]/, '_') }
       .join('-')
   end
