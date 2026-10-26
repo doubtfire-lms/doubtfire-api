@@ -37,7 +37,7 @@ class AcceptOverseerJob
     )
 
     work_dir_name = [
-      task.unit.code, Time.current.to_i, 'overseer', task.project.student.username,
+      Time.current.to_i, task.unit.code, 'overseer', task.project.student.username,
       task_definition.abbreviation, task.id, overseer_assessment_id, SecureRandom.uuid
     ].map { |part| part.to_s.gsub(/[^A-Za-z0-9_-]/, '_') }.join('-')
 

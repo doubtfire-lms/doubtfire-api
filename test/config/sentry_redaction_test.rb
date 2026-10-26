@@ -16,6 +16,20 @@ class SentryRedactionTest < ActiveSupport::TestCase
     )
   end
 
+  test "scrubs student details from unit-labelled LaTeX work directories" do
+    task_path = "tmp/rails-latex/task-20260724-1100-COURSE1234-student-name-task-1-2/file.tex"
+    portfolio_path = "tmp/rails-latex/portfolio-20260724-1100-COURSE1234-student-name-1-2/file.tex"
+
+    assert_equal(
+      "tmp/rails-latex/task-20260724-1100-[username]-task-1-2/file.tex",
+      OnTrackSentryRedaction.scrub_string(task_path)
+    )
+    assert_equal(
+      "tmp/rails-latex/portfolio-20260724-1100-[username]-1-2/file.tex",
+      OnTrackSentryRedaction.scrub_string(portfolio_path)
+    )
+  end
+
   test "filters Sidekiq job args from Sentry's contexts" do
     contexts = { sidekiq: { "class" => "ImportBatchFeedbackJob", "args" => [20, "student@example.com"], "jid" => "abc" } }
 

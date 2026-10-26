@@ -332,9 +332,10 @@ class ProjectModelTest < ActiveSupport::TestCase
     assert_equal 'Evidence.pdf', evidence[:name]
     assert FileHelper.validate_pdf(project.portfolio_tmp_file_path(evidence))[:valid]
     assert_equal [source.path, source.path], conversion_calls.map(&:first)
+    unit_code = project.unit.code.gsub(/[^A-Za-z0-9_-]/, '_')
     username = project.student.username.gsub(/[^A-Za-z0-9_-]/, '_')
-    assert_match(/\A\d+-portfolio-#{Regexp.escape(username)}-lsr-[0-9a-f-]{36}\z/, conversion_calls[0][1])
-    assert_match(/\A\d+-portfolio-#{Regexp.escape(username)}-document-[0-9a-f-]{36}\z/, conversion_calls[1][1])
+    assert_match(/\A\d+-#{Regexp.escape(unit_code)}-portfolio-#{Regexp.escape(username)}-lsr-[0-9a-f-]{36}\z/, conversion_calls[0][1])
+    assert_match(/\A\d+-#{Regexp.escape(unit_code)}-portfolio-#{Regexp.escape(username)}-document-[0-9a-f-]{36}\z/, conversion_calls[1][1])
   ensure
     FileHelper.define_singleton_method(:convert_word_document_to_pdf, original_converter) if original_converter
     source&.close
