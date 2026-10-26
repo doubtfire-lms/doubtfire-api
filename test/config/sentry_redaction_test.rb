@@ -16,6 +16,14 @@ class SentryRedactionTest < ActiveSupport::TestCase
     )
   end
 
+  test "filters Sidekiq job args from Sentry's contexts" do
+    contexts = { sidekiq: { "class" => "ImportBatchFeedbackJob", "args" => [20, "student@example.com"], "jid" => "abc" } }
+
+    OnTrackSentryRedaction.scrub_contexts(contexts)
+
+    assert_equal({ "class" => "ImportBatchFeedbackJob", "args" => "[Filtered]", "jid" => "abc" }, contexts[:sidekiq])
+  end
+
   test "scrubs student details from portfolio PDF failure exceptions" do
     exception_value = Sentry::SingleExceptionInterface.new(
       exception: PdfGeneration::ProjectCompilePortfolioModule::LatexError.new(
