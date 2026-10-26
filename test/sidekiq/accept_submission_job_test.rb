@@ -24,7 +24,7 @@ class AcceptSubmissionJobTest < ActiveSupport::TestCase
     end
 
     if defined?(Sentry)
-      Sentry.stub(:capture_exception, nil, &perform_job)
+      Sentry.stub(:capture_exception, nil) { perform_job.call }
     else
       perform_job.call
     end
