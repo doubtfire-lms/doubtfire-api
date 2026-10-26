@@ -700,6 +700,17 @@ class Task < ApplicationRecord
     check_feedback && !system_transition
   end
 
+  def feedback_given_for_transition?(status, by_user)
+    case status
+    when TaskStatus.complete
+      has_manual_feedback_since_first_ready_for_feedback?
+    when TaskStatus.fix_and_resubmit, TaskStatus.redo
+      has_recent_manual_feedback_from_tutor?(by_user)
+    else
+      true
+    end
+  end
+
   def group
     return nil unless group_task?
 
@@ -770,17 +781,10 @@ class Task < ApplicationRecord
           return nil
         end
 
-        if transition_feedback_check_required?(check_feedback, system_transition)
-          if status == TaskStatus.complete && !has_manual_feedback_since_first_ready_for_feedback?
-            errors.add(:task_status, "cannot be moved to '#{status.name}' until feedback has been given")
-            return nil
-          end
-
-          if [TaskStatus.fix_and_resubmit, TaskStatus.redo].include?(status) &&
-             !has_recent_manual_feedback_from_tutor?(by_user)
-            errors.add(:task_status, "cannot be moved to '#{status.name}' until feedback has been given")
-            return nil
-          end
+        if transition_feedback_check_required?(check_feedback, system_transition) &&
+           !feedback_given_for_transition?(status, by_user)
+          errors.add(:task_status, "cannot be moved to '#{status.name}' until feedback has been given")
+          return nil
         end
 
         if task_definition.assess_in_portfolio_only
