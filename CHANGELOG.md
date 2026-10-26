@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-78](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-77...v11.0.0-78) (2026-10-26)
+
+
+### Features
+
+* allow staff to reuse submissions for feedback ([#732](https://github.com/b0ink/doubtfire-deploy/issues/732)) ([5d02218](https://github.com/b0ink/doubtfire-deploy/commit/5d02218fae35acc1646d52d9ed9319969a438d67))
+* enable sentry for sidekiq ([#698](https://github.com/b0ink/doubtfire-deploy/issues/698)) ([770c49a](https://github.com/b0ink/doubtfire-deploy/commit/770c49a07b45c906d33d9036d6abfc845041069e))
+* setting to restrict task submissions and status changes to staff ([#731](https://github.com/b0ink/doubtfire-deploy/issues/731)) ([aaaff74](https://github.com/b0ink/doubtfire-deploy/commit/aaaff7453558a71a7983108e835c572f81b6beeb))
+* support image and pdf attachments in staff notes ([#734](https://github.com/b0ink/doubtfire-deploy/issues/734)) ([b9a1009](https://github.com/b0ink/doubtfire-deploy/commit/b9a1009458ee9d13f84d39e31abbf25e6a1c470e))
+
+
+### Bug Fixes
+
+* prevent pdfgen from claiming sidekiq-owned submissions ([#730](https://github.com/b0ink/doubtfire-deploy/issues/730)) ([ca9e274](https://github.com/b0ink/doubtfire-deploy/commit/ca9e274afbf1eec4a5771c1a5c11658a851b906a))
+* require authentication for scorm extension routes ([ef24b3c](https://github.com/b0ink/doubtfire-deploy/commit/ef24b3ca7efdc6032bd58f8e413a422a05ec1f36))
+* require authentication for Turnitin EULA acceptance ([7846be6](https://github.com/b0ink/doubtfire-deploy/commit/7846be65ae2fe1daf46f38b0ba7472817623dbd5))
+* whitelist similarity languages and avoid shell execution ([#727](https://github.com/b0ink/doubtfire-deploy/issues/727)) ([b47c050](https://github.com/b0ink/doubtfire-deploy/commit/b47c050d824e5d4b6d5b9082e1c6101a0131275a))
+
 ## [11.0.0-77](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-76...v11.0.0-77) (2026-10-25)
 
 
