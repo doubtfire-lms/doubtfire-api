@@ -808,6 +808,27 @@ class Task < ApplicationRecord
     true
   end
 
+  def reuse_existing_submission_for_feedback(by_user)
+    related_tasks = group_submission ? group_submission.tasks.to_a : [self]
+    eligible = related_tasks.all? do |task|
+      role = task.role_for(by_user)
+      role.in?([:tutor, :admin]) &&
+        task.task_status != TaskStatus.ready_for_feedback &&
+        task.submission_date.present? && task.has_pdf &&
+        task.transition_assignment_allowed?(by_user, role, false)
+    end
+    return nil unless eligible
+
+    Task.transaction do
+      related_tasks.each do |task|
+        task.engage TaskStatus.ready_for_feedback
+        task.add_status_comment(by_user, TaskStatus.ready_for_feedback)
+      end
+    end
+
+    true
+  end
+
   def has_discussed_in_class_comment?
     comments.where(content_type: 'discussed_in_class').exists?
   end
