@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.0.0-79](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-78...v11.0.0-79) (2026-10-26)
+
+
+### Bug Fixes
+
+* skip docker login job if vars not set ([84f366f](https://github.com/b0ink/doubtfire-deploy/commit/84f366fbde88cddc2f3d6ee1d0810cc25c11a1cf))
+
 ## [11.0.0-78](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-77...v11.0.0-78) (2026-10-26)
 
 
