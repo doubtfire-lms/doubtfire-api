@@ -324,6 +324,7 @@ class Unit < ApplicationRecord
   end
 
   def notify_discuss_timeout_for(task, teaching_breaks: nil, now_time: Time.zone.now)
+    return 0 if task.project.portfolio_locked?
     return 0 if task.moved_to_discuss_at.blank?
     return 0 if now_time.to_date > last_teaching_date
 
@@ -4255,6 +4256,8 @@ class Unit < ApplicationRecord
     overdue_statuses = [TaskStatus.time_exceeded.id]
 
     tasks.where(task_status_id: overdue_statuses).find_each do |task|
+      next if task.project.portfolio_locked?
+
       task.add_status_comment(main_convenor.user, TaskStatus.assess_in_portfolio)
       task.update(task_status_id: TaskStatus.assess_in_portfolio.id)
     end

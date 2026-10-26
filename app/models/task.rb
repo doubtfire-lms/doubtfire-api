@@ -129,6 +129,7 @@ class Task < ApplicationRecord
   end
 
   # Delete action - before dependent association
+  before_destroy :prevent_destroy_when_portfolio_locked
   before_destroy :delete_associated_files
 
   # Model associations
@@ -175,6 +176,7 @@ class Task < ApplicationRecord
   validate :prevent_complete_if_requires_discussion
   validate :prevent_feedback_exceeed_if_assess_in_portfolio_enabled
   validate :prevent_time_exceeed_if_assess_in_portfolio_enabled
+  validate :prevent_changes_when_portfolio_locked
 
   include TaskTiiModule
 
@@ -201,6 +203,12 @@ class Task < ApplicationRecord
     if (unit.mark_late_submissions_as_assess_in_portfolio || task_definition.assess_in_portfolio_only) && task_status == TaskStatus.time_exceeded
       errors.add(:task_status, "cannot be 'time_exceeded' if unit 'has tasks assessed in portolio' enabled")
     end
+  end
+
+  def prevent_changes_when_portfolio_locked
+    return unless project&.portfolio_locked?
+
+    errors.add(:base, 'Task cannot be changed while the project portfolio is submitted')
   end
 
   def for_definition_with_quality?
@@ -692,6 +700,17 @@ class Task < ApplicationRecord
     check_feedback && !system_transition
   end
 
+  def feedback_given_for_transition?(status, by_user)
+    case status
+    when TaskStatus.complete
+      has_manual_feedback_since_first_ready_for_feedback?
+    when TaskStatus.fix_and_resubmit, TaskStatus.redo
+      has_recent_manual_feedback_from_tutor?(by_user)
+    else
+      true
+    end
+  end
+
   def group
     return nil unless group_task?
 
@@ -709,6 +728,11 @@ class Task < ApplicationRecord
 
   def trigger_transition(trigger: '', by_user: nil, bulk: false, group_transition: false, quality: 1, recursive_fix: false,
                          check_feedback: false, system_transition: false)
+    if project.portfolio_locked?
+      errors.add(:base, 'Project is locked because its portfolio has been submitted')
+      return nil
+    end
+
     #
     # Ensure that assessor is allowed to update the task in the indicated way
     #
@@ -757,17 +781,10 @@ class Task < ApplicationRecord
           return nil
         end
 
-        if transition_feedback_check_required?(check_feedback, system_transition)
-          if status == TaskStatus.complete && !has_manual_feedback_since_first_ready_for_feedback?
-            errors.add(:task_status, "cannot be moved to '#{status.name}' until feedback has been given")
-            return nil
-          end
-
-          if [TaskStatus.fix_and_resubmit, TaskStatus.redo].include?(status) &&
-             !has_recent_manual_feedback_from_tutor?(by_user)
-            errors.add(:task_status, "cannot be moved to '#{status.name}' until feedback has been given")
-            return nil
-          end
+        if transition_feedback_check_required?(check_feedback, system_transition) &&
+           !feedback_given_for_transition?(status, by_user)
+          errors.add(:task_status, "cannot be moved to '#{status.name}' until feedback has been given")
+          return nil
         end
 
         if task_definition.assess_in_portfolio_only
@@ -1512,6 +1529,14 @@ class Task < ApplicationRecord
     result
   end
 
+  def prevent_destroy_when_portfolio_locked
+    return unless project&.portfolio_locked?
+    return if project.destroyed? || project.marked_for_destruction?
+
+    errors.add(:base, 'Task cannot be deleted while the project portfolio is submitted')
+    throw :abort
+  end
+
   class TaskAppController < ApplicationController
     include LatexHelper
 
@@ -1782,7 +1807,13 @@ class Task < ApplicationRecord
         contribs = contributions.map { |data| { project: Project.find(data[:project_id]), pct: data[:pct].to_i, pts: data[:pts].to_i } }
       end
       group_submission = group.create_submission self, "#{user.name} has submitted work", contribs
-      group_submission.tasks.each { |t| t.create_submission_and_trigger_state_change(user, false, contributions, trigger, self) }
+      group_submission.tasks.each do |t|
+        # Group members whose own portfolio is locked keep the exact task state
+        # they had when they submitted - do not propagate this submission to them.
+        next if t.project.portfolio_locked?
+
+        t.create_submission_and_trigger_state_change(user, false, contributions, trigger, self)
+      end
       reload
     else
       self.file_uploaded_at = Time.zone.now

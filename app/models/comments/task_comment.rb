@@ -34,6 +34,7 @@ class TaskComment < ApplicationRecord
   validates :recipient, presence: true
   validates :comment, length: { minimum: 0, maximum: 4095, allow_blank: true }
   validate :valid_reply_to?, on: :create
+  validate :prevent_changes_when_portfolio_locked
 
   before_validation :set_default_attention_audience, on: :create
 
@@ -43,8 +44,24 @@ class TaskComment < ApplicationRecord
   end
 
   # Delete action - before dependent association
+  before_destroy :prevent_destroy_when_portfolio_locked
   before_destroy :rewind_comment_read_cursors, prepend: true
   before_destroy :delete_associated_files
+
+  def prevent_changes_when_portfolio_locked
+    return unless task&.project&.portfolio_locked?
+
+    errors.add(:base, 'Comment cannot be changed while the project portfolio is submitted')
+  end
+
+  def prevent_destroy_when_portfolio_locked
+    return unless task&.project&.portfolio_locked?
+    return if task.destroyed? || task.marked_for_destruction?
+    return if task.project.destroyed? || task.project.marked_for_destruction?
+
+    errors.add(:base, 'Comment cannot be deleted while the project portfolio is submitted')
+    throw :abort
+  end
 
   def valid_reply_to?
     if reply_to_id.present?

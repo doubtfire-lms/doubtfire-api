@@ -16,6 +16,12 @@ module Entities
     expose :portfolio_files, unless: :summary_only
     expose :compile_portfolio, unless: :summary_only
     expose :portfolio_available
+    # Grape passes entity options to exposure procs, so Symbol#to_proc is not compatible here.
+    # rubocop:disable Style/SymbolProc
+    expose :portfolio_locked do |project|
+      project.portfolio_locked?
+    end
+    # rubocop:enable Style/SymbolProc
     expose :portfolio_submission_date, if: :for_staff
     expose :uses_draft_learning_summary, unless: :summary_only
 

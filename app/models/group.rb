@@ -242,7 +242,9 @@ class Group < ApplicationRecord
       project = contrib[:project]
       task = project.matching_task submitter_task
 
-      next if task.task_submission_closed?
+      # A group member whose own portfolio is locked keeps the exact task
+      # state they had when they submitted, so leave their task alone.
+      next if task.task_submission_closed? || task.project.portfolio_locked?
 
       if contrib[:pct].to_i > 0
         task.group_submission = gs
