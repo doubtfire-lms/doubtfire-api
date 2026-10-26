@@ -452,7 +452,7 @@ class TaskTest < ActiveSupport::TestCase
     td = TaskDefinition.new({
         unit_id: unit.id,
         tutorial_stream: unit.tutorial_streams.first,
-        name: '"Quoted Task"',
+        name: 'The "Quoted" Task',
         description: 'Task with quotes in name',
         weighting: 4,
         target_grade: 0,
