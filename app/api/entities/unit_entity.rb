@@ -33,6 +33,7 @@ module Entities
     with_options(format_with: :date_only) do
       expose :start_date
       expose :end_date
+      expose :last_teaching_date
       expose :portfolio_auto_generation_date, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }, expose_nil: false
     end
 
@@ -91,6 +92,7 @@ module Entities
     expose :feedback_overflow_threshold_days, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
 
     expose :discuss_timeout_enabled, unless: :summary_only
+    expose :discuss_timeout_active?, as: :discuss_timeout_active, unless: :summary_only
     expose :discuss_timeout_warning_days, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
     expose :discuss_timeout_expire_days, unless: :summary_only
 

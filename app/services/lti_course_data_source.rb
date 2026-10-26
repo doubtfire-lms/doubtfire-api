@@ -73,19 +73,24 @@ class LtiCourseDataSource
     raise Error, e.message
   end
 
-  def groups
-    course_data_snapshot(%w[groups]).fetch('groups', []).map do |group|
+  def course_data
+    snapshot = course_data_snapshot(%w[groups assignments])
+    { course: course(snapshot), groups: groups(snapshot), assignments: assignments(snapshot) }
+  end
+
+  def groups(snapshot = nil)
+    (snapshot || course_data_snapshot(%w[groups])).fetch('groups', []).map do |group|
       { id: group['id'].to_i, name: group['name'], idnumber: group['idnumber'] }
     end
   end
 
-  def assignments
-    course_data_snapshot(%w[assignments]).fetch('assignments', []).map do |assignment|
+  def assignments(snapshot = nil)
+    (snapshot || course_data_snapshot(%w[assignments])).fetch('assignments', []).map do |assignment|
       { id: assignment['id'].to_i, name: assignment['name'], due_date: assignment['due_date'].to_i }
     end
   end
 
-  def course
+  def course(snapshot = nil)
     require_link!
     details = {
       context_id: link['contextId'],
@@ -94,7 +99,7 @@ class LtiCourseDataSource
       start_date: nil,
       end_date: nil
     }
-    data = optional_course_data(%w[groups])
+    data = snapshot || optional_course_data(%w[groups])
     return details unless data
 
     context = data['context'] || {}

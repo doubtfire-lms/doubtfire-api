@@ -1,6 +1,11 @@
 require 'json'
 
 class TaskDefinition < ApplicationRecord
+  JPLAG_LANGUAGES = %w[
+    java c cpp csharp python3 javascript typescript golang kotlin rlang rust swift
+    scala llvmir scheme emf emf-model scxml text multi
+  ].freeze
+
   include ApplicationHelper
   include FileHelper
   include MimeCheckHelpers
@@ -103,6 +108,8 @@ class TaskDefinition < ApplicationRecord
   validate :submission_history_required_for_overseer
 
   validates :description, length: { maximum: 4095, allow_blank: true }
+  # Existing MOSS tasks can still be edited, but new language selections must match the JPlag UI.
+  validates :similarity_language, inclusion: { in: JPLAG_LANGUAGES }, allow_nil: true, if: :will_save_change_to_similarity_language?
 
   validate :ensure_no_submissions, if: :will_save_change_to_group_set_id?
   validate :unit_must_be_same

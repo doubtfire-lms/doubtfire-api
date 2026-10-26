@@ -432,7 +432,11 @@ module Doubtfire
       end
 
       config.after_initialize do
-        if config.docker_config[:DOCKER_TOKEN] && config.docker_config[:DOCKER_PROXY_URL]
+        docker_login_configured = %i[DOCKER_TOKEN DOCKER_USER DOCKER_PROXY_URL].all? do |key|
+          config.docker_config[key].present?
+        end
+
+        if docker_login_configured
           LoginDockerJob.perform_async
         end
       end

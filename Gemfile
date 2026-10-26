@@ -125,3 +125,4 @@ gem "sys-filesystem"
 
 gem "sentry-rails"
 gem "sentry-ruby"
+gem "sentry-sidekiq", "~> 6.5.0"

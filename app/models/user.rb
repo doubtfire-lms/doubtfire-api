@@ -394,8 +394,7 @@ class User < ApplicationRecord
       :get_scorm_token,
 
       :get_feedback_chips,
-      :get_los,
-      :update_glos
+      :get_los
     ]
 
     # What can tutors do with users?
@@ -406,8 +405,7 @@ class User < ApplicationRecord
       :get_scorm_token,
 
       :get_feedback_chips,
-      :get_los,
-      :update_glos
+      :get_los
     ]
 
     # What can students do with users?

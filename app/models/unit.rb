@@ -7,6 +7,7 @@ require 'moss_ruby'
 require 'csv_helper'
 require 'grade_helper'
 require 'securerandom'
+require 'tmpdir'
 
 class Unit < ApplicationRecord
   DEFAULT_GRADE_DEFINITIONS = [
@@ -211,7 +212,7 @@ class Unit < ApplicationRecord
 
   belongs_to :overseer_image, optional: true
 
-  validates :name, :description, :start_date, :end_date, presence: true
+  validates :name, :description, :start_date, :end_date, :last_teaching_date, presence: true
   validates :name, allowed_characters: { type: :unit_name }
   validates :code, allowed_characters: { type: :unit_code }
 
@@ -237,7 +238,11 @@ class Unit < ApplicationRecord
   validate :warning_not_greater_than_overflow
   validate :discuss_timeout_warning_before_expiry
 
+  before_validation :default_last_teaching_date, on: :create
+  before_validation :sync_last_teaching_date_with_end_date, on: :update
+
   validate :validate_end_date_after_start_date
+  validate :validate_last_teaching_date
   validate :ensure_teaching_period_dates_match, if: :has_teaching_period?
 
   validate :ensure_main_convenor_is_appropriate, if: :main_convenor_id_changed?
@@ -258,6 +263,9 @@ class Unit < ApplicationRecord
   # SQL equivalent of #within_teaching_dates?
   scope :within_teaching_dates, lambda { |now = Time.zone.now|
     set_active.where('units.end_date IS NULL OR units.end_date >= ?', now.to_date)
+  }
+  scope :within_last_teaching_date, lambda { |now = Time.zone.now|
+    set_active.where('units.last_teaching_date >= ?', now.to_date)
   }
 
   include UnitTiiModule
@@ -287,13 +295,20 @@ class Unit < ApplicationRecord
     active? && (end_date.blank? || now.to_date <= end_date)
   end
 
+  def within_last_teaching_date?(now = Time.zone.now)
+    active? && now.to_date <= last_teaching_date
+  end
+
+  def discuss_timeout_active?
+    discuss_timeout_enabled && within_last_teaching_date?
+  end
+
   def self.notify_discuss_timeouts!
-    within_teaching_dates.find_each(&:notify_discuss_timeouts!)
+    within_last_teaching_date.find_each(&:notify_discuss_timeouts!)
   end
 
   def notify_discuss_timeouts!
-    return 0 unless discuss_timeout_enabled
-    return 0 unless within_teaching_dates?
+    return 0 unless discuss_timeout_active?
 
     discuss_timeout_tasks.find_each.sum do |task|
       notify_discuss_timeout_for(task)
@@ -311,12 +326,16 @@ class Unit < ApplicationRecord
   def notify_discuss_timeout_for(task, teaching_breaks: nil, now_time: Time.zone.now)
     return 0 if task.project.portfolio_locked?
     return 0 if task.moved_to_discuss_at.blank?
+    return 0 if now_time.to_date > last_teaching_date
+
+    expiry_at = task.discuss_timeout_expiry_at(discuss_timeout_expire_days, teaching_breaks: teaching_breaks)
+    return 0 if expiry_at.to_date >= last_teaching_date
 
     actor = task.project.tutor_for(task.task_definition) || main_convenor&.user
     return 0 if actor.blank?
 
     elapsed_days = task.discuss_timeout_elapsed_days(now_time, teaching_breaks: teaching_breaks)
-    if elapsed_days >= discuss_timeout_expire_days
+    if now_time.in_time_zone(expiry_at.time_zone).to_date > expiry_at.to_date
       expire_discuss_timeout_task(task, actor)
     elsif elapsed_days >= discuss_timeout_warning_days
       warn_discuss_timeout_task(task, actor, teaching_breaks: teaching_breaks)
@@ -334,7 +353,7 @@ class Unit < ApplicationRecord
       comment = task.add_discuss_timeout_comment(
         actor,
         DiscussTimeoutComment.warning,
-        "You must discuss this task with your tutor before #{formatted_discuss_timeout_date(expiry_date)}. If it has not been discussed by then, it will move to Fix and Resubmit, and you will need to resubmit your work."
+        "You must discuss this task with your tutor on or before #{formatted_discuss_timeout_date(expiry_date)}. If it has not been discussed by then, it will move to Fix and Resubmit, and you will need to resubmit your work."
       )
       raise ActiveRecord::Rollback if comment.blank?
 
@@ -373,9 +392,7 @@ class Unit < ApplicationRecord
   end
 
   def discuss_timeout_expiry_date(task, teaching_breaks: nil)
-    task
-      .discuss_timeout_expiry_at(discuss_timeout_expire_days, teaching_breaks: teaching_breaks)
-      &.to_date
+    task.discuss_timeout_expiry_date(discuss_timeout_expire_days, teaching_breaks: teaching_breaks)
   end
 
   def formatted_discuss_timeout_date(date)
@@ -458,6 +475,7 @@ class Unit < ApplicationRecord
     if tp.present?
       self[:start_date] = tp.start_date
       self[:end_date] = tp.end_date
+      self[:last_teaching_date] = tp.last_teaching_date
       self[:teaching_period_id] = tp.id
     end
     super(tp)
@@ -525,6 +543,9 @@ class Unit < ApplicationRecord
     end
     if self[:end_date] != teaching_period.end_date
       errors.add(:end_date, "should match teaching period date")
+    end
+    if last_teaching_date != teaching_period.last_teaching_date
+      errors.add(:last_teaching_date, "should match teaching period date")
     end
   end
 
@@ -626,13 +647,31 @@ class Unit < ApplicationRecord
     end
   end
 
+  def default_last_teaching_date
+    self.last_teaching_date ||= teaching_period&.last_teaching_date || end_date&.to_date
+  end
+
+  def sync_last_teaching_date_with_end_date
+    return unless will_save_change_to_end_date? && !will_save_change_to_last_teaching_date?
+    return unless last_teaching_date == end_date_change_to_be_saved.first&.to_date
+
+    self.last_teaching_date = end_date&.to_date
+  end
+
+  def validate_last_teaching_date
+    return if start_date.blank? || end_date.blank? || last_teaching_date.blank?
+    return if last_teaching_date.between?(start_date.to_date, end_date.to_date)
+
+    errors.add(:last_teaching_date, 'must be between the start and end dates')
+  end
+
   def autogen_date_within_unit_active_period
     if [start_date, end_date, portfolio_auto_generation_date].all?(&:present?) && !(start_date < portfolio_auto_generation_date && portfolio_auto_generation_date <= end_date)
       errors.add(:portfolio_auto_generation_date, "should be after unit start date and before unit end date")
     end
   end
 
-  def rollover(teaching_period, start_date, end_date, new_code)
+  def rollover(teaching_period, start_date, end_date, new_code, last_teaching_date = nil)
     new_unit = self.dup
 
     new_unit.code = new_code if new_code.present?
@@ -643,6 +682,7 @@ class Unit < ApplicationRecord
       new_unit.teaching_period = nil
       new_unit.start_date = start_date
       new_unit.end_date = end_date
+      new_unit.last_teaching_date = last_teaching_date || end_date&.to_date
     end
 
     # Clear archived
@@ -3408,17 +3448,11 @@ class Unit < ApplicationRecord
       update_task_status_from_csv(user, File.read(file["tempfile"].path), success, ignored, errors)
     else
       # files are extracted to a temp dir first
-      i = 0
-      tmp_dir = File.join(Dir.tmpdir, 'doubtfire', 'batch', i.to_s)
-
-      while Dir.exist? tmp_dir
-        i += 1
-        tmp_dir = File.join(Dir.tmpdir, 'doubtfire', 'batch', i.to_s)
-      end
+      batch_tmp_root = File.join(Dir.tmpdir, 'doubtfire', 'batch')
+      FileUtils.mkdir_p(batch_tmp_root)
+      tmp_dir = Dir.mktmpdir('batch-', batch_tmp_root)
 
       logger.debug "Created temp directory for batch zip at #{tmp_dir}"
-
-      FileUtils.mkdir_p(tmp_dir)
 
       Zip::File.open(file["tempfile"].path) do |zip|
         # Find the marking file within the directory tree
@@ -3520,9 +3554,6 @@ class Unit < ApplicationRecord
           end
         end
       end
-
-      # Remove the extract dir
-      FileUtils.rm_rf tmp_dir
     end
 
     {
@@ -3530,6 +3561,8 @@ class Unit < ApplicationRecord
       ignored: ignored,
       errors: errors
     }
+  ensure
+    FileUtils.rm_rf(tmp_dir) if tmp_dir
   end
 
   def batch_feedback_csv_required_headers
@@ -3855,6 +3888,7 @@ class Unit < ApplicationRecord
 
   def send_weekly_status_emails(summary_stats)
     return unless send_notifications
+    return unless within_last_teaching_date?
 
     summary_stats[:unit] = self
     summary_stats[:tutorials] = {}
@@ -4213,8 +4247,6 @@ class Unit < ApplicationRecord
     FileUtils.rm_rf unit_portfolio_path
     FileUtils.rm_rf submission_history_path
     FileUtils.rm_rf jplag_report_path
-
-    FileUtils.cd FileHelper.student_work_dir
   end
 
   def update_overdue_tasks_aip

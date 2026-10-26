@@ -4,7 +4,8 @@ class ExecuteCommunicationSetJob
   include Sidekiq::Job
   include Sidekiq::Status::Worker
 
-  sidekiq_options lock: :until_executed,
+  sidekiq_options queue: 'parallel',
+                  lock: :until_executed,
                   lock_args_method: ->(args) { [args[0], args[1], 'communication-set'] },
                   on_conflict: :reject,
                   retry: 1
@@ -377,6 +378,7 @@ class ExecuteCommunicationSetJob
     return '' if template.blank?
 
     student = project&.user
+    convenor = unit.main_convenor_user
     target_grade_value = target_grade_override.nil? ? project&.target_grade : target_grade_override
 
     replacements = {
@@ -386,6 +388,7 @@ class ExecuteCommunicationSetJob
       '{{student.full_name}}' => [student&.first_name, student&.last_name].compact.join(' '),
       '{{student.username}}' => student&.username.to_s,
       '{{student.student_id}}' => student&.student_id.to_s,
+      '{{convenor.preferred_name}}' => (convenor&.nickname&.strip.presence || convenor&.first_name).to_s,
       '{{affected_students_count}}' => affected_students_count.to_s,
       '{{unit.code}}' => unit.code.to_s,
       '{{unit.name}}' => unit.name.to_s,

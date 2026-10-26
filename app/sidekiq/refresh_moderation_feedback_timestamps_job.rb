@@ -3,6 +3,8 @@
 class RefreshModerationFeedbackTimestampsJob
   include Sidekiq::Job
 
+  sidekiq_options queue: 'parallel'
+
   def perform
     ModeratedTask
       .where(state: %i[open waiting_for_new_feedback])
