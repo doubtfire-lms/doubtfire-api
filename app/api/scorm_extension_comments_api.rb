@@ -4,6 +4,10 @@ class ScormExtensionCommentsApi < Grape::API
   helpers AuthenticationHelpers
   helpers AuthorisationHelpers
 
+  before do
+    authenticated?
+  end
+
   desc 'Request a scorm extension for a task'
   params do
     requires :comment, type: String, desc: 'The details of the request'

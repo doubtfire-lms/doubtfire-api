@@ -6,6 +6,8 @@
 class TiiCheckProgressJob
   include Sidekiq::Job
 
+  sidekiq_options queue: 'parallel'
+
   def perform
     return unless TurnItIn.enabled?
 

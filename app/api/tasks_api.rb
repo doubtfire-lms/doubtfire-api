@@ -167,6 +167,14 @@ class TasksApi < Grape::API
 
     # check the user can put this task
     if authorise? current_user, project, :make_submission
+      if params[:trigger].present? && task_definition.staff_managed_task && !authorise?(current_user, project, :assess)
+        error!({ error: 'Only teaching staff can change the status of this task.' }, 403)
+      end
+
+      if !grade.nil? && !authorise?(current_user, project, :assess)
+        error!({ error: 'Not authorised to grade this task' }, 403)
+      end
+
       task = project.task_for_task_definition(task_definition)
       mark_as_discussed = params[:discussed] == true && authorise?(current_user, project, :assess)
       needs_discussed_comment = mark_as_discussed && !task.has_discussed_in_class_comment?
@@ -176,6 +184,11 @@ class TasksApi < Grape::API
         # Check if they should be using portfolio_evidence api
         if needs_upload_docs && params[:trigger] == 'ready_for_feedback'
           error!({ error: 'Cannot set this task status to ready to mark without uploading documents.' }, 403)
+        end
+
+        if !needs_upload_docs && %w[ready_for_feedback assess_in_portfolio].include?(params[:trigger]) &&
+           (prerequisite_error = task.unmet_prerequisite_error)
+          error!({ error: prerequisite_error }, 409)
         end
 
         if params[:trigger] == 'assess_in_portfolio' && !authorise?(current_user, project, :assess)
@@ -345,7 +358,7 @@ class TasksApi < Grape::API
     )
 
     # Find the file
-    file_loc = FileHelper.zip_file_path_for_done_task(task)
+    file_loc = task.downloadable_submission_zip_path
 
     if file_loc.nil? || !File.exist?(file_loc)
       file_loc = Rails.root.join('public/resources/FileNotFound.pdf')

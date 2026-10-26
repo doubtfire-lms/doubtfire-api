@@ -15,6 +15,7 @@ class TeachingPeriodsAuthenticatedApi < Grape::API
       requires :year, type: Integer, desc: 'The year of the teaching period'
       requires :start_date, type: Date, desc: 'The start date of the teaching period'
       requires :end_date, type: Date, desc: 'The end date of the teaching period'
+      optional :last_teaching_date, type: Date, desc: 'The final day of teaching, inclusive'
       requires :active_until, type: Date, desc: 'The teaching period will be active until this date'
     end
   end
@@ -28,6 +29,7 @@ class TeachingPeriodsAuthenticatedApi < Grape::API
                                                                      :year,
                                                                      :start_date,
                                                                      :end_date,
+                                                                     :last_teaching_date,
                                                                      :active_until)
 
     result = TeachingPeriod.create!(teaching_period_parameters)
@@ -47,6 +49,7 @@ class TeachingPeriodsAuthenticatedApi < Grape::API
       optional :year, type: Integer, desc: 'The year of the teaching period'
       optional :start_date, type: Date, desc: 'The start date of the teaching period'
       optional :end_date, type: Date, desc: 'The end date of the teaching period'
+      optional :last_teaching_date, type: Date, desc: 'The final day of teaching, inclusive'
       optional :active_until, type: Date, desc: 'The teaching period will be active until this date'
     end
   end
@@ -61,6 +64,7 @@ class TeachingPeriodsAuthenticatedApi < Grape::API
                                                                      :year,
                                                                      :start_date,
                                                                      :end_date,
+                                                                     :last_teaching_date,
                                                                      :active_until)
 
     teaching_period.update!(teaching_period_parameters)

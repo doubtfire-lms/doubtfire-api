@@ -49,6 +49,39 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     assert_equal actual_tp['end_date'].to_date, expected_tp.end_date.to_date
   end
 
+  def test_get_teaching_period_details_with_units_without_user
+    tp = FactoryBot.create(:teaching_period)
+    unit = FactoryBot.create(:unit, teaching_period: tp, with_students: false, stream_count: 0, tutorials: 0)
+
+    get "/api/teaching_periods/#{tp.id}"
+
+    assert_equal 200, last_response.status
+    assert_equal [unit.id], last_response_body['units'].map { |u| u['id'] }
+    assert_nil last_response_body['units'].first['my_role']
+  end
+
+  def test_get_teaching_period_details_ignores_username_without_token
+    tp = FactoryBot.create(:teaching_period)
+    unit = FactoryBot.create(:unit, teaching_period: tp, with_students: false, stream_count: 0, tutorials: 0)
+
+    header 'username', unit.main_convenor_user.username
+    get "/api/teaching_periods/#{tp.id}"
+
+    assert_equal 200, last_response.status
+    assert_nil last_response_body['units'].first['my_role']
+  end
+
+  def test_get_teaching_period_details_includes_role_when_authenticated
+    tp = FactoryBot.create(:teaching_period)
+    unit = FactoryBot.create(:unit, teaching_period: tp, with_students: false, stream_count: 0, tutorials: 0)
+
+    add_auth_header_for(user: unit.main_convenor_user)
+    get "/api/teaching_periods/#{tp.id}"
+
+    assert_equal 200, last_response.status
+    assert_equal 'Convenor', last_response_body['units'].first['my_role']
+  end
+
   # PUT tests
   # Update break from teaching period
   def test_update_break_from_teaching_period
@@ -96,8 +129,10 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     tp = FactoryBot.create(:teaching_period)
 
     # data to replace
+    replacement = FactoryBot.build(:teaching_period)
+    replacement.last_teaching_date = replacement.end_date.to_date
     data_to_put = {
-      teaching_period: FactoryBot.build(:teaching_period)
+      teaching_period: replacement
     }
 
     # Add username and auth_token to Header
@@ -107,18 +142,20 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     put_json "/api/teaching_periods/#{tp.id}", data_to_put
 
     # check if the POST get through
-    assert_equal 200, last_response.status
+    assert_equal 200, last_response.status, last_response_body
 
     # check if the details posted match as expected
-    response_keys = %w(period year start_date end_date active_until)
+    response_keys = %w[period year start_date end_date active_until]
     tp_updated = tp.reload
     assert_json_matches_model(tp_updated, last_response_body, response_keys)
+    assert_equal tp_updated.last_teaching_date.iso8601, last_response_body['last_teaching_date']
 
     # check if the details in the replaced teaching period match as data set to replace
     assert_equal data_to_put[:teaching_period]['period'], tp_updated.period
     assert_equal data_to_put[:teaching_period]['active_until'].to_date, tp_updated.active_until.to_date
     assert_equal data_to_put[:teaching_period]['start_date'].to_date, tp_updated.start_date.to_date
     assert_equal data_to_put[:teaching_period]['end_date'].to_date, tp_updated.end_date.to_date
+    assert_equal data_to_put[:teaching_period]['last_teaching_date'], tp_updated.last_teaching_date
   end
   
   # Put teaching period using unauthorised account

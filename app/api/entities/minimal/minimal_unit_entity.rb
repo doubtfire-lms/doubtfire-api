@@ -17,12 +17,14 @@ module Entities
       with_options(format_with: :date_only) do
         expose :start_date
         expose :end_date
+        expose :last_teaching_date
       end
 
       expose :active
       expose :grade_values
       expose :grade_definitions
       expose :discuss_timeout_enabled, unless: :summary_only
+      expose :discuss_timeout_active?, as: :discuss_timeout_active, unless: :summary_only
       expose :discuss_timeout_expire_days, unless: :summary_only
     end
   end

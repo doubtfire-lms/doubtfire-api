@@ -8,7 +8,8 @@ class AcceptOverseerJob
   include ApplicationHelper
   include FileHelper
 
-  sidekiq_options lock: :until_executed,
+  sidekiq_options queue: 'default',
+                  lock: :until_executed,
                   lock_args_method: ->(args) { [args.first, args.last, 'overseer-assessment'] },
                   on_conflict: :reject,
                   retry: 1
@@ -35,7 +36,10 @@ class AcceptOverseerJob
       total_steps: active_overseer_steps.size
     )
 
-    work_dir_name = "#{task.id}-#{overseer_assessment_id}"
+    work_dir_name = [
+      task.unit.code, Time.current.to_i, 'overseer', task.project.student.username,
+      task_definition.abbreviation, task.id, overseer_assessment_id, SecureRandom.uuid
+    ].map { |part| part.to_s.gsub(/[^A-Za-z0-9_-]/, '_') }.join('-')
 
     work_dir = Rails.root.join("tmp", "overseer", work_dir_name)
     FileUtils.mkdir_p(work_dir)

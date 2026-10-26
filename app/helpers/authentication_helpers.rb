@@ -131,6 +131,14 @@ module AuthenticationHelpers
     User.eager_load(:role, :auth_tokens).find_by(username: username)
   end
 
+  #
+  # Get the current user for routes that do not require authentication - nil unless the auth token is valid
+  #
+  def authenticated_user
+    user_param, auth_param = get_user_and_token_from(:header)
+    current_user if user_auth_token_type(user_param, auth_param, :general) == :valid
+  end
+
   def set_content_cookie_in_response(token = nil)
     domain = Doubtfire::Application.config.institution[:cookie_domain]
     common_options = {
@@ -250,12 +258,9 @@ module AuthenticationHelpers
     # rubocop:enable Naming/AccessorMethodName
 
     if remember
-      token = current_user.auth_tokens.where(token_type: :refresh_token).last
-
-      # Generate a new token when the old one is absent or getting close to expiring
-      if token.nil? || token.auth_token_expiry <= Time.zone.now - 12.hours
-        token = current_user.generate_authentication_token!(token_type: :refresh_token)
-      end
+      # Reuse a recent refresh token, but rotate it once it is past 75% of its lifetime (or
+      # expired) so that signing in again always yields a cookie with most of its life left.
+      token = current_user.generate_authentication_token!(token_type: :refresh_token, force_new: false)
 
       domain = Doubtfire::Application.config.institution[:cookie_domain]
 

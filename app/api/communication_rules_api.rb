@@ -690,6 +690,7 @@ class CommunicationRulesApi < Grape::API
       requires :type, type: String
       optional :subject, type: String
       optional :body, type: String
+      optional :plain_text, type: Boolean
       optional :email_tutors, type: Boolean
       optional :email_convenors, type: Boolean
       optional :target_grade, type: Integer
@@ -710,6 +711,7 @@ class CommunicationRulesApi < Grape::API
                                                   :type,
                                                   :subject,
                                                   :body,
+                                                  :plain_text,
                                                   :email_tutors,
                                                   :email_convenors,
                                                   :target_grade,
@@ -729,6 +731,7 @@ class CommunicationRulesApi < Grape::API
       optional :type, type: String
       optional :subject, type: String
       optional :body, type: String
+      optional :plain_text, type: Boolean
       optional :email_tutors, type: Boolean
       optional :email_convenors, type: Boolean
       optional :target_grade, type: Integer
@@ -746,7 +749,7 @@ class CommunicationRulesApi < Grape::API
     action = rule.communication_actions.find(params[:id])
     action_params = ActionController::Parameters.new(params)
                                                 .require(:communication_action)
-                                                .permit(:type, :subject, :body, :email_tutors, :email_convenors, :target_grade, :task_definition_id)
+                                                .permit(:type, :subject, :body, :plain_text, :email_tutors, :email_convenors, :target_grade, :task_definition_id)
 
     action.update!(action_params)
     present action, with: Entities::CommunicationActionEntity

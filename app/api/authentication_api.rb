@@ -112,11 +112,9 @@ class AuthenticationApi < Grape::API
       logger.info "Authenticate #{user_id_data[:email]} from #{request.ip}"
 
       # Lookup using login_id if it exists
-      # Lookup using email otherwise and set login_id
+      # Lookup using username or email otherwise and set login_id
       # Otherwise create new
-      user = User.find_by(login_id: user_id_data[:login_id]) ||
-             User.find_by(username: user_id_data[:username]) ||
-             User.find_by(email: user_id_data[:email]) ||
+      user = UserIdentity.find_user(login_id: user_id_data[:login_id], email: user_id_data[:email], username: user_id_data[:username]) ||
              User.create do |new_user|
                # Update new user with details from the SAML response
                Doubtfire::Application.config.institution_settings.update_user_from_saml_response(
@@ -126,13 +124,11 @@ class AuthenticationApi < Grape::API
                )
              end
 
-      # Set login id + username if not yet specified
-      if user.login_id.nil? || user.username.nil?
-        user.update(
-          login_id: user_id_data[:login_id],
-          username: user_id_data[:username]
-        )
+      if UserIdentity.blocked?(user, login_id: user_id_data[:login_id], email: user_id_data[:email], source: 'saml')
+        error!({ error: 'This account is linked to a different login. ' \
+                        'Please get in contact with the system administrators.' }, 403)
       end
+      UserIdentity.link_identity(user, login_id: user_id_data[:login_id], username: user_id_data[:username])
 
       # Try and save the user once authenticated if new
       if user.new_record?
@@ -200,7 +196,8 @@ class AuthenticationApi < Grape::API
       # end
     end
     post '/auth/lti' do
-      token = decode_lti_token(params[:ltik])
+      ensure_lti_service_request!
+      token = decode_lti_token(params[:ltik], purpose: 'auth')
 
       member = token['member']
       if member.nil?
@@ -212,20 +209,17 @@ class AuthenticationApi < Grape::API
         error!({ error: "Missing required fields:  #{missing.join(', ')}" }, 400)
       end
 
-      user_id_data = {
-        login_id: member['ext_user_username'] || member['user_id'],
-        email: member['email'],
-        username: member['email']&.split('@')&.first
-      }
+      lti_identity = %w[user_id ext_user_username lis_person_sourcedid email].index_with { |key| member[key] }
+      logger.info "LTI user is logging in: #{lti_identity.to_json}"
+
+      user_id_data = UserIdentity.lti_user_id_data(member)
 
       logger.info "Authenticate #{user_id_data[:email]} from #{request.ip}"
 
       # Lookup using login_id if it exists
-      # Lookup using email otherwise and set login_id
+      # Lookup using username or email otherwise and set login_id
       # Otherwise create new
-      user = User.find_by(login_id: user_id_data[:login_id]) ||
-             User.find_by(username: user_id_data[:username]) ||
-             User.find_by(email: user_id_data[:email]) ||
+      user = UserIdentity.find_user(login_id: user_id_data[:login_id], email: user_id_data[:email], username: user_id_data[:username]) ||
              User.create do |new_user|
                # Update new user with details from the LTI response
                Doubtfire::Application.config.institution_settings.update_user_from_lti_response(
@@ -235,13 +229,11 @@ class AuthenticationApi < Grape::API
                )
              end
 
-      # Set login id + username if not yet specified
-      if user.login_id.nil? || user.username.nil?
-        user.update(
-          login_id: user_id_data[:login_id],
-          username: user_id_data[:username]
-        )
+      if UserIdentity.blocked?(user, login_id: user_id_data[:login_id], email: user_id_data[:email], source: 'lti_launch')
+        error!({ error: 'This account is linked to a different login. ' \
+                        'Please get in contact with your unit convenor or the system administrators.' }, 403)
       end
+      UserIdentity.link_identity(user, login_id: user_id_data[:login_id], username: user_id_data[:username])
 
       # Try and save the user once authenticated if new
       if user.new_record?
@@ -253,6 +245,17 @@ class AuthenticationApi < Grape::API
                         'system administrators.')
         end
         user.save
+      end
+
+      # Fill a missing student ID from the LMS person identifier when it is available and unused.
+      sourced_id = member['lis_person_sourcedid'].to_s.strip.presence
+      if user.role_id == Role.student_id && user.student_id.blank? && sourced_id.present? &&
+         !User.exists?(student_id: sourced_id)
+        begin
+          user.update(student_id: sourced_id)
+        rescue ActiveRecord::RecordNotUnique
+          # Another launch claimed this ID between the lookup and update.
+        end
       end
 
       # Generate a temporary auth_token for future requests

@@ -3,6 +3,7 @@ module OnTrackSentryRedaction
   PII_KEY_PATTERN = /(^|_)(email|first_name|last_name|login_id|name|student_id|username|user_id)\z/i
   RAILS_LATEX_TASK_WORK_DIR = %r{(tmp/rails-latex/task-\d{8}-\d{4}-)[^/\s]+?(-[^/\s-]+-\d+-\d+(?:-retry)?)(?=/|\s|$)}
   RAILS_LATEX_PORTFOLIO_WORK_DIR = %r{(tmp/rails-latex/portfolio-\d{8}-\d{4}-)[^/\s]+?(-\d+-\d+(?:-retry)?)(?=/|\s|$)}
+  PORTFOLIO_FAILURE_DETAILS = /(Failed to convert portfolio to PDF - \d+ - )[^\n]+? \([^)]+\)(?=\s+\S+)/
   SCORM_PATH = %r{(/scorm/[^/?#]+/)[^/?#]+(/)[^/?#]+}i
 
   module_function
@@ -89,6 +90,7 @@ module OnTrackSentryRedaction
     value
       .gsub(RAILS_LATEX_TASK_WORK_DIR, "\\1[username]\\2")
       .gsub(RAILS_LATEX_PORTFOLIO_WORK_DIR, "\\1[username]\\2")
+      .gsub(PORTFOLIO_FAILURE_DETAILS, "\\1[Filtered] ([username])")
       .gsub(SCORM_PATH, "\\1[username]\\2[Filtered]")
   end
 end

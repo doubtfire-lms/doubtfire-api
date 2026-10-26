@@ -19,7 +19,7 @@ class CommunicationTransfer
     type operator target_grade task_statuses task_status_count task_target_grade
     activity_days spec_con_days submitted_portfolio
   ].freeze
-  ACTION_ATTRIBUTES = %w[type subject body email_tutors email_convenors target_grade].freeze
+  ACTION_ATTRIBUTES = %w[type subject body plain_text email_tutors email_convenors target_grade].freeze
 
   # Abbreviated references. Campuses are shared between units; everything else
   # is unit scoped. Group sets and groups are named rather than abbreviated, so

@@ -1,12 +1,14 @@
 class SendDiscussTimeoutEmailJob
   include Sidekiq::Job
 
-  sidekiq_options retry: 5
+  sidekiq_options queue: 'parallel',
+                  retry: 5
 
   def perform(task_id, sender_id, notification_type, expiry_date = nil)
     task = Task.find_by(id: task_id)
     sender = User.find_by(id: sender_id)
     return if task.blank? || sender.blank?
+    return unless task.unit.discuss_timeout_active?
     return unless task.unit.send_notifications
     return unless task.project.student.receive_feedback_notifications
 

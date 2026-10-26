@@ -5,6 +5,7 @@ module Entities
     expose :year
     expose :start_date
     expose :end_date
+    expose :last_teaching_date
     expose :active_until
     expose :active do |teaching_period, options|
       teaching_period.active?

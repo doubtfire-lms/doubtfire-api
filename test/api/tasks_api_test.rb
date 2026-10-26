@@ -653,6 +653,45 @@ class TasksApiTest < ActiveSupport::TestCase
     unit.destroy
   end
 
+  def test_cant_set_upload_free_task_ready_for_feedback_until_prerequisites_met
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 2)
+    prerequisite_definition, task_definition = unit.task_definitions.first(2)
+    prerequisite_definition.update!(target_grade: 0)
+    task_definition.update!(target_grade: 3, upload_requirements: [])
+    project = unit.active_projects.first
+    task = project.task_for_task_definition(task_definition)
+    prerequisite_task = project.task_for_task_definition(prerequisite_definition)
+    prerequisite = TaskPrerequisite.create!(
+      task_definition: task_definition,
+      prerequisite: prerequisite_definition,
+      task_status_id: TaskStatus.ready_for_feedback.id
+    )
+
+    add_auth_header_for(user: project.user)
+    path = "/api/projects/#{project.id}/task_def_id/#{task_definition.id}"
+
+    put path, { trigger: 'ready_for_feedback' }
+    assert_equal 409, last_response.status
+    assert_equal "Cannot submit this task until prerequisite '#{prerequisite_definition.abbreviation}' has been submitted",
+                 last_response_body['error']
+    assert_equal TaskStatus.not_started, task.reload.task_status
+
+    prerequisite.update!(task_status_id: TaskStatus.complete.id)
+    prerequisite_task.update!(task_status: TaskStatus.ready_for_feedback)
+
+    put path, { trigger: 'ready_for_feedback' }
+    assert_equal 409, last_response.status
+    assert_equal "Cannot submit this task until prerequisite '#{prerequisite_definition.abbreviation}' has been completed",
+                 last_response_body['error']
+    assert_equal TaskStatus.not_started, task.reload.task_status
+
+    prerequisite_task.update!(task_status: TaskStatus.complete)
+
+    put path, { trigger: 'ready_for_feedback' }
+    assert_equal 200, last_response.status
+    assert_equal TaskStatus.ready_for_feedback, task.reload.task_status
+  end
+
   def test_prerequisites_task_status
     # Create a unit and two task definitions
     unit = FactoryBot.create(:unit, student_count: 1, task_count: 10)
@@ -1156,6 +1195,36 @@ class TasksApiTest < ActiveSupport::TestCase
       assert_equal 12, claim_log.days_awaiting_feedback
       assert_equal Time.zone.now, claim_log.claimed_at
     end
+  end
+
+  def test_student_cannot_grade_own_task
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
+    td = TaskDefinition.create!({
+                                  unit_id: unit.id,
+                                  tutorial_stream: unit.tutorial_streams.first,
+                                  name: 'Graded task',
+                                  description: 'Task graded by staff',
+                                  weighting: 4,
+                                  target_grade: 0,
+                                  start_date: Time.zone.now - 2.weeks,
+                                  target_date: Time.zone.now + 1.week,
+                                  abbreviation: 'GradedTask',
+                                  restrict_status_updates: false,
+                                  upload_requirements: [],
+                                  plagiarism_warn_pct: 0.8,
+                                  is_graded: true,
+                                  max_quality_pts: 0
+                                })
+
+    project = unit.active_projects.first
+    top_grade = unit.grade_definitions.map { |definition| definition['value'] }.max
+
+    add_auth_header_for(user: project.student)
+
+    put "/api/projects/#{project.id}/task_def_id/#{td.id}", { grade: top_grade }
+
+    assert_equal 403, last_response.status, last_response_body
+    assert_nil Task.find_by(project: project, task_definition: td)&.grade
   end
 
 end

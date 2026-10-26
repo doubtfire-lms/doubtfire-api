@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_09_09_002511) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_26_014153) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -101,6 +101,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_09_002511) do
     t.bigint "task_definition_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "plain_text", default: false, null: false
     t.index ["communication_rule_id"], name: "index_communication_actions_on_communication_rule_id"
     t.index ["task_definition_id"], name: "index_communication_actions_on_task_definition_id"
     t.index ["type"], name: "index_communication_actions_on_type"
@@ -331,6 +332,49 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_09_002511) do
     t.datetime "updated_at", null: false
     t.index ["abbreviation", "context_type", "context_id"], name: "index_learning_outcomes_on_abbreviation_and_context", unique: true
     t.index ["context_id", "context_type"], name: "index_learning_outcomes_on_context_id_and_context_type"
+  end
+
+  create_table "lms_group_mappings", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "lms_integration_id", null: false
+    t.bigint "lms_group_id", null: false
+    t.string "lms_group_name", null: false
+    t.string "target_type", null: false
+    t.bigint "group_set_id"
+    t.bigint "group_id"
+    t.bigint "campus_id"
+    t.bigint "tutorial_stream_id"
+    t.bigint "tutorial_id"
+    t.boolean "create_if_missing", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["campus_id"], name: "index_lms_group_mappings_on_campus_id"
+    t.index ["group_id"], name: "index_lms_group_mappings_on_group_id"
+    t.index ["group_set_id"], name: "index_lms_group_mappings_on_group_set_id"
+    t.index ["lms_integration_id", "lms_group_id"], name: "index_lms_group_mappings_on_integration_and_group"
+    t.index ["lms_integration_id"], name: "index_lms_group_mappings_on_lms_integration_id"
+    t.index ["tutorial_id"], name: "index_lms_group_mappings_on_tutorial_id"
+    t.index ["tutorial_stream_id"], name: "index_lms_group_mappings_on_tutorial_stream_id"
+  end
+
+  create_table "lms_integrations", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "unit_id", null: false
+    t.string "source", default: "lti", null: false
+    t.bigint "assignment_id"
+    t.string "assignment_name"
+    t.boolean "fetch_extensions", default: false, null: false
+    t.boolean "auto_sync_students", default: false, null: false
+    t.boolean "withdraw_missing_students", default: false, null: false
+    t.boolean "auto_sync_extensions", default: false, null: false
+    t.boolean "group_mapping_enabled", default: false, null: false
+    t.boolean "skip_ungraded", default: true, null: false
+    t.boolean "send_grade_rationale", default: false, null: false
+    t.boolean "validated", default: false, null: false
+    t.datetime "validated_at"
+    t.datetime "auto_sync_failing_since"
+    t.text "auto_sync_last_error"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["unit_id"], name: "index_lms_integrations_on_unit_id", unique: true
   end
 
   create_table "logins", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
@@ -641,6 +685,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_09_002511) do
     t.boolean "use_resources_for_jplag_base_code", default: false, null: false
     t.boolean "lock_assessments_to_tutorial_stream", default: false, null: false
     t.boolean "requires_discussion", default: false, null: false
+    t.boolean "staff_managed_task", default: false, null: false
     t.index ["abbreviation", "unit_id"], name: "index_task_definitions_on_abbreviation_and_unit_id", unique: true
     t.index ["group_set_id"], name: "index_task_definitions_on_group_set_id"
     t.index ["name", "unit_id"], name: "index_task_definitions_on_name_and_unit_id", unique: true
@@ -758,6 +803,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_09_002511) do
     t.datetime "active_until", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.date "last_teaching_date", null: false
     t.index ["period", "year"], name: "index_teaching_periods_on_period_and_year", unique: true
   end
 
@@ -973,6 +1019,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_09_002511) do
     t.boolean "discuss_timeout_enabled", default: false, null: false
     t.integer "discuss_timeout_warning_days", default: 7, null: false
     t.integer "discuss_timeout_expire_days", default: 14, null: false
+    t.date "last_teaching_date", null: false
     t.index ["draft_task_definition_id"], name: "index_units_on_draft_task_definition_id"
     t.index ["main_convenor_id"], name: "index_units_on_main_convenor_id"
     t.index ["overseer_image_id"], name: "index_units_on_overseer_image_id"

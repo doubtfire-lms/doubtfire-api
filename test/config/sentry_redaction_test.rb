@@ -23,4 +23,21 @@ class SentryRedactionTest < ActiveSupport::TestCase
 
     assert_equal({ "class" => "ImportBatchFeedbackJob", "args" => "[Filtered]", "jid" => "abc" }, contexts[:sidekiq])
   end
+
+  test "scrubs student details from portfolio PDF failure exceptions" do
+    exception_value = Sentry::SingleExceptionInterface.new(
+      exception: PdfGeneration::ProjectCompilePortfolioModule::LatexError.new(
+        "Failed to convert portfolio to PDF - 1234 - Test Example (example1234) COURSE123"
+      ),
+      mechanism: nil
+    )
+    exception = Sentry::ExceptionInterface.new(exceptions: [exception_value])
+
+    OnTrackSentryRedaction.scrub_exception(exception)
+
+    assert_equal(
+      "Failed to convert portfolio to PDF - 1234 - [Filtered] ([username]) COURSE123 (PdfGeneration::ProjectCompilePortfolioModule::LatexError)",
+      exception_value.value
+    )
+  end
 end

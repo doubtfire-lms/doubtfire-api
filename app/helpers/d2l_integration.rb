@@ -335,7 +335,7 @@ class D2lIntegration
   end
 
   def self.d2l_grade_job_present?(unit)
-    queue = Sidekiq::Queue.new("default")
+    queue = Sidekiq::Queue.new(D2lPostGradesJob.get_sidekiq_options['queue'])
     queue.each do |job|
       return true if job.klass == 'D2lPostGradesJob' && job.args[0] == unit.id
     end

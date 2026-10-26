@@ -17,6 +17,37 @@ class UnitModelTest < ActiveSupport::TestCase
     @unit.destroy
   end
 
+  def test_weekly_status_emails_stop_after_last_teaching_date
+    last_teaching_date = Time.zone.today
+    unit = FactoryBot.create(
+      :unit,
+      with_students: false,
+      end_date: Time.zone.now + 1.week,
+      last_teaching_date: last_teaching_date
+    )
+
+    travel_to Time.zone.parse("#{last_teaching_date + 1.day} 08:00:00") do
+      summary_stats = {}
+      unit.send_weekly_status_emails(summary_stats)
+
+      assert_empty summary_stats
+    end
+  end
+
+  def test_default_last_teaching_date_follows_end_date_changes
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0)
+    original_end_date = unit.end_date
+    earlier_end_date = original_end_date - 1.week
+
+    unit.update!(end_date: earlier_end_date)
+    assert_equal earlier_end_date.to_date, unit.last_teaching_date
+
+    custom_last_teaching_date = earlier_end_date.to_date - 1.week
+    unit.update!(last_teaching_date: custom_last_teaching_date)
+    unit.update!(end_date: original_end_date)
+    assert_equal custom_last_teaching_date, unit.last_teaching_date
+  end
+
   def test_sync_unit
     import_settings = {
       replace_existing_campus: false,
@@ -192,6 +223,38 @@ class UnitModelTest < ActiveSupport::TestCase
     assert File.exist?(unit2.task_definitions.first.task_resources), 'task resource is absent'
 
     unit2.destroy
+  end
+
+  def test_rollover_of_unit_content
+    unit = FactoryBot.create(:unit, with_students: false, stream_count: 0, task_count: 0)
+    FactoryBot.create(:task_definition, unit: unit, abbreviation: 'P1', outcome_count: 0)
+
+    Tempfile.create(['unit-content', '.zip']) do |archive|
+      Zip::File.open(archive.path, Zip::File::CREATE) do |zip|
+        zip.get_output_stream('dist/index.html') { |s| s.write('<html><head></head></html>') }
+        zip.get_output_stream('dist/P1.docx') { |s| s.write('worksheet') }
+      end
+      site = unit.unit_content_sites.create!(name: 'Content', original_filename: 'content.zip', archive_path: archive.path, root_dir: '/dist', is_main: true)
+      unit.unit_content_links.create!(unit_content_site: site, context_type: 'task_definition', context_key: 'P1', route: '/')
+      unit.unit_content_links.create!(unit_content_site: site, context_type: 'task_definition_resource', context_key: 'P1', route: '/P1.docx')
+
+      unit2 = unit.rollover TeachingPeriod.find(2), nil, nil, nil
+
+      new_site = unit2.unit_content_sites.sole
+      assert new_site.is_main
+      assert_not_equal site.archive_path, new_site.archive_path
+      assert File.file?(new_site.served_file_path('/'))
+      assert_equal 2, unit2.unit_content_links.where(unit_content_site: new_site).count
+
+      new_td = unit2.task_definitions.find_by(abbreviation: 'P1')
+      assert new_td.has_content_link?
+      assert new_td.has_task_resource_link?
+
+      unit2.destroy
+      assert File.file?(site.archive_path), 'rolled over unit destroy removed original archive'
+    end
+  ensure
+    unit&.destroy
   end
 
   def test_rollover_of_learning_summary
@@ -1124,6 +1187,7 @@ class UnitModelTest < ActiveSupport::TestCase
     assert_equal @unit.code, unit2.code
     assert_in_delta start_date, unit2.start_date, 1.hour
     assert_in_delta end_date, unit2.end_date, 1.hour
+    assert_equal end_date.to_date, unit2.last_teaching_date
 
     unit2.destroy
   end
@@ -1153,6 +1217,7 @@ class UnitModelTest < ActiveSupport::TestCase
     assert_not_equal @unit.code, unit2.code
     assert_equal 'NEWCODE-1', unit2.code
     assert_equal tp, unit2.teaching_period
+    assert_equal tp.last_teaching_date, unit2.last_teaching_date
 
     unit2.task_definitions.each do |td|
       assert File.exist?(td.task_sheet), 'task sheet is absent'

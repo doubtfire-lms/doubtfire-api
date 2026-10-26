@@ -17,6 +17,7 @@ class ExecuteCommunicationSetJobTest < ActiveSupport::TestCase
     task_definition = unit.task_definitions.first
     campus = Campus.first
     comment_author = unit.main_convenor_user
+    comment_author.update!(nickname: 'Professor Lee')
 
     student_one = FactoryBot.create(:user, :student)
     student_one.update!(first_name: 'Ada', last_name: 'Lovelace')
@@ -35,7 +36,7 @@ class ExecuteCommunicationSetJobTest < ActiveSupport::TestCase
     communication_rule.communication_actions.create!(
       type: 'TaskCommentAction',
       task_definition: task_definition,
-      body: 'Please review {{student.first_name}} for {{unit.code}}'
+      body: 'Please review {{student.first_name}} for {{unit.code}} - {{convenor.preferred_name}}'
     )
 
     ExecuteCommunicationSetJob.new.perform(communication_set.id)
@@ -51,7 +52,13 @@ class ExecuteCommunicationSetJobTest < ActiveSupport::TestCase
 
     assert_equal comment_author, comment_one.user
     assert_equal comment_author, comment_two.user
-    assert_equal 'Please review Ada for ' + unit.code, comment_one.comment
-    assert_equal 'Please review Grace for ' + unit.code, comment_two.comment
+    assert_equal 'Please review Ada for ' + unit.code + ' - Professor Lee', comment_one.comment
+    assert_equal 'Please review Grace for ' + unit.code + ' - Professor Lee', comment_two.comment
+
+    comment_author.update!(nickname: nil)
+    rendered = ExecuteCommunicationSetJob.new.send(
+      :render_template, '{{convenor.preferred_name}}', project_one, unit, communication_rule, 2
+    )
+    assert_equal comment_author.first_name, rendered
   end
 end

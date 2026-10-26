@@ -67,6 +67,9 @@ module Doubtfire
     # Limit number of pdf generators to run at once
     config.pdfgen_max_processes = ENV['DF_MAX_PDF_GEN_PROCESSES'] || 2
 
+    # Size of each chunk in a batch feedback upload; keep under the proxy's request body limit
+    config.batch_feedback_chunk_size = ENV.fetch('BATCH_FEEDBACK_CHUNK_SIZE_MB', 50).to_i.megabytes
+
     # Each Word document conversion runs a short-lived, network-isolated
     # Gotenberg container. The image includes the conversion entrypoint.
     config.gotenberg_image = ENV.fetch('GOTENBERG_IMAGE', nil)
@@ -106,6 +109,19 @@ module Doubtfire
       return host if host.start_with?('http://', 'https://')
 
       "https://#{host}"
+    end
+
+    LTI_SECRET_MIN_BYTES = 32
+    LTI_SECRET_PLACEHOLDERS = %w[your-secret-lti-shared-api-secret].freeze
+
+    # Returns why the LTI shared secret is unsafe, or nil when it can be used
+    def self.lti_api_secret_problem(secret)
+      secret = secret.to_s
+      return 'is not set' if secret.blank?
+      return 'is still the example value' if LTI_SECRET_PLACEHOLDERS.include?(secret)
+      return "must be at least #{LTI_SECRET_MIN_BYTES} bytes" if secret.bytesize < LTI_SECRET_MIN_BYTES
+
+      nil
     end
 
     # ==> Log to stdout
@@ -150,12 +166,29 @@ module Doubtfire
     credentials.secret_key_aaf = Application.fetch_credential_or_env(:aaf, :secret_key, env_key: 'DF_SECRET_KEY_AAF', default: Rails.env.production? ? nil : 'secretsecret12345')
     credentials.secret_key_moss = Application.fetch_credential_or_env(:moss, :secret_key, env_key: 'DF_SECRET_KEY_MOSS')
 
+    # ==> User identity
+    # Refuse accounts matched by username or email that already belong to a different login id. When off, these are only logged.
+    config.enforce_login_id_match = ENV['DF_ENFORCE_LOGIN_ID_MATCH'].to_s.downcase == 'true'
+
     # ==> LTI settings
     # If enabled, mounts the LTI routes and enables LTI authentication.
     config.lti_enabled = ENV.fetch('LTI_ENABLED', false).to_s.downcase == "true"
     # Shared secret between Ruby on Rails API and the LTI.js API
     # LTI.js will send signed JWT tokens using this secret
     config.lti_api_secret = Application.fetch_credential_or_env(:lti, :shared_api_secret, env_key: 'LTI_SHARED_API_SECRET')
+    # Anyone holding this secret can sign in as any user through /api/auth/lti
+    if config.lti_enabled && (problem = Application.lti_api_secret_problem(config.lti_api_secret))
+      raise "LTI_SHARED_API_SECRET #{problem}. Generate one with `openssl rand -hex 32`, or set LTI_ENABLED=false."
+    end
+    # Where the LTI service connects from: hostnames, IPs or CIDR ranges. Only these can call /api/auth/lti and /api/lti/*
+    config.lti_service_hosts = ENV.fetch('LTI_SERVICE_HOSTS', 'lti').split(',').map(&:strip).reject(&:empty?)
+    if config.lti_enabled && config.lti_service_hosts.empty?
+      raise 'LTI_SERVICE_HOSTS must list where the LTI service connects from when LTI_ENABLED is true, e.g. lti.'
+    end
+
+    # Server-to-server access to the LTI service, used by the unit LMS tab and scheduled LMS syncs
+    config.lti_internal_url = ENV.fetch('LTI_INTERNAL_URL', nil)
+    config.lti_internal_key = Application.fetch_credential_or_env(:lti, :internal_sync_key, env_key: 'LTI_INTERNAL_SYNC_KEY')
 
     # ==> Moderation settings
     config.moderation_score_factor = Float(ENV.fetch('MODERATION_SCORE_FACTOR', 1.0))

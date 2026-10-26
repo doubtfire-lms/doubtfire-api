@@ -3,7 +3,8 @@ class ImportBatchFeedbackJob
   include Sidekiq::Status::Worker
   include LogHelper
 
-  sidekiq_options lock: :until_executed,
+  sidekiq_options queue: 'parallel',
+                  lock: :until_executed,
                   lock_args_method: ->(args) { args.first(3) },
                   on_conflict: :reject,
                   retry: false

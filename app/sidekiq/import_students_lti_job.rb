@@ -10,7 +10,8 @@ class ImportStudentsLtiJob
   include CsvHelper
   include LtiHelper
 
-  sidekiq_options lock: :until_executed,
+  sidekiq_options queue: 'parallel',
+                  lock: :until_executed,
                   lock_args_method: ->(args) { [args.first] },
                   on_conflict: :reject,
                   retry: false
@@ -37,23 +38,22 @@ class ImportStudentsLtiJob
         next
       end
 
-      user_id_data = {
-        login_id: member["user_id"],
-        email: member["email"],
-        username: member["email"][/(.*)@/, 1]
-      }
+      user_id_data = UserIdentity.lti_user_id_data(member)
 
-      user = User.find_by(login_id: user_id_data[:login_id]) ||
-             User.find_by(username: user_id_data[:username]) ||
-             User.find_by(email: user_id_data[:email]) ||
+      user = UserIdentity.find_user(login_id: user_id_data[:login_id], email: user_id_data[:email], username: user_id_data[:username]) ||
              User.create! do |new_user|
-               # Update new user with details from the SAML response
+               # Update new user with details from the LTI response
                Doubtfire::Application.config.institution_settings.update_user_from_lti_response(
                  new_user,
                  user_id_data,
                  member
                )
              end
+      if UserIdentity.blocked?(user, login_id: user_id_data[:login_id], email: user_id_data[:email], source: 'lti_bulk_enrol')
+        result[:errors] << { row: member, message: "#{user.username} is linked to a different login id" }
+        next
+      end
+      UserIdentity.link_identity(user, login_id: user_id_data[:login_id], username: user_id_data[:username])
 
       if user.valid?
         unit_role = Doubtfire::Application.config.institution_settings.should_employ_lti_member(member)
