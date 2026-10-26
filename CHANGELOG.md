@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [11.0.1](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0...v11.0.1) (2026-10-26)
+
+
+### Bug Fixes
+
+* allow task title punctuation and clarify validation errors ([#735](https://github.com/b0ink/doubtfire-deploy/issues/735)) ([4675793](https://github.com/b0ink/doubtfire-deploy/commit/467579343cc5085d83e43a846019ca04addb27cb))
+
 ## [11.0.0](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-79...v11.0.0) (2026-10-26)
 
 ## [11.0.0-79](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-78...v11.0.0-79) (2026-10-26)
