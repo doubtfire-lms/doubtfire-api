@@ -167,6 +167,10 @@ class TasksApi < Grape::API
 
     # check the user can put this task
     if authorise? current_user, project, :make_submission
+      if params[:trigger].present? && task_definition.staff_managed_task && !authorise?(current_user, project, :assess)
+        error!({ error: 'Only teaching staff can change the status of this task.' }, 403)
+      end
+
       if !grade.nil? && !authorise?(current_user, project, :assess)
         error!({ error: 'Not authorised to grade this task' }, 403)
       end

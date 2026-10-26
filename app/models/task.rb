@@ -717,6 +717,8 @@ class Task < ApplicationRecord
 
     return nil if role.nil?
 
+    return nil if [:student, :group_member].include?(role) && task_definition.staff_managed_task
+
     #
     # Ensure that only staff can change from staff assigned status if
     # this is a restricted task
@@ -1789,6 +1791,10 @@ class Task < ApplicationRecord
   # Checks to make sure that the files match what we expect
   #
   def accept_submission(current_user, files, ui, contributions, trigger, alignments, accepted_tii_eula: false, test_submission: false)
+    if task_definition.staff_managed_task && [:student, :group_member].include?(role_for(current_user))
+      ui.error!({ 'error' => 'Only teaching staff can upload a submission for this task.' }, 403)
+    end
+
     submission_lock_target.with_lock do
     # Ensure there is not a submission already in process
     if processing_pdf?

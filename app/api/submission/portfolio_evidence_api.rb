@@ -37,6 +37,10 @@ module Submission
         error!({ error: "Not authorised to submit task '#{task_definition.name}'" }, 401)
       end
 
+      if task_definition.staff_managed_task && !authorise?(current_user, project, :assess)
+        error!({ error: 'Only teaching staff can upload a submission for this task.' }, 403)
+      end
+
       task = project.task_for_task_definition(task_definition)
 
       if task.group_task? && !task.group
