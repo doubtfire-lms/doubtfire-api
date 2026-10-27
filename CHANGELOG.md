@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.1.0-1](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-0...v11.1.0-1) (2026-10-27)
+
+
+### Bug Fixes
+
+* use jemalloc in production images to curb Sidekiq RSS growth ([#740](https://github.com/b0ink/doubtfire-deploy/issues/740)) ([08251e1](https://github.com/b0ink/doubtfire-deploy/commit/08251e1971de05b8c4cbf63e5b75d40291b30d10))
+
 ## [11.1.0-0](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.1...v11.1.0-0) (2026-10-27)
 
 
