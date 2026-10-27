@@ -99,11 +99,18 @@ class AuthenticationApi < Grape::API
       requires :SAMLResponse, type: String, desc: 'Data provided for further processing.'
     end
     post '/auth/jwt' do
-      response = OneLogin::RubySaml::Response.new(params[:SAMLResponse], allowed_clock_drift: 1.second,
-                                                                         settings: AuthenticationHelpers.saml_settings)
+      # Malformed payloads raise during parsing (e.g. REXML::ParseException), so treat them as invalid
+      begin
+        response = OneLogin::RubySaml::Response.new(params[:SAMLResponse], allowed_clock_drift: 1.second,
+                                                                           settings: AuthenticationHelpers.saml_settings)
+        valid = response.is_valid?
+      rescue StandardError => e
+        logger.error "Unable to parse SAML response: #{e.class}: #{e.message}"
+        valid = false
+      end
 
       # We validate the SAML Response and check if the user already exists in the system
-      return error!({ error: 'Invalid SAML response.' }, 401) unless response.is_valid?
+      return error!({ error: 'Invalid SAML response.' }, 401) unless valid
 
       # Get the user identification data from the SAML response
       # This includes the login_id, email and username
@@ -162,16 +169,25 @@ class AuthenticationApi < Grape::API
       requires :SAMLResponse, type: String, desc: 'SAML logout response data.'
     end
     post '/auth/saml_logout' do
-      response = OneLogin::RubySaml::Logoutresponse.new(
-        params[:SAMLResponse],
-        AuthenticationHelpers.saml_settings
-      )
+      begin
+        response = OneLogin::RubySaml::Logoutresponse.new(
+          params[:SAMLResponse],
+          AuthenticationHelpers.saml_settings
+        )
 
-      # Check if the SAML response is valid - if not log an error
-      unless response.is_valid?
-        logger.error "Invalid SAML logout response: #{response.errors.join(', ')}"
+        # Check if the SAML response is valid - if not log an error
+        unless response.validate
+          logger.error "Invalid SAML logout response: #{response.errors.join(', ')}"
+        end
+      rescue StandardError => e
+        logger.error "Unable to parse SAML logout response: #{e.class}: #{e.message}"
       end
 
+      host = Doubtfire::Application.config.institution[:host]
+      unless host.starts_with?('http')
+        protocol = Rails.env.development? ? 'http' : 'https'
+        host = "#{protocol}://#{host}"
+      end
       redirect "#{host}/sign_in"
     end
   end
