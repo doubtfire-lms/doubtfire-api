@@ -1,6 +1,11 @@
 require 'json'
 
 class TaskDefinition < ApplicationRecord
+  JPLAG_LANGUAGES = %w[
+    java c cpp csharp python3 javascript typescript golang kotlin rlang rust swift
+    scala llvmir scheme emf emf-model scxml text multi
+  ].freeze
+
   include ApplicationHelper
   include FileHelper
   include MimeCheckHelpers
@@ -55,6 +60,8 @@ class TaskDefinition < ApplicationRecord
 
   delegate :role_for, to: :unit
 
+  before_validation :normalize_upload_requirement_keys
+  before_destroy :ensure_not_used_as_prerequisite, prepend: true
   before_destroy :delete_associated_files
 
   after_update :move_files_on_abbreviation_change, if: :saved_change_to_abbreviation?
@@ -90,15 +97,19 @@ class TaskDefinition < ApplicationRecord
   serialize :upload_requirements, coder: JSON
 
   # Model validations/constraints
-  validates :name, uniqueness: { scope:  :unit_id } # task definition names within a unit must be unique
+  validates :name, allowed_characters: { type: :title }, uniqueness: { scope: :unit_id } # task definition names within a unit must be unique
   validates :abbreviation, uniqueness: { scope: :unit_id } # task definition names within a unit must be unique
 
-  validates :target_grade, inclusion: { in: GradeHelper::RANGE, message: '%{value} is not a valid target grade' }
+  validates :target_grade, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+  validate :target_grade_enabled_for_unit
   validates :max_quality_pts, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 100, message: 'must be between 0 and 100' }
 
   validate :upload_requirements, :check_upload_requirements_format
+  validate :submission_history_required_for_overseer
 
   validates :description, length: { maximum: 4095, allow_blank: true }
+  # Existing MOSS tasks can still be edited, but new language selections must match the JPlag UI.
+  validates :similarity_language, inclusion: { in: JPLAG_LANGUAGES }, allow_nil: true, if: :will_save_change_to_similarity_language?
 
   validate :ensure_no_submissions, if: :will_save_change_to_group_set_id?
   validate :unit_must_be_same
@@ -113,36 +124,49 @@ class TaskDefinition < ApplicationRecord
   include TaskDefinitionTiiModule
   include TaskDefinitionSimilarityModule
 
-  # def p_target_date
-  #   due_date
-  # end
-
-  # Per-grade target date overrides
-
-  def c_target_date
-    grade_due_dates.find { |g| g.target_grade == 1 }&.target_due_date
+  def grade_due_date_overrides
+    grade_due_dates.map do |override|
+      {
+        target_grade: override.target_grade,
+        target_due_date: override.target_due_date,
+        start_date: override.start_date
+      }
+    end
   end
 
-  def d_target_date
-    grade_due_dates.find { |g| g.target_grade == 2 }&.target_due_date
+  def content_link
+    return @content_link if defined?(@content_link)
+
+    @content_link = unit.unit_content_links.find do |link|
+      link.context_type == 'task_definition' && link.context_key == abbreviation
+    end || unit.unit_content_links.find_by(context_type: 'task_definition', context_key: abbreviation)
   end
 
-  def hd_target_date
-    grade_due_dates.find { |g| g.target_grade == 3 }&.target_due_date
+  def has_content_link?
+    content_link.present?
   end
 
-  # Per-grade start date overrides
+  def task_resource_link
+    return @task_resource_link if defined?(@task_resource_link)
 
-  def c_start_date
-    grade_due_dates.find { |g| g.target_grade == 1 }&.start_date
+    @task_resource_link = unit.unit_content_links.find do |link|
+      link.context_type == 'task_definition_resource' && link.context_key == abbreviation
+    end || unit.unit_content_links.find_by(
+      context_type: 'task_definition_resource',
+      context_key: abbreviation
+    )
   end
 
-  def d_start_date
-    grade_due_dates.find { |g| g.target_grade == 2 }&.start_date
+  def has_task_resource_link?
+    task_resource_link.present? && task_resource_link.unit_content_site.file?(task_resource_link.route)
   end
 
-  def hd_start_date
-    grade_due_dates.find { |g| g.target_grade == 3 }&.start_date
+  def grade_target_date(target_grade)
+    grade_due_dates.find { |g| g.target_grade == target_grade.to_i }&.target_due_date
+  end
+
+  def grade_start_date(target_grade)
+    grade_due_dates.find { |g| g.target_grade == target_grade.to_i }&.start_date
   end
 
   def unit_must_be_same
@@ -169,6 +193,8 @@ class TaskDefinition < ApplicationRecord
   def check_existing_prerequisites
     prereqs = TaskPrerequisite.where(task_definition_id: id)
     prereqs.each do |dp|
+      next if dp.prerequisite.nil?
+
       if target_grade < dp.prerequisite.target_grade
         errors.add(:target_grade, "cannot be lower than prerequisite #{dp.prerequisite.abbreviation}'s target grade")
       end
@@ -176,10 +202,20 @@ class TaskDefinition < ApplicationRecord
 
     dependents = TaskPrerequisite.where(prerequisite_id: id)
     dependents.each do |pr|
+      next if pr.task_definition.nil?
+
       if target_grade > pr.task_definition.target_grade
         errors.add(:target_grade, "cannot exceed the target grade #{pr.task_definition.abbreviation} because this is a prerequisite")
       end
     end
+  end
+
+  def ensure_not_used_as_prerequisite
+    return if destroyed_by_association&.name == :task_definitions
+    return unless TaskPrerequisite.exists?(prerequisite_id: id)
+
+    errors.add(:base, "Cannot delete task definition while it is used as a prerequisite. Remove the prerequisite links first.")
+    throw :abort
   end
 
   # In the rollover process, copy this definition into another unit
@@ -216,7 +252,7 @@ class TaskDefinition < ApplicationRecord
       FileUtils.cp(task_sheet, new_td.task_sheet())
     end
 
-    if has_task_resources?
+    if has_uploaded_task_resources?
       # Copy the task resources, and trigger tii integration if needed
       new_td.add_task_resources(task_resources, copy: true)
     end
@@ -226,8 +262,28 @@ class TaskDefinition < ApplicationRecord
     end
 
     new_td.save!
+    overseer_steps.find_each do |step|
+      new_td.overseer_steps.create!(
+        step.attributes.except('id', 'task_definition_id', 'created_at', 'updated_at')
+      )
+    end
+
+    grade_due_dates.each do |override|
+      new_td.grade_due_dates.create!(
+        target_grade: override.target_grade,
+        start_date: date_in_unit(override.start_date, other_unit),
+        target_due_date: date_in_unit(override.target_due_date, other_unit)
+      )
+    end
 
     new_td
+  end
+
+  # Map a date to the same week and day in another unit
+  def date_in_unit(date, other_unit)
+    return nil if date.nil?
+
+    other_unit.date_for_week_and_day(unit.week_number(date), Date::ABBR_DAYNAMES[date.wday])
   end
 
   def has_removed_group?
@@ -278,6 +334,10 @@ class TaskDefinition < ApplicationRecord
 
   def move_files_on_abbreviation_change
     old_abbr = saved_change_to_abbreviation[0] # 0 is original abbreviation
+    unit.unit_content_links
+        .where(context_type: %w[task_definition task_definition_resource], context_key: old_abbr)
+        .find_each { |link| link.update!(context_key: abbreviation) }
+
     if File.exist? task_sheet_with_abbreviation(old_abbr, false)
       FileUtils.mv(task_sheet_with_abbreviation(old_abbr), task_sheet())
     end
@@ -335,8 +395,10 @@ class TaskDefinition < ApplicationRecord
         return
       end
 
-      # Check keys only contain key, type, name, tii_check, and tii_pct
-      unless req.keys.excluding('key', 'type', 'name', 'tii_check', 'tii_pct').empty?
+      req['type'] = 'zip' if req['type'] == 'archive'
+
+      # Check keys only contain supported upload requirement settings
+      unless req.keys.excluding('key', 'type', 'name', 'tii_check', 'tii_pct', 'submission_history').empty?
         errors.add(:upload_requirements, "has additional values for item #{i + 1} --> #{req.keys.join(' ')}.")
       end
 
@@ -345,8 +407,8 @@ class TaskDefinition < ApplicationRecord
         errors.add(:upload_requirements, "the name for item #{i + 1} does not seem to be a valid filename --> #{req['name']}.")
       end
 
-      # Check the type is either document or image or code
-      unless %w(document image code).include? req['type']
+      # Check the type is either document, image, code, or zip
+      unless %w(document image code zip).include? req['type']
         errors.add(:upload_requirements, "the type for item #{i + 1} is not valid --> #{req['type']}.")
       end
 
@@ -360,8 +422,27 @@ class TaskDefinition < ApplicationRecord
         errors.add(:upload_requirements, "the tii_pct for item #{i + 1} is not a non-negative number --> #{req['tii_pct']}.")
       end
 
+      unless req['submission_history'].blank? || [true, false].include?(req['submission_history'])
+        errors.add(:upload_requirements, "the submission_history for item #{i + 1} is not a boolean --> #{req['submission_history']}.")
+      end
+
       i += 1
     end
+  end
+
+  def normalize_upload_requirement_keys
+    return unless upload_requirements.is_a?(Array)
+    return unless upload_requirements.all? { |requirement| requirement.is_a?(Hash) && requirement.key?('key') }
+
+    normalized_requirements = self.class.normalize_upload_requirement_keys(upload_requirements)
+    self.upload_requirements = normalized_requirements unless normalized_requirements == upload_requirements
+  end
+
+  def submission_history_required_for_overseer
+    return unless assessment_enabled?
+    return if upload_requirements&.any? { |requirement| requirement['submission_history'] == true }
+
+    errors.add(:upload_requirements, 'must include at least one file in submission history when Overseer is enabled')
   end
 
   def number_of_uploaded_files
@@ -385,11 +466,47 @@ class TaskDefinition < ApplicationRecord
     upload_requirements[idx]['type']
   end
 
-  def self.to_csv(task_definitions)
+  def self.to_csv(unit, task_definitions)
+    grade_columns = grade_override_csv_columns(unit)
+    columns = required_csv_columns.dup
+    columns.insert(columns.index(:due_day) + 1, *grade_columns)
+    # overseer_steps goes last as its JSON is too large to read inline
+    columns << :overseer_steps
+
     CSV.generate() do |csv|
-      csv << csv_columns
+      csv << columns
       task_definitions.each do |task_definition|
-        csv << task_definition.to_csv_row
+        values = required_csv_columns.zip(task_definition.to_csv_row).to_h
+                                     .merge(grade_columns.zip(task_definition.grade_override_csv_values).to_h)
+                                     .merge(overseer_steps: task_definition.overseer_steps_csv_value)
+        csv << columns.map { |col| values[col] }
+      end
+    end
+  end
+
+  # Pass uses the task's own dates, so only higher grades have overrides
+  def self.override_grades(unit)
+    unit.grade_values.reject(&:zero?)
+  end
+
+  # Keyed by abbreviation (eg. grade_hd_target_week) so columns are readable
+  def self.grade_csv_key(unit, grade)
+    unit.grade_abbreviation(grade).downcase.tr(' ', '_')
+  end
+
+  def self.grade_override_csv_columns(unit)
+    override_grades(unit).flat_map do |grade|
+      key = grade_csv_key(unit, grade)
+      %w(start_week start_day target_week target_day).map { |col| :"grade_#{key}_#{col}" }
+    end
+  end
+
+  def grade_override_csv_values
+    TaskDefinition.override_grades(unit).flat_map do |grade|
+      override = grade_due_dates.find { |g| g.target_grade == grade }
+      [override&.start_date, override&.target_due_date].flat_map do |date|
+        # '-' rather than blank so Excel doesn't overflow the previous cell into it
+        date.nil? ? %w(- -) : [unit.week_number(date), Date::ABBR_DAYNAMES[date.wday]]
       end
     end
   end
@@ -506,11 +623,18 @@ class TaskDefinition < ApplicationRecord
     self.target_date += date_diff
     self.due_date += date_diff unless self.due_date.nil?
     self.save!
+
+    grade_due_dates.each do |override|
+      override.update!(
+        start_date: override.start_date&.+(date_diff),
+        target_due_date: override.target_due_date&.+(date_diff)
+      )
+    end
   end
 
   def to_csv_row
     TaskDefinition.csv_columns
-                  .reject { |col| [:start_week, :start_day, :target_week, :target_day, :due_week, :due_day, :upload_requirements, :group_set, :tutorial_stream, :assess_in_portfolio_only, :task_prerequisites, :discussion_prompts].include? col}
+                  .reject { |col| [:start_week, :start_day, :target_week, :target_day, :due_week, :due_day, :upload_requirements, :group_set, :tutorial_stream, :assess_in_portfolio_only, :task_prerequisites, :discussion_prompts, :overseer_steps].include? col}
                   .map { |column| attributes[column.to_s] } +
       [
         group_set.nil? ? "" : group_set.name,
@@ -541,11 +665,42 @@ class TaskDefinition < ApplicationRecord
     # [ self['due_date'].nil? ? '' : due_date.strftime('%d-%m-%Y')]
   end
 
+  def overseer_steps_csv_value
+    overseer_steps.map do |step|
+      {
+        name: step.name,
+        description: step.description,
+        display_name: step.display_name,
+        display_description: step.display_description,
+        run_command: step.run_command,
+        timeout: step.timeout,
+        sort_order: step.sort_order,
+        step_type: step.step_type,
+        partial_output_diff: step.partial_output_diff,
+        stdin_input_file: step.stdin_input_file,
+        expected_output_file: step.expected_output_file,
+        feedback_message: step.feedback_message,
+        status_on_success: TaskStatus.find_by(id: step.status_on_success_id)&.status_key,
+        status_on_failure: TaskStatus.find_by(id: step.status_on_failure_id)&.status_key,
+        halt_on_success: step.halt_on_success,
+        halt_on_failure: step.halt_on_failure,
+        show_expected_output: step.show_expected_output,
+        show_stdin: step.show_stdin,
+        show_stdout: step.show_stdout,
+        enabled: step.enabled
+      }
+    end.to_json
+  end
+
   def self.csv_columns
     [:name, :abbreviation, :description, :weighting, :target_grade, :restrict_status_updates, :max_quality_pts,
      :is_graded, :plagiarism_warn_pct, :scorm_enabled, :scorm_allow_review, :scorm_bypass_test, :scorm_time_delay_enabled,
      :scorm_attempt_limit, :group_set, :upload_requirements, :start_week, :start_day, :target_week, :target_day,
-     :due_week, :due_day, :tutorial_stream, :assess_in_portfolio_only, :task_prerequisites, :discussion_prompts]
+     :due_week, :due_day, :tutorial_stream, :assess_in_portfolio_only, :task_prerequisites, :discussion_prompts, :overseer_steps]
+  end
+
+  def self.required_csv_columns
+    csv_columns - [:overseer_steps]
   end
 
   def self.task_def_for_csv_row(unit, row)
@@ -562,6 +717,9 @@ class TaskDefinition < ApplicationRecord
     return [nil, false, "Unable to determine start date for #{abbreviation} -- need week number, and day short text eg. 'Wed'"] if start_date.nil?
 
     due_date = unit.date_for_week_and_day row[:due_week].to_i, "#{row[:due_day]}".strip
+
+    grade_overrides, override_error = grade_overrides_for_csv_row(unit, row)
+    return [nil, false, "#{override_error} for #{abbreviation}"] if override_error
 
     result = TaskDefinition.find_by(unit_id: unit.id, abbreviation: abbreviation)
 
@@ -611,6 +769,7 @@ class TaskDefinition < ApplicationRecord
     end
 
     import_discussion_prompts_from_csv_row(result, row)
+    import_overseer_steps_from_csv_row(result, row)
 
     result.assess_in_portfolio_only = %w(Yes y Y yes true TRUE 1).include? "#{row[:assess_in_portfolio_only]}".strip
 
@@ -631,7 +790,52 @@ class TaskDefinition < ApplicationRecord
       end
     end
 
+    result.apply_grade_overrides(grade_overrides)
+
     [result, new_task, new_task ? "Added new task definition #{result.abbreviation}." : "Updated existing task #{result.abbreviation}"]
+  end
+
+  def apply_grade_overrides(grade_overrides)
+    grade_overrides.each do |grade, dates|
+      override = grade_due_dates.find_or_initialize_by(target_grade: grade)
+      if dates.empty?
+        override.destroy if override.persisted?
+      else
+        override.update!(start_date: dates[:start_date], target_due_date: dates[:target_due_date])
+      end
+    end
+  end
+
+  # Reads grade_<n>_(start|target)_(week|day) columns into { grade => { start_date:, target_due_date: } }.
+  # Grades whose columns are all blank (or '-') map to {} so existing overrides are cleared.
+  def self.grade_overrides_for_csv_row(unit, row)
+    grades_by_key = override_grades(unit).index_by { |grade| grade_csv_key(unit, grade) }
+    grade_keys = row.headers.filter_map { |hdr| hdr.to_s[/\Agrade_(.+)_(?:start|target)_(?:week|day)\z/, 1] }.uniq
+
+    overrides = {}
+    grade_keys.each do |grade_key|
+      dates = {}
+      { start_date: 'start', target_due_date: 'target' }.each do |key, prefix|
+        week, day = %w(week day).map { |part| row[:"grade_#{grade_key}_#{prefix}_#{part}"].to_s.strip.sub(/\A-\z/, '') }
+        next if week.empty? && day.empty?
+
+        date = unit.date_for_week_and_day(week.to_i, day) unless week.empty? || day.empty?
+        return [nil, "Unable to determine grade #{grade_key.upcase} #{prefix} date -- need week number, and day short text eg. 'Wed'"] if date.nil?
+
+        dates[key] = date
+      end
+
+      grade = grades_by_key[grade_key]
+      if grade.nil?
+        return [nil, "Grade #{grade_key.upcase} cannot have date overrides in this unit"] if dates.any?
+
+        next
+      end
+
+      overrides[grade] = dates
+    end
+
+    [overrides, nil]
   end
 
   def self.normalize_upload_requirement_keys(upload_requirements)
@@ -658,11 +862,52 @@ class TaskDefinition < ApplicationRecord
     end
   end
 
+  def self.import_overseer_steps_from_csv_row(task_definition, row)
+    task_definition.overseer_steps.destroy_all
+    return if row[:overseer_steps].blank?
+
+    JSON.parse(row[:overseer_steps]).each do |step|
+      OverseerStep.create!(
+        task_definition: task_definition,
+        name: step['name'],
+        description: step['description'],
+        display_name: step['display_name'],
+        display_description: step['display_description'],
+        run_command: step['run_command'],
+        timeout: step['timeout'],
+        sort_order: step['sort_order'],
+        step_type: step['step_type'],
+        partial_output_diff: step['partial_output_diff'],
+        stdin_input_file: step['stdin_input_file'],
+        expected_output_file: step['expected_output_file'],
+        feedback_message: step['feedback_message'],
+        status_on_success_id: status_id_from_csv(step['status_on_success']),
+        status_on_failure_id: status_id_from_csv(step['status_on_failure']),
+        halt_on_success: step['halt_on_success'],
+        halt_on_failure: step['halt_on_failure'],
+        show_expected_output: step['show_expected_output'],
+        show_stdin: step['show_stdin'],
+        show_stdout: step['show_stdout'],
+        enabled: step.key?('enabled') ? step['enabled'] : true
+      )
+    end
+  end
+
+  def self.status_id_from_csv(value)
+    return nil if value.blank?
+
+    TaskStatus.status_for_name(value)&.id || TaskStatus.find_by(id: value.to_i)&.id
+  end
+
   def is_group_task?
     !group_set.nil?
   end
 
   def has_task_resources?
+    has_task_resource_link? || has_uploaded_task_resources?
+  end
+
+  def has_uploaded_task_resources?
     File.exist? task_resources(false)
   end
 
@@ -739,10 +984,10 @@ class TaskDefinition < ApplicationRecord
   end
 
   def remove_task_resources()
-    if has_task_resources?
+    if has_uploaded_task_resources?
       FileUtils.rm task_resources
 
-      tii_group_attachments.destroy_all if tii_checks?
+      tii_group_attachments.destroy_all if tii_checks? && !has_task_resource_link?
     end
   end
 
@@ -818,7 +1063,7 @@ class TaskDefinition < ApplicationRecord
   end
 
   def related_tasks_with_files(consolidate_groups = true)
-    tasks_with_files = tasks.select(&:has_pdf)
+    tasks_with_files = tasks.joins(:project).where(projects: { enrolled: true }).select(&:has_pdf)
 
     if is_group_task? && consolidate_groups
       # group task so only select one member of each group
@@ -840,12 +1085,18 @@ class TaskDefinition < ApplicationRecord
 
   # Read a file from the task definition resources.
   #
-  # @param filename [String] The name of the file to read from the zipfile.
+  # @param filename [String] The linked filename or path within the resource zip.
   # @return [String] The contents of the file, or nil if the file does not exist.
   def read_file_from_resources(filename)
-    return nil unless has_task_resources?
+    linked_resource = linked_task_resource
+    return nil unless linked_resource || has_uploaded_task_resources?
 
-    Zip::File.open(task_resources) do |zip_file|
+    if linked_resource && !task_resource_zip?(linked_resource)
+      return filename == linked_resource[:filename] ? File.binread(linked_resource[:path]) : nil
+    end
+
+    resource_path = linked_resource ? linked_resource[:path] : task_resources
+    Zip::File.open(resource_path) do |zip_file|
       entry = zip_file.glob(filename).first
       return entry.get_input_stream.read if entry
     end
@@ -853,7 +1104,23 @@ class TaskDefinition < ApplicationRecord
     nil
   end
 
+  def linked_task_resource
+    return unless has_task_resource_link?
+
+    task_resource_link.unit_content_site.extract_file(task_resource_link.route)
+  end
+
+  def task_resource_zip?(resource)
+    resource.present? && File.extname(resource[:filename]).casecmp('.zip').zero?
+  end
+
   private
+
+  def target_grade_enabled_for_unit
+    return if unit.nil? || target_grade.nil? || unit.grade_value?(target_grade)
+
+    errors.add(:target_grade, 'is not enabled for this unit')
+  end
 
   def delete_associated_files()
     remove_task_sheet()

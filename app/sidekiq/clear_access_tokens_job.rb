@@ -4,6 +4,8 @@
 class ClearAccessTokensJob
   include Sidekiq::Job
 
+  sidekiq_options queue: 'parallel'
+
   def perform
     UserOauthToken.destroy_old_tokens
     UserOauthState.destroy_old_states

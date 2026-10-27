@@ -8,12 +8,13 @@ module TestHelpers
     module_function
 
     def tii_headers(base = {})
+      api_key = Doubtfire::Application.fetch_credential_or_env(:tii, :api_key, env_key: 'TCA_API_KEY')
       base["headers"] = {
-        'Accept'=>'application/json',
-        'Authorization'=>"Bearer #{ENV['TCA_API_KEY']}",
-        'Content-Type'=>'application/json',
-        'X-Turnitin-Integration-Name'=>'formatif-tii',
-        'X-Turnitin-Integration-Version'=>'1.0'
+        'Accept' => 'application/json',
+        'Authorization' => "Bearer #{api_key}",
+        'Content-Type' => 'application/json',
+        'X-Turnitin-Integration-Name' => 'formatif-tii',
+        'X-Turnitin-Integration-Version' => '1.0'
       }
 
       base
@@ -36,46 +37,46 @@ module TestHelpers
         TCAClient::FeaturesEnabled.new(
           {
             similarity: TCAClient::FeaturesSimilarity.new(
-                viewer_modes: {
-                    match_overview: true,
-                    all_sources: true
-                },
-                generation_settings: TCAClient::FeaturesGenerationSettings.new(
-                    search_repositories: [
-                        'INTERNET',
-                        'SUBMITTED_WORK',
-                        'PUBLICATION',
-                        'CROSSREF',
-                        'CROSSREF_POSTED_CONTENT',
-                    ],
-                    submission_auto_excludes: true
-                  ),
-                view_settings: {
-                    exclude_bibliography: true,
-                    exclude_quotes: true,
-                    exclude_abstract: true,
-                    exclude_methods: true,
-                    exclude_small_matches: true,
-                    exclude_internet: true,
-                    exclude_publications: true,
-                    exclude_crossref: true,
-                    exclude_crossref_posted_content: true,
-                    exclude_submitted_works: true,
-                    exclude_citations: true,
-                    exclude_preprints: true
-                }
+              viewer_modes: {
+                match_overview: true,
+                all_sources: true
+              },
+              generation_settings: TCAClient::FeaturesGenerationSettings.new(
+                search_repositories: %w[
+                  INTERNET
+                  SUBMITTED_WORK
+                  PUBLICATION
+                  CROSSREF
+                  CROSSREF_POSTED_CONTENT
+                ],
+                submission_auto_excludes: true
               ),
+              view_settings: {
+                exclude_bibliography: true,
+                exclude_quotes: true,
+                exclude_abstract: true,
+                exclude_methods: true,
+                exclude_small_matches: true,
+                exclude_internet: true,
+                exclude_publications: true,
+                exclude_crossref: true,
+                exclude_crossref_posted_content: true,
+                exclude_submitted_works: true,
+                exclude_citations: true,
+                exclude_preprints: true
+              }
+            ),
             tenant: TCAClient::FeaturesTenant.new({
-                require_eula: true
-            }),
+                                                    require_eula: true
+                                                  }),
             product_name: 'Turnitin Originality',
-            access_options: [
-                'NATIVE',
-                'CORE_API',
-                'DRAFT_COACH'
+            access_options: %w[
+              NATIVE
+              CORE_API
+              DRAFT_COACH
             ]
-        }
-      )
+          }
+        )
       end
     end
 
@@ -99,31 +100,31 @@ module TestHelpers
           valid_from: "2018-04-30T17:00:00Z",
           valid_until: nil,
           url: "https://static.turnitin.com/eula/v1beta/fr-fr/eula.html",
-          available_languages: [
-              "sv-SE",
-              "zh-CN",
-              "ja-JP",
-              "ko-KR",
-              "es-MX",
-              "nl-NL",
-              "ru-RU",
-              "zh-TW",
-              "ar-SA",
-              "pt-BR",
-              "de-DE",
-              "el-GR",
-              "nb-NO",
-              "cs-CZ",
-              "da-DK",
-              "tr-TR",
-              "pl-PL",
-              "fi-FI",
-              "it-IT",
-              "bl-AH",
-              "vi-VN",
-              "fr-FR",
-              "en-US",
-              "ro-RO"
+          available_languages: %w[
+            sv-SE
+            zh-CN
+            ja-JP
+            ko-KR
+            es-MX
+            nl-NL
+            ru-RU
+            zh-TW
+            ar-SA
+            pt-BR
+            de-DE
+            el-GR
+            nb-NO
+            cs-CZ
+            da-DK
+            tr-TR
+            pl-PL
+            fi-FI
+            it-IT
+            bl-AH
+            vi-VN
+            fr-FR
+            en-US
+            ro-RO
           ]
         )
       end

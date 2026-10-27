@@ -1,4 +1,5 @@
 require 'grape'
+require 'mime/types'
 
 class TaskDefinitionsApi < Grape::API
   helpers AuthenticationHelpers
@@ -27,6 +28,7 @@ class TaskDefinitionsApi < Grape::API
       optional :due_date,                 type: Date,     desc: 'The deadline date'
       requires :abbreviation,             type: String,   desc: 'The abbreviation of the task'
       requires :restrict_status_updates,  type: Boolean,  desc: 'Restrict updating of the status to staff'
+      optional :staff_managed_task,       type: Boolean,  desc: 'Only staff can upload submissions and change task status'
       optional :upload_requirements,      type: String,   desc: 'Task file upload requirements'
       requires :plagiarism_warn_pct,      type: Integer,  desc: 'The percent at which to record and warn about plagiarism'
       requires :is_graded,                type: Boolean,  desc: 'Whether or not this task definition is a graded task'
@@ -64,6 +66,7 @@ class TaskDefinitionsApi < Grape::API
                                                 :due_date,
                                                 :abbreviation,
                                                 :restrict_status_updates,
+                                                :staff_managed_task,
                                                 :plagiarism_warn_pct,
                                                 :scorm_enabled,
                                                 :scorm_allow_review,
@@ -85,6 +88,10 @@ class TaskDefinitionsApi < Grape::API
 
     task_params[:unit_id] = unit.id
     task_params[:upload_requirements] = params[:task_def][:upload_requirements].present? ? JSON.parse(params[:task_def][:upload_requirements]) : []
+
+    unless unit.grade_value?(task_params[:target_grade])
+      error!({ error: 'Target grade is not enabled for this unit' }, 422)
+    end
 
     task_def = TaskDefinition.new(task_params)
 
@@ -123,6 +130,7 @@ class TaskDefinitionsApi < Grape::API
       optional :due_date,                 type: Date,     desc: 'The deadline date'
       optional :abbreviation,             type: String,   desc: 'The abbreviation of the task'
       optional :restrict_status_updates,  type: Boolean,  desc: 'Restrict updating of the status to staff'
+      optional :staff_managed_task,       type: Boolean,  desc: 'Only staff can upload submissions and change task status'
       optional :upload_requirements,      type: String,   desc: 'Task file upload requirements'
       optional :plagiarism_warn_pct,      type: Integer,  desc: 'The percent at which to record and warn about plagiarism'
       optional :scorm_enabled,            type: Boolean,  desc: 'Whether or not SCORM test assessment is enabled for this task'
@@ -139,13 +147,11 @@ class TaskDefinitionsApi < Grape::API
       optional :requires_discussion,      type: Boolean,  desc: 'Whether task must be discussed in class before it can be signed off as complete'
       optional :use_resources_for_jplag_base_code, type: Boolean, desc: 'Include the common base code from task resources for JPlag comparisons'
       optional :lock_assessments_to_tutorial_stream, type: Boolean, desc: 'Only allow tutors in this tutorial stream to assess this task'
-      # optional :p_target_date, type: Date, desc: 'Pass due date override'
-      optional :c_target_date,            type: Date,     desc: 'Credit due date override'
-      optional :d_target_date,            type: Date,     desc: 'Distinction due date override'
-      optional :hd_target_date,           type: Date,     desc: 'High Distinction due date override'
-      optional :c_start_date,             type: Date,     desc: 'Credit start date override'
-      optional :d_start_date,             type: Date,     desc: 'Distinction start date override'
-      optional :hd_start_date,            type: Date,     desc: 'High Distinction start date override'
+      optional :grade_due_dates, type: Array do
+        requires :target_grade, type: Integer
+        optional :target_due_date, type: Date
+        optional :start_date, type: Date
+      end
     end
   end
   put '/units/:unit_id/task_definitions/:id' do
@@ -157,14 +163,7 @@ class TaskDefinitionsApi < Grape::API
     end
 
     # strip these out so TaskDefinition#update! never sees them
-    grade_due_overrides = params[:task_def].slice(
-      'p_target_date', 'c_target_date', 'd_target_date', 'hd_target_date',
-      'p_start_date', 'c_start_date', 'd_start_date', 'hd_start_date'
-    )
-    params[:task_def].except!(
-      'p_target_date', 'c_target_date', 'd_target_date', 'hd_target_date',
-      'p_start_date', 'c_start_date', 'd_start_date', 'hd_start_date'
-    )
+    grade_due_date_rows = params[:task_def].delete('grade_due_dates')
 
     task_params = ActionController::Parameters.new(params)
                                               .require(:task_def)
@@ -178,6 +177,7 @@ class TaskDefinitionsApi < Grape::API
                                                 :due_date,
                                                 :abbreviation,
                                                 :restrict_status_updates,
+                                                :staff_managed_task,
                                                 :plagiarism_warn_pct,
                                                 :scorm_enabled,
                                                 :scorm_allow_review,
@@ -212,6 +212,10 @@ class TaskDefinitionsApi < Grape::API
       end
     end
 
+    if task_params.key?(:target_grade) && !unit.grade_value?(task_params[:target_grade])
+      error!({ error: 'Target grade is not enabled for this unit' }, 422)
+    end
+
     # Bulk update task definition with permitted parameters
     task_def.update!(task_params)
 
@@ -239,29 +243,32 @@ class TaskDefinitionsApi < Grape::API
       end
     end
 
-    grade_number = { 'c' => 1, 'd' => 2, 'hd' => 3 }
-    field_map = { 'target_date' => :target_due_date, 'start_date' => :start_date }
-
-    grade_due_overrides.each do |key, date|
-      next if date.blank?
-
-      # if task_def.start_date > date
-      #   error!({ error: 'Target date cannot be earlier than start date' }, 400)
-      # end
-
+    if grade_due_date_rows.present?
       unless unit.allow_flexible_dates
         error!({ error: 'This unit must have Allow Flexible Dates enabled to modify target dates per grade' }, 403)
       end
 
-      grade_key, kind = key.to_s.split('_', 2) # e.g. "c", "target_date"
-      next unless grade_number.key?(grade_key)
-      next unless field_map.key?(kind)
+      grade_due_date_rows.each do |row_params|
+        target_grade = row_params[:target_grade] || row_params['target_grade']
+        next if target_grade.to_i.zero?
 
-      row = TaskDefinitionGradeDueDate.find_or_initialize_by(
-        task_definition: task_def,
-        target_grade: grade_number[grade_key]
-      )
-      row.update!(field_map[kind] => date)
+        unless unit.grade_value?(target_grade)
+          error!({ error: "Target grade #{target_grade} is not enabled for this unit" }, 422)
+        end
+
+        target_due_date = row_params[:target_due_date] || row_params['target_due_date']
+        start_date = row_params[:start_date] || row_params['start_date']
+        row = TaskDefinitionGradeDueDate.find_or_initialize_by(
+          task_definition: task_def,
+          target_grade: target_grade
+        )
+
+        if target_due_date.blank? && start_date.blank?
+          row.destroy if row.persisted?
+        else
+          row.update!(target_due_date: target_due_date, start_date: start_date)
+        end
+      end
     end
 
     present task_def, with: Entities::TaskDefinitionEntity, my_role: unit.role_for(current_user)
@@ -319,7 +326,8 @@ class TaskDefinitionsApi < Grape::API
     end
 
     task_def.destroy
-    task_def.destroyed?
+    error!({ error: task_def.errors.full_messages.last }, 403) unless task_def.destroyed?
+    true
   end
 
   desc 'Upload the task sheet for a given task'
@@ -559,6 +567,7 @@ class TaskDefinitionsApi < Grape::API
                  .joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment')")
                  .joins("LEFT OUTER JOIN (#{subquery}) as sq ON sq.project_id = projects.id")
                  .joins('LEFT OUTER JOIN task_similarities ON tasks.id = task_similarities.task_id')
+                 .joins("LEFT JOIN task_pins ON task_pins.task_id = tasks.id AND task_pins.user_id = #{current_user.id}")
                  .select(
                    'sq.tutorial_stream_id as tutorial_stream_id',
                    'sq.tutorial_id as tutorial_id',
@@ -572,7 +581,8 @@ class TaskDefinitionsApi < Grape::API
                    'grade',
                    'quality_pts',
                    "SUM(case when task_comments.date_extension_assessed IS NULL AND task_comments.type = 'ExtensionComment' AND NOT task_comments.id IS NULL THEN 1 ELSE 0 END) > 0 as has_extensions",
-                   'SUM(case when task_similarities.flagged then 1 else 0 end) as similar_to_count'
+                   'SUM(case when task_similarities.flagged then 1 else 0 end) as similar_to_count',
+                   'COUNT(distinct task_pins.task_id) != 0 as pinned'
                  )
                  .where('task_definition_id = :id', id: params[:task_def_id])
                  .group(
@@ -603,7 +613,8 @@ class TaskDefinitionsApi < Grape::API
         similarity_flag: t.similar_to_count > 0,
         grade: t.grade,
         quality_pts: t.quality_pts,
-        has_extensions: t.has_extensions
+        has_extensions: t.has_extensions,
+        pinned: t.pinned
       }
     end
 
@@ -653,7 +664,14 @@ class TaskDefinitionsApi < Grape::API
       error!({ error: 'Not authorised to download task details of unit' }, 403)
     end
 
-    if task_def.has_task_resources?
+    resource = task_def.linked_task_resource
+
+    if resource
+      path = resource[:path]
+      filename = File.basename(resource[:filename]).gsub(/[\r\n"]/, '_')
+      content_type MIME::Types.type_for(filename).first&.content_type || 'application/octet-stream'
+      header['Content-Disposition'] = "attachment; filename=\"#{filename}\""
+    elsif task_def.has_uploaded_task_resources?
       path = task_def.task_resources
       content_type 'application/octet-stream'
       header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}-resources.zip"
@@ -781,7 +799,7 @@ class TaskDefinitionsApi < Grape::API
     logger.debug "This is the has_jplag_report? #{task_def.has_jplag_report?}"
     if task_def.has_jplag_report?
       path = FileHelper.task_jplag_report_path(unit, task_def)
-      header['Content-Disposition'] = "attachment; filename=#{task_def.abbreviation}-jplag-report.jplag"
+      header['Content-Disposition'] = "attachment; filename=#{unit.code}-#{task_def.abbreviation}-jplag-report.jplag"
     else
       path = Rails.root.join("public/resources/FileNotFound.pdf")
       content_type 'application/pdf'

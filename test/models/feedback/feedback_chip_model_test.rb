@@ -2,6 +2,29 @@ require 'test_helper'
 
 class FeedbackChipModelTest < ActiveSupport::TestCase
 
+  def test_csv_context_uses_import_unit_and_task_context
+    previous_period = FactoryBot.create(:teaching_period)
+    current_period = FactoryBot.create(:teaching_period)
+    previous_unit = FactoryBot.create(:unit, code: 'SAME1', teaching_period: previous_period, task_count: 0, outcome_count: 0)
+    current_unit = FactoryBot.create(:unit, code: 'SAME1', teaching_period: current_period, task_count: 0, outcome_count: 0)
+    FactoryBot.create(:task_definition, unit: previous_unit, abbreviation: 'T1', outcome_count: 0)
+    current_task = FactoryBot.create(:task_definition, unit: current_unit, abbreviation: 'T1', outcome_count: 0)
+    unit_outcome = FactoryBot.create(:learning_outcome, context: current_unit, abbreviation: 'LO1')
+    task_outcome = FactoryBot.create(:learning_outcome, context: current_task, abbreviation: 'LO1')
+    row = CSV::Row.new(
+      %w[unit_code task_abbreviation learning_outcome_abbreviation],
+      %w[SAME1 T1 LO1]
+    )
+
+    result = Feedback::FeedbackChip.context_for_csv(row, 'Unit', current_unit)
+
+    assert result[:success]
+    assert_equal current_unit, result[:unit]
+    assert_equal current_task, result[:task_definition]
+    assert_equal task_outcome, result[:learning_outcome]
+    assert_not_equal unit_outcome, result[:learning_outcome]
+  end
+
   def test_valid_feedback_template_chip_parent
     unit = Unit.first
     learning_outcome = FactoryBot.create(:learning_outcome, context_id: unit.id, context_type: 'Unit')

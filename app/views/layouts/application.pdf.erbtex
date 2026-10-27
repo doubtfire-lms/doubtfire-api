@@ -27,6 +27,12 @@
 }
 
 \usepackage[fencedCode,hashEnumerators,pipeTables,texMathDollars]{markdown}
+\markdownSetup{rendererPrototypes={
+  ulBeginTight={\begin{itemize}},
+  ulEndTight={\end{itemize}},
+  olBeginTight={\begin{enumerate}},
+  olEndTight={\end{enumerate}}
+}}
 
 \usepackage{luatextra}
 \defaultfontfeatures{Ligatures=TeX}
@@ -38,6 +44,9 @@
 \usepackage{pdfpages}
 \usepackage{epstopdf}
 \usepackage{amssymb}
+% Notebook Markdown may use these comparison commands in inline maths.
+\providecommand{\lt}{\mathrel{<}}
+\providecommand{\gt}{\mathrel{>}}
 \usepackage{colortbl}
 \usepackage{lastpage}
 \usepackage{multirow}
@@ -96,20 +105,22 @@ end
     \fancyfoot[R]{}
 }
 
-\definecolor{complete}{rgb}{0.357, 0.718, 0.357}
-\definecolor{rff}{rgb}{0.0,0.47,0.84}
+\definecolor{complete}{HTML}{5BB75B}
+\definecolor{rff}{HTML}{0079D8}
 
-\definecolor{notstarted}{rgb}{0.8,0.8,0.8}
-\definecolor{workingonit}{rgb}{0.922, 0.561, 0.024}
-\definecolor{needhelp}{rgb}{0.643, 0.561, 0.808}
-\definecolor{fix}{rgb}{0.949, 0.847, 0.361}
-\definecolor{dnr}{rgb}{0.831, 0.42, 0.329}
-\definecolor{redo}{rgb}{0.502, 0.251, 0}
-\definecolor{discuss}{rgb}{0.192, 0.69, 0.835}
-\definecolor{demo}{rgb}{0.259, 0.545, 0.792}
-\definecolor{fail}{rgb}{0.851, 0.216, 0.075}
-\definecolor{timeexceeded}{rgb}{0.851, 0.216, 0.075}
-\definecolor{assessinportfolio}{rgb}{0.568, 0.721, 0.568}
+\definecolor{notstarted}{HTML}{CCCCCC}
+\definecolor{workingonit}{HTML}{EB8F06}
+\definecolor{needhelp}{HTML}{A48FCE}
+\definecolor{fix}{HTML}{F2D85C}
+\definecolor{dnr}{HTML}{D46B54}
+\definecolor{redo}{HTML}{804000}
+\definecolor{discuss}{HTML}{31B0D5}
+\definecolor{rediscuss}{HTML}{126352}
+\definecolor{demo}{HTML}{428BCA}
+\definecolor{fail}{HTML}{D93713}
+\definecolor{timeexceeded}{HTML}{D93713}
+\definecolor{assessinportfolio}{HTML}{F2D85C}
+\definecolor{attentionrequired}{HTML}{F1814D}
 
 \begin{document}
 

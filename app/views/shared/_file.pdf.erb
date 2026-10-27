@@ -26,3 +26,9 @@
     <% end # end for  %>
 
 <% end %>
+
+<% if %w[zip archive].include?(file_type) %>
+\begin{tcolorbox}[colback=blue!5!white,colframe=blue!75!black]
+  This zip file was uploaded with the portfolio. Zip contents are not expanded into this PDF.
+\end{tcolorbox}
+<% end %>

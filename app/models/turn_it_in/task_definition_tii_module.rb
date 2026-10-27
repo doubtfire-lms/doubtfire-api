@@ -37,10 +37,21 @@ module TaskDefinitionTiiModule
     return if tii_group_id.blank?
     return unless has_task_resources?
 
+    linked_resource = linked_task_resource
+    if linked_resource && !task_resource_zip?(linked_resource)
+      filename = linked_resource[:filename]
+      return unless filename.downcase.end_with?('.doc', '.docx')
+      return if filename.include?('__MACOSX') || File.size(linked_resource[:path]) < 50
+
+      TiiGroupAttachment.find_or_create_from_task_definition(self, filename)
+      return
+    end
+
     count = 0
 
     # loop through files in the task resources zip file
-    Zip::File.open(task_resources) do |zip_file|
+    resource_path = linked_resource ? linked_resource[:path] : task_resources
+    Zip::File.open(resource_path) do |zip_file|
       zip_file.each do |entry|
         next unless entry.file?
         next unless entry.name.end_with?('.doc', '.docx')
