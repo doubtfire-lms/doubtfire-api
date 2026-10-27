@@ -102,6 +102,7 @@ class PortfolioEvidence
     errors.each do |project, tasks|
       tasks.each { |task| Notification.create_pdf_failure(task) }
 
+      next unless project.enrolled
       next unless NotificationSetting.for(project.student).delivers?(project.unit, 'pdf_generation_failed', :email)
 
       logger.info "emailing task notification to #{project.student.name}"

@@ -21,6 +21,16 @@ class NotificationTest < ActiveSupport::TestCase
     assert_nil notification.read_at
   end
 
+  def test_withdrawal_clears_and_stops_student_notifications
+    @task.add_text_comment(@tutor, 'Please revise this section')
+
+    @project.update!(enrolled: false)
+
+    assert_empty @student.received_notifications.where(project: @project).unread
+    comment = @task.add_text_comment(@tutor, 'One more thing')
+    assert_not Notification.exists?(task_comment: comment, recipient: @student)
+  end
+
   def test_student_feedback_notifies_staff_but_student_status_does_not
     comment = @task.add_text_comment(@student, 'Could you clarify this feedback?')
     @task.add_status_comment(@student, TaskStatus.ready_for_feedback)

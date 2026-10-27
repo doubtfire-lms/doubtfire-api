@@ -8,6 +8,8 @@ class SendDiscussTimeoutEmailJob
     task = Task.find_by(id: task_id)
     sender = User.find_by(id: sender_id)
     return if task.blank? || sender.blank?
+    # The student may have withdrawn after this was queued.
+    return unless task.project.enrolled
     return unless task.unit.discuss_timeout_active?
     return unless task.unit.send_notifications
 

@@ -8,9 +8,9 @@ namespace :overseer_notifications do
       tasks = project_assessments.map(&:task).uniq
       mark_notified = -> { project_assessments.each { |assessment| assessment.update!(student_notified_at: Time.current) } }
 
-      # The student may have switched this email off, or muted the unit. Mark them
-      # notified anyway, so they are not reconsidered every ten minutes.
-      unless NotificationSetting.for(project.student).delivers?(project.unit, 'overseer_failed', :email)
+      # The student may have withdrawn, switched this email off, or muted the unit.
+      # Mark them notified anyway, so they are not reconsidered every ten minutes.
+      unless project.enrolled && NotificationSetting.for(project.student).delivers?(project.unit, 'overseer_failed', :email)
         mark_notified.call
         next
       end

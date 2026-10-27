@@ -47,6 +47,7 @@ class Project < ApplicationRecord
   validate :tutorial_enrolment_same_campus, if: :will_save_change_to_enrolled?
 
   after_update :check_withdraw_from_groups, if: :saved_change_to_enrolled?
+  after_update :clear_notifications_on_withdrawal, if: :saved_change_to_enrolled?
   after_update :update_task_stats, if: :saved_change_to_target_grade? # TODO: consider making this an async task!
   after_update :revert_overdue_tasks, if: :saved_change_to_spec_con_days?
 
@@ -741,6 +742,13 @@ class Project < ApplicationRecord
 
     errors.add :base, "Cannot delete project with enrolments"
     throw :abort
+  end
+
+  # A withdrawn student is no longer notified about the unit, so clear what is already waiting for them.
+  def clear_notifications_on_withdrawal
+    return if enrolled
+
+    Notification.mark_read(Notification.where(recipient_id: user_id, project_id: id).unread)
   end
 
   # If someone withdraws from a unit, make sure they are removed from groups
