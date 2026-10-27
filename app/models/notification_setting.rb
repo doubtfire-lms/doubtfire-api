@@ -44,8 +44,10 @@ class NotificationSetting < ApplicationRecord
     Time.zone.tzinfo.name
   end
 
-  # Use the first unit the user enrolled in as their home campus for now.
+  # Falls back to the campus of the first unit the user enrolled in until a timezone is saved for them.
   def resolved_digest_timezone
+    return user.timezone if user.timezone.present?
+
     first_project = user.projects.where(enrolled: true).order(:id).includes(:campus).first
     first_project&.campus&.timezone.presence || self.class.default_digest_timezone
   end
@@ -174,7 +176,7 @@ class NotificationSetting < ApplicationRecord
   end
 
   def digest_time_zone
-    ActiveSupport::TimeZone[resolved_digest_timezone]
+    ActiveSupport::TimeZone[digest_timezone || resolved_digest_timezone]
   end
 
   def digest_timezone_supported

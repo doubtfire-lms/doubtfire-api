@@ -84,5 +84,9 @@ class CreateNotificationsAndPreferences < ActiveRecord::Migration[8.0]
     add_index :notification_unit_overrides, [:user_id, :unit_id],
               unique: true,
               name: 'index_notification_unit_overrides_on_user_and_unit'
+
+    # An IANA timezone, synced from the browser while auto_timezone is on, otherwise chosen by the user.
+    add_column :users, :timezone, :string, limit: 64
+    add_column :users, :auto_timezone, :boolean, null: false, default: true
   end
 end

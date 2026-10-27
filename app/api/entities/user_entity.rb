@@ -12,6 +12,8 @@ module Entities
     expose :receive_feedback_notifications, unless: :minimal
     expose :opt_in_to_research, unless: :minimal
     expose :has_run_first_time_setup, unless: :minimal
+    expose :timezone, unless: :minimal
+    expose :auto_timezone, unless: :minimal
 
     expose :accepted_tii_eula, unless: :minimal, if: ->(user, options) { TurnItIn.enabled? } do |user, options|
       if TiiActionFetchFeaturesEnabled.eula_required?

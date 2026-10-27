@@ -24,6 +24,24 @@ class NotificationSettingTest < ActiveSupport::TestCase
     assert_equal Notification::KINDS.sort, settings.channels.keys.sort
   end
 
+  def test_the_user_timezone_overrides_the_campus_and_reschedules_the_digest
+    user = FactoryBot.create(:user)
+    settings = NotificationSetting.for(user)
+
+    user.update!(timezone: 'Asia/Kuala_Lumpur')
+    settings.reload
+
+    assert_equal 'Asia/Kuala_Lumpur', settings.digest_timezone
+    assert_equal settings.next_occurrence(Time.current), settings.next_digest_at
+  end
+
+  def test_rejects_an_unknown_timezone
+    user = FactoryBot.create(:user)
+
+    assert_not user.update(timezone: 'Not/AZone')
+    assert user.errors.key?(:timezone)
+  end
+
   def test_a_unit_without_a_preference_follows_the_defaults
     settings = NotificationSetting.for(FactoryBot.create(:user))
     unit = FactoryBot.create(:unit, with_students: false, task_count: 0)

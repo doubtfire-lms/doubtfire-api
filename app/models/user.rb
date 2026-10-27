@@ -20,6 +20,7 @@ class User < ApplicationRecord
   include UserTiiModule
 
   after_update :move_files_on_username_change, if: :saved_change_to_username?
+  after_update :refresh_notification_schedule, if: :saved_change_to_timezone?
 
   ###
   # Authentication
@@ -205,6 +206,7 @@ class User < ApplicationRecord
   validates :email,       presence: true, uniqueness: { case_sensitive: false }, format: { with: /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\z/i }
   validates :student_id,  uniqueness: true, allow_nil: true
   validate :can_change_to_role?, if: :will_save_change_to_role_id?
+  validate :timezone_supported, if: :will_save_change_to_timezone?
 
   # Queries
   scope :tutors,    -> { joins(:role).where('roles.id = :tutor_role or roles.id = :convenor_role or roles.id = :admin_role or roles.id = :auditor_role', tutor_role: Role.tutor_id, convenor_role: Role.convenor_id, admin_role: Role.admin_id, auditor_role: Role.auditor_id) }
@@ -472,6 +474,17 @@ class User < ApplicationRecord
     sn = "#{sn[0..11]}..." if sn.length > 15
 
     "#{fn} #{sn}"
+  end
+
+  # Saving the settings picks up the new timezone and reschedules the next digest.
+  def refresh_notification_schedule
+    notification_setting&.save!
+  end
+
+  def timezone_supported
+    return if timezone.nil? || ActiveSupport::TimeZone[timezone].present?
+
+    errors.add(:timezone, 'must be a valid timezone')
   end
 
   def move_files_on_username_change
