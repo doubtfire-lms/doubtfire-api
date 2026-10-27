@@ -10,25 +10,19 @@ FactoryBot.define do
     role        { Role.student }
     student_id  { Faker::Number.number(digits: 7) }
 
-    before(:create) do |user, eval|
-      while User.where(username: user.username).count > 0
-        user.username = "#{user.username}-#{rand(1000)}"
-      end
+    before(:create) do |user, _eval|
+      user.username = "#{user.username}-#{rand(1000)}" while User.where(username: user.username).count > 0
 
-      while User.where(student_id: user.student_id).count > 0
-        user.student_id = user.student_id.to_i + 1
-      end
+      user.student_id = user.student_id.to_i + 1 while User.where(student_id: user.student_id).count > 0
 
       # Faker only dedupes within a run, so a seeded database can already hold
       # the address it hands out.
-      while User.where(email: user.email).count > 0
-        user.email = "#{rand(1000)}-#{user.email}"
-      end
+      user.email = "#{rand(1000)}-#{user.email}" while User.where(email: user.email).count > 0
     end
 
     trait :student do
       transient do
-        enrol_in    { 0 }     # Number of units to enrol into
+        enrol_in { 0 } # Number of units to enrol into
       end
 
       after(:create) do |user, eval|

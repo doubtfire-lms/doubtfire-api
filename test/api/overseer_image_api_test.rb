@@ -288,7 +288,7 @@ class OverseerImageApiTest < ActiveSupport::TestCase
     ]
 
     # create a overseer image to delete
-    overseer_image = FactoryBot.create (:overseer_image)
+    overseer_image = FactoryBot.create(:overseer_image)
 
     # number of overseer image before delete
     number_of_images = OverseerImage.count

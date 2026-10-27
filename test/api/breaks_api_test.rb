@@ -5,7 +5,7 @@ class BreaksApiTest < ActiveSupport::TestCase
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
 
-  #POST TEST
+  # POST TEST
   def test_post_breaks
     teaching_period = FactoryBot.create(:teaching_period)
     campus = FactoryBot.create(:campus)
@@ -29,7 +29,7 @@ class BreaksApiTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status
 
     # Check if the details posted match as expected
-    response_keys = %w(start_date number_of_days label campus_ids pause_week_count)
+    response_keys = %w[start_date number_of_days label campus_ids pause_week_count]
     the_break = Break.find(last_response_body['id'])
     assert_json_matches_model(the_break, last_response_body, response_keys)
 
@@ -38,7 +38,7 @@ class BreaksApiTest < ActiveSupport::TestCase
     assert_equal data_to_post[:number_of_days], the_break.number_of_days
     assert_equal data_to_post[:label], the_break.label
     assert_equal data_to_post[:campus_ids], the_break.campus_ids
-    refute the_break.pause_week_count
+    assert_not the_break.pause_week_count
 
     # check if one more break is created
     assert_equal Break.count, number_of_break + 1
@@ -48,7 +48,7 @@ class BreaksApiTest < ActiveSupport::TestCase
   # Get breaks in a teaching period
   def test_get_breaks
     # Create teaching period
-    teaching_period  = FactoryBot.create(:teaching_period)
+    teaching_period = FactoryBot.create(:teaching_period)
     teaching_period.add_break teaching_period.start_date + 1.week, 7
 
     add_auth_header_for(user: FactoryBot.create(:user, :admin))
@@ -61,9 +61,9 @@ class BreaksApiTest < ActiveSupport::TestCase
     assert_equal expected_data.count, last_response_body.count
     assert expected_data.count > 0
 
-    response_keys =  %w(id start_date number_of_days label campus_ids pause_week_count)
-    test_keys =  %w(id number_of_days pause_week_count)
-    last_response_body.each do | data |
+    response_keys = %w[id start_date number_of_days label campus_ids pause_week_count]
+    test_keys = %w[id number_of_days pause_week_count]
+    last_response_body.each do |data|
       the_break = Break.find(data['id'])
       assert_json_matches_model(the_break, data, test_keys)
       assert_equal the_break.start_date.strftime('%Y-%m-%d'), data['start_date']
@@ -73,9 +73,9 @@ class BreaksApiTest < ActiveSupport::TestCase
 
   def test_delete_breaks
     # Create teaching period
-    teaching_period  = FactoryBot.create(:teaching_period)
+    teaching_period = FactoryBot.create(:teaching_period)
     teaching_period.add_break teaching_period.start_date + 1.week, 7
-    teaching_period.add_break teaching_period.start_date + 3.week, 7
+    teaching_period.add_break teaching_period.start_date + 3.weeks, 7
 
     add_auth_header_for(user: FactoryBot.create(:user, :admin))
     the_break = Break.last
@@ -122,7 +122,7 @@ class BreaksApiTest < ActiveSupport::TestCase
       pause_week_count: true
     }
 
-    refute_equal 201, last_response.status
+    assert_not_equal 201, last_response.status
     assert_equal number_of_breaks, Break.count
   end
 
@@ -137,7 +137,7 @@ class BreaksApiTest < ActiveSupport::TestCase
     }
 
     assert_equal 200, last_response.status
-    refute last_response_body['pause_week_count']
-    refute the_break.reload.pause_week_count
+    assert_not last_response_body['pause_week_count']
+    assert_not the_break.reload.pause_week_count
   end
 end

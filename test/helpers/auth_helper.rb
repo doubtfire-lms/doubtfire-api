@@ -17,7 +17,7 @@ module TestHelpers
       token = user.valid_auth_tokens.where(token_type: token_type).first
       return token.authentication_token unless token.nil?
 
-      return user.generate_authentication_token!(token_type: token_type).authentication_token
+      user.generate_authentication_token!(token_type: token_type).authentication_token
     end
 
     #

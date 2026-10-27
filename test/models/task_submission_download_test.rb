@@ -6,9 +6,9 @@ class TaskSubmissionDownloadTest < ActiveSupport::TestCase
     unit = project.unit
     task_definition = unit.task_definitions.first
     task_definition.update!(upload_requirements: [
-      { 'key' => 'file0', 'name' => 'Design report', 'type' => 'document' },
-      { 'key' => 'file1', 'name' => 'source.py', 'type' => 'code' }
-    ])
+                              { 'key' => 'file0', 'name' => 'Design report', 'type' => 'document' },
+                              { 'key' => 'file1', 'name' => 'source.py', 'type' => 'code' }
+                            ])
     task = project.task_for_task_definition(task_definition)
     source = task.zip_file_path_for_done_task
     FileUtils.mkdir_p(File.dirname(source))

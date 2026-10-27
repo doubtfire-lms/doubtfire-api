@@ -109,7 +109,7 @@ class WebcalApiTest < ActiveSupport::TestCase
     assert 400, last_response.status
 
     # Specify both time & unit
-    Webcal.valid_time_units.each_with_index { |u, i|
+    Webcal.valid_time_units.each_with_index do |u, i|
       t = i + 1
 
       put_json '/api/webcal', { webcal: { reminder: { time: t, unit: u } } }
@@ -118,7 +118,7 @@ class WebcalApiTest < ActiveSupport::TestCase
       assert_not_nil last_response_body['reminder']
       assert_equal t, last_response_body['reminder']['time']
       assert_equal u, last_response_body['reminder']['unit']
-    }
+    end
   end
 
   test 'Can update unit exclusions' do

@@ -43,13 +43,13 @@ class LearningOutcomeApiTest < ActiveSupport::TestCase
     data_to_post = {
       abbreviation: 'ULO9',
       short_description: 'learning outcome short description',
-      full_outcome_description: 'Long description of learning outcome',
+      full_outcome_description: 'Long description of learning outcome'
     }
 
     data_to_put = {
       abbreviation: 'NLO9',
       short_description: 'new learning outcome short description',
-      full_outcome_description: 'New long description of learning outcome',
+      full_outcome_description: 'New long description of learning outcome'
     }
 
     users_can.each do |user|
@@ -100,7 +100,7 @@ class LearningOutcomeApiTest < ActiveSupport::TestCase
 
     last_response_body.each do |outcome|
       model = LearningOutcome.find(outcome['id'])
-      assert_json_matches_model model, outcome, %w(id context_id context_type abbreviation short_description full_outcome_description)
+      assert_json_matches_model model, outcome, %w[id context_id context_type abbreviation short_description full_outcome_description]
     end
   end
 

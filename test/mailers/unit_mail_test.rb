@@ -30,8 +30,8 @@ class UnitMailTest < ActionMailer::TestCase
 
     mail = PortfolioEvidenceMailer.portfolio_ready(project)
 
-    assert_equal 1, mail.from().count
-    assert_equal convenor.email, mail.from().first
+    assert_equal 1, mail.from.count
+    assert_equal convenor.email, mail.from.first
     assert mail.html_part.body.include? "projects/#{project.id}/portfolio"
     unit.destroy!
   end
@@ -48,8 +48,8 @@ class UnitMailTest < ActionMailer::TestCase
 
     mail = PortfolioEvidenceMailer.portfolio_failed(project)
 
-    assert_equal 1, mail.from().count
-    assert_equal convenor.email, mail.from().first
+    assert_equal 1, mail.from.count
+    assert_equal convenor.email, mail.from.first
     assert mail.html_part.body.include? "projects/#{project.id}/portfolio"
     unit.destroy!
   end

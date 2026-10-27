@@ -2,13 +2,12 @@
 require './lib/helpers/database_populator'
 
 FactoryBot.define do
-
   factory :task_definition do
     unit
     name                      { Faker::Lorem.unique.word }
     description               { Faker::Lorem.sentence }
     target_grade              { rand(GradeHelper::RANGE) }
-    upload_requirements       { [{'key' => 'file0','name' => 'Imported Code','type' => 'code'}] }
+    upload_requirements       { [{ 'key' => 'file0', 'name' => 'Imported Code', 'type' => 'code' }] }
     start_date                { unit.start_date + rand(1..12).weeks }
     sequence(:abbreviation)   { |n| "#{GradeHelper.short_grade_for target_grade}#{((unit.start_date - start_date) / 1.week).floor + 1}.#{n}" }
     weighting                 { rand(1..5) }
@@ -44,15 +43,15 @@ FactoryBot.define do
       part_enrolled_student_count { 2 }
       inactive_student_count      { 1 }
       task_count                  { 2 }
-      tutorials                   { 1 }  #per campus
-      tutorial_config             { [] } #[ {stream: 0, campus: 0} ]
+      tutorials                   { 1 }  # per campus
+      tutorial_config             { [] } # [ {stream: 0, campus: 0} ]
       group_sets                  { 0 }
-      groups                      { [] } #[ { gs: 0, students:0 } ]
-      group_tasks                 { [] } #[ {idx: 0, gs: 0 }] - index of task, and index of group set
+      groups                      { [] } # [ { gs: 0, students:0 } ]
+      group_tasks                 { [] } # [ {idx: 0, gs: 0 }] - index of task, and index of group set
       outcome_count               { 2 }
       stream_count                { 0 }
       campus_count                { 1 }
-      set_one_of_each_task        { false }  # In addition to the standard tasks, also add one of each different think of task - group, quality, graded, etc.
+      set_one_of_each_task        { false } # In addition to the standard tasks, also add one of each different think of task - group, quality, graded, etc.
       perform_submissions         { false }
       staff_count                 { 1 }
     end
@@ -68,7 +67,7 @@ FactoryBot.define do
     send_notifications { true }
     allow_flexible_dates { false }
 
-    after(:create) do | unit, eval |
+    after(:create) do |unit, eval|
       group_sets = eval.group_sets
       task_count = eval.task_count
       group_tasks = eval.group_tasks.clone
@@ -79,10 +78,10 @@ FactoryBot.define do
       if eval.set_one_of_each_task
         group_sets = 1 unless group_sets > 0
         task_count = 3 if task_count < 3
-        group_tasks << {idx: 0, gs: group_sets - 1}
+        group_tasks << { idx: 0, gs: group_sets - 1 }
         group_sets.times do |gs|
           (eval.student_count / 4).times do
-            groups << { gs: gs, students: 4}
+            groups << { gs: gs, students: 4 }
           end
         end
       end
@@ -109,15 +108,15 @@ FactoryBot.define do
         break if (c == campuses.last) && tutorial_streams.count > 0
 
         if tutorial_streams.count > 0
-          tutorial_streams.each { |ts| create_list(:tutorial, eval.tutorials, unit: unit, campus: c, tutorial_stream: ts ) }
+          tutorial_streams.each { |ts| create_list(:tutorial, eval.tutorials, unit: unit, campus: c, tutorial_stream: ts) }
         else
-          create_list(:tutorial, eval.tutorials, unit: unit, campus: c )
+          create_list(:tutorial, eval.tutorials, unit: unit, campus: c)
         end
       end
 
       # Now update last campus - give it tutorials with no tutorial streams to mimic "cloud"
       if tutorial_streams.count > 0
-        create_list(:tutorial, eval.tutorials, unit: unit, campus: campuses.last )
+        create_list(:tutorial, eval.tutorials, unit: unit, campus: campuses.last)
       end
 
       unit.employ_staff(FactoryBot.create(:user, :convenor), Role.convenor)
@@ -136,7 +135,7 @@ FactoryBot.define do
       campuses.each do |c|
         campus_tutorials = unit.tutorials.where(campus: c)
         (eval.unenrolled_student_count + eval.student_count + eval.part_enrolled_student_count + eval.inactive_student_count).times do |i|
-          p = unit.enrol_student( FactoryBot.create(:user, :student), c )
+          p = unit.enrol_student(FactoryBot.create(:user, :student), c)
           next if i < eval.unenrolled_student_count
           if i < eval.unenrolled_student_count + eval.inactive_student_count
             p.update(enrolled: false)
@@ -146,7 +145,7 @@ FactoryBot.define do
           next if campus_tutorials.empty?
 
           if campus_tutorials.first.tutorial_stream.present?
-            tutorial_streams.each_with_index do |ts, i|
+            tutorial_streams.each_with_index do |ts, _i|
               p.enrol_in ts.tutorials.where(campus_id: c.id).sample
             end
           else
@@ -184,10 +183,10 @@ FactoryBot.define do
             task = p.task_for_task_definition td
             tutor = p.tutor_for(td)
 
-            unless [TaskStatus.ready_for_feedback, TaskStatus.need_help, TaskStatus.working_on_it].include? ts
-              DatabasePopulator.assess_task(p, task, tutor, ts,  td.start_date + 1.week)
-            else
+            if [TaskStatus.ready_for_feedback, TaskStatus.need_help, TaskStatus.working_on_it].include? ts
               DatabasePopulator.assess_task(p, task, p.student, ts,  td.start_date + 1.week)
+            else
+              DatabasePopulator.assess_task(p, task, tutor, ts, td.start_date + 1.week)
             end
           end
         end
