@@ -147,12 +147,10 @@ class NotificationSetting < ApplicationRecord
     # Matching start and end times mean all day.
     window = MINUTES_PER_DAY - 1 if window.zero?
 
-    (from.to_date.yesterday..from.to_date.tomorrow).each do |date|
-      (0..window).step(digest_interval_hours * 60) do |offset|
-        slot = local_slot(date, start_minutes + offset)
-        return slot if slot > from
-      end
+    slots = (from.to_date.yesterday..from.to_date.tomorrow).flat_map do |date|
+      (0..window).step(digest_interval_hours * 60).map { |offset| local_slot(date, start_minutes + offset) }
     end
+    slots.find { |slot| slot > from }
   end
 
   def local_slot(date, minutes)
