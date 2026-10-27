@@ -5,6 +5,7 @@ module Entities
     expose :digest_frequency
     expose :digest_interval_hours
     expose :digest_start_time
+    expose :digest_end_time
     expose :digest_time
     expose :digest_timezone do |settings, _options|
       settings.resolved_digest_timezone

@@ -423,6 +423,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_27_094931) do
     t.string "digest_frequency", limit: 16, default: "weekly", null: false
     t.integer "digest_interval_hours", default: 4, null: false
     t.string "digest_start_time", limit: 5, default: "07:00", null: false
+    t.string "digest_end_time", limit: 5, default: "22:00", null: false
     t.string "digest_time", limit: 5, default: "07:00", null: false
     t.string "digest_timezone", limit: 64, null: false
     t.integer "digest_weekday", default: 1, null: false

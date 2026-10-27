@@ -15,6 +15,7 @@ class NotificationSettingTest < ActiveSupport::TestCase
     assert_equal 'weekly', settings.digest_frequency
     assert_equal 4, settings.digest_interval_hours
     assert_equal '07:00', settings.digest_start_time
+    assert_equal '22:00', settings.digest_end_time
     assert_equal '07:00', settings.digest_time
     assert_equal NotificationSetting.default_digest_timezone, settings.digest_timezone
     assert_equal 1, settings.digest_weekday
@@ -143,31 +144,49 @@ class NotificationSettingTest < ActiveSupport::TestCase
     assert_equal 'Australia/Melbourne', next_occurrence.time_zone.name
   end
 
-  def test_hourly_delivery_continues_across_midnight_without_drifting
+  def test_hourly_delivery_pauses_outside_the_active_window
     settings = FactoryBot.build(
       :notification_setting,
       digest_frequency: 'hourly',
       digest_interval_hours: 4,
-      digest_start_time: '08:00'
+      digest_start_time: '08:00',
+      digest_end_time: '22:00'
     )
     digest_zone = ActiveSupport::TimeZone[settings.resolved_digest_timezone]
 
     assert_equal digest_zone.local(2026, 7, 29, 12),
                  settings.next_occurrence(digest_zone.local(2026, 7, 29, 10, 30))
-    assert_equal digest_zone.local(2026, 7, 30, 0),
+    assert_equal digest_zone.local(2026, 7, 30, 8),
                  settings.next_occurrence(digest_zone.local(2026, 7, 29, 20, 30))
   end
 
-  def test_three_hourly_delivery_continues_from_its_anchor
+  def test_hourly_window_can_run_past_midnight
     settings = FactoryBot.build(
       :notification_setting,
       digest_frequency: 'hourly',
       digest_interval_hours: 3,
-      digest_start_time: '08:00'
+      digest_start_time: '20:00',
+      digest_end_time: '02:00'
     )
     digest_zone = ActiveSupport::TimeZone[settings.resolved_digest_timezone]
 
     assert_equal digest_zone.local(2026, 7, 30, 2),
+                 settings.next_occurrence(digest_zone.local(2026, 7, 29, 23, 30))
+    assert_equal digest_zone.local(2026, 7, 30, 20),
+                 settings.next_occurrence(digest_zone.local(2026, 7, 30, 2, 30))
+  end
+
+  def test_matching_start_and_end_times_send_all_day
+    settings = FactoryBot.build(
+      :notification_setting,
+      digest_frequency: 'hourly',
+      digest_interval_hours: 6,
+      digest_start_time: '07:00',
+      digest_end_time: '07:00'
+    )
+    digest_zone = ActiveSupport::TimeZone[settings.resolved_digest_timezone]
+
+    assert_equal digest_zone.local(2026, 7, 30, 1),
                  settings.next_occurrence(digest_zone.local(2026, 7, 29, 23, 30))
   end
 

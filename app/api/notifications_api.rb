@@ -178,6 +178,7 @@ class NotificationsApi < Grape::API
     optional :digest_frequency, type: String, values: NotificationSetting::FREQUENCIES
     optional :digest_interval_hours, type: Integer, values: NotificationSetting::DIGEST_INTERVAL_HOURS
     optional :digest_start_time, type: String
+    optional :digest_end_time, type: String
     optional :digest_time, type: String
     optional :digest_weekday, type: Integer
     optional :units, type: Array do

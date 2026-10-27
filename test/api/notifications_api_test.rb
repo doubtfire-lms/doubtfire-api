@@ -245,6 +245,7 @@ class NotificationsApiTest < ActiveSupport::TestCase
     assert_equal 'weekly', last_response_body['digest_frequency']
     assert_equal 4, last_response_body['digest_interval_hours']
     assert_equal '07:00', last_response_body['digest_start_time']
+    assert_equal '22:00', last_response_body['digest_end_time']
     assert_equal NotificationSetting.default_digest_timezone, last_response_body['digest_timezone']
     assert_equal %w[in_app email], last_response_body.dig('channels', 'new_task_comment')
     assert_equal %w[in_app email], last_response_body.dig('channels', 'feedback_warning')
@@ -258,6 +259,7 @@ class NotificationsApiTest < ActiveSupport::TestCase
              digest_frequency: 'daily',
              digest_interval_hours: 6,
              digest_start_time: '09:00',
+             digest_end_time: '21:00',
              digest_time: '10:30',
              digest_weekday: 1,
              units: [{ unit_id: @unit.id, muted: true }]
@@ -266,6 +268,7 @@ class NotificationsApiTest < ActiveSupport::TestCase
     assert_equal 'daily', last_response_body['digest_frequency']
     assert_equal 6, last_response_body['digest_interval_hours']
     assert_equal '09:00', last_response_body['digest_start_time']
+    assert_equal '21:00', last_response_body['digest_end_time']
     assert_equal NotificationSetting.default_digest_timezone, last_response_body['digest_timezone']
     assert_equal ['in_app'], last_response_body.dig('channels', 'new_task_comment')
     assert_equal [{ 'unit_id' => @unit.id, 'muted' => true, 'channels' => nil }], last_response_body['units']

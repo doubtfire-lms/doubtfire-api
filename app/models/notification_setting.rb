@@ -6,6 +6,7 @@ class NotificationSetting < ApplicationRecord
   FREQUENCIES = %w[off hourly daily weekly].freeze
   DIGEST_INTERVAL_HOURS = [1, 2, 3, 4, 6, 12].freeze
   TIME_FORMAT = /\A(?:[01]\d|2[0-3]):[0-5]\d\z/
+  MINUTES_PER_DAY = 24 * 60
 
   attribute :channels, :json
 
@@ -15,6 +16,7 @@ class NotificationSetting < ApplicationRecord
   validates :digest_frequency, inclusion: { in: FREQUENCIES }
   validates :digest_interval_hours, inclusion: { in: DIGEST_INTERVAL_HOURS }
   validates :digest_start_time, format: { with: TIME_FORMAT }
+  validates :digest_end_time, format: { with: TIME_FORMAT }
   validates :digest_time, format: { with: TIME_FORMAT }
   validates :digest_weekday, inclusion: { in: 1..7 }
   validate :digest_timezone_supported
@@ -91,10 +93,7 @@ class NotificationSetting < ApplicationRecord
     return nil if digest_frequency == 'off'
 
     local_from = from.in_time_zone(digest_time_zone)
-    if digest_frequency == 'hourly'
-      start_hour, start_minute = digest_start_time.split(':').map(&:to_i)
-      return next_hourly_occurrence(local_from, start_hour, start_minute)
-    end
+    return next_hourly_occurrence(local_from) if digest_frequency == 'hourly'
 
     hour, minute = digest_time.split(':').map(&:to_i)
     date = local_from.to_date
@@ -128,6 +127,7 @@ class NotificationSetting < ApplicationRecord
       will_save_change_to_digest_frequency? ||
       will_save_change_to_digest_interval_hours? ||
       will_save_change_to_digest_start_time? ||
+      will_save_change_to_digest_end_time? ||
       will_save_change_to_digest_time? ||
       will_save_change_to_digest_timezone? ||
       will_save_change_to_digest_weekday?
@@ -137,22 +137,33 @@ class NotificationSetting < ApplicationRecord
     digest_frequency == 'off' && saved_change_to_digest_frequency?
   end
 
-  # The start time anchors the wall-clock slots, which continue across midnight.
-  # Rebuilding them each day avoids job delays and daylight-saving changes
-  # shifting the user's schedule.
-  def next_hourly_occurrence(from, hour, minute)
-    date = from.to_date
-    candidate_hours = (24 / digest_interval_hours).times.map do |offset|
-      (hour + (offset * digest_interval_hours)) % 24
-    end.sort
-    candidates = candidate_hours.map do |candidate_hour|
-      digest_time_zone.local(date.year, date.month, date.day, candidate_hour, minute)
-    end
+  # Slots run every interval from the start time until the end time, which may be
+  # after midnight, then pause until the next day's start. They are rebuilt from
+  # wall-clock times each day so job delays and daylight saving cannot shift them.
+  # Yesterday is checked for a window that runs past midnight.
+  def next_hourly_occurrence(from)
+    start_minutes = minutes_of_day(digest_start_time)
+    window = (minutes_of_day(digest_end_time) - start_minutes) % MINUTES_PER_DAY
+    # Matching start and end times mean all day.
+    window = MINUTES_PER_DAY - 1 if window.zero?
 
-    candidates.find { |candidate| candidate > from } || begin
-      next_date = date + 1.day
-      digest_time_zone.local(next_date.year, next_date.month, next_date.day, candidate_hours.first, minute)
+    (from.to_date.yesterday..from.to_date.tomorrow).each do |date|
+      (0..window).step(digest_interval_hours * 60) do |offset|
+        slot = local_slot(date, start_minutes + offset)
+        return slot if slot > from
+      end
     end
+  end
+
+  def local_slot(date, minutes)
+    date += minutes / MINUTES_PER_DAY
+    minutes %= MINUTES_PER_DAY
+    digest_time_zone.local(date.year, date.month, date.day, minutes / 60, minutes % 60)
+  end
+
+  def minutes_of_day(time)
+    hour, minute = time.split(':').map(&:to_i)
+    (hour * 60) + minute
   end
 
   def digest_time_zone

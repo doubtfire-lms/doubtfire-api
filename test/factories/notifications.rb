@@ -11,6 +11,7 @@ FactoryBot.define do
     digest_frequency { 'weekly' }
     digest_interval_hours { 4 }
     digest_start_time { '08:00' }
+    digest_end_time { '22:00' }
     digest_time { '07:00' }
     digest_weekday { 1 }
   end
