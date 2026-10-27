@@ -39,6 +39,14 @@ module Doubtfire
     config.auth_method = (ENV['DF_AUTH_METHOD'] || :database).to_sym
     config.access_token_expiry = ENV.fetch('DF_ACCESS_TOKEN_EXPIRY_SECONDS', 2.hours.to_i).to_i.seconds
     config.refresh_token_expiry = ENV.fetch('DF_REFRESH_TOKEN_EXPIRY_SECONDS', 1.week.to_i).to_i.seconds
+    auth_rate_limit_enabled = ENV.fetch('ONTRACK_AUTH_RATE_LIMIT_ENABLED', 'true').downcase
+    raise ArgumentError, 'ONTRACK_AUTH_RATE_LIMIT_ENABLED must be true, false, 1, or 0' unless %w[true false 1 0].include?(auth_rate_limit_enabled)
+
+    config.auth_rate_limit_enabled = %w[true 1].include?(auth_rate_limit_enabled)
+    config.auth_rate_limit = Integer(ENV.fetch('ONTRACK_AUTH_RATE_LIMIT', 5))
+    config.auth_rate_period_seconds = Integer(ENV.fetch('ONTRACK_AUTH_RATE_PERIOD_SECONDS', 20))
+    raise ArgumentError, 'ONTRACK_AUTH_RATE_LIMIT must be positive' unless config.auth_rate_limit.positive?
+    raise ArgumentError, 'ONTRACK_AUTH_RATE_PERIOD_SECONDS must be positive' unless config.auth_rate_period_seconds.positive?
 
     # ==> Student work directory
     # File server location for storing student's work. Defaults to `student_work`
