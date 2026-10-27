@@ -3,7 +3,8 @@
 class SendNotificationDigestJob
   include Sidekiq::Job
 
-  sidekiq_options lock: :until_executed,
+  sidekiq_options queue: 'parallel',
+                  lock: :until_executed,
                   lock_args_method: ->(args) { ["notification-digest:#{args.first}"] },
                   on_conflict: :reject,
                   retry: 5

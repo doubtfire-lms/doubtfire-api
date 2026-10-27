@@ -32,6 +32,11 @@ class TiiCheckProgressJobTest < ActiveSupport::TestCase
       AggregateTaskCompletionStatsJob,
       PollCommunicationSetSchedulesJob,
       NotifyDiscussTimeoutJob,
+      NotifyTaskDeadlinesJob,
+      NotifyFeedbackWarningsJob,
+      CreateWeeklySummaryNotificationsJob,
+      PollNotificationDigestsJob,
+      PruneNotificationsJob,
       SyncLmsIntegrationsJob
     ]
     scheduled_jobs.each do |job_class|

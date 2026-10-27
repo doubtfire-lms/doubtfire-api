@@ -5,7 +5,8 @@ class NotifyTaskDeadlinesJob
 
   ROLLOUT_KEY = 'notifications:task_deadline:rollout_at'
 
-  sidekiq_options lock: :until_executed,
+  sidekiq_options queue: 'parallel',
+                  lock: :until_executed,
                   lock_args_method: ->(_args) { ['notify-task-deadlines'] },
                   on_conflict: :reject,
                   retry: 1

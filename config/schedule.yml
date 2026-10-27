@@ -38,22 +38,27 @@ notify_discuss_timeout:
 notify_task_deadlines:
   cron: "every hour"
   class: "NotifyTaskDeadlinesJob"
+  queue: parallel
 
 notify_feedback_warnings:
   cron: "every hour"
   class: "NotifyFeedbackWarningsJob"
+  queue: parallel
 
 create_weekly_summary_notifications:
   cron: "every monday at 3am"
   class: "CreateWeeklySummaryNotificationsJob"
+  queue: parallel
 
 poll_notification_digests:
   cron: "every 5 minutes"
   class: "PollNotificationDigestsJob"
+  queue: parallel
 
 prune_notifications:
   cron: "every day at 2am"
   class: "PruneNotificationsJob"
+  queue: parallel
 
 sync_lms_integrations:
   cron: "every day at 3am"

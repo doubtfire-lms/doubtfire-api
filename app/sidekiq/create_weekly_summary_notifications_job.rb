@@ -4,7 +4,8 @@
 class CreateWeeklySummaryNotificationsJob
   include Sidekiq::Job
 
-  sidekiq_options lock: :until_executed,
+  sidekiq_options queue: 'parallel',
+                  lock: :until_executed,
                   lock_args_method: ->(_args) { ['create-weekly-summary-notifications'] },
                   on_conflict: :reject,
                   retry: 2

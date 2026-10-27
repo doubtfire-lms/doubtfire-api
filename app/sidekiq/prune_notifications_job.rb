@@ -3,7 +3,8 @@
 class PruneNotificationsJob
   include Sidekiq::Job
 
-  sidekiq_options lock: :until_executed,
+  sidekiq_options queue: 'parallel',
+                  lock: :until_executed,
                   lock_args_method: ->(_args) { ['prune-notifications'] },
                   on_conflict: :reject,
                   retry: 1
