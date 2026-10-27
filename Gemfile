@@ -85,6 +85,7 @@ gem 'grape-swagger-rails'
 gem 'bunny-pub-sub', '0.5.2'
 gem 'ci_reporter'
 gem 'dotenv'
+gem 'rack-attack'
 gem 'rack-cors', require: 'rack/cors'
 gem 'require_all', '>=1.3.3'
 
