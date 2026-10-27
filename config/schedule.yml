@@ -43,6 +43,10 @@ notify_feedback_warnings:
   cron: "every hour"
   class: "NotifyFeedbackWarningsJob"
 
+create_weekly_summary_notifications:
+  cron: "every monday at 3am"
+  class: "CreateWeeklySummaryNotificationsJob"
+
 poll_notification_digests:
   cron: "every 5 minutes"
   class: "PollNotificationDigestsJob"

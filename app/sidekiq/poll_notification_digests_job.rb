@@ -9,9 +9,6 @@ class PollNotificationDigestsJob
                   retry: 1
 
   def perform
-    # Create the 7am weekly summaries first so a digest due at the same time can include them.
-    CreateWeeklySummaryNotificationsJob.new.perform
-
     NotificationSetting.due.find_each do |setting|
       SendNotificationDigestJob.perform_async(setting.id)
     end

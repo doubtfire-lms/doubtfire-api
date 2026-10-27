@@ -94,17 +94,6 @@ class NotificationSettingTest < ActiveSupport::TestCase
     assert settings.delivers?(unit, 'new_task_comment', :email)
   end
 
-  def test_weekly_summary_is_due_in_the_users_timezone
-    user = FactoryBot.create(:user)
-    campus = FactoryBot.create(:campus, timezone: 'Pacific/Auckland')
-    FactoryBot.create(:project, user: user, campus: campus)
-    settings = FactoryBot.create(:notification_setting, user: user)
-
-    assert settings.weekly_summary_due?(Time.utc(2026, 7, 26, 19, 5))
-    assert_not settings.weekly_summary_due?(Time.utc(2026, 7, 26, 18, 55))
-    assert_not settings.weekly_summary_due?(Time.utc(2026, 7, 26, 19, 15))
-  end
-
   def test_a_muted_unit_keeps_following_the_defaults_underneath
     settings = NotificationSetting.for(FactoryBot.create(:user))
     unit = FactoryBot.create(:unit, with_students: false, task_count: 0)

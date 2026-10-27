@@ -70,19 +70,6 @@ class NotificationSetting < ApplicationRecord
     channels_for_unit_id(unit&.id, 'weekly_summary').any?
   end
 
-  def weekly_summary_opted_in?
-    return true if Array(channels['weekly_summary']).any?
-
-    user.notification_unit_overrides.any? do |override|
-      !override.muted && override.customised? && Array(override.channels['weekly_summary']).any?
-    end
-  end
-
-  def weekly_summary_due?(at = Time.current)
-    local = at.in_time_zone(digest_timezone)
-    local.monday? && local.hour == 7 && local.min < 15
-  end
-
   # Notifications are always recorded so the digest has something to send, so the
   # in-app list has to filter them out rather than rely on them never existing.
   def shows_in_app?(unit_id, kind)
