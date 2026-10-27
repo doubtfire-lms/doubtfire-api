@@ -67,10 +67,7 @@ class NotificationSetting < ApplicationRecord
   end
 
   def weekly_summary_for?(unit)
-    override = user.notification_unit_overrides.find_by(unit_id: unit&.id)
-    return false if override&.muted
-
-    Array((override&.customised? ? override.channels : channels)['weekly_summary']).any?
+    channels_for_unit_id(unit&.id, 'weekly_summary').any?
   end
 
   def weekly_summary_opted_in?

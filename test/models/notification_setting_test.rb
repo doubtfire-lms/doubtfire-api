@@ -80,7 +80,7 @@ class NotificationSettingTest < ActiveSupport::TestCase
     assert settings.weekly_summary_for?(unit)
 
     FactoryBot.create(:notification_unit_override, user: settings.user, unit: unit, muted: true)
-    assert_not settings.weekly_summary_for?(unit)
+    assert_not NotificationSetting.for(settings.user.reload).weekly_summary_for?(unit)
   end
 
   def test_weekly_summary_can_be_opted_out_of_without_changing_other_notifications
