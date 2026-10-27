@@ -6,6 +6,14 @@ class AuthTest < ActiveSupport::TestCase
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
 
+  setup do
+    Rack::Attack.enabled = false
+  end
+
+  teardown do
+    Rack::Attack.enabled = true
+  end
+
   def app
     Rails.application
   end

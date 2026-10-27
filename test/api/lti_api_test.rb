@@ -7,6 +7,14 @@ class LtiApiTest < ActiveSupport::TestCase
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
 
+  setup do
+    Rack::Attack.enabled = false
+  end
+
+  teardown do
+    Rack::Attack.enabled = true
+  end
+
   LTI_ROUTE_PURPOSES = {
     '/api/auth/lti' => 'auth',
     '/api/lti/link' => 'link',
