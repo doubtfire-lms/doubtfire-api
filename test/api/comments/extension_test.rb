@@ -15,22 +15,22 @@ class ExtensionTest < ActiveSupport::TestCase
     user = project.student
 
     td = TaskDefinition.new({
-        unit_id: unit.id,
-        tutorial_stream: project.tutorial_enrolments.first.tutorial.tutorial_stream,
-        name: 'status task change',
-        description: 'status task change test',
-        weighting: 4,
-        target_grade: 0,
-        start_date: Time.zone.now - 2.weeks,
-        target_date: Time.zone.now - 1.day,
-        due_date: Time.zone.now + 1.day,
-        abbreviation: 'LESS1WEEKEXTTEST',
-        restrict_status_updates: false,
-        upload_requirements: [ ],
-        plagiarism_warn_pct: 0.8,
-        is_graded: false,
-        max_quality_pts: 0
-      })
+                              unit_id: unit.id,
+                              tutorial_stream: project.tutorial_enrolments.first.tutorial.tutorial_stream,
+                              name: 'status task change',
+                              description: 'status task change test',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: Time.zone.now - 2.weeks,
+                              target_date: Time.zone.now - 1.day,
+                              due_date: Time.zone.now + 1.day,
+                              abbreviation: 'LESS1WEEKEXTTEST',
+                              restrict_status_updates: false,
+                              upload_requirements: [],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0
+                            })
     td.save!
     data_to_post = {
       weeks_requested: '1',
@@ -44,7 +44,7 @@ class ExtensionTest < ActiveSupport::TestCase
     post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", data_to_post
     response = last_response_body
     assert_equal 201, last_response.status
-    assert response["weeks_requested"] == 1, "Error: Deadline less than a week, requested weeks should be 1, found #{response["weeks_requested"]}."
+    assert response["weeks_requested"] == 1, "Error: Deadline less than a week, requested weeks should be 1, found #{response['weeks_requested']}."
 
     # Request a 2 week extension on the day
     td.due_date = Time.zone.now + 2.weeks
@@ -57,7 +57,7 @@ class ExtensionTest < ActiveSupport::TestCase
     post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", data_to_post
     response = last_response_body
     assert_equal 201, last_response.status
-    assert response["weeks_requested"] == 2, "Error: Weeks requested weeks should be 2, found #{response["weeks_requested"]}."
+    assert response["weeks_requested"] == 2, "Error: Weeks requested weeks should be 2, found #{response['weeks_requested']}."
 
     # Add auth_token and username to header
     add_auth_header_for(user: user)
@@ -67,7 +67,6 @@ class ExtensionTest < ActiveSupport::TestCase
     post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", data_to_post
     response = last_response_body
     assert_equal 403, last_response.status, "Error: Allowed too long of a request to be applied."
-
 
     # Add auth_token and username to header
     add_auth_header_for(user: user)
@@ -90,22 +89,22 @@ class ExtensionTest < ActiveSupport::TestCase
     other_tutor = unit.main_convenor_user
 
     td = TaskDefinition.new({
-        unit_id: unit.id,
-        tutorial_stream: unit.tutorial_streams.first,
-        name: 'status task change',
-        description: 'status task change test',
-        weighting: 4,
-        target_grade: 0,
-        start_date: Time.zone.now - 2.weeks,
-        target_date: Time.zone.now - 1.day,
-        due_date: Time.zone.now + 1.day,
-        abbreviation: 'LESS1WEEKEXTTEST',
-        restrict_status_updates: false,
-        upload_requirements: [ ],
-        plagiarism_warn_pct: 0.8,
-        is_graded: false,
-        max_quality_pts: 0
-      })
+                              unit_id: unit.id,
+                              tutorial_stream: unit.tutorial_streams.first,
+                              name: 'status task change',
+                              description: 'status task change test',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: Time.zone.now - 2.weeks,
+                              target_date: Time.zone.now - 1.day,
+                              due_date: Time.zone.now + 1.day,
+                              abbreviation: 'LESS1WEEKEXTTEST',
+                              restrict_status_updates: false,
+                              upload_requirements: [],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0
+                            })
     td.save!
 
     main_tutor = project.tutor_for(td)
@@ -121,17 +120,17 @@ class ExtensionTest < ActiveSupport::TestCase
     post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", data_to_post
     response = last_response_body
     assert_equal 201, last_response.status
-    assert response["weeks_requested"] == 1, "Error: Deadline less than a week, requested weeks should be 1, found #{response["weeks_requested"]}."
+    assert response["weeks_requested"] == 1, "Error: Deadline less than a week, requested weeks should be 1, found #{response['weeks_requested']}."
 
     tc = TaskComment.find(response['id'])
 
     # Check it is not read by the main tutor
-    refute tc.read_by?(main_tutor), "Error: Should not be read by main tutor on create"
+    assert_not tc.read_by?(main_tutor), "Error: Should not be read by main tutor on create"
     assert tc.read_by?(user), "Error: Should be read by student on create"
 
     # Check that reading by main tutor does not read the task
     tc.read_by? main_tutor
-    refute tc.read_by?(main_tutor), "Error: Should not be read by main tutor even when they read it"
+    assert_not tc.read_by?(main_tutor), "Error: Should not be read by main tutor even when they read it"
 
     # Check it is read after grant by another user
     tc.assess_extension other_tutor, true
@@ -148,22 +147,22 @@ class ExtensionTest < ActiveSupport::TestCase
     other_tutor = unit.main_convenor_user
 
     td = TaskDefinition.new({
-        unit_id: unit.id,
-        tutorial_stream: unit.tutorial_streams.first,
-        name: 'status task change',
-        description: 'status task change test',
-        weighting: 4,
-        target_grade: 0,
-        start_date: Time.zone.now - 2.weeks,
-        target_date: Time.zone.now - 1.day,
-        due_date: Time.zone.now + 1.day,
-        abbreviation: 'LESS1WEEKEXTTEST',
-        restrict_status_updates: false,
-        upload_requirements: [ ],
-        plagiarism_warn_pct: 0.8,
-        is_graded: false,
-        max_quality_pts: 0
-      })
+                              unit_id: unit.id,
+                              tutorial_stream: unit.tutorial_streams.first,
+                              name: 'status task change',
+                              description: 'status task change test',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: Time.zone.now - 2.weeks,
+                              target_date: Time.zone.now - 1.day,
+                              due_date: Time.zone.now + 1.day,
+                              abbreviation: 'LESS1WEEKEXTTEST',
+                              restrict_status_updates: false,
+                              upload_requirements: [],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0
+                            })
     td.save!
 
     main_tutor = project.tutor_for(td)
@@ -182,7 +181,7 @@ class ExtensionTest < ActiveSupport::TestCase
     post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", data_to_post
     response = last_response_body
     assert_equal 201, last_response.status
-    assert response["weeks_requested"] == 1, "Error: Deadline less than a week, requested weeks should be 1, found #{response["weeks_requested"]}."
+    assert response["weeks_requested"] == 1, "Error: Deadline less than a week, requested weeks should be 1, found #{response['weeks_requested']}."
 
     tc = ExtensionComment.find(response['id'])
 
@@ -197,22 +196,22 @@ class ExtensionTest < ActiveSupport::TestCase
   def test_extension_on_resubmit
     unit = FactoryBot.create(:unit, extension_weeks_on_resubmit_request: 2)
     td = TaskDefinition.new({
-        unit_id: unit.id,
-        tutorial_stream: unit.tutorial_streams.first,
-        name: 'Task past due - for revert',
-        description: 'Task past due',
-        weighting: 4,
-        target_grade: 0,
-        start_date: Time.zone.now - 2.weeks,
-        target_date: Time.zone.now + 1.day,
-        due_date: Time.zone.now + 1.day + 3.weeks,
-        abbreviation: 'TaskPastDueForRevert',
-        restrict_status_updates: false,
-        upload_requirements: [ ],
-        plagiarism_warn_pct: 0.8,
-        is_graded: false,
-        max_quality_pts: 0
-      })
+                              unit_id: unit.id,
+                              tutorial_stream: unit.tutorial_streams.first,
+                              name: 'Task past due - for revert',
+                              description: 'Task past due',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: Time.zone.now - 2.weeks,
+                              target_date: Time.zone.now + 1.day,
+                              due_date: Time.zone.now + 1.day + 3.weeks,
+                              abbreviation: 'TaskPastDueForRevert',
+                              restrict_status_updates: false,
+                              upload_requirements: [],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0
+                            })
     td.save!
 
     data_to_post = {
@@ -245,7 +244,7 @@ class ExtensionTest < ActiveSupport::TestCase
   end
 
   def test_extension_in_inbox
-    unit = FactoryBot.create(:unit, auto_apply_extension_before_deadline: false, unenrolled_student_count: 0, part_enrolled_student_count: 0, inactive_student_count: 0, tutorials: 2, staff_count: 2, task_count:0)
+    unit = FactoryBot.create(:unit, auto_apply_extension_before_deadline: false, unenrolled_student_count: 0, part_enrolled_student_count: 0, inactive_student_count: 0, tutorials: 2, staff_count: 2, task_count: 0)
     project = unit.projects.first
     user = project.student
     tutor = unit.main_convenor_user
@@ -253,22 +252,22 @@ class ExtensionTest < ActiveSupport::TestCase
     assert project.enrolled
 
     td = TaskDefinition.new({
-        unit_id: unit.id,
-        tutorial_stream: unit.tutorial_streams.first,
-        name: 'status task change',
-        description: 'status task change test',
-        weighting: 4,
-        target_grade: 0,
-        start_date: Time.zone.now - 2.weeks,
-        target_date: Time.zone.now - 1.day,
-        due_date: Time.zone.now + 2.week,
-        abbreviation: 'LESS1WEEKEXTTEST',
-        restrict_status_updates: false,
-        upload_requirements: [ ],
-        plagiarism_warn_pct: 0.8,
-        is_graded: false,
-        max_quality_pts: 0
-      })
+                              unit_id: unit.id,
+                              tutorial_stream: unit.tutorial_streams.first,
+                              name: 'status task change',
+                              description: 'status task change test',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: Time.zone.now - 2.weeks,
+                              target_date: Time.zone.now - 1.day,
+                              due_date: Time.zone.now + 2.weeks,
+                              abbreviation: 'LESS1WEEKEXTTEST',
+                              restrict_status_updates: false,
+                              upload_requirements: [],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0
+                            })
     td.save!
 
     data_to_post = {
@@ -284,7 +283,7 @@ class ExtensionTest < ActiveSupport::TestCase
     post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", data_to_post
     response = last_response_body
     assert_equal 201, last_response.status
-    assert response["weeks_requested"] == 1, "Error: Deadline less than a week, requested weeks should be 1, found #{response["weeks_requested"]}."
+    assert response["weeks_requested"] == 1, "Error: Deadline less than a week, requested weeks should be 1, found #{response['weeks_requested']}."
 
     unit.reload
     task = unit.tasks.last
@@ -308,27 +307,27 @@ class ExtensionTest < ActiveSupport::TestCase
   end
 
   def test_flexible_dates
-    unit = FactoryBot.create(:unit, student_count: 1, unenrolled_student_count: 0, part_enrolled_student_count: 0, inactive_student_count: 0, tutorials: 1, staff_count: 1, task_count:0)
+    unit = FactoryBot.create(:unit, student_count: 1, unenrolled_student_count: 0, part_enrolled_student_count: 0, inactive_student_count: 0, tutorials: 1, staff_count: 1, task_count: 0)
     project = unit.projects.first
     user = project.student
 
     td = TaskDefinition.new({
-        unit_id: unit.id,
-        tutorial_stream: unit.tutorial_streams.first,
-        name: 'Flexible Dates Test',
-        description: 'Flexible Dates Test',
-        weighting: 4,
-        target_grade: 0,
-        start_date: Time.zone.now - 2.weeks,
-        target_date: Time.zone.now + 1.day,
-        due_date: Time.zone.now + 1.day + 3.weeks,
-        abbreviation: 'FLEXTEST',
-        restrict_status_updates: false,
-        upload_requirements: [ ],
-        plagiarism_warn_pct: 0.8,
-        is_graded: false,
-        max_quality_pts: 0
-      })
+                              unit_id: unit.id,
+                              tutorial_stream: unit.tutorial_streams.first,
+                              name: 'Flexible Dates Test',
+                              description: 'Flexible Dates Test',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: Time.zone.now - 2.weeks,
+                              target_date: Time.zone.now + 1.day,
+                              due_date: Time.zone.now + 1.day + 3.weeks,
+                              abbreviation: 'FLEXTEST',
+                              restrict_status_updates: false,
+                              upload_requirements: [],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0
+                            })
     td.save!
 
     data_to_post = {
@@ -354,7 +353,7 @@ class ExtensionTest < ActiveSupport::TestCase
     assert_equal(-1, task.extensions, "Error: Task should have -1 extensions set")
 
     # Check cannot make extension request
-    post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", {weeks_requested: 1, comment: "Test Extension Request"}
+    post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/request_extension", { weeks_requested: 1, comment: "Test Extension Request" }
     assert_equal 403, last_response.status, last_response_body
 
     td.destroy!

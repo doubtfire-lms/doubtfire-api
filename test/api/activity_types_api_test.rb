@@ -15,9 +15,9 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
 
     assert_equal expected_data.count, last_response_body.count
 
-    response_keys = %w(name abbreviation)
+    response_keys = %w[name abbreviation]
 
-    last_response_body.each do | data |
+    last_response_body.each do |data|
       expected_data = ActivityType.find(data['id'])
       assert_json_matches_model(expected_data, data, response_keys)
     end
@@ -28,7 +28,7 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
   def test_admin_can_post_activity_type
     # Admin user
     admin = FactoryBot.create(:user, :admin)
-    
+
     # the number of teaching period before post
     no_activity_type = ActivityType.count
 
@@ -42,12 +42,12 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
 
     # perform the POST
     post_json '/api/activity_types', data_to_post
-    
-    # check if the request get through 
+
+    # check if the request get through
     assert_equal 201, last_response.status
 
     # check if the details posted match as expected
-    response_keys = %w(name abbreviation)
+    response_keys = %w[name abbreviation]
     activity_type = ActivityType.find(last_response_body['id'])
     assert_json_matches_model(activity_type, last_response_body, response_keys)
 
@@ -56,14 +56,14 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     assert_equal data_to_post[:activity_type]['abbreviation'], activity_type.abbreviation
 
     # check if one more activity type is created
-    assert_equal no_activity_type +1, ActivityType.count
+    assert_equal no_activity_type + 1, ActivityType.count
   end
 
   # 2: Convenor cannot create a new activity type
   def test_convenor_cannot_post_activity_type
     # Convenor user
     convenor = FactoryBot.create(:user, :convenor)
-    
+
     # the number of teaching period before post
     no_activity_type = ActivityType.count
 
@@ -74,11 +74,11 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
 
     # auth_token and username added to header
     add_auth_header_for(user: convenor)
-    
+
     # perform the POST
     post_json '/api/activity_types', data_to_post
-    
-    # check if the request get through 
+
+    # check if the request get through
     assert_equal 403, last_response.status
 
     # check if no more activity type is created
@@ -89,7 +89,7 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
   def test_tutor_cannot_post_activity_type
     # Tutor user
     tutor = FactoryBot.create(:user, :tutor)
-    
+
     # the number of teaching period before post
     no_activity_type = ActivityType.count
 
@@ -100,11 +100,11 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
 
     # auth_token and username added to header
     add_auth_header_for(user: tutor)
-  
+
     # perform the POST
     post_json '/api/activity_types', data_to_post
-    
-    # check if the request get through 
+
+    # check if the request get through
     assert_equal 403, last_response.status
 
     # check if no more activity type is created
@@ -119,27 +119,27 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
 
     # The activity type to be replaced
     activity_type = FactoryBot.create(:activity_type)
-    
-    # Data to replace 
+
+    # Data to replace
     data_to_put = {
       activity_type: FactoryBot.build(:activity_type)
     }
 
     # auth_token and username added to header
-    add_auth_header_for(user:admin)
+    add_auth_header_for(user: admin)
 
     # Update activity_type with data_to_put
     put_json "/api/activity_types/#{activity_type.id}", data_to_put
-    
-    #check if the request get through
+
+    # check if the request get through
     assert_equal 200, last_response.status
 
     # check if the details posted match as expected
-    response_keys = %w(name abbreviation)
+    response_keys = %w[name abbreviation]
     activity_type_updated = activity_type.reload
     assert_json_matches_model(activity_type_updated, last_response_body, response_keys)
 
-    # check if the details in the replaced teaching period match as data set to replace 
+    # check if the details in the replaced teaching period match as data set to replace
     assert_equal data_to_put[:activity_type]['name'], activity_type_updated.name
     assert_equal data_to_put[:activity_type]['abbreviation'], activity_type_updated.abbreviation
   end
@@ -151,8 +151,8 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
 
     # The activity type to be replaced
     activity_type = FactoryBot.create(:activity_type)
-    
-    # Data to replace 
+
+    # Data to replace
     data_to_put = {
       activity_type: FactoryBot.build(:activity_type)
     }
@@ -162,8 +162,8 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
 
     # Update activity_type with data_to_put
     put_json "/api/activity_types/#{activity_type.id}", data_to_put
-    
-    #check if the request get through
+
+    # check if the request get through
     assert_equal 403, last_response.status
   end
 
@@ -174,8 +174,8 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
 
     # The activity type to be replaced
     activity_type = FactoryBot.create(:activity_type)
-    
-    # Data to replace 
+
+    # Data to replace
     data_to_put = {
       activity_type: FactoryBot.build(:activity_type)
     }
@@ -185,8 +185,8 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
 
     # Update activity_type with data_to_put
     put_json "/api/activity_types/#{activity_type.id}", data_to_put
-    
-    #check if the request get through
+
+    # check if the request get through
     assert_equal 403, last_response.status
   end
 
@@ -209,21 +209,21 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     post_json '/api/activity_types', data_to_post
 
     # Check if the post does not get through
-    assert_equal 403, last_response.status  
+    assert_equal 403, last_response.status
 
     # Check if the number of activity type is the same as initially
     assert_equal ActivityType.count, number_of_activity_type
-  end  
+  end
 
   def test_student_cannot_put_activity_type
     # A user with student role which does not have premision to put a activity type
     user = FactoryBot.create(:user, :student)
 
-    #Create a new activity type
+    # Create a new activity type
     activity_type = FactoryBot.create(:activity_type)
 
     # Number of Activity type before put new activity type
-    number_of_activity_type = ActivityType.count    
+    number_of_activity_type = ActivityType.count
 
     # Create a dummy activity type
     data_to_put = {
@@ -235,9 +235,9 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
 
     # Perform PUT, but the student user does not have permissions to put it.
     put_json "/api/activity_types/#{activity_type.id}", data_to_put
-    
+
     # Check if the put does not get through
-    assert_equal 403, last_response.status  
+    assert_equal 403, last_response.status
 
     # Check if the number of activity type is the same as initially
     assert_equal ActivityType.count, number_of_activity_type
@@ -246,42 +246,41 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
   def test_delete_activity_type
     # Create a activity type
     activity_type = FactoryBot.create(:activity_type)
-          
-    #number of activity type before delete
+
+    # number of activity type before delete
     number_of_ativity_type = ActivityType.count
-        
 
     # auth_token and username added to header
     add_auth_header_for(user: User.first)
-    
+
     # perform the delete
-    delete_json "/api/activity_types/#{activity_type.id}" 
-    
+    delete_json "/api/activity_types/#{activity_type.id}"
+
     # Check if the delete get through
     assert_equal 200, last_response.status
 
     # Check delete if success
-    assert_equal ActivityType.count, number_of_ativity_type-1
+    assert_equal ActivityType.count, number_of_ativity_type - 1
 
     # Check that you can't find the deleted id
-    refute ActivityType.exists?(activity_type.id)
+    assert_not ActivityType.exists?(activity_type.id)
   end
 
   def test_student_cannot_delete_activity_type
     # A user with student role which does not have permision to delete a activity type
     user = FactoryBot.build(:user, :student)
-    
+
     # create a activity type to delete
-    activity_type = FactoryBot.create (:activity_type)
-    
+    activity_type = FactoryBot.create(:activity_type)
+
     # number of activity type before delete
     number_of_ativity_type = ActivityType.count
-    
+
     # auth_token and username added to header
     add_auth_header_for(user: user)
 
     # perform the delete
-    delete_json "/api/activity_types/#{activity_type.id}" 
+    delete_json "/api/activity_types/#{activity_type.id}"
 
     # check if the delete does not get through
     assert_equal 403, last_response.status
@@ -290,6 +289,6 @@ class ActivityTypesApiTest < ActiveSupport::TestCase
     assert_equal ActivityType.count, number_of_ativity_type
 
     # # Check that you still can find the deleted id
-   assert ActivityType.exists?(activity_type.id)
+    assert ActivityType.exists?(activity_type.id)
   end
 end

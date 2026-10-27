@@ -11,7 +11,6 @@ class UnitRolesTest < ActiveSupport::TestCase
 
   # GET /api/units_roles
   def test_get_unit_roles
-
     # Add username and auth_token to Header
     add_auth_header_for(user: User.first)
 
@@ -82,10 +81,10 @@ class UnitRolesTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
 
     # check if the number of unit roles reduces by 1
-    assert_equal UnitRole.count, number_of_ur -1
+    assert_equal UnitRole.count, number_of_ur - 1
 
     # Check that you can't find the deleted id
-    refute UnitRole.exists?(id_of_ur)
+    assert_not UnitRole.exists?(id_of_ur)
   end
 
   # Delete a teaching period using unauthorised account
@@ -142,7 +141,7 @@ class UnitRolesTest < ActiveSupport::TestCase
 
     delete "/api/unit_roles/#{initial_id}"
     assert_equal 200, last_response.status, last_response.inspect
-    refute UnitRole.where(id: initial_id).present?
+    assert_not UnitRole.where(id: initial_id).present?
   end
 
   def test_delete_unit_role_with_assigned_tutorials_requires_reassignment
@@ -174,7 +173,7 @@ class UnitRolesTest < ActiveSupport::TestCase
 
     assert_equal 200, last_response.status
     assert_equal replacement_role.id, tutorial.reload.unit_role_id
-    refute UnitRole.exists?(tutor_role.id)
+    assert_not UnitRole.exists?(tutor_role.id)
   end
 
   def test_delete_unit_role_with_assigned_tutorials_rejects_invalid_reassignment_target

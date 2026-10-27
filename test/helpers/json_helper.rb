@@ -13,14 +13,14 @@ module TestHelpers
     def post_json(endpoint, data)
       header 'CONTENT_TYPE', 'application/json'
 
-      post URI::Parser.new.escape(endpoint), data.to_json
+      post URI::Parser.new.escape(endpoint), params: data.to_json
     end
 
     #
     # PUTs a hash data as JSON with content-type "application/json"
     #
     def put_json(endpoint, data)
-      put URI::Parser.new.escape(endpoint), data.to_json, 'CONTENT_TYPE' => 'application/json'
+      put URI::Parser.new.escape(endpoint), params: data.to_json, session: { 'CONTENT_TYPE' => 'application/json' }
     end
 
     #

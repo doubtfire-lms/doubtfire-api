@@ -63,8 +63,8 @@ class ProjectsApiTest < ActiveSupport::TestCase
 
       assert_json_limit_keys_to_exactly keys, data
 
-      assert_json_matches_model(project, data, %w(campus_id target_grade campus_id))
-      assert_json_matches_model(project.unit, data['unit'], %w(id code name active))
+      assert_json_matches_model(project, data, %w[campus_id target_grade campus_id])
+      assert_json_matches_model(project.unit, data['unit'], %w[id code name active])
 
       assert_json_matches_model project, data, key_test
     end
@@ -205,8 +205,8 @@ class ProjectsApiTest < ActiveSupport::TestCase
       project = user.projects.find(data['id'])
       assert project.present?, data.inspect
 
-      assert_json_matches_model(project, data, %w(campus_id target_grade campus_id))
-      assert_json_matches_model(project.unit, data['unit'], %w(code id name active))
+      assert_json_matches_model(project, data, %w[campus_id target_grade campus_id])
+      assert_json_matches_model(project.unit, data['unit'], %w[code id name active])
     end
   end
 
@@ -227,7 +227,7 @@ class ProjectsApiTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status, last_response_body
     assert_equal user.projects.find(project.id).submitted_grade, 2
 
-    keys = %w(campus_id target_grade submitted_grade compile_portfolio portfolio_available uses_draft_learning_summary)
+    keys = %w[campus_id target_grade submitted_grade compile_portfolio portfolio_available uses_draft_learning_summary]
 
     assert_json_limit_keys_to_exactly keys, last_response_body
     assert_json_matches_model project, last_response_body, keys

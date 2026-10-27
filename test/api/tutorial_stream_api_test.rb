@@ -19,9 +19,9 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     add_auth_header_for(user: unit.main_convenor_user)
 
     assert_equal 0, unit.tutorial_streams.count
-    post_json "/api/units/#{unit.id}/tutorial_streams", {activity_type_abbr: activity_type.abbreviation}
+    post_json "/api/units/#{unit.id}/tutorial_streams", { activity_type_abbr: activity_type.abbreviation }
     assert_equal 201, last_response.status
-    post_json "/api/units/#{unit.id}/tutorial_streams", {activity_type_abbr: activity_type.abbreviation}
+    post_json "/api/units/#{unit.id}/tutorial_streams", { activity_type_abbr: activity_type.abbreviation }
     assert_equal 201, last_response.status
 
     unit.reload
@@ -31,7 +31,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
 
     assert_equal 1, unit.tutorial_streams.count
     assert_equal 200, last_response.status
-    post_json "/api/units/#{unit.id}/tutorial_streams", {activity_type_abbr: activity_type.abbreviation}
+    post_json "/api/units/#{unit.id}/tutorial_streams", { activity_type_abbr: activity_type.abbreviation }
     assert_equal 201, last_response.status
   end
 end

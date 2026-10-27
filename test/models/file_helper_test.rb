@@ -19,10 +19,10 @@ class FileHelperTest < ActiveSupport::TestCase
   end
 
   def test_convert_use_with_gif
-    in_file = "#{Rails.root}/test_files/submissions/unbelievable.gif"
+    in_file = "#{Rails.root.join('test_files/submissions/unbelievable.gif')}"
 
     Dir.mktmpdir do |dir|
-      dest_file = "#{dir}#{File.basename(in_file, ".*")}.jpg"
+      dest_file = "#{dir}#{File.basename(in_file, '.*')}.jpg"
       assert FileHelper.compress_image_to_dest(in_file, dest_file, true)
       assert File.exist? dest_file
     end
@@ -291,7 +291,7 @@ class FileHelperTest < ActiveSupport::TestCase
         'zip'
       )
 
-      refute result[:accepted]
+      assert_not result[:accepted]
       assert_includes result[:msg], 'unsafe path'
     end
   end
@@ -311,7 +311,7 @@ class FileHelperTest < ActiveSupport::TestCase
         'zip'
       )
 
-      refute result[:accepted]
+      assert_not result[:accepted]
       assert_includes result[:msg], 'Nested archives are not allowed'
     end
   end
@@ -355,7 +355,7 @@ class FileHelperTest < ActiveSupport::TestCase
 
       result = FileHelper.validate_zip_upload(zip_file.path, 'submission.zip')
 
-      refute result[:valid]
+      assert_not result[:valid]
       assert_includes result[:msg], 'uncompressed size limit'
     end
   ensure
@@ -376,7 +376,7 @@ class FileHelperTest < ActiveSupport::TestCase
       assert_includes tree[:lines], '↳ src/'
       assert_includes tree[:lines], '  ↳ main.rb'
       assert_includes tree[:lines], '↳ README.md'
-      refute tree[:truncated]
+      assert_not tree[:truncated]
     end
   end
 

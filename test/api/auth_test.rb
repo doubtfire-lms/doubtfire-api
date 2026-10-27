@@ -51,7 +51,7 @@ class AuthTest < ActiveSupport::TestCase
     assert_equal 'general', token.token_type
 
     # User has the token - count of matching tokens for that user is 1
-    assert_equal 1, expected_auth.auth_tokens.select{|t| t.authentication_token == actual_auth['auth_token']}.count
+    assert_equal 1, expected_auth.auth_tokens.select { |t| t.authentication_token == actual_auth['auth_token'] }.count
 
     # Check we got a refresh token
     assert last_response.cookies['refresh_token'], 'Expect refresh token to be set'
@@ -135,8 +135,8 @@ class AuthTest < ActiveSupport::TestCase
     actual_auth = last_response_body
 
     # Check response body doesn't return 'user' and 'auth_token' values
-    refute actual_auth.key?('user'), 'User not expected if auth fails'
-    refute actual_auth.key?('auth_token'), 'Auth token not expected if auth fails'
+    assert_not actual_auth.key?('user'), 'User not expected if auth fails'
+    assert_not actual_auth.key?('auth_token'), 'Auth token not expected if auth fails'
 
     # 401 response code means invalid username / password
     assert_equal 401, last_response.status
@@ -155,8 +155,8 @@ class AuthTest < ActiveSupport::TestCase
     actual_auth = last_response_body
 
     # Check response body doesn't return 'user' and 'auth_token' values
-    refute actual_auth.key?('user'), 'User not expected if auth fails'
-    refute actual_auth.key?('auth_token'), 'Auth token not expected if auth fails'
+    assert_not actual_auth.key?('user'), 'User not expected if auth fails'
+    assert_not actual_auth.key?('auth_token'), 'Auth token not expected if auth fails'
 
     assert actual_auth.key? 'error'
   end
@@ -201,8 +201,8 @@ class AuthTest < ActiveSupport::TestCase
     actual_auth = last_response_body
 
     # Check response body doesn't return 'user' and 'auth_token' values
-    refute actual_auth.key?('user'), 'User not expected if auth fails'
-    refute actual_auth.key?('auth_token'), 'Auth token not expected if auth fails'
+    assert_not actual_auth.key?('user'), 'User not expected if auth fails'
+    assert_not actual_auth.key?('auth_token'), 'Auth token not expected if auth fails'
 
     # 400 response code means missing username and password
     assert_equal 400, last_response.status
