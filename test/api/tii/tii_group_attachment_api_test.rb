@@ -15,8 +15,7 @@ class TiiGroupAttachmentApiTest < ActiveSupport::TestCase
 
   setup do
     @task_def = FactoryBot.create(:task_definition,
-      unit: FactoryBot.create(:unit, with_students: false, task_count: 0)
-    )
+                                  unit: FactoryBot.create(:unit, with_students: false, task_count: 0))
 
     @unit = @task_def.unit
 
@@ -100,7 +99,7 @@ class TiiGroupAttachmentApiTest < ActiveSupport::TestCase
     get "/api/units/#{@unit.id}/task_definitions/#{@task_def.id}/tii_group_attachments"
     assert_equal 200, last_response.status, last_response_body
     assert_equal 2, last_response_body.length
-    assert_json_limit_keys_to_exactly(%w(id group_attachment_id filename status), last_response_body.first)
+    assert_json_limit_keys_to_exactly(%w[id group_attachment_id filename status], last_response_body.first)
   end
 
   def test_can_trigger_upload_group_attachments_for_task_definition

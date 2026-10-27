@@ -96,8 +96,8 @@ class ProjectModelTest < ActiveSupport::TestCase
     assert_equal 1, unit.unit_roles.count
 
     # Employ two more staff
-    unit.employ_staff( FactoryBot.create(:user, :convenor), Role.tutor)
-    unit.employ_staff( FactoryBot.create(:user, :convenor), Role.tutor)
+    unit.employ_staff(FactoryBot.create(:user, :convenor), Role.tutor)
+    unit.employ_staff(FactoryBot.create(:user, :convenor), Role.tutor)
     assert_equal 3, unit.unit_roles.count
 
     tutorial_first = FactoryBot.create(:tutorial, unit: unit, campus: campus, tutorial_stream: tutorial_stream_first, unit_role: unit.unit_roles.first)
@@ -139,7 +139,7 @@ class ProjectModelTest < ActiveSupport::TestCase
   end
 
   def test_matching_tasks
-    unit = FactoryBot.create(:unit, student_count:2)
+    unit = FactoryBot.create(:unit, student_count: 2)
     campus = Campus.first
 
     p1 = unit.students[0]
@@ -159,7 +159,7 @@ class ProjectModelTest < ActiveSupport::TestCase
     assert project.compile_portfolio
 
     project.create_portfolio
-    refute project.reload.compile_portfolio
+    assert_not project.reload.compile_portfolio
     assert project.portfolio_exists?
     assert File.exist?(project.portfolio_path)
 
@@ -322,7 +322,7 @@ class ProjectModelTest < ActiveSupport::TestCase
 
     assert_equal 'LearningSummaryReport.pdf', report[:name]
     assert FileHelper.validate_pdf(project.learning_summary_report_path)[:valid]
-    refute project.reload.uses_draft_learning_summary
+    assert_not project.reload.uses_draft_learning_summary
 
     evidence = project.move_to_portfolio(
       { filename: 'Evidence.docx', 'tempfile' => source },
@@ -380,33 +380,33 @@ class ProjectModelTest < ActiveSupport::TestCase
     project.update compile_portfolio: true
     assert project.compile_portfolio
 
-    project.move_to_portfolio( {
-      filename: "LearningSummaryReport.pdf",
-      'tempfile' => File.new(test_file_path("submissions/1.2P.pdf"))
-    }, "LearningSummaryReport", "document")
+    project.move_to_portfolio({
+                                filename: "LearningSummaryReport.pdf",
+                                'tempfile' => File.new(test_file_path("submissions/1.2P.pdf"))
+                              }, "LearningSummaryReport", "document")
 
-    project.move_to_portfolio( {
-      filename: "1.2P.pdf",
-      'tempfile' => File.new(test_file_path("submissions/1.2P.pdf"))
-    }, "1.2P.pdf", "document")
+    project.move_to_portfolio({
+                                filename: "1.2P.pdf",
+                                'tempfile' => File.new(test_file_path("submissions/1.2P.pdf"))
+                              }, "1.2P.pdf", "document")
 
-    project.move_to_portfolio( {
-      filename: "logo.jpeg",
-      'tempfile' => File.new(test_file_path("submissions/Deakin_Logo.jpeg"))
-    }, "logo.jpeg", "image")
+    project.move_to_portfolio({
+                                filename: "logo.jpeg",
+                                'tempfile' => File.new(test_file_path("submissions/Deakin_Logo.jpeg"))
+                              }, "logo.jpeg", "image")
 
-    project.move_to_portfolio( {
-      filename: "program.cs",
-      'tempfile' => File.new(test_file_path("submissions/program.cs"))
-    }, "program.cs", "code")
+    project.move_to_portfolio({
+                                filename: "program.cs",
+                                'tempfile' => File.new(test_file_path("submissions/program.cs"))
+                              }, "program.cs", "code")
 
-    project.move_to_portfolio( {
-      filename: "vectorial_graph.ipynb",
-      'tempfile' => File.new(test_file_path("submissions/vectorial_graph.ipynb"))
-    }, "vectorial_graph.ipynb", "code")
+    project.move_to_portfolio({
+                                filename: "vectorial_graph.ipynb",
+                                'tempfile' => File.new(test_file_path("submissions/vectorial_graph.ipynb"))
+                              }, "vectorial_graph.ipynb", "code")
 
     project.create_portfolio
-    refute project.reload.compile_portfolio
+    assert_not project.reload.compile_portfolio
     assert project.portfolio_exists?
 
     assert File.exist?(project.portfolio_path)

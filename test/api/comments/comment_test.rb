@@ -34,8 +34,8 @@ class CommentTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status, last_response_body
     assert_equal 3, last_response_body.length, last_response_body.inspect
 
-    keys = %w(id comment has_attachment type is_new reply_to_id author recipient created_at recipient_read_time)
-    keys_test = %w(id comment reply_to_id)
+    keys = %w[id comment has_attachment type is_new reply_to_id author recipient created_at recipient_read_time]
+    keys_test = %w[id comment reply_to_id]
 
     last_response_body.each do |resp|
       assert_json_limit_keys_to_exactly keys, resp
@@ -50,14 +50,14 @@ class CommentTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status, last_response_body
     assert_equal 3, last_response_body.length, last_response_body.inspect
 
-    keys = %w(id comment has_attachment type is_new reply_to_id author recipient created_at recipient_read_time)
-    keys_test = %w(id comment reply_to_id)
+    keys = %w[id comment has_attachment type is_new reply_to_id author recipient created_at recipient_read_time]
+    keys_test = %w[id comment reply_to_id]
 
     last_response_body.each do |resp|
       assert_json_limit_keys_to_exactly keys, resp
       comment = TaskComment.find(resp['id'])
       assert_json_matches_model comment, resp, keys_test
-      refute resp['is_new'], resp.inspect
+      assert_not resp['is_new'], resp.inspect
     end
 
     task.add_text_comment(user, 'Response')
@@ -94,7 +94,7 @@ class CommentTest < ActiveSupport::TestCase
     }
 
     # check each is the same
-    assert_json_matches_model expected_response, last_response_body, %w(comment has_attachment type is_new)
+    assert_json_matches_model expected_response, last_response_body, %w[comment has_attachment type is_new]
     assert_json_matches_model expected_response[:author], last_response_body['author'], ['id']
     assert_json_matches_model expected_response[:recipient], last_response_body['recipient'], ['id']
   end
@@ -133,7 +133,7 @@ class CommentTest < ActiveSupport::TestCase
     comment_data = { comment: 'Responding!', reply_to_id: TaskComment.last.id }
     post_json "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/comments", comment_data
     assert_equal 201, last_response.status
-    assert_json_matches_model expected_response, last_response_body, %w(comment type reply_to_id)
+    assert_json_matches_model expected_response, last_response_body, %w[comment type reply_to_id]
 
     expected_response = {
       'comment' => 'Responding again!',
@@ -153,7 +153,7 @@ class CommentTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status
 
     # check each is the same
-    assert_json_matches_model expected_response, last_response_body, %w(comment type reply_to_id)
+    assert_json_matches_model expected_response, last_response_body, %w[comment type reply_to_id]
   end
 
   def test_student_post_reply_to_invalid_comment
@@ -343,7 +343,7 @@ class CommentTest < ActiveSupport::TestCase
                             due_date: Time.zone.now + 1.week,
                             abbreviation: 'TaskSwitchIndGrp',
                             restrict_status_updates: false,
-                            upload_requirements: [ { 'key' => 'file0', 'name' => 'Shape Class', 'type' => 'code' } ],
+                            upload_requirements: [{ 'key' => 'file0', 'name' => 'Shape Class', 'type' => 'code' }],
                             plagiarism_warn_pct: 0.8,
                             is_graded: false,
                             max_quality_pts: 0,
@@ -586,7 +586,7 @@ class CommentTest < ActiveSupport::TestCase
                             due_date: Time.zone.now + 2.weeks,
                             abbreviation: 'test_read_receipts_for_task_status_comments',
                             restrict_status_updates: false,
-                            upload_requirements: [ ],
+                            upload_requirements: [],
                             plagiarism_warn_pct: 0.8,
                             is_graded: false,
                             max_quality_pts: 0)
@@ -606,8 +606,8 @@ class CommentTest < ActiveSupport::TestCase
     task = project.task_for_task_definition(td)
     assert_equal TaskStatus.ready_for_feedback, task.task_status
 
-    refute task.comments.last.new_for?(user)
-    refute task.comments.last.new_for?(project.tutor_for(td))
+    assert_not task.comments.last.new_for?(user)
+    assert_not task.comments.last.new_for?(project.tutor_for(td))
 
     td.destroy!
   end
