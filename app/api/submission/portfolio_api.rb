@@ -35,7 +35,12 @@ module Submission
       end
 
       # Move file into place
-      result = project.move_to_portfolio(file, name, kind) # returns details of file
+      result = begin
+        project.move_to_portfolio(file, name, kind) # returns details of file
+      rescue FileHelper::DocumentConversionError => e
+        Rails.logger.error "Failed to convert portfolio document to PDF: #{e.message}"
+        error!({ error: 'Could not convert the Word document to PDF. Please try again or upload a PDF.' }, 422)
+      end
 
       present result, Grape::Presenters::Presenter
     end # post
@@ -55,6 +60,10 @@ module Submission
 
       # Remove file or portfolio?
       if params[:idx].nil? && params[:name].nil? && params[:kind].nil?
+        project.update!({
+                          portfolio_submission_date: nil,
+                          portfolio_production_date: nil
+                        })
         project.remove_portfolio # returns details of file
       elsif !(params[:idx].nil? || params[:name].nil? || params[:kind].nil?)
         idx = params[:idx]

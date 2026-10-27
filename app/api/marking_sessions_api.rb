@@ -27,7 +27,7 @@ class MarkingSessionsApi < Grape::API
     end
 
     unit_role = unit.unit_role_for(current_user)
-    unless unit_role
+    unless unit_role || current_user.role == Role.admin
       error!({ error: "You are not authorised to view marking sessions for this unit" }, 403)
     end
 
@@ -51,7 +51,7 @@ class MarkingSessionsApi < Grape::API
                .where(unit: unit)
                .where(start_time: start_date..end_date)
 
-    sessions = sessions.where(user_id: current_user.id) if unit_role.role != Role.convenor
+    sessions = sessions.where(user_id: current_user.id) if unit_role && unit_role&.role != Role.convenor
 
     present sessions, with: Entities::MarkingSessionEntity
   end

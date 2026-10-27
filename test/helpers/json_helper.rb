@@ -7,6 +7,8 @@ module TestHelpers
   module JsonHelper
     module_function
 
+    # These helpers use Rack::Test, which takes the request body as its second positional argument.
+    # rubocop:disable Rails/HttpPositionalArguments
     #
     # POSTs a hash data as JSON with content-type "application/json"
     #
@@ -20,8 +22,11 @@ module TestHelpers
     # PUTs a hash data as JSON with content-type "application/json"
     #
     def put_json(endpoint, data)
-      put URI::Parser.new.escape(endpoint), data.to_json, 'CONTENT_TYPE' => 'application/json'
+      header 'CONTENT_TYPE', 'application/json'
+
+      put URI::Parser.new.escape(endpoint), data.to_json
     end
+    # rubocop:enable Rails/HttpPositionalArguments
 
     #
     # PUTs a hash data as JSON with content-type "application/json"

@@ -10,42 +10,42 @@ class GroupsApiTest < ActiveSupport::TestCase
     Rails.application
   end
 
-#   def test_get_groups
-#     # The GET we are testing
-#     unit_id = rand(1..Unit.all.length)
+  #   def test_get_groups
+  #     # The GET we are testing
+  #     unit_id = rand(1..Unit.all.length)
 
-#   end
+  #   end
 
   def test_group_submission_with_extensions
     unit = FactoryBot.create :unit
 
-    group_set = GroupSet.create!({name: 'test_group_submission_with_extensions', unit: unit})
+    group_set = GroupSet.create!({ name: 'test_group_submission_with_extensions', unit: unit })
     group_set.save!
 
-    group = Group.create!({group_set: group_set, name: 'test_group_submission_with_extensions', tutorial: unit.tutorials.first})
+    group = Group.create!({ group_set: group_set, name: 'test_group_submission_with_extensions', tutorial: unit.tutorials.first })
 
     group.add_member(unit.active_projects[0])
     group.add_member(unit.active_projects[1])
     group.add_member(unit.active_projects[2])
 
     td = TaskDefinition.new({
-        unit_id: unit.id,
-        tutorial_stream: unit.tutorial_streams.first,
-        name: 'Task to switch from ind to group after submission',
-        description: 'test def',
-        weighting: 4,
-        target_grade: 0,
-        start_date: Time.zone.now - 1.week,
-        target_date: Time.zone.now - 1.day,
-        due_date: Time.zone.now + 1.week,
-        abbreviation: 'TaskSwitchIndGrp',
-        restrict_status_updates: false,
-        upload_requirements: [ { "key" => 'file0', "name" => 'Shape Class', "type" => 'code' } ],
-        plagiarism_warn_pct: 0.8,
-        is_graded: false,
-        max_quality_pts: 0,
-        group_set: group_set
-      })
+                              unit_id: unit.id,
+                              tutorial_stream: unit.tutorial_streams.first,
+                              name: 'Task to switch from ind to group after submission',
+                              description: 'test def',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: Time.zone.now - 1.week,
+                              target_date: Time.zone.now - 1.day,
+                              due_date: Time.zone.now + 1.week,
+                              abbreviation: 'TaskSwitchIndGrp',
+                              restrict_status_updates: false,
+                              upload_requirements: [{ "key" => 'file0', "name" => 'Shape Class', "type" => 'code' }],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0,
+                              group_set: group_set
+                            })
     assert td.save!
 
     data_to_post = {
@@ -77,8 +77,8 @@ class GroupsApiTest < ActiveSupport::TestCase
 
     group.reload
     group.projects.each do |proj|
-        task = proj.task_for_task_definition(td)
-        assert_equal TaskStatus.ready_for_feedback, task.task_status
+      task = proj.task_for_task_definition(td)
+      assert_equal TaskStatus.ready_for_feedback, task.task_status
     end
 
     # ensure groupset has groups to destroy
@@ -91,34 +91,34 @@ class GroupsApiTest < ActiveSupport::TestCase
   def test_comment_on_group_task_without_group
     unit = FactoryBot.create :unit
 
-    group_set = GroupSet.create!({name: 'test_comment_without_group', unit: unit})
+    group_set = GroupSet.create!({ name: 'test_comment_without_group', unit: unit })
     group_set.save!
 
     td = TaskDefinition.new({
-        unit_id: unit.id,
-        tutorial_stream: unit.tutorial_streams.first,
-        name: 'Task to switch from ind to group after submission',
-        description: 'test def',
-        weighting: 4,
-        target_grade: 0,
-        start_date: Time.zone.now - 1.week,
-        target_date: Time.zone.now - 1.day,
-        due_date: Time.zone.now + 1.week,
-        abbreviation: 'TaskSwitchIndGrp',
-        restrict_status_updates: false,
-        upload_requirements: [ { "key" => 'file0', "name" => 'Shape Class', "type" => 'code' } ],
-        plagiarism_warn_pct: 0.8,
-        is_graded: false,
-        max_quality_pts: 0,
-        group_set: group_set
-      })
+                              unit_id: unit.id,
+                              tutorial_stream: unit.tutorial_streams.first,
+                              name: 'Task to switch from ind to group after submission',
+                              description: 'test def',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: Time.zone.now - 1.week,
+                              target_date: Time.zone.now - 1.day,
+                              due_date: Time.zone.now + 1.week,
+                              abbreviation: 'TaskSwitchIndGrp',
+                              restrict_status_updates: false,
+                              upload_requirements: [{ "key" => 'file0', "name" => 'Shape Class', "type" => 'code' }],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0,
+                              group_set: group_set
+                            })
     assert td.save!
 
     project = unit.projects.first
 
     comment_data = { comment: "Hello World" }
 
-     # Add username and auth_token to Header
+    # Add username and auth_token to Header
     add_auth_header_for(user: project.student)
 
     post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/comments", comment_data
@@ -132,33 +132,33 @@ class GroupsApiTest < ActiveSupport::TestCase
   def test_pdf_comment_on_group_task
     unit = FactoryBot.create :unit
 
-    group_set = GroupSet.create!({name: 'test_comment_without_group', unit: unit})
+    group_set = GroupSet.create!({ name: 'test_comment_without_group', unit: unit })
     group_set.save!
 
-    group = Group.create!({group_set: group_set, name: 'test_group_submission_with_extensions', tutorial: unit.tutorials.first})
+    group = Group.create!({ group_set: group_set, name: 'test_group_submission_with_extensions', tutorial: unit.tutorials.first })
 
     group.add_member(unit.active_projects[0])
     group.add_member(unit.active_projects[1])
     group.add_member(unit.active_projects[2])
 
     td = TaskDefinition.new({
-        unit_id: unit.id,
-        tutorial_stream: unit.tutorial_streams.first,
-        name: 'Task to switch from ind to group after submission',
-        description: 'test def',
-        weighting: 4,
-        target_grade: 0,
-        start_date: Time.zone.now - 1.week,
-        target_date: Time.zone.now - 1.day,
-        due_date: Time.zone.now + 1.week,
-        abbreviation: 'TaskSwitchIndGrp',
-        restrict_status_updates: false,
-        upload_requirements: [ { "key" => 'file0', "name" => 'Shape Class', "type" => 'code' } ],
-        plagiarism_warn_pct: 0.8,
-        is_graded: false,
-        max_quality_pts: 0,
-        group_set: group_set
-      })
+                              unit_id: unit.id,
+                              tutorial_stream: unit.tutorial_streams.first,
+                              name: 'Task to switch from ind to group after submission',
+                              description: 'test def',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: Time.zone.now - 1.week,
+                              target_date: Time.zone.now - 1.day,
+                              due_date: Time.zone.now + 1.week,
+                              abbreviation: 'TaskSwitchIndGrp',
+                              restrict_status_updates: false,
+                              upload_requirements: [{ "key" => 'file0', "name" => 'Shape Class', "type" => 'code' }],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0,
+                              group_set: group_set
+                            })
     assert td.save!
 
     project = unit.projects.first
@@ -181,27 +181,27 @@ class GroupsApiTest < ActiveSupport::TestCase
   def test_pdf_comment_on_group_task_without_group
     unit = FactoryBot.create :unit
 
-    group_set = GroupSet.create!({name: 'test_comment_without_group', unit: unit})
+    group_set = GroupSet.create!({ name: 'test_comment_without_group', unit: unit })
     group_set.save!
 
     td = TaskDefinition.new({
-        unit_id: unit.id,
-        tutorial_stream: unit.tutorial_streams.first,
-        name: 'Task to switch from ind to group after submission',
-        description: 'test def',
-        weighting: 4,
-        target_grade: 0,
-        start_date: Time.zone.now - 1.week,
-        target_date: Time.zone.now - 1.day,
-        due_date: Time.zone.now + 1.week,
-        abbreviation: 'TaskSwitchIndGrp',
-        restrict_status_updates: false,
-        upload_requirements: [ { "key" => 'file0', "name" => 'Shape Class', "type" => 'code' } ],
-        plagiarism_warn_pct: 0.8,
-        is_graded: false,
-        max_quality_pts: 0,
-        group_set: group_set
-      })
+                              unit_id: unit.id,
+                              tutorial_stream: unit.tutorial_streams.first,
+                              name: 'Task to switch from ind to group after submission',
+                              description: 'test def',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: Time.zone.now - 1.week,
+                              target_date: Time.zone.now - 1.day,
+                              due_date: Time.zone.now + 1.week,
+                              abbreviation: 'TaskSwitchIndGrp',
+                              restrict_status_updates: false,
+                              upload_requirements: [{ "key" => 'file0', "name" => 'Shape Class', "type" => 'code' }],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0,
+                              group_set: group_set
+                            })
     assert td.save!
 
     project = unit.projects.first
@@ -307,7 +307,7 @@ class GroupsApiTest < ActiveSupport::TestCase
   end
 
   def test_group_student_count
-    unit = FactoryBot.create :unit, group_sets: 1, groups: [{ gs: 0, students: 2}]
+    unit = FactoryBot.create :unit, group_sets: 1, groups: [{ gs: 0, students: 2 }]
     assert_equal 2, unit.groups.first.group_memberships.count
 
     # Add username and auth_token to Header
@@ -320,7 +320,7 @@ class GroupsApiTest < ActiveSupport::TestCase
   end
 
   def test_group_switch_tutorial
-    unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 0}]
+    unit = FactoryBot.create :unit, group_sets: 1, groups: [{ gs: 0, students: 0 }]
 
     gs = unit.group_sets.first
     gs.update keep_groups_in_same_class: true, allow_students_to_manage_groups: true
@@ -334,13 +334,13 @@ class GroupsApiTest < ActiveSupport::TestCase
 
     tutorial = FactoryBot.create :tutorial, unit: unit, campus: nil
 
-    refute p1.enrolled_in? tutorial
-    refute p2.enrolled_in? tutorial
+    assert_not p1.enrolled_in? tutorial
+    assert_not p2.enrolled_in? tutorial
 
     # Add username and auth_token to Header
     add_auth_header_for(user: unit.main_convenor_user)
 
-    put "/api/units/#{unit.id}/group_sets/#{gs.id}/groups/#{group1.id}", { group: {tutorial_id: tutorial.id} }
+    put "/api/units/#{unit.id}/group_sets/#{gs.id}/groups/#{group1.id}", { group: { tutorial_id: tutorial.id } }
 
     assert 201, last_response.status
 
@@ -355,7 +355,7 @@ class GroupsApiTest < ActiveSupport::TestCase
   end
 
   def test_group_switch_tutorial_no_student_management
-    unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 0}]
+    unit = FactoryBot.create :unit, group_sets: 1, groups: [{ gs: 0, students: 0 }]
 
     gs = unit.group_sets.first
     gs.update keep_groups_in_same_class: true, allow_students_to_manage_groups: false
@@ -369,11 +369,11 @@ class GroupsApiTest < ActiveSupport::TestCase
 
     tutorial = FactoryBot.create :tutorial, unit: unit, campus: nil
 
-    refute p1.enrolled_in? tutorial
-    refute p2.enrolled_in? tutorial
+    assert_not p1.enrolled_in? tutorial
+    assert_not p2.enrolled_in? tutorial
 
     add_auth_header_for(user: unit.main_convenor_user)
-    put "/api/units/#{unit.id}/group_sets/#{gs.id}/groups/#{group1.id}", { group: {tutorial_id: tutorial.id} }
+    put "/api/units/#{unit.id}/group_sets/#{gs.id}/groups/#{group1.id}", { group: { tutorial_id: tutorial.id } }
 
     assert 201, last_response.status
 
@@ -388,7 +388,7 @@ class GroupsApiTest < ActiveSupport::TestCase
   end
 
   def test_group_switch_tutorial_unenrolled_students
-    unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 0}]
+    unit = FactoryBot.create :unit, group_sets: 1, groups: [{ gs: 0, students: 0 }]
 
     gs = unit.group_sets.first
     gs.update keep_groups_in_same_class: true, allow_students_to_manage_groups: false, capacity: 2
@@ -404,16 +404,16 @@ class GroupsApiTest < ActiveSupport::TestCase
 
     tutorial = FactoryBot.create :tutorial, unit: unit, campus: nil
 
-    refute p1.enrolled_in? tutorial
-    refute p2.enrolled_in? tutorial
+    assert_not p1.enrolled_in? tutorial
+    assert_not p2.enrolled_in? tutorial
 
     p2.update(enrolled: false)
     p2.reload
 
-    refute group1.at_capacity?
+    assert_not group1.at_capacity?
 
     add_auth_header_for(user: unit.main_convenor_user)
-    put "/api/units/#{unit.id}/group_sets/#{gs.id}/groups/#{group1.id}", { group: {tutorial_id: tutorial.id} }
+    put "/api/units/#{unit.id}/group_sets/#{gs.id}/groups/#{group1.id}", { group: { tutorial_id: tutorial.id } }
 
     assert 201, last_response.status
 
@@ -428,17 +428,17 @@ class GroupsApiTest < ActiveSupport::TestCase
     assert group1.valid?, group1.errors.full_messages
 
     assert p1.enrolled_in? tutorial
-    refute p2.enrolled_in? tutorial
+    assert_not p2.enrolled_in? tutorial
 
     # check we can reenrol the student
-    refute group1.at_capacity?
+    assert_not group1.at_capacity?
     assert p2.update(enrolled: true)
-    refute group1.at_capacity? # they are not in the right tutorial
+    assert_not group1.at_capacity? # they are not in the right tutorial
     assert_equal 1, group1.projects.count
   end
 
   def test_locked_groups
-    unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 0}], task_count: 0
+    unit = FactoryBot.create :unit, group_sets: 1, groups: [{ gs: 0, students: 0 }], task_count: 0
 
     gs = unit.group_sets.first
     group1 = gs.groups.first

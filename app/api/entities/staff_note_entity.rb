@@ -9,6 +9,10 @@ module Entities
     expose :updated_at
 
     expose :reply_to_id
+    expose :attachment_type
+    expose :has_attachment do |note, _options|
+      note.attachment?
+    end
 
   end
 end

@@ -1,4 +1,9 @@
 module FileStreamHelper
+  def expose_headers(*headers_to_expose)
+    exposed_headers = header['Access-Control-Expose-Headers'].to_s.split(',').map(&:strip)
+    header['Access-Control-Expose-Headers'] = (exposed_headers + headers_to_expose).compact_blank.uniq.join(',')
+  end
+
   # Extract part of the contents so that is can be streamed to the client
   # file_path is the path to the file to be streamed
   # this will set the headers and return the content
@@ -33,7 +38,7 @@ module FileStreamHelper
       begin_point = 0
       end_point = 10_485_760
     else
-      header['Access-Control-Expose-Headers'] = 'Content-Disposition' if header.key?('Content-Disposition')
+      expose_headers('Content-Disposition') if header.key?('Content-Disposition')
       sendfile file_path
 
       return
@@ -41,7 +46,7 @@ module FileStreamHelper
 
     # Return the requested content
     content_length = [end_point - begin_point + 1, 0].max # Ensure we don't attempt to read a negative length
-    header['Access-Control-Expose-Headers'] = header.key?('Content-Disposition') ? 'Content-Disposition,Content-Range,Accept-Ranges' : 'Content-Range,Accept-Ranges'
+    expose_headers(('Content-Disposition' if header.key?('Content-Disposition')), 'Content-Range', 'Accept-Ranges')
     header['Content-Range'] = "bytes #{begin_point}-#{end_point}/#{file_size}"
     header['Content-Length'] = content_length.to_s
     header['Accept-Ranges'] = 'bytes'
@@ -52,5 +57,6 @@ module FileStreamHelper
     body = File.binread(file_path, content_length, begin_point)
   end
 
+  module_function :expose_headers
   module_function :stream_file
 end

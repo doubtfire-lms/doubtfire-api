@@ -52,6 +52,7 @@ gem 'puma'
 
 gem 'bootsnap', require: false
 gem 'csv'
+gem 'uri', '>= 1.1.1' # CVE-2025-61594
 
 # Extend irb for better output
 gem 'hirb'
@@ -103,6 +104,7 @@ gem 'net-smtp', require: false
 gem 'tca_client'
 
 # Async jobs
+gem 'ice_cube'
 gem 'sidekiq'
 gem 'sidekiq-cron'
 gem 'sidekiq-status'
@@ -121,3 +123,7 @@ gem 'pdf-reader'
 gem 'oauth2'
 
 gem "sys-filesystem"
+
+gem "sentry-rails"
+gem "sentry-ruby"
+gem "sentry-sidekiq", "~> 6.5.0"

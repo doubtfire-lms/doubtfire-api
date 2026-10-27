@@ -1,7 +1,12 @@
-require "test_helper"
+require 'test_helper'
 
-describe OverseerStep do
-  # it "does a thing" do
-  #   value(1+1).must_equal 2
-  # end
+class OverseerStepTest < ActiveSupport::TestCase
+  def test_requires_database_backed_text_fields
+    overseer_step = OverseerStep.new(timeout: 30, sort_order: 0)
+
+    assert_not overseer_step.valid?
+    assert_includes overseer_step.errors[:name], "can't be blank"
+    assert_includes overseer_step.errors[:display_name], "can't be blank"
+    assert_includes overseer_step.errors[:step_type], "can't be blank"
+  end
 end

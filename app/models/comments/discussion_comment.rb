@@ -1,6 +1,10 @@
 class DiscussionComment < TaskComment
   include FileHelper
 
+  before_create do
+    self.attention_audience = :student
+  end
+
   def status
     return "not started" if not started and not completed
     return "opened" if started and not completed

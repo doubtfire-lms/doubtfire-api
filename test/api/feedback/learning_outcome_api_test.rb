@@ -43,13 +43,13 @@ class LearningOutcomeApiTest < ActiveSupport::TestCase
     data_to_post = {
       abbreviation: 'ULO9',
       short_description: 'learning outcome short description',
-      full_outcome_description: 'Long description of learning outcome',
+      full_outcome_description: 'Long description of learning outcome'
     }
 
     data_to_put = {
       abbreviation: 'NLO9',
       short_description: 'new learning outcome short description',
-      full_outcome_description: 'New long description of learning outcome',
+      full_outcome_description: 'New long description of learning outcome'
     }
 
     users_can.each do |user|
@@ -100,7 +100,7 @@ class LearningOutcomeApiTest < ActiveSupport::TestCase
 
     last_response_body.each do |outcome|
       model = LearningOutcome.find(outcome['id'])
-      assert_json_matches_model model, outcome, %w(id context_id context_type abbreviation short_description full_outcome_description)
+      assert_json_matches_model model, outcome, %w[id context_id context_type abbreviation short_description full_outcome_description]
     end
   end
 
@@ -193,6 +193,29 @@ class LearningOutcomeApiTest < ActiveSupport::TestCase
     assert_equal 'changed short_description', learning_outcome.short_description
     assert_equal 'changed full_outcome_description', learning_outcome.full_outcome_description
     assert_json_matches_model learning_outcome, last_response_body, %w[id context_id context_type abbreviation short_description full_outcome_description]
+  end
+
+  def test_tutors_and_convenors_cannot_manage_global_outcomes
+    learning_outcome = FactoryBot.create(:learning_outcome, context_id: nil, context_type: nil,
+                                                            short_description: 'Original')
+    new_abbreviation = FactoryBot.build(:learning_outcome).abbreviation
+    new_outcome = { abbreviation: new_abbreviation, short_description: 'New outcome' }
+
+    [FactoryBot.create(:user, :tutor), FactoryBot.create(:user, :convenor)].each do |user|
+      add_auth_header_for user: user
+
+      post_json 'api/global/outcomes', new_outcome
+      assert_equal 403, last_response.status
+      assert_nil LearningOutcome.global_outcomes.find_by(abbreviation: new_abbreviation)
+
+      put_json "api/global/outcomes/#{learning_outcome.id}", short_description: 'Changed'
+      assert_equal 403, last_response.status
+      assert_equal 'Original', learning_outcome.reload.short_description
+
+      delete "api/global/outcomes/#{learning_outcome.id}"
+      assert_equal 403, last_response.status
+      assert LearningOutcome.exists?(learning_outcome.id)
+    end
   end
 
   def test_create_task_definition_learning_outcome
@@ -403,6 +426,17 @@ class LearningOutcomeApiTest < ActiveSupport::TestCase
     new_td_lo_feedback_chips.each do |chip|
       assert_equal chip.learning_outcome_id, new_td_lo.id, 'Each feedback chip should have the correct learning outcome id'
     end
+
+    copied_group_chip = new_td_lo.feedback_group_chips.find_by(chip_text: group_chip_td_lo.chip_text)
+    copied_template_chip = new_td_lo.feedback_template_chips.find_by(chip_text: template_chip_td_lo.chip_text)
+
+    assert_not_nil copied_group_chip, 'The task learning outcome feedback group should be copied'
+    assert_not_nil copied_template_chip, 'The task learning outcome feedback template should be copied'
+    assert_equal copied_group_chip, copied_template_chip.parent_chip
+    assert_equal template_chip_td_lo.description, copied_template_chip.description
+    assert_equal template_chip_td_lo.task_status, copied_template_chip.task_status
+    assert_equal template_chip_td_lo.summary_text, copied_template_chip.summary_text
+    assert_equal template_chip_td_lo.comment_text, copied_template_chip.comment_text
 
     new_link = LearningOutcomeLink.find_by(source_id: new_lo1.id, target_id: global_learning_outcome.id)
     assert_not_nil new_link, 'New learning outcome 1 should be linked to the global learning outcome'
