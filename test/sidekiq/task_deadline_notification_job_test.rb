@@ -98,6 +98,16 @@ class TaskDeadlineNotificationJobTest < ActiveSupport::TestCase
     assert_not_nil @student.received_notifications.first.read_at
   end
 
+  def test_stops_deadline_notifications_after_the_last_teaching_date
+    travel_to(@now) { Notification.refresh_task_deadline_notifications! }
+    @unit.update!(last_teaching_date: (@now + 5.days).to_date)
+
+    travel_to(@now + 11.days) { Notification.refresh_task_deadline_notifications! }
+
+    assert_equal ['task_start_now'], @student.received_notifications.pluck(:kind)
+    assert_not_nil @student.received_notifications.first.read_at
+  end
+
   def test_digest_groups_deadline_notifications_into_sections_and_emails_them_only_once
     due_soon_definition = FactoryBot.create(
       :task_definition,

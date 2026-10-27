@@ -118,6 +118,13 @@ class FeedbackWarningNotificationJobTest < ActiveSupport::TestCase
     assert_resolves_warning { @unit.update!(active: false) }
   end
 
+  def test_stops_warning_after_the_last_teaching_date
+    assert_resolves_warning { @unit.teaching_period.update!(last_teaching_date: (@now - 1.day).to_date) }
+
+    reset_warning(submission_date: @now - 8.days)
+    assert_not Notification.exists?(task: @task, kind: 'feedback_warning', read_at: nil)
+  end
+
   def test_a_resubmission_can_raise_another_warning
     Notification.refresh_feedback_warning_notifications!(now: @now)
     first = Notification.find_by!(task: @task, kind: 'feedback_warning')

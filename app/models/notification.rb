@@ -496,7 +496,7 @@ class Notification < ApplicationRecord
   end
 
   def self.each_task_deadline_candidate(now:)
-    Unit.set_active.current_for_date(now).where(send_notifications: true).find_each do |unit|
+    Unit.within_last_teaching_date(now).where(start_date: ..now, send_notifications: true).find_each do |unit|
       unit.active_projects.includes(:user, :campus).find_each do |project|
         project.assigned_task_defs.find_each do |task_definition|
           yield project.task_for_task_definition(task_definition)
@@ -519,7 +519,7 @@ class Notification < ApplicationRecord
       .joins(:task_definition, project: :unit)
       .where(projects: { enrolled: true })
       .where(units: { active: true, send_notifications: true })
-      .where('units.start_date <= :now AND units.end_date >= :now', now: now)
+      .where('units.start_date <= :now AND units.last_teaching_date >= :today', now: now, today: now.to_date)
       .where(task_status_id: feedback_warning_status_id)
       .where.not(submission_date: nil)
       .where(
@@ -539,10 +539,9 @@ class Notification < ApplicationRecord
 
   def self.task_deadline_eligible?(task, now:)
     task.project.enrolled &&
-      task.unit.active &&
+      task.unit.within_last_teaching_date?(now) &&
       task.unit.send_notifications &&
       task.unit.start_date <= now &&
-      task.unit.end_date >= now &&
       task.task_definition.target_grade <= task.project.target_grade &&
       task.submission_date.nil? &&
       !task.submitted_status?
@@ -551,10 +550,9 @@ class Notification < ApplicationRecord
   def self.feedback_warning_eligible?(task, now:, started_at: nil)
     eligible =
       task.project.enrolled &&
-      task.unit.active &&
+      task.unit.within_last_teaching_date?(now) &&
       task.unit.send_notifications &&
       task.unit.start_date <= now &&
-      task.unit.end_date >= now &&
       task.task_definition.target_grade <= task.project.target_grade &&
       task.task_status_id == feedback_warning_status_id &&
       task.submission_date.present? &&
