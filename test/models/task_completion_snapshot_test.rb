@@ -89,6 +89,30 @@ class TaskCompletionSnapshotTest < ActiveSupport::TestCase
     assert_equal({}, snapshot.load_stats)
   end
 
+  test 'status population counts each student once across tutorial streams' do
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 1, stream_count: 2, tutorials: 1, campus_count: 1)
+    snapshot = FactoryBot.create(:task_completion_snapshot, unit: unit)
+    campus = unit.tutorials.first.campus
+    task = unit.task_definitions_by_grade.first.abbreviation
+    first_stream, second_stream = unit.tutorial_streams.pluck(:abbreviation)
+
+    payload = CSV.generate do |csv|
+      csv << ['Student ID', 'Username', 'Campus', 'Target Grade', first_stream, second_stream, task]
+      csv << ['1', 'student-1', campus.abbreviation, unit.grade_label(0), 'T1', 'T2', TaskStatus.complete.id]
+      csv << ['2', 'student-2', campus.abbreviation, unit.grade_label(0), 'T1', '', TaskStatus.not_started.id]
+      csv << ['1', 'student-1', campus.abbreviation, unit.grade_label(0), 'T1', 'T2', TaskStatus.complete.id]
+    end
+    snapshot.store_stats!(payload)
+
+    population = snapshot.load_status_population_stats
+    all_tutorials = population['all'][campus.name]
+
+    assert_equal({ 'complete' => 1, 'not_started' => 1 }, all_tutorials['__all__'][task])
+    assert_equal({ 'complete' => 1, 'not_started' => 1 }, all_tutorials['T1'][task])
+    assert_equal({ 'complete' => 1 }, all_tutorials['T2'][task])
+    assert_equal all_tutorials, population['target_grades']['0'][campus.name]
+  end
+
   test 'deleting snapshot deletes associated zip file' do
     tutorial = @unit.tutorials.first
     task_definition = @unit.task_definitions_by_grade.first

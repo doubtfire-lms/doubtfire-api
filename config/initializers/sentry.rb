@@ -3,6 +3,7 @@ module OnTrackSentryRedaction
   PII_KEY_PATTERN = /(^|_)(email|first_name|last_name|login_id|name|student_id|username|user_id)\z/i
   RAILS_LATEX_TASK_WORK_DIR = %r{(tmp/rails-latex/task-\d{8}-\d{4}-)[^/\s]+?(-[^/\s-]+-\d+-\d+(?:-retry)?)(?=/|\s|$)}
   RAILS_LATEX_PORTFOLIO_WORK_DIR = %r{(tmp/rails-latex/portfolio-\d{8}-\d{4}-)[^/\s]+?(-\d+-\d+(?:-retry)?)(?=/|\s|$)}
+  PORTFOLIO_FAILURE_DETAILS = /(Failed to convert portfolio to PDF - \d+ - )[^\n]+? \([^)]+\)(?=\s+\S+)/
   SCORM_PATH = %r{(/scorm/[^/?#]+/)[^/?#]+(/)[^/?#]+}i
 
   module_function
@@ -13,6 +14,7 @@ module OnTrackSentryRedaction
     event.message = scrub_string(event.message) if event.respond_to?(:message) && event.respond_to?(:message=)
     event.user.replace(scrub_hash(event.user)) if event.respond_to?(:user) && event.user.respond_to?(:replace)
     event.extra.replace(scrub_hash(event.extra)) if event.respond_to?(:extra) && event.extra.respond_to?(:replace)
+    scrub_contexts(event.contexts) if event.respond_to?(:contexts)
 
     scrub_exception(event.exception) if event.respond_to?(:exception)
     scrub_breadcrumbs(event.breadcrumbs) if event.respond_to?(:breadcrumbs)
@@ -27,6 +29,15 @@ module OnTrackSentryRedaction
     request.headers&.each_key do |key|
       request.headers[key] = FILTERED if key.casecmp("Username").zero?
     end
+  end
+
+  def scrub_contexts(contexts)
+    sidekiq = contexts&.[](:sidekiq)
+    return unless sidekiq.respond_to?(:key?)
+
+    # Job args are positional, so PII_KEY_PATTERN cannot tell which ones hold user details.
+    %w[args wrapped_args].each { |key| sidekiq[key] = FILTERED if sidekiq.key?(key) }
+    contexts[:sidekiq] = scrub_hash(sidekiq)
   end
 
   def scrub_exception(exception)
@@ -79,6 +90,7 @@ module OnTrackSentryRedaction
     value
       .gsub(RAILS_LATEX_TASK_WORK_DIR, "\\1[username]\\2")
       .gsub(RAILS_LATEX_PORTFOLIO_WORK_DIR, "\\1[username]\\2")
+      .gsub(PORTFOLIO_FAILURE_DETAILS, "\\1[Filtered] ([username])")
       .gsub(SCORM_PATH, "\\1[username]\\2[Filtered]")
   end
 end

@@ -28,6 +28,7 @@ class TaskDefinitionsApi < Grape::API
       optional :due_date,                 type: Date,     desc: 'The deadline date'
       requires :abbreviation,             type: String,   desc: 'The abbreviation of the task'
       requires :restrict_status_updates,  type: Boolean,  desc: 'Restrict updating of the status to staff'
+      optional :staff_managed_task,       type: Boolean,  desc: 'Only staff can upload submissions and change task status'
       optional :upload_requirements,      type: String,   desc: 'Task file upload requirements'
       requires :plagiarism_warn_pct,      type: Integer,  desc: 'The percent at which to record and warn about plagiarism'
       requires :is_graded,                type: Boolean,  desc: 'Whether or not this task definition is a graded task'
@@ -65,6 +66,7 @@ class TaskDefinitionsApi < Grape::API
                                                 :due_date,
                                                 :abbreviation,
                                                 :restrict_status_updates,
+                                                :staff_managed_task,
                                                 :plagiarism_warn_pct,
                                                 :scorm_enabled,
                                                 :scorm_allow_review,
@@ -128,6 +130,7 @@ class TaskDefinitionsApi < Grape::API
       optional :due_date,                 type: Date,     desc: 'The deadline date'
       optional :abbreviation,             type: String,   desc: 'The abbreviation of the task'
       optional :restrict_status_updates,  type: Boolean,  desc: 'Restrict updating of the status to staff'
+      optional :staff_managed_task,       type: Boolean,  desc: 'Only staff can upload submissions and change task status'
       optional :upload_requirements,      type: String,   desc: 'Task file upload requirements'
       optional :plagiarism_warn_pct,      type: Integer,  desc: 'The percent at which to record and warn about plagiarism'
       optional :scorm_enabled,            type: Boolean,  desc: 'Whether or not SCORM test assessment is enabled for this task'
@@ -174,6 +177,7 @@ class TaskDefinitionsApi < Grape::API
                                                 :due_date,
                                                 :abbreviation,
                                                 :restrict_status_updates,
+                                                :staff_managed_task,
                                                 :plagiarism_warn_pct,
                                                 :scorm_enabled,
                                                 :scorm_allow_review,

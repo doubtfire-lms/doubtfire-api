@@ -117,6 +117,8 @@ class UnitMailTest < ActionMailer::TestCase
 
     assert_equal project.student.email, approaching.to.first
     assert_includes approaching.subject, 'Discussion deadline approaching'
+    assert_includes approaching.text_part.body.to_s, 'on or before'
+    assert_includes approaching.html_part.body.to_s, 'on or before'
     assert_includes approaching.text_part.body.to_s, unit.formatted_discuss_timeout_date(deadline)
     assert_includes approaching.text_part.body.to_s, "projects/#{project.id}/dashboard/#{task.task_definition.abbreviation}"
     assert_equal 1, approaching.html_part.body.to_s.scan('<style type="text/css">').count
@@ -160,6 +162,19 @@ class UnitMailTest < ActionMailer::TestCase
       SendDiscussTimeoutEmailJob.new.perform(*missed_job['args'])
     end
     assert_includes ActionMailer::Base.deliveries.last.subject, 'Discussion deadline missed'
+  end
+
+  def test_queued_discussion_email_is_not_sent_after_last_teaching_date
+    unit = FactoryBot.create(:unit, last_teaching_date: Time.zone.today)
+    project = unit.active_projects.first
+    task = project.task_for_task_definition(unit.task_definitions.first)
+    sender = unit.main_convenor_user
+
+    travel_to (Time.zone.now + 1.day).beginning_of_day do
+      assert_emails 0 do
+        SendDiscussTimeoutEmailJob.new.perform(task.id, sender.id, 'approaching', Time.zone.today.iso8601)
+      end
+    end
   end
 
   def test_discuss_timeout_notifications_are_not_queued_for_unenrolled_students

@@ -55,6 +55,7 @@ may override that default with an empty string.
 | `DF_ZIP_ENTRY_LIMIT`                  | Maximum number of entries in an uploaded ZIP.                    | `1000`                          |
 | `DF_ZIP_COMPRESSION_RATIO_LIMIT`      | Maximum permitted ZIP compression ratio.                         | `100`                           |
 | `DF_ZIP_UNCOMPRESSED_SIZE_MULTIPLIER` | Maximum expanded ZIP size as a multiple of `DF_MAX_FILE_SIZE`.   | `10`                            |
+| `BATCH_FEEDBACK_CHUNK_SIZE_MB`        | Chunk size in MB for batch feedback uploads.                     | `50`                            |
 | `DF_AUDITOR_UNIT_ACCESS_YEARS`        | Number of years of units visible to auditors.                    | `2`                             |
 | `DF_IMPORT_STUDENTS_WEEKS_BEFPRE`     | Weeks before a teaching period that student imports are allowed. | `1`                             |
 | `DF_FFMPEG_PATH`                      | Path to FFmpeg for audio processing.                             | `ffmpeg`                        |
@@ -88,6 +89,9 @@ for `DF_SECRET_KEY_BASE`, `DF_SECRET_KEY_ATTR`, `DF_SECRET_KEY_DEVISE`,
 | `DF_AUTH_METHOD`                    | Authentication method: `database`, `ldap`, `aaf`, or `saml`. | `database`                       |
 | `DF_ACCESS_TOKEN_EXPIRY_SECONDS`    | Access-token lifetime in seconds.                            | `7200`                           |
 | `DF_REFRESH_TOKEN_EXPIRY_SECONDS`   | Refresh-token lifetime in seconds.                           | `604800`                         |
+| `ONTRACK_AUTH_RATE_LIMIT_ENABLED`   | Enable auth throttling; accepts true/false or 1/0.           | `true`                           |
+| `ONTRACK_AUTH_RATE_LIMIT`           | Maximum authentication requests per IP in one window.        | `5`                              |
+| `ONTRACK_AUTH_RATE_PERIOD_SECONDS`  | Authentication throttle window in seconds.                   | `20`                             |
 | `DF_SECRET_KEY_BASE`                | Rails secret key base fallback.                              | Required in production           |
 | `DF_SECRET_KEY_ATTR`                | Legacy encrypted-attribute key fallback.                     | Required in production           |
 | `DF_SECRET_KEY_DEVISE`              | Devise secret fallback.                                      | Required in production           |
@@ -175,6 +179,7 @@ for `DF_SECRET_KEY_BASE`, `DF_SECRET_KEY_ATTR`, `DF_SECRET_KEY_DEVISE`,
 | `DF_JPLAG_MAX_SHOWN_COMPARISONS` | Maximum comparisons retained in a JPlag report; `-1` means all. | `2500`  |
 | `LTI_ENABLED`                    | Enable LTI routes and authentication.                           | `false` |
 | `LTI_SHARED_API_SECRET`          | Shared secret between the Rails and LTI APIs.                   | Unset   |
+| `DF_ENFORCE_LOGIN_ID_MATCH`      | Refuse accounts that already belong to a different login id.    | `false` |
 | `MODERATION_SCORE_FACTOR`        | Multiplier applied to moderation score changes.                 | `1.0`   |
 
 ### Overseer and container access

@@ -32,12 +32,12 @@ class UserTest < ActiveSupport::TestCase
 
   def test_invalid_without_first_name
     user = FactoryBot.build(:user, first_name: nil)
-    refute user.valid?
+    assert_not user.valid?
   end
 
   def test_invalid_without_last_name
     user = FactoryBot.build(:user, last_name: nil)
-    refute user.valid?
+    assert_not user.valid?
   end
 
   test 'profile names allow commas, periods, slashes, hyphens, parentheses, and apostrophes' do

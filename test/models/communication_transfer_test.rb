@@ -28,6 +28,17 @@ class CommunicationTransferTest < ActiveSupport::TestCase
     assert_predicate imported, :executable?
   end
 
+  def test_plain_text_email_setting_survives_export_and_import
+    @rule.communication_actions.first.update!(plain_text: true)
+    document = CommunicationTransfer.export_set(@set)
+    target_unit = unit_with_task('T1.1')
+
+    imported = CommunicationTransfer.import_set(document, target_unit)
+
+    assert_equal true, document.dig('set', 'rules', 0, 'actions', 0, 'plain_text')
+    assert_predicate imported.communication_rules.first.communication_actions.first, :plain_text?
+  end
+
   def test_importing_without_the_task_keeps_the_rule_but_blocks_the_set
     target_unit = unit_with_task('Different')
 

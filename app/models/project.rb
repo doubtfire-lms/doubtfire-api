@@ -309,6 +309,7 @@ class Project < ApplicationRecord
       )
       .map do |r|
         t = Task.find(r.id)
+        discuss_timeout_expiry_at = t.discuss_timeout_expiry_at(teaching_breaks: teaching_breaks)
         {
           id: r.id,
           status: TaskStatus.id_to_key(r.status_id),
@@ -323,7 +324,8 @@ class Project < ApplicationRecord
           scorm_extensions: t.scorm_extensions,
           due_date: t.due_date,
           moved_to_discuss_at: t.moved_to_discuss_at,
-          discuss_timeout_expiry_at: t.discuss_timeout_expiry_at(teaching_breaks: teaching_breaks),
+          discuss_timeout_expiry_at: discuss_timeout_expiry_at,
+          discuss_timeout_expiry_date: discuss_timeout_expiry_at&.to_date,
           submission_date: t.submission_date,
           completion_date: t.completion_date,
           target_start_date: t.target_start_date,
@@ -708,14 +710,14 @@ class Project < ApplicationRecord
     FileUtils.rm_f(portfolio_path) if portfolio_available
   end
 
-  def add_staff_note(user, text, reply_to_id = nil)
-    text = text.strip
-    return nil if user.nil? || text.nil? || text.empty?
+  def add_staff_note(user, text, reply_to_id = nil, attachment: false)
+    text = text.to_s.strip
+    return nil if user.nil? || (text.empty? && !attachment)
 
     ln = staff_notes.last
 
     # don't add if duplicate note
-    return if ln && ln.user == user && ln.note == text
+    return if !attachment && ln && ln.user == user && ln.note == text
 
     note = StaffNote.create
     note.note = text

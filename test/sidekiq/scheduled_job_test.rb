@@ -22,6 +22,20 @@ class TiiCheckProgressJobTest < ActiveSupport::TestCase
     assert_equal 1, PruneNotificationsJob.jobs.count
     assert_equal 1, SyncLmsIntegrationsJob.jobs.count
     # assert_equal 1, ArchiveOldUnitsJob.jobs.count
+
+    scheduled_jobs = [
+      TiiRegisterWebHookJob,
+      TiiCheckProgressJob,
+      ClearAccessTokensJob,
+      RefreshModerationFeedbackTimestampsJob,
+      AggregateTaskCompletionStatsJob,
+      PollCommunicationSetSchedulesJob,
+      NotifyDiscussTimeoutJob,
+      SyncLmsIntegrationsJob
+    ]
+    scheduled_jobs.each do |job_class|
+      assert_equal 'parallel', job_class.jobs.first['queue'], job_class.name
+    end
   end
 
 end

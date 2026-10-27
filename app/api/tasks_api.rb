@@ -158,6 +158,7 @@ class TasksApi < Grape::API
     optional :quality_pts, type: Integer, desc: 'Quality points value if task has quality assessment'
     optional :discussed, type: Boolean, desc: 'Mark task as discussed'
     optional :trigger_recursive_fix, desc: 'If marking fix and resubmit, recursively update preqreuisite submissions to fix'
+    optional :reuse_existing_submission, type: Boolean, desc: 'Staff may reuse submitted evidence when requesting feedback'
   end
   put '/projects/:id/task_def_id/:task_definition_id' do
     project = Project.find(params[:id])
@@ -167,15 +168,39 @@ class TasksApi < Grape::API
 
     # check the user can put this task
     if authorise? current_user, project, :make_submission
+      if params[:trigger].present? && task_definition.staff_managed_task && !authorise?(current_user, project, :assess)
+        error!({ error: 'Only teaching staff can change the status of this task.' }, 403)
+      end
+
+      if !grade.nil? && !authorise?(current_user, project, :assess)
+        error!({ error: 'Not authorised to grade this task' }, 403)
+      end
+
       task = project.task_for_task_definition(task_definition)
       mark_as_discussed = params[:discussed] == true && authorise?(current_user, project, :assess)
       needs_discussed_comment = mark_as_discussed && !task.has_discussed_in_class_comment?
 
       # if trigger supplied...
       unless params[:trigger].nil?
+        reuse_existing_submission = params[:reuse_existing_submission] == true
+        if reuse_existing_submission && (params[:trigger] != 'ready_for_feedback' ||
+           !authorise?(current_user, project, :assess))
+          error!({ error: 'Not authorised to reuse an existing submission.' }, 403)
+        end
+
         # Check if they should be using portfolio_evidence api
-        if needs_upload_docs && params[:trigger] == 'ready_for_feedback'
+        if needs_upload_docs && params[:trigger] == 'ready_for_feedback' && !reuse_existing_submission
           error!({ error: 'Cannot set this task status to ready to mark without uploading documents.' }, 403)
+        end
+
+        if reuse_existing_submission &&
+           (task.task_status == TaskStatus.ready_for_feedback || !task.has_pdf || task.submission_date.nil?)
+          error!({ error: 'This task has no existing submission available for feedback.' }, 409)
+        end
+
+        if !needs_upload_docs && %w[ready_for_feedback assess_in_portfolio].include?(params[:trigger]) &&
+           (prerequisite_error = task.unmet_prerequisite_error)
+          error!({ error: prerequisite_error }, 409)
         end
 
         if params[:trigger] == 'assess_in_portfolio' && !authorise?(current_user, project, :assess)
@@ -204,19 +229,26 @@ class TasksApi < Grape::API
         logger.info "#{current_user.username} assessing task #{task.id} to #{params[:trigger]}"
         begin
           task.discussion_confirmed_for_transition = mark_as_discussed
-          result = task.trigger_transition(
-            trigger: params[:trigger],
-            by_user: current_user,
-            quality: params[:quality_pts],
-            recursive_fix: params[:trigger_recursive_fix],
-            check_feedback: true
-          )
+          result = if reuse_existing_submission
+                     task.reuse_existing_submission_for_feedback(current_user)
+                   else
+                     task.trigger_transition(
+                       trigger: params[:trigger],
+                       by_user: current_user,
+                       quality: params[:quality_pts],
+                       recursive_fix: params[:trigger_recursive_fix],
+                       check_feedback: true
+                     )
+                   end
         ensure
           task.discussion_confirmed_for_transition = false
         end
 
         if result.nil? && task.errors.any?
           error!({ error: task.errors.full_messages.to_sentence }, 403)
+        end
+        if result.nil? && reuse_existing_submission
+          error!({ error: 'This task cannot reuse its existing submission for feedback.' }, 409)
         end
         if result.nil? && task.task_definition.restrict_status_updates
           error!({ error: 'This task can only be updated by your tutor.' }, 403)
@@ -345,7 +377,7 @@ class TasksApi < Grape::API
     )
 
     # Find the file
-    file_loc = FileHelper.zip_file_path_for_done_task(task)
+    file_loc = task.downloadable_submission_zip_path
 
     if file_loc.nil? || !File.exist?(file_loc)
       file_loc = Rails.root.join('public/resources/FileNotFound.pdf')

@@ -17,6 +17,37 @@ class UnitModelTest < ActiveSupport::TestCase
     @unit.destroy
   end
 
+  def test_weekly_status_emails_stop_after_last_teaching_date
+    last_teaching_date = Time.zone.today
+    unit = FactoryBot.create(
+      :unit,
+      with_students: false,
+      end_date: Time.zone.now + 1.week,
+      last_teaching_date: last_teaching_date
+    )
+
+    travel_to Time.zone.parse("#{last_teaching_date + 1.day} 08:00:00") do
+      summary_stats = {}
+      unit.send_weekly_status_emails(summary_stats)
+
+      assert_empty summary_stats
+    end
+  end
+
+  def test_default_last_teaching_date_follows_end_date_changes
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0)
+    original_end_date = unit.end_date
+    earlier_end_date = original_end_date - 1.week
+
+    unit.update!(end_date: earlier_end_date)
+    assert_equal earlier_end_date.to_date, unit.last_teaching_date
+
+    custom_last_teaching_date = earlier_end_date.to_date - 1.week
+    unit.update!(last_teaching_date: custom_last_teaching_date)
+    unit.update!(end_date: original_end_date)
+    assert_equal custom_last_teaching_date, unit.last_teaching_date
+  end
+
   def test_sync_unit
     import_settings = {
       replace_existing_campus: false,
@@ -194,8 +225,40 @@ class UnitModelTest < ActiveSupport::TestCase
     unit2.destroy
   end
 
+  def test_rollover_of_unit_content
+    unit = FactoryBot.create(:unit, with_students: false, stream_count: 0, task_count: 0)
+    FactoryBot.create(:task_definition, unit: unit, abbreviation: 'P1', outcome_count: 0)
+
+    Tempfile.create(['unit-content', '.zip']) do |archive|
+      Zip::File.open(archive.path, Zip::File::CREATE) do |zip|
+        zip.get_output_stream('dist/index.html') { |s| s.write('<html><head></head></html>') }
+        zip.get_output_stream('dist/P1.docx') { |s| s.write('worksheet') }
+      end
+      site = unit.unit_content_sites.create!(name: 'Content', original_filename: 'content.zip', archive_path: archive.path, root_dir: '/dist', is_main: true)
+      unit.unit_content_links.create!(unit_content_site: site, context_type: 'task_definition', context_key: 'P1', route: '/')
+      unit.unit_content_links.create!(unit_content_site: site, context_type: 'task_definition_resource', context_key: 'P1', route: '/P1.docx')
+
+      unit2 = unit.rollover TeachingPeriod.find(2), nil, nil, nil
+
+      new_site = unit2.unit_content_sites.sole
+      assert new_site.is_main
+      assert_not_equal site.archive_path, new_site.archive_path
+      assert File.file?(new_site.served_file_path('/'))
+      assert_equal 2, unit2.unit_content_links.where(unit_content_site: new_site).count
+
+      new_td = unit2.task_definitions.find_by(abbreviation: 'P1')
+      assert new_td.has_content_link?
+      assert new_td.has_task_resource_link?
+
+      unit2.destroy
+      assert File.file?(site.archive_path), 'rolled over unit destroy removed original archive'
+    end
+  ensure
+    unit&.destroy
+  end
+
   def test_rollover_of_learning_summary
-    lsr = FactoryBot.create(:task_definition, unit: @unit, upload_requirements: [{'key' => 'file0','name' => 'LSR','type' => 'document'}])
+    lsr = FactoryBot.create(:task_definition, unit: @unit, upload_requirements: [{ 'key' => 'file0', 'name' => 'LSR', 'type' => 'document' }])
     assert lsr.valid?, lsr.errors.full_messages
     @unit.draft_task_definition = lsr
     @unit.save
@@ -203,7 +266,7 @@ class UnitModelTest < ActiveSupport::TestCase
     unit2 = @unit.rollover TeachingPeriod.find(2), nil, nil, nil
 
     assert_not_nil unit2.draft_task_definition
-    refute_equal lsr, unit2.draft_task_definition
+    assert_not_equal lsr, unit2.draft_task_definition
 
     unit2.destroy
   end
@@ -219,13 +282,13 @@ class UnitModelTest < ActiveSupport::TestCase
 
   def test_rollover_of_group_tasks
     unit = FactoryBot.create(:unit,
-      code: 'SIT102',
-      teaching_period: TeachingPeriod.find(3),
-      group_sets: 1,
-      student_count: 2,
-      task_count: 1,
-      groups: [ { gs: 0, students: 2} ],
-      group_tasks: [ { idx: 0, gs: 0 }] )
+                             code: 'SIT102',
+                             teaching_period: TeachingPeriod.find(3),
+                             group_sets: 1,
+                             student_count: 2,
+                             task_count: 1,
+                             groups: [{ gs: 0, students: 2 }],
+                             group_tasks: [{ idx: 0, gs: 0 }])
 
     unit2 = unit.rollover TeachingPeriod.find(2), nil, nil, nil
 
@@ -315,7 +378,7 @@ class UnitModelTest < ActiveSupport::TestCase
   end
 
   def test_rollover_of_tasks_have_same_start_week_and_day
-    @unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Tasks.csv"))
+    @unit.import_tasks_from_csv File.open(Rails.root.join('test_files', "#{@unit.code}-Tasks.csv"))
 
     unit2 = @unit.rollover TeachingPeriod.find(2), nil, nil, nil
 
@@ -333,7 +396,7 @@ class UnitModelTest < ActiveSupport::TestCase
   end
 
   def test_rollover_of_tasks_have_same_target_week_and_day
-    @unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Tasks.csv"))
+    @unit.import_tasks_from_csv File.open(Rails.root.join('test_files', "#{@unit.code}-Tasks.csv"))
 
     unit2 = @unit.rollover TeachingPeriod.find(2), nil, nil, nil
 
@@ -549,9 +612,9 @@ class UnitModelTest < ActiveSupport::TestCase
     @unit.teaching_period = nil
     @unit.save!
 
-    @unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Tasks.csv"))
+    @unit.import_tasks_from_csv File.open(Rails.root.join('test_files', "#{@unit.code}-Tasks.csv"))
 
-    pre_update_details = @unit.task_definitions.map{|td| { id: td.id, start_week: td.start_week, target_week: td.target_week, due_week: td.due_week } }
+    pre_update_details = @unit.task_definitions.map { |td| { id: td.id, start_week: td.start_week, target_week: td.target_week, due_week: td.due_week } }
 
     @unit.start_date = @unit.start_date + 1.week
     @unit.save!
@@ -569,7 +632,7 @@ class UnitModelTest < ActiveSupport::TestCase
   end
 
   test 'rollover of tasks have same due week and day' do
-    @unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{@unit.code}-Tasks.csv"))
+    @unit.import_tasks_from_csv File.open(Rails.root.join('test_files', "#{@unit.code}-Tasks.csv"))
 
     unit2 = @unit.rollover TeachingPeriod.find(2), nil, nil, nil
 
@@ -589,7 +652,6 @@ class UnitModelTest < ActiveSupport::TestCase
     assert_empty unit.projects
     project = FactoryBot.create(:project, unit: unit, campus: campus)
     assert_equal 1, unit.projects.count
-
 
     # Make sure there are no enrolments for the project
     assert_empty project.tutorial_enrolments
@@ -651,7 +713,7 @@ class UnitModelTest < ActiveSupport::TestCase
     assert_equal 2, projects.count
 
     # Check returned project
-    assert projects.select{|p| p[:id] == project2.id}.first.present?
+    assert projects.select { |p| p[:id] == project2.id }.first.present?
 
     # Ensure there are matching number of streams
     assert_equal unit.tutorial_streams.count, projects.last[:tutorial_enrolments].count
@@ -659,7 +721,7 @@ class UnitModelTest < ActiveSupport::TestCase
     unit.tutorial_streams.each do |s|
       unit.projects.each do |p|
         proj_tute_enrolment = p.tutorial_enrolment_for_stream(s)
-        data_tute_enrolment = projects.select{|ps| ps[:id] == p.id}.first[:tutorial_enrolments].select{|te| te[:stream_abbr] == s.abbreviation}.map{|te| te[:tutorial_id]}.first
+        data_tute_enrolment = projects.select { |ps| ps[:id] == p.id }.first[:tutorial_enrolments].select { |te| te[:stream_abbr] == s.abbreviation }.map { |te| te[:tutorial_id] }.first
 
         # if there is a enrolment for this project...
         if proj_tute_enrolment.present?
@@ -673,7 +735,7 @@ class UnitModelTest < ActiveSupport::TestCase
     end
   end
 
-  def check_task_completion_csv unit, col_count = nil
+  def check_task_completion_csv(unit, col_count = nil)
     csv_str = unit.task_completion_csv
 
     CSV.parse(csv_str,
@@ -681,7 +743,6 @@ class UnitModelTest < ActiveSupport::TestCase
               return_headers: false,
               header_converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')&.downcase }],
               converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }]).each do |entry|
-
       assert_equal(col_count, entry.length, entry.inspect) unless col_count.nil?
 
       user = User.find_by(username: entry['username'])
@@ -706,8 +767,8 @@ class UnitModelTest < ActiveSupport::TestCase
         assert_equal(task.quality_pts.to_s, entry["#{td.abbreviation.downcase} stars"], "#{td.abbreviation} stars --> #{entry.inspect}") if td.has_stars? && task.quality_pts != -1
         if task.grade.present?
           assert_equal(GradeHelper.short_grade_for(task.grade), entry["#{td.abbreviation.downcase} grade"], "#{td.abbreviation} --> #{entry.inspect}") if td.is_graded?
-        else
-          assert_nil(entry["#{td.abbreviation.downcase} grade"], "#{td.abbreviation} --> #{entry.inspect}") if td.is_graded?
+        elsif td.is_graded?
+          assert_nil(entry["#{td.abbreviation.downcase} grade"], "#{td.abbreviation} --> #{entry.inspect}")
         end
         assert_equal(task.contribution_pts, (entry["#{td.abbreviation.downcase} contribution"].nil? ? 3 : Integer(entry["#{td.abbreviation.downcase} contribution"])), "#{td.abbreviation} contrib --> #{entry.inspect}") if td.is_group_task?
       end
@@ -715,16 +776,16 @@ class UnitModelTest < ActiveSupport::TestCase
       # Test tutorial streams
       unit.tutorial_streams.each do |ts|
         if project.tutorial_for_stream(ts).present?
-          assert_equal project.tutorial_for_stream(ts).abbreviation, entry[ts.abbreviation.downcase], {entry: entry.inspect, stream: ts.abbreviation, proj_tut: project.tutorial_for_stream(ts)}
+          assert_equal project.tutorial_for_stream(ts).abbreviation, entry[ts.abbreviation.downcase], { entry: entry.inspect, stream: ts.abbreviation, proj_tut: project.tutorial_for_stream(ts) }
         else
-          assert_nil entry[ts.abbreviation.downcase], {entry: entry.inspect, stream: ts.abbreviation, proj_tut: project.tutorial_for_stream(ts)}
+          assert_nil entry[ts.abbreviation.downcase], { entry: entry.inspect, stream: ts.abbreviation, proj_tut: project.tutorial_for_stream(ts) }
         end
       end
     end
   end
 
   def test_task_completion_csv
-    unit = FactoryBot.create :unit, campus_count: 2, tutorials:2, stream_count:2, task_count:3, student_count:8, unenrolled_student_count: 1, part_enrolled_student_count: 2, set_one_of_each_task: true
+    unit = FactoryBot.create :unit, campus_count: 2, tutorials: 2, stream_count: 2, task_count: 3, student_count: 8, unenrolled_student_count: 1, part_enrolled_student_count: 2, set_one_of_each_task: true
 
     unit.task_definitions.each do |td|
       unit.projects.each do |student|
@@ -740,16 +801,16 @@ class UnitModelTest < ActiveSupport::TestCase
   end
 
   def test_task_completion_csv_no_task_data
-    unit = FactoryBot.create :unit, campus_count: 2, tutorials:2, stream_count:2, task_count:3, student_count:8, unenrolled_student_count: 1, part_enrolled_student_count: 2, set_one_of_each_task: true
+    unit = FactoryBot.create :unit, campus_count: 2, tutorials: 2, stream_count: 2, task_count: 3, student_count: 8, unenrolled_student_count: 1, part_enrolled_student_count: 2, set_one_of_each_task: true
 
     check_task_completion_csv unit
   end
 
   def test_task_completion_csv_all_td_in_one_stream
-    unit = FactoryBot.create :unit, campus_count: 2, tutorials:1, stream_count:1, task_count:1, student_count:3, unenrolled_student_count: 0, part_enrolled_student_count: 0
+    unit = FactoryBot.create :unit, campus_count: 2, tutorials: 1, stream_count: 1, task_count: 1, student_count: 3, unenrolled_student_count: 0, part_enrolled_student_count: 0
 
     unit.tutorial_streams << FactoryBot.create(:tutorial_stream, unit: unit)
-    tutorial = FactoryBot.create(:tutorial, unit: unit, tutorial_stream: unit.tutorial_streams.last, campus: unit.campuses.first )
+    tutorial = FactoryBot.create(:tutorial, unit: unit, tutorial_stream: unit.tutorial_streams.last, campus: unit.campuses.first)
 
     unit.projects.where(campus: tutorial.campus).first.enrol_in(tutorial)
 
@@ -760,7 +821,7 @@ class UnitModelTest < ActiveSupport::TestCase
   end
 
   def test_export_users
-    unit = FactoryBot.create :unit, campus_count: 2, tutorials:2, stream_count:0, task_count:3, student_count:8, unenrolled_student_count: 0, part_enrolled_student_count: 0, set_one_of_each_task: true
+    unit = FactoryBot.create :unit, campus_count: 2, tutorials: 2, stream_count: 0, task_count: 3, student_count: 8, unenrolled_student_count: 0, part_enrolled_student_count: 0, set_one_of_each_task: true
 
     csv_str = unit.export_users_to_csv
 
@@ -809,10 +870,13 @@ class UnitModelTest < ActiveSupport::TestCase
     assert FactoryBot.build(:task_definition, unit: @unit, name: 'Hyphenated-Task #1 (Core)').valid?
     assert FactoryBot.build(:task_definition, unit: @unit, name: 'P1.1 - Hello World').valid?
     assert FactoryBot.build(:task_definition, unit: @unit, name: "Student's Task").valid?
+    assert FactoryBot.build(:task_definition, unit: @unit, name: 'A* with Admissible Heuristic').valid?
+    assert FactoryBot.build(:task_definition, unit: @unit, name: 'C++ Starter Pack').valid?
+    assert FactoryBot.build(:task_definition, unit: @unit, name: '2+2').valid?
   end
 
-  test 'unit and task titles reject equals, plus, and at characters anywhere' do
-    ['={', '=2+2', '+command', '@command', 'Unit=Name', 'Unit+Name', 'Unit@Name'].each do |value|
+  test 'unit and task titles reject unsupported punctuation' do
+    ['={', '=2+2', '@command', 'Unit=Name', 'Unit@Name'].each do |value|
       unit = FactoryBot.build(:unit, name: value)
       task_definition = FactoryBot.build(:task_definition, unit: @unit, name: value)
 
@@ -820,6 +884,19 @@ class UnitModelTest < ActiveSupport::TestCase
       assert_includes unit.errors[:name], 'contains unsupported characters'
       assert_not task_definition.valid?, value
       assert_includes task_definition.errors[:name], 'contains unsupported characters'
+    end
+
+    unit = FactoryBot.build(:unit, name: 'Unit+Name')
+    assert_not unit.valid?
+    assert_includes unit.errors[:name], 'contains unsupported characters'
+  end
+
+  test 'task titles must start with an alphanumeric character' do
+    ['* Star', ' Task', '(Intro)', '+command', ' +command', '=2+2'].each do |value|
+      task_definition = FactoryBot.build(:task_definition, unit: @unit, name: value)
+
+      assert_not task_definition.valid?, value
+      assert_includes task_definition.errors[:name], 'must begin with an alphanumeric character'
     end
   end
 
@@ -945,7 +1022,7 @@ class UnitModelTest < ActiveSupport::TestCase
   end
 
   def test_change_main_convenor_success
-    unit = FactoryBot.create :unit, campus_count: 1, tutorials:0, stream_count:0, task_count:0, with_students:false
+    unit = FactoryBot.create :unit, campus_count: 1, tutorials: 0, stream_count: 0, task_count: 0, with_students: false
 
     admin_user = FactoryBot.create :user, :admin
     convenor_user = FactoryBot.create :user, :convenor
@@ -976,8 +1053,8 @@ class UnitModelTest < ActiveSupport::TestCase
   end
 
   def test_change_main_convenor_does_not_allow_roles_from_other_units
-    unit = FactoryBot.create :unit, campus_count: 1, tutorials:0, stream_count:0, task_count:0, with_students:false
-    other_unit = FactoryBot.create :unit, campus_count: 1, tutorials:0, stream_count:0, task_count:0, with_students:false
+    unit = FactoryBot.create :unit, campus_count: 1, tutorials: 0, stream_count: 0, task_count: 0, with_students: false
+    other_unit = FactoryBot.create :unit, campus_count: 1, tutorials: 0, stream_count: 0, task_count: 0, with_students: false
 
     admin_user = FactoryBot.create :user, :admin
     convenor_user = FactoryBot.create :user, :convenor
@@ -988,14 +1065,14 @@ class UnitModelTest < ActiveSupport::TestCase
     assert unit.valid?, 'Should be valid before changes... check factory girl!'
 
     unit.main_convenor_id = admin_user_role.id
-    refute unit.valid?, 'It should not be ok to change to the admin user from other unit'
+    assert_not unit.valid?, 'It should not be ok to change to the admin user from other unit'
 
     unit.main_convenor_id = convenor_user_role.id
-    refute unit.valid?, 'It should not be ok to change to the convenor user from other unit'
+    assert_not unit.valid?, 'It should not be ok to change to the convenor user from other unit'
   end
 
   def test_change_main_convenor_does_not_allow_non_convneor_roles
-    unit = FactoryBot.create :unit, campus_count: 1, tutorials:0, stream_count:0, task_count:0, with_students:false
+    unit = FactoryBot.create :unit, campus_count: 1, tutorials: 0, stream_count: 0, task_count: 0, with_students: false
 
     admin_user = FactoryBot.create :user, :admin
     convenor_user = FactoryBot.create :user, :convenor
@@ -1004,14 +1081,14 @@ class UnitModelTest < ActiveSupport::TestCase
     convenor_user_role = unit.employ_staff convenor_user, Role.tutor
 
     unit.main_convenor_id = admin_user_role.id
-    refute unit.valid?, 'It should not be ok to change to the admin user with no convenor access to unit'
+    assert_not unit.valid?, 'It should not be ok to change to the admin user with no convenor access to unit'
 
     unit.main_convenor_id = convenor_user_role.id
-    refute unit.valid?, 'It should not be ok to change to the convenor user with no convenor access to unit'
+    assert_not unit.valid?, 'It should not be ok to change to the convenor user with no convenor access to unit'
   end
 
   def test_change_main_convenor_does_not_allow_students_to_be_epmployed
-    unit = FactoryBot.create :unit, campus_count: 1, tutorials:0, stream_count:0, task_count:0, with_students:false
+    unit = FactoryBot.create :unit, campus_count: 1, tutorials: 0, stream_count: 0, task_count: 0, with_students: false
 
     convenor_user = FactoryBot.create :user, :convenor
     student_user = FactoryBot.create :user, :student
@@ -1019,18 +1096,18 @@ class UnitModelTest < ActiveSupport::TestCase
     student_user_role = unit.employ_staff student_user, Role.tutor
     assert student_user_role.nil?
 
-    #force this test... work around validations
+    # force this test... work around validations
     student_user_role = unit.employ_staff convenor_user, Role.convenor
     student_user_role.user = student_user
 
-    refute student_user_role.valid?, 'You should not be able to change a unit role to have a student!'
+    assert_not student_user_role.valid?, 'You should not be able to change a unit role to have a student!'
 
     unit.main_convenor = student_user_role
-    refute unit.valid?, 'Even if the above validation fails, the student user role should not be able to admin unit'
+    assert_not unit.valid?, 'Even if the above validation fails, the student user role should not be able to admin unit'
   end
 
   def test_portfolio_zip
-    unit = FactoryBot.create :unit, campus_count: 2, tutorials:2, stream_count:2, task_count:1, student_count:1, unenrolled_student_count: 0, part_enrolled_student_count: 1
+    unit = FactoryBot.create :unit, campus_count: 2, tutorials: 2, stream_count: 2, task_count: 1, student_count: 1, unenrolled_student_count: 0, part_enrolled_student_count: 1
 
     paths = []
 
@@ -1051,7 +1128,7 @@ class UnitModelTest < ActiveSupport::TestCase
     unit.destroy!
 
     paths.each do |path|
-      refute File.exist?(path)
+      assert_not File.exist?(path)
     end
   end
 
@@ -1124,6 +1201,7 @@ class UnitModelTest < ActiveSupport::TestCase
     assert_equal @unit.code, unit2.code
     assert_in_delta start_date, unit2.start_date, 1.hour
     assert_in_delta end_date, unit2.end_date, 1.hour
+    assert_equal end_date.to_date, unit2.last_teaching_date
 
     unit2.destroy
   end
@@ -1153,6 +1231,7 @@ class UnitModelTest < ActiveSupport::TestCase
     assert_not_equal @unit.code, unit2.code
     assert_equal 'NEWCODE-1', unit2.code
     assert_equal tp, unit2.teaching_period
+    assert_equal tp.last_teaching_date, unit2.last_teaching_date
 
     unit2.task_definitions.each do |td|
       assert File.exist?(td.task_sheet), 'task sheet is absent'
@@ -1360,7 +1439,6 @@ class UnitModelTest < ActiveSupport::TestCase
     assert_not unit.valid?, '"mark_late_submissions_as_assess_in_portfolio" cannot be disabled while tasks are in the Assess in Portfolio state'
     assert_includes unit.errors[:mark_late_submissions_as_assess_in_portfolio], 'cannot be disabled while tasks are in the Assess in Portfolio state'
   end
-
 
   test 'capture-task-complete-stats-snapshot creates snapshot for date' do
     data = build_unit_with_controlled_task_statuses

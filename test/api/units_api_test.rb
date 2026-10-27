@@ -127,19 +127,19 @@ class UnitsApiTest < ActiveSupport::TestCase
 
   def create_unit
     {
-      name:'Intro to Social Skills',
-      code:'JRRW40003',
-      start_date:'2016-05-14T00:00:00.000Z',
-      end_date:'2017-05-14T00:00:00.000Z'
+      name: 'Intro to Social Skills',
+      code: 'JRRW40003',
+      start_date: '2016-05-14T00:00:00.000Z',
+      end_date: '2017-05-14T00:00:00.000Z'
     }
   end
 
-  def test_post_create_unit_custom_token(token='abcdef')
+  def test_post_create_unit_custom_token(token = 'abcdef')
     count = Unit.all.length
     unit = create_unit
 
     data_to_post = {
-        unit: unit
+      unit: unit
     }
 
     # Add username and auth_token to Header
@@ -147,7 +147,7 @@ class UnitsApiTest < ActiveSupport::TestCase
 
     # Override the header for empty auth_token
     if token == ''
-      header 'auth_token',''
+      header 'auth_token', ''
     end
 
     post_json '/api/units', data_to_post
@@ -189,7 +189,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status, last_response_body
     # Check there is a new tutorial
     assert_equal count_tutorials + 1, Tutorial.all.length, last_response_body
-    assert_json_matches_model tutorial, last_response_body, ["abbreviation", "capacity", "meeting_location", "meeting_day", "meeting_time"]
+    assert_json_matches_model tutorial, last_response_body, %w[abbreviation capacity meeting_location meeting_day meeting_time]
 
     unit.destroy
   end
@@ -261,8 +261,8 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
 
     assert last_response_body.map { |r| r['id'] }.include? test_unit_inside.id
-    refute last_response_body.map { |r| r['id'] }.include? test_unit_before.id
-    refute last_response_body.map { |r| r['id'] }.include? test_unit_after.id
+    assert_not last_response_body.map { |r| r['id'] }.include? test_unit_before.id
+    assert_not last_response_body.map { |r| r['id'] }.include? test_unit_after.id
 
     # Test convenor can not get all
     add_auth_header_for(user: aconvenor)
@@ -342,7 +342,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert actual_unit.key?("tutorials"), actual_unit.inspect
     # assert actual_unit.key?("tutorial_enrolments"), actual_unit.inspect
     assert actual_unit.key?("task_definitions"), actual_unit.inspect
-    #TODO: expand tests to check details returned
+    # TODO: expand tests to check details returned
 
     assert actual_unit.key?("staff"), actual_unit.inspect
     assert_equal expected_unit.staff.count, actual_unit["staff"].count, actual_unit["staff"].inspect
@@ -380,7 +380,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert actual_unit.key?("groups"), actual_unit.inspect
     assert_equal expected_unit.groups.count, actual_unit["groups"].count, actual_unit["groups"].inspect
     actual_unit["groups"].each do |group|
-      keys = %w(id name tutorial_id group_set_id student_count capacity_adjustment locked)
+      keys = %w[id name tutorial_id group_set_id student_count capacity_adjustment locked]
       assert_json_limit_keys_to_exactly keys, group
       assert_json_matches_model Group.find(group['id']), group, keys
     end
@@ -421,9 +421,8 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal 3, actual_unit['tutorial_streams'].count
   end
 
-  #Test GET for getting the unit details of current user
+  # Test GET for getting the unit details of current user
   def test_units_current
-
     # Add username and auth_token to Header
     add_auth_header_for(user: User.first)
 
@@ -431,17 +430,16 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
   end
 
-
-  #Test PUT for updating unit details with valid id
+  # Test PUT for updating unit details with valid id
   def test_units_put
     original = FactoryBot.create(:unit, with_students: false)
 
-    unit={}
+    unit = {}
     unit['name'] = 'Intro to python'
     unit['code'] = 'JRSW40004'
     unit['description'] = 'new language'
     unit['start_date'] = '2018-12-14T00:00:00.000Z'
-    unit['end_date']='2019-05-14T00:00:00.000Z'
+    unit['end_date'] = '2019-05-14T00:00:00.000Z'
     unit['active'] = false
     unit['auto_apply_extension_before_deadline'] = false
     unit['send_notifications'] = false
@@ -456,7 +454,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     put_json "/api/units/#{original.id}", data_to_put
     assert_equal 200, last_response.status
 
-    assert_json_matches_model original.reload, unit, %w( name code description start_date end_date active auto_apply_extension_before_deadline send_notifications )
+    assert_json_matches_model original.reload, unit, %w[name code description start_date end_date active auto_apply_extension_before_deadline send_notifications]
   end
 
   def test_units_put_rejects_unsupported_name_and_code_characters
@@ -514,13 +512,13 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal 'Updated by tutor administrator', unit.reload.name
   end
 
-  #Test PUT for updating unit details with empty name
+  # Test PUT for updating unit details with empty name
   def test_put_update_unit_empty_name
     unit = Unit.first
     unit[:name] = ''
 
     data_to_put = {
-        unit: unit
+      unit: unit
     }
 
     # Add username and auth_token to Header
@@ -530,10 +528,10 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal 400, last_response.status
   end
 
-  #Test PUT for updating unit details with invalid id
+  # Test PUT for updating unit details with invalid id
   def test_put_update_unit_invalid_id
     data_to_put = {
-        unit: { name: 'test'}
+      unit: { name: 'test' }
     }
 
     # Add username and auth_token to Header
@@ -571,7 +569,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal 404, last_response.status
   end
 
-  def test_put_update_unit_custom_token()
+  def test_put_update_unit_custom_token
     unit = Unit.first
     token = 'abcdef'
     data_to_put = {
@@ -631,9 +629,9 @@ class UnitsApiTest < ActiveSupport::TestCase
 
   def test_draft_learning_summary_upload_requirements
     unit = FactoryBot.create :unit, student_count: 1, task_count: 0
-    task_def_code = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [{'key' => 'file0','name' => 'Code file','type' => 'code'}])
-    task_def_doc = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [{'key' => 'file0','name' => 'Draft learning summary','type' => 'document'}])
-    task_def_doc_code = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [{'key' => 'file0','name' => 'Draft learning summary','type' => 'document'}, {'key' => 'file1','name' => 'Code file','type' => 'code'}])
+    task_def_code = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [{ 'key' => 'file0', 'name' => 'Code file', 'type' => 'code' }])
+    task_def_doc = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [{ 'key' => 'file0', 'name' => 'Draft learning summary', 'type' => 'document' }])
+    task_def_doc_code = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [{ 'key' => 'file0', 'name' => 'Draft learning summary', 'type' => 'document' }, { 'key' => 'file1', 'name' => 'Code file', 'type' => 'code' }])
 
     # Test with a task containing non document upload requirement
     data_to_put = {
@@ -718,6 +716,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal 3, last_response_body[0]['campus_student_counts'][tutorial.campus.name]
     assert_equal 3, last_response_body[0]['target_grade_student_counts']['0']
     assert_equal 3, last_response_body[0]['target_grade_campus_student_counts']['0'][tutorial.campus.name]
+    assert_equal 3, last_response_body[0]['status_population_stats']['all'][tutorial.campus.name]['__all__'][task_definition.abbreviation]['complete']
 
     assert_not_equal older_snapshot.snapshot_date.to_s, last_response_body[1]['snapshot_date'].to_date.to_s
   end
@@ -822,7 +821,7 @@ class UnitsApiTest < ActiveSupport::TestCase
       'Rationale',
       'Assessor',
       'Tutorial',
-      task_definition.abbreviation,
+      task_definition.abbreviation
     ]
 
     CSV.generate do |csv|
@@ -841,7 +840,7 @@ class UnitsApiTest < ActiveSupport::TestCase
           '',
           '',
           tutorial.abbreviation,
-          status,
+          status
         ]
       end
     end

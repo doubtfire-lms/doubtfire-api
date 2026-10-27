@@ -101,6 +101,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_24_110628) do
     t.bigint "task_definition_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "plain_text", default: false, null: false
     t.index ["communication_rule_id"], name: "index_communication_actions_on_communication_rule_id"
     t.index ["task_definition_id"], name: "index_communication_actions_on_task_definition_id"
     t.index ["type"], name: "index_communication_actions_on_type"
@@ -645,6 +646,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_24_110628) do
     t.bigint "reply_to_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "content_type"
     t.index ["project_id"], name: "index_staff_notes_on_project_id"
     t.index ["reply_to_id"], name: "index_staff_notes_on_reply_to_id"
     t.index ["staff_notes_id"], name: "index_staff_notes_on_staff_notes_id"
@@ -747,6 +749,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_24_110628) do
     t.boolean "use_resources_for_jplag_base_code", default: false, null: false
     t.boolean "lock_assessments_to_tutorial_stream", default: false, null: false
     t.boolean "requires_discussion", default: false, null: false
+    t.boolean "staff_managed_task", default: false, null: false
     t.index ["abbreviation", "unit_id"], name: "index_task_definitions_on_abbreviation_and_unit_id", unique: true
     t.index ["group_set_id"], name: "index_task_definitions_on_group_set_id"
     t.index ["name", "unit_id"], name: "index_task_definitions_on_name_and_unit_id", unique: true
@@ -864,6 +867,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_24_110628) do
     t.datetime "active_until", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.date "last_teaching_date", null: false
     t.index ["period", "year"], name: "index_teaching_periods_on_period_and_year", unique: true
   end
 
@@ -1079,6 +1083,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_24_110628) do
     t.boolean "discuss_timeout_enabled", default: false, null: false
     t.integer "discuss_timeout_warning_days", default: 7, null: false
     t.integer "discuss_timeout_expire_days", default: 14, null: false
+    t.date "last_teaching_date", null: false
     t.index ["draft_task_definition_id"], name: "index_units_on_draft_task_definition_id"
     t.index ["main_convenor_id"], name: "index_units_on_main_convenor_id"
     t.index ["overseer_image_id"], name: "index_units_on_overseer_image_id"

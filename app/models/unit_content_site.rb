@@ -99,6 +99,25 @@ class UnitContentSite < ApplicationRecord
     raise
   end
 
+  def copy_to(other_unit)
+    archive_dir = self.class.archive_dir_for(other_unit)
+    FileUtils.mkdir_p archive_dir
+
+    new_site = dup
+    new_site.unit = other_unit
+    new_site.archive_path = File.join(
+      archive_dir,
+      "#{SecureRandom.hex(8)}-#{FileHelper.sanitized_filename(original_filename)}"
+    )
+    FileUtils.cp archive_path, new_site.archive_path
+    new_site.save!
+    new_site.extract_for_serving!
+    new_site
+  rescue StandardError
+    new_site&.persisted? ? new_site.destroy : FileUtils.rm_f(new_site&.archive_path.to_s)
+    raise
+  end
+
   def self.root_dir_options_for(archive_path)
     root_dir_options_from_entries(archive_entries_for(archive_path))
   rescue Zip::Error

@@ -24,28 +24,28 @@ class StatusTest < ActiveSupport::TestCase
     user = project.student
 
     td = TaskDefinition.new({
-        unit_id: unit.id,
-        tutorial_stream: unit.tutorial_streams.first,
-        abbreviation: 'test_status_comments',
-        name: 'test_status_comments',
-        description: 'test_status_comments',
-        weighting: 4,
-        target_grade: 0,
-        start_date: Time.zone.now - 2.weeks,
-        target_date: Time.zone.now - 1.week,
-        due_date: Time.zone.now + 1.day,
-        restrict_status_updates: false,
-        upload_requirements: [ ],
-        plagiarism_warn_pct: 0.8,
-        is_graded: false,
-        max_quality_pts: 0
-      })
+                              unit_id: unit.id,
+                              tutorial_stream: unit.tutorial_streams.first,
+                              abbreviation: 'test_status_comments',
+                              name: 'test_status_comments',
+                              description: 'test_status_comments',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: Time.zone.now - 2.weeks,
+                              target_date: Time.zone.now - 1.week,
+                              due_date: Time.zone.now + 1.day,
+                              restrict_status_updates: false,
+                              upload_requirements: [],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0
+                            })
     td.save!
 
     tutor = project.tutor_for(td)
 
     data_to_post = {
-      trigger: 'ready_for_feedback',
+      trigger: 'ready_for_feedback'
     }
 
     # Add auth_token and username to header

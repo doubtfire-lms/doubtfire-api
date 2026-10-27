@@ -4,7 +4,7 @@
 # fails if the name exists, so a request retried while the original is still running can't store the
 # same chunk twice. No locks are needed, which matters because file locks hang on some NFS mounts.
 class BatchFeedbackUpload
-  CHUNK_SIZE = 50.megabytes
+  CHUNK_SIZE = Doubtfire::Application.config.batch_feedback_chunk_size
   EXPIRES_AFTER = 24.hours
   ID_PATTERN = /\A\h{32}\z/
   CHUNK_NAME_PATTERN = /\A(\d{20})-(\h{64})\z/

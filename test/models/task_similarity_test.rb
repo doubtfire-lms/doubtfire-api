@@ -149,7 +149,7 @@ class TaskSimilarityTest < ActiveSupport::TestCase
       pct: 10
     )
 
-    refute similarity.valid?, similarity.errors.full_messages
+    assert_not similarity.valid?, similarity.errors.full_messages
 
     similarity.other_task = task
     assert similarity.valid?, similarity.errors.full_messages
@@ -167,7 +167,6 @@ class TaskSimilarityTest < ActiveSupport::TestCase
     )
 
     assert tii_similarity.valid?, tii_similarity.errors.full_messages
-
   ensure
     task&.project&.unit&.destroy
   end
@@ -185,9 +184,9 @@ class TaskSimilarityTest < ActiveSupport::TestCase
     assert similarity.valid?, similarity.errors.full_messages
 
     similarity.pct = -1
-    refute similarity.valid?
+    assert_not similarity.valid?
     similarity.pct = 101
-    refute similarity.valid?
+    assert_not similarity.valid?
 
     similarity.pct = 0
     assert similarity.valid?, similarity.errors.full_messages
@@ -266,10 +265,9 @@ class TaskSimilarityTest < ActiveSupport::TestCase
     add_auth_header_for(user: task.unit.main_convenor_user)
 
     # This will post to get the viewer url
-    viewer_url_request = stub_request(:post, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1223/viewer-url").
-      with(tii_headers).
-      to_return(status: 200, body: TCAClient::SimilarityViewerUrlResponse.new(viewer_url: 'https://viewer.url').to_hash.to_json, headers: {}
-    )
+    viewer_url_request = stub_request(:post, "https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/submissions/1223/viewer-url")
+                         .with(tii_headers)
+                         .to_return(status: 200, body: TCAClient::SimilarityViewerUrlResponse.new(viewer_url: 'https://viewer.url').to_hash.to_json, headers: {})
 
     get "/api/tasks/#{task.id}/similarities/#{sim.id}/viewer_url"
     assert_equal 200, last_response.status

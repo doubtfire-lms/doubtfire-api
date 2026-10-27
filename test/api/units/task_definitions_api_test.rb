@@ -12,19 +12,19 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
   end
 
   def all_task_def_keys
-    [
-      'name',
-      'description',
-      'target_grade',
-      'group_set_id',
-      'start_date',
-      'target_date',
-      'due_date',
-      'abbreviation',
-      'restrict_status_updates',
-      'plagiarism_warn_pct',
-      'is_graded',
-      'max_quality_pts'
+    %w[
+      name
+      description
+      target_grade
+      group_set_id
+      start_date
+      target_date
+      due_date
+      abbreviation
+      restrict_status_updates
+      plagiarism_warn_pct
+      is_graded
+      max_quality_pts
     ]
   end
 
@@ -35,21 +35,21 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
 
     data_to_post = {
       task_def: {
-        tutorial_stream_abbr:     unit.tutorial_streams.first.abbreviation,
-        name:                     'New Task Def',
-        description:              'First task def',
-        weighting:                4,
-        target_grade:             1,
-        group_set_id:             unit.group_sets.first.id,
-        start_date:               unit.start_date,
-        target_date:              unit.start_date + 7.days,
-        due_date:                 unit.start_date + 21.days,
-        abbreviation:             'P1.1',
-        restrict_status_updates:  false,
-        upload_requirements:      '[ { "key": "file0", "name": "Shape Class", "type": "document" } ]',
-        plagiarism_warn_pct:      80,
-        is_graded:                false,
-        max_quality_pts:          0
+        tutorial_stream_abbr: unit.tutorial_streams.first.abbreviation,
+        name: 'New Task Def',
+        description: 'First task def',
+        weighting: 4,
+        target_grade: 1,
+        group_set_id: unit.group_sets.first.id,
+        start_date: unit.start_date,
+        target_date: unit.start_date + 7.days,
+        due_date: unit.start_date + 21.days,
+        abbreviation: 'P1.1',
+        restrict_status_updates: false,
+        upload_requirements: '[ { "key": "file0", "name": "Shape Class", "type": "document" } ]',
+        plagiarism_warn_pct: 80,
+        is_graded: false,
+        max_quality_pts: 0
       }
     }
 
@@ -69,21 +69,21 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
 
     data_to_put = {
       task_def: {
-        tutorial_stream_abbr:     unit.tutorial_streams.last.abbreviation,
-        name:                     'New Task Def 1',
-        description:              'First task def 1',
-        weighting:                2,
-        target_grade:             2,
-        group_set_id:             nil,
-        start_date:               unit.start_date + 2.days,
-        target_date:              unit.start_date + 9.days,
-        due_date:                 unit.start_date + 23.days,
-        abbreviation:             'P1.2',
-        restrict_status_updates:  true,
-        upload_requirements:      [ { "key": "file0", "name": "Other Class", "type": "document" } ].to_json,
-        plagiarism_warn_pct:      80,
-        is_graded:                false,
-        max_quality_pts:          0
+        tutorial_stream_abbr: unit.tutorial_streams.last.abbreviation,
+        name: 'New Task Def 1',
+        description: 'First task def 1',
+        weighting: 2,
+        target_grade: 2,
+        group_set_id: nil,
+        start_date: unit.start_date + 2.days,
+        target_date: unit.start_date + 9.days,
+        due_date: unit.start_date + 23.days,
+        abbreviation: 'P1.2',
+        restrict_status_updates: true,
+        upload_requirements: [{ key: "file0", name: "Other Class", type: "document" }].to_json,
+        plagiarism_warn_pct: 80,
+        is_graded: false,
+        max_quality_pts: 0
       }
     }
 
@@ -115,6 +115,18 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     post_json "/api/units/#{test_unit.id}/task_definitions/#{test_task_definition_id}/task_sheet", data_to_post
 
     assert last_response_body.key?('error')
+  end
+
+  def test_update_rejects_unsupported_similarity_language
+    unit = FactoryBot.create(:unit, task_count: 1)
+    task_definition = unit.task_definitions.first
+    add_auth_header_for(user: unit.main_convenor_user)
+
+    put_json "/api/units/#{unit.id}/task_definitions/#{task_definition.id}",
+             { task_def: { similarity_language: 'java; touch /tmp/injected' } }
+
+    assert_equal 400, last_response.status, last_response_body
+    assert_nil task_definition.reload.similarity_language
   end
 
   def test_post_tasksheet
@@ -181,30 +193,30 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     ]
 
     # Save will trigger TII integration
-    create_tii_group_stub = stub_request(:put, %r[https://localhost/api/v1/groups/.*]).
-      with(tii_headers).
-      with(body: %r[.*id.*.*name.*type.*ASSIGNMENT.*group_context.*id.*name.*due_date.*report_generation.*IMMEDIATELY_AND_DUE_DATE.*]).
-      to_return(status: 200, body: "", headers: {})
+    create_tii_group_stub = stub_request(:put, %r{https://localhost/api/v1/groups/.*})
+                            .with(tii_headers)
+                            .with(body: /.*id.*.*name.*type.*ASSIGNMENT.*group_context.*id.*name.*due_date.*report_generation.*IMMEDIATELY_AND_DUE_DATE.*/)
+                            .to_return(status: 200, body: "", headers: {})
 
-    post_attachment_stub = stub_request(:post, %r[https://localhost/api/v1/groups/.*/attachments]).
-      with(tii_headers).
-      with(body: "{\"title\":\"TestWordDoc.docx\",\"template\":false}").
-      to_return(
-        status: 200,
-        body: TCAClient::AddGroupAttachmentResponse.new(
-          id: SecureRandom.uuid
-        ).to_json,
-        headers: {}
-      )
+    post_attachment_stub = stub_request(:post, %r{https://localhost/api/v1/groups/.*/attachments})
+                           .with(tii_headers)
+                           .with(body: "{\"title\":\"TestWordDoc.docx\",\"template\":false}")
+                           .to_return(
+                             status: 200,
+                             body: TCAClient::AddGroupAttachmentResponse.new(
+                               id: SecureRandom.uuid
+                             ).to_json,
+                             headers: {}
+                           )
 
-    upload_stub = stub_request(:put, %r[https://localhost/api/v1/groups/.*/attachments/.*/original]).
-      with(tii_headers).
-      with(headers: {'Content-Type'=>'binary/octet-stream'}).
-      to_return(status: 200, body: '{ "message": "Successfully uploaded file for attachment ..." }', headers: {})
+    upload_stub = stub_request(:put, %r{https://localhost/api/v1/groups/.*/attachments/.*/original})
+                  .with(tii_headers)
+                  .with(headers: { 'Content-Type' => 'binary/octet-stream' })
+                  .to_return(status: 200, body: '{ "message": "Successfully uploaded file for attachment ..." }', headers: {})
 
-    delete_stub = stub_request(:delete, %r[https://localhost/api/v1/groups/.*/attachments/.*]).
-      with(tii_headers).
-      to_return(status: 200, body: "", headers: {})
+    delete_stub = stub_request(:delete, %r{https://localhost/api/v1/groups/.*/attachments/.*})
+                  .with(tii_headers)
+                  .to_return(status: 200, body: "", headers: {})
 
     td.save!
 
@@ -242,21 +254,21 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
   def test_submission_creates_folders
     unit = Unit.first
     td = TaskDefinition.new({
-        unit_id: unit.id,
-        tutorial_stream: unit.tutorial_streams.first,
-        name: 'test_submission_creates_folders',
-        description: 'test def',
-        weighting: 4,
-        target_grade: 0,
-        start_date: unit.start_date + 1.week,
-        target_date: unit.start_date + 2.weeks,
-        abbreviation: 'test_submission_creates_folders',
-        restrict_status_updates: false,
-        upload_requirements: [ { "key" => "file0", "name" => "Shape Class", "type" => "document" } ],
-        plagiarism_warn_pct: 0.8,
-        is_graded: false,
-        max_quality_pts: 0
-      })
+                              unit_id: unit.id,
+                              tutorial_stream: unit.tutorial_streams.first,
+                              name: 'test_submission_creates_folders',
+                              description: 'test def',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: unit.start_date + 1.week,
+                              target_date: unit.start_date + 2.weeks,
+                              abbreviation: 'test_submission_creates_folders',
+                              restrict_status_updates: false,
+                              upload_requirements: [{ "key" => "file0", "name" => "Shape Class", "type" => "document" }],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0
+                            })
     td.save!
 
     data_to_post = {
@@ -296,21 +308,21 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
   def test_change_to_group_after_submissions
     unit = Unit.first
     td = TaskDefinition.new({
-        unit_id: unit.id,
-        tutorial_stream: unit.tutorial_streams.first,
-        name: 'Task to switch from ind to group after submission',
-        description: 'test def',
-        weighting: 4,
-        target_grade: 0,
-        start_date: unit.start_date + 1.week,
-        target_date: unit.start_date + 2.weeks,
-        abbreviation: 'TaskSwitchIndGrp',
-        restrict_status_updates: false,
-        upload_requirements: [ { "key" => 'file0', "name" => 'Shape Class', "type" => 'document' } ],
-        plagiarism_warn_pct: 0.8,
-        is_graded: false,
-        max_quality_pts: 0
-      })
+                              unit_id: unit.id,
+                              tutorial_stream: unit.tutorial_streams.first,
+                              name: 'Task to switch from ind to group after submission',
+                              description: 'test def',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: unit.start_date + 1.week,
+                              target_date: unit.start_date + 2.weeks,
+                              abbreviation: 'TaskSwitchIndGrp',
+                              restrict_status_updates: false,
+                              upload_requirements: [{ "key" => 'file0', "name" => 'Shape Class', "type" => 'document' }],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0
+                            })
     td.save!
 
     data_to_post = {
@@ -336,13 +348,13 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
 
     # Change it to a group task
 
-    group_set = GroupSet.create!({name: 'test group set', unit: unit})
+    group_set = GroupSet.create!({ name: 'test group set', unit: unit })
     group_set.save!
 
     td.group_set = group_set
-    assert !td.save
+    assert_not td.save
 
-    task.reload()
+    task.reload
     task.task_definition = td
     path = task.zip_file_path_for_done_task
     assert path
@@ -837,8 +849,8 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
   end
 
   def test_change_draft_learning_summary_upload_requirements
-    unit = FactoryBot.create :unit, student_count:1, task_count:0
-    upload_reqs = [{'key' => 'file0','name' => 'Draft learning summary','type' => 'document'}]
+    unit = FactoryBot.create :unit, student_count: 1, task_count: 0
+    upload_reqs = [{ 'key' => 'file0', 'name' => 'Draft learning summary', 'type' => 'document' }]
     task_def = FactoryBot.create(:task_definition, unit: unit, upload_requirements: upload_reqs)
 
     # Set draft learning summary task defintion
@@ -858,7 +870,7 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     # Test change upload requirements to a non-document upload
     data_to_put = {
       task_def: {
-        upload_requirements: [{"key": "file0","name": "Code file","type": "code"}].to_json
+        upload_requirements: [{ key: "file0", name: "Code file", type: "code" }].to_json
       }
     }
 

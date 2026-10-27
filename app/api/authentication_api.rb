@@ -99,11 +99,18 @@ class AuthenticationApi < Grape::API
       requires :SAMLResponse, type: String, desc: 'Data provided for further processing.'
     end
     post '/auth/jwt' do
-      response = OneLogin::RubySaml::Response.new(params[:SAMLResponse], allowed_clock_drift: 1.second,
-                                                                         settings: AuthenticationHelpers.saml_settings)
+      # Malformed payloads raise during parsing (e.g. REXML::ParseException), so treat them as invalid
+      begin
+        response = OneLogin::RubySaml::Response.new(params[:SAMLResponse], allowed_clock_drift: 1.second,
+                                                                           settings: AuthenticationHelpers.saml_settings)
+        valid = response.is_valid?
+      rescue StandardError => e
+        logger.error "Unable to parse SAML response: #{e.class}: #{e.message}"
+        valid = false
+      end
 
       # We validate the SAML Response and check if the user already exists in the system
-      return error!({ error: 'Invalid SAML response.' }, 401) unless response.is_valid?
+      return error!({ error: 'Invalid SAML response.' }, 401) unless valid
 
       # Get the user identification data from the SAML response
       # This includes the login_id, email and username
@@ -112,11 +119,9 @@ class AuthenticationApi < Grape::API
       logger.info "Authenticate #{user_id_data[:email]} from #{request.ip}"
 
       # Lookup using login_id if it exists
-      # Lookup using email otherwise and set login_id
+      # Lookup using username or email otherwise and set login_id
       # Otherwise create new
-      user = User.find_by(login_id: user_id_data[:login_id]) ||
-             User.find_by(username: user_id_data[:username]) ||
-             User.find_by(email: user_id_data[:email]) ||
+      user = UserIdentity.find_user(login_id: user_id_data[:login_id], email: user_id_data[:email], username: user_id_data[:username]) ||
              User.create do |new_user|
                # Update new user with details from the SAML response
                Doubtfire::Application.config.institution_settings.update_user_from_saml_response(
@@ -126,13 +131,11 @@ class AuthenticationApi < Grape::API
                )
              end
 
-      # Set login id + username if not yet specified
-      if user.login_id.nil? || user.username.nil?
-        user.update(
-          login_id: user_id_data[:login_id],
-          username: user_id_data[:username]
-        )
+      if UserIdentity.blocked?(user, login_id: user_id_data[:login_id], email: user_id_data[:email], source: 'saml')
+        error!({ error: 'This account is linked to a different login. ' \
+                        'Please get in contact with the system administrators.' }, 403)
       end
+      UserIdentity.link_identity(user, login_id: user_id_data[:login_id], username: user_id_data[:username])
 
       # Try and save the user once authenticated if new
       if user.new_record?
@@ -166,16 +169,25 @@ class AuthenticationApi < Grape::API
       requires :SAMLResponse, type: String, desc: 'SAML logout response data.'
     end
     post '/auth/saml_logout' do
-      response = OneLogin::RubySaml::Logoutresponse.new(
-        params[:SAMLResponse],
-        AuthenticationHelpers.saml_settings
-      )
+      begin
+        response = OneLogin::RubySaml::Logoutresponse.new(
+          params[:SAMLResponse],
+          AuthenticationHelpers.saml_settings
+        )
 
-      # Check if the SAML response is valid - if not log an error
-      unless response.is_valid?
-        logger.error "Invalid SAML logout response: #{response.errors.join(', ')}"
+        # Check if the SAML response is valid - if not log an error
+        unless response.validate
+          logger.error "Invalid SAML logout response: #{response.errors.join(', ')}"
+        end
+      rescue StandardError => e
+        logger.error "Unable to parse SAML logout response: #{e.class}: #{e.message}"
       end
 
+      host = Doubtfire::Application.config.institution[:host]
+      unless host.starts_with?('http')
+        protocol = Rails.env.development? ? 'http' : 'https'
+        host = "#{protocol}://#{host}"
+      end
       redirect "#{host}/sign_in"
     end
   end
@@ -216,20 +228,14 @@ class AuthenticationApi < Grape::API
       lti_identity = %w[user_id ext_user_username lis_person_sourcedid email].index_with { |key| member[key] }
       logger.info "LTI user is logging in: #{lti_identity.to_json}"
 
-      user_id_data = {
-        login_id: member['ext_user_username'] || member['user_id'],
-        email: member['email'],
-        username: member['email']&.split('@')&.first
-      }
+      user_id_data = UserIdentity.lti_user_id_data(member)
 
       logger.info "Authenticate #{user_id_data[:email]} from #{request.ip}"
 
       # Lookup using login_id if it exists
-      # Lookup using email otherwise and set login_id
+      # Lookup using username or email otherwise and set login_id
       # Otherwise create new
-      user = User.find_by(login_id: user_id_data[:login_id]) ||
-             User.find_by(username: user_id_data[:username]) ||
-             User.find_by(email: user_id_data[:email]) ||
+      user = UserIdentity.find_user(login_id: user_id_data[:login_id], email: user_id_data[:email], username: user_id_data[:username]) ||
              User.create do |new_user|
                # Update new user with details from the LTI response
                Doubtfire::Application.config.institution_settings.update_user_from_lti_response(
@@ -239,13 +245,11 @@ class AuthenticationApi < Grape::API
                )
              end
 
-      # Set login id + username if not yet specified
-      if user.login_id.nil? || user.username.nil?
-        user.update(
-          login_id: user_id_data[:login_id],
-          username: user_id_data[:username]
-        )
+      if UserIdentity.blocked?(user, login_id: user_id_data[:login_id], email: user_id_data[:email], source: 'lti_launch')
+        error!({ error: 'This account is linked to a different login. ' \
+                        'Please get in contact with your unit convenor or the system administrators.' }, 403)
       end
+      UserIdentity.link_identity(user, login_id: user_id_data[:login_id], username: user_id_data[:username])
 
       # Try and save the user once authenticated if new
       if user.new_record?
@@ -257,6 +261,17 @@ class AuthenticationApi < Grape::API
                         'system administrators.')
         end
         user.save
+      end
+
+      # Fill a missing student ID from the LMS person identifier when it is available and unused.
+      sourced_id = member['lis_person_sourcedid'].to_s.strip.presence
+      if user.role_id == Role.student_id && user.student_id.blank? && sourced_id.present? &&
+         !User.exists?(student_id: sourced_id)
+        begin
+          user.update(student_id: sourced_id)
+        rescue ActiveRecord::RecordNotUnique
+          # Another launch claimed this ID between the lookup and update.
+        end
       end
 
       # Generate a temporary auth_token for future requests

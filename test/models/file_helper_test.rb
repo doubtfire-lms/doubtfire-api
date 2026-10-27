@@ -19,12 +19,33 @@ class FileHelperTest < ActiveSupport::TestCase
   end
 
   def test_convert_use_with_gif
-    in_file = "#{Rails.root}/test_files/submissions/unbelievable.gif"
+    in_file = "#{Rails.root.join('test_files/submissions/unbelievable.gif')}"
 
     Dir.mktmpdir do |dir|
-      dest_file = "#{dir}#{File.basename(in_file, ".*")}.jpg"
+      dest_file = "#{dir}#{File.basename(in_file, '.*')}.jpg"
       assert FileHelper.compress_image_to_dest(in_file, dest_file, true)
       assert File.exist? dest_file
+    end
+  end
+
+  def test_convert_large_jpeg_with_small_file_size
+    in_file = Rails.root.join('test_files/submissions/large-low-detail.jpg')
+    assert_operator File.size(in_file), :<, 2_000_000
+    source_dimensions, source_status = Open3.capture2('identify', '-ping', '-format', '%w %h', in_file.to_s)
+    assert source_status.success?
+    assert_equal '15000 17000', source_dimensions
+
+    Dir.mktmpdir do |dir|
+      dest_file = File.join(dir, 'large-low-detail.jpg')
+      assert FileHelper.compress_image_to_dest(in_file.to_s, dest_file, true)
+      assert File.exist?(dest_file)
+
+      dimensions, status = Open3.capture2('identify', '-format', '%w %h', dest_file)
+      assert status.success?
+      width, height = dimensions.split.map(&:to_i)
+      assert_operator width, :<=, 2048
+      assert_operator height, :<=, 2048
+      assert_equal 2048, [width, height].max
     end
   end
 
@@ -132,7 +153,9 @@ class FileHelperTest < ActiveSupport::TestCase
         true
       end
     end.new(0)
+    input_mode = nil
     runner = lambda do |work_id|
+      input_mode = File.stat(Rails.root.join('tmp/gotenberg', work_id, 'input.docx')).mode & 0o777
       FileUtils.cp(
         Rails.root.join('test_files/submissions/valid.pdf'),
         Rails.root.join('tmp/gotenberg', work_id, 'output.pdf')
@@ -144,6 +167,7 @@ class FileHelperTest < ActiveSupport::TestCase
       source_path = File.join(dir, 'submission.docx')
       destination_path = File.join(dir, 'submission.pdf')
       FileUtils.cp(Rails.root.join('test_files/TestWordDoc.docx'), source_path)
+      FileUtils.chmod(0o600, source_path)
 
       original_runner = FileHelper.method(:run_word_document_conversion)
       FileHelper.define_singleton_method(:run_word_document_conversion, runner)
@@ -158,6 +182,7 @@ class FileHelperTest < ActiveSupport::TestCase
       end
 
       assert_equal destination_path, result
+      assert_equal 0o644, input_mode
       assert FileHelper.validate_pdf(destination_path)[:valid]
     end
   end
@@ -266,7 +291,7 @@ class FileHelperTest < ActiveSupport::TestCase
         'zip'
       )
 
-      refute result[:accepted]
+      assert_not result[:accepted]
       assert_includes result[:msg], 'unsafe path'
     end
   end
@@ -286,7 +311,7 @@ class FileHelperTest < ActiveSupport::TestCase
         'zip'
       )
 
-      refute result[:accepted]
+      assert_not result[:accepted]
       assert_includes result[:msg], 'Nested archives are not allowed'
     end
   end
@@ -330,7 +355,7 @@ class FileHelperTest < ActiveSupport::TestCase
 
       result = FileHelper.validate_zip_upload(zip_file.path, 'submission.zip')
 
-      refute result[:valid]
+      assert_not result[:valid]
       assert_includes result[:msg], 'uncompressed size limit'
     end
   ensure
@@ -351,7 +376,7 @@ class FileHelperTest < ActiveSupport::TestCase
       assert_includes tree[:lines], '↳ src/'
       assert_includes tree[:lines], '  ↳ main.rb'
       assert_includes tree[:lines], '↳ README.md'
-      refute tree[:truncated]
+      assert_not tree[:truncated]
     end
   end
 

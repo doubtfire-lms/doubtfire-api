@@ -2,19 +2,13 @@ class AcceptSubmissionJob
   include Sidekiq::Job
   include LogHelper
 
-  sidekiq_options lock: :until_executed,
+  sidekiq_options queue: 'default',
+                  lock: :until_executed,
                   lock_args_method: ->(args) { [args.first] },
                   on_conflict: :reject,
                   retry: false
 
   def perform(task_id, user_id, accepted_tii_eula, test_submission)
-    begin
-      # Ensure cwd is valid...
-      FileUtils.cd(Rails.root)
-    rescue StandardError => e
-      logger.error e
-    end
-
     begin
       task = Task.find(task_id)
       user = User.find(user_id)
@@ -26,7 +20,7 @@ class AcceptSubmissionJob
     begin
       logger.info "Accepting submission for task #{task.id} by user #{user.id}"
       # Convert submission to PDF
-      task.convert_submission_to_pdf(log_to_stdout: true)
+      raise "Failed to convert submission to PDF for task #{task.id}" unless task.convert_submission_to_pdf(log_to_stdout: true)
     rescue StandardError => e
       logger.error e
 

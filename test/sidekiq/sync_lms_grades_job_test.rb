@@ -72,6 +72,21 @@ class SyncLmsGradesJobTest < ActiveSupport::TestCase
     assert_requested submit
   end
 
+  def test_grades_are_not_sent_to_an_account_linked_to_a_different_login_id_when_enforced
+    unit = FactoryBot.create(:unit, with_students: false)
+    student = FactoryBot.create(:user, :student, login_id: SecureRandom.uuid)
+    unit.enrol_student(student, Campus.first).update!(grade: 2)
+    config = Doubtfire::Application.config
+    config.enforce_login_id_match = true
+
+    result = run_job(unit, FakeSource.new([lms_member('10', SecureRandom.uuid, student.email)]), preview_only: true)
+
+    assert_empty result['success']
+    assert_equal(['OnTrack account is linked to a different login id'], result['ignored'].map { |row| row['message'] })
+  ensure
+    config.enforce_login_id_match = false
+  end
+
   private
 
   def with_lti_service

@@ -39,6 +39,14 @@ module Doubtfire
     config.auth_method = (ENV['DF_AUTH_METHOD'] || :database).to_sym
     config.access_token_expiry = ENV.fetch('DF_ACCESS_TOKEN_EXPIRY_SECONDS', 2.hours.to_i).to_i.seconds
     config.refresh_token_expiry = ENV.fetch('DF_REFRESH_TOKEN_EXPIRY_SECONDS', 1.week.to_i).to_i.seconds
+    auth_rate_limit_enabled = ENV.fetch('ONTRACK_AUTH_RATE_LIMIT_ENABLED', 'true').downcase
+    raise ArgumentError, 'ONTRACK_AUTH_RATE_LIMIT_ENABLED must be true, false, 1, or 0' unless %w[true false 1 0].include?(auth_rate_limit_enabled)
+
+    config.auth_rate_limit_enabled = %w[true 1].include?(auth_rate_limit_enabled)
+    config.auth_rate_limit = Integer(ENV.fetch('ONTRACK_AUTH_RATE_LIMIT', 5))
+    config.auth_rate_period_seconds = Integer(ENV.fetch('ONTRACK_AUTH_RATE_PERIOD_SECONDS', 20))
+    raise ArgumentError, 'ONTRACK_AUTH_RATE_LIMIT must be positive' unless config.auth_rate_limit.positive?
+    raise ArgumentError, 'ONTRACK_AUTH_RATE_PERIOD_SECONDS must be positive' unless config.auth_rate_period_seconds.positive?
 
     # ==> Student work directory
     # File server location for storing student's work. Defaults to `student_work`
@@ -66,6 +74,9 @@ module Doubtfire
 
     # Limit number of pdf generators to run at once
     config.pdfgen_max_processes = ENV['DF_MAX_PDF_GEN_PROCESSES'] || 2
+
+    # Size of each chunk in a batch feedback upload; keep under the proxy's request body limit
+    config.batch_feedback_chunk_size = ENV.fetch('BATCH_FEEDBACK_CHUNK_SIZE_MB', 50).to_i.megabytes
 
     # Each Word document conversion runs a short-lived, network-isolated
     # Gotenberg container. The image includes the conversion entrypoint.
@@ -162,6 +173,10 @@ module Doubtfire
     credentials.secret_key_devise = Application.fetch_credential_or_env(:secret_key_devise, env_key: 'DF_SECRET_KEY_DEVISE', default: Rails.env.production? ? nil : 'f4e23c4388dc600e503a09ad057b8271d8fcf4c2cd6723b44f33db638e49075fe96bc545eed9110ded0c5df505625d4e1c838b718349eecf1d39270d0829d5b9')
     credentials.secret_key_aaf = Application.fetch_credential_or_env(:aaf, :secret_key, env_key: 'DF_SECRET_KEY_AAF', default: Rails.env.production? ? nil : 'secretsecret12345')
     credentials.secret_key_moss = Application.fetch_credential_or_env(:moss, :secret_key, env_key: 'DF_SECRET_KEY_MOSS')
+
+    # ==> User identity
+    # Refuse accounts matched by username or email that already belong to a different login id. When off, these are only logged.
+    config.enforce_login_id_match = ENV['DF_ENFORCE_LOGIN_ID_MATCH'].to_s.downcase == 'true'
 
     # ==> LTI settings
     # If enabled, mounts the LTI routes and enables LTI authentication.
@@ -360,6 +375,7 @@ module Doubtfire
                  methods: %i[get post put patch delete options head]
       end
     end
+    config.middleware.use Rack::Attack
 
     config.active_support.to_time_preserves_timezone = :zone
 
@@ -425,7 +441,11 @@ module Doubtfire
       end
 
       config.after_initialize do
-        if config.docker_config[:DOCKER_TOKEN] && config.docker_config[:DOCKER_PROXY_URL]
+        docker_login_configured = %i[DOCKER_TOKEN DOCKER_USER DOCKER_PROXY_URL].all? do |key|
+          config.docker_config[key].present?
+        end
+
+        if docker_login_configured
           LoginDockerJob.perform_async
         end
       end

@@ -158,7 +158,7 @@ class LearningOutcomeModelTest < ActiveSupport::TestCase
     assert_not_nil new_tlo
     assert_equal tlo.full_outcome_description, new_tlo.full_outcome_description
     assert_equal tlo.short_description, new_tlo.short_description
-    assert_equal 2, new_tlo.linked_outcomes.pluck(:id).count, new_tlo.linked_outcomes.map{ |o| "#{o.id} #{o.abbreviation}" }.join(',')
+    assert_equal 2, new_tlo.linked_outcomes.pluck(:id).count, new_tlo.linked_outcomes.map { |o| "#{o.id} #{o.abbreviation}" }.join(',')
     assert_includes new_tlo.linked_outcomes.pluck(:id), glo.id
     assert_includes new_tlo.linked_outcomes.pluck(:id), new_ulo.id
   ensure
