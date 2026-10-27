@@ -48,7 +48,7 @@ end
 gem 'mysql2'
 
 # Webserver - included in development and test and optionally in production
-gem 'puma'
+gem 'puma', '~> 7.2', '>= 7.2.1'
 
 gem 'bootsnap', require: false
 gem 'csv'
