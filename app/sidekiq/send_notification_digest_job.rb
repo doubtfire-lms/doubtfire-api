@@ -22,7 +22,7 @@ class SendNotificationDigestJob
                    .received_notifications
                    .email_pending
                    .email_ready(now)
-                   .includes(:recipient, :actor, :unit, { project: :campus }, task: [:task_definition, { project: :user }])
+                   .includes(:recipient, :actor, :unit, :project, task: [:task_definition, { project: :user }])
                    .to_a
     deliverable, skipped = ready.partition { |notification| deliverable?(setting, notification, now) }
 

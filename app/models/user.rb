@@ -476,6 +476,11 @@ class User < ApplicationRecord
     "#{fn} #{sn}"
   end
 
+  # Users who have not signed in since timezones were added use the server's.
+  def notification_timezone
+    timezone.presence || NotificationSetting.default_digest_timezone
+  end
+
   # Saving the settings picks up the new timezone and reschedules the next digest.
   def refresh_notification_schedule
     notification_setting&.save!

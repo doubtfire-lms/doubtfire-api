@@ -250,7 +250,7 @@ class Notification < ApplicationRecord
   end
 
   def self.refresh_task_deadline_notifications!(now: Time.current, started_at: nil)
-    stale = where(kind: TASK_DEADLINE_KINDS).unread.includes(task: [:task_definition, { project: %i[unit campus user] }])
+    stale = where(kind: TASK_DEADLINE_KINDS).unread.includes(task: [:task_definition, { project: %i[unit user] }])
     stale.find_each do |notification|
       mark_read(where(id: notification.id)) unless notification.current_task_deadline?(now: now)
     end
@@ -324,7 +324,7 @@ class Notification < ApplicationRecord
   def self.task_deadline_kind(task, now: Time.current)
     return nil unless task_deadline_eligible?(task, now: now)
 
-    today = now.in_time_zone(task.project.campus&.timezone.presence || Time.zone.name).to_date
+    today = now.in_time_zone(task.project.student.notification_timezone).to_date
     start_date = task.local_start_date.to_date
     due_date = task.local_due_date.to_date
 
@@ -497,7 +497,7 @@ class Notification < ApplicationRecord
 
   def self.each_task_deadline_candidate(now:)
     Unit.within_last_teaching_date(now).where(start_date: ..now, send_notifications: true).find_each do |unit|
-      unit.active_projects.includes(:user, :campus).find_each do |project|
+      unit.active_projects.includes(:user).find_each do |project|
         project.assigned_task_defs.find_each do |task_definition|
           yield project.task_for_task_definition(task_definition)
         end

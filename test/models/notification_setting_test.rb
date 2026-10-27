@@ -24,7 +24,7 @@ class NotificationSettingTest < ActiveSupport::TestCase
     assert_equal Notification::KINDS.sort, settings.channels.keys.sort
   end
 
-  def test_the_user_timezone_overrides_the_campus_and_reschedules_the_digest
+  def test_changing_the_user_timezone_reschedules_the_digest
     user = FactoryBot.create(:user)
     settings = NotificationSetting.for(user)
 
@@ -111,9 +111,7 @@ class NotificationSettingTest < ActiveSupport::TestCase
   end
 
   def test_daily_delivery_keeps_its_time_across_a_daylight_saving_transition
-    user = FactoryBot.create(:user)
-    campus = FactoryBot.create(:campus, timezone: 'Australia/Melbourne')
-    FactoryBot.create(:project, user: user, campus: campus)
+    user = FactoryBot.create(:user, timezone: 'Australia/Melbourne')
     settings = FactoryBot.build(
       :notification_setting,
       user: user,
@@ -128,12 +126,10 @@ class NotificationSettingTest < ActiveSupport::TestCase
     assert_equal 9, next_occurrence.hour
   end
 
-  def test_delivery_uses_the_first_enrolled_projects_campus_timezone
-    user = FactoryBot.create(:user)
-    first_campus = FactoryBot.create(:campus, timezone: 'Australia/Melbourne')
-    second_campus = FactoryBot.create(:campus, timezone: 'Pacific/Auckland')
-    FactoryBot.create(:project, user: user, campus: first_campus, enrolled: true)
-    FactoryBot.create(:project, user: user, campus: second_campus, enrolled: true)
+  def test_delivery_uses_the_users_timezone_over_their_campus
+    user = FactoryBot.create(:user, timezone: 'Australia/Melbourne')
+    campus = FactoryBot.create(:campus, timezone: 'Pacific/Auckland')
+    FactoryBot.create(:project, user: user, campus: campus, enrolled: true)
     settings = FactoryBot.build(
       :notification_setting,
       user: user,

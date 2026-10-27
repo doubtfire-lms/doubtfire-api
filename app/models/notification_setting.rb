@@ -44,12 +44,8 @@ class NotificationSetting < ApplicationRecord
     Time.zone.tzinfo.name
   end
 
-  # Falls back to the campus of the first unit the user enrolled in until a timezone is saved for them.
   def resolved_digest_timezone
-    return user.timezone if user.timezone.present?
-
-    first_project = user.projects.where(enrolled: true).order(:id).includes(:campus).first
-    first_project&.campus&.timezone.presence || self.class.default_digest_timezone
+    user.notification_timezone
   end
 
   # The channels a unit delivers a kind on, honouring its override when it has

@@ -81,7 +81,7 @@ class NotificationGroupBuilder
       read: items.all? { |notification| notification.read_at.present? },
       read_at: items.filter_map(&:read_at).max,
       latest_at: latest.created_at,
-      timezone: project&.campus&.timezone || Time.zone.name,
+      timezone: latest.recipient.notification_timezone,
       tutor_note_ids: tutor_notes.filter_map(&:tutor_note_id),
       tutor_note_unit_role_id: tutor_notes.first&.unit_role_id,
       tutor_note_on_task_tutor: tutor_note_on_task_tutor?(tutor_notes.first, task),

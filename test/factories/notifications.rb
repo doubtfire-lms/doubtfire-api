@@ -12,7 +12,6 @@ FactoryBot.define do
     digest_interval_hours { 4 }
     digest_start_time { '08:00' }
     digest_time { '07:00' }
-    digest_timezone { 'UTC' }
     digest_weekday { 1 }
   end
 
