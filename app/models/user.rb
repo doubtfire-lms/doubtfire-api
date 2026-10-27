@@ -481,17 +481,6 @@ class User < ApplicationRecord
     timezone.presence || NotificationSetting.default_digest_timezone
   end
 
-  # Saving the settings picks up the new timezone and reschedules the next digest.
-  def refresh_notification_schedule
-    notification_setting&.save!
-  end
-
-  def timezone_supported
-    return if timezone.nil? || ActiveSupport::TimeZone[timezone].present?
-
-    errors.add(:timezone, 'must be a valid timezone')
-  end
-
   def move_files_on_username_change
     old_username = saved_change_to_username[0]
 
@@ -656,5 +645,18 @@ class User < ApplicationRecord
     unless unit_role.nil?
       unit_role.get_marking_sessions(start_date: start_date, end_date: end_date, timezone: timezone)
     end
+  end
+
+  private
+
+  # Saving the settings picks up the new timezone and reschedules the next digest.
+  def refresh_notification_schedule
+    notification_setting&.save!
+  end
+
+  def timezone_supported
+    return if timezone.nil? || ActiveSupport::TimeZone[timezone].present?
+
+    errors.add(:timezone, 'must be a valid timezone')
   end
 end
