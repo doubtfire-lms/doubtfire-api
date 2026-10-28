@@ -1,5 +1,10 @@
+require 'digest'
+
 module Rack
   class Attack
+    AUTH_REFRESH_PATHS = %w[/api/auth/access-token /api/auth/access-token.json].freeze
+    AUTH_LOGIN_PATHS = %w[/api/auth /api/auth.json].freeze
+
     # Production uses the configured Rails cache: Redis when available,
     # otherwise an in-process memory store.
     Rack::Attack.cache.store = if Rails.env.production?
@@ -8,10 +13,31 @@ module Rack
                                  ActiveSupport::Cache::MemoryStore.new
                                end
 
-    # Limit repeated login attempts against the API auth endpoint.
-    throttle('auth/ip', limit: Doubtfire::Application.config.auth_rate_limit,
-                        period: Doubtfire::Application.config.auth_rate_period_seconds.seconds) do |req|
-      req.ip if Doubtfire::Application.config.auth_rate_limit_enabled && req.path.start_with?('/api/auth') && req.post?
+    # Limit password guesses per username and IP, so users sharing a campus IP never block each other.
+    throttle('auth/username_ip', limit: Doubtfire::Application.config.auth_rate_limit,
+                                 period: Doubtfire::Application.config.auth_rate_period_seconds.seconds) do |req|
+      next unless Doubtfire::Application.config.auth_rate_limit_enabled && req.post? && AUTH_LOGIN_PATHS.include?(req.path)
+
+      params = begin
+        ActionDispatch::Request.new(req.env).params
+      rescue ActionController::BadRequest, ActionDispatch::Http::Parameters::ParseError
+        {}
+      end
+      username = params['username']
+      next unless params['password'].present? && username.is_a?(String) && username.present?
+
+      "#{req.ip}:#{username.strip.downcase}"
+    end
+
+    # Limit repeated use of one refresh cookie without affecting other users of a shared IP.
+    throttle('auth/refresh/token', limit: Doubtfire::Application.config.auth_refresh_rate_limit,
+                                   period: Doubtfire::Application.config.auth_refresh_rate_period_seconds.seconds) do |req|
+      next unless Doubtfire::Application.config.auth_rate_limit_enabled && req.post? && AUTH_REFRESH_PATHS.include?(req.path)
+
+      refresh_token = req.cookies['refresh_token']
+      next if refresh_token.blank? || refresh_token.bytesize > 256
+
+      Digest::SHA256.hexdigest(refresh_token)
     end
 
     # Return a consistent API-friendly throttling response.
@@ -29,7 +55,12 @@ module Rack
       now = match_data[:epoch_time] || Time.now.to_i
       retry_after = match_data[:period].to_i - (now % match_data[:period].to_i) if match_data[:period].to_i.positive?
 
-      body = { error: 'Too many login attempts. Please try again shortly.' }.to_json
+      message = if AUTH_REFRESH_PATHS.include?(rack_env['PATH_INFO'])
+                  'Too many token refresh attempts. Please try again shortly.'
+                else
+                  'Too many login attempts. Please try again shortly.'
+                end
+      body = { error: message }.to_json
       headers = { 'Content-Type' => 'application/json' }
       headers['Retry-After'] = retry_after.to_s if retry_after
 

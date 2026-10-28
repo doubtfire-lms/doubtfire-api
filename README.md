@@ -90,8 +90,10 @@ for `DF_SECRET_KEY_BASE`, `DF_SECRET_KEY_ATTR`, `DF_SECRET_KEY_DEVISE`,
 | `DF_ACCESS_TOKEN_EXPIRY_SECONDS`    | Access-token lifetime in seconds.                            | `7200`                           |
 | `DF_REFRESH_TOKEN_EXPIRY_SECONDS`   | Refresh-token lifetime in seconds.                           | `604800`                         |
 | `ONTRACK_AUTH_RATE_LIMIT_ENABLED`   | Enable auth throttling; accepts true/false or 1/0.           | `true`                           |
-| `ONTRACK_AUTH_RATE_LIMIT`           | Maximum authentication requests per IP in one window.        | `5`                              |
+| `ONTRACK_AUTH_RATE_LIMIT`           | Maximum password logins per username and IP in one window.   | `5`                              |
 | `ONTRACK_AUTH_RATE_PERIOD_SECONDS`  | Authentication throttle window in seconds.                   | `20`                             |
+| `ONTRACK_AUTH_REFRESH_RATE_LIMIT`   | Maximum refresh requests per refresh cookie in one window.   | `30`                             |
+| `ONTRACK_AUTH_REFRESH_RATE_PERIOD_SECONDS` | Refresh throttle window in seconds.                 | `60`                             |
 | `DF_SECRET_KEY_BASE`                | Rails secret key base fallback.                              | Required in production           |
 | `DF_SECRET_KEY_ATTR`                | Legacy encrypted-attribute key fallback.                     | Required in production           |
 | `DF_SECRET_KEY_DEVISE`              | Devise secret fallback.                                      | Required in production           |
