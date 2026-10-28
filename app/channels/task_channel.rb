@@ -9,6 +9,10 @@ class TaskChannel < ApplicationCable::Channel
   # A failed broadcast must not fail the request or job that changed the task
   def self.broadcast_event(task, event)
     ActionCable.server.broadcast(stream_name(task.project_id, task.task_definition_id), { event: event })
+    ActionCable.server.broadcast(
+      ProjectChannel.stream_name(task.project_id),
+      { event: event, task_definition_id: task.task_definition_id }
+    )
   rescue StandardError => e
     Rails.logger.error("TaskChannel #{event} broadcast failed for task #{task.id}: #{e.message}")
   end

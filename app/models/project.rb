@@ -280,15 +280,16 @@ class Project < ApplicationRecord
     [application_reference_date, unit.end_date].min
   end
 
-  def task_details_for_shallow_serializer(user)
+  def task_details_for_shallow_serializer(user, task_definition_id: nil)
     teaching_breaks = unit.teaching_period&.breaks_for(campus) || []
     attention_audience = TaskComment.attention_audiences.fetch(user == student ? 'student' : 'staff')
     similarity_stats = TaskSimilarity
                        .select('task_id', 'COUNT(*) AS similarity_count', 'SUM(flagged) AS flagged_count')
                        .group(:task_id)
                        .to_sql
+    scope = task_definition_id ? tasks.where(task_definition_id: task_definition_id) : tasks
 
-    tasks
+    scope
       .joins(:task_status)
       .joins('LEFT JOIN tasks group_comment_tasks ON tasks.group_submission_id IS NOT NULL ' \
              'AND group_comment_tasks.group_submission_id = tasks.group_submission_id')

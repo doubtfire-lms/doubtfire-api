@@ -60,7 +60,7 @@ class TaskChannelTest < ActionCable::Channel::TestCase
     task = @project.task_for_task_definition(@task_definition)
 
     assert_broadcast_on(stream_name, { event: 'submission_processed' }) do
-      task.broadcast_submission_processed
+      task.broadcast_group_event('submission_processed')
     end
   end
 

@@ -1285,4 +1285,17 @@ class TasksApiTest < ActiveSupport::TestCase
     assert_nil Task.find_by(project: project, task_definition: td)&.grade
   end
 
+  def test_refresh_task_includes_unread_comment_count
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 1, stream_count: 0)
+    project = unit.projects.first
+    td = unit.task_definitions.first
+    project.task_for_task_definition(td).add_text_comment(unit.main_convenor_user, 'Hello')
+
+    add_auth_header_for(user: project.student)
+    get "/api/projects/#{project.id}/refresh_tasks/#{td.id}"
+
+    assert_equal 200, last_response.status, last_response_body
+    assert_equal td.id, last_response_body['task_definition_id']
+    assert_equal 1, last_response_body['num_new_comments']
+  end
 end
