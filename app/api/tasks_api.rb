@@ -178,7 +178,6 @@ class TasksApi < Grape::API
 
       task = project.task_for_task_definition(task_definition)
       mark_as_discussed = params[:discussed] == true && authorise?(current_user, project, :assess)
-      needs_discussed_comment = mark_as_discussed && !task.has_discussed_in_class_comment?
 
       # if trigger supplied...
       unless params[:trigger].nil?
@@ -253,7 +252,7 @@ class TasksApi < Grape::API
         if result.nil? && task.task_definition.restrict_status_updates
           error!({ error: 'This task can only be updated by your tutor.' }, 403)
         end
-        task.add_discussed_comment(current_user) if result && needs_discussed_comment
+        task.add_discussed_comment(current_user) if result && mark_as_discussed
 
         SessionTracker.record_assessment_activity(
           action: "assessing",
@@ -264,7 +263,7 @@ class TasksApi < Grape::API
         )
       end
 
-      task.add_discussed_comment(current_user) if params[:trigger].nil? && needs_discussed_comment
+      task.add_discussed_comment(current_user) if params[:trigger].nil? && mark_as_discussed
 
       # if grade was supplied
       unless grade.nil?
