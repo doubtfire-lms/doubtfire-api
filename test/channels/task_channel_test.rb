@@ -56,6 +56,14 @@ class TaskChannelTest < ActionCable::Channel::TestCase
     end
   end
 
+  def test_submission_processed_broadcasts_to_task_stream
+    task = @project.task_for_task_definition(@task_definition)
+
+    assert_broadcast_on(stream_name, { event: 'submission_processed' }) do
+      task.broadcast_submission_processed
+    end
+  end
+
   def test_broadcast_failure_does_not_raise
     task = @project.task_for_task_definition(@task_definition)
 

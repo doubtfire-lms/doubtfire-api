@@ -1132,6 +1132,12 @@ class Task < ApplicationRecord
     TaskChannel.broadcast_event(self, 'status_changed')
   end
 
+  # Sent after the in-process folder is cleared so submission_details no longer reports processing_pdf
+  def broadcast_submission_processed
+    tasks = group_task? && group_submission ? group_submission.tasks : [self]
+    tasks.each { |task| TaskChannel.broadcast_event(task, 'submission_processed') }
+  end
+
   def add_discussed_comment(current_user)
     comment = 'Discussed in class'
 
@@ -1739,6 +1745,7 @@ class Task < ApplicationRecord
       # Dir.glob(Rails.root.join('tmp/rails-latex/**/input.aux')).each { |f| File.delete(f) }
 
       clear_in_process
+      broadcast_submission_processed
     end
   end
 
