@@ -1297,5 +1297,6 @@ class TasksApiTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status, last_response_body
     assert_equal td.id, last_response_body['task_definition_id']
     assert_equal 1, last_response_body['num_new_comments']
+    assert_not last_response_body.key?('completion_date'), 'nil dates must be omitted, not sent as null'
   end
 end

@@ -60,14 +60,14 @@ class TasksApi < Grape::API
       error!({ error: 'You do not have permission to access this project' }, 403)
     end
 
-    # Same shape as the project's task list, including the caller's unread comment count
+    # Same rows and entity as the project's task list, so dates and nils serialise identically
     result = project.task_details_for_shallow_serializer(current_user, task_definition_id: params[:task_definition_id])
 
     if params[:task_definition_id].present?
       result = result.first
     end
 
-    present result, with: Grape::Presenters::Presenter
+    present result, with: Entities::TaskEntity
   end
 
   desc 'Pin a task to the user\'s task inbox'
