@@ -60,28 +60,14 @@ class TasksApi < Grape::API
       error!({ error: 'You do not have permission to access this project' }, 403)
     end
 
-    base = project.tasks
-
-    if params[:task_definition_id].present?
-      base = base.where('tasks.task_definition_id = :task_definition_id', task_definition_id: params[:task_definition_id])
-    end
-
-    result = base
-             .map do |task|
-      {
-        task_definition_id: task.task_definition_id,
-        status: TaskStatus.id_to_key(task.task_status_id),
-        due_date: task.due_date,
-        extensions: task.extensions,
-        scorm_extensions: task.scorm_extensions
-      }
-    end
+    # Same rows and entity as the project's task list, so dates and nils serialise identically
+    result = project.task_details_for_shallow_serializer(current_user, task_definition_id: params[:task_definition_id])
 
     if params[:task_definition_id].present?
       result = result.first
     end
 
-    present result, with: Grape::Presenters::Presenter
+    present result, with: Entities::TaskEntity
   end
 
   desc 'Pin a task to the user\'s task inbox'

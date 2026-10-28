@@ -27,6 +27,7 @@ Doubtfire::Application.routes.draw do
   get 'api/internal/downloads/unit-content', to: 'unit_content_download_authorizations#show'
 
   mount ApiRoot => '/'
+  mount ActionCable.server => '/cable'
   mount GrapeSwaggerRails::Engine => '/api/docs'
   mount Sidekiq::Web => "/sidekiq" # mount Sidekiq::Web in your Rails app
 

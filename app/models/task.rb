@@ -163,6 +163,7 @@ class Task < ApplicationRecord
 
   before_save :set_discuss_timeout_tracking, if: :will_save_change_to_task_status_id?
   after_update :update_task_stats, if: :saved_change_to_task_status_id? # TODO: consider moving to async task
+  after_commit :broadcast_status_change, on: :update, if: :saved_change_to_task_status_id?
 
   validates :task_definition_id, uniqueness: { scope: :project,
                                                message: 'must be unique within the project' }
@@ -1127,6 +1128,16 @@ class Task < ApplicationRecord
     comment
   end
 
+  def broadcast_status_change
+    TaskChannel.broadcast_event(self, 'status_changed')
+  end
+
+  # Group members share comments, unread counts and the submission PDF
+  def broadcast_group_event(event)
+    tasks = group_task? && group_submission ? group_submission.tasks : [self]
+    tasks.each { |task| TaskChannel.broadcast_event(task, event) }
+  end
+
   def add_discussed_comment(current_user)
     comment = 'Discussed in class'
 
@@ -1734,6 +1745,8 @@ class Task < ApplicationRecord
       # Dir.glob(Rails.root.join('tmp/rails-latex/**/input.aux')).each { |f| File.delete(f) }
 
       clear_in_process
+      # Sent after the in-process folder is cleared so submission_details no longer reports processing_pdf
+      broadcast_group_event('submission_processed')
     end
   end
 
