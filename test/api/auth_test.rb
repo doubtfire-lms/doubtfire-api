@@ -49,6 +49,40 @@ class AuthTest < ActiveSupport::TestCase
     Rack::Attack.cache.store.clear
   end
 
+  def test_auth_rate_limit_is_per_username_on_shared_ip
+    original_setting = Doubtfire::Application.config.auth_rate_limit_enabled
+    Doubtfire::Application.config.auth_rate_limit_enabled = true
+    Rack::Attack.cache.store.clear
+    Rack::Attack.enabled = true
+
+    limit = Doubtfire::Application.config.auth_rate_limit
+    (limit + 1).times do
+      post_json '/api/auth.json', username: 'aadmin123', password: 'password'
+    end
+    assert_equal 429, last_response.status
+
+    post_json '/api/auth.json', username: 'aadmin', password: 'password'
+    assert_equal 201, last_response.status
+  ensure
+    Doubtfire::Application.config.auth_rate_limit_enabled = original_setting
+    Rack::Attack.cache.store.clear
+  end
+
+  def test_auth_token_exchange_is_not_rate_limited
+    original_setting = Doubtfire::Application.config.auth_rate_limit_enabled
+    Doubtfire::Application.config.auth_rate_limit_enabled = true
+    Rack::Attack.cache.store.clear
+    Rack::Attack.enabled = true
+
+    (Doubtfire::Application.config.auth_rate_limit + 1).times do
+      post_json '/api/auth.json', username: 'aadmin', auth_token: 'invalid'
+      assert_equal 419, last_response.status
+    end
+  ensure
+    Doubtfire::Application.config.auth_rate_limit_enabled = original_setting
+    Rack::Attack.cache.store.clear
+  end
+
   def test_access_token_refresh_does_not_use_login_rate_limit
     original_setting = Doubtfire::Application.config.auth_rate_limit_enabled
     Doubtfire::Application.config.auth_rate_limit_enabled = true

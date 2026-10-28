@@ -3,6 +3,7 @@ require 'digest'
 module Rack
   class Attack
     AUTH_REFRESH_PATHS = %w[/api/auth/access-token /api/auth/access-token.json].freeze
+    AUTH_LOGIN_PATHS = %w[/api/auth /api/auth.json].freeze
 
     # Production uses the configured Rails cache: Redis when available,
     # otherwise an in-process memory store.
@@ -12,13 +13,20 @@ module Rack
                                  ActiveSupport::Cache::MemoryStore.new
                                end
 
-    # Limit repeated login attempts without counting routine access-token refreshes.
-    throttle('auth/ip', limit: Doubtfire::Application.config.auth_rate_limit,
-                        period: Doubtfire::Application.config.auth_rate_period_seconds.seconds) do |req|
-      next unless Doubtfire::Application.config.auth_rate_limit_enabled && req.post? && req.path.start_with?('/api/auth')
-      next if AUTH_REFRESH_PATHS.include?(req.path)
+    # Limit password guesses per username and IP, so users sharing a campus IP never block each other.
+    throttle('auth/username_ip', limit: Doubtfire::Application.config.auth_rate_limit,
+                                 period: Doubtfire::Application.config.auth_rate_period_seconds.seconds) do |req|
+      next unless Doubtfire::Application.config.auth_rate_limit_enabled && req.post? && AUTH_LOGIN_PATHS.include?(req.path)
 
-      req.ip
+      params = begin
+        ActionDispatch::Request.new(req.env).params
+      rescue ActionController::BadRequest, ActionDispatch::Http::Parameters::ParseError
+        {}
+      end
+      username = params['username']
+      next unless params['password'].present? && username.is_a?(String) && username.present?
+
+      "#{req.ip}:#{username.strip.downcase}"
     end
 
     # Limit repeated use of one refresh cookie without affecting other users of a shared IP.
