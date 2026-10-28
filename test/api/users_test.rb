@@ -36,7 +36,6 @@ class UnitsTest < ActiveSupport::TestCase
 
   # Get users' details
   def test_get_users
-
     # Add username and auth_token to Header
     add_auth_header_for(user: User.first)
 
@@ -53,7 +52,7 @@ class UnitsTest < ActiveSupport::TestCase
     response_keys = %w[first_name last_name email student_id nickname receive_task_notifications receive_portfolio_notifications receive_feedback_notifications opt_in_to_research has_run_first_time_setup]
 
     # Loop through all of the responses
-    last_response_body.each do | data |
+    last_response_body.each do |data|
       # Find the matching user, by id from response
       user = User.find(data['id'])
       # Match json with object
@@ -76,12 +75,11 @@ class UnitsTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
 
     # Check the returned details match as expected
-    response_keys = %w(first_name last_name email student_id nickname receive_task_notifications receive_portfolio_notifications receive_feedback_notifications opt_in_to_research has_run_first_time_setup)
+    response_keys = %w[first_name last_name email student_id nickname receive_task_notifications receive_portfolio_notifications receive_feedback_notifications opt_in_to_research has_run_first_time_setup]
     assert_json_matches_model(expected_user, returned_user, response_keys)
   end
 
   def test_get_convenors
-
     # Add username and auth_token to Header
     add_auth_header_for(user: User.first)
 
@@ -90,7 +88,6 @@ class UnitsTest < ActiveSupport::TestCase
   end
 
   def test_get_tutors
-
     # Add username and auth_token to Header
     add_auth_header_for(user: User.first)
 
@@ -99,7 +96,7 @@ class UnitsTest < ActiveSupport::TestCase
   end
 
   def test_get_no_token
-    models = %w(users users/tutors users/convenors)
+    models = %w[users users/tutors users/convenors]
 
     models.each do |m|
       get "/api/#{m}"
@@ -108,12 +105,12 @@ class UnitsTest < ActiveSupport::TestCase
   end
 
   def test_get_invalid_token
-    models = %w(users users/tutors users/convenors)
+    models = %w[users users/tutors users/convenors]
 
-    models.each { |m|
+    models.each do |m|
       get "/api/#{m}?auth_token=1234"
       assert_equal 419, last_response.status
-    }
+    end
   end
 
   # ========================================================================
@@ -163,7 +160,7 @@ class UnitsTest < ActiveSupport::TestCase
     user = create_user
 
     data_to_post = {
-        user: user
+      user: user
     }
 
     # Add username and auth_token to Header
@@ -186,7 +183,7 @@ class UnitsTest < ActiveSupport::TestCase
     user = create_user
 
     data_to_post = {
-        user: user
+      user: user
     }
 
     # Add username and auth_token to Header
@@ -208,14 +205,14 @@ class UnitsTest < ActiveSupport::TestCase
     pre_count = User.all.length
     user = create_user
 
-    invalid_emails = %w(qwertyuiop qwertyuiop@qwe qwertyuiop@.com qwertyuiop@blah..com)
+    invalid_emails = %w[qwertyuiop qwertyuiop@qwe qwertyuiop@.com qwertyuiop@blah..com]
 
     invalid_emails.each do |email|
       # Assign invalid email
       user[:email] = email
 
       data_to_post = {
-          user: user
+        user: user
       }
 
       # Add username and auth_token to Header
@@ -251,14 +248,14 @@ class UnitsTest < ActiveSupport::TestCase
     end
   end
 
-  def test_post_create_user_custom_role(role='asdasd')
+  def test_post_create_user_custom_role(role = 'asdasd')
     pre_count = User.all.length
     user = create_user
 
     user[:system_role] = role
 
     data_to_post = {
-        user: user
+      user: user
     }
 
     # Add username and auth_token to Header
@@ -274,12 +271,12 @@ class UnitsTest < ActiveSupport::TestCase
     test_post_create_user_custom_role 'root'
   end
 
-  def test_post_create_user_custom_token(token='asdasd')
+  def test_post_create_user_custom_token(token = 'asdasd')
     pre_count = User.all.length
     user = create_user
 
     data_to_post = {
-        user: user
+      user: user
     }
 
     # Add username and auth_token to Header
@@ -287,7 +284,7 @@ class UnitsTest < ActiveSupport::TestCase
 
     # Override header to empty auth_token
     if token == ''
-      header 'auth_token',''
+      header 'auth_token', ''
     end
 
     post_json '/api/users', data_to_post
@@ -325,7 +322,7 @@ class UnitsTest < ActiveSupport::TestCase
     user[:email] = User.third.email
 
     data_to_put = {
-        user: user
+      user: user
     }
 
     # Add username and auth_token to Header
@@ -338,14 +335,14 @@ class UnitsTest < ActiveSupport::TestCase
   def test_put_update_user_invalid_email
     user = User.second
 
-    invalid_emails = %w(qwertyuiop qwertyuiop@qwe qwertyuiop@.com qwertyuiop@blah..com)
+    invalid_emails = %w[qwertyuiop qwertyuiop@qwe qwertyuiop@.com qwertyuiop@blah..com]
 
     invalid_emails.each do |email|
       # Assign invalid email
       user[:email] = email
 
       data_to_put = {
-          user: user
+        user: user
       }
 
       # Add username and auth_token to Header
@@ -361,7 +358,7 @@ class UnitsTest < ActiveSupport::TestCase
     user[:email] = ''
 
     data_to_put = {
-        user: user
+      user: user
     }
 
     # Add username and auth_token to Header
@@ -371,19 +368,19 @@ class UnitsTest < ActiveSupport::TestCase
     assert_equal 400, last_response.status
   end
 
-  def test_put_update_user_custom_token(token='asdasd')
+  def test_put_update_user_custom_token(token = 'asdasd')
     user = User.second
     user[:email] = ''
 
     data_to_put = {
-        user: user
+      user: user
     }
 
     # Add username and auth_token to Header
     add_auth_header_for(user: User.first, auth_token: token)
 
     if token == ''
-      header 'auth_token',token
+      header 'auth_token', token
     end
 
     put_json '/api/users/2', data_to_put

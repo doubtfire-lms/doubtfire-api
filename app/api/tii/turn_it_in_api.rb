@@ -17,6 +17,8 @@ module Tii
       requires :id, type: Integer, desc: 'The user id who is accepting the EULA'
     end
     put 'tii_eula/users/:id/accept' do
+      authenticated?
+
       if current_user.id != params[:id]
         error!({ error: "You are not authorised to accept the EULA on behalf of another user" }, 403)
       end

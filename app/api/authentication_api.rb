@@ -40,7 +40,7 @@ class AuthenticationApi < Grape::API
       # User lookup
       username = username.downcase
       institution_email_domain = Doubtfire::Application.config.institution[:email_domain]
-      user = User.find_or_create_by(username: username) do |new_user|
+      user = User.find_or_initialize_by(username: username) do |new_user|
         new_user.first_name = 'First Name'
         new_user.last_name  = 'Surname'
         new_user.email      = "#{username}@#{institution_email_domain}"
@@ -50,10 +50,12 @@ class AuthenticationApi < Grape::API
       end
 
       # Try to authenticate with password
-      if password.present? && !user.authenticate?(password)
+      # A supplied password must always be authenticated. Using `present?` here
+      # allows blank and whitespace-only passwords to skip both credential checks.
+      if password && !user.authenticate?(password)
         error!({ error: 'Invalid email or password.' }, 401)
         return
-      elsif auth_token.present? && !authenticated?(:login)
+      elsif auth_token && !authenticated?(:login)
         error!({ error: 'Invalid user or auth token.' }, 401)
         return
       end
@@ -77,10 +79,12 @@ class AuthenticationApi < Grape::API
 
       token&.destroy!
       token = user.generate_authentication_token!
+      user.record_sign_in!
 
       # Return user details
       present :user, user, with: Entities::UserEntity
       present :auth_token, token.authentication_token
+      present :auth_token_expiry, token.auth_token_expiry
       set_refresh_cookie_in_response(remember)
     end
   end
@@ -95,11 +99,18 @@ class AuthenticationApi < Grape::API
       requires :SAMLResponse, type: String, desc: 'Data provided for further processing.'
     end
     post '/auth/jwt' do
-      response = OneLogin::RubySaml::Response.new(params[:SAMLResponse], allowed_clock_drift: 1.second,
-                                                                         settings: AuthenticationHelpers.saml_settings)
+      # Malformed payloads raise during parsing (e.g. REXML::ParseException), so treat them as invalid
+      begin
+        response = OneLogin::RubySaml::Response.new(params[:SAMLResponse], allowed_clock_drift: 1.second,
+                                                                           settings: AuthenticationHelpers.saml_settings)
+        valid = response.is_valid?
+      rescue StandardError => e
+        logger.error "Unable to parse SAML response: #{e.class}: #{e.message}"
+        valid = false
+      end
 
       # We validate the SAML Response and check if the user already exists in the system
-      return error!({ error: 'Invalid SAML response.' }, 401) unless response.is_valid?
+      return error!({ error: 'Invalid SAML response.' }, 401) unless valid
 
       # Get the user identification data from the SAML response
       # This includes the login_id, email and username
@@ -108,11 +119,9 @@ class AuthenticationApi < Grape::API
       logger.info "Authenticate #{user_id_data[:email]} from #{request.ip}"
 
       # Lookup using login_id if it exists
-      # Lookup using email otherwise and set login_id
+      # Lookup using username or email otherwise and set login_id
       # Otherwise create new
-      user = User.find_by(login_id: user_id_data[:login_id]) ||
-             User.find_by(username: user_id_data[:username]) ||
-             User.find_by(email: user_id_data[:email]) ||
+      user = UserIdentity.find_user(login_id: user_id_data[:login_id], email: user_id_data[:email], username: user_id_data[:username]) ||
              User.create do |new_user|
                # Update new user with details from the SAML response
                Doubtfire::Application.config.institution_settings.update_user_from_saml_response(
@@ -122,13 +131,11 @@ class AuthenticationApi < Grape::API
                )
              end
 
-      # Set login id + username if not yet specified
-      if user.login_id.nil? || user.username.nil?
-        user.update(
-          login_id: user_id_data[:login_id],
-          username: user_id_data[:username]
-        )
+      if UserIdentity.blocked?(user, login_id: user_id_data[:login_id], email: user_id_data[:email], source: 'saml')
+        error!({ error: 'This account is linked to a different login. ' \
+                        'Please get in contact with the system administrators.' }, 403)
       end
+      UserIdentity.link_identity(user, login_id: user_id_data[:login_id], username: user_id_data[:username])
 
       # Try and save the user once authenticated if new
       if user.new_record?
@@ -162,14 +169,25 @@ class AuthenticationApi < Grape::API
       requires :SAMLResponse, type: String, desc: 'SAML logout response data.'
     end
     post '/auth/saml_logout' do
-      response = OneLogin::RubySaml::Logoutresponse.new(params[:SAMLResponse], allowed_clock_drift: 1.second,
-                                                                               settings: AuthenticationHelpers.saml_settings)
+      begin
+        response = OneLogin::RubySaml::Logoutresponse.new(
+          params[:SAMLResponse],
+          AuthenticationHelpers.saml_settings
+        )
 
-      # Check if the SAML response is valid - if not log an error
-      unless response.is_valid?
-        logger.error "Invalid SAML logout response: #{response.errors.join(', ')}"
+        # Check if the SAML response is valid - if not log an error
+        unless response.validate
+          logger.error "Invalid SAML logout response: #{response.errors.join(', ')}"
+        end
+      rescue StandardError => e
+        logger.error "Unable to parse SAML logout response: #{e.class}: #{e.message}"
       end
 
+      host = Doubtfire::Application.config.institution[:host]
+      unless host.starts_with?('http')
+        protocol = Rails.env.development? ? 'http' : 'https'
+        host = "#{protocol}://#{host}"
+      end
       redirect "#{host}/sign_in"
     end
   end
@@ -194,7 +212,8 @@ class AuthenticationApi < Grape::API
       # end
     end
     post '/auth/lti' do
-      token = decode_lti_token(params[:ltik])
+      ensure_lti_service_request!
+      token = decode_lti_token(params[:ltik], purpose: 'auth')
 
       member = token['member']
       if member.nil?
@@ -206,20 +225,17 @@ class AuthenticationApi < Grape::API
         error!({ error: "Missing required fields:  #{missing.join(', ')}" }, 400)
       end
 
-      user_id_data = {
-        login_id: member['ext_user_username'] || member['user_id'],
-        email: member['email'],
-        username: member['email']&.split('@')&.first
-      }
+      lti_identity = %w[user_id ext_user_username lis_person_sourcedid email].index_with { |key| member[key] }
+      logger.info "LTI user is logging in: #{lti_identity.to_json}"
+
+      user_id_data = UserIdentity.lti_user_id_data(member)
 
       logger.info "Authenticate #{user_id_data[:email]} from #{request.ip}"
 
       # Lookup using login_id if it exists
-      # Lookup using email otherwise and set login_id
+      # Lookup using username or email otherwise and set login_id
       # Otherwise create new
-      user = User.find_by(login_id: user_id_data[:login_id]) ||
-             User.find_by(username: user_id_data[:username]) ||
-             User.find_by(email: user_id_data[:email]) ||
+      user = UserIdentity.find_user(login_id: user_id_data[:login_id], email: user_id_data[:email], username: user_id_data[:username]) ||
              User.create do |new_user|
                # Update new user with details from the LTI response
                Doubtfire::Application.config.institution_settings.update_user_from_lti_response(
@@ -229,13 +245,11 @@ class AuthenticationApi < Grape::API
                )
              end
 
-      # Set login id + username if not yet specified
-      if user.login_id.nil? || user.username.nil?
-        user.update(
-          login_id: user_id_data[:login_id],
-          username: user_id_data[:username]
-        )
+      if UserIdentity.blocked?(user, login_id: user_id_data[:login_id], email: user_id_data[:email], source: 'lti_launch')
+        error!({ error: 'This account is linked to a different login. ' \
+                        'Please get in contact with your unit convenor or the system administrators.' }, 403)
       end
+      UserIdentity.link_identity(user, login_id: user_id_data[:login_id], username: user_id_data[:username])
 
       # Try and save the user once authenticated if new
       if user.new_record?
@@ -247,6 +261,17 @@ class AuthenticationApi < Grape::API
                         'system administrators.')
         end
         user.save
+      end
+
+      # Fill a missing student ID from the LMS person identifier when it is available and unused.
+      sourced_id = member['lis_person_sourcedid'].to_s.strip.presence
+      if user.role_id == Role.student_id && user.student_id.blank? && sourced_id.present? &&
+         !User.exists?(student_id: sourced_id)
+        begin
+          user.update(student_id: sourced_id)
+        rescue ActiveRecord::RecordNotUnique
+          # Another launch claimed this ID between the lookup and update.
+        end
       end
 
       # Generate a temporary auth_token for future requests
@@ -370,12 +395,14 @@ class AuthenticationApi < Grape::API
         # Invalidate the token and regenrate a new one
         token.destroy!
         token = user.generate_authentication_token!
+        user.record_sign_in!
 
         logger.info "Login #{params[:username]} from #{request.ip}"
 
         # Respond user details with new auth token
         present :user, user, with: Entities::UserEntity
         present :auth_token, token.authentication_token
+        present :auth_token_expiry, token.auth_token_expiry
         set_refresh_cookie_in_response(params[:remember])
       end
     end
@@ -438,6 +465,7 @@ class AuthenticationApi < Grape::API
   end
   delete '/auth' do
     user = User.find_by(username: headers['username'] || headers['Username'])
+    signing_out_user = user
     token = user&.token_for_text?(headers['auth-token'] || headers['Auth-Token'], :general)
 
     if token.present?
@@ -450,6 +478,7 @@ class AuthenticationApi < Grape::API
       user_param = cookies['username']
 
       user = User.find_by(username: user_param)
+      signing_out_user ||= user
       token = user&.token_for_text?(auth_param, :refresh_token)
       if token.present?
         logger.info "Destroy refresh token for #{user.username} from #{request.ip}"
@@ -459,6 +488,8 @@ class AuthenticationApi < Grape::API
 
     # Remove the refresh token cookie - if remember is false
     set_refresh_cookie_in_response(false) unless params[:remember]
+    signing_out_user&.auth_tokens&.where(token_type: :content)&.destroy_all
+    set_content_cookie_in_response
     present nil
   end
 
@@ -479,12 +510,28 @@ class AuthenticationApi < Grape::API
     end
   end
 
+  desc 'Get unit content authentication token'
+  get '/auth/content' do
+    if authenticated?(:general)
+      token = current_user.auth_tokens.find_by(token_type: :content)
+      if token.nil? || token.auth_token_expiry <= Time.zone.now
+        token&.destroy
+        token = current_user.generate_content_authentication_token!
+      end
+
+      set_content_cookie_in_response(token)
+      present :content_access, true
+    end
+  end
+
   desc 'Get access token from the refresh token cookie'
   params do
     optional :delete_auth_token, type: Boolean, desc: 'Delete the auth token if also provided', default: true
   end
   post '/auth/access-token' do
     if authenticated_via_refresh_token?
+      current_user.record_access!
+
       # Check if we have a auth token as well
       if params[:delete_auth_token]
         user_param, auth_param = get_user_and_token_from(:header)
@@ -499,8 +546,10 @@ class AuthenticationApi < Grape::API
         end
       end
       # Return user details
+      token = current_user.generate_authentication_token!(token_type: :general, force_new: false)
       present :user, current_user, with: Entities::UserEntity
-      present :auth_token, current_user.generate_authentication_token!(token_type: :general, force_new: false).authentication_token
+      present :auth_token, token.authentication_token
+      present :auth_token_expiry, token.auth_token_expiry
     else
       present nil
     end

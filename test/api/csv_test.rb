@@ -23,7 +23,7 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
 
     # Check for file
-    assert_equal "attachment; filename=COS10001-Tasks.csv",last_response.headers["content-disposition"]
+    assert_equal "attachment; filename=COS10001-Tasks.csv", last_response.headers["content-disposition"]
   end
 
   def test_download_csv_all_task_definitions_unit_with_empty_unit_id
@@ -39,10 +39,9 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 404, last_response.status
   end
 
-  #3: Testing for unit ID error with incorrect user ID
-  #GET /api/csv/task_definitions
+  # 3: Testing for unit ID error with incorrect user ID
+  # GET /api/csv/task_definitions
   def test_download_csv_all_task_definitions_unit_with_incorrect_unit_id
-
     unit_id_to_test = '999'
 
     # auth_token and username added to header
@@ -55,10 +54,9 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 404, last_response.status
   end
 
-  #4: Testing for unit ID error with string user ID
-  #GET /api/csv/task_definitions
+  # 4: Testing for unit ID error with string user ID
+  # GET /api/csv/task_definitions
   def test_download_csv_all_task_definitions_unit_with_string_unit_id
-
     unit_id_to_test = 'string'
 
     # auth_token and username added to header
@@ -71,10 +69,9 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 400, last_response.status
   end
 
-  #5: Testing for authentication failure with incorrect token
-  #GET /api/csv/task_definitions
+  # 5: Testing for authentication failure with incorrect token
+  # GET /api/csv/task_definitions
   def test_download_csv_all_task_definitions_unit_with_incorrect_auth_token
-
     unit_id_to_test = 'string'
 
     # auth_token and username added to header
@@ -87,17 +84,16 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 419, last_response.status
   end
 
-  #6: Testing for authentication failure with empty token
-  #GET /api/csv/task_definitions
+  # 6: Testing for authentication failure with empty token
+  # GET /api/csv/task_definitions
   def test_download_csv_all_task_definitions_unit_with_empty_auth_token
-
     unit_id_to_test = 'string'
 
     # auth_token and username added to header
     add_auth_header_for(user: User.first)
 
     # Overwrite header for empty auth_token
-    header 'auth_token',''
+    header 'auth_token', ''
 
     # perform the get
     get "/api/csv/task_definitions?unit_id=#{unit_id_to_test}"
@@ -106,7 +102,7 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 419, last_response.status
   end
 
-  #####--------------POST tests - Upload CSV of task definitions to the provided unit------------######
+  # ####--------------POST tests - Upload CSV of task definitions to the provided unit------------######
 
   # 7: Testing for CSV upload all task definitions for the given unit
   # POST /api/csv/task_definitions
@@ -221,7 +217,6 @@ class CsvTest < ActiveSupport::TestCase
   # 8: Testing for CSV upload failure due to incorrect auth token
   # POST /api/csv/task_definitions
   def test_csv_upload_all_task_definitions_unit_incorrect_auth_token
-
     data_to_post = {
       unit_id: '1',
       file: upload_file_csv('test_files/csv_test_files/COS10001-Tasks.csv')
@@ -236,10 +231,9 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 419, last_response.status
   end
 
-  #9: Testing for CSV upload failure due to empty auth token
-  #POST /api/csv/task_definitions
+  # 9: Testing for CSV upload failure due to empty auth token
+  # POST /api/csv/task_definitions
   def test_csv_upload_all_task_definitions_unit_empty_auth_token
-
     data_to_post = {
       unit_id: '1',
       file: upload_file_csv('test_files/csv_test_files/COS10001-Tasks.csv')
@@ -249,7 +243,7 @@ class CsvTest < ActiveSupport::TestCase
     add_auth_header_for(user: User.first)
 
     # Overwrite header for empty auth_token
-    header 'auth_token',''
+    header 'auth_token', ''
 
     # perform the POST
     post "/api/csv/task_definitions", data_to_post
@@ -257,10 +251,9 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 419, last_response.status
   end
 
-  #10: Testing for CSV upload failure due to string unit ID
-  #POST /api/csv/task_definitions
+  # 10: Testing for CSV upload failure due to string unit ID
+  # POST /api/csv/task_definitions
   def test_csv_upload_all_task_definitions_unit_string_unit_id
-
     data_to_post = {
       unit_id: 'string',
       file: upload_file_csv('test_files/csv_test_files/COS10001-Tasks.csv')
@@ -275,10 +268,9 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 400, last_response.status
   end
 
-  #11: Testing for CSV upload failure due to empty unit ID
-  #POST /api/csv/task_definitions
+  # 11: Testing for CSV upload failure due to empty unit ID
+  # POST /api/csv/task_definitions
   def test_csv_upload_all_task_definitions_unit_empty_unit_id
-
     data_to_post = {
       unit_id: '',
       file: upload_file_csv('test_files/csv_test_files/COS10001-Tasks.csv')
@@ -293,10 +285,9 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 404, last_response.status
   end
 
-  #12: Testing for CSV upload of xlsx file type
-  #POST /api/csv/task_definitions
+  # 12: Testing for CSV upload of xlsx file type
+  # POST /api/csv/task_definitions
   def test_csv_upload_all_task_definitions_unit_xlsx
-
     unit = FactoryBot.create(:unit, with_students: false)
 
     data_to_post = {
@@ -319,10 +310,9 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal tdc + 1, unit.task_definitions.count
   end
 
-  #13: Testing for CSV upload failure due to incorrect file type (PDF)
-  #POST /api/csv/task_definitions
+  # 13: Testing for CSV upload failure due to incorrect file type (PDF)
+  # POST /api/csv/task_definitions
   def test_csv_upload_all_task_definitions_unit_incorrect_file_pdf
-
     data_to_post = {
       unit_id: '1',
       file: upload_file_csv('test_files/csv_test_files/COS10001-Tasks.pdf')
@@ -337,13 +327,12 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 403, last_response.status
   end
 
-  #14: Testing for CSV upload failure due to no file
-  #POST /api/csv/task_definitions
+  # 14: Testing for CSV upload failure due to no file
+  # POST /api/csv/task_definitions
   def test_csv_upload_all_task_definitions_unit_no_file
-
     data_to_post = {
       unit_id: '1',
-      file: '',
+      file: ''
     }
 
     # auth_token and username added to header
@@ -355,10 +344,9 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 400, last_response.status
   end
 
-  #15: Testing for CSV upload failure due to non-existant unit id
-  #POST /api/csv/task_definitions
+  # 15: Testing for CSV upload failure due to non-existant unit id
+  # POST /api/csv/task_definitions
   def test_csv_upload_all_task_definitions_unit_incorrect_unit_id
-
     data_to_post = {
       unit_id: '9999',
       file: upload_file_csv('test_files/csv_test_files/COS10001-Tasks.csv')
@@ -373,12 +361,11 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 404, last_response.status
   end
 
-  #####--------------GET tests - Download CSV of all students in this unit------------######
+  # ####--------------GET tests - Download CSV of all students in this unit------------######
 
-  #16: Testing for CSV download of all the students in a unit
-  #GET /api/csv/units/{id}
+  # 16: Testing for CSV download of all the students in a unit
+  # GET /api/csv/units/{id}
   def test_download_csv_all_students_in_unit
-
     unit_id_to_test = '1'
 
     # auth_token and username added to header
@@ -391,13 +378,12 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
 
     # Check for file
-    assert_equal "attachment; filename=COS10001-Students.csv",last_response.headers["content-disposition"]
+    assert_equal "attachment; filename=COS10001-Students.csv", last_response.headers["content-disposition"]
   end
 
-  #18: Testing for unit ID error with string unit ID
-  #GET /api/csv/units/{id}
+  # 18: Testing for unit ID error with string unit ID
+  # GET /api/csv/units/{id}
   def test_download_csv_all_students_in_unit_with_string_unit_id
-
     unit_id_to_test = 'string'
 
     # auth_token and username added to header
@@ -410,10 +396,9 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 404, last_response.status
   end
 
-  #19: Testing for unit ID error with incorrect (non-existant) user ID
-  #GET /api/csv/units/{id}
+  # 19: Testing for unit ID error with incorrect (non-existant) user ID
+  # GET /api/csv/units/{id}
   def test_download_csv_all_students_in_unit_with_incorrect_unit_id
-
     unit_id_to_test = '999'
 
     # auth_token and username added to header
@@ -426,10 +411,9 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 404, last_response.status
   end
 
-  #20: Testing for authentication failure with incorrect token
-  #GET /api/csv/units/{id}
+  # 20: Testing for authentication failure with incorrect token
+  # GET /api/csv/units/{id}
   def test_download_csv_all_students_in_unit_with_incorrect_auth_token
-
     unit_id_to_test = '1'
 
     # auth_token and username added to header
@@ -442,17 +426,16 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 419, last_response.status
   end
 
-  #21: Testing for authentication failure with empty token
-  #GET /api/csv/units/{id}
+  # 21: Testing for authentication failure with empty token
+  # GET /api/csv/units/{id}
   def test_download_csv_all_students_in_unit_with_empty_auth_token
-
     unit_id_to_test = '1'
 
     # auth_token and username added to header
     add_auth_header_for(user: User.first)
 
-    #Override header for empty auth_token
-    header 'auth_token',''
+    # Override header for empty auth_token
+    header 'auth_token', ''
 
     # perform the get
     get "/api/csv/units/#{unit_id_to_test}"
@@ -461,7 +444,7 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 419, last_response.status
   end
 
-  #####--------------POST tests - Upload CSV of all the students in a unit------------######
+  # ####--------------POST tests - Upload CSV of all the students in a unit------------######
 
   # 22: Testing for CSV upload of all the students in a unit
   # POST /api/csv/units/{id}
@@ -490,8 +473,8 @@ class CsvTest < ActiveSupport::TestCase
     end
   end
 
-  #23: Testing for CSV upload failure due to incorrect auth token
-  #POST /api/csv/units/{id}
+  # 23: Testing for CSV upload failure due to incorrect auth token
+  # POST /api/csv/units/{id}
   def test_csv_upload_all_students_in_unit_incorrect_auth_token
     unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
 
@@ -508,8 +491,8 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 419, last_response.status
   end
 
-  #24: Testing for CSV upload failure due to empty auth token
-  #POST /api/csv/units/{id}
+  # 24: Testing for CSV upload failure due to empty auth token
+  # POST /api/csv/units/{id}
   def test_csv_upload_all_students_in_unit_empty_auth_token
     unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
     data_to_post = {
@@ -521,7 +504,7 @@ class CsvTest < ActiveSupport::TestCase
     add_auth_header_for(user: User.first)
 
     # Override the header for empty auth_token
-    header 'auth_token',''
+    header 'auth_token', ''
 
     # perform the POST
     post "/api/csv/units/#{unit.id}", data_to_post
@@ -529,8 +512,8 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 419, last_response.status
   end
 
-  #25: Testing for CSV upload failure due to string unit ID
-  #POST /api/csv/units/{id}
+  # 25: Testing for CSV upload failure due to string unit ID
+  # POST /api/csv/units/{id}
   def test_csv_upload_all_students_in_unit_string_unit_id
     data_to_post = {
       file: upload_file_csv('test_files/csv_test_files/COS10001-Students.csv')
@@ -545,8 +528,8 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 404, last_response.status
   end
 
-  #28: Testing for CSV upload failure due to incorrect file type (PDF)
-  #POST /api/csv/units/{id}
+  # 28: Testing for CSV upload failure due to incorrect file type (PDF)
+  # POST /api/csv/units/{id}
   def test_csv_upload_all_students_in_unit_incorrect_file_pdf
     unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
 
@@ -563,8 +546,8 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 403, last_response.status
   end
 
-  #29: Testing for CSV upload failure due to no file
-  #POST /api/csv/units/{id}
+  # 29: Testing for CSV upload failure due to no file
+  # POST /api/csv/units/{id}
   def test_csv_upload_all_students_in_unit_no_file
     unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
 
@@ -581,10 +564,9 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 400, last_response.status
   end
 
-  #30: Testing for CSV upload failure due to non-existant unit id
-  #POST /api/csv/units/{id}
+  # 30: Testing for CSV upload failure due to non-existant unit id
+  # POST /api/csv/units/{id}
   def test_csv_upload_all_students_in_unit_incorrect_unit_id
-
     unit_id_to_test = '999'
     data_to_post = {
       file: upload_file_csv('test_files/csv_test_files/COS10001-Students.csv')
@@ -598,10 +580,10 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 404, last_response.status
   end
 
-  #####--------------POST tests - Upload CSV with the students to un-enrol from the unit------------######
+  # ####--------------POST tests - Upload CSV with the students to un-enrol from the unit------------######
 
-  #31: Testing for CSV upload of all the students in a unit
-  #POST /api/csv/units/{id}/withdraw
+  # 31: Testing for CSV upload of all the students in a unit
+  # POST /api/csv/units/{id}/withdraw
   def test_csv_upload_students_un_enroll_in_unit
     unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
 
@@ -626,8 +608,8 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal false, Project.where(user_id: user_id_check).last.enrolled
   end
 
-  #32: Testing for CSV upload failure due to incorrect auth token
-  #POST /api/csv/units/{id}/withdraw
+  # 32: Testing for CSV upload failure due to incorrect auth token
+  # POST /api/csv/units/{id}/withdraw
   def test_csv_upload_students_un_enroll_in_unit_incorrect_auth_token
     unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
 
@@ -653,14 +635,12 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal true, unit.projects.last.enrolled
   end
 
-  #33: Testing for CSV upload failure due to empty auth token
-  #POST /api/csv/units/{id}/withdraw
+  # 33: Testing for CSV upload failure due to empty auth token
+  # POST /api/csv/units/{id}/withdraw
   def test_csv_upload_students_un_enroll_in_unit_empty_auth_token
-
     unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
     response = unit.import_users_from_csv test_file_path 'csv_test_files/COS10001-Students.csv'
     assert_equal 1, unit.projects.count, response
-
 
     unit_id_to_test = '1'
     data_to_post = {
@@ -670,8 +650,8 @@ class CsvTest < ActiveSupport::TestCase
     # auth_token and username added to header
     add_auth_header_for(user: User.first)
 
-    #Override header for empty auth_token
-    header 'auth_token',''
+    # Override header for empty auth_token
+    header 'auth_token', ''
 
     user_id_check = unit.projects.last.user_id
 
@@ -685,10 +665,9 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal true, unit.projects.last.enrolled
   end
 
-  #34: Testing for CSV upload failure due to string unit ID
-  #POST /api/csv/units/{id}/withdraw
+  # 34: Testing for CSV upload failure due to string unit ID
+  # POST /api/csv/units/{id}/withdraw
   def test_csv_upload_students_un_enroll_in_unit_string_unit_id
-
     # Adding user to withdraw from unit
     unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
     unit.import_users_from_csv test_file_path 'csv_test_files/COS10001-Students.csv'
@@ -714,10 +693,9 @@ class CsvTest < ActiveSupport::TestCase
     unit.destroy
   end
 
-  #35: Testing for CSV upload failure due to empty unit ID
-  #POST /api/csv/units/{id}/withdraw
+  # 35: Testing for CSV upload failure due to empty unit ID
+  # POST /api/csv/units/{id}/withdraw
   def test_csv_upload_students_un_enroll_in_unit_empty_unit_id
-
     unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
     unit.import_users_from_csv test_file_path 'csv_test_files/COS10001-Students.csv'
 
@@ -741,10 +719,9 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal true, Project.where(user_id: user_id_check).last.enrolled
   end
 
-  #36: Testing for CSV uploadof XLSX
-  #POST /api/csv/units/{id}/withdraw
+  # 36: Testing for CSV uploadof XLSX
+  # POST /api/csv/units/{id}/withdraw
   def test_csv_upload_students_un_enroll_in_unit_xlsx
-
     unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
 
     unit.import_users_from_csv test_file_path 'csv_test_files/COS10001-Students.csv'
@@ -768,13 +745,11 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 1, last_response_body['success'].count, last_response_body
   end
 
-  #37: Testing for CSV upload failure due to incorrect file type (PDF)
-  #POST /api/csv/units/{id}/withdraw
+  # 37: Testing for CSV upload failure due to incorrect file type (PDF)
+  # POST /api/csv/units/{id}/withdraw
   def test_csv_upload_students_un_enroll_in_unit_incorrect_file_pdf
-
     unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
     unit.import_users_from_csv test_file_path 'csv_test_files/COS10001-Students.csv'
-
 
     unit_id_to_test = unit.id
     data_to_post = {
@@ -799,7 +774,6 @@ class CsvTest < ActiveSupport::TestCase
   # 38: Testing for CSV upload failure due to no file
   # POST /api/csv/units/{id}/withdraw
   def test_csv_upload_students_un_enroll_in_unit_no_file
-
     unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
     unit.import_users_from_csv test_file_path 'csv_test_files/COS10001-Students.csv'
 
@@ -823,14 +797,13 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal true, Project.where(user_id: user_id_check).last.enrolled
   end
 
-  #39: Testing for CSV upload failure due to non-existant unit id
-  #POST /api/csv/units/{id}/withdraw
+  # 39: Testing for CSV upload failure due to non-existant unit id
+  # POST /api/csv/units/{id}/withdraw
   def test_csv_upload_students_un_enroll_in_unit_incorrect_unit_id
-
     unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
     unit.import_users_from_csv test_file_path 'csv_test_files/COS10001-Students.csv'
 
-   # auth_token and username added to header
+    # auth_token and username added to header
     add_auth_header_for(user: User.first)
 
     unit_id_to_test = '999'
@@ -878,13 +851,12 @@ class CsvTest < ActiveSupport::TestCase
     end
   end
 
-  #41: Testing for unit ID error with empty user ID
-  #GET /api/csv/units/{id}/task_completion
+  # 41: Testing for unit ID error with empty user ID
+  # GET /api/csv/units/{id}/task_completion
   def test_download_csv_all_student_tasks_in_unit_with_empty_unit_id
-
     unit_id_to_test = ''
 
-   # auth_token and username added to header
+    # auth_token and username added to header
     add_auth_header_for(user: User.first)
 
     # perform the get
@@ -894,10 +866,9 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 404, last_response.status
   end
 
-  #42: Testing for unit ID error with string user ID
-  #GET /api/csv/units/{id}/task_completion
+  # 42: Testing for unit ID error with string user ID
+  # GET /api/csv/units/{id}/task_completion
   def test_download_csv_all_student_tasks_in_unit_with_string_unit_id
-
     unit_id_to_test = 'string'
 
     # auth_token and username added to header
@@ -910,10 +881,9 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 404, last_response.status
   end
 
-  #43: Testing for unit ID error with incorrect (non-existant) user ID
-  #GET /api/csv/units/{id}/task_completion
+  # 43: Testing for unit ID error with incorrect (non-existant) user ID
+  # GET /api/csv/units/{id}/task_completion
   def test_download_csv_all_student_tasks_in_unit_with_incorrect_unit_id
-
     unit_id_to_test = '999'
 
     # auth_token and username added to header
@@ -926,10 +896,9 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 404, last_response.status
   end
 
-  #44: Testing for authentication failure with incorrect token
-  #GET /api/csv/units/{id}/task_completion
+  # 44: Testing for authentication failure with incorrect token
+  # GET /api/csv/units/{id}/task_completion
   def test_download_csv_all_student_tasks_in_unit_with_incorrect_auth_token
-
     unit_id_to_test = '1'
 
     # Add authentication token to header
@@ -942,10 +911,9 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 419, last_response.status
   end
 
-  #45: Testing for authentication failure with empty token
-  #GET /api/csv/units/{id}/task_completion
+  # 45: Testing for authentication failure with empty token
+  # GET /api/csv/units/{id}/task_completion
   def test_download_csv_all_student_tasks_in_unit_with_empty_auth_token
-
     unit_id_to_test = '1'
 
     # Add authentication token to header
@@ -989,10 +957,63 @@ class CsvTest < ActiveSupport::TestCase
     end
   end
 
-  #47: Testing for unit ID error with empty user ID
-  #GET /api/csv/units/{id}/tutor_assessments
-  def test_download_csv_stats_tutor_assessed_with_empty_unit_id
+  # GET /api/csv/units/{id}/overflow_task_claims
+  def test_download_csv_overflow_task_claims
+    Sidekiq::Testing.inline! do
+      unit = create(:unit, student_count: 1, task_count: 1, stream_count: 0, tutorials: 1)
+      convenor = unit.main_convenor.user
+      tutor_user = create(:user, :tutor, first_name: 'ATutor', last_name: 'Tutor')
+      tutor_role = unit.employ_staff(tutor_user, Role.tutor)
+      tutorial = unit.tutorials.first
+      tutorial.update!(unit_role: tutor_role)
 
+      project = unit.active_projects.first
+      student = project.student
+      student.update!(username: 'student-one', student_id: 's1234567')
+
+      task_definition = unit.task_definitions.first
+      task_definition.update!(abbreviation: 'T1')
+
+      task = project.task_for_task_definition(task_definition)
+      claimed_at = Time.zone.parse('2026-04-01 10:30:00 UTC')
+      create(
+        :overflow_task_claim_log,
+        unit_id: unit.id,
+        task_id: task.id,
+        claimed_by_unit_role_id: tutor_role.id,
+        claimed_by_user_id: tutor_user.id,
+        original_tutor_user_id: tutor_user.id,
+        student_user_id: student.id,
+        days_awaiting_feedback: 12,
+        claimed_at: claimed_at
+      )
+
+      add_auth_header_for(user: convenor)
+
+      get "/api/csv/units/#{unit.id}/overflow_task_claims"
+
+      assert_equal 200, last_response.status
+      assert_equal unit.overflow_task_claims_csv, last_response_body['result']
+
+      rows = CSV.parse(last_response_body['result'], headers: true)
+      assert_equal 1, rows.length
+      assert_equal 'ATutor Tutor', rows[0]['Tutor who claimed']
+      assert_equal tutor_role.id.to_s, rows[0]['Claiming Unit Role ID']
+      assert_equal 'ATutor Tutor', rows[0]['Original Tutor']
+      assert_equal 'student-one', rows[0]['Student Username']
+      assert_equal 's1234567', rows[0]['Student ID']
+      assert_equal task.id.to_s, rows[0]['Task ID']
+      assert_equal 'T1', rows[0]['Task Definition']
+      assert_equal '12', rows[0]['Days Awaiting Feedback']
+      assert_equal claimed_at.to_s, rows[0]['Timestamp']
+      assert_equal claimed_at, Time.zone.parse(rows[0]['Timestamp'])
+      Sidekiq::Testing.fake!
+    end
+  end
+
+  # 47: Testing for unit ID error with empty user ID
+  # GET /api/csv/units/{id}/tutor_assessments
+  def test_download_csv_stats_tutor_assessed_with_empty_unit_id
     unit_id_to_test = ''
 
     # Add authentication token to header
@@ -1005,10 +1026,9 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 404, last_response.status
   end
 
-  #48: Testing for unit ID error with string user ID
-  #GET /api/csv/units/{id}/tutor_assessments
+  # 48: Testing for unit ID error with string user ID
+  # GET /api/csv/units/{id}/tutor_assessments
   def test_download_csv_stats_tutor_assessed_with_string_unit_id
-
     unit_id_to_test = 'string'
 
     # Add authentication token to header
@@ -1020,10 +1040,9 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 404, last_response.status
   end
 
-  #49: Testing for unit ID error with incorrect (non-existant) user ID
-  #GET /api/csv/units/{id}/tutor_assessments
+  # 49: Testing for unit ID error with incorrect (non-existant) user ID
+  # GET /api/csv/units/{id}/tutor_assessments
   def test_download_csv_stats_tutor_assessed_with_incorrect_unit_id
-
     unit_id_to_test = '999'
 
     # Add authentication token to header
@@ -1036,10 +1055,9 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 404, last_response.status
   end
 
-  #50: Testing for authentication failure with incorrect token
-  #GET /api/csv/units/{id}/tutor_assessments
+  # 50: Testing for authentication failure with incorrect token
+  # GET /api/csv/units/{id}/tutor_assessments
   def test_download_csv_stats_tutor_assessed_with_incorrect_auth_token
-
     unit_id_to_test = '1'
 
     # Add authentication token to header
@@ -1052,17 +1070,16 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 419, last_response.status
   end
 
-  #51: Testing for authentication failure with empty token
-  #GET /api/csv/units/{id}/tutor_assessments
+  # 51: Testing for authentication failure with empty token
+  # GET /api/csv/units/{id}/tutor_assessments
   def test_download_csv_stats_tutor_assessed_with_empty_auth_token
-
     unit_id_to_test = '1'
 
     # Add authentication token to header
     add_auth_header_for(user: User.first)
 
-    #Override header for empty auth_token
-    header 'auth_token',''
+    # Override header for empty auth_token
+    header 'auth_token', ''
 
     # perform the get
     get "/api/csv/units/#{unit_id_to_test}/tutor_assessments"
@@ -1071,12 +1088,11 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 419, last_response.status
   end
 
-  #####--------------GET tests - Download CSV of all users------------######
+  # ####--------------GET tests - Download CSV of all users------------######
 
-  #52: Testing for CSV download of stats related to number of tasks assessed by each tutor
-  #GET /api/csv/users
+  # 52: Testing for CSV download of stats related to number of tasks assessed by each tutor
+  # GET /api/csv/users
   def test_download_csv_all_users
-
     # Add authentication token to header
     add_auth_header_for(user: User.first)
 
@@ -1087,13 +1103,12 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
 
     # Check for file
-    assert_equal "attachment; filename=doubtfire_users.csv",last_response.headers["content-disposition"]
+    assert_equal "attachment; filename=doubtfire_users.csv", last_response.headers["content-disposition"]
   end
 
-  #53: Testing for authentication failure with incorrect token
-  #GET /api/csv/users
+  # 53: Testing for authentication failure with incorrect token
+  # GET /api/csv/users
   def test_download_csv_all_users_with_incorrect_auth_token
-
     # Add authentication token to header
     add_auth_header_for(username: 'aadmin', auth_token: 'wrong_token')
 
@@ -1104,15 +1119,14 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 419, last_response.status
   end
 
-  #54: Testing for authentication failure with empty token
-  #GET /api/csv/users
+  # 54: Testing for authentication failure with empty token
+  # GET /api/csv/users
   def test_download_csv_all_users_with_empty_auth_token
-
     # Add authentication token to header
     add_auth_header_for(user: User.first)
 
-    #Override header for empty auth_token
-    header 'auth_token',''
+    # Override header for empty auth_token
+    header 'auth_token', ''
 
     # perform the get
     get "/api/csv/users"
@@ -1121,12 +1135,11 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 419, last_response.status
   end
 
-  #####--------------POST tests - Upload CSV of users------------######
+  # ####--------------POST tests - Upload CSV of users------------######
 
-  #55: Testing for CSV upload of users
-  #POST /api/csv/users
+  # 55: Testing for CSV upload of users
+  # POST /api/csv/users
   def test_csv_upload_users
-
     data_to_post = {
       file: upload_file_csv('test_files/csv_test_files/doubtfire_users.csv')
     }
@@ -1142,10 +1155,9 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 'test.case@doubtfire.com', User.last.email
   end
 
-  #56: Testing for CSV upload failure due to incorrect auth token
-  #POST /api/csv/units/{id}/withdraw
+  # 56: Testing for CSV upload failure due to incorrect auth token
+  # POST /api/csv/units/{id}/withdraw
   def test_csv_upload_users_incorrect_auth_token
-
     data_to_post = {
       file: upload_file_csv('test_files/csv_test_files/doubtfire_users.csv')
     }
@@ -1160,19 +1172,18 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 419, last_response.status
   end
 
-  #57: Testing for CSV upload failure due to empty auth token
-  #POST /api/csv/units/{id}/withdraw
+  # 57: Testing for CSV upload failure due to empty auth token
+  # POST /api/csv/units/{id}/withdraw
   def test_csv_upload_users_empty_auth_token
-
     data_to_post = {
-      file: upload_file_csv('test_files/csv_test_files/doubtfire_users.csv'),
+      file: upload_file_csv('test_files/csv_test_files/doubtfire_users.csv')
     }
 
     # Add authentication token to header
     add_auth_header_for(user: User.first)
 
-    #Override header for empty auth_token
-    header 'auth_token',''
+    # Override header for empty auth_token
+    header 'auth_token', ''
 
     # perform the POST to withdraw user from the unit
     post "/api/csv/users", data_to_post
@@ -1181,13 +1192,12 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 419, last_response.status
   end
 
-  #58: Testing for CSV upload of XLSX
-  #POST /api/csv/units/{id}/withdraw
+  # 58: Testing for CSV upload of XLSX
+  # POST /api/csv/units/{id}/withdraw
   def test_csv_upload_users_xlsx
-
     data_to_post = {
       file: upload_file_csv('test_files/csv_test_files/doubtfire_users.xlsx')
-  }
+    }
 
     # Add authentication token to header
     add_auth_header_for(user: User.first)
@@ -1199,10 +1209,9 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 1, last_response_body['ignored'].count, last_response_body
   end
 
-  #59: Testing for CSV upload failure due to incorrect file type (PDF)
-  #POST /api/csv/units/{id}/withdraw
+  # 59: Testing for CSV upload failure due to incorrect file type (PDF)
+  # POST /api/csv/units/{id}/withdraw
   def test_csv_upload_users_incorrect_file_pdf
-
     data_to_post = {
       file: upload_file_csv('test_files/csv_test_files/doubtfire_users.pdf')
     }
@@ -1217,10 +1226,9 @@ class CsvTest < ActiveSupport::TestCase
     assert_equal 403, last_response.status
   end
 
-  #60: Testing for CSV upload failure due to no file
-  #POST /api/csv/units/{id}/withdraw
+  # 60: Testing for CSV upload failure due to no file
+  # POST /api/csv/units/{id}/withdraw
   def test_csv_upload_users_no_file
-
     data_to_post = {
       file: ''
     }
@@ -1243,20 +1251,20 @@ class CsvTest < ActiveSupport::TestCase
 
     ulos = [
       FactoryBot.create(:learning_outcome, context_type: 'Unit', context_id: unit.id, abbreviation: 'ULO1'),
-      FactoryBot.create(:learning_outcome, context_type: 'Unit', context_id: unit.id, abbreviation: 'ULO2'),
+      FactoryBot.create(:learning_outcome, context_type: 'Unit', context_id: unit.id, abbreviation: 'ULO2')
     ]
     other_ulos = [
-      FactoryBot.create(:learning_outcome, context_type: 'Unit', context_id: other_unit.id, abbreviation: 'ULO1'),
+      FactoryBot.create(:learning_outcome, context_type: 'Unit', context_id: other_unit.id, abbreviation: 'ULO1')
     ]
     td = FactoryBot.create(:task_definition, unit: unit, abbreviation: 'P1', outcome_count: 0)
     tlos = [
       FactoryBot.create(:learning_outcome, context_type: 'TaskDefinition', context_id: td.id, abbreviation: 'TLO1'),
-      FactoryBot.create(:learning_outcome, context_type: 'TaskDefinition', context_id: td.id, abbreviation: 'TLO2'),
+      FactoryBot.create(:learning_outcome, context_type: 'TaskDefinition', context_id: td.id, abbreviation: 'TLO2')
     ]
     other_td = FactoryBot.create(:task_definition, unit: other_unit, abbreviation: 'P1', outcome_count: 0)
     other_tlos = [
       FactoryBot.create(:learning_outcome, context_type: 'TaskDefinition', context_id: other_td.id, abbreviation: 'TLO1'),
-      FactoryBot.create(:learning_outcome, context_type: 'TaskDefinition', context_id: other_td.id, abbreviation: 'TLO2'),
+      FactoryBot.create(:learning_outcome, context_type: 'TaskDefinition', context_id: other_td.id, abbreviation: 'TLO2')
     ]
 
     admin = FactoryBot.create(:user, :admin)

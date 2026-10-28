@@ -95,5 +95,86 @@ module Submission
       job = setup_job(job_id)
       present job, with: Entities::SidekiqJobEntity
     end
+
+    helpers do
+      def authorise_batch_feedback_upload!(unit)
+        error!({ error: 'Not authorised to batch upload feedback csv' }, 401) unless authorise?(current_user, unit, :provide_bulk_feedback)
+      end
+
+      def find_batch_feedback_upload!
+        upload = BatchFeedbackUpload.find(params[:id])
+        error!({ error: 'Upload not found' }, 404) if upload.nil? || upload.user_id != current_user.id
+        upload
+      end
+    end
+
+    rescue_from BatchFeedbackUpload::OffsetMismatch do |e|
+      error!({ error: e.message, offset: e.offset }, 409)
+    end
+
+    rescue_from BatchFeedbackUpload::NotFound do
+      error!({ error: 'Upload not found' }, 404)
+    end
+
+    rescue_from BatchFeedbackUpload::Error do |e|
+      error!({ error: e.message }, 422)
+    end
+
+    desc 'Start a chunked batch feedback upload for a selected task definition.'
+    params do
+      requires :unit_id, type: Integer, desc: 'Unit ID to upload marked submissions to.'
+      requires :task_definition_id, type: Integer, desc: 'Task definition ID the upload relates to.'
+      requires :filename, type: String, desc: 'Name of the csv or zip being uploaded.'
+      requires :size, type: Integer, desc: 'Total size of the upload in bytes.'
+    end
+    post '/submission/batch_feedback_uploads' do
+      unit = Unit.find(params[:unit_id])
+      task_definition = unit.task_definitions.find(params[:task_definition_id])
+      authorise_batch_feedback_upload!(unit)
+
+      upload = BatchFeedbackUpload.create(
+        unit: unit,
+        task_definition: task_definition,
+        user: current_user,
+        filename: params[:filename],
+        size: params[:size]
+      )
+      upload.status
+    end
+
+    desc 'Get how much of a chunked batch feedback upload has been received.'
+    get '/submission/batch_feedback_uploads/:id' do
+      find_batch_feedback_upload!.status
+    end
+
+    desc 'Append a chunk to a batch feedback upload.'
+    params do
+      requires :offset, type: Integer, desc: 'Byte offset this chunk starts at.'
+      requires :chunk, type: File, desc: 'The next part of the file.'
+      requires :sha256, type: String, regexp: /\A\h{64}\z/, desc: 'Hex SHA-256 of the chunk.'
+    end
+    patch '/submission/batch_feedback_uploads/:id' do
+      upload = find_batch_feedback_upload!
+      upload.append(params[:offset], params[:chunk][:tempfile].path, params[:sha256])
+      upload.status
+    end
+
+    desc 'Finish a batch feedback upload and start importing it.'
+    post '/submission/batch_feedback_uploads/:id/complete' do
+      upload = find_batch_feedback_upload!
+      authorise_batch_feedback_upload!(Unit.find(upload.unit_id))
+
+      job_id = upload.complete! do |path|
+        ImportBatchFeedbackJob.perform_async(upload.unit_id, current_user.id, upload.task_definition_id, path)
+      end
+      job = setup_job(job_id)
+      present job, with: Entities::SidekiqJobEntity
+    end
+
+    desc 'Cancel a batch feedback upload.'
+    delete '/submission/batch_feedback_uploads/:id' do
+      find_batch_feedback_upload!.destroy
+      body false
+    end
   end
 end

@@ -13,14 +13,14 @@ class TiiCheckProgressJobTest < ActiveSupport::TestCase
     unit = FactoryBot.create(:unit, with_students: false, task_count: 0, stream_count: 0)
 
     task_def = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [
-      {
-        'key' => 'file0',
-        'name' => 'My document',
-        'type' => 'document',
-        'tii_check' => true,
-        'tii_pct' => 10
-      }
-    ])
+                                   {
+                                     'key' => 'file0',
+                                     'name' => 'My document',
+                                     'type' => 'document',
+                                     'tii_check' => true,
+                                     'tii_pct' => 10
+                                   }
+                                 ])
 
     # Setup users
     convenor = unit.main_convenor_user
@@ -146,14 +146,14 @@ class TiiCheckProgressJobTest < ActiveSupport::TestCase
     unit = FactoryBot.create(:unit, with_students: false, task_count: 0, stream_count: 0)
 
     task_def = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [
-      {
-        'key' => 'file0',
-        'name' => 'My document',
-        'type' => 'document',
-        'tii_check' => true,
-        'tii_pct' => 10
-      }
-    ])
+                                   {
+                                     'key' => 'file0',
+                                     'name' => 'My document',
+                                     'type' => 'document',
+                                     'tii_check' => true,
+                                     'tii_pct' => 10
+                                   }
+                                 ])
 
     # Setup users
     convenor = unit.main_convenor_user
@@ -223,13 +223,13 @@ class TiiCheckProgressJobTest < ActiveSupport::TestCase
     user = FactoryBot.create(:user)
 
     # Prepare stub for call when eula is accepted
-    accept_request = stub_request(:post, "https://#{ENV['TCA_HOST']}/api/v1/eula/v1beta/accept").
-    with(tii_headers).
-    to_return(
-      {status: 503, body: "", headers: {}},
-      {status: 429, body: "", headers: {}},
-      {status: 200, body: "", headers: {}}
-    )
+    accept_request = stub_request(:post, "https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/eula/v1beta/accept")
+                     .with(tii_headers)
+                     .to_return(
+                       { status: 503, body: "", headers: {} },
+                       { status: 429, body: "", headers: {} },
+                       { status: 200, body: "", headers: {} }
+                     )
 
     # start an action
     user.accept_tii_eula
@@ -241,11 +241,11 @@ class TiiCheckProgressJobTest < ActiveSupport::TestCase
     # Get the action
     action = TiiActionAcceptEula.last
     assert action.retry # still waiting to try
-    refute action.last_run.present?
+    assert_not action.last_run.present?
 
     # Check the user
     assert user.reload.accepted_tii_eula?
-    refute user.tii_eula_version_confirmed
+    assert_not user.tii_eula_version_confirmed
 
     # No call yet...
     assert_requested accept_request, times: 0
@@ -266,7 +266,7 @@ class TiiCheckProgressJobTest < ActiveSupport::TestCase
     action.reload
     assert_equal 1, action.retries
     assert action.retry
-    refute action.complete
+    assert_not action.complete
     assert_equal :service_not_available, action.error_code_sym
 
     # We just tried this...

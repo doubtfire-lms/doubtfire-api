@@ -159,7 +159,7 @@ class TiiActionApiTest < ActiveSupport::TestCase
     TiiActionJob.clear
     add_auth_header_for(user: User.where(role: Role.admin).first)
     action = TiiActionUploadSubmission.last
-    put_json "/api/tii_actions/#{action.id}", { 'action': 'retry' }
+    put_json "/api/tii_actions/#{action.id}", { action: 'retry' }
 
     assert_equal 200, last_response.status
     assert_equal 1, TiiActionJob.jobs.size
@@ -174,13 +174,13 @@ class TiiActionApiTest < ActiveSupport::TestCase
     # Ensure retry is false
     action.update(retry: false)
 
-    refute action.retry
+    assert_not action.retry
 
-    put_json "/api/tii_actions/#{action.id}", { 'action': 'retry' }
+    put_json "/api/tii_actions/#{action.id}", { action: 'retry' }
     assert_equal 200, last_response.status
 
     # Ensure 2nd put does not cause action to be scheduled twice
-    put_json "/api/tii_actions/#{action.id}", { 'action': 'retry' }
+    put_json "/api/tii_actions/#{action.id}", { action: 'retry' }
     assert_equal 403, last_response.status
 
     assert_equal 1, TiiActionJob.jobs.size

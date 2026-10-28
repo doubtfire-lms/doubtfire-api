@@ -14,6 +14,11 @@ Sidekiq.configure_server do |config|
 
   Sidekiq::Status.configure_server_middleware(config, expiration: 30.minutes.to_i)
   Sidekiq::Status.configure_client_middleware(config, expiration: 30.minutes.to_i)
+
+  config.on(:startup) do
+    schedule_file = Rails.root.join('config/schedule.yml')
+    Sidekiq::Cron::Job.load_from_hash!(YAML.load_file(schedule_file)) if File.exist?(schedule_file)
+  end
 end
 
 Sidekiq.configure_client do |config|

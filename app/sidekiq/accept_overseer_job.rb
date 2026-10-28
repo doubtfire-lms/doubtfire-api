@@ -8,7 +8,8 @@ class AcceptOverseerJob
   include ApplicationHelper
   include FileHelper
 
-  sidekiq_options lock: :until_executed,
+  sidekiq_options queue: 'default',
+                  lock: :until_executed,
                   lock_args_method: ->(args) { [args.first, args.last, 'overseer-assessment'] },
                   on_conflict: :reject,
                   retry: 1
@@ -35,12 +36,15 @@ class AcceptOverseerJob
       total_steps: active_overseer_steps.size
     )
 
-    work_dir_name = "#{task.id}-#{overseer_assessment_id}"
+    work_dir_name = [
+      Time.current.to_i, task.unit.code, 'overseer', task.project.student.username,
+      task_definition.abbreviation, task.id, overseer_assessment_id, SecureRandom.uuid
+    ].map { |part| part.to_s.gsub(/[^A-Za-z0-9_-]/, '_') }.join('-')
 
     work_dir = Rails.root.join("tmp", "overseer", work_dir_name)
     FileUtils.mkdir_p(work_dir)
 
-    extract_student_submission_files(task, submission, work_dir)
+    extract_student_submission_files(task, submission, work_dir, timestamp)
     extract_overseer_resource_files(assessment, work_dir)
 
     success_status = nil
@@ -55,6 +59,11 @@ class AcceptOverseerJob
     steps_passed = 0
 
     assessment_pass = true
+
+    overseer_image = task_definition.overseer_image ||
+                     task.unit.overseer_image ||
+                     OverseerImage.find_by(tag: docker_image_name_tag)
+    ensure_docker_image_present(docker_image_name_tag, overseer_image)
 
     active_overseer_steps.each do |step|
       result = run_overseer_step(
@@ -95,15 +104,19 @@ class AcceptOverseerJob
       end
     else
       oa.update!(status: :failed)
-      preserve_status_on_failure = [TaskStatus.time_exceeded.id, TaskStatus.assess_in_portfolio.id].include?(task.task_status_id)
+      # preserve_status_on_failure = [TaskStatus.time_exceeded.id, TaskStatus.assess_in_portfolio.id].include?(task.task_status_id)
 
-      unless failure_status.nil? || preserve_status_on_failure
+      unless failure_status.nil? # || preserve_status_on_failure
         # TODO: have an override status setting for the step? eg. if the task is overdue, let it remain overdue, otherwise use this task status
         task.update!(task_status: failure_status)
         task.add_status_comment(task.project.tutor_for(task.task_definition), failure_status)
         oa.update!(result_task_status: failure_status.status_key.to_s)
       end
-      task.add_text_comment(task.project.tutor_for(task.task_definition), "**Automated comment**: Some tests did not pass for this submission. Please review the Overseer report, verify your output, and resubmit.")
+      task.add_text_comment(
+        task.project.tutor_for(task.task_definition),
+        "**Automated comment**: Some tests did not pass for this submission. Please review the Overseer report, verify your output, and resubmit.",
+        attention_audience: :student
+      )
     end
 
     FileUtils.rm_rf(work_dir)
@@ -112,6 +125,18 @@ class AcceptOverseerJob
   rescue StandardError => e
     logger.error e
     raise e
+  end
+
+  def ensure_docker_image_present(docker_image_name_tag, overseer_image)
+    _, _, inspect_status = Open3.capture3('docker', 'image', 'inspect', docker_image_name_tag)
+    return if inspect_status.success?
+
+    raise "Docker image #{docker_image_name_tag} is not configured" if overseer_image.nil?
+
+    overseer_image.pull_from_docker
+    return if overseer_image.success?
+
+    raise "Unable to pull Docker image #{docker_image_name_tag}: #{overseer_image.pulled_image_text}"
   end
 
   def run_overseer_step(step:, work_dir:, work_dir_name:, task_id:, timestamp:, docker_image_name_tag:, overseer_assessment_id:)
@@ -156,6 +181,7 @@ class AcceptOverseerJob
 
     command = %(
       timeout #{timeout} docker run --rm -i \
+      --pull never \
       --cpus 1 \
       --network none \
       #{volume_mount} \
@@ -240,25 +266,32 @@ class AcceptOverseerJob
     )
   end
 
-  def extract_student_submission_files(task, submission, work_dir)
-    # Extract submission files, removing any parent folders
-    Zip::File.open(submission) do |zip_file|
-      zip_file.each do |entry|
-        next if entry.name_is_directory?
+  def extract_student_submission_files(task, submission, work_dir, timestamp)
+    # Submission files are stored directly under their timestamp in the task archive.
+    Zip::File.open(submission) do |history_zip|
+      prefix = "#{FileHelper.sanitized_path(timestamp.to_s)}/"
+      entries = history_zip.entries.reject(&:name_is_directory?).select { |entry| entry.name.start_with?(prefix) }
+      raise "Submission history entries not found for timestamp: #{timestamp}" if entries.empty?
 
-        parts = entry.name.split('/')[1..]
-        next unless parts.length >= 1
+      extract_submission_entries(task, entries, work_dir, prefix)
+    end
+  end
 
-        file_name = parts.first
-        index = file_name.to_i
+  def extract_submission_entries(task, entries, work_dir, prefix)
+    # Extract submission files, removing any parent folders.
+    entries.each do |entry|
+      parts = entry.name.delete_prefix(prefix).split('/')
+      next unless parts.first == task.id.to_s && parts.length >= 2
 
-        file = task.upload_requirements[index]
-        final_name = file['name']
+      file_name = parts.second
+      index = file_name.to_i
 
-        dest_path = File.join(work_dir, final_name)
-        FileUtils.mkdir_p(File.dirname(dest_path))
-        zip_file.extract(entry, dest_path) { true }
-      end
+      file = task.upload_requirements[index]
+      final_name = file['name']
+
+      dest_path = File.join(work_dir, final_name)
+      FileUtils.mkdir_p(File.dirname(dest_path))
+      entry.extract(dest_path) { true }
     end
   end
 

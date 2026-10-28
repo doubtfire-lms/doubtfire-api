@@ -132,16 +132,15 @@ class TasksApi < Grape::API
       task.extensions = params[:extensions]
       task.save!
 
-      comment = TaskComment.create(
+      TaskComment.create(
         task: task,
         user: current_user,
         comment: "Planned date adjusted to #{task.due_date.strftime('%d %b')}.",
         content_type: :plan,
+        attention_audience: :none,
         recipient: project.student,
         extension_weeks: params[:extensions]
       )
-
-      comment.mark_as_read(project.tutor_for(task_definition))
 
       present task, with: Entities::TaskEntity, include_other_projects: true, update_only: true
     else
@@ -159,6 +158,7 @@ class TasksApi < Grape::API
     optional :quality_pts, type: Integer, desc: 'Quality points value if task has quality assessment'
     optional :discussed, type: Boolean, desc: 'Mark task as discussed'
     optional :trigger_recursive_fix, desc: 'If marking fix and resubmit, recursively update preqreuisite submissions to fix'
+    optional :reuse_existing_submission, type: Boolean, desc: 'Staff may reuse submitted evidence when requesting feedback'
   end
   put '/projects/:id/task_def_id/:task_definition_id' do
     project = Project.find(params[:id])
@@ -168,17 +168,38 @@ class TasksApi < Grape::API
 
     # check the user can put this task
     if authorise? current_user, project, :make_submission
-      task = project.task_for_task_definition(task_definition)
-
-      if !params[:discussed].nil? && authorise?(current_user, project, :assess)
-        task.add_discussed_comment(current_user)
+      if params[:trigger].present? && task_definition.staff_managed_task && !authorise?(current_user, project, :assess)
+        error!({ error: 'Only teaching staff can change the status of this task.' }, 403)
       end
+
+      if !grade.nil? && !authorise?(current_user, project, :assess)
+        error!({ error: 'Not authorised to grade this task' }, 403)
+      end
+
+      task = project.task_for_task_definition(task_definition)
+      mark_as_discussed = params[:discussed] == true && authorise?(current_user, project, :assess)
 
       # if trigger supplied...
       unless params[:trigger].nil?
+        reuse_existing_submission = params[:reuse_existing_submission] == true
+        if reuse_existing_submission && (params[:trigger] != 'ready_for_feedback' ||
+           !authorise?(current_user, project, :assess))
+          error!({ error: 'Not authorised to reuse an existing submission.' }, 403)
+        end
+
         # Check if they should be using portfolio_evidence api
-        if needs_upload_docs && params[:trigger] == 'ready_for_feedback'
+        if needs_upload_docs && params[:trigger] == 'ready_for_feedback' && !reuse_existing_submission
           error!({ error: 'Cannot set this task status to ready to mark without uploading documents.' }, 403)
+        end
+
+        if reuse_existing_submission &&
+           (task.task_status == TaskStatus.ready_for_feedback || !task.has_pdf || task.submission_date.nil?)
+          error!({ error: 'This task has no existing submission available for feedback.' }, 409)
+        end
+
+        if !needs_upload_docs && %w[ready_for_feedback assess_in_portfolio].include?(params[:trigger]) &&
+           (prerequisite_error = task.unmet_prerequisite_error)
+          error!({ error: prerequisite_error }, 409)
         end
 
         if params[:trigger] == 'assess_in_portfolio' && !authorise?(current_user, project, :assess)
@@ -199,15 +220,40 @@ class TasksApi < Grape::API
           error!({ error: 'This task can only be assessed in portfolio.' }, 403)
         end
 
-        if task.task_definition.requires_discussion && params[:trigger] == 'complete' && !task.has_discussed_in_class_comment?
+        if task.task_definition.requires_discussion && params[:trigger] == 'complete' &&
+           !task.has_discussed_in_class_comment? && !mark_as_discussed
           error!({ error: 'This task must be discussed in class before it can be marked complete.' }, 403)
         end
 
         logger.info "#{current_user.username} assessing task #{task.id} to #{params[:trigger]}"
-        result = task.trigger_transition(trigger: params[:trigger], by_user: current_user, quality: params[:quality_pts], recursive_fix: params[:trigger_recursive_fix])
+        begin
+          task.discussion_confirmed_for_transition = mark_as_discussed
+          result = if reuse_existing_submission
+                     task.reuse_existing_submission_for_feedback(current_user)
+                   else
+                     task.trigger_transition(
+                       trigger: params[:trigger],
+                       by_user: current_user,
+                       quality: params[:quality_pts],
+                       recursive_fix: params[:trigger_recursive_fix],
+                       check_feedback: true
+                     )
+                   end
+        ensure
+          task.discussion_confirmed_for_transition = false
+        end
+
+        if result.nil? && task.errors.any?
+          error!({ error: task.errors.full_messages.to_sentence }, 403)
+        end
+        if result.nil? && reuse_existing_submission
+          error!({ error: 'This task cannot reuse its existing submission for feedback.' }, 409)
+        end
         if result.nil? && task.task_definition.restrict_status_updates
           error!({ error: 'This task can only be updated by your tutor.' }, 403)
         end
+        task.add_discussed_comment(current_user) if result && mark_as_discussed
+
         SessionTracker.record_assessment_activity(
           action: "assessing",
           user: current_user,
@@ -216,6 +262,8 @@ class TasksApi < Grape::API
           task: task
         )
       end
+
+      task.add_discussed_comment(current_user) if params[:trigger].nil? && mark_as_discussed
 
       # if grade was supplied
       unless grade.nil?
@@ -328,7 +376,7 @@ class TasksApi < Grape::API
     )
 
     # Find the file
-    file_loc = FileHelper.zip_file_path_for_done_task(task)
+    file_loc = task.downloadable_submission_zip_path
 
     if file_loc.nil? || !File.exist?(file_loc)
       file_loc = Rails.root.join('public/resources/FileNotFound.pdf')
@@ -380,15 +428,14 @@ class TasksApi < Grape::API
                        "Planned date reset: #{task_definition.start_date.strftime('%d %b')} - #{task_definition.target_date.strftime('%d %b')}."
                      end
 
-      comment = TaskComment.create(
+      TaskComment.create(
         task: task,
         user: current_user,
         comment: comment_text,
         content_type: :plan,
+        attention_audience: :none,
         recipient: project.student
       )
-
-      comment.mark_as_read(project.tutor_for(task_definition))
 
       present task, with: Entities::TaskEntity, include_other_projects: true, update_only: true
     else
@@ -419,15 +466,14 @@ class TasksApi < Grape::API
         )
 
         comment_text = "Planned date reset: #{task.task_definition.start_date.strftime('%d %b')} - #{task.task_definition.target_date.strftime('%d %b')}."
-        comment = TaskComment.create(
+        TaskComment.create(
           task: task,
           user: current_user,
           comment: comment_text,
           content_type: :plan,
+          attention_audience: :none,
           recipient: project.student
         )
-
-        comment.mark_as_read(project.tutor_for(task.task_definition))
       end
 
       present project, with: Entities::ProjectEntity, user: current_user, for_student: true, in_project: true
@@ -507,19 +553,30 @@ class TasksApi < Grape::API
       error!({ error: "This task has already been claimed by another tutor" }, 409)
     end
 
-    inactive_claim = task.overflow_task_claim
-    inactive_claim&.destroy!
+    claimed_at = Time.zone.now
+    original_tutor = task.tutor
 
-    task_claim = OverflowTaskClaim.create!({
-                                             task: task,
-                                             claimed_by_unit_role_id: my_unit_role.id
-                                           })
+    ActiveRecord::Base.transaction do
+      task.overflow_task_claim&.destroy!
 
-    unless task_claim.valid?
-      error!({ error: "Failed to claim task" }, 400)
+      OverflowTaskClaim.create!(
+        task: task,
+        claimed_by_unit_role: my_unit_role
+      )
+
+      OverflowTaskClaimLog.create!(
+        unit: unit,
+        task: task,
+        claimed_by_unit_role: my_unit_role,
+        claimed_by_user: current_user,
+        original_tutor_user: original_tutor,
+        student_user: project.student,
+        days_awaiting_feedback: task.days_awaiting_feedback(claimed_at),
+        claimed_at: claimed_at
+      )
     end
 
-    logger.info "Overflow task claim: {\"user_id\": #{current_user.id},\"task_id\": #{task.id}, \"timestamp\": \"#{Time.zone.now}\", \"original_tutor_user_id\": #{task.tutor ? task.tutor.id : -1}}"
+    logger.info "Overflow task claim: {\"user_id\": #{current_user.id},\"task_id\": #{task.id}, \"timestamp\": \"#{claimed_at}\", \"original_tutor_user_id\": #{original_tutor ? original_tutor.id : -1}}"
 
     true
   end

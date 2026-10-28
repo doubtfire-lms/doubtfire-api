@@ -351,14 +351,14 @@ class D2lTest < ActiveSupport::TestCase
                             headers: { 'Content-Type' => 'application/json;charset=UTF-8' }
                           )
 
-    assert_equal p1, D2lIntegration.find_project_for_d2l_user(unit, { "OrgDefinedId" => p1.student.student_id, "UserName" => p1.student.username, "Email" => p1.student.email } )
-    assert_equal p2, D2lIntegration.find_project_for_d2l_user(unit, { "OrgDefinedId" => 'BLAH', "UserName" => p2.student.username, "Email" => p2.student.email } )
-    assert_equal p3, D2lIntegration.find_project_for_d2l_user(unit, { "OrgDefinedId" => 'BLAH', "UserName" => 'BLEE', "Email" => p3.student.email } )
-    assert_nil D2lIntegration.find_project_for_d2l_user(unit, { "OrgDefinedId" => 'BLAH', "UserName" => 'BLEE', "Email" => 'BLAH' } )
+    assert_equal p1, D2lIntegration.find_project_for_d2l_user(unit, { "OrgDefinedId" => p1.student.student_id, "UserName" => p1.student.username, "Email" => p1.student.email })
+    assert_equal p2, D2lIntegration.find_project_for_d2l_user(unit, { "OrgDefinedId" => 'BLAH', "UserName" => p2.student.username, "Email" => p2.student.email })
+    assert_equal p3, D2lIntegration.find_project_for_d2l_user(unit, { "OrgDefinedId" => 'BLAH', "UserName" => 'BLEE', "Email" => p3.student.email })
+    assert_nil D2lIntegration.find_project_for_d2l_user(unit, { "OrgDefinedId" => 'BLAH', "UserName" => 'BLEE', "Email" => 'BLAH' })
 
     p1_put_request =  stub_request(:put, "https://api.brightspace.com/d2l/api/le/1.47/12345/grades/98701/values/12345")
                       .with(
-                        body: {"{\"GradeObjectType\":1,\"PointsNumerator\":50}" => nil}
+                        body: { "{\"GradeObjectType\":1,\"PointsNumerator\":50}" => nil }
                       ).to_return(
                         status: 200,
                         headers: {
@@ -370,7 +370,7 @@ class D2lTest < ActiveSupport::TestCase
 
     p2_put_request =  stub_request(:put, "https://api.brightspace.com/d2l/api/le/1.47/12345/grades/98701/values/12346")
                       .with(
-                        body: { "{\"GradeObjectType\":1,\"PointsNumerator\":60}" => nil },
+                        body: { "{\"GradeObjectType\":1,\"PointsNumerator\":60}" => nil }
                       ).to_return(status: 200, headers: {})
 
     D2lAssessmentMapping.create(unit: unit, org_unit_id: '12345')

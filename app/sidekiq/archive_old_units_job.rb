@@ -4,6 +4,8 @@
 class ArchiveOldUnitsJob
   include Sidekiq::Job
 
+  sidekiq_options queue: 'parallel'
+
   def perform
     return unless Doubtfire::Application.config.archive_units
 
@@ -17,6 +19,7 @@ class ArchiveOldUnitsJob
   rescue StandardError => e
     begin
       # Notify system admin
+      Sentry.capture_exception(e) if defined?(Sentry)
       mail = ErrorLogMailer.error_message('Archive Units', "Failed to move old units to archive", e)
       mail.deliver if mail.present?
 

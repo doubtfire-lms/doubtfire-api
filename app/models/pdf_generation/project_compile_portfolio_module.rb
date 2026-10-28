@@ -71,7 +71,9 @@ module PdfGeneration
         @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
         @is_retry = is_retry
         @include_pax = !is_retry
-        @work_id = "portfolio-#{project.id}-#{Time.now.to_i}-#{Process.pid}-#{Thread.current.object_id}#{'-retry' if is_retry}"
+        @work_id = FileHelper.sanitized_path(
+          "portfolio-#{Time.current.strftime('%Y%m%d-%H%M')}-#{project.unit.code}-#{project.student.username}-#{project.id}-#{Process.pid}#{'-retry' if is_retry}"
+        )
       end
 
       def make_pdf
@@ -113,9 +115,7 @@ module PdfGeneration
 
     # Create the portfolio for this project
     def create_portfolio
-      self.compile_portfolio = false
-      save!
-
+      logger.info "Creating portfolio for #{user.username} in #{unit.code}"
       begin
         pac = ProjectAppController.new
         pac.init(self, false)
@@ -142,8 +142,13 @@ module PdfGeneration
         logger.info "Created portfolio at #{portfolio_path} - #{log_details}"
 
         self.portfolio_production_date = Time.zone.now
-        save
+        self.compile_portfolio = false
+        save!
+        true
       rescue StandardError => e
+        self.compile_portfolio = false
+        save!
+
         logger.error "Failed to convert portfolio to PDF - #{log_details} -\nError: #{e.message}"
 
         log_file = e.message.scan(%r{/.*\.log}).first
@@ -164,7 +169,7 @@ module PdfGeneration
           end
         end
 
-        raise LatexError.new(log_message), "Failed to convert portfolio to PDF - #{log_details}"
+        raise LatexError.new(log_message), "Failed to convert portfolio to PDF - #{id} - #{unit.code}"
       end
     end
 
@@ -197,6 +202,19 @@ module PdfGeneration
           task.task_definition.upload_requirements.blank? &&
           ![TaskStatus.need_help.id, TaskStatus.working_on_it.id].include?(task.task_status_id)
         )
+      end
+    end
+
+    # Return the tasks that are currently being processed
+    def tasks_processing_pdf
+      # Get assigned tasks that should be included in the portfolio
+      tasks = self.tasks.joins(:task_definition).order('task_definitions.target_date, task_definitions.abbreviation')
+
+      # Select tasks that should have a PDF submission, but is currently being processed
+      tasks.select do |task|
+        !task.has_pdf &&
+          task.processing_pdf? &&
+          task.task_definition.upload_requirements.present?
       end
     end
 
@@ -252,18 +270,17 @@ module PdfGeneration
         kind: kind,
         name: file[:filename]
       }
+      word_document = kind == 'document' && FileHelper.word_document?(file[:filename])
+      if word_document
+        result[:name] = "#{File.basename(file[:filename], File.extname(file[:filename]))}.pdf"
+      end
 
       # copy up the learning summary report as first -- otherwise use files to determine idx
       if name == 'LearningSummaryReport' && kind == 'document'
         result[:idx] = 0
         result[:name] = 'LearningSummaryReport.pdf'
-
-        # set uses_draft_learning_summary to false, since we uploaded a new learning summary
-        self.uses_draft_learning_summary = false
-        save
       else
-        Dir.chdir(portfolio_tmp_dir)
-        files = Dir.glob('*')
+        files = Dir.glob('*', base: portfolio_tmp_dir)
         idx = files.map { |a_file| a_file.split('-').first.to_i }.max
         if idx.nil? || idx < 1
           idx = 1
@@ -274,7 +291,29 @@ module PdfGeneration
       end
 
       dest_file = portfolio_tmp_file_name(result)
-      FileUtils.cp file["tempfile"].path, File.join(portfolio_tmp_dir, dest_file)
+      dest_path = File.join(portfolio_tmp_dir, dest_file)
+      if word_document
+        Dir.mktmpdir('portfolio-document-', portfolio_tmp_dir) do |conversion_dir|
+          converted_path = File.join(conversion_dir, dest_file)
+          FileHelper.convert_word_document_to_pdf(
+            file['tempfile'].path,
+            converted_path,
+            work_id: FileHelper.gotenberg_work_id(
+              unit_code: unit.code, kind: 'portfolio', username: student.username,
+              label: name == 'LearningSummaryReport' ? 'lsr' : 'document'
+            )
+          )
+          File.rename(converted_path, dest_path)
+        end
+      else
+        FileUtils.cp file['tempfile'].path, dest_path
+      end
+
+      if name == 'LearningSummaryReport' && kind == 'document'
+        self.uses_draft_learning_summary = false
+        save
+      end
+
       result
     end
 
@@ -285,8 +324,8 @@ module PdfGeneration
 
       result = []
 
-      Dir.chdir(portfolio_tmp_dir)
-      files = Dir.glob('*').select { |f| (f =~ /^\d{3}-(cover|document|code|image)/) == 0 }
+      files = Dir.glob('*', base: portfolio_tmp_dir)
+                 .select { |f| (f =~ /^\d{3}-(cover|document|code|image|zip|archive)/) == 0 }
       files.each do |file|
         parts = file.split('-')
         idx = parts[0].to_i
@@ -294,7 +333,7 @@ module PdfGeneration
         name = parts.drop(2).join('-')
         result << { kind: kind, name: name, idx: idx }
 
-        FileHelper.ensure_utf8_code(file, force_ascii) if ensure_valid && kind == "code"
+        FileHelper.ensure_utf8_code(File.join(portfolio_tmp_dir, file), force_ascii) if ensure_valid && kind == "code"
       end
 
       result
@@ -320,8 +359,8 @@ module PdfGeneration
       end
     end
 
-    def portfolio_path
-      FileHelper.student_portfolio_path(self.unit, self.student.username, create: true)
+    def portfolio_path(create: true)
+      FileHelper.student_portfolio_path(self.unit, self.student.username, create: create)
     end
 
     def portfolio_exists?
@@ -339,7 +378,9 @@ module PdfGeneration
     end
 
     def portfolio_available
-      (File.exist? portfolio_path) && !compile_portfolio
+      # Checking must not create the directory -- this runs once per student in
+      # bulk reports and communication previews.
+      (File.exist? portfolio_path(create: false)) && !compile_portfolio
     end
 
     def remove_portfolio

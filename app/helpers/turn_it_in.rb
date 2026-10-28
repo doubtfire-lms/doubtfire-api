@@ -84,6 +84,7 @@ class TurnItIn
       @@delay_call_until = DateTime.now + 1.minute
     when 403 # forbidden, issue with authentication... notify admin
       begin
+        Sentry.capture_exception(error) if defined?(Sentry)
         ErrorLogMailer.error_message('TII Credentials', "TII Error: #{error.message}", error).deliver
       rescue StandardError => e
         Rails.logger.error "Failed to send error email: #{e}"

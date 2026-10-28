@@ -3,9 +3,13 @@
 class RefreshModerationFeedbackTimestampsJob
   include Sidekiq::Job
 
+  sidekiq_options queue: 'parallel'
+
   def perform
     ModeratedTask
       .where(state: %i[open waiting_for_new_feedback])
+      .joins(task: { project: :unit })
+      .where(units: { id: Unit.within_teaching_dates.select(:id) })
       .includes(task: :comments)
       .find_each do |moderated_task|
       task = moderated_task.task

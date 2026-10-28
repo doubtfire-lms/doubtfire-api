@@ -178,6 +178,21 @@ class TaskCommentsApi < Grape::API
       error!({ error: 'Not authorised to delete this comment' }, 403)
     end
 
+    # Comments that don't reveal a delete button
+    protected_comment_types = [
+      AssessmentComment,
+      ExtensionComment,
+      ScormComment,
+      TaskCheckedInComment,
+      TaskDiscussedComment,
+      TaskFeedbackReviewRequestComment,
+      TaskStatusComment
+    ]
+
+    if protected_comment_types.any? { |comment_type| task_comment.is_a?(comment_type) }
+      error!({ error: 'This comment type cannot be deleted' }, 403)
+    end
+
     task_comment.destroy
 
     SessionTracker.record_assessment_activity(

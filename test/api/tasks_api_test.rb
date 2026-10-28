@@ -11,6 +11,52 @@ class TasksApiTest < ActiveSupport::TestCase
     Rails.application
   end
 
+  def test_staff_can_request_feedback_using_existing_submission
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 1)
+    task_definition = unit.task_definitions.first
+    task_definition.update!(upload_requirements: [{ 'key' => 'file0', 'name' => 'Work', 'type' => 'document' }])
+    project = unit.active_projects.first
+    task = project.task_for_task_definition(task_definition)
+    submitted_at = 2.days.ago
+    task.submit(project.user, submitted_at)
+    task.update!(task_status: TaskStatus.assess_in_portfolio)
+    pdf_path = task.final_pdf_path
+    path = "/api/projects/#{project.id}/task_def_id/#{task_definition.id}"
+
+    add_auth_header_for(user: unit.main_convenor_user)
+    put path, trigger: 'ready_for_feedback', reuse_existing_submission: true
+    assert_equal 409, last_response.status
+    assert_equal TaskStatus.assess_in_portfolio, task.reload.task_status
+
+    FileUtils.mkdir_p(File.dirname(pdf_path))
+    FileUtils.cp(Rails.root.join('test_files/submissions/1.2P.pdf'), pdf_path)
+
+    submission_count = task.task_submissions.count
+    original_submission_date = task.submission_date
+    original_pdf = File.binread(pdf_path)
+    add_auth_header_for(user: project.user)
+    put path, trigger: 'ready_for_feedback', reuse_existing_submission: true
+    assert_equal 403, last_response.status
+    assert_equal TaskStatus.assess_in_portfolio, task.reload.task_status
+
+    add_auth_header_for(user: unit.main_convenor_user)
+    put path, trigger: 'ready_for_feedback', reuse_existing_submission: true
+    assert_equal 200, last_response.status, last_response_body
+    assert_equal TaskStatus.ready_for_feedback, task.reload.task_status
+    assert_equal original_submission_date, task.submission_date
+    assert_equal submission_count, task.task_submissions.count
+    assert_equal original_pdf, File.binread(pdf_path)
+
+    task.update!(task_status: TaskStatus.redo)
+    put path, trigger: 'ready_for_feedback', reuse_existing_submission: true
+    assert_equal 200, last_response.status, last_response_body
+    assert_equal TaskStatus.ready_for_feedback, task.reload.task_status
+    assert_equal original_submission_date, task.submission_date
+    assert_equal submission_count, task.task_submissions.count
+  ensure
+    FileUtils.rm_f(pdf_path) if pdf_path
+  end
+
   def test_task_get
     # The GET we are testing
     unit = FactoryBot.create(:unit, perform_submissions: true)
@@ -653,6 +699,45 @@ class TasksApiTest < ActiveSupport::TestCase
     unit.destroy
   end
 
+  def test_cant_set_upload_free_task_ready_for_feedback_until_prerequisites_met
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 2)
+    prerequisite_definition, task_definition = unit.task_definitions.first(2)
+    prerequisite_definition.update!(target_grade: 0)
+    task_definition.update!(target_grade: 3, upload_requirements: [])
+    project = unit.active_projects.first
+    task = project.task_for_task_definition(task_definition)
+    prerequisite_task = project.task_for_task_definition(prerequisite_definition)
+    prerequisite = TaskPrerequisite.create!(
+      task_definition: task_definition,
+      prerequisite: prerequisite_definition,
+      task_status_id: TaskStatus.ready_for_feedback.id
+    )
+
+    add_auth_header_for(user: project.user)
+    path = "/api/projects/#{project.id}/task_def_id/#{task_definition.id}"
+
+    put path, { trigger: 'ready_for_feedback' }
+    assert_equal 409, last_response.status
+    assert_equal "Cannot submit this task until prerequisite '#{prerequisite_definition.abbreviation}' has been submitted",
+                 last_response_body['error']
+    assert_equal TaskStatus.not_started, task.reload.task_status
+
+    prerequisite.update!(task_status_id: TaskStatus.complete.id)
+    prerequisite_task.update!(task_status: TaskStatus.ready_for_feedback)
+
+    put path, { trigger: 'ready_for_feedback' }
+    assert_equal 409, last_response.status
+    assert_equal "Cannot submit this task until prerequisite '#{prerequisite_definition.abbreviation}' has been completed",
+                 last_response_body['error']
+    assert_equal TaskStatus.not_started, task.reload.task_status
+
+    prerequisite_task.update!(task_status: TaskStatus.complete)
+
+    put path, { trigger: 'ready_for_feedback' }
+    assert_equal 200, last_response.status
+    assert_equal TaskStatus.ready_for_feedback, task.reload.task_status
+  end
+
   def test_prerequisites_task_status
     # Create a unit and two task definitions
     unit = FactoryBot.create(:unit, student_count: 1, task_count: 10)
@@ -824,10 +909,65 @@ class TasksApiTest < ActiveSupport::TestCase
     assert_instance_of TaskDiscussedComment, discussed_comment
     assert_equal 'discussed_in_class', discussed_comment.content_type
 
+    put "/api/projects/#{project.id}/task_def_id/#{td.id}", { discussed: true }
+    assert_equal 200, last_response.status
+    task.reload
+    assert_equal 1, task.comments.where(content_type: 'discussed_in_class').count
+
+    task.add_text_comment(tutor, 'Manual tutor feedback')
+
+    put "/api/projects/#{project.id}/task_def_id/#{td.id}", { discussed: true }
+    assert_equal 200, last_response.status
+    task.reload
+    assert_equal 2, task.comments.where(content_type: 'discussed_in_class').count
+
     put "/api/projects/#{project.id}/task_def_id/#{td.id}", { trigger: 'complete' }
     assert_equal 200, last_response.status
     task.reload
     assert_equal TaskStatus.complete, task.task_status
+  end
+
+  def test_complete_with_discussed_only_keeps_comment_when_transition_succeeds
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
+    td = TaskDefinition.create!({
+                                  unit_id: unit.id,
+                                  tutorial_stream: unit.tutorial_streams.first,
+                                  name: 'Discussion required task',
+                                  description: 'Task that requires discussion before complete',
+                                  weighting: 4,
+                                  target_grade: 0,
+                                  start_date: Time.zone.now - 2.weeks,
+                                  target_date: Time.zone.now + 1.week,
+                                  abbreviation: 'DiscussReqAtomicTask',
+                                  restrict_status_updates: false,
+                                  requires_discussion: true,
+                                  upload_requirements: [],
+                                  plagiarism_warn_pct: 0.8,
+                                  is_graded: false,
+                                  max_quality_pts: 0
+                                })
+
+    project = unit.active_projects.first
+    task = project.task_for_task_definition(td)
+    tutor = unit.tutors.first
+
+    add_auth_header_for(user: tutor)
+
+    task.add_discussed_comment(tutor)
+
+    put "/api/projects/#{project.id}/task_def_id/#{td.id}", { trigger: 'complete', discussed: true }
+    assert_equal 403, last_response.status
+    task.reload
+    assert_not_equal TaskStatus.complete, task.task_status
+    assert_equal 1, task.comments.where(content_type: 'discussed_in_class').count
+
+    task.add_text_comment(tutor, 'Manual tutor feedback')
+
+    put "/api/projects/#{project.id}/task_def_id/#{td.id}", { trigger: 'complete', discussed: true }
+    assert_equal 200, last_response.status
+    task.reload
+    assert_equal TaskStatus.complete, task.task_status
+    assert_equal 2, task.comments.where(content_type: 'discussed_in_class').count
   end
 
   def test_require_comment_for_feedback_submission_assess_in_portfolio
@@ -835,15 +975,15 @@ class TasksApiTest < ActiveSupport::TestCase
     td1 = unit.task_definitions.first
     project = unit.active_projects.first
 
-    task = project.task_for_task_definition(td1)
-
-    td1.update(
+    td1.update!(
       upload_requirements: [{ "key" => 'file0', "name" => 'Shape Class', "type" => 'code' }],
       target_grade: 0, # Pass
       start_date: Time.zone.now - 2.weeks,
       target_date: Time.zone.now + 1.week,
       assess_in_portfolio_only: false
     )
+
+    task = project.task_for_task_definition(td1)
 
     add_auth_header_for(user: project.user)
 
@@ -912,7 +1052,10 @@ class TasksApiTest < ActiveSupport::TestCase
         target_grade: 0,
         outcome_count: 0
       )
-      td.update!(due_date: Time.zone.today + 1.week)
+      td.update!(
+        target_date: Time.zone.today + 1.week,
+        due_date: Time.zone.today + 1.week
+      )
 
       student1 = FactoryBot.create(:user, :student)
       student2 = FactoryBot.create(:user, :student)
@@ -964,9 +1107,9 @@ class TasksApiTest < ActiveSupport::TestCase
       task1.reload
       assert task2.submission_date > task1.submission_date
       assert_equal original_submission_date, task1.submission_date
-      assert TaskStatus.ready_for_feedback, task1.task_status
+      assert_equal TaskStatus.ready_for_feedback, task1.task_status
 
-      # Submit the task again after the duedate, ensure the submission_date hasn't changed (student1)
+      # Submit the task again later, ensure the submission_date hasn't changed (student1)
       travel 2.days
 
       task1.submit(student1)
@@ -979,7 +1122,7 @@ class TasksApiTest < ActiveSupport::TestCase
       task1.reload
       assert task2.submission_date > task1.submission_date
       assert_equal original_submission_date, task1.submission_date
-      assert TaskStatus.ready_for_feedback, task1.task_status
+      assert_equal TaskStatus.ready_for_feedback, task1.task_status
 
       task1.update(task_status_id: TaskStatus.fix_and_resubmit.id)
 
@@ -988,7 +1131,7 @@ class TasksApiTest < ActiveSupport::TestCase
 
       task1.submit(student1)
       task1.reload
-      assert TaskStatus.ready_for_feedback, task1.task_status
+      assert_equal TaskStatus.ready_for_feedback, task1.task_status
 
       tasks = unit.tasks_for_task_inbox(tutor, false)
 
@@ -1053,14 +1196,93 @@ class TasksApiTest < ActiveSupport::TestCase
     task.reload
     assert_equal new_start_date, task.target_start_date
     assert_equal new_end_date, task.target_due_date
+    assert task.comments.last.attention_none?
 
     put "/api/projects/#{project1.id}/reset_target_dates"
     assert_equal 200, last_response.status
     task.reload
     assert_nil task.target_start_date
     assert_nil task.target_due_date
+    assert task.comments.last.attention_none?
 
     unit.update!(allow_flexible_dates: false)
+  end
+
+  def test_claim_overflow_task_creates_analytics_log
+    travel_to Time.zone.parse('2026-04-15 10:30:00 UTC') do
+      unit = create(
+        :unit,
+        student_count: 1,
+        unenrolled_student_count: 0,
+        part_enrolled_student_count: 0,
+        inactive_student_count: 0,
+        task_count: 1,
+        stream_count: 0,
+        tutorials: 1
+      )
+      original_tutor = create(:user, :tutor)
+      original_tutor_role = unit.employ_staff(original_tutor, Role.tutor)
+      unit.tutorials.first.update!(unit_role: original_tutor_role)
+
+      claiming_tutor = create(:user, :tutor)
+      claiming_role = unit.employ_staff(claiming_tutor, Role.tutor)
+      claiming_role.update!(can_mark_overflow_tasks: true)
+
+      project = unit.active_projects.first
+      task_definition = unit.task_definitions.first
+      task = project.task_for_task_definition(task_definition)
+      task.update!(submission_date: 12.days.ago)
+
+      add_auth_header_for(user: claiming_tutor)
+
+      assert_difference('OverflowTaskClaim.count', 1) do
+        assert_difference('OverflowTaskClaimLog.count', 1) do
+          post "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/claim_overflow_task"
+        end
+      end
+
+      assert_equal 201, last_response.status
+
+      claim_log = OverflowTaskClaimLog.order(:id).last
+      assert_equal unit, claim_log.unit
+      assert_equal task, claim_log.task
+      assert_equal claiming_role, claim_log.claimed_by_unit_role
+      assert_equal claiming_tutor, claim_log.claimed_by_user
+      assert_equal original_tutor, claim_log.original_tutor_user
+      assert_equal project.student, claim_log.student_user
+      assert_equal 12, claim_log.days_awaiting_feedback
+      assert_equal Time.zone.now, claim_log.claimed_at
+    end
+  end
+
+  def test_student_cannot_grade_own_task
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
+    td = TaskDefinition.create!({
+                                  unit_id: unit.id,
+                                  tutorial_stream: unit.tutorial_streams.first,
+                                  name: 'Graded task',
+                                  description: 'Task graded by staff',
+                                  weighting: 4,
+                                  target_grade: 0,
+                                  start_date: Time.zone.now - 2.weeks,
+                                  target_date: Time.zone.now + 1.week,
+                                  abbreviation: 'GradedTask',
+                                  restrict_status_updates: false,
+                                  upload_requirements: [],
+                                  plagiarism_warn_pct: 0.8,
+                                  is_graded: true,
+                                  max_quality_pts: 0
+                                })
+
+    project = unit.active_projects.first
+    top_grade = unit.grade_definitions.map { |definition| definition['value'] }.max
+
+    add_auth_header_for(user: project.student)
+
+    put "/api/projects/#{project.id}/task_def_id/#{td.id}", { grade: top_grade }
+
+    assert_equal 403, last_response.status, last_response_body
+    assert_nil Task.find_by(project: project, task_definition: td)&.grade
   end
 
 end

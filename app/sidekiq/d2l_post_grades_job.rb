@@ -4,7 +4,8 @@ class D2lPostGradesJob
   include Sidekiq::Job
   include LogHelper
 
-  sidekiq_options lock: :until_executed
+  sidekiq_options queue: 'parallel',
+                  lock: :until_executed
 
   def perform(unit_id, user_id)
     unit = Unit.find(unit_id)

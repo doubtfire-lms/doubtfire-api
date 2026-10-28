@@ -93,6 +93,144 @@ class StaffNotesApiTest < ActiveSupport::TestCase
     assert_equal response_staff_note.id, second_staff_note.reply_to_id
   end
 
+  def test_tutor_can_post_and_view_image_attachment_but_student_cannot
+    unit = FactoryBot.create(:unit, code: 'COS10001')
+    student = FactoryBot.create(:user, :student)
+    project = unit.enrol_student(student, nil)
+    tutor = FactoryBot.create(:user, :tutor)
+    unit.employ_staff(tutor, Role.tutor)
+
+    add_auth_header_for(user: tutor)
+    post "/api/projects/#{project.id}/staff_notes", {
+      note: '',
+      attachment: upload_file('test_files/submissions/Deakin_Logo.jpeg', 'image/jpeg')
+    }
+    assert_equal 201, last_response.status, last_response.body
+
+    response_note = last_response_body
+    note = StaffNote.find(response_note['id'])
+    assert_equal true, response_note['has_attachment']
+    assert_equal 'image', response_note['attachment_type']
+    assert_equal 'image/jpeg', note.content_type
+    assert File.file?(note.attachment_path)
+    attachment_path = note.attachment_path
+
+    get "/api/projects/#{project.id}/staff_notes/#{note.id}/attachment"
+    assert_equal 200, last_response.status
+    assert_match(%r{image/}, last_response.headers['Content-Type'])
+
+    add_auth_header_for(user: student)
+    get "/api/projects/#{project.id}/staff_notes/#{note.id}/attachment"
+    assert_equal 403, last_response.status
+
+    add_auth_header_for(user: tutor)
+    delete "/api/projects/#{project.id}/staff_notes/#{note.id}"
+    assert_equal 200, last_response.status
+    assert_not File.exist?(attachment_path)
+  end
+
+  def test_tutor_can_post_pdf_and_invalid_attachment_is_rejected
+    unit = FactoryBot.create(:unit, code: 'COS10001')
+    student = FactoryBot.create(:user, :student)
+    project = unit.enrol_student(student, nil)
+    tutor = FactoryBot.create(:user, :tutor)
+    unit.employ_staff(tutor, Role.tutor)
+
+    add_auth_header_for(user: tutor)
+    post "/api/projects/#{project.id}/staff_notes", {
+      attachment: upload_file('test_files/submissions/valid.pdf', 'application/pdf')
+    }
+    assert_equal 201, last_response.status, last_response.body
+    assert_equal 'pdf', last_response_body['attachment_type']
+    assert_equal true, last_response_body['has_attachment']
+    assert_equal 'application/pdf', project.staff_notes.last.content_type
+
+    post "/api/projects/#{project.id}/staff_notes", {
+      attachment: upload_file('test_files/csv_test_files/COS10001-Students.csv', 'text/csv')
+    }
+    assert_equal 400, last_response.status
+    assert_equal 1, project.staff_notes.count
+
+    project.staff_notes.last.destroy!
+  end
+
+  def test_only_convenors_and_admins_can_upload_staff_notes_csv
+    unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false)
+    admin_unit = FactoryBot.create(:unit, code: 'COS10002', with_students: false)
+    student = FactoryBot.create(:user, :student, login_id: 'staff-note-student')
+    tutor = FactoryBot.create(:user, :tutor)
+    convenor = FactoryBot.create(:user, :convenor)
+    admin = FactoryBot.create(:user, :admin)
+    unit.enrol_student(student, nil)
+    admin_unit.enrol_student(student, nil)
+    unit.employ_staff(tutor, Role.tutor)
+    unit.employ_staff(convenor, Role.convenor)
+
+    csv_file = Tempfile.new(['staff-notes-permissions', '.csv'])
+    csv_file.write("username,comment\n#{student.username},Permission test note\n")
+    csv_file.rewind
+
+    Sidekiq::Testing.inline! do
+      [[convenor, unit], [admin, admin_unit]].each do |user, upload_unit|
+        add_auth_header_for(user: user)
+        post "/api/csv/units/#{upload_unit.id}/staff_notes", file: Rack::Test::UploadedFile.new(csv_file.path, 'text/csv')
+        assert_equal 201, last_response.status, "#{user.role.name}: #{last_response.body}"
+      end
+
+      [tutor, student].each do |user|
+        add_auth_header_for(user: user)
+        post "/api/csv/units/#{unit.id}/staff_notes", file: Rack::Test::UploadedFile.new(csv_file.path, 'text/csv')
+        assert_equal 403, last_response.status, user.role.name
+      end
+    ensure
+      Sidekiq::Testing.fake!
+    end
+  ensure
+    csv_file&.close
+    csv_file&.unlink
+  end
+
+  def test_staff_notes_csv_imports_by_username_or_login_id
+    unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false)
+    convenor = FactoryBot.create(:user, :convenor)
+    first_student = FactoryBot.create(:user, :student, login_id: 'staff-note-login-1')
+    second_student = FactoryBot.create(:user, :student, login_id: 'staff-note-login-2')
+    first_project = unit.enrol_student(first_student, nil)
+    second_project = unit.enrol_student(second_student, nil)
+    unit.employ_staff(convenor, Role.convenor)
+
+    csv_file = Tempfile.new(['staff-notes-import', '.csv'])
+    csv_file.write(CSV.generate do |csv|
+      csv << %w[username login_id comment]
+      csv << [first_student.username, nil, 'Username note']
+      csv << [nil, second_student.login_id, 'Login ID note']
+      csv << [first_student.username, first_student.login_id, 'Duplicate note']
+      csv << [first_student.username, first_student.login_id, 'Duplicate note']
+      csv << [first_student.username, second_student.login_id, 'Mismatched identifiers note']
+    end)
+    csv_file.rewind
+
+    Sidekiq::Testing.inline! do
+      add_auth_header_for(user: convenor)
+      post "/api/csv/units/#{unit.id}/staff_notes", file: Rack::Test::UploadedFile.new(csv_file.path, 'text/csv')
+
+      assert_equal 201, last_response.status, last_response.body
+      result = JSON.parse(last_response_body['result'])
+      assert_equal 3, result['success'].size
+      assert_equal 1, result['ignored'].size
+      assert_equal 1, result['errors'].size
+      assert_equal 'Staff note already exists', result['ignored'].first['message']
+      assert_equal 'Username and login_id do not match the same user', result['errors'].first['message']
+      assert_equal ['Username note', 'Duplicate note'], first_project.staff_notes.reload.pluck(:note)
+      assert_equal ['Login ID note'], second_project.staff_notes.reload.pluck(:note)
+    ensure
+      Sidekiq::Testing.fake!
+    end
+  ensure
+    csv_file&.close
+    csv_file&.unlink
+  end
+
   def test_tutor_can_edit_staff_notes
     unit = FactoryBot.create(:unit, code: 'COS10001')
 

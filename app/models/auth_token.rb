@@ -10,7 +10,8 @@ class AuthToken < ApplicationRecord
     general: 0,
     login: 1,
     scorm: 2,
-    refresh_token: 3
+    refresh_token: 3,
+    content: 4
   }
 
   def self.generate(user, remember, expiry_time = Time.zone.now + 2.hours, token_type = :general)

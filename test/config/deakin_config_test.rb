@@ -10,11 +10,11 @@ class DeakinConfigTest < ActiveSupport::TestCase
     ENV['DF_INSTITUTION_SETTINGS_SYNC_BASE_URL'] = 'https://test.com/enrolment'
     ENV['DF_INSTITUTION_SETTINGS_SYNC_STAR_URL'] = 'https://test.com/timetable'
 
-    require "#{Rails.root}/config/deakin"
+    require "#{Rails.root.join('config/deakin')}"
     Doubtfire::Application.config.institution_settings = DeakinInstitutionSettings.new
 
     # Rename and adjust abbreviation of all other campuses... so we can make sure they have the right details
-    Campus.update_all "name = #{db_concat("'Test-'", "name")}, abbreviation = #{db_concat("'-'", "abbreviation")}"
+    Campus.update_all "name = #{db_concat("'Test-'", 'name')}, abbreviation = #{db_concat("'-'", 'abbreviation')}"
 
     FactoryBot.create(:campus, name: 'Test Sync Campus', abbreviation: 'T')
     FactoryBot.create(:campus, name: 'Online', abbreviation: 'C')
@@ -29,13 +29,13 @@ class DeakinConfigTest < ActiveSupport::TestCase
 
     # Setup enrolments stub
     raw_enrolment_file = File.new(test_file_path("deakin/enrolment_sample.json"))
-    enrolment_stub = stub_request(:get, /#{ENV['DF_INSTITUTION_SETTINGS_SYNC_BASE_URL']}.*/).to_return(body: raw_enrolment_file, status: 200)
+    enrolment_stub = stub_request(:get, /#{ENV.fetch('DF_INSTITUTION_SETTINGS_SYNC_BASE_URL', nil)}.*/).to_return(body: raw_enrolment_file, status: 200)
 
     raw_timetable_file = File.new(test_file_path("deakin/timetable_sample.json"))
-    timetable_stub = stub_request(:post, /#{ENV['DF_INSTITUTION_SETTINGS_SYNC_STAR_URL']}.*allocated$/).to_return(body: raw_timetable_file, status: 200)
+    timetable_stub = stub_request(:post, /#{ENV.fetch('DF_INSTITUTION_SETTINGS_SYNC_STAR_URL', nil)}.*allocated$/).to_return(body: raw_timetable_file, status: 200)
 
     raw_timetable_activity_file = File.new(test_file_path("deakin/timetable_activity_sample.json"))
-    timetable_activity_stub = stub_request(:post, /#{ENV['DF_INSTITUTION_SETTINGS_SYNC_STAR_URL']}.*activities$/).to_return(body: raw_timetable_activity_file, status: 200)
+    timetable_activity_stub = stub_request(:post, /#{ENV.fetch('DF_INSTITUTION_SETTINGS_SYNC_STAR_URL', nil)}.*activities$/).to_return(body: raw_timetable_activity_file, status: 200)
 
     tp = FactoryBot.create(:teaching_period, period: 'T2', year: 2020)
     unit = FactoryBot.create(:unit, code: 'SIT999', name: 'Test Sync', teaching_period: tp, with_students: false, stream_count: 0, tutorials: 0)
@@ -43,7 +43,7 @@ class DeakinConfigTest < ActiveSupport::TestCase
     assert_equal 0, unit.tutorials.count
     assert_equal 0, unit.projects.count
 
-    result = unit.sync_enrolments()
+    result = unit.sync_enrolments
 
     assert_equal 3, unit.projects.count, result # 3 students and others skipped
     assert_equal 1, unit.tutorials.count, result # campus
@@ -60,13 +60,13 @@ class DeakinConfigTest < ActiveSupport::TestCase
 
     # Setup enrolments stubs
     raw_enrolment_file = File.new(test_file_path("deakin/enrolment_sample.json"))
-    enrolment_stub = stub_request(:get, /#{ENV['DF_INSTITUTION_SETTINGS_SYNC_BASE_URL']}.*/).to_return(body: raw_enrolment_file, status: 200)
+    enrolment_stub = stub_request(:get, /#{ENV.fetch('DF_INSTITUTION_SETTINGS_SYNC_BASE_URL', nil)}.*/).to_return(body: raw_enrolment_file, status: 200)
 
     raw_timetable_file = File.new(test_file_path("deakin/timetable_sample.json"))
-    timetable_stub = stub_request(:post, /#{ENV['DF_INSTITUTION_SETTINGS_SYNC_STAR_URL']}.*allocated$/).to_return(body: raw_timetable_file, status: 200)
+    timetable_stub = stub_request(:post, /#{ENV.fetch('DF_INSTITUTION_SETTINGS_SYNC_STAR_URL', nil)}.*allocated$/).to_return(body: raw_timetable_file, status: 200)
 
     raw_timetable_cls_activity_file = File.new(test_file_path("deakin/timetable_activity_sample.json"))
-    timetable_activity_stub = stub_request(:post, /#{ENV['DF_INSTITUTION_SETTINGS_SYNC_STAR_URL']}.*activities$/).to_return(body: raw_timetable_cls_activity_file, status: 200)
+    timetable_activity_stub = stub_request(:post, /#{ENV.fetch('DF_INSTITUTION_SETTINGS_SYNC_STAR_URL', nil)}.*activities$/).to_return(body: raw_timetable_cls_activity_file, status: 200)
 
     tp = FactoryBot.create(:teaching_period, period: 'T2', year: 2020)
     unit = FactoryBot.create(:unit, code: 'SIT999', name: 'Test Sync', teaching_period: tp, with_students: false, stream_count: 0, tutorials: 0)
@@ -90,7 +90,7 @@ class DeakinConfigTest < ActiveSupport::TestCase
 
     # Setup enrolments stubs
     raw_enrolment_file = File.new(test_file_path("deakin/enrolment_sample.json"))
-    enrolment_stub = stub_request(:get, /#{ENV['DF_INSTITUTION_SETTINGS_SYNC_BASE_URL']}.*/)
+    enrolment_stub = stub_request(:get, /#{ENV.fetch('DF_INSTITUTION_SETTINGS_SYNC_BASE_URL', nil)}.*/)
                      .to_return([
                                   { body: "Too many requests", status: 429 },
                                   { body: "Internal server error", status: 500 },
@@ -98,20 +98,20 @@ class DeakinConfigTest < ActiveSupport::TestCase
                                 ])
 
     raw_timetable_file = File.new(test_file_path("deakin/timetable_sample.json"))
-    timetable_stub = stub_request(:post, /#{ENV['DF_INSTITUTION_SETTINGS_SYNC_STAR_URL']}.*allocated$/).
-      to_return([
-                  { body: "Too many requests", status: 429 },
-                  { body: "Internal server error", status: 500 },
-                  { body: raw_timetable_file, status: 200 }
-                ])
+    timetable_stub = stub_request(:post, /#{ENV.fetch('DF_INSTITUTION_SETTINGS_SYNC_STAR_URL', nil)}.*allocated$/)
+                     .to_return([
+                                  { body: "Too many requests", status: 429 },
+                                  { body: "Internal server error", status: 500 },
+                                  { body: raw_timetable_file, status: 200 }
+                                ])
 
     raw_timetable_cls_activity_file = File.new(test_file_path("deakin/timetable_activity_sample.json"))
-    timetable_activity_stub = stub_request(:post, /#{ENV['DF_INSTITUTION_SETTINGS_SYNC_STAR_URL']}.*activities$/).
-      to_return([
-                  { body: "Too many requests", status: 429 },
-                  { body: "Internal server error", status: 500 },
-                  { body: raw_timetable_cls_activity_file, status: 200 }
-                ])
+    timetable_activity_stub = stub_request(:post, /#{ENV.fetch('DF_INSTITUTION_SETTINGS_SYNC_STAR_URL', nil)}.*activities$/)
+                              .to_return([
+                                           { body: "Too many requests", status: 429 },
+                                           { body: "Internal server error", status: 500 },
+                                           { body: raw_timetable_cls_activity_file, status: 200 }
+                                         ])
 
     tp = FactoryBot.create(:teaching_period, period: 'T2', year: 2020)
     unit = FactoryBot.create(:unit, code: 'SIT999', name: 'Test Sync', teaching_period: tp, with_students: false, stream_count: 0, tutorials: 0)
@@ -134,13 +134,13 @@ class DeakinConfigTest < ActiveSupport::TestCase
     raw_enrolment_file_3 = File.new(test_file_path("deakin/enrol_multi_1.json"))
     raw_enrolment_file_4 = File.new(test_file_path("deakin/enrol_multi_2.json"))
 
-    enrolment_stub = stub_request(:get, /#{ENV['DF_INSTITUTION_SETTINGS_SYNC_BASE_URL']}.*/).
-      to_return([
-                  { body: raw_enrolment_file_1, status: 200 },
-                  { body: raw_enrolment_file_2, status: 200 },
-                  { body: raw_enrolment_file_3, status: 200 },
-                  { body: raw_enrolment_file_4, status: 200 }
-                ])
+    enrolment_stub = stub_request(:get, /#{ENV.fetch('DF_INSTITUTION_SETTINGS_SYNC_BASE_URL', nil)}.*/)
+                     .to_return([
+                                  { body: raw_enrolment_file_1, status: 200 },
+                                  { body: raw_enrolment_file_2, status: 200 },
+                                  { body: raw_enrolment_file_3, status: 200 },
+                                  { body: raw_enrolment_file_4, status: 200 }
+                                ])
 
     tp = FactoryBot.create(:teaching_period, period: 'T2', year: 2024)
     unit = FactoryBot.create(:unit, code: 'SIT724/SIT746', name: 'Test Sync', teaching_period: tp, with_students: false, stream_count: 0, tutorials: 0)
@@ -169,13 +169,13 @@ class DeakinConfigTest < ActiveSupport::TestCase
 
     # Setup enrolments stubs
     raw_enrolment_file = File.new(test_file_path("deakin/enrolment_sample.json"))
-    enrolment_stub = stub_request(:get, /#{ENV['DF_INSTITUTION_SETTINGS_SYNC_BASE_URL']}.*/).to_return(body: raw_enrolment_file, status: 200)
+    enrolment_stub = stub_request(:get, /#{ENV.fetch('DF_INSTITUTION_SETTINGS_SYNC_BASE_URL', nil)}.*/).to_return(body: raw_enrolment_file, status: 200)
 
     raw_timetable_file = File.new(test_file_path("deakin/timetable_sample.json"))
-    timetable_stub = stub_request(:post, /#{ENV['DF_INSTITUTION_SETTINGS_SYNC_STAR_URL']}.*allocated$/).to_return(body: raw_timetable_file, status: 200)
+    timetable_stub = stub_request(:post, /#{ENV.fetch('DF_INSTITUTION_SETTINGS_SYNC_STAR_URL', nil)}.*allocated$/).to_return(body: raw_timetable_file, status: 200)
 
     raw_timetable_activity_file = File.new(test_file_path("deakin/timetable_activity_sample.json"))
-    timetable_activity_stub = stub_request(:post, /#{ENV['DF_INSTITUTION_SETTINGS_SYNC_STAR_URL']}.*activities$/).to_return(body: raw_timetable_activity_file, status: 200)
+    timetable_activity_stub = stub_request(:post, /#{ENV.fetch('DF_INSTITUTION_SETTINGS_SYNC_STAR_URL', nil)}.*activities$/).to_return(body: raw_timetable_activity_file, status: 200)
 
     tp = FactoryBot.create(:teaching_period, period: 'T2', year: 2020)
     unit = FactoryBot.create(:unit, code: 'SIT999', name: 'Test Sync', teaching_period: tp, with_students: false, stream_count: 0, tutorials: 0)
@@ -184,7 +184,7 @@ class DeakinConfigTest < ActiveSupport::TestCase
     unit.save
     # unit.update enable_sync_timetable: false
 
-    unit.sync_enrolments()
+    unit.sync_enrolments
 
     assert_equal 0, unit.tutorials.count # none created
 

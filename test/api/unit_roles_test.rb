@@ -11,7 +11,6 @@ class UnitRolesTest < ActiveSupport::TestCase
 
   # GET /api/units_roles
   def test_get_unit_roles
-
     # Add username and auth_token to Header
     add_auth_header_for(user: User.first)
 
@@ -82,10 +81,10 @@ class UnitRolesTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
 
     # check if the number of unit roles reduces by 1
-    assert_equal UnitRole.count, number_of_ur -1
+    assert_equal UnitRole.count, number_of_ur - 1
 
     # Check that you can't find the deleted id
-    refute UnitRole.exists?(id_of_ur)
+    assert_not UnitRole.exists?(id_of_ur)
   end
 
   # Delete a teaching period using unauthorised account
@@ -142,7 +141,7 @@ class UnitRolesTest < ActiveSupport::TestCase
 
     delete "/api/unit_roles/#{initial_id}"
     assert_equal 200, last_response.status, last_response.inspect
-    refute UnitRole.where(id: initial_id).present?
+    assert_not UnitRole.where(id: initial_id).present?
   end
 
   def test_delete_unit_role_with_assigned_tutorials_requires_reassignment
@@ -174,7 +173,7 @@ class UnitRolesTest < ActiveSupport::TestCase
 
     assert_equal 200, last_response.status
     assert_equal replacement_role.id, tutorial.reload.unit_role_id
-    refute UnitRole.exists?(tutor_role.id)
+    assert_not UnitRole.exists?(tutor_role.id)
   end
 
   def test_delete_unit_role_with_assigned_tutorials_rejects_invalid_reassignment_target
@@ -209,6 +208,50 @@ class UnitRolesTest < ActiveSupport::TestCase
     assert_equal initial_main_convenor_id, tutorial.reload.unit_role_id
     assert UnitRole.exists?(initial_main_convenor_id)
     assert UnitRole.exists?(replacement_role.id)
+  end
+
+  def test_admin_not_in_unit_can_update_unit_role
+    unit = FactoryBot.create :unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0, campus_count: 0
+
+    admin_user = FactoryBot.create :user, :admin
+    tutor_user = FactoryBot.create :user, :convenor
+    tutor_role = unit.employ_staff tutor_user, Role.tutor
+
+    # The admin is not employed within the unit
+    assert_nil unit.unit_role_for(admin_user)
+
+    add_auth_header_for(user: admin_user)
+
+    # Promote the staff member to convenor
+    put_json "/api/unit_roles/#{tutor_role.id}", { unit_role: { role_id: Role.convenor.id } }
+
+    assert_equal 200, last_response.status, last_response.inspect
+    assert_equal Role.convenor.id, tutor_role.reload.role_id
+
+    # ... and mark them as observer only
+    put_json "/api/unit_roles/#{tutor_role.id}", { unit_role: { role_id: Role.convenor.id, observer_only: true } }
+
+    assert_equal 200, last_response.status, last_response.inspect
+    assert tutor_role.reload.observer_only
+
+    unit.destroy
+  end
+
+  def test_tutor_not_in_unit_cannot_update_unit_role
+    unit = FactoryBot.create :unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0, campus_count: 0
+
+    other_tutor_user = FactoryBot.create :user, :tutor
+    tutor_user = FactoryBot.create :user, :convenor
+    tutor_role = unit.employ_staff tutor_user, Role.tutor
+
+    add_auth_header_for(user: other_tutor_user)
+
+    put_json "/api/unit_roles/#{tutor_role.id}", { unit_role: { role_id: Role.convenor.id } }
+
+    assert_equal 403, last_response.status, last_response.inspect
+    assert_equal Role.tutor.id, tutor_role.reload.role_id
+
+    unit.destroy
   end
 
   def test_observer_unit_role
@@ -330,5 +373,28 @@ class UnitRolesTest < ActiveSupport::TestCase
       get route
       assert_not_equal 403, last_response.status, "#{route}: (#{last_response_body})"
     end
+  end
+
+  def test_student_cannot_moderate_feedback
+    unit = FactoryBot.create :unit, with_students: true, task_count: 1, outcome_count: 0, staff_count: 0
+    project = unit.active_projects.first
+    task = project.task_for_task_definition(unit.task_definitions.first)
+    task.save! if task.new_record?
+
+    # Tutors without a mentor have a nil mentor, as do users without a unit role
+    tutor_role = unit.unit_role_for(project.tutor_for(task.task_definition))
+    tutor_role.update!(mentor: nil)
+
+    moderated_task = ModeratedTask.create!(task: task, task_definition: task.task_definition, state: :open, moderation_type: :escalation)
+
+    add_auth_header_for(user: project.student)
+    post "/api/unit_roles/#{tutor_role.id}/moderation/#{task.id}", { action: 'overturn' }
+
+    assert_equal 400, last_response.status, last_response_body
+    assert moderated_task.reload.open?
+    assert_nil moderated_task.outcome
+    assert_nil TutorFeedbackScore.find_by(unit_role: tutor_role, task_definition: task.task_definition)
+
+    unit.destroy
   end
 end

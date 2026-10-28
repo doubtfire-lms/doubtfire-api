@@ -1,0 +1,3 @@
+class CampusCondition < CommunicationCondition
+  validates :operator, inclusion: { in: ENROLMENT_OPERATORS }
+end

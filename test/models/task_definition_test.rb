@@ -8,24 +8,126 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     Rails.application
   end
 
+  def test_validation_ignores_orphaned_prerequisite_records
+    unit = FactoryBot.create(:unit, task_count: 0)
+    prerequisite = FactoryBot.create(:task_definition, unit: unit, target_grade: 0)
+    dependent = FactoryBot.create(:task_definition, unit: unit, target_grade: 0)
+    TaskPrerequisite.create!(
+      task_definition: dependent,
+      prerequisite: prerequisite,
+      task_status_id: TaskStatus.complete.id
+    )
+
+    prerequisite.delete
+
+    assert_nothing_raised { dependent.update!(name: 'Updated task definition') }
+  end
+
+  def test_similarity_language_accepts_supported_languages_and_rejects_commands
+    task_definition = FactoryBot.create(:unit, task_count: 1).task_definitions.first
+
+    [nil, 'java', 'python3'].each do |language|
+      task_definition.similarity_language = language
+      task_definition.validate
+      assert_empty task_definition.errors[:similarity_language]
+    end
+
+    ['java; touch /tmp/injected', 'unknown', 'moss java'].each do |language|
+      task_definition.similarity_language = language
+      task_definition.validate
+      assert_not_empty task_definition.errors[:similarity_language]
+    end
+  end
+
+  def test_jplag_rejects_an_invalid_stored_language_before_running_commands
+    unit = FactoryBot.create(:unit, task_count: 1)
+    task_definition = unit.task_definitions.first
+    task_definition.similarity_language = 'java; touch /tmp/injected'
+    task_definition.plagiarism_warn_pct = 50
+
+    assert_raises(ArgumentError) do
+      unit.send(:run_jplag_on_done_files, task_definition, Rails.root.join('tmp/jplag'), [], '/tmp/report.jplag')
+    end
+  end
+
+  def test_unit_can_be_destroyed_when_its_tasks_have_prerequisites
+    unit = FactoryBot.create(:unit, task_count: 0)
+    prerequisite = FactoryBot.create(:task_definition, unit: unit, target_grade: 0)
+    dependent = FactoryBot.create(:task_definition, unit: unit, target_grade: 0)
+    task_prerequisite = TaskPrerequisite.create!(
+      task_definition: dependent,
+      prerequisite: prerequisite,
+      task_status_id: TaskStatus.complete.id
+    )
+
+    unit.destroy!
+
+    assert_not TaskDefinition.exists?(prerequisite.id)
+    assert_not TaskDefinition.exists?(dependent.id)
+    assert_not TaskPrerequisite.exists?(task_prerequisite.id)
+  end
+
+  def test_overseer_requires_a_submission_history_upload
+    task_definition = FactoryBot.build(
+      :task_definition,
+      assessment_enabled: true,
+      upload_requirements: [
+        { 'key' => 'file0', 'name' => 'main.rb', 'type' => 'code', 'submission_history' => false }
+      ]
+    )
+
+    assert_not task_definition.valid?
+    assert_includes task_definition.errors[:upload_requirements],
+                    'must include at least one file in submission history when Overseer is enabled'
+  end
+
+  def test_overseer_accepts_a_submission_history_upload
+    task_definition = FactoryBot.build(
+      :task_definition,
+      assessment_enabled: true,
+      upload_requirements: [
+        { 'key' => 'file0', 'name' => 'main.rb', 'type' => 'code', 'submission_history' => true }
+      ]
+    )
+
+    task_definition.validate
+    assert_empty task_definition.errors[:upload_requirements]
+  end
+
+  def test_normalizes_duplicate_and_out_of_order_upload_requirement_keys
+    task_definition = FactoryBot.build(
+      :task_definition,
+      upload_requirements: [
+        { 'key' => 'file1', 'name' => 'main.rb', 'type' => 'code' },
+        { 'key' => 'file1', 'name' => 'output.png', 'type' => 'image' },
+        { 'key' => 'file5', 'name' => 'report.pdf', 'type' => 'document' }
+      ]
+    )
+
+    task_definition.save!
+    task_definition.reload
+
+    assert_equal %w[file0 file1 file2], task_definition.upload_requirements.pluck('key')
+  end
+
   def test_default_quality_points
     test_unit = Unit.first
     td = TaskDefinition.new({
-      unit_id: test_unit.id,
-      tutorial_stream: test_unit.tutorial_streams.first,
-      name: 'Test quality points',
-      description: 'test def',
-      weighting: 4,
-      target_grade: 0,
-      start_date: test_unit.start_date + 1.week,
-      target_date: test_unit.start_date + 2.weeks,
-      abbreviation: 'TestQualPts',
-      restrict_status_updates: false,
-      upload_requirements: [ ],
-      plagiarism_warn_pct: 0.8,
-      is_graded: false,
-      max_quality_pts: 5
-    })
+                              unit_id: test_unit.id,
+                              tutorial_stream: test_unit.tutorial_streams.first,
+                              name: 'Test quality points',
+                              description: 'test def',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: test_unit.start_date + 1.week,
+                              target_date: test_unit.start_date + 2.weeks,
+                              abbreviation: 'TestQualPts',
+                              restrict_status_updates: false,
+                              upload_requirements: [],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 5
+                            })
     td.save!
 
     p = test_unit.active_projects.first
@@ -41,68 +143,68 @@ class TaskDefinitionTest < ActiveSupport::TestCase
   def test_default_tii_settings
     test_unit = Unit.first
     td = TaskDefinition.new({
-      unit_id: test_unit.id,
-      tutorial_stream: test_unit.tutorial_streams.first,
-      name: 'Test tii settings',
-      description: 'test def',
-      weighting: 4,
-      target_grade: 0,
-      start_date: test_unit.start_date + 1.week,
-      target_date: test_unit.start_date + 2.weeks,
-      abbreviation: 'TestTiiSettings',
-      restrict_status_updates: false,
-      upload_requirements: [
-        {
-          "key" => 'file0',
-          "name" => 'Document 1',
-          "type" => 'document',
-          "tii_check" => true,
-          "tii_pct" => 5
-        },
-        {
-          "key" => 'file1',
-          "name" => 'Document 2',
-          "type" => 'document',
-          "tii_check" => false,
-          "tii_pct" => 10
-        },
-        {
-          "key" => 'file2',
-          "name" => 'Code 1',
-          "type" => 'code',
-          "tii_check" => true,
-          "tii_pct" => 20
-        },
-        {
-          "key" => 'file3',
-          "name" => 'Image 3',
-          "type" => 'image',
-          "tii_check" => true,
-          "tii_pct" => 30
-        },
-        {
-          "key" => 'file4',
-          "name" => 'Document 4',
-          "type" => 'document'
-        }
-      ],
-      plagiarism_warn_pct: 0.8,
-      is_graded: false,
-      max_quality_pts: 5
-    })
+                              unit_id: test_unit.id,
+                              tutorial_stream: test_unit.tutorial_streams.first,
+                              name: 'Test tii settings',
+                              description: 'test def',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: test_unit.start_date + 1.week,
+                              target_date: test_unit.start_date + 2.weeks,
+                              abbreviation: 'TestTiiSettings',
+                              restrict_status_updates: false,
+                              upload_requirements: [
+                                {
+                                  "key" => 'file0',
+                                  "name" => 'Document 1',
+                                  "type" => 'document',
+                                  "tii_check" => true,
+                                  "tii_pct" => 5
+                                },
+                                {
+                                  "key" => 'file1',
+                                  "name" => 'Document 2',
+                                  "type" => 'document',
+                                  "tii_check" => false,
+                                  "tii_pct" => 10
+                                },
+                                {
+                                  "key" => 'file2',
+                                  "name" => 'Code 1',
+                                  "type" => 'code',
+                                  "tii_check" => true,
+                                  "tii_pct" => 20
+                                },
+                                {
+                                  "key" => 'file3',
+                                  "name" => 'Image 3',
+                                  "type" => 'image',
+                                  "tii_check" => true,
+                                  "tii_pct" => 30
+                                },
+                                {
+                                  "key" => 'file4',
+                                  "name" => 'Document 4',
+                                  "type" => 'document'
+                                }
+                              ],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 5
+                            })
     td.save!
 
     assert td.is_document?(0)
     assert td.is_document?(1)
-    refute td.is_document?(2)
-    refute td.is_document?(3)
+    assert_not td.is_document?(2)
+    assert_not td.is_document?(3)
     assert td.is_document?(4)
 
     assert td.use_tii?(0)
-    refute td.use_tii?(1)
-    refute td.use_tii?(2)
-    refute td.use_tii?(3)
-    refute td.use_tii?(4)
+    assert_not td.use_tii?(1)
+    assert_not td.use_tii?(2)
+    assert_not td.use_tii?(3)
+    assert_not td.use_tii?(4)
 
     assert_equal 5, td.tii_match_pct(0)
     assert_equal 35, td.tii_match_pct(1) # default
@@ -111,6 +213,34 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert_equal 35, td.tii_match_pct(4)
 
     td.destroy
+  end
+
+  def test_upload_requirements_allow_zip
+    test_unit = Unit.first
+    td = TaskDefinition.new({
+                              unit_id: test_unit.id,
+                              tutorial_stream: test_unit.tutorial_streams.first,
+                              name: 'Test zip requirement',
+                              description: 'test def',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: test_unit.start_date + 1.week,
+                              target_date: test_unit.start_date + 2.weeks,
+                              abbreviation: 'TestZipReq',
+                              restrict_status_updates: false,
+                              upload_requirements: [
+                                {
+                                  "key" => 'file0',
+                                  "name" => 'Source Zip',
+                                  "type" => 'zip'
+                                }
+                              ],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 5
+                            })
+
+    assert td.valid?, td.errors.full_messages.join(', ')
   end
 
   def test_group_tasks
@@ -131,7 +261,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     group_set.unit = u
     group_set.save!
 
-    path = Rails.root.join('test_files', 'unit_csv_imports', 'import_group_tasks.csv')
+    path = Rails.root.join("test_files/unit_csv_imports/import_group_tasks.csv")
     u.import_tasks_from_csv File.new(path)
 
     assert_equal 1, group_set.task_definitions.count
@@ -170,7 +300,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
       task_def = unit.task_definitions.find_by(abbreviation: task_def_csv['abbreviation'])
       keys_to_ignore = %w[tutorial_stream start_week start_day target_week target_day due_week due_day upload_requirements task_prerequisites discussion_prompts overseer_steps]
       task_def_csv.each do |key, value|
-        unless keys_to_ignore.include?(key)
+        unless keys_to_ignore.include?(key) || key.start_with?('grade_')
           assert_equal(task_def[key].to_s, value)
         end
       end
@@ -261,6 +391,116 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     assert imported_step.enabled
   end
 
+  def test_rollover_maps_grade_due_dates_by_week_and_day
+    unit = FactoryBot.create(:unit, teaching_period: TeachingPeriod.find(3), with_students: false, task_count: 1)
+    td = unit.task_definitions.first
+    td.grade_due_dates.create!(
+      target_grade: 2,
+      start_date: unit.date_for_week_and_day(2, 'Mon'),
+      target_due_date: unit.date_for_week_and_day(9, 'Wed')
+    )
+
+    unit2 = unit.rollover TeachingPeriod.find(2), nil, nil, nil
+    override = unit2.task_definitions.find_by(abbreviation: td.abbreviation).grade_due_dates.find_by(target_grade: 2)
+
+    assert_equal unit2.date_for_week_and_day(2, 'Mon').to_date, override.start_date.to_date
+    assert_equal unit2.date_for_week_and_day(9, 'Wed').to_date, override.target_due_date.to_date
+  ensure
+    unit2&.destroy
+    unit&.destroy
+  end
+
+  def test_csv_grade_due_dates_map_by_week_and_day
+    source = FactoryBot.create(:unit, teaching_period: TeachingPeriod.find(3), with_students: false, task_count: 1)
+    td = source.task_definitions.first
+    td.grade_due_dates.create!(target_grade: 3, target_due_date: source.date_for_week_and_day(9, 'Fri'))
+
+    rows = CSV.parse(source.task_definitions_csv, headers: true)
+    assert_equal '9', rows[0]['grade_hd_target_week']
+    assert_equal 'Fri', rows[0]['grade_hd_target_day']
+    assert_equal '-', rows[0]['grade_hd_start_week']
+    assert_equal '-', rows[0]['grade_c_target_week']
+    assert_nil rows[0]['grade_p_target_week']
+
+    target = FactoryBot.create(:unit, teaching_period: TeachingPeriod.find(2), with_students: false, task_count: 0)
+    file = Tempfile.new(['task-definitions', '.csv'])
+    file.write(rows.to_csv)
+    file.close
+
+    result = target.import_tasks_from_csv(file.path)
+    assert_empty result[:errors], result
+
+    imported = target.task_definitions.find_by(abbreviation: td.abbreviation)
+    override = imported.grade_due_dates.find_by(target_grade: 3)
+    assert_equal target.date_for_week_and_day(9, 'Fri').to_date, override.target_due_date.to_date
+    assert_nil override.start_date
+
+    # '-' grade columns clear the override
+    rows[0]['grade_hd_target_week'] = '-'
+    rows[0]['grade_hd_target_day'] = '-'
+    File.write(file.path, rows.to_csv)
+
+    result = target.import_tasks_from_csv(file.path)
+    assert_empty result[:errors], result
+    assert_empty imported.grade_due_dates.reload
+  ensure
+    file&.unlink
+    target&.destroy
+    source&.destroy
+  end
+
+  def test_import_does_not_skip_task_name_containing_name
+    target_unit = Unit.create!(
+      code: 'CSVNAME1',
+      name: 'CSV Import With Name Substring',
+      description: 'Import target',
+      teaching_period: TeachingPeriod.find(3)
+    )
+
+    csv = CSV.generate do |rows|
+      rows << TaskDefinition.required_csv_columns
+      rows << [
+        'Coin Clash (Tournament Mini-Project)',
+        'D4',
+        'Build an adversarial game agent.',
+        1,
+        0,
+        false,
+        0,
+        false,
+        90,
+        false,
+        false,
+        false,
+        false,
+        0,
+        nil,
+        [{ key: 'file0', name: 'coin_clash.rb', type: 'code' }].to_json,
+        1,
+        'Tue',
+        1,
+        'Tue',
+        1,
+        'Tue',
+        nil,
+        false,
+        [].to_json,
+        [].to_json
+      ]
+    end
+
+    file = Tempfile.new(['task-definitions', '.csv'])
+    file.write(csv)
+    file.close
+
+    result = target_unit.import_tasks_from_csv(file.path)
+
+    assert_empty result[:errors], result
+    assert target_unit.task_definitions.exists?(abbreviation: 'D4')
+  ensure
+    file&.unlink
+  end
+
   def test_export_without_tutorial_stream
     data = {
       code: 'COS10001',
@@ -271,7 +511,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     unit = Unit.create(data)
     assert_empty unit.task_definitions
-    unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{unit.code}-ImportTasksWithoutTutorialStream.csv"))
+    unit.import_tasks_from_csv File.open(Rails.root.join('test_files', "#{unit.code}-ImportTasksWithoutTutorialStream.csv"))
     assert_not_empty unit.task_definitions
 
     task_defs_csv = CSV.parse unit.task_definitions_csv, headers: true
@@ -290,7 +530,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     unit = Unit.create(data)
     assert_empty unit.task_definitions
-    unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{unit.code}-ImportTasksWithoutTutorialStream.csv"))
+    unit.import_tasks_from_csv File.open(Rails.root.join('test_files', "#{unit.code}-ImportTasksWithoutTutorialStream.csv"))
     assert_equal 36, unit.task_definitions.count, 'imported all task definitions'
 
     unit.task_definitions.each do |task_definition|
@@ -312,7 +552,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     activity_type = FactoryBot.create(:activity_type)
     tutorial_stream = unit.add_tutorial_stream('Import-Tasks', 'import-tasks', activity_type)
-    unit.import_tasks_from_csv File.open(Rails.root.join('test_files',"#{unit.code}-ImportTasksWithTutorialStream.csv"))
+    unit.import_tasks_from_csv File.open(Rails.root.join('test_files', "#{unit.code}-ImportTasksWithTutorialStream.csv"))
     assert_equal 36, unit.task_definitions.count, 'imported all task definitions'
 
     unit.task_definitions.each do |task_definition|
@@ -321,9 +561,9 @@ class TaskDefinitionTest < ActiveSupport::TestCase
   end
 
   def test_cannot_change_group_set_with_submissions
-    unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 3}], task_count: 0
+    unit = FactoryBot.create :unit, group_sets: 1, groups: [{ gs: 0, students: 3 }], task_count: 0
 
-    td = FactoryBot.create :task_definition, unit: unit, group_set: unit.group_sets.first, upload_requirements: [ ], start_date: Time.zone.now + 1.day
+    td = FactoryBot.create :task_definition, unit: unit, group_set: unit.group_sets.first, upload_requirements: [], start_date: Time.zone.now + 1.day
 
     group = unit.groups.first
 
@@ -336,16 +576,16 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     td.group_set = nil
 
-    refute td.valid?
+    assert_not td.valid?
   end
 
   def test_delete_unneeded_group_submission_on_group_set_change
     # When we change the group setting, and there is some old task interactions
     # make sure group submission details are removed
 
-    unit = FactoryBot.create :unit, group_sets: 1, groups: [{gs: 0, students: 3}], task_count: 0
+    unit = FactoryBot.create :unit, group_sets: 1, groups: [{ gs: 0, students: 3 }], task_count: 0
 
-    td = FactoryBot.create :task_definition, unit: unit, group_set: unit.group_sets.first, upload_requirements: [ ], start_date: Time.zone.now + 1.day
+    td = FactoryBot.create :task_definition, unit: unit, group_set: unit.group_sets.first, upload_requirements: [], start_date: Time.zone.now + 1.day
 
     group = unit.groups.first
 
@@ -506,8 +746,8 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     task1 = student.task_for_task_definition(td1)
     task2 = student.task_for_task_definition(td2)
 
-    task1.comments.delete_all
-    task2.comments.delete_all
+    task1.comments.destroy_all
+    task2.comments.destroy_all
 
     task1.update(task_status_id: TaskStatus.time_exceeded.id)
 
