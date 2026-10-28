@@ -909,7 +909,17 @@ class TasksApiTest < ActiveSupport::TestCase
     assert_instance_of TaskDiscussedComment, discussed_comment
     assert_equal 'discussed_in_class', discussed_comment.content_type
 
+    put "/api/projects/#{project.id}/task_def_id/#{td.id}", { discussed: true }
+    assert_equal 200, last_response.status
+    task.reload
+    assert_equal 1, task.comments.where(content_type: 'discussed_in_class').count
+
     task.add_text_comment(tutor, 'Manual tutor feedback')
+
+    put "/api/projects/#{project.id}/task_def_id/#{td.id}", { discussed: true }
+    assert_equal 200, last_response.status
+    task.reload
+    assert_equal 2, task.comments.where(content_type: 'discussed_in_class').count
 
     put "/api/projects/#{project.id}/task_def_id/#{td.id}", { trigger: 'complete' }
     assert_equal 200, last_response.status
@@ -943,11 +953,13 @@ class TasksApiTest < ActiveSupport::TestCase
 
     add_auth_header_for(user: tutor)
 
+    task.add_discussed_comment(tutor)
+
     put "/api/projects/#{project.id}/task_def_id/#{td.id}", { trigger: 'complete', discussed: true }
     assert_equal 403, last_response.status
     task.reload
     assert_not_equal TaskStatus.complete, task.task_status
-    assert_not task.has_discussed_in_class_comment?
+    assert_equal 1, task.comments.where(content_type: 'discussed_in_class').count
 
     task.add_text_comment(tutor, 'Manual tutor feedback')
 
@@ -955,7 +967,7 @@ class TasksApiTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
     task.reload
     assert_equal TaskStatus.complete, task.task_status
-    assert task.has_discussed_in_class_comment?
+    assert_equal 2, task.comments.where(content_type: 'discussed_in_class').count
   end
 
   def test_require_comment_for_feedback_submission_assess_in_portfolio
