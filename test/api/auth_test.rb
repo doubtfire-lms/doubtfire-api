@@ -49,6 +49,74 @@ class AuthTest < ActiveSupport::TestCase
     Rack::Attack.cache.store.clear
   end
 
+  def test_access_token_refresh_does_not_use_login_rate_limit
+    original_setting = Doubtfire::Application.config.auth_rate_limit_enabled
+    Doubtfire::Application.config.auth_rate_limit_enabled = true
+    Rack::Attack.cache.store.clear
+    Rack::Attack.enabled = true
+
+    limit = Doubtfire::Application.config.auth_rate_limit
+    user = FactoryBot.create(:user)
+    token = user.generate_authentication_token!(token_type: :refresh_token)
+    set_cookie "username=#{user.username}"
+    set_cookie "refresh_token=#{token.authentication_token}"
+
+    (limit + 1).times do |index|
+      path = index.even? ? '/api/auth/access-token' : '/api/auth/access-token.json'
+      post path
+      assert_equal 201, last_response.status
+    end
+
+    credentials = { username: 'aadmin123', password: 'password' }
+    limit.times do
+      post_json '/api/auth.json', credentials
+      assert_equal 401, last_response.status
+    end
+
+    post_json '/api/auth.json', credentials
+    assert_equal 429, last_response.status
+  ensure
+    Doubtfire::Application.config.auth_rate_limit_enabled = original_setting
+    Rack::Attack.cache.store.clear
+  end
+
+  def test_access_token_refresh_has_its_own_rate_limit
+    original_setting = Doubtfire::Application.config.auth_rate_limit_enabled
+    Doubtfire::Application.config.auth_rate_limit_enabled = true
+    Rack::Attack.cache.store.clear
+    Rack::Attack.enabled = true
+
+    travel_to Time.zone.parse('2026-07-21 11:00:00 UTC') do
+      user = FactoryBot.create(:user)
+      token = user.generate_authentication_token!(token_type: :refresh_token)
+      set_cookie "username=#{user.username}"
+      set_cookie "refresh_token=#{token.authentication_token}"
+
+      Doubtfire::Application.config.auth_refresh_rate_limit.times do
+        post '/api/auth/access-token'
+        assert_equal 201, last_response.status
+      end
+
+      post '/api/auth/access-token'
+      assert_equal 429, last_response.status
+      assert_equal 'Too many token refresh attempts. Please try again shortly.', last_response_body['error']
+      assert_operator last_response.headers['Retry-After'].to_i, :>, 0
+
+      other_user = FactoryBot.create(:user)
+      other_token = other_user.generate_authentication_token!(token_type: :refresh_token)
+      set_cookie "username=#{other_user.username}"
+      set_cookie "refresh_token=#{other_token.authentication_token}"
+      post '/api/auth/access-token'
+      assert_equal 201, last_response.status
+
+      post_json '/api/auth.json', username: 'aadmin123', password: 'password'
+      assert_equal 401, last_response.status
+    end
+  ensure
+    Doubtfire::Application.config.auth_rate_limit_enabled = original_setting
+    Rack::Attack.cache.store.clear
+  end
+
   def test_auth_post_is_not_rate_limited_when_disabled
     original_setting = Doubtfire::Application.config.auth_rate_limit_enabled
     Doubtfire::Application.config.auth_rate_limit_enabled = false
