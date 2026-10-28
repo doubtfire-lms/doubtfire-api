@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [11.0.2](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.1...v11.0.2) (2026-10-28)
+
+
+### Bug Fixes
+
+* allow multiple discussed in class ([9d24e3f](https://github.com/b0ink/doubtfire-deploy/commit/9d24e3fb2e1576d065d5f1c95e7df72125c86bc4))
+* handle malformed SAMLResponse on saml auth and logout endpoints ([#737](https://github.com/b0ink/doubtfire-deploy/issues/737)) ([3762f40](https://github.com/b0ink/doubtfire-deploy/commit/3762f40b7d00140f912898379d29e3f82373d61a))
+* use jemalloc in production images to curb Sidekiq RSS growth ([#740](https://github.com/b0ink/doubtfire-deploy/issues/740)) ([f0f5046](https://github.com/b0ink/doubtfire-deploy/commit/f0f504657eee535f6171da9d00688ca6a6553b07))
+
 ### [11.0.1](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0...v11.0.1) (2026-10-26)
 
 
