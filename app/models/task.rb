@@ -1129,7 +1129,7 @@ class Task < ApplicationRecord
   end
 
   def broadcast_status_change
-    TaskChannel.broadcast_to(self, event: 'status_changed')
+    TaskChannel.broadcast_event(self, 'status_changed')
   end
 
   def add_discussed_comment(current_user)

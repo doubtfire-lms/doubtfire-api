@@ -9,7 +9,7 @@ module ApplicationCable
     protected
 
     def find_verified_user
-      if verified_user = env['warden'].user || user_from_token
+      if verified_user = env['warden']&.user || user_from_token
         verified_user
       else
         reject_unauthorized_connection
@@ -18,7 +18,8 @@ module ApplicationCable
 
     def user_from_token
       username = request.params[:username]
-      auth_token = request.params[:authToken] || request.params[:auth_token] || request.params[:Auth_Token]
+      # auth_token is covered by filter_parameters, keeping it out of the logged request path
+      auth_token = request.params[:auth_token]
       return if username.blank? || auth_token.blank?
 
       user = User.eager_load(:role, :auth_tokens).find_by(username: username)
