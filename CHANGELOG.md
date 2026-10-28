@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.1.0-2](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-1...v11.1.0-2) (2026-10-28)
+
+
+### Bug Fixes
+
+* allow multiple discussed in class ([c9244cf](https://github.com/b0ink/doubtfire-deploy/commit/c9244cffb4478c2654f59294b968acea0016c152))
+
+## [11.1.0-1](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-0...v11.1.0-1) (2026-10-27)
+
+
+### Bug Fixes
+
+* use jemalloc in production images to curb Sidekiq RSS growth ([#740](https://github.com/b0ink/doubtfire-deploy/issues/740)) ([08251e1](https://github.com/b0ink/doubtfire-deploy/commit/08251e1971de05b8c4cbf63e5b75d40291b30d10))
+
+## [11.1.0-0](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.1...v11.1.0-0) (2026-10-27)
+
+
+### Features
+
+* rate limit POST /api/auth with Rack::Attack ([#634](https://github.com/b0ink/doubtfire-deploy/issues/634)) ([ce2b542](https://github.com/b0ink/doubtfire-deploy/commit/ce2b54225f7184efc4dc51e51097935b00cfc76c))
+
+
+### Bug Fixes
+
+* handle malformed SAMLResponse on saml auth and logout endpoints ([#737](https://github.com/b0ink/doubtfire-deploy/issues/737)) ([2530fdd](https://github.com/b0ink/doubtfire-deploy/commit/2530fdd9758eb439b35f2778b14076f813b4fc75))
+
 ### [11.0.1](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0...v11.0.1) (2026-10-26)
 
 
