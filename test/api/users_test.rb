@@ -332,6 +332,17 @@ class UnitsTest < ActiveSupport::TestCase
     assert_equal 400, last_response.status
   end
 
+  def test_put_update_own_timezone
+    user = FactoryBot.create(:user, :student)
+    add_auth_header_for(user: user)
+
+    put_json "/api/users/#{user.id}", { user: { timezone: 'Asia/Shanghai', auto_timezone: false } }
+
+    assert_equal 200, last_response.status
+    assert_equal 'Asia/Shanghai', last_response_body['timezone']
+    assert_not user.reload.auto_timezone
+  end
+
   def test_put_update_user_invalid_email
     user = User.second
 

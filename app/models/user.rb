@@ -20,6 +20,7 @@ class User < ApplicationRecord
   include UserTiiModule
 
   after_update :move_files_on_username_change, if: :saved_change_to_username?
+  after_update :refresh_notification_schedule, if: :saved_change_to_timezone?
 
   ###
   # Authentication
@@ -183,6 +184,18 @@ class User < ApplicationRecord
   has_many    :chip_usage, dependent: :destroy, inverse_of: :tutor, class_name: 'Feedback::ChipUsage'
 
   has_many    :marking_sessions, dependent: :destroy
+  has_many    :received_notifications,
+              class_name: 'Notification',
+              foreign_key: :recipient_id,
+              dependent: :destroy,
+              inverse_of: :recipient
+  has_many    :acted_notifications,
+              class_name: 'Notification',
+              foreign_key: :actor_id,
+              dependent: :nullify,
+              inverse_of: :actor
+  has_many    :notification_unit_overrides, dependent: :destroy
+  has_one     :notification_setting, dependent: :destroy
 
   # Model validations/constraints
   validates :first_name,  presence: true, allowed_characters: { type: :first_name }
@@ -193,6 +206,7 @@ class User < ApplicationRecord
   validates :email,       presence: true, uniqueness: { case_sensitive: false }, format: { with: /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\z/i }
   validates :student_id,  uniqueness: true, allow_nil: true
   validate :can_change_to_role?, if: :will_save_change_to_role_id?
+  validate :timezone_supported, if: :will_save_change_to_timezone?
 
   # Queries
   scope :tutors,    -> { joins(:role).where('roles.id = :tutor_role or roles.id = :convenor_role or roles.id = :admin_role or roles.id = :auditor_role', tutor_role: Role.tutor_id, convenor_role: Role.convenor_id, admin_role: Role.admin_id, auditor_role: Role.auditor_id) }
@@ -462,6 +476,11 @@ class User < ApplicationRecord
     "#{fn} #{sn}"
   end
 
+  # Users who have not signed in since timezones were added use the server's.
+  def notification_timezone
+    timezone.presence || NotificationSetting.default_digest_timezone
+  end
+
   def move_files_on_username_change
     old_username = saved_change_to_username[0]
 
@@ -626,5 +645,18 @@ class User < ApplicationRecord
     unless unit_role.nil?
       unit_role.get_marking_sessions(start_date: start_date, end_date: end_date, timezone: timezone)
     end
+  end
+
+  private
+
+  # Saving the settings picks up the new timezone and reschedules the next digest.
+  def refresh_notification_schedule
+    notification_setting&.save!
+  end
+
+  def timezone_supported
+    return if timezone.nil? || ActiveSupport::TimeZone[timezone].present?
+
+    errors.add(:timezone, 'must be a valid timezone')
   end
 end

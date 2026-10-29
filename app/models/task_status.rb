@@ -4,6 +4,25 @@
 class TaskStatus < ApplicationRecord
   # TODO: Consider refactoring this class. Is there any point to having this in the database? Could this become an enum?
 
+  # Must match STATUS_COLORS in the web app's task-status.ts.
+  COLORS = {
+    not_started: '#cccccc',
+    complete: '#5bb75b',
+    need_help: '#a48fce',
+    working_on_it: '#eb8f06',
+    fix_and_resubmit: '#f2d85c',
+    feedback_exceeded: '#d46b54',
+    redo: '#804000',
+    discuss: '#31b0d5',
+    ready_for_feedback: '#0079d8',
+    demonstrate: '#428bca',
+    fail: '#d93713',
+    time_exceeded: '#d93713',
+    assess_in_portfolio: '#f2d85c',
+    attention_required: '#f1814d',
+    rediscuss: '#126352'
+  }.freeze
+
   # Model associations
   has_many :tasks, dependent: :restrict_with_exception
 
@@ -151,6 +170,10 @@ class TaskStatus < ApplicationRecord
     when 15 then :rediscuss
     else :not_started
     end
+  end
+
+  def color
+    COLORS[status_key]
   end
 
   def status_key

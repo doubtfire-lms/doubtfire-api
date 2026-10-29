@@ -45,7 +45,9 @@ namespace :maintenance do
   end
 
   def notify_failed_submission(task, message)
-    if task.project.student.receive_task_notifications
+    Notification.create_pdf_failure(task)
+
+    if NotificationSetting.for(task.project.student).delivers?(task.unit, 'pdf_generation_failed', :email)
       begin
         PortfolioEvidenceMailer.task_pdf_failed(task.project, [task]).deliver_now
       rescue StandardError => e

@@ -81,7 +81,8 @@ class UnitsApi < Grape::API
       optional :main_convenor_id, type: Integer
       optional :auto_apply_extension_before_deadline, type: Boolean, desc: 'Indicates if extensions before the deadline should be automatically applied'
       optional :mark_late_submissions_as_assess_in_portfolio, type: Boolean, desc: 'Indicates if late submissions should be set Time Exceeded or Assess in Portfolio'
-      optional :send_notifications, type: Boolean, desc: 'Indicates if emails should be sent on updates each week'
+      optional :send_notifications, type: Boolean, desc: 'Indicates if notification digests and discussion deadline emails are sent'
+      optional :generate_weekly_summaries, type: Boolean, desc: 'Indicates if weekly summary notifications are created'
       optional :enable_sync_timetable, type: Boolean, desc: 'Sync to timetable automatically if supported by deployment'
       optional :enable_sync_enrolments, type: Boolean, desc: 'Sync student enrolments automatically if supported by deployment'
       optional :draft_task_definition_id, type: Integer, desc: 'Indicates the ID of the task definition used as the "draft learning summary task"'
@@ -129,6 +130,7 @@ class UnitsApi < Grape::API
                                                           :auto_apply_extension_before_deadline,
                                                           :mark_late_submissions_as_assess_in_portfolio,
                                                           :send_notifications,
+                                                          :generate_weekly_summaries,
                                                           :enable_sync_timetable,
                                                           :enable_sync_enrolments,
                                                           :draft_task_definition_id,
@@ -184,7 +186,8 @@ class UnitsApi < Grape::API
       optional :main_convenor_user_id, type: Integer
       optional :auto_apply_extension_before_deadline, type: Boolean, desc: 'Indicates if extensions before the deadline should be automatically applied', default: true
       optional :mark_late_submissions_as_assess_in_portfolio, type: Boolean, desc: 'Indicates if late submissions should be set to Time Exceeded or Assess in Portfolio', default: true
-      optional :send_notifications, type: Boolean, desc: 'Indicates if emails should be sent on updates each week', default: true
+      optional :send_notifications, type: Boolean, desc: 'Indicates if notification digests and discussion deadline emails are sent', default: true
+      optional :generate_weekly_summaries, type: Boolean, desc: 'Indicates if weekly summary notifications are created', default: true
       optional :enable_sync_timetable, type: Boolean, desc: 'Sync to timetable automatically if supported by deployment', default: true
       optional :enable_sync_enrolments, type: Boolean, desc: 'Sync student enrolments automatically if supported by deployment', default: true
       optional :allow_flexible_dates, type: Boolean, desc: 'Can turn on/off flexible dates for tasks in this unit', default: true
@@ -229,6 +232,7 @@ class UnitsApi < Grape::API
                                                     :auto_apply_extension_before_deadline,
                                                     :mark_late_submissions_as_assess_in_portfolio,
                                                     :send_notifications,
+                                                    :generate_weekly_summaries,
                                                     :enable_sync_timetable,
                                                     :enable_sync_enrolments,
                                                     :allow_flexible_dates,
