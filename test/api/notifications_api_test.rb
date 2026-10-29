@@ -251,6 +251,16 @@ class NotificationsApiTest < ActiveSupport::TestCase
     assert_equal %w[in_app email], last_response_body.dig('channels', 'feedback_warning')
     assert_equal %w[in_app email], last_response_body.dig('channels', 'weekly_summary')
     assert_empty last_response_body['units']
+    assert_empty last_response_body['email_disabled_unit_ids']
+  end
+
+  def test_settings_list_the_users_units_that_do_not_send_email
+    @unit.update!(send_notifications: false)
+    FactoryBot.create(:unit, send_notifications: false, with_students: false)
+
+    get '/api/notification_settings'
+
+    assert_equal [@unit.id], last_response_body['email_disabled_unit_ids']
   end
 
   def test_updating_settings_stores_the_schedule_and_the_units_that_differ

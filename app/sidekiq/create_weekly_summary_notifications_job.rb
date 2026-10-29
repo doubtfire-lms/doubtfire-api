@@ -21,7 +21,7 @@ class CreateWeeklySummaryNotificationsJob
     }
 
     Unit.within_last_teaching_date(week_end)
-        .where(send_notifications: true, start_date: ...week_end)
+        .where(generate_weekly_summaries: true, start_date: ...week_end)
         .find_each do |unit|
       unit.create_weekly_summary_notifications(summary_stats)
     end

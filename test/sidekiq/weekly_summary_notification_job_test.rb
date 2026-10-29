@@ -21,6 +21,22 @@ class WeeklySummaryNotificationJobTest < ActiveSupport::TestCase
     assert_not_nil summaries.first.email_processed_at
   end
 
+  def test_creates_summaries_when_the_unit_does_not_send_email
+    @unit.update!(send_notifications: false)
+
+    travel_to(@monday) { CreateWeeklySummaryNotificationsJob.new.perform }
+
+    assert Notification.exists?(recipient: @project.student, unit: @unit, kind: 'weekly_summary')
+  end
+
+  def test_skips_units_without_weekly_summaries
+    @unit.update!(generate_weekly_summaries: false)
+
+    travel_to(@monday) { CreateWeeklySummaryNotificationsJob.new.perform }
+
+    assert_not Notification.exists?(unit: @unit, kind: 'weekly_summary')
+  end
+
   def test_skips_units_past_their_last_teaching_date
     @unit.update!(last_teaching_date: (@monday - 1.day).to_date)
 

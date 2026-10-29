@@ -58,6 +58,14 @@ class TaskDeadlineNotificationJobTest < ActiveSupport::TestCase
     assert_equal ['task_start_now'], @student.received_notifications.where(task: @task).pluck(:kind)
   end
 
+  def test_creates_reminders_when_the_unit_does_not_send_email
+    @unit.update!(send_notifications: false)
+
+    travel_to(@now) { Notification.refresh_task_deadline_notifications! }
+
+    assert_equal ['task_start_now'], @student.received_notifications.where(task: @task).pluck(:kind)
+  end
+
   def test_creates_due_soon_and_overdue_transitions
     travel_to(@now + 5.days) do
       Notification.refresh_task_deadline_notifications!

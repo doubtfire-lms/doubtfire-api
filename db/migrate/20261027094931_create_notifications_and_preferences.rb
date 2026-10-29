@@ -89,5 +89,10 @@ class CreateNotificationsAndPreferences < ActiveRecord::Migration[8.0]
     # An IANA timezone, synced from the browser while auto_timezone is on, otherwise chosen by the user.
     add_column :users, :timezone, :string, limit: 64
     add_column :users, :auto_timezone, :boolean, null: false, default: true
+
+    # send_notifications only controls email, so weekly summaries are switched separately.
+    add_column :units, :generate_weekly_summaries, :boolean, null: false, default: true
+    # Units that sent no emails sent no summaries either, so they keep doing so.
+    up_only { execute 'UPDATE units SET generate_weekly_summaries = send_notifications' }
   end
 end

@@ -60,6 +60,14 @@ class FeedbackWarningNotificationJobTest < ActiveSupport::TestCase
     assert_equal @tutor, notifications.first.recipient
   end
 
+  def test_warns_when_the_unit_does_not_send_email
+    @task.unit.update!(send_notifications: false)
+
+    Notification.refresh_feedback_warning_notifications!(now: @now)
+
+    assert Notification.exists?(task: @task, kind: 'feedback_warning', recipient: @tutor)
+  end
+
   def test_does_not_warn_before_the_threshold
     @task.update!(submission_date: @now - 5.days + 1.minute)
 

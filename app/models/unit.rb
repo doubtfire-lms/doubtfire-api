@@ -3876,7 +3876,7 @@ class Unit < ApplicationRecord
   end
 
   def create_weekly_summary_notifications(summary_stats, recipient_ids: nil)
-    return unless send_notifications
+    return unless generate_weekly_summaries
     return unless within_last_teaching_date?(summary_stats[:week_end])
 
     summary_recipients = recipient_ids.presence

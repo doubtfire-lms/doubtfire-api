@@ -1085,6 +1085,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_27_094931) do
     t.integer "discuss_timeout_warning_days", default: 7, null: false
     t.integer "discuss_timeout_expire_days", default: 14, null: false
     t.date "last_teaching_date", null: false
+    t.boolean "generate_weekly_summaries", default: true, null: false
     t.index ["draft_task_definition_id"], name: "index_units_on_draft_task_definition_id"
     t.index ["main_convenor_id"], name: "index_units_on_main_convenor_id"
     t.index ["overseer_image_id"], name: "index_units_on_overseer_image_id"
