@@ -460,6 +460,8 @@ class Notification < ApplicationRecord
       # notification. Status comments are :none as well, but they do notify and are
       # handled by the branch above.
       return nil if comment.attention_none?
+      # Staff see student comments in their task inbox, so they are not notified as well.
+      return nil if student_actor?(comment)
 
       'new_task_comment'
     end

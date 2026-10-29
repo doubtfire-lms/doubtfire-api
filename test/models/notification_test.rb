@@ -39,12 +39,11 @@ class NotificationTest < ActiveSupport::TestCase
     assert_not Notification.exists?(task_comment: comment, recipient: @student)
   end
 
-  def test_student_feedback_notifies_staff_but_student_status_does_not
-    comment = @task.add_text_comment(@student, 'Could you clarify this feedback?')
+  def test_student_comments_and_status_changes_do_not_notify_staff
+    @task.add_text_comment(@student, 'Could you clarify this feedback?')
     @task.add_status_comment(@student, TaskStatus.ready_for_feedback)
 
-    assert Notification.exists?(task_comment: comment, recipient: @tutor, kind: 'new_task_comment')
-    assert_not Notification.exists?(recipient: @tutor, kind: 'task_status_changed')
+    assert_not Notification.exists?(recipient: @tutor)
   end
 
   def test_staff_group_feedback_fans_out_to_each_students_corresponding_task
@@ -128,7 +127,7 @@ class NotificationTest < ActiveSupport::TestCase
   end
 
   def test_a_tutor_note_groups_apart_from_the_tasks_own_notifications
-    @task.add_text_comment(@student, 'Can you check this change?')
+    FactoryBot.create(:notification, recipient: @tutor, unit: @unit, project: @task.project, task: @task)
     unit_role = @unit.unit_role_for(@tutor)
     tutor_note = unit_role.add_tutor_note(@unit.main_convenor_user, 'Please follow up', @task.id)
     Notification.create_for_tutor_note(tutor_note, @tutor, 'moderation_note_added')
