@@ -228,6 +228,29 @@ class NotificationJobsTest < ActiveSupport::TestCase
     assert_nil notification.email_sent_at
   end
 
+  def test_digest_shows_the_task_badge_status_chip_and_icons
+    settings = create_settings
+    unit = FactoryBot.create(:unit, task_count: 1)
+    project = unit.active_projects.first
+    task = project.task_for_task_definition(unit.task_definitions.first)
+    FactoryBot.create(
+      :notification,
+      recipient: settings.user, unit: unit, project: project, task: task,
+      kind: 'task_status_changed', task_status: TaskStatus.complete
+    )
+    FactoryBot.create(:notification, recipient: settings.user, unit: unit, project: project, kind: 'portfolio_ready')
+
+    assert_emails 1 do
+      SendNotificationDigestJob.new.perform(settings.id)
+    end
+
+    digest_html = ActionMailer::Base.deliveries.last.html_part.body.to_s
+    assert_includes digest_html, '/assets/images/email/status-complete.png'
+    assert_includes digest_html, 'alt="Complete"'
+    assert_includes digest_html, '/assets/images/email/kind-notifications.png'
+    assert_match(/>\s*#{Regexp.escape(task.task_definition.abbreviation)}\s*</, digest_html)
+  end
+
   def test_activity_after_the_unit_ends_is_processed_without_sending
     settings = create_settings
     notification = FactoryBot.create(:notification, recipient: settings.user)
