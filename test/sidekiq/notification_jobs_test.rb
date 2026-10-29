@@ -228,6 +228,19 @@ class NotificationJobsTest < ActiveSupport::TestCase
     assert_nil notification.email_sent_at
   end
 
+  def test_an_inactive_unit_is_processed_without_sending
+    settings = create_settings
+    notification = FactoryBot.create(:notification, recipient: settings.user)
+    notification.unit.update!(active: false)
+
+    assert_no_emails do
+      SendNotificationDigestJob.new.perform(settings.id)
+    end
+
+    assert_not_nil notification.reload.email_processed_at
+    assert_nil notification.email_sent_at
+  end
+
   def test_a_muted_unit_is_processed_without_sending
     settings = create_settings
     notification = FactoryBot.create(:notification, recipient: settings.user)

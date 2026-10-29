@@ -41,7 +41,8 @@ class SendNotificationDigestJob
   private
 
   def deliverable?(setting, notification, now)
-    notification.unit.send_notifications &&
+    notification.unit.active &&
+      notification.unit.send_notifications &&
       !notification.recipient_withdrawn? &&
       notification.current_for_delivery?(now: now) &&
       setting.delivers?(notification.unit, notification.kind, :email)

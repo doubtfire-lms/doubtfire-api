@@ -210,6 +210,7 @@ class Notification < ApplicationRecord
     unit = attributes.fetch(:unit)
     kind = attributes.fetch(:kind)
     deduplication_key = attributes.fetch(:deduplication_key)
+    return unless unit.active
     return if withdrawn_student?(attributes[:project], recipient)
 
     settings = NotificationSetting.for(recipient)
@@ -496,7 +497,7 @@ class Notification < ApplicationRecord
   end
 
   def self.each_task_deadline_candidate(now:)
-    Unit.within_last_teaching_date(now).where(start_date: ..now).find_each do |unit|
+    Unit.within_last_teaching_date(now).where(active: true, start_date: ..now).find_each do |unit|
       unit.active_projects.includes(:user).find_each do |project|
         project.assigned_task_defs.find_each do |task_definition|
           yield project.task_for_task_definition(task_definition)
@@ -539,6 +540,7 @@ class Notification < ApplicationRecord
 
   def self.task_deadline_eligible?(task, now:)
     task.project.enrolled &&
+      task.unit.active &&
       task.unit.within_last_teaching_date?(now) &&
       task.unit.start_date <= now &&
       task.task_definition.target_grade <= task.project.target_grade &&
@@ -549,6 +551,7 @@ class Notification < ApplicationRecord
   def self.feedback_warning_eligible?(task, now:, started_at: nil)
     eligible =
       task.project.enrolled &&
+      task.unit.active &&
       task.unit.within_last_teaching_date?(now) &&
       task.unit.start_date <= now &&
       task.task_definition.target_grade <= task.project.target_grade &&

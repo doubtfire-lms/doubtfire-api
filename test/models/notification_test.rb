@@ -21,6 +21,14 @@ class NotificationTest < ActiveSupport::TestCase
     assert_nil notification.read_at
   end
 
+  def test_inactive_units_create_no_notifications
+    @task.unit.update!(active: false)
+
+    comment = @task.add_text_comment(@tutor, 'Please revise this section')
+
+    assert_not Notification.exists?(task_comment: comment)
+  end
+
   def test_withdrawal_clears_and_stops_student_notifications
     @task.add_text_comment(@tutor, 'Please revise this section')
 

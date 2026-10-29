@@ -58,6 +58,14 @@ class TaskDeadlineNotificationJobTest < ActiveSupport::TestCase
     assert_equal ['task_start_now'], @student.received_notifications.where(task: @task).pluck(:kind)
   end
 
+  def test_skips_inactive_units
+    @unit.update!(active: false)
+
+    travel_to(@now) { Notification.refresh_task_deadline_notifications! }
+
+    assert_not Notification.exists?(task: @task)
+  end
+
   def test_creates_reminders_when_the_unit_does_not_send_email
     @unit.update!(send_notifications: false)
 
