@@ -93,6 +93,67 @@ class StaffNotesApiTest < ActiveSupport::TestCase
     assert_equal response_staff_note.id, second_staff_note.reply_to_id
   end
 
+  def test_tutor_can_post_and_view_image_attachment_but_student_cannot
+    unit = FactoryBot.create(:unit, code: 'COS10001')
+    student = FactoryBot.create(:user, :student)
+    project = unit.enrol_student(student, nil)
+    tutor = FactoryBot.create(:user, :tutor)
+    unit.employ_staff(tutor, Role.tutor)
+
+    add_auth_header_for(user: tutor)
+    post "/api/projects/#{project.id}/staff_notes", {
+      note: '',
+      attachment: upload_file('test_files/submissions/Deakin_Logo.jpeg', 'image/jpeg')
+    }
+    assert_equal 201, last_response.status, last_response.body
+
+    response_note = last_response_body
+    note = StaffNote.find(response_note['id'])
+    assert_equal true, response_note['has_attachment']
+    assert_equal 'image', response_note['attachment_type']
+    assert_equal 'image/jpeg', note.content_type
+    assert File.file?(note.attachment_path)
+    attachment_path = note.attachment_path
+
+    get "/api/projects/#{project.id}/staff_notes/#{note.id}/attachment"
+    assert_equal 200, last_response.status
+    assert_match(%r{image/}, last_response.headers['Content-Type'])
+
+    add_auth_header_for(user: student)
+    get "/api/projects/#{project.id}/staff_notes/#{note.id}/attachment"
+    assert_equal 403, last_response.status
+
+    add_auth_header_for(user: tutor)
+    delete "/api/projects/#{project.id}/staff_notes/#{note.id}"
+    assert_equal 200, last_response.status
+    assert_not File.exist?(attachment_path)
+  end
+
+  def test_tutor_can_post_pdf_and_invalid_attachment_is_rejected
+    unit = FactoryBot.create(:unit, code: 'COS10001')
+    student = FactoryBot.create(:user, :student)
+    project = unit.enrol_student(student, nil)
+    tutor = FactoryBot.create(:user, :tutor)
+    unit.employ_staff(tutor, Role.tutor)
+
+    add_auth_header_for(user: tutor)
+    post "/api/projects/#{project.id}/staff_notes", {
+      attachment: upload_file('test_files/submissions/valid.pdf', 'application/pdf')
+    }
+    assert_equal 201, last_response.status, last_response.body
+    assert_equal 'pdf', last_response_body['attachment_type']
+    assert_equal true, last_response_body['has_attachment']
+    assert_equal 'application/pdf', project.staff_notes.last.content_type
+
+    post "/api/projects/#{project.id}/staff_notes", {
+      attachment: upload_file('test_files/csv_test_files/COS10001-Students.csv', 'text/csv')
+    }
+    assert_equal 400, last_response.status
+    assert_equal 1, project.staff_notes.count
+
+    project.staff_notes.last.destroy!
+  end
+
   def test_only_convenors_and_admins_can_upload_staff_notes_csv
     unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false)
     admin_unit = FactoryBot.create(:unit, code: 'COS10002', with_students: false)

@@ -717,6 +717,8 @@ class Task < ApplicationRecord
 
     return nil if role.nil?
 
+    return nil if [:student, :group_member].include?(role) && task_definition.staff_managed_task
+
     #
     # Ensure that only staff can change from staff assigned status if
     # this is a restricted task
@@ -802,6 +804,27 @@ class Task < ApplicationRecord
       logger.debug "Group task transition for #{group_submission} set to status #{trigger} (id=#{id})"
       unless [TaskStatus.working_on_it, TaskStatus.need_help].include? task_status
         ensured_group_submission.propagate_transition self, trigger, by_user, quality
+      end
+    end
+
+    true
+  end
+
+  def reuse_existing_submission_for_feedback(by_user)
+    related_tasks = group_submission ? group_submission.tasks.to_a : [self]
+    eligible = related_tasks.all? do |task|
+      role = task.role_for(by_user)
+      role.in?([:tutor, :admin]) &&
+        task.task_status != TaskStatus.ready_for_feedback &&
+        task.submission_date.present? && task.has_pdf &&
+        task.transition_assignment_allowed?(by_user, role, false)
+    end
+    return nil unless eligible
+
+    Task.transaction do
+      related_tasks.each do |task|
+        task.engage TaskStatus.ready_for_feedback
+        task.add_status_comment(by_user, TaskStatus.ready_for_feedback)
       end
     end
 
@@ -1510,7 +1533,7 @@ class Task < ApplicationRecord
       @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
       @include_pax = !is_retry
       @work_id = FileHelper.sanitized_path(
-        "task-#{Time.current.strftime('%Y%m%d-%H%M')}-#{task.project.student.username}-#{task.task_definition.abbreviation}-#{task.id}-#{Process.pid}#{'-retry' if is_retry}"
+        "task-#{Time.current.strftime('%Y%m%d-%H%M')}-#{task.unit.code}-#{task.project.student.username}-#{task.task_definition.abbreviation}-#{task.id}-#{Process.pid}#{'-retry' if is_retry}"
       )
       host = Doubtfire::Application.config.institution[:host].to_s
       host = "http://#{host}" unless host.match?(%r{\Ahttps?://})
@@ -1729,7 +1752,7 @@ class Task < ApplicationRecord
         source_path,
         destination_path,
         work_id: FileHelper.gotenberg_work_id(
-          kind: 'task', username: project.student.username, label: task_definition.abbreviation
+          unit_code: unit.code, kind: 'task', username: project.student.username, label: task_definition.abbreviation
         )
       )
       FileUtils.rm_f(source_path)
@@ -1789,6 +1812,10 @@ class Task < ApplicationRecord
   # Checks to make sure that the files match what we expect
   #
   def accept_submission(current_user, files, ui, contributions, trigger, alignments, accepted_tii_eula: false, test_submission: false)
+    if task_definition.staff_managed_task && [:student, :group_member].include?(role_for(current_user))
+      ui.error!({ 'error' => 'Only teaching staff can upload a submission for this task.' }, 403)
+    end
+
     submission_lock_target.with_lock do
     # Ensure there is not a submission already in process
     if processing_pdf?

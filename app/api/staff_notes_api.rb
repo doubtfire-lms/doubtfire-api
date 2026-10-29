@@ -3,6 +3,7 @@ require 'grape'
 class StaffNotesApi < Grape::API
   helpers AuthenticationHelpers
   helpers AuthorisationHelpers
+  helpers FileStreamHelper
 
   before do
     authenticated?
@@ -27,7 +28,8 @@ class StaffNotesApi < Grape::API
   desc "Create a new staff note for a project"
   params do
     requires :project_id,   type: Integer, desc: 'Project to add the staff note for'
-    requires :note,         type: String, desc: 'The text to add to the staff note'
+    optional :note,         type: String, desc: 'The text to add to the staff note'
+    optional :attachment,   type: File, desc: 'Image or PDF attachment'
     optional :reply_to_id,  type: Integer, desc: 'ID of the staff note this is being replied to'
   end
   post '/projects/:project_id/staff_notes' do
@@ -38,6 +40,24 @@ class StaffNotesApi < Grape::API
     end
 
     text_note = params[:note]
+    attached_file = params[:attachment]
+
+    if attached_file.present?
+      file_size = File.size?(attached_file['tempfile'].path)
+      error!({ error: 'Attachment is empty.' }, 400) if file_size.blank?
+      error!({ error: 'Attachment exceeds the maximum attachment size of 30MB.' }, 400) if file_size >= 30_000_000
+
+      image_result = FileHelper.accept_file(attached_file, 'staff note image', 'image')
+      attachment_type = if image_result[:accepted]
+                          'image'
+                        elsif File.extname(attached_file[:filename].to_s).downcase == '.pdf' &&
+                              FileHelper.accept_file(attached_file, 'staff note PDF', 'document')[:accepted]
+                          'pdf'
+                        end
+      error!({ error: 'Only images and PDFs can be attached to staff notes.' }, 400) if attachment_type.nil?
+    end
+
+    error!({ error: 'Note text or an attachment is required.' }, 400) if text_note.blank? && attached_file.blank?
 
     reply_to_id = params[:reply_to_id]
     if reply_to_id.present?
@@ -46,13 +66,43 @@ class StaffNotesApi < Grape::API
       error!(error: 'Original staff note is not in this project.') if project.staff_notes.find(reply_to_id).blank?
     end
 
-    result = project.add_staff_note(current_user, text_note, reply_to_id)
+    result = project.add_staff_note(current_user, text_note, reply_to_id, attachment: attached_file.present?)
 
     if result.nil?
       error!({ error: 'Duplicate note.' }, 403)
     else
+      if attached_file.present?
+        begin
+          result.add_attachment(attached_file, attachment_type)
+        rescue StandardError
+          result.destroy!
+          raise
+        end
+      end
       present result, with: Entities::StaffNoteEntity, user: current_user
     end
+  end
+
+  desc 'Get an attachment related to a staff note'
+  params do
+    optional :as_attachment, type: Boolean, default: false
+  end
+  get '/projects/:project_id/staff_notes/:id/attachment' do
+    project = Project.find(params[:project_id])
+    unless authorise?(current_user, project, :get_staff_note)
+      error!({ error: 'You do not have permission to access this project' }, 403)
+    end
+
+    staff_note = project.staff_notes.find(params[:id])
+    error!({ error: 'No attachment for this staff note.' }, 404) unless staff_note.attachment?
+
+    content_type staff_note.content_type
+    env['api.format'] = :binary
+    if params[:as_attachment]
+      header['Content-Disposition'] = "attachment; filename=#{staff_note.attachment_file_name}"
+    end
+
+    stream_file staff_note.attachment_path
   end
 
   desc "Delete a staff note for a project"

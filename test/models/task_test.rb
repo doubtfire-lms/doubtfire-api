@@ -258,21 +258,21 @@ class TaskTest < ActiveSupport::TestCase
   def test_pdf_creation_with_gif
     unit = Unit.first
     td = TaskDefinition.new({
-        unit_id: unit.id,
-        tutorial_stream: unit.tutorial_streams.first,
-        name: 'Task with image',
-        description: 'img task',
-        weighting: 4,
-        target_grade: 0,
-        start_date: unit.start_date + 1.week,
-        target_date: unit.start_date + 2.weeks,
-        abbreviation: 'TaskPdfWithGif',
-        restrict_status_updates: false,
-        upload_requirements: [ { "key" => 'file0', "name" => 'An Image', "type" => 'image' } ],
-        plagiarism_warn_pct: 0.8,
-        is_graded: false,
-        max_quality_pts: 0
-      })
+                              unit_id: unit.id,
+                              tutorial_stream: unit.tutorial_streams.first,
+                              name: 'Task with image',
+                              description: 'img task',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: unit.start_date + 1.week,
+                              target_date: unit.start_date + 2.weeks,
+                              abbreviation: 'TaskPdfWithGif',
+                              restrict_status_updates: false,
+                              upload_requirements: [{ "key" => 'file0', "name" => 'An Image', "type" => 'image' }],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0
+                            })
     td.save!
 
     data_to_post = {
@@ -363,21 +363,21 @@ class TaskTest < ActiveSupport::TestCase
   def test_image_upload
     unit = Unit.first
     td = TaskDefinition.new({
-        unit_id: unit.id,
-        tutorial_stream: unit.tutorial_streams.first,
-        name: 'Task with image2',
-        description: 'img task2',
-        weighting: 4,
-        target_grade: 0,
-        start_date: unit.start_date + 1.week,
-        target_date: unit.start_date + 2.weeks,
-        abbreviation: 'TaskPdfWithGif2',
-        restrict_status_updates: false,
-        upload_requirements: [ { "key" => 'file0', "name" => 'An Image', "type" => 'image' } ],
-        plagiarism_warn_pct: 0.8,
-        is_graded: false,
-        max_quality_pts: 0
-      })
+                              unit_id: unit.id,
+                              tutorial_stream: unit.tutorial_streams.first,
+                              name: 'Task with image2',
+                              description: 'img task2',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: unit.start_date + 1.week,
+                              target_date: unit.start_date + 2.weeks,
+                              abbreviation: 'TaskPdfWithGif2',
+                              restrict_status_updates: false,
+                              upload_requirements: [{ "key" => 'file0', "name" => 'An Image', "type" => 'image' }],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0
+                            })
     td.save!
 
     data_to_post = {
@@ -405,21 +405,21 @@ class TaskTest < ActiveSupport::TestCase
   def test_pdf_creation_with_jpg
     unit = Unit.first
     td = TaskDefinition.new({
-        unit_id: unit.id,
-        tutorial_stream: unit.tutorial_streams.first,
-        name: 'Task with image',
-        description: 'img task',
-        weighting: 4,
-        target_grade: 0,
-        start_date: unit.start_date + 1.week,
-        target_date: unit.start_date + 2.weeks,
-        abbreviation: 'TaskPdfWithJpg',
-        restrict_status_updates: false,
-        upload_requirements: [ { "key" => 'file0', "name" => 'An Image', "type" => 'image' } ],
-        plagiarism_warn_pct: 0.8,
-        is_graded: false,
-        max_quality_pts: 0
-      })
+                              unit_id: unit.id,
+                              tutorial_stream: unit.tutorial_streams.first,
+                              name: 'Task with image',
+                              description: 'img task',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: unit.start_date + 1.week,
+                              target_date: unit.start_date + 2.weeks,
+                              abbreviation: 'TaskPdfWithJpg',
+                              restrict_status_updates: false,
+                              upload_requirements: [{ "key" => 'file0', "name" => 'An Image', "type" => 'image' }],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0
+                            })
     td.save!
 
     data_to_post = {
@@ -450,21 +450,21 @@ class TaskTest < ActiveSupport::TestCase
   def test_pdf_with_quotes_in_task_title
     unit = Unit.first
     td = TaskDefinition.new({
-        unit_id: unit.id,
-        tutorial_stream: unit.tutorial_streams.first,
-        name: '"Quoted Task"',
-        description: 'Task with quotes in name',
-        weighting: 4,
-        target_grade: 0,
-        start_date: unit.start_date + 1.week,
-        target_date: unit.start_date + 2.weeks,
-        abbreviation: 'TaskQuoted',
-        restrict_status_updates: false,
-        upload_requirements: [ { "key" => 'file0', "name" => 'An Image', "type" => 'image' } ],
-        plagiarism_warn_pct: 0.8,
-        is_graded: false,
-        max_quality_pts: 0
-      })
+                              unit_id: unit.id,
+                              tutorial_stream: unit.tutorial_streams.first,
+                              name: 'The "Quoted" Task',
+                              description: 'Task with quotes in name',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: unit.start_date + 1.week,
+                              target_date: unit.start_date + 2.weeks,
+                              abbreviation: 'TaskQuoted',
+                              restrict_status_updates: false,
+                              upload_requirements: [{ "key" => 'file0', "name" => 'An Image', "type" => 'image' }],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0
+                            })
     td.save!
 
     data_to_post = {
@@ -491,8 +491,8 @@ class TaskTest < ActiveSupport::TestCase
   end
 
   def test_copy_draft_learning_summary
-    unit = FactoryBot.create :unit, student_count:1, task_count:0
-    task_def = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [{'key' => 'file0','name' => 'Draft learning summary','type' => 'document'}])
+    unit = FactoryBot.create :unit, student_count: 1, task_count: 0
+    task_def = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [{ 'key' => 'file0', 'name' => 'Draft learning summary', 'type' => 'document' }])
 
     # Maybe make this call API to set
     unit.draft_task_definition = task_def
@@ -505,13 +505,13 @@ class TaskTest < ActiveSupport::TestCase
     project = unit.active_projects.first
 
     # Check we can't auto generate if we do not have a learning summary report
-    refute project.learning_summary_report_exists?
-    refute project.auto_generate_portfolio
-    refute project.compile_portfolio
-    refute project.portfolio_auto_generated
+    assert_not project.learning_summary_report_exists?
+    assert_not project.auto_generate_portfolio
+    assert_not project.compile_portfolio
+    assert_not project.portfolio_auto_generated
 
     path = File.join(project.portfolio_temp_path, '000-document-LearningSummaryReport.pdf')
-    refute File.exist? path
+    assert_not File.exist? path
 
     data_to_post = with_file('test_files/unit_files/sample-learning-summary.pdf', 'application/pdf', data_to_post)
 
@@ -546,9 +546,9 @@ class TaskTest < ActiveSupport::TestCase
 
     # Check auto generate doesn't work if we are not enrolled
     project.enrolled = false
-    refute project.auto_generate_portfolio
-    refute project.compile_portfolio
-    refute project.portfolio_auto_generated
+    assert_not project.auto_generate_portfolio
+    assert_not project.compile_portfolio
+    assert_not project.portfolio_auto_generated
 
     unit.destroy
     assert_not File.exist? path
@@ -606,8 +606,8 @@ class TaskTest < ActiveSupport::TestCase
   end
 
   def test_draft_learning_summary_wont_copy
-    unit = FactoryBot.create :unit, student_count:1, task_count:0
-    task_def = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [{'key' => 'file0','name' => 'Draft learning summary','type' => 'document'}])
+    unit = FactoryBot.create :unit, student_count: 1, task_count: 0
+    task_def = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [{ 'key' => 'file0', 'name' => 'Draft learning summary', 'type' => 'document' }])
 
     unit.draft_task_definition = task_def
 
@@ -647,21 +647,21 @@ class TaskTest < ActiveSupport::TestCase
   def test_ipynb_to_pdf
     unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
     td = TaskDefinition.new({
-        unit_id: unit.id,
-        tutorial_stream: unit.tutorial_streams.first,
-        name: 'Task with ipynb',
-        description: 'Code task',
-        weighting: 4,
-        target_grade: 0,
-        start_date: unit.start_date + 1.week,
-        target_date: unit.start_date + 2.weeks,
-        abbreviation: 'TaskPdfWithIpynb',
-        restrict_status_updates: false,
-        upload_requirements: [ { "key" => 'file0', "name" => 'A notebook', "type" => 'code' } ],
-        plagiarism_warn_pct: 0.8,
-        is_graded: false,
-        max_quality_pts: 0
-      })
+                              unit_id: unit.id,
+                              tutorial_stream: unit.tutorial_streams.first,
+                              name: 'Task with ipynb',
+                              description: 'Code task',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: unit.start_date + 1.week,
+                              target_date: unit.start_date + 2.weeks,
+                              abbreviation: 'TaskPdfWithIpynb',
+                              restrict_status_updates: false,
+                              upload_requirements: [{ "key" => 'file0', "name" => 'A notebook', "type" => 'code' }],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0
+                            })
     td.save!
 
     data_to_post = {
@@ -766,21 +766,21 @@ class TaskTest < ActiveSupport::TestCase
   def test_code_submission_with_long_lines
     unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
     td = TaskDefinition.new({
-        unit_id: unit.id,
-        tutorial_stream: unit.tutorial_streams.first,
-        name: 'Task with super ling lines in code submission',
-        description: 'Code task',
-        weighting: 4,
-        target_grade: 0,
-        start_date: unit.start_date + 1.week,
-        target_date: unit.start_date + 2.weeks,
-        abbreviation: 'Long',
-        restrict_status_updates: false,
-        upload_requirements: [ { "key" => 'file0', "name" => 'long.py', "type" => 'code' } ],
-        plagiarism_warn_pct: 0.8,
-        is_graded: false,
-        max_quality_pts: 0
-      })
+                              unit_id: unit.id,
+                              tutorial_stream: unit.tutorial_streams.first,
+                              name: 'Task with super ling lines in code submission',
+                              description: 'Code task',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: unit.start_date + 1.week,
+                              target_date: unit.start_date + 2.weeks,
+                              abbreviation: 'Long',
+                              restrict_status_updates: false,
+                              upload_requirements: [{ "key" => 'file0', "name" => 'long.py', "type" => 'code' }],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0
+                            })
     td.save!
 
     data_to_post = {
@@ -840,21 +840,21 @@ class TaskTest < ActiveSupport::TestCase
   def test_code_submission_with_long_lines
     unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
     td = TaskDefinition.new({
-        unit_id: unit.id,
-        tutorial_stream: unit.tutorial_streams.first,
-        name: 'Task with super ling lines in code submission',
-        description: 'Code task',
-        weighting: 4,
-        target_grade: 0,
-        start_date: unit.start_date + 1.week,
-        target_date: unit.start_date + 2.weeks,
-        abbreviation: 'Long',
-        restrict_status_updates: false,
-        upload_requirements: [ { "key" => 'file0', "name" => 'long.py', "type" => 'code' } ],
-        plagiarism_warn_pct: 0.8,
-        is_graded: false,
-        max_quality_pts: 0
-      })
+                              unit_id: unit.id,
+                              tutorial_stream: unit.tutorial_streams.first,
+                              name: 'Task with super ling lines in code submission',
+                              description: 'Code task',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: unit.start_date + 1.week,
+                              target_date: unit.start_date + 2.weeks,
+                              abbreviation: 'Long',
+                              restrict_status_updates: false,
+                              upload_requirements: [{ "key" => 'file0', "name" => 'long.py', "type" => 'code' }],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0
+                            })
     td.save!
 
     data_to_post = {
@@ -914,21 +914,21 @@ class TaskTest < ActiveSupport::TestCase
   def test_code_submission_with_long_lines
     unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
     td = TaskDefinition.new({
-        unit_id: unit.id,
-        tutorial_stream: unit.tutorial_streams.first,
-        name: 'Task with super ling lines in code submission',
-        description: 'Code task',
-        weighting: 4,
-        target_grade: 0,
-        start_date: unit.start_date + 1.week,
-        target_date: unit.start_date + 2.weeks,
-        abbreviation: 'Long',
-        restrict_status_updates: false,
-        upload_requirements: [ { "key" => 'file0', "name" => 'long.py', "type" => 'code' } ],
-        plagiarism_warn_pct: 0.8,
-        is_graded: false,
-        max_quality_pts: 0
-      })
+                              unit_id: unit.id,
+                              tutorial_stream: unit.tutorial_streams.first,
+                              name: 'Task with super ling lines in code submission',
+                              description: 'Code task',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: unit.start_date + 1.week,
+                              target_date: unit.start_date + 2.weeks,
+                              abbreviation: 'Long',
+                              restrict_status_updates: false,
+                              upload_requirements: [{ "key" => 'file0', "name" => 'long.py', "type" => 'code' }],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0
+                            })
     td.save!
 
     data_to_post = {
@@ -988,21 +988,21 @@ class TaskTest < ActiveSupport::TestCase
   def test_pdf_validation_on_submit
     unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
     td = TaskDefinition.new({
-        unit_id: unit.id,
-        tutorial_stream: unit.tutorial_streams.first,
-        name: 'PDF Test Task',
-        description: 'Test task',
-        weighting: 4,
-        target_grade: 0,
-        start_date: unit.start_date + 1.week,
-        target_date: unit.start_date + 2.weeks,
-        abbreviation: 'PDFTestTask',
-        restrict_status_updates: false,
-        upload_requirements: [ { "key" => 'file0', "name" => 'A pdf file', "type" => 'document' } ],
-        plagiarism_warn_pct: 0.8,
-        is_graded: false,
-        max_quality_pts: 0
-      })
+                              unit_id: unit.id,
+                              tutorial_stream: unit.tutorial_streams.first,
+                              name: 'PDF Test Task',
+                              description: 'Test task',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: unit.start_date + 1.week,
+                              target_date: unit.start_date + 2.weeks,
+                              abbreviation: 'PDFTestTask',
+                              restrict_status_updates: false,
+                              upload_requirements: [{ "key" => 'file0', "name" => 'A pdf file', "type" => 'document' }],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0
+                            })
     td.save!
 
     data_to_post = {
@@ -1108,9 +1108,10 @@ class TaskTest < ActiveSupport::TestCase
     end
 
     assert converted
+    unit_code = task.unit.code.gsub(/[^A-Za-z0-9_-]/, '_')
     username = task.project.student.username.gsub(/[^A-Za-z0-9_-]/, '_')
     abbreviation = task.task_definition.abbreviation.gsub(/[^A-Za-z0-9_-]/, '_')
-    assert_match(/\A\d+-task-#{Regexp.escape(username)}-#{Regexp.escape(abbreviation)}-[0-9a-f-]{36}\z/, conversion_work_id)
+    assert_match(/\A\d+-#{Regexp.escape(unit_code)}-task-#{Regexp.escape(username)}-#{Regexp.escape(abbreviation)}-[0-9a-f-]{36}\z/, conversion_work_id)
     assert FileHelper.validate_pdf(task.final_pdf_path)[:valid]
 
     Zip::File.open(task.zip_file_path_for_done_task) do |archive|
@@ -1179,21 +1180,21 @@ class TaskTest < ActiveSupport::TestCase
   def test_pdf_creation_fails_on_invalid_pdf
     unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
     td = TaskDefinition.new({
-        unit_id: unit.id,
-        tutorial_stream: unit.tutorial_streams.first,
-        name: 'PDF Test Task',
-        description: 'Test task',
-        weighting: 4,
-        target_grade: 0,
-        start_date: unit.start_date + 1.week,
-        target_date: unit.start_date + 2.weeks,
-        abbreviation: 'PDFTestTask',
-        restrict_status_updates: false,
-        upload_requirements: [ { "key" => 'file0', "name" => 'A pdf file', "type" => 'code' } ],
-        plagiarism_warn_pct: 0.8,
-        is_graded: false,
-        max_quality_pts: 0
-      })
+                              unit_id: unit.id,
+                              tutorial_stream: unit.tutorial_streams.first,
+                              name: 'PDF Test Task',
+                              description: 'Test task',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: unit.start_date + 1.week,
+                              target_date: unit.start_date + 2.weeks,
+                              abbreviation: 'PDFTestTask',
+                              restrict_status_updates: false,
+                              upload_requirements: [{ "key" => 'file0', "name" => 'A pdf file', "type" => 'code' }],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0
+                            })
     td.save!
 
     data_to_post = {
@@ -1226,21 +1227,21 @@ class TaskTest < ActiveSupport::TestCase
   def test_pax_crash_does_not_stop_pdf_creation
     unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
     td = TaskDefinition.new({
-        unit_id: unit.id,
-        tutorial_stream: unit.tutorial_streams.first,
-        name: 'PDF Test Task',
-        description: 'Test task',
-        weighting: 4,
-        target_grade: 0,
-        start_date: unit.start_date + 1.week,
-        target_date: unit.start_date + 2.weeks,
-        abbreviation: 'PDFTestTask',
-        restrict_status_updates: false,
-        upload_requirements: [ { "key" => 'file0', "name" => 'A pdf file', "type" => 'document' } ],
-        plagiarism_warn_pct: 0.8,
-        is_graded: false,
-        max_quality_pts: 0
-      })
+                              unit_id: unit.id,
+                              tutorial_stream: unit.tutorial_streams.first,
+                              name: 'PDF Test Task',
+                              description: 'Test task',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: unit.start_date + 1.week,
+                              target_date: unit.start_date + 2.weeks,
+                              abbreviation: 'PDFTestTask',
+                              restrict_status_updates: false,
+                              upload_requirements: [{ "key" => 'file0', "name" => 'A pdf file', "type" => 'document' }],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0
+                            })
     td.save!
 
     data_to_post = {
@@ -1393,15 +1394,15 @@ class TaskTest < ActiveSupport::TestCase
     # Now... lets upload a submission with too many files
     begin
       task.accept_submission user,
-        [
-          {
-            id: 'file0',
-            name: 'Document 1',
-            type: 'document',
-            filename: 'file0.pdf',
-            "tempfile" => File.new(test_file_path('submissions/1.2P.pdf'))
-          }
-        ], self, nil, 'ready_for_feedback', nil
+                             [
+                               {
+                                 id: 'file0',
+                                 name: 'Document 1',
+                                 type: 'document',
+                                 filename: 'file0.pdf',
+                                 "tempfile" => File.new(test_file_path('submissions/1.2P.pdf'))
+                               }
+                             ], self, nil, 'ready_for_feedback', nil
       assert false, 'Should have raised an error with too many files submitted'
     rescue StandardError => e
       assert_equal :not_started, task.status
@@ -1448,15 +1449,15 @@ class TaskTest < ActiveSupport::TestCase
     # Now... try uploading again
     begin
       task.accept_submission user,
-        [
-          {
-            id: 'file0',
-            name: 'Document 1',
-            type: 'document',
-            filename: 'file0.pdf',
-            "tempfile" => File.new(test_file_path('submissions/1.2P.pdf'))
-          }
-        ], self, nil, 'ready_for_feedback', nil
+                             [
+                               {
+                                 id: 'file0',
+                                 name: 'Document 1',
+                                 type: 'document',
+                                 filename: 'file0.pdf',
+                                 "tempfile" => File.new(test_file_path('submissions/1.2P.pdf'))
+                               }
+                             ], self, nil, 'ready_for_feedback', nil
       assert false, 'Should have raised an error with existing upload in process'
     rescue StandardError => e
       assert_includes e.message, 'A submission is already being processed. Please wait for the current submission process to complete.'
@@ -1467,15 +1468,15 @@ class TaskTest < ActiveSupport::TestCase
 
     begin
       task.accept_submission user,
-        [
-          {
-            id: 'file0',
-            name: 'Document 1',
-            type: 'document',
-            filename: 'file0.pdf',
-            "tempfile" => File.new(test_file_path('submissions/1.2P.pdf'))
-          }
-        ], self, nil, 'ready_for_feedback', nil
+                             [
+                               {
+                                 id: 'file0',
+                                 name: 'Document 1',
+                                 type: 'document',
+                                 filename: 'file0.pdf',
+                                 "tempfile" => File.new(test_file_path('submissions/1.2P.pdf'))
+                               }
+                             ], self, nil, 'ready_for_feedback', nil
       assert false, 'Should have raised an error with existing upload in process'
     rescue StandardError => e
       assert_includes e.message, 'A submission is already being processed. Please wait for the current submission process to complete.'
@@ -1558,21 +1559,21 @@ class TaskTest < ActiveSupport::TestCase
   def test_portfolio_evidence_path
     unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
     td = TaskDefinition.new({
-        unit_id: unit.id,
-        tutorial_stream: unit.tutorial_streams.first,
-        name: 'Test task',
-        description: 'Code task',
-        weighting: 4,
-        target_grade: 0,
-        start_date: unit.start_date + 1.week,
-        target_date: unit.start_date + 2.weeks,
-        abbreviation: 'ABBR',
-        restrict_status_updates: false,
-        upload_requirements: [ { "key" => 'file0', "name" => 'Some Code', "type" => 'code' } ],
-        plagiarism_warn_pct: 0.8,
-        is_graded: false,
-        max_quality_pts: 0
-      })
+                              unit_id: unit.id,
+                              tutorial_stream: unit.tutorial_streams.first,
+                              name: 'Test task',
+                              description: 'Code task',
+                              weighting: 4,
+                              target_grade: 0,
+                              start_date: unit.start_date + 1.week,
+                              target_date: unit.start_date + 2.weeks,
+                              abbreviation: 'ABBR',
+                              restrict_status_updates: false,
+                              upload_requirements: [{ "key" => 'file0', "name" => 'Some Code', "type" => 'code' }],
+                              plagiarism_warn_pct: 0.8,
+                              is_graded: false,
+                              max_quality_pts: 0
+                            })
     td.save!
 
     data_to_post = {
@@ -1675,7 +1676,7 @@ class TaskTest < ActiveSupport::TestCase
                               target_date: unit.start_date + 1.week,
                               abbreviation: 'ABBR',
                               restrict_status_updates: false,
-                              upload_requirements: [ ],
+                              upload_requirements: [],
                               plagiarism_warn_pct: 0.8,
                               is_graded: false,
                               max_quality_pts: 0
@@ -1727,12 +1728,12 @@ class TaskTest < ActiveSupport::TestCase
                               description: 'Test task',
                               weighting: 4,
                               target_grade: 0,
-                              start_date: Time.zone.now - 3.week,
-                              target_date: Time.zone.now - 2.week,
+                              start_date: Time.zone.now - 3.weeks,
+                              target_date: Time.zone.now - 2.weeks,
                               due_date: Time.zone.now + 1.week,
                               abbreviation: 'ABBR',
                               restrict_status_updates: false,
-                              upload_requirements: [ ],
+                              upload_requirements: [],
                               plagiarism_warn_pct: 0.8,
                               is_graded: false,
                               max_quality_pts: 0

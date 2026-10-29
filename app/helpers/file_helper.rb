@@ -195,8 +195,8 @@ module FileHelper
     false
   end
 
-  def gotenberg_work_id(kind:, username:, label:)
-    [Time.current.to_i, kind, username, label, SecureRandom.uuid]
+  def gotenberg_work_id(unit_code:, kind:, username:, label:)
+    [Time.current.to_i, unit_code, kind, username, label, SecureRandom.uuid]
       .map { |part| part.to_s.gsub(/[^A-Za-z0-9_-]/, '_') }
       .join('-')
   end
@@ -834,7 +834,7 @@ module FileHelper
   def move_files(from_path, to_path, retain_from = false, only_before = nil)
     FileUtils.mkdir_p(to_path)
     files = Dir.glob('*', base: from_path).map { |name| File.join(from_path, name) }.filter do |path|
-      !retain_from || only_before.nil? || File.ctime(path) < only_before
+      (!retain_from || only_before.nil? || File.ctime(path) < only_before) && (!block_given? || yield(path))
     end
     FileUtils.mv(files, to_path, force: true)
 

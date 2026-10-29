@@ -11,6 +11,52 @@ class TasksApiTest < ActiveSupport::TestCase
     Rails.application
   end
 
+  def test_staff_can_request_feedback_using_existing_submission
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 1)
+    task_definition = unit.task_definitions.first
+    task_definition.update!(upload_requirements: [{ 'key' => 'file0', 'name' => 'Work', 'type' => 'document' }])
+    project = unit.active_projects.first
+    task = project.task_for_task_definition(task_definition)
+    submitted_at = 2.days.ago
+    task.submit(project.user, submitted_at)
+    task.update!(task_status: TaskStatus.assess_in_portfolio)
+    pdf_path = task.final_pdf_path
+    path = "/api/projects/#{project.id}/task_def_id/#{task_definition.id}"
+
+    add_auth_header_for(user: unit.main_convenor_user)
+    put path, trigger: 'ready_for_feedback', reuse_existing_submission: true
+    assert_equal 409, last_response.status
+    assert_equal TaskStatus.assess_in_portfolio, task.reload.task_status
+
+    FileUtils.mkdir_p(File.dirname(pdf_path))
+    FileUtils.cp(Rails.root.join('test_files/submissions/1.2P.pdf'), pdf_path)
+
+    submission_count = task.task_submissions.count
+    original_submission_date = task.submission_date
+    original_pdf = File.binread(pdf_path)
+    add_auth_header_for(user: project.user)
+    put path, trigger: 'ready_for_feedback', reuse_existing_submission: true
+    assert_equal 403, last_response.status
+    assert_equal TaskStatus.assess_in_portfolio, task.reload.task_status
+
+    add_auth_header_for(user: unit.main_convenor_user)
+    put path, trigger: 'ready_for_feedback', reuse_existing_submission: true
+    assert_equal 200, last_response.status, last_response_body
+    assert_equal TaskStatus.ready_for_feedback, task.reload.task_status
+    assert_equal original_submission_date, task.submission_date
+    assert_equal submission_count, task.task_submissions.count
+    assert_equal original_pdf, File.binread(pdf_path)
+
+    task.update!(task_status: TaskStatus.redo)
+    put path, trigger: 'ready_for_feedback', reuse_existing_submission: true
+    assert_equal 200, last_response.status, last_response_body
+    assert_equal TaskStatus.ready_for_feedback, task.reload.task_status
+    assert_equal original_submission_date, task.submission_date
+    assert_equal submission_count, task.task_submissions.count
+  ensure
+    FileUtils.rm_f(pdf_path) if pdf_path
+  end
+
   def test_task_get
     # The GET we are testing
     unit = FactoryBot.create(:unit, perform_submissions: true)
@@ -863,7 +909,17 @@ class TasksApiTest < ActiveSupport::TestCase
     assert_instance_of TaskDiscussedComment, discussed_comment
     assert_equal 'discussed_in_class', discussed_comment.content_type
 
+    put "/api/projects/#{project.id}/task_def_id/#{td.id}", { discussed: true }
+    assert_equal 200, last_response.status
+    task.reload
+    assert_equal 1, task.comments.where(content_type: 'discussed_in_class').count
+
     task.add_text_comment(tutor, 'Manual tutor feedback')
+
+    put "/api/projects/#{project.id}/task_def_id/#{td.id}", { discussed: true }
+    assert_equal 200, last_response.status
+    task.reload
+    assert_equal 2, task.comments.where(content_type: 'discussed_in_class').count
 
     put "/api/projects/#{project.id}/task_def_id/#{td.id}", { trigger: 'complete' }
     assert_equal 200, last_response.status
@@ -897,11 +953,13 @@ class TasksApiTest < ActiveSupport::TestCase
 
     add_auth_header_for(user: tutor)
 
+    task.add_discussed_comment(tutor)
+
     put "/api/projects/#{project.id}/task_def_id/#{td.id}", { trigger: 'complete', discussed: true }
     assert_equal 403, last_response.status
     task.reload
     assert_not_equal TaskStatus.complete, task.task_status
-    assert_not task.has_discussed_in_class_comment?
+    assert_equal 1, task.comments.where(content_type: 'discussed_in_class').count
 
     task.add_text_comment(tutor, 'Manual tutor feedback')
 
@@ -909,7 +967,7 @@ class TasksApiTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
     task.reload
     assert_equal TaskStatus.complete, task.task_status
-    assert task.has_discussed_in_class_comment?
+    assert_equal 2, task.comments.where(content_type: 'discussed_in_class').count
   end
 
   def test_require_comment_for_feedback_submission_assess_in_portfolio

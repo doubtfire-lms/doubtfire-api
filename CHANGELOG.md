@@ -2,6 +2,66 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.1.0-2](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-1...v11.1.0-2) (2026-10-28)
+
+
+### Bug Fixes
+
+* allow multiple discussed in class ([c9244cf](https://github.com/b0ink/doubtfire-deploy/commit/c9244cffb4478c2654f59294b968acea0016c152))
+
+## [11.1.0-1](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-0...v11.1.0-1) (2026-10-27)
+
+
+### Bug Fixes
+
+* use jemalloc in production images to curb Sidekiq RSS growth ([#740](https://github.com/b0ink/doubtfire-deploy/issues/740)) ([08251e1](https://github.com/b0ink/doubtfire-deploy/commit/08251e1971de05b8c4cbf63e5b75d40291b30d10))
+
+## [11.1.0-0](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.1...v11.1.0-0) (2026-10-27)
+
+
+### Features
+
+* rate limit POST /api/auth with Rack::Attack ([#634](https://github.com/b0ink/doubtfire-deploy/issues/634)) ([ce2b542](https://github.com/b0ink/doubtfire-deploy/commit/ce2b54225f7184efc4dc51e51097935b00cfc76c))
+
+
+### Bug Fixes
+
+* handle malformed SAMLResponse on saml auth and logout endpoints ([#737](https://github.com/b0ink/doubtfire-deploy/issues/737)) ([2530fdd](https://github.com/b0ink/doubtfire-deploy/commit/2530fdd9758eb439b35f2778b14076f813b4fc75))
+
+### [11.0.1](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0...v11.0.1) (2026-10-26)
+
+
+### Bug Fixes
+
+* allow task title punctuation and clarify validation errors ([#735](https://github.com/b0ink/doubtfire-deploy/issues/735)) ([4675793](https://github.com/b0ink/doubtfire-deploy/commit/467579343cc5085d83e43a846019ca04addb27cb))
+
+## [11.0.0](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-79...v11.0.0) (2026-10-26)
+
+## [11.0.0-79](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-78...v11.0.0-79) (2026-10-26)
+
+
+### Bug Fixes
+
+* skip docker login job if vars not set ([84f366f](https://github.com/b0ink/doubtfire-deploy/commit/84f366fbde88cddc2f3d6ee1d0810cc25c11a1cf))
+
+## [11.0.0-78](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-77...v11.0.0-78) (2026-10-26)
+
+
+### Features
+
+* allow staff to reuse submissions for feedback ([#732](https://github.com/b0ink/doubtfire-deploy/issues/732)) ([5d02218](https://github.com/b0ink/doubtfire-deploy/commit/5d02218fae35acc1646d52d9ed9319969a438d67))
+* enable sentry for sidekiq ([#698](https://github.com/b0ink/doubtfire-deploy/issues/698)) ([770c49a](https://github.com/b0ink/doubtfire-deploy/commit/770c49a07b45c906d33d9036d6abfc845041069e))
+* setting to restrict task submissions and status changes to staff ([#731](https://github.com/b0ink/doubtfire-deploy/issues/731)) ([aaaff74](https://github.com/b0ink/doubtfire-deploy/commit/aaaff7453558a71a7983108e835c572f81b6beeb))
+* support image and pdf attachments in staff notes ([#734](https://github.com/b0ink/doubtfire-deploy/issues/734)) ([b9a1009](https://github.com/b0ink/doubtfire-deploy/commit/b9a1009458ee9d13f84d39e31abbf25e6a1c470e))
+
+
+### Bug Fixes
+
+* prevent pdfgen from claiming sidekiq-owned submissions ([#730](https://github.com/b0ink/doubtfire-deploy/issues/730)) ([ca9e274](https://github.com/b0ink/doubtfire-deploy/commit/ca9e274afbf1eec4a5771c1a5c11658a851b906a))
+* require authentication for scorm extension routes ([ef24b3c](https://github.com/b0ink/doubtfire-deploy/commit/ef24b3ca7efdc6032bd58f8e413a422a05ec1f36))
+* require authentication for Turnitin EULA acceptance ([7846be6](https://github.com/b0ink/doubtfire-deploy/commit/7846be65ae2fe1daf46f38b0ba7472817623dbd5))
+* whitelist similarity languages and avoid shell execution ([#727](https://github.com/b0ink/doubtfire-deploy/issues/727)) ([b47c050](https://github.com/b0ink/doubtfire-deploy/commit/b47c050d824e5d4b6d5b9082e1c6101a0131275a))
+
 ## [11.0.0-77](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.0-76...v11.0.0-77) (2026-10-25)
 
 

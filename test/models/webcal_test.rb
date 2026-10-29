@@ -186,7 +186,7 @@ class WebcalTest < ActiveSupport::TestCase
 
     # Calls `fn` per task definition in `all_task_defs` with 2 args---the `TaskDefinition`, and the corresponding
     # `Icalendar::Event`.
-    per_task_def = ->(&fn) {
+    per_task_def = lambda { |&fn|
       all_task_defs.each do |td|
         # Find event for task definition, by metadata.
         ev = cal.events.detect do |e|
@@ -197,14 +197,14 @@ class WebcalTest < ActiveSupport::TestCase
       end
     }
 
-    per_task_def.call { |td, ev| assert_not ev.alarms.any?, 'Error: Reminders must not be included by default.' }
+    per_task_def.call { |_td, ev| assert_not ev.alarms.any?, 'Error: Reminders must not be included by default.' }
 
     time = 2
     checks = [
       { unit: 'W', trigger_symbol: :weeks, expected_trigger: 'TRIGGER;RELATED=START:-P2W' },
       { unit: 'D', trigger_symbol: :days, expected_trigger: 'TRIGGER;RELATED=START:-P2D' },
       { unit: 'H', trigger_symbol: :hours, expected_trigger: 'TRIGGER;RELATED=START:-PT2H' },
-      { unit: 'M', trigger_symbol: :minutes, expected_trigger: 'TRIGGER;RELATED=START:-PT2M' },
+      { unit: 'M', trigger_symbol: :minutes, expected_trigger: 'TRIGGER;RELATED=START:-PT2M' }
     ]
 
     checks.each do |check|
@@ -212,8 +212,7 @@ class WebcalTest < ActiveSupport::TestCase
       cal = @webcal.to_ical
       assert_includes cal.to_ical, check[:expected_trigger]
 
-      per_task_def.call do |td, ev|
-
+      per_task_def.call do |_td, ev|
         assert_equal 1, ev.alarms.count, 'Error: Specified alarm does not exist.'
 
         assert_equal time, ev.alarms.first.trigger[check[:trigger_symbol]], 'Error: Unexpected reminder time for specified unit.'

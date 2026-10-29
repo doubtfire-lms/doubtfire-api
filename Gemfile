@@ -48,7 +48,7 @@ end
 gem 'mysql2'
 
 # Webserver - included in development and test and optionally in production
-gem 'puma'
+gem 'puma', '~> 7.2', '>= 7.2.1'
 
 gem 'bootsnap', require: false
 gem 'csv'
@@ -85,6 +85,7 @@ gem 'grape-swagger-rails'
 gem 'bunny-pub-sub', '0.5.2'
 gem 'ci_reporter'
 gem 'dotenv'
+gem 'rack-attack'
 gem 'rack-cors', require: 'rack/cors'
 gem 'require_all', '>=1.3.3'
 
@@ -125,3 +126,4 @@ gem "sys-filesystem"
 
 gem "sentry-rails"
 gem "sentry-ruby"
+gem "sentry-sidekiq", "~> 6.5.0"

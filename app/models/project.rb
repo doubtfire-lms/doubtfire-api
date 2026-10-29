@@ -708,14 +708,14 @@ class Project < ApplicationRecord
     FileUtils.rm_f(portfolio_path) if portfolio_available
   end
 
-  def add_staff_note(user, text, reply_to_id = nil)
-    text = text.strip
-    return nil if user.nil? || text.nil? || text.empty?
+  def add_staff_note(user, text, reply_to_id = nil, attachment: false)
+    text = text.to_s.strip
+    return nil if user.nil? || (text.empty? && !attachment)
 
     ln = staff_notes.last
 
     # don't add if duplicate note
-    return if ln && ln.user == user && ln.note == text
+    return if !attachment && ln && ln.user == user && ln.note == text
 
     note = StaffNote.create
     note.note = text

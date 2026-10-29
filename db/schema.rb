@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_23_034838) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_26_053206) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -583,6 +583,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_23_034838) do
     t.bigint "reply_to_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "content_type"
     t.index ["project_id"], name: "index_staff_notes_on_project_id"
     t.index ["reply_to_id"], name: "index_staff_notes_on_reply_to_id"
     t.index ["staff_notes_id"], name: "index_staff_notes_on_staff_notes_id"
@@ -685,6 +686,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_23_034838) do
     t.boolean "use_resources_for_jplag_base_code", default: false, null: false
     t.boolean "lock_assessments_to_tutorial_stream", default: false, null: false
     t.boolean "requires_discussion", default: false, null: false
+    t.boolean "staff_managed_task", default: false, null: false
     t.index ["abbreviation", "unit_id"], name: "index_task_definitions_on_abbreviation_and_unit_id", unique: true
     t.index ["group_set_id"], name: "index_task_definitions_on_group_set_id"
     t.index ["name", "unit_id"], name: "index_task_definitions_on_name_and_unit_id", unique: true

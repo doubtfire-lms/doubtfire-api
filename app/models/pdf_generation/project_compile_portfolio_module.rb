@@ -72,7 +72,7 @@ module PdfGeneration
         @is_retry = is_retry
         @include_pax = !is_retry
         @work_id = FileHelper.sanitized_path(
-          "portfolio-#{Time.current.strftime('%Y%m%d-%H%M')}-#{project.student.username}-#{project.id}-#{Process.pid}#{'-retry' if is_retry}"
+          "portfolio-#{Time.current.strftime('%Y%m%d-%H%M')}-#{project.unit.code}-#{project.student.username}-#{project.id}-#{Process.pid}#{'-retry' if is_retry}"
         )
       end
 
@@ -299,7 +299,7 @@ module PdfGeneration
             file['tempfile'].path,
             converted_path,
             work_id: FileHelper.gotenberg_work_id(
-              kind: 'portfolio', username: student.username,
+              unit_code: unit.code, kind: 'portfolio', username: student.username,
               label: name == 'LearningSummaryReport' ? 'lsr' : 'document'
             )
           )

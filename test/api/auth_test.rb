@@ -6,6 +6,14 @@ class AuthTest < ActiveSupport::TestCase
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
 
+  setup do
+    Rack::Attack.enabled = false
+  end
+
+  teardown do
+    Rack::Attack.enabled = true
+  end
+
   def app
     Rails.application
   end
@@ -17,6 +25,45 @@ class AuthTest < ActiveSupport::TestCase
 
   # --------------------------------------------------------------------------- #
   # POST tests
+
+  def test_auth_post_is_rate_limited
+    original_setting = Doubtfire::Application.config.auth_rate_limit_enabled
+    Doubtfire::Application.config.auth_rate_limit_enabled = true
+    Rack::Attack.cache.store.clear
+    Rack::Attack.enabled = true
+
+    limit = Doubtfire::Application.config.auth_rate_limit
+    credentials = { username: 'aadmin123', password: 'password' }
+
+    limit.times do
+      post_json '/api/auth.json', credentials
+      assert_equal 401, last_response.status
+    end
+
+    post_json '/api/auth.json', credentials
+    assert_equal 429, last_response.status
+    assert_equal 'Too many login attempts. Please try again shortly.', last_response_body['error']
+    assert_operator last_response.headers['Retry-After'].to_i, :>, 0
+  ensure
+    Doubtfire::Application.config.auth_rate_limit_enabled = original_setting
+    Rack::Attack.cache.store.clear
+  end
+
+  def test_auth_post_is_not_rate_limited_when_disabled
+    original_setting = Doubtfire::Application.config.auth_rate_limit_enabled
+    Doubtfire::Application.config.auth_rate_limit_enabled = false
+    Rack::Attack.cache.store.clear
+    Rack::Attack.enabled = true
+
+    credentials = { username: 'aadmin123', password: 'password' }
+    (Doubtfire::Application.config.auth_rate_limit + 1).times do
+      post_json '/api/auth.json', credentials
+      assert_equal 401, last_response.status
+    end
+  ensure
+    Doubtfire::Application.config.auth_rate_limit_enabled = original_setting
+    Rack::Attack.cache.store.clear
+  end
 
   # Test POST for new authentication token
   def test_auth_post
@@ -51,7 +98,7 @@ class AuthTest < ActiveSupport::TestCase
     assert_equal 'general', token.token_type
 
     # User has the token - count of matching tokens for that user is 1
-    assert_equal 1, expected_auth.auth_tokens.select{|t| t.authentication_token == actual_auth['auth_token']}.count
+    assert_equal 1, expected_auth.auth_tokens.select { |t| t.authentication_token == actual_auth['auth_token'] }.count
 
     # Check we got a refresh token
     assert last_response.cookies['refresh_token'], 'Expect refresh token to be set'
@@ -135,8 +182,8 @@ class AuthTest < ActiveSupport::TestCase
     actual_auth = last_response_body
 
     # Check response body doesn't return 'user' and 'auth_token' values
-    refute actual_auth.key?('user'), 'User not expected if auth fails'
-    refute actual_auth.key?('auth_token'), 'Auth token not expected if auth fails'
+    assert_not actual_auth.key?('user'), 'User not expected if auth fails'
+    assert_not actual_auth.key?('auth_token'), 'Auth token not expected if auth fails'
 
     # 401 response code means invalid username / password
     assert_equal 401, last_response.status
@@ -155,8 +202,8 @@ class AuthTest < ActiveSupport::TestCase
     actual_auth = last_response_body
 
     # Check response body doesn't return 'user' and 'auth_token' values
-    refute actual_auth.key?('user'), 'User not expected if auth fails'
-    refute actual_auth.key?('auth_token'), 'Auth token not expected if auth fails'
+    assert_not actual_auth.key?('user'), 'User not expected if auth fails'
+    assert_not actual_auth.key?('auth_token'), 'Auth token not expected if auth fails'
 
     assert actual_auth.key? 'error'
   end
@@ -201,8 +248,8 @@ class AuthTest < ActiveSupport::TestCase
     actual_auth = last_response_body
 
     # Check response body doesn't return 'user' and 'auth_token' values
-    refute actual_auth.key?('user'), 'User not expected if auth fails'
-    refute actual_auth.key?('auth_token'), 'Auth token not expected if auth fails'
+    assert_not actual_auth.key?('user'), 'User not expected if auth fails'
+    assert_not actual_auth.key?('auth_token'), 'Auth token not expected if auth fails'
 
     # 400 response code means missing username and password
     assert_equal 400, last_response.status

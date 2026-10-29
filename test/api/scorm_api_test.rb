@@ -96,10 +96,9 @@ class ScormApiTest < ActiveSupport::TestCase
     user.update!(username: "user.name")
 
     td = FactoryBot.create(:task_definition,
-      unit: unit,
-      tutorial_stream: unit.tutorial_streams.first,
-      scorm_enabled: true
-    )
+                           unit: unit,
+                           tutorial_stream: unit.tutorial_streams.first,
+                           scorm_enabled: true)
     td.add_scorm_data(test_file_path("numbas.zip"), copy: true)
     td.save!
 

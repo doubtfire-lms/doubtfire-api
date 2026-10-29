@@ -101,7 +101,8 @@ module UnitSimilarityModule
     logger.info "Checking plagiarsm for unit #{code} - #{name} (id=#{id})"
 
     task_definitions.each do |td|
-      next if td.similarity_language.nil? || td.upload_requirements.nil? || td.upload_requirements.select { |upreq| upreq['type'] == 'code' && upreq['tii_check'] }.empty?
+      next unless TaskDefinition::JPLAG_LANGUAGES.include?(td.similarity_language)
+      next unless td.upload_requirements&.any? { |upreq| upreq['type'] == 'code' && upreq['tii_check'] }
 
       # Is there anything to check?
       logger.debug "Checking plagiarism for #{td.name} (id=#{td.id})"
@@ -225,12 +226,15 @@ module UnitSimilarityModule
     similarity_pct = task_definition.plagiarism_warn_pct
     return if similarity_pct.nil?
 
+    file_lang = task_definition.similarity_language
+    raise ArgumentError, "Unsupported JPlag language: #{file_lang.inspect}" unless TaskDefinition::JPLAG_LANGUAGES.include?(file_lang)
+
     # Check if the directory exists and create it if it doesn't
     results_dir = File.dirname(report_path)
-    system("docker exec -i jplag sh -c 'if [ ! -d \"#{results_dir}\" ]; then mkdir -p \"#{results_dir}\"; fi'") || raise('Failed to create JPlag results directory')
+    system('docker', 'exec', '-i', 'jplag', 'mkdir', '-p', results_dir) || raise('Failed to create JPlag results directory')
 
     # Remove existing result file if it exists
-    system("docker exec -i jplag sh -c 'if [ -f \"#{report_path}\" ]; then rm \"#{report_path}\"; fi'") || raise('Failed to remove previous JPlag report')
+    system('docker', 'exec', '-i', 'jplag', 'rm', '-f', report_path) || raise('Failed to remove previous JPlag report')
 
     # Extract task resources for base code
     use_base_code = false
@@ -289,42 +293,40 @@ module UnitSimilarityModule
     logger.info "Starting JPLAG container to run on #{tasks_dir}"
     root_dir = Rails.root.to_s
     tasks_dir_split = tasks_dir.to_s.split(root_dir)[1]
-    file_lang = task_definition.similarity_language.to_s
 
     # Convert pct to decimal
     similarity_threshold = similarity_pct.to_f / 100
 
     min_tokens = Doubtfire::Application.config.jplag_min_tokens.to_i
     # If empty, let JPlag set the default per-language
-    min_token_string = min_tokens <= 0 ? "" : "--min-tokens=#{min_tokens}"
-
-    base_code_string = use_base_code ? "--base-code=#{tasks_dir_split}/base" : ""
-
     skip_cluster_check = Doubtfire::Application.config.jplag_skip_cluster_check
-    skip_cluster_string = skip_cluster_check ? '--cluster-skip' : ''
 
     max_shown_comparisons = Doubtfire::Application.config.jplag_max_shown_comparisons
     max_shown_comparisons = 2500 if max_shown_comparisons.nil?
 
     # Run JPLAG on the extracted files. JPlag container should already be in the /jplag/ workdir.
     docker_command = [
-      "docker exec -i jplag",
-      "java -jar jplag-jar-with-dependencies.jar",
-      "--skip-version-check",
-      "#{tasks_dir_split}/submissions",
-      base_code_string,
-      "-l #{file_lang}",
+      'docker', 'exec', '-i', 'jplag',
+      'java', '-jar', 'jplag-jar-with-dependencies.jar',
+      '--skip-version-check',
+      "#{tasks_dir_split}/submissions"
+    ]
+    docker_command << "--base-code=#{tasks_dir_split}/base" if use_base_code
+    docker_command += [
+      '-l', file_lang,
       "--similarity-threshold=#{similarity_threshold}",
-      "--shown-comparisons=#{max_shown_comparisons}",
-      min_token_string,
-      skip_cluster_string,
-      "-M RUN",
-      "-r #{report_path.delete_suffix('.jplag')}",
-      "--overwrite"
-    ].join(" ")
+      "--shown-comparisons=#{max_shown_comparisons}"
+    ]
+    docker_command << "--min-tokens=#{min_tokens}" if min_tokens.positive?
+    docker_command << '--cluster-skip' if skip_cluster_check
+    docker_command += [
+      '-M', 'RUN',
+      '-r', report_path.delete_suffix('.jplag'),
+      '--overwrite'
+    ]
 
-    logger.debug "Executing command: #{docker_command}"
-    system(docker_command)
+    logger.debug "Executing command: #{docker_command.inspect}"
+    system(*docker_command) || raise('Failed to run JPlag')
 
     # Delete the extracted code files from tmp
     tmp_dir = Rails.root.join("tmp/jplag")
