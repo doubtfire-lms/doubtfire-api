@@ -21,11 +21,13 @@ module TimeoutHelper
   # Timeout system call
   #
   # Usage:
-  #   system_try_within 30, "doing the thing", "gs do.pdf the.pdf thing.pdf"
+  #   system_try_within 30, "doing the thing", ['gs', 'do.pdf', 'the.pdf', 'thing.pdf']
   #
   def system_try_within(sec, timeout_message, command)
-    # shell script to kill command after timeout
-    system "timeout -k 2 #{sec} nice -n 10 #{command}"
+    raise ArgumentError, 'command must be an argument array' unless command.is_a?(Array)
+
+    system('timeout', '-k', '2', sec.to_s, 'nice', '-n', '10', *command,
+           out: File::NULL, err: File::NULL)
   rescue
     logger.error "Timeout when #{timeout_message} after #{sec}s"
     false
