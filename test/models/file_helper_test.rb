@@ -380,6 +380,59 @@ class FileHelperTest < ActiveSupport::TestCase
     end
   end
 
+  def test_ensure_utf8_code_does_not_interpret_uploaded_filename_as_shell
+    uploaded_filename = 'solution.rb$(true)'
+    stored_filename = "000-code#{File.extname(uploaded_filename)}"
+    contents = "puts 'safe'\n"
+
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, stored_filename)
+      File.write(path, contents)
+
+      FileHelper.ensure_utf8_code(path, false)
+
+      assert_equal contents, File.read(path)
+    end
+  end
+
+  def test_code_upload_rejects_shell_metacharacters_in_filename_extension
+    Tempfile.create(['code', '.rb']) do |uploaded_file|
+      uploaded_file.write("puts 'safe'\n")
+      uploaded_file.flush
+
+      result = FileHelper.accept_file(
+        { filename: 'solution.rb$(true)', 'tempfile' => uploaded_file },
+        'Code',
+        'code'
+      )
+
+      assert_not result[:accepted]
+      assert_equal 'invalid file extension.', result[:msg]
+    end
+  end
+
+  def test_image_conversion_does_not_interpret_filename_as_shell
+    Dir.mktmpdir do |dir|
+      source = File.join(dir, 'upload$(true).gif')
+      destination = File.join(dir, 'converted$(true).jpg')
+      FileUtils.cp(Rails.root.join('test_files/submissions/unbelievable.gif'), source)
+
+      assert FileHelper.compress_image_to_dest(source, destination, true)
+      assert File.exist?(destination)
+    end
+  end
+
+  def test_pdf_page_count_does_not_interpret_filename_as_shell
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'submission$(true).pdf')
+      FileUtils.cp(Rails.root.join('test_files/submissions/valid.pdf'), path)
+
+      assert_operator FileHelper.pages_in_pdf(path), :>, 0
+      assert FileHelper.qpdf(path)
+      assert File.exist?(path)
+    end
+  end
+
   def test_process_audio_converts_webm_audio
     Dir.mktmpdir("audio path ") do |dir|
       source_wav = File.join(dir, "source tone.wav")
