@@ -228,6 +228,36 @@ class NotificationJobsTest < ActiveSupport::TestCase
     assert_nil notification.email_sent_at
   end
 
+  def test_activity_after_the_unit_ends_is_processed_without_sending
+    settings = create_settings
+    notification = FactoryBot.create(:notification, recipient: settings.user)
+    # rubocop:disable Rails/SkipsModelValidations
+    notification.unit.update_columns(start_date: 3.months.ago, end_date: 2.days.ago)
+    # rubocop:enable Rails/SkipsModelValidations
+
+    assert_no_emails do
+      SendNotificationDigestJob.new.perform(settings.id)
+    end
+
+    assert_not_nil notification.reload.email_processed_at
+    assert_nil notification.email_sent_at
+  end
+
+  def test_activity_before_the_unit_ends_is_still_sent_after_it
+    settings = create_settings
+    notification = FactoryBot.create(:notification, recipient: settings.user)
+    # rubocop:disable Rails/SkipsModelValidations
+    notification.unit.update_columns(start_date: 3.months.ago, end_date: 2.days.ago)
+    notification.update_columns(created_at: 3.days.ago)
+    # rubocop:enable Rails/SkipsModelValidations
+
+    assert_emails 1 do
+      SendNotificationDigestJob.new.perform(settings.id)
+    end
+
+    assert_not_nil notification.reload.email_sent_at
+  end
+
   def test_an_inactive_unit_is_processed_without_sending
     settings = create_settings
     notification = FactoryBot.create(:notification, recipient: settings.user)

@@ -43,6 +43,8 @@ class SendNotificationDigestJob
   def deliverable?(setting, notification, now)
     notification.unit.active &&
       notification.unit.send_notifications &&
+      # Post-semester tidying stays in-app, while a digest sent after the end still carries what came before it.
+      notification.created_at.to_date <= notification.unit.end_date.to_date &&
       !notification.recipient_withdrawn? &&
       notification.current_for_delivery?(now: now) &&
       setting.delivers?(notification.unit, notification.kind, :email)
