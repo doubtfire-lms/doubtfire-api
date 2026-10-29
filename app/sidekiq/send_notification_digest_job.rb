@@ -10,6 +10,9 @@ class SendNotificationDigestJob
                   retry: 5
 
   def perform(setting_id)
+    # Left unclaimed, so pending notifications wait for a sender to be configured.
+    return if Doubtfire::Application.config.notification_emails_from.blank?
+
     setting = NotificationSetting.find(setting_id)
     return if setting.digest_frequency == 'off'
 

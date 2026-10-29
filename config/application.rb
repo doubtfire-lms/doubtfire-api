@@ -201,6 +201,10 @@ module Doubtfire
     # ==> Moderation settings
     config.moderation_score_factor = Float(ENV.fetch('MODERATION_SCORE_FACTOR', 1.0))
 
+    # ==> Notification emails
+    # Digests are not emailed until a sender address is configured.
+    config.notification_emails_from = ENV.fetch('ONTRACK_NOTIFICATION_EMAILS_FROM', nil).presence
+
     # ==> Institution settings
     # Institution YAML and ENV (override) config load
     config.institution = YAML.load_file(Rails.root.join('config/institution.yml').to_s).with_indifferent_access

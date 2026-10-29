@@ -10,6 +10,8 @@ class PollNotificationDigestsJob
                   retry: 1
 
   def perform
+    return if Doubtfire::Application.config.notification_emails_from.blank?
+
     NotificationSetting.due.find_each do |setting|
       SendNotificationDigestJob.perform_async(setting.id)
     end

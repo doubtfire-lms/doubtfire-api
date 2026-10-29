@@ -47,7 +47,7 @@ class NotificationsMailer < ApplicationMailer
     subject = "#{@notification_count} new #{'notification'.pluralize(@notification_count)}"
     mail(
       to: %("#{@recipient.name}" <#{@recipient.email}>),
-      from: %("#{@doubtfire_product_name}" <no-reply@#{Doubtfire::Application.config.institution[:email_domain]}>),
+      from: %("#{@doubtfire_product_name}" <#{Doubtfire::Application.config.notification_emails_from}>),
       subject: subject
     )
   end
