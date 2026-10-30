@@ -25,7 +25,7 @@ module LatexHelper
   end
 
   def latex_host_path(relative_path)
-    latex_work_dir.join(relative_path)
+    latex_work_dir.join(relative_path).to_s
   end
 
   private

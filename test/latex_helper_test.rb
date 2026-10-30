@@ -20,6 +20,7 @@ class LatexHelperTest < ActiveSupport::TestCase
     result = renderer.generate_pdf(template: 'unused') do
       relative_path = renderer.stage_latex_file(source.path)
       staged_path = renderer.latex_host_path(relative_path)
+      assert_kind_of String, staged_path
       assert_equal 'original student file', File.binread(staged_path)
       File.binwrite(staged_path, 'changed copy')
       assert_equal 'original student file', File.binread(source.path)
