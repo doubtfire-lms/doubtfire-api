@@ -298,13 +298,38 @@ class AcceptOverseerJob
   def extract_overseer_resource_files(assessment, work_dir)
     # Extract optional assessment resources
     if File.exist?(assessment)
+      root = File.realpath(work_dir)
       Zip::File.open(assessment) do |zip_file|
-        zip_file.each do |entry|
-          dest_path = File.join(work_dir, entry.name)
+        entries = zip_file.map do |entry|
+          [entry, safe_overseer_resource_path!(entry, root)]
+        end
+
+        entries.each do |entry, dest_path|
           FileUtils.mkdir_p(File.dirname(dest_path))
           zip_file.extract(entry, dest_path) { true } # overwrite if exists
         end
       end
     end
+  end
+
+  private
+
+  def safe_overseer_resource_path!(entry, root)
+    name = entry.name
+    if name.blank? || name.start_with?('/') || name.include?('\\') || name.include?("\0") ||
+       name.split('/').include?('..') || entry.symlink?
+      raise Zip::Error, 'Unsafe assessment resource path'
+    end
+
+    dest_path = File.expand_path(name, root)
+    raise Zip::Error, 'Unsafe assessment resource path' unless dest_path.start_with?("#{root}/")
+
+    current_path = root
+    name.split('/').each do |part|
+      current_path = File.join(current_path, part)
+      raise Zip::Error, 'Unsafe assessment resource path' if File.symlink?(current_path)
+    end
+
+    dest_path
   end
 end
