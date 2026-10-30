@@ -14,7 +14,7 @@ module Tii
     get '/units/:unit_id/task_definitions/:task_def_id/tii_group_attachments' do
       unit = Unit.find(params[:unit_id])
 
-      unless authorise? current_user, unit, :add_task_def
+      unless authorise? current_user, unit, :view_tii_group_attachments
         error!({ error: 'Not authorised access group attachments for this unit' }, 403)
       end
 

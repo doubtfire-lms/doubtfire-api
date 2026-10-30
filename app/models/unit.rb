@@ -48,7 +48,8 @@ class Unit < ApplicationRecord
       :download_jplag_report,
       :get_marking_sessions,
       :get_tutor_times,
-      :get_staff_notes
+      :get_staff_notes,
+      :download_submission_history_files
     ]
 
     # What can convenors do with units?
@@ -86,7 +87,18 @@ class Unit < ApplicationRecord
       :capture_task_completion_snapshot,
       :manage_unit_content,
       :mannage_communications,
-      :delete_engagement
+      :delete_engagement,
+      :view_communications,
+      :view_unit_content_sites,
+      :view_lms_integration,
+      :view_d2l_integration,
+      :view_tii_group_attachments,
+      :view_tii_actions,
+      :view_task_assessment_resources,
+      :download_submission_history_files,
+      :download_group_csv,
+      :download_learning_outcomes,
+      :download_feedback_chips
     ]
 
     # What can admin do with units?
@@ -117,6 +129,16 @@ class Unit < ApplicationRecord
       :get_tutor_times,
       :manage_unit_content,
       :mannage_communications,
+      :view_communications,
+      :view_unit_content_sites,
+      :view_lms_integration,
+      :view_d2l_integration,
+      :view_tii_group_attachments,
+      :view_tii_actions,
+      :view_task_assessment_resources,
+      :download_group_csv,
+      :download_learning_outcomes,
+      :download_feedback_chips
     ]
 
     # What can auditors do with units?

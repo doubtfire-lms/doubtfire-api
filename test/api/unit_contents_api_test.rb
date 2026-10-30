@@ -55,6 +55,22 @@ class UnitContentsApiTest < ActiveSupport::TestCase
     assert_equal 403, last_response.status
   end
 
+  def test_observer_convenor_can_read_content_sites_but_cannot_change_them
+    observer = FactoryBot.create(:user, :convenor)
+    @unit.employ_staff(observer, Role.convenor).update!(observer_only: true)
+    add_auth_header_for(user: observer)
+
+    get "/api/units/#{@unit.id}/content/sites"
+    assert_equal 200, last_response.status
+
+    get "/api/units/#{@unit.id}/content/sites/#{@site.id}/archive"
+    assert_equal 200, last_response.status
+
+    put "/api/units/#{@unit.id}/content/sites/#{@site.id}", name: 'Changed name'
+    assert_equal 403, last_response.status
+    assert_equal 'Course site', @site.reload.name
+  end
+
   private
 
   def write_zip(path, entries)

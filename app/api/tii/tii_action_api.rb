@@ -20,7 +20,7 @@ module Tii
     get '/tii_actions' do
       unit = Unit.find(params[:unit_id]) if params[:unit_id].present?
 
-      unless authorise?(current_user, User, :admin_units) || (unit.present? && authorise?(current_user, unit, :add_task_def))
+      unless authorise?(current_user, User, :admin_units) || (unit.present? && authorise?(current_user, unit, :view_tii_actions))
         error!({ error: 'Not authorised access turn it in actions' }, 403)
       end
 

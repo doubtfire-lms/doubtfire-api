@@ -18,7 +18,7 @@ module D2lIntegrationApi
     get '/units/:unit_id/d2l' do
       unit = Unit.find(params[:unit_id])
 
-      unless authorise?(current_user, unit, :update)
+      unless authorise?(current_user, unit, :view_d2l_integration)
         error!({ error: 'Not authorised to view D2L details' }, 403)
       end
 
@@ -126,7 +126,7 @@ module D2lIntegrationApi
     get '/units/:unit_id/d2l/grades' do
       unit = Unit.find(params[:unit_id])
 
-      unless authorise?(current_user, unit, :update)
+      unless authorise?(current_user, unit, :view_d2l_integration)
         error!({ error: 'Not authorised to view grade transfer results' }, 403)
       end
 
@@ -144,7 +144,7 @@ module D2lIntegrationApi
     get '/units/:unit_id/d2l/grades/available' do
       unit = Unit.find(params[:unit_id])
 
-      unless authorise?(current_user, unit, :update)
+      unless authorise?(current_user, unit, :view_d2l_integration)
         error!({ error: 'Not authorised to view grade transfer results' }, 403)
       end
 
@@ -161,7 +161,7 @@ module D2lIntegrationApi
     get '/units/:unit_id/d2l/grades/weighted' do
       unit = Unit.find(params[:unit_id])
 
-      unless authorise?(current_user, unit, :update)
+      unless authorise?(current_user, unit, :view_d2l_integration)
         error!({ error: 'Not authorised to view unit details' }, 403)
       end
 

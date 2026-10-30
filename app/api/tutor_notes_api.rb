@@ -29,7 +29,7 @@ class TutorNotesApi < Grape::API
       error!({ error: 'You do not have permission to access this unit' }, 403)
     end
 
-    unless authorise? current_user, unit_role, :create_tutor_note
+    unless authorise? current_user, unit_role, :get_tutor_note
       error!({ error: 'You do not have permission to access this.' }, 403)
     end
 

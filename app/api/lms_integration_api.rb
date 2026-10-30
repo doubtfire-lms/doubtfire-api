@@ -42,7 +42,7 @@ class LmsIntegrationApi < Grape::API
 
   desc 'Get the LMS link and integration settings for a unit'
   get '/units/:unit_id/lms' do
-    unit = lms_unit!
+    unit = lms_unit!(:view_lms_integration)
     link = nil
     link_error = nil
     begin
@@ -165,7 +165,7 @@ class LmsIntegrationApi < Grape::API
 
   desc 'Get course details, groups and assignments from the LMS course-data plugin'
   get '/units/:unit_id/lms/course_data' do
-    unit = lms_unit!
+    unit = lms_unit!(:view_lms_integration)
     require_link!(unit)
 
     source = LmsIntegration.data_source_for(unit)
@@ -264,7 +264,7 @@ class LmsIntegrationApi < Grape::API
 
   desc 'Get the LMS grade item linked to a unit'
   get '/units/:unit_id/lms/grade_line_item' do
-    unit = lms_unit!
+    unit = lms_unit!(:view_lms_integration)
     begin
       LtiServer.new(unit.id).grade_line_item
     rescue LtiServer::Error => e

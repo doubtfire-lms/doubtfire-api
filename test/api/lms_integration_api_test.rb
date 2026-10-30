@@ -39,6 +39,20 @@ class LmsIntegrationApiTest < ActiveSupport::TestCase
     assert_requested retry_request
   end
 
+  def test_observer_convenor_can_view_lms_settings_but_cannot_change_them
+    unit = FactoryBot.create(:unit, with_students: false)
+    observer = FactoryBot.create(:user, :convenor)
+    unit.employ_staff(observer, Role.convenor).update!(observer_only: true)
+    add_auth_header_for(user: observer)
+    stub_link(unit)
+
+    get "/api/units/#{unit.id}/lms"
+    assert_equal 200, last_response.status
+
+    patch "/api/units/#{unit.id}/lms/settings", { auto_sync_students: true }
+    assert_equal 403, last_response.status
+  end
+
   def test_student_cannot_retry_grade_line_item_setup
     unit = FactoryBot.create(:unit, with_students: false)
     add_auth_header_for(user: FactoryBot.create(:user, :student))

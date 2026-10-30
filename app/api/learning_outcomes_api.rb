@@ -172,7 +172,7 @@ class LearningOutcomesApi < Grape::API
     context_type = params[:context_type_plural].singularize.camelize
     context_model = context_type.classify.constantize.find(params[:context_id])
 
-    unless authorise? current_user, context_model, :update
+    unless authorise? current_user, context_model, :download_learning_outcomes
       error!({ error: 'You are not authorised to download outcomes for this context.' }, 403)
     end
 

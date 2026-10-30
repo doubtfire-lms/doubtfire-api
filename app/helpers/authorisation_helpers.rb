@@ -28,7 +28,24 @@ module AuthorisationHelpers
     :get_groups,
     :get_discussion_prompt,
     :get_engagements,
-    :get_tutor_times
+    :get_tutor_times,
+    :get_marking_sessions,
+    :get_tutor_times_summary,
+    :get_staff_notes,
+    :download_overflow_stats,
+    :view_staff_inbox,
+    :view_communications,
+    :view_unit_content_sites,
+    :view_lms_integration,
+    :view_d2l_integration,
+    :view_tii_group_attachments,
+    :view_tii_actions,
+    :view_task_assessment_resources,
+    :download_submission_history_files,
+    :download_group_csv,
+    :download_learning_outcomes,
+    :download_feedback_chips,
+    :get_tutor_note
   ].freeze
 
   #

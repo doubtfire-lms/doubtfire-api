@@ -21,7 +21,9 @@ class TaskDefinition < ApplicationRecord
       :create_task_prerequisite,
       :get_discussion_prompt,
       :create_discussion_prompt,
-      :manage_overseer_steps
+      :manage_overseer_steps,
+      :download_learning_outcomes,
+      :download_feedback_chips
     ]
 
     admin_role_permissions = [
@@ -33,7 +35,9 @@ class TaskDefinition < ApplicationRecord
       :create_task_prerequisite,
       :get_discussion_prompt,
       :create_discussion_prompt,
-      :manage_overseer_steps
+      :manage_overseer_steps,
+      :download_learning_outcomes,
+      :download_feedback_chips
     ]
 
     tutor_role_permissions = [
