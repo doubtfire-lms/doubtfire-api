@@ -364,8 +364,8 @@ class UnitRolesTest < ActiveSupport::TestCase
       },
       {
         method: 'put',
-        path: "api/units/#{unit.id}/content/links",
-        body: { links: [] }
+        path: "api/units/#{unit.id}/content/sites/0",
+        body: { name: 'Observer cannot change this' }
       },
       {
         method: 'post',
