@@ -54,14 +54,16 @@ class UnitRole < ApplicationRecord
     # What can tutors do with unit roles?
     tutor_role_permissions = [
       :get,
-      :create_tutor_note
+      :create_tutor_note,
+      :get_tutor_note
     ]
     # What can convenors do with unit roles?
     convenor_role_permissions = [
       :get,
       :delete,
       :delete_tutor_note,
-      :create_tutor_note
+      :create_tutor_note,
+      :get_tutor_note
     ]
     # What can nil users do with unit roles?
     nil_role_permissions = []

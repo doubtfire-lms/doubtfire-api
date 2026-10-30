@@ -153,7 +153,7 @@ class GroupSetsApi < Grape::API
     unit = Unit.find(params[:unit_id])
     group_set = unit.group_sets.find(params[:group_set_id])
 
-    unless authorise? current_user, unit, :update
+    unless authorise? current_user, unit, :download_group_csv
       error!({ error: 'Not authorised to download csv of groups for this unit' }, 403)
     end
 
@@ -169,7 +169,7 @@ class GroupSetsApi < Grape::API
     unit = Unit.find(params[:unit_id])
     group_set = unit.group_sets.find(params[:group_set_id])
 
-    unless authorise? current_user, unit, :update
+    unless authorise? current_user, unit, :download_group_csv
       error!({ error: 'Not authorised to download csv of groups for this unit' }, 403)
     end
 

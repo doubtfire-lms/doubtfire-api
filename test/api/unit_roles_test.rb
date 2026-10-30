@@ -283,6 +283,18 @@ class UnitRolesTest < ActiveSupport::TestCase
       "api/projects/#{project.id}/staff_notes"
     ]
 
+    read_only_routes = [
+      "api/units/#{unit.id}/content/sites",
+      "api/units/#{unit.id}/content/links",
+      "api/units/#{unit.id}/communication_sets",
+      "api/units/#{unit.id}/communication_rules",
+      "api/units/#{unit.id}/task_definitions/#{td.id}/tii_group_attachments",
+      "api/tii_actions?unit_id=#{unit.id}",
+      "api/units/#{unit.id}/marking_sessions",
+      "api/csv/units/#{unit.id}/staff_notes",
+      "api/unit_roles/#{tutor_user_role.id}/tutor_notes"
+    ]
+
     protected_routes = [
       {
         method: 'post',
@@ -352,6 +364,16 @@ class UnitRolesTest < ActiveSupport::TestCase
       },
       {
         method: 'put',
+        path: "api/units/#{unit.id}/content/sites/0",
+        body: { name: 'Observer cannot change this' }
+      },
+      {
+        method: 'post',
+        path: "api/units/#{unit.id}/communication_sets",
+        body: { communication_set: { name: 'Observer cannot create this' } }
+      },
+      {
+        method: 'put',
         path: "api/projects/#{project.id}/task_def_id/#{td.id}",
         body: {
           trigger: 'complete'
@@ -372,6 +394,12 @@ class UnitRolesTest < ActiveSupport::TestCase
       add_auth_header_for(user: convenor_user)
       get route
       assert_not_equal 403, last_response.status, "#{route}: (#{last_response_body})"
+    end
+
+    read_only_routes.each do |route|
+      add_auth_header_for(user: convenor_user)
+      get route
+      assert_equal 200, last_response.status, "#{route}: (#{last_response.body})"
     end
   end
 

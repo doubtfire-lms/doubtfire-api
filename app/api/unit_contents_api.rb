@@ -9,6 +9,13 @@ class UnitContentsApi < Grape::API
   helpers MimeCheckHelpers
 
   helpers do
+    def authorise_unit_content_read!(unit)
+      return if authorise?(current_user, unit, :view_unit_content_sites) ||
+                authorise?(current_user, User, :admin_units)
+
+      error!({ error: 'Not authorised to view unit content sites' }, 403)
+    end
+
     def authorise_unit_content_management!(unit)
       return if authorise?(current_user, unit, :manage_unit_content) ||
                 authorise?(current_user, User, :admin_units)
@@ -24,7 +31,7 @@ class UnitContentsApi < Grape::API
   desc 'List unit content sites'
   get '/units/:id/content/sites' do
     unit = Unit.find(params[:id])
-    authorise_unit_content_management!(unit)
+    authorise_unit_content_read!(unit)
 
     present unit.unit_content_sites.order(created_at: :desc),
             with: Entities::UnitContentSiteEntity,
@@ -34,7 +41,7 @@ class UnitContentsApi < Grape::API
   desc 'Download a unit content site archive'
   get '/units/:id/content/sites/:site_id/archive' do
     unit = Unit.find(params[:id])
-    authorise_unit_content_management!(unit)
+    authorise_unit_content_read!(unit)
 
     site = unit.unit_content_sites.find(params[:site_id])
     filename = FileHelper.sanitized_filename(site.original_filename)

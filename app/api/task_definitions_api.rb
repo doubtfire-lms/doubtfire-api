@@ -693,7 +693,7 @@ class TaskDefinitionsApi < Grape::API
     unit = Unit.find(params[:unit_id])
     task_def = unit.task_definitions.find(params[:task_def_id])
 
-    unless authorise? current_user, unit, :add_task_def
+    unless authorise? current_user, unit, :view_task_assessment_resources
       error!({ error: 'Not authorised to download task details of unit' }, 403)
     end
 

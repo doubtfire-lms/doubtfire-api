@@ -161,7 +161,7 @@ module Feedback
       context_model = context_type.classify.constantize.find(params[:context_id])
       learning_outcome = LearningOutcome.find(params[:id])
 
-      unless authorise? current_user, context_model, :create_feedback_chips
+      unless authorise? current_user, context_model, :download_feedback_chips
         error!({ error: 'You are not authorised to download feedback chips in this context.' }, 403)
       end
 
@@ -185,7 +185,7 @@ module Feedback
       context_type = params[:context_type_plural].singularize.camelize
       context_model = context_type.classify.constantize.find(params[:context_id])
 
-      unless authorise? current_user, context_model, :create_feedback_chips
+      unless authorise? current_user, context_model, :download_feedback_chips
         error!({ error: 'You are not authorised to download feedback chips in this context.' }, 403)
       end
 
