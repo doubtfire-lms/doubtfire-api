@@ -244,6 +244,7 @@ class Notebook:
         # Use the longest names first so one attachment name cannot partially
         # replace another, for example image.png and my-image.png.
         attachments = content.get('attachments') or {}
+        saved_paths = set()
         for name in sorted(attachments, key=len, reverse=True):
             try:
                 attachment_path = self._save_markdown_attachment(attachments[name])
@@ -252,6 +253,7 @@ class Notebook:
 
             if not attachment_path:
                 continue
+            saved_paths.add(attachment_path)
 
             # Notebook editors may leave spaces literal or URL-encode them.
             references = {
@@ -270,6 +272,13 @@ class Notebook:
                 f'**[Image attachment unavailable: '
                 f'{match.group(1) or match.group(2)}]**'
             ),
+            source_text,
+        )
+
+        # any other image path would reach \includegraphics and embed files from the TeX container
+        source_text = re.sub(
+            r'!\[(?:[^\]\n]*\]\(([^)\n]*)\))?',
+            lambda match: match.group(0) if match.group(1) in saved_paths else '!\\[' + match.group(0)[2:],
             source_text,
         )
 
