@@ -399,7 +399,7 @@ class UnitRolesTest < ActiveSupport::TestCase
     read_only_routes.each do |route|
       add_auth_header_for(user: convenor_user)
       get route
-      assert_equal 200, last_response.status, "#{route}: (#{last_response_body})"
+      assert_equal 200, last_response.status, "#{route}: (#{last_response.body})"
     end
   end
 
