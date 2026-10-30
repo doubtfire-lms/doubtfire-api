@@ -10,6 +10,7 @@ cd /workdir/texlive-latex/${OUTPUT_DIR}
 mkdir -p work
 cp *.tex *.py work/
 cd work
+export TMPDIR="$PWD"
 
 # Compile PDF
 lualatex -shell-escape -interaction=batchmode -halt-on-error input.tex

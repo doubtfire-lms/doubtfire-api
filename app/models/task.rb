@@ -1474,8 +1474,7 @@ class Task < ApplicationRecord
     File.join(in_dir, result) unless result.nil?
   end
 
-  def in_process_files_for_task(is_retry)
-    magic = FileMagic.new(FileMagic::MAGIC_MIME)
+  def in_process_files_for_task(_is_retry)
     in_process_dir = student_work_dir(:in_process, false)
     return [] unless Dir.exist? in_process_dir
 
@@ -1494,16 +1493,7 @@ class Task < ApplicationRecord
         logger.error "Error processing task #{log_details} - missing file #{file_req}"
         raise "File `#{file_req['name']}` missing from submission."
       else
-        truncated = false
-
-        if file_req['type'] == 'code'
-          FileHelper.ensure_utf8_code(output_filename, is_retry)
-          extension = File.extname(output_filename)[1..-1]
-          unless extension.eql?("ipynb")
-            truncated = FileHelper.line_wrap(output_filename)
-          end
-        end
-        result << { path: output_filename, type: file_req['type'], truncated: truncated }
+        result << { path: output_filename, type: file_req['type'], truncated: false }
 
         idx += 1 # next file index
       end
@@ -1518,22 +1508,22 @@ class Task < ApplicationRecord
     attr_accessor :task
     attr_accessor :submission_date
     attr_accessor :files
-    attr_accessor :base_path
     attr_accessor :image_path
     attr_accessor :include_pax
+    attr_accessor :is_retry
     attr_accessor :submitted_files_url
 
     def init(task, is_retry)
       @task = task
       @submission_date = task.submission_date || task.file_uploaded_at || task.task_submissions.maximum(:submission_time)
       @files = task.in_process_files_for_task(is_retry)
-      @base_path = task.student_work_dir(:in_process, false)
-      @image_path = Rails.root.join('public/assets/images')
+      @image_path = LatexHelper::LATEX_ASSET_IMAGE_PATH
       @institution_name = Doubtfire::Application.config.institution[:name]
       @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
       @include_pax = !is_retry
+      @is_retry = is_retry
       @work_id = FileHelper.sanitized_path(
-        "task-#{Time.current.strftime('%Y%m%d-%H%M')}-#{task.unit.code}-#{task.project.student.username}-#{task.task_definition.abbreviation}-#{task.id}-#{Process.pid}#{'-retry' if is_retry}"
+        "task-#{Time.current.strftime('%Y%m%d-%H%M')}-#{SecureRandom.hex(12)}-#{task.unit.code}-#{task.project.student.username}-#{task.task_definition.abbreviation}-#{task.id}-#{Process.pid}#{'-retry' if is_retry}"
       )
       host = Doubtfire::Application.config.institution[:host].to_s
       host = "http://#{host}" unless host.match?(%r{\Ahttps?://})
@@ -1542,15 +1532,22 @@ class Task < ApplicationRecord
     end
 
     def make_pdf
-      logger.debug "Rendering PDF for a task, preprocessing attachments."
-      @files.each do |f|
-        if f[:type] == "document"
-          logger.debug "Running QPDF on #{f[:path]} before rendering to repair any potential broken files."
-          FileHelper.qpdf(f[:path])
+      logger.debug 'Rendering PDF for a task, staging attachments.'
+      generate_pdf(template: '/task/task_pdf') do
+        @files.each do |file|
+          next unless %w[image code document].include?(file[:type])
+
+          file[:latex_path] = stage_latex_file(file[:path])
+          staged_path = latex_host_path(file[:latex_path])
+          if file[:type] == 'document'
+            logger.debug "Running QPDF on staged file #{staged_path} before rendering."
+            FileHelper.qpdf(staged_path)
+          elsif file[:type] == 'code'
+            FileHelper.ensure_utf8_code(staged_path, @is_retry)
+            file[:truncated] = FileHelper.line_wrap(staged_path) unless File.extname(file[:path]) == '.ipynb'
+          end
         end
       end
-      logger.debug 'Preprocessing complete, rendering file.'
-      generate_pdf(template: '/task/task_pdf')
     end
   end
 
