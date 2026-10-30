@@ -39,15 +39,15 @@ document_list = Array.new
 \begin{titlepage}
 <% if @learning_summary_report
     # add learning summary report to the document list for annotation extraction
-    document_list.append(@learning_summary_report) unless @is_retry %>
-\includepdf[addtotoc={\thepage,section,1,Learning Summary Report,chap:learningsummary},pages={1-1},fitpaper]{<%= @learning_summary_report %>}
+    document_list.append(@learning_summary_report_latex_path) unless @is_retry %>
+\includepdf[addtotoc={\thepage,section,1,Learning Summary Report,chap:learningsummary},pages={1-1},fitpaper]{<%= @learning_summary_report_latex_path %>}
 <%
-    if FileHelper.pages_in_pdf(@learning_summary_report) > 30
+    if FileHelper.pages_in_pdf(latex_host_path(@learning_summary_report_latex_path)) > 30
 %>
-\includepdf[pages={2-},fitpaper]{<%= @learning_summary_report %>}
+\includepdf[pages={2-},fitpaper]{<%= @learning_summary_report_latex_path %>}
 <%  else
-      for page_idx in 2..FileHelper.pages_in_pdf(@learning_summary_report) do %>
-\includepdf[pages={<%= page_idx %>-<%= page_idx %>},fitpaper]{<%= @learning_summary_report %>}
+      for page_idx in 2..FileHelper.pages_in_pdf(latex_host_path(@learning_summary_report_latex_path)) do %>
+\includepdf[pages={<%= page_idx %>-<%= page_idx %>},fitpaper]{<%= @learning_summary_report_latex_path %>}
 <%    end # end for
     end # if long LSR
   end # if there is a learning summary
@@ -222,10 +222,10 @@ end # if there are linked outcomes
 
     % add additional PDF files to the document list for annotation extraction
     <% if f[:kind] == "document" %>
-         <% document_list.append(@project.portfolio_tmp_file_path(f)) unless @is_retry %>
+         <% document_list.append(f[:latex_path]) unless @is_retry %>
     <% end %>
 
-    <%= render partial:"shared/file", locals: {idx: f[:idx] - 1, count: @files.count - 1, name: f[:name], base_path: @base_path, file_name: @project.portfolio_tmp_file_path(f), file_type: f[:kind]} %>
+    <%= render partial:"shared/file", locals: {idx: f[:idx] - 1, count: @files.count - 1, name: f[:name], file_name: @project.portfolio_tmp_file_path(f), latex_file_name: f[:latex_path], file_type: f[:kind]} %>
   <% end %>
 <% end %>
 
@@ -286,8 +286,8 @@ end # if there are linked outcomes
 <%
   end # if comments exist
 
-  if File.exist? task.final_pdf_path
-    max_pages = FileHelper.pages_in_pdf(task.final_pdf_path)
+  if (latex_path = @task_pdf_latex_paths[task.id])
+    max_pages = FileHelper.pages_in_pdf(latex_host_path(latex_path))
 
     # Limit to 100 pages
     if max_pages > 100
@@ -295,11 +295,11 @@ end # if there are linked outcomes
     else
       # add task evidence to the document list for annotation extraction
       # skip long files
-      document_list.append(task.final_pdf_path) unless @is_retry
+      document_list.append(latex_path) unless @is_retry
     end
 
     for page_idx in 1..max_pages do %>
-\includepdf[pages={<%= page_idx %>-<%= page_idx %>},fitpaper]{<%= task.final_pdf_path %>}
+\includepdf[pages={<%= page_idx %>-<%= page_idx %>},fitpaper]{<%= latex_path %>}
 <%  end # end for pages
   end # end if file exists
 end # portfolio tasks do

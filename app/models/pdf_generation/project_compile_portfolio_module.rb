@@ -39,7 +39,6 @@ module PdfGeneration
 
       attr_accessor :student,
                     :project,
-                    :base_path,
                     :image_path,
                     :learning_summary_report,
                     :submission_date,
@@ -60,9 +59,8 @@ module PdfGeneration
         @learning_summary_report = project.learning_summary_report_path
         @submission_date = project.portfolio_submission_date
         @formatted_submission_date, @formatted_submission_time = format_submission_date(project)
-        @files = project.portfolio_files(ensure_valid: true, force_ascii: is_retry)
-        @base_path = project.portfolio_temp_path
-        @image_path = Rails.root.join('public/assets/images')
+        @files = project.portfolio_files
+        @image_path = LatexHelper::LATEX_ASSET_IMAGE_PATH
         @ordered_tasks = project.tasks.joins(:task_definition).order('task_definitions.start_date, task_definitions.abbreviation').where("task_definitions.target_grade <= #{project.target_grade}")
         @portfolio_tasks = project.portfolio_tasks
         @task_defs = project.unit.task_definitions.order(:start_date)
@@ -72,13 +70,29 @@ module PdfGeneration
         @is_retry = is_retry
         @include_pax = !is_retry
         @work_id = FileHelper.sanitized_path(
-          "portfolio-#{Time.current.strftime('%Y%m%d-%H%M')}-#{project.unit.code}-#{project.student.username}-#{project.id}-#{Process.pid}#{'-retry' if is_retry}"
+          "portfolio-#{Time.current.strftime('%Y%m%d-%H%M')}-#{SecureRandom.hex(12)}-#{project.unit.code}-#{project.student.username}-#{project.id}-#{Process.pid}#{'-retry' if is_retry}"
         )
       end
 
       def make_pdf
         logger.debug 'Running make_pdf: (portfolio)'
-        generate_pdf(template: '/portfolio/portfolio_pdf')
+        generate_pdf(template: '/portfolio/portfolio_pdf') do
+          @learning_summary_report_latex_path = stage_latex_file(@learning_summary_report) if @learning_summary_report
+
+          @files.each do |file|
+            next if file[:idx] == 0 || !%w[image code document].include?(file[:kind])
+
+            source_path = @project.portfolio_tmp_file_path(file)
+            file[:latex_path] = stage_latex_file(source_path)
+            FileHelper.ensure_utf8_code(latex_host_path(file[:latex_path]), @is_retry) if file[:kind] == 'code'
+          end
+
+          @task_pdf_latex_paths = {}
+          @portfolio_tasks.each do |task|
+            source_path = task.final_pdf_path
+            @task_pdf_latex_paths[task.id] = stage_latex_file(source_path) if File.exist?(source_path)
+          end
+        end
       end
 
       private
