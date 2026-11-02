@@ -94,5 +94,33 @@ class CreateNotificationsAndPreferences < ActiveRecord::Migration[8.0]
     add_column :units, :generate_weekly_summaries, :boolean, null: false, default: true
     # Units that sent no emails sent no summaries either, so they keep doing so.
     up_only { execute 'UPDATE units SET generate_weekly_summaries = send_notifications' }
+
+    # Keep existing email opt-outs when moving to per-kind settings. Leave the
+    # legacy columns in place for a later major version to remove.
+    up_only do
+      User.reset_column_information
+      NotificationSetting.reset_column_information
+
+      opted_out_users = User.where(receive_task_notifications: [false, nil])
+                            .or(User.where(receive_portfolio_notifications: [false, nil]))
+                            .or(User.where(receive_feedback_notifications: [false, nil]))
+
+      legacy_email_kinds = {
+        receive_task_notifications: %w[task_start_now task_due_soon task_overdue],
+        receive_portfolio_notifications: %w[portfolio_ready portfolio_failed],
+        receive_feedback_notifications: %w[new_task_comment task_status_changed discuss_warning discuss_expired]
+      }
+
+      opted_out_users.find_each do |user|
+        channels = NotificationSetting.default_channels
+        legacy_email_kinds.each do |preference, kinds|
+          next if user.public_send(preference)
+
+          kinds.each { |kind| channels.fetch(kind).delete('email') }
+        end
+
+        NotificationSetting.create!(user: user, channels: channels)
+      end
+    end
   end
 end
