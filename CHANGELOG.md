@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [11.0.3](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.2...v11.0.3) (2026-11-02)
+
+
+### Bug Fixes
+
+* prevent TeX injection from notebooks during PDF generation ([#742](https://github.com/b0ink/doubtfire-deploy/issues/742)) ([0d168a9](https://github.com/b0ink/doubtfire-deploy/commit/0d168a9d081895f6864f2deca53d70b469dc8878))
+
 ### [11.0.2](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.1...v11.0.2) (2026-10-28)
 
 
