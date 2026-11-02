@@ -43,7 +43,7 @@ class TaskSimilarityTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status
 
     student1_task = student1_project.task_for_task_definition(td)
-    student1_task.convert_submission_to_pdf(log_to_stdout: false)
+    assert archive_submission_with_pdf_fixture(student1_task)
     assert File.exist? student1_task.final_pdf_path
     assert student1_task.has_pdf
 
@@ -54,7 +54,7 @@ class TaskSimilarityTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status
 
     student2_task = student2_project.task_for_task_definition(td)
-    student2_task.convert_submission_to_pdf(log_to_stdout: false)
+    assert archive_submission_with_pdf_fixture(student2_task)
     assert File.exist? student2_task.final_pdf_path
     assert student2_task.has_pdf
 

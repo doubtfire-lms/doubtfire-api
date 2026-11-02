@@ -29,5 +29,12 @@ module TestHelpers
     def upload_file(path, type)
       Rack::Test::UploadedFile.new(Rails.root.join(path), type)
     end
+
+    def archive_submission_with_pdf_fixture(task)
+      return false unless task.compress_new_to_done
+
+      FileUtils.cp(test_file_path('unit_files/sample-student-submission.pdf'), task.final_pdf_path)
+      true
+    end
   end
 end

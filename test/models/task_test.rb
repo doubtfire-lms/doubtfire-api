@@ -1594,7 +1594,7 @@ class TaskTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status, last_response_body
 
     task = project.task_for_task_definition(td)
-    assert task.convert_submission_to_pdf(log_to_stdout: true)
+    assert archive_submission_with_pdf_fixture(task)
     path = task.zip_file_path_for_done_task
     assert path
     assert File.exist? path
@@ -1638,7 +1638,7 @@ class TaskTest < ActiveSupport::TestCase
     task.reload
     assert_nil task.portfolio_evidence
     assert_not File.exist?(new_path), "File exists #{new_path} after upload"
-    task.convert_submission_to_pdf(log_to_stdout: false)
+    assert archive_submission_with_pdf_fixture(task)
     assert File.exist?(task.final_pdf_path), task.final_pdf_path
 
     # Check after archive

@@ -512,8 +512,8 @@ class TasksApiTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status, last_response_body
 
     task = project.task_for_task_definition(td)
-    task.convert_submission_to_pdf(log_to_stdout: false)
-    assert File.exist? task.final_pdf_path
+    assert_equal TaskStatus.ready_for_feedback, task.task_status
+    assert task.processing_pdf?
 
     unit.destroy
   end
