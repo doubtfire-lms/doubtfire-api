@@ -83,7 +83,7 @@ class NotificationsMailer < ApplicationMailer
     )
   end
 
-  # Icons are hosted PNGs, since mail clients drop icon fonts and SVG.
+  # Background images are optional decoration; the email also renders text labels.
   def email_icon_url(name)
     "#{@doubtfire_host}/assets/images/email/#{name}.png"
   end
@@ -92,10 +92,9 @@ class NotificationsMailer < ApplicationMailer
     status = group[:latest_status] && TaskStatus.status_for_name(group[:latest_status].to_s)
     return nil if status.nil?
 
-    { background: status.color, label: status.name, icon_url: email_icon_url("status-#{status.status_key}") }
+    { color: status.color, label: status.name, icon_url: email_icon_url("status-#{status.status_key}") }
   end
 
-  # Matches the icon the web app shows for notifications without a task.
   def group_icon_url(group)
     icon =
       if group[:counts]['communication_email'].positive?
@@ -110,11 +109,21 @@ class NotificationsMailer < ApplicationMailer
     email_icon_url("kind-#{icon}")
   end
 
+  def group_badge_label(group)
+    return 'EM' if group[:counts]['communication_email'].positive?
+    return 'WK' if group[:counts]['weekly_summary'].positive?
+    return 'IN' if group.dig(:destination, :type) == 'unit_inbox'
+    return 'PF' if group[:project_id] && Notification::PORTFOLIO_KINDS.any? { |kind| group[:counts][kind].positive? }
+
+    'NT'
+  end
+
   helper_method :notification_timestamp
   helper_method :notification_due_date
   helper_method :weekly_summary_period
   helper_method :status_chip
   helper_method :group_icon_url
+  helper_method :group_badge_label
 
   private
 

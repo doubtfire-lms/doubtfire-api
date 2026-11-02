@@ -27,7 +27,7 @@
               <%= "#{Time.zone.now.day.ordinalize} #{Time.zone.now.strftime('%B %Y')}" %>
             </div>
           </div>
-          <img src="<%= @doubtfire_host %>/assets/images/logo.png" alt="<%= @doubtfire_product_name %>" style="display:block; width:60px; height:35px; border:0; flex:none;" />
+          <div style="flex:none; margin-left:16px; color:#777; font-size:0.9em; font-weight:bold; line-height:1.4; text-align:right;"><%= @doubtfire_product_name %></div>
         </header>
 
         <p style="margin:20px 0 0; line-height:1.6;">Hi <%= @recipient.first_name %>,</p>
@@ -57,14 +57,12 @@
               <% end %>
               <% group_section[:groups].each do |group| %>
                 <article class="notification-box" style="font-family:Inter,Roboto,-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Helvetica,Arial,sans-serif; background:#fafafa; border-left:4px solid <%= group[:severity] == 'critical' ? '#c62828' : group[:severity] == 'warning' ? '#ed6c02' : '#1565c0' %>; padding:14px 16px; margin:0 0 10px; line-height:1.55;">
-                  <div style="display:flex; align-items:flex-start; gap:12px;">
-                    <div style="flex:none; width:40px; height:40px; border-radius:6px; background:#e5e7eb; color:#111827; text-align:center; font-size:13px; font-weight:600; line-height:40px; white-space:nowrap; overflow:hidden;">
-                      <% if group[:task] %>
-                        <%= group[:task][:abbreviation] %>
-                      <% else %>
-                        <img src="<%= group_icon_url(group) %>" alt="" style="display:block; width:24px; height:24px; margin:8px auto; border:0;" />
-                      <% end %>
-                    </div>
+                  <div style="display:flex; align-items:flex-start;">
+                    <% if group[:task] %>
+                      <div style="flex:none; width:40px; height:40px; margin-right:12px; border-radius:6px; background:#e5e7eb; color:#111827; text-align:center; font-size:13px; font-weight:600; line-height:40px; white-space:nowrap; overflow:hidden;"><%= group[:task][:abbreviation] %></div>
+                    <% else %>
+                      <div style="flex:none; box-sizing:border-box; width:64px; height:40px; margin-right:12px; padding:0 6px 0 30px; border-radius:6px; background-color:#e5e7eb; background-image:url('<%= group_icon_url(group) %>'); background-repeat:no-repeat; background-position:6px center; background-size:20px 20px; color:#111827; text-align:center; font-size:12px; font-weight:600; line-height:40px; white-space:nowrap; overflow:hidden;"><%= group_badge_label(group) %></div>
+                    <% end %>
                     <div style="flex:1; min-width:0;">
                       <div class="notification-heading" style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding-bottom:2px;">
                         <div style="min-width:0; font-weight:bold; color:#333; font-size:1.1em; line-height:1.4;">
@@ -81,7 +79,7 @@
                           <% end %>
                         </div>
                         <% if group_section[:kind] && group.dig(:task, :due_date) %>
-                          <div style="flex:none; font-weight:bold; color:#333; font-size:1.1em; line-height:1.4; white-space:nowrap;">
+                          <div style="flex:none; margin-left:16px; font-weight:bold; color:#333; font-size:1.1em; line-height:1.4; white-space:nowrap;">
                             <%= notification_due_date(group) %>
                           </div>
                         <% end %>
@@ -91,6 +89,14 @@
                       <% end %>
                       <% unless group_section[:kind] && group[:event_count] == group[:counts][group_section[:kind]] %>
                         <div style="color:#555;"><%= group[:detail] %></div>
+                      <% end %>
+                      <% if (chip = status_chip(group)) %>
+                        <div style="padding-top:7px;">
+                          <span style="display:inline-block; padding:2px; border:1px solid #e5e7eb; border-radius:4px; background:#fff; color:#444; font-size:0.8em; font-weight:bold; line-height:1.4;">
+                            <span style="display:inline-block; padding:2px 8px; vertical-align:middle;"><%= chip[:label] %></span>
+                            <span style="display:inline-block; width:22px; height:22px; border-radius:3px; background-color:<%= chip[:color] %>; background-image:url('<%= chip[:icon_url] %>'); background-repeat:no-repeat; background-position:center; background-size:16px 16px; vertical-align:middle;"></span>
+                          </span>
+                        </div>
                       <% end %>
                       <% if group[:weekly_summary] %>
                         <% summary = group[:weekly_summary] %>
@@ -218,11 +224,6 @@
                         </div>
                       <% end %>
                     </div>
-                    <% if (chip = status_chip(group)) %>
-                      <span title="<%= chip[:label] %>" style="flex:none; align-self:center; display:inline-block; padding:5px 14px; border-radius:999px; background:<%= chip[:background] %>; line-height:0;">
-                        <img src="<%= chip[:icon_url] %>" alt="<%= chip[:label] %>" style="display:block; width:18px; height:18px; border:0;" />
-                      </span>
-                    <% end %>
                   </div>
                 </article>
               <% end %>
