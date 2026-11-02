@@ -325,7 +325,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal actual_unit['start_date'].to_date, expected_unit.start_date.to_date
     assert_equal actual_unit['end_date'].to_date, expected_unit.end_date.to_date
 
-    keys = %w[code id name main_convenor_id description active auto_apply_extension_before_deadline send_notifications enable_sync_enrolments enable_sync_timetable draft_task_definition_id allow_student_extension_requests extension_weeks_on_resubmit_request allow_student_change_tutorial]
+    keys = %w[code id name main_convenor_id description active auto_apply_extension_before_deadline send_notifications generate_weekly_summaries enable_sync_enrolments enable_sync_timetable draft_task_definition_id allow_student_extension_requests extension_weeks_on_resubmit_request allow_student_change_tutorial]
 
     assert actual_unit.key?("my_role"), actual_unit.inspect
     assert_equal expected_unit.role_for(expected_unit.main_convenor_user).name, actual_unit["my_role"]
@@ -443,6 +443,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     unit['active'] = false
     unit['auto_apply_extension_before_deadline'] = false
     unit['send_notifications'] = false
+    unit['generate_weekly_summaries'] = false
 
     data_to_put = {
       unit: unit
@@ -454,7 +455,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     put_json "/api/units/#{original.id}", data_to_put
     assert_equal 200, last_response.status
 
-    assert_json_matches_model original.reload, unit, %w[name code description start_date end_date active auto_apply_extension_before_deadline send_notifications]
+    assert_json_matches_model original.reload, unit, %w[name code description start_date end_date active auto_apply_extension_before_deadline send_notifications generate_weekly_summaries]
   end
 
   def test_units_put_rejects_unsupported_name_and_code_characters

@@ -2,11 +2,12 @@ class PortfolioEvidenceMailer < ApplicationMailer
   def add_general
     @doubtfire_host = Doubtfire::Application.config.institution[:host]
     @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
-    @unsubscribe_url = "#{@doubtfire_host}/edit_profile"
+    @unsubscribe_url = "#{@doubtfire_host}/notifications/settings"
   end
 
   def task_pdf_failed(project, tasks)
     return nil if project.nil? || tasks.nil? || tasks.empty?
+    return nil unless notification_email_enabled?(project, 'pdf_generation_failed')
 
     add_general
     @student = project.student
@@ -37,25 +38,9 @@ class PortfolioEvidenceMailer < ApplicationMailer
     mail(to: email_with_name, from: tutor_email, subject: subject)
   end
 
-  def task_feedback_ready(project, tasks)
-    return nil if project.nil? || tasks.nil? || tasks.empty?
-
-    add_general
-    @student = project.student
-    @project = project
-    @tasks = tasks.sort_by { |t| t.task_definition.abbreviation }
-    @tutor = project.main_convenor_user
-    @has_comments = !@tasks.select { |t| t.is_last_comment_by?(@tutor) }.empty?
-    return nil if @tutor.nil? || @student.nil?
-
-    email_with_name = %("#{@student.name}" <#{@student.email}>)
-    tutor_email = %("#{@tutor.name}" <#{@tutor.email}>)
-    subject = "#{project.unit.name}: Feedback ready to review"
-    mail(to: email_with_name, from: tutor_email, subject: subject)
-  end
-
   def overseer_assessment_failed(project, tasks)
     return nil if project.nil? || tasks.nil? || tasks.empty?
+    return nil unless notification_email_enabled?(project, 'overseer_failed')
 
     add_general
     @student = project.student
@@ -98,5 +83,11 @@ class PortfolioEvidenceMailer < ApplicationMailer
     convenor_email = %("#{@convenor.name}" <#{@convenor.email}>)
     subject = "#{project.unit.name}: Portfolio failed to compile"
     mail(to: email_with_name, from: convenor_email, subject: subject)
+  end
+
+  private
+
+  def notification_email_enabled?(project, kind)
+    NotificationSetting.for(project.student).delivers?(project.unit, kind, :email)
   end
 end

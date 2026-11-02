@@ -14,6 +14,7 @@ class QueueRoutingTest < ActiveSupport::TestCase
     ArchiveOldUnitsJob
     ClearAccessTokensJob
     CommunicationRuleJob
+    CreateWeeklySummaryNotificationsJob
     D2lPostGradesJob
     DownloadMarkingSessionsJob
     DownloadOverflowTaskClaimsCsvJob
@@ -37,11 +38,16 @@ class QueueRoutingTest < ActiveSupport::TestCase
     ImportStudentsLtiJob
     LoginDockerJob
     NotifyDiscussTimeoutJob
+    NotifyFeedbackWarningsJob
+    NotifyTaskDeadlinesJob
     NotifyTutorNotesJob
     PollCommunicationSetSchedulesJob
+    PollNotificationDigestsJob
+    PruneNotificationsJob
     PullDockerImageJob
     RefreshModerationFeedbackTimestampsJob
     SendDiscussTimeoutEmailJob
+    SendNotificationDigestJob
     SyncLmsGradesJob
     SyncLmsIntegrationsJob
     TiiActionJob

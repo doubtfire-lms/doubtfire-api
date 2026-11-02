@@ -5,6 +5,46 @@ require "test_helper"
 class ProjectModelTest < ActiveSupport::TestCase
   include TestHelpers::TestFileHelper
 
+  def test_top_tasks_excludes_tasks_until_prerequisites_are_met
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0)
+    project = FactoryBot.create(:project, unit: unit, target_grade: 0)
+    prerequisite_definition = FactoryBot.create(
+      :task_definition,
+      unit: unit,
+      abbreviation: 'PREREQ',
+      target_grade: 0,
+      start_date: Time.zone.today - 1.day,
+      target_date: Time.zone.today + 3.days
+    )
+    dependent_definition = FactoryBot.create(
+      :task_definition,
+      unit: unit,
+      abbreviation: 'DEPENDENT',
+      target_grade: 0,
+      start_date: Time.zone.today - 1.day,
+      target_date: Time.zone.today + 3.days
+    )
+    prerequisite = TaskPrerequisite.create!(
+      task_definition: dependent_definition,
+      prerequisite: prerequisite_definition,
+      task_status_id: TaskStatus.complete.id
+    )
+
+    assert_not_includes project.top_tasks.map { |entry| entry[:task_definition] }, dependent_definition
+    assert_not project.tasks.exists?(task_definition: prerequisite_definition)
+
+    prerequisite_task = project.task_for_task_definition(prerequisite_definition)
+    prerequisite_task.update!(task_status: TaskStatus.assess_in_portfolio)
+    assert_not_includes project.top_tasks.map { |entry| entry[:task_definition] }, dependent_definition
+
+    prerequisite.update!(task_status_id: TaskStatus.ready_for_feedback.id)
+    assert_includes project.top_tasks.map { |entry| entry[:task_definition] }, dependent_definition
+
+    prerequisite.update!(task_status_id: TaskStatus.complete.id)
+    prerequisite_task.update!(task_status: TaskStatus.complete)
+    assert_includes project.top_tasks.map { |entry| entry[:task_definition] }, dependent_definition
+  end
+
   def test_unit_staff_role_takes_precedence_when_staff_owns_project
     unit = FactoryBot.create(:unit, with_students: false)
     staff = FactoryBot.create(:user, :tutor)

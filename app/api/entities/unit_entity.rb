@@ -61,6 +61,7 @@ module Entities
 
     expose :auto_apply_extension_before_deadline, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
     expose :send_notifications, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
+    expose :generate_weekly_summaries, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
     expose :enable_sync_enrolments, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
     expose :enable_sync_timetable, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
     expose :draft_task_definition_id, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
