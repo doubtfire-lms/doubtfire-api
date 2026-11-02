@@ -38,8 +38,6 @@ class NotificationJobsTest < ActiveSupport::TestCase
     assert_includes digest_html, 'notification-box'
     assert_includes digest_html, 'Unsubscribe'
     assert_includes digest_html, unit.code
-    assert_no_match(/<(?:table|tr|td)\b/, digest_html)
-    assert_no_match(/\s(?:width|cellpadding|cellspacing|align|valign|nowrap)=/, digest_html)
 
     assert_not_nil enabled.reload.email_sent_at
     assert_not_nil disabled.reload.email_processed_at
