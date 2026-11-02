@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.1.0-4](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-3...v11.1.0-4) (2026-11-02)
+
+
+### Features
+
+* expose Sidekiq and portfolio compilation statistics ([#746](https://github.com/b0ink/doubtfire-deploy/issues/746)) ([a0267a1](https://github.com/b0ink/doubtfire-deploy/commit/a0267a11ed9b263213c0687e892ad160319d1fba))
+* notifications ([#661](https://github.com/b0ink/doubtfire-deploy/issues/661)) ([57cb77d](https://github.com/b0ink/doubtfire-deploy/commit/57cb77d26fe9418f5f9bde0d62cc6cb40edc888b))
+
+
+### Bug Fixes
+
+* keep digest layout readable when email icons are blocked ([0c05e4b](https://github.com/b0ink/doubtfire-deploy/commit/0c05e4b000f650ca7bad34c1d1a40a7f6431263f))
+
 ## [11.1.0-3](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-2...v11.1.0-3) (2026-10-30)
 
 
