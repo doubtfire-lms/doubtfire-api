@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.1.0-6](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-5...v11.1.0-6) (2026-11-02)
+
+
+### Bug Fixes
+
+* block path traversal in Overseer assessment ZIPs ([#745](https://github.com/b0ink/doubtfire-deploy/issues/745)) ([c5ee4e7](https://github.com/b0ink/doubtfire-deploy/commit/c5ee4e7f8bca9e3127f26e0ac168072fe4871611))
+* parse pdf generator process limit as an integer ([18ed3ed](https://github.com/b0ink/doubtfire-deploy/commit/18ed3edbf72b4290b129f9dc546e2d2cf8ca9a5f))
+
 ## [11.1.0-5](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-4...v11.1.0-5) (2026-11-02)
 
 
