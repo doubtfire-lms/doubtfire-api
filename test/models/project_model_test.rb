@@ -11,6 +11,7 @@ class ProjectModelTest < ActiveSupport::TestCase
     prerequisite_definition = FactoryBot.create(
       :task_definition,
       unit: unit,
+      abbreviation: 'PREREQ',
       target_grade: 0,
       start_date: Time.zone.today - 1.day,
       target_date: Time.zone.today + 3.days
@@ -18,6 +19,7 @@ class ProjectModelTest < ActiveSupport::TestCase
     dependent_definition = FactoryBot.create(
       :task_definition,
       unit: unit,
+      abbreviation: 'DEPENDENT',
       target_grade: 0,
       start_date: Time.zone.today - 1.day,
       target_date: Time.zone.today + 3.days
