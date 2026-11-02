@@ -73,7 +73,7 @@ module Doubtfire
     config.overseer_student_notification_grace_period = ENV.fetch('OVERSEER_STUDENT_NOTIFICATION_GRACE_PERIOD_MINUTES', 30).to_i.minutes
 
     # Limit number of pdf generators to run at once
-    config.pdfgen_max_processes = ENV['DF_MAX_PDF_GEN_PROCESSES'] || 2
+    config.pdfgen_max_processes = ENV.fetch('DF_MAX_PDF_GEN_PROCESSES', 2).to_i
 
     # Size of each chunk in a batch feedback upload; keep under the proxy's request body limit
     config.batch_feedback_chunk_size = ENV.fetch('BATCH_FEEDBACK_CHUNK_SIZE_MB', 50).to_i.megabytes
