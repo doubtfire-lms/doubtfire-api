@@ -567,13 +567,10 @@ class Task < ApplicationRecord
 
   def unmet_prerequisite_error
     task_definition.task_prerequisites.each do |prerequisite|
+      next if prerequisite.met_for?(project)
+
       prereq_td = prerequisite.prerequisite
       minimum_status = TaskStatus.find(prerequisite.task_status_id)
-      prereq_task = project.task_for_task_definition(prereq_td)
-
-      next if prereq_task.ready_or_complete? &&
-              PREREQUISITE_STATUS_LEVELS[prereq_task.status] >= PREREQUISITE_STATUS_LEVELS[minimum_status.status_key]
-
       verb = case minimum_status
              when TaskStatus.complete then 'completed'
              when TaskStatus.discuss then 'discussed'

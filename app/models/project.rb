@@ -348,6 +348,7 @@ class Project < ApplicationRecord
   #
   def task_definitions_and_status(target)
     assigned_task_defs_for_grade(target)
+      .includes(:task_prerequisites)
       .order("start_date ASC, abbreviation ASC")
       .map { |td|
       if has_task_for_task_definition? td
@@ -373,6 +374,9 @@ class Project < ApplicationRecord
     # Get list of tasks that could be top tasks...
     #
     task_states = task_definitions_and_status(target_grade)
+    task_states.select! do |task_state|
+      task_state[:task_definition].task_prerequisites.all? { |prerequisite| prerequisite.met_for?(self) }
+    end
 
     #
     # Start with overdue...

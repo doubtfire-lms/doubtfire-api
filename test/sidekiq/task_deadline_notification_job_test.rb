@@ -58,6 +58,35 @@ class TaskDeadlineNotificationJobTest < ActiveSupport::TestCase
     assert_equal ['task_start_now'], @student.received_notifications.where(task: @task).pluck(:kind)
   end
 
+  def test_skips_deadline_reminders_until_prerequisites_are_met
+    prerequisite_definition = FactoryBot.create(
+      :task_definition, unit: @unit, target_grade: @definition.target_grade
+    )
+    TaskPrerequisite.create!(
+      task_definition: @definition,
+      prerequisite: prerequisite_definition,
+      task_status_id: TaskStatus.complete.id
+    )
+
+    travel_to(@now) { Notification.refresh_task_deadline_notifications! }
+    assert_not @student.received_notifications.exists?(task: @task)
+
+    prerequisite_task = @project.task_for_task_definition(prerequisite_definition)
+    prerequisite_task.update!(task_status: TaskStatus.assess_in_portfolio)
+    travel_to(@now + 5.days) { Notification.refresh_task_deadline_notifications! }
+    assert_not @student.received_notifications.exists?(task: @task)
+
+    prerequisite_task.update!(task_status: TaskStatus.complete)
+    travel_to(@now + 5.days) { Notification.refresh_task_deadline_notifications! }
+    assert_equal ['task_due_soon'], @student.received_notifications.where(task: @task).pluck(:kind)
+
+    prerequisite_task.update!(task_status: TaskStatus.assess_in_portfolio)
+    travel_to(@now + 11.days) { Notification.refresh_task_deadline_notifications! }
+    due_soon = @student.received_notifications.find_by!(task: @task, kind: 'task_due_soon')
+    assert_not_nil due_soon.read_at
+    assert_not @student.received_notifications.exists?(task: @task, kind: 'task_overdue')
+  end
+
   def test_skips_inactive_units
     @unit.update!(active: false)
 

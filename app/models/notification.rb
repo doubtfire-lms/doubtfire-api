@@ -501,7 +501,7 @@ class Notification < ApplicationRecord
   def self.each_task_deadline_candidate(now:)
     Unit.within_last_teaching_date(now).where(active: true, start_date: ..now).find_each do |unit|
       unit.active_projects.includes(:user).find_each do |project|
-        project.assigned_task_defs.find_each do |task_definition|
+        project.assigned_task_defs.includes(:task_prerequisites).find_each do |task_definition|
           yield project.task_for_task_definition(task_definition)
         end
       end
@@ -547,7 +547,8 @@ class Notification < ApplicationRecord
       task.unit.start_date <= now &&
       task.task_definition.target_grade <= task.project.target_grade &&
       task.submission_date.nil? &&
-      !task.submitted_status?
+      !task.submitted_status? &&
+      task.task_definition.task_prerequisites.all? { |prerequisite| prerequisite.met_for?(task.project) }
   end
 
   def self.feedback_warning_eligible?(task, now:, started_at: nil)
