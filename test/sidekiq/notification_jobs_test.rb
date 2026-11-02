@@ -228,7 +228,7 @@ class NotificationJobsTest < ActiveSupport::TestCase
     assert_nil notification.email_sent_at
   end
 
-  def test_digest_shows_text_badges_alongside_optional_icons
+  def test_digest_keeps_status_indicator_at_right_with_optional_icon
     settings = create_settings
     unit = FactoryBot.create(:unit, task_count: 1)
     project = unit.active_projects.first
@@ -247,7 +247,7 @@ class NotificationJobsTest < ActiveSupport::TestCase
     digest_html = ActionMailer::Base.deliveries.last.html_part.body.to_s
     assert_includes digest_html, '/assets/images/email/status-complete.png'
     assert_includes digest_html, '/assets/images/email/kind-notifications.png'
-    assert_match(%r{>\s*Complete\s*</span>}, digest_html)
+    assert_match(/<td align="right"[^>]*>\s*<span title="Complete"/, digest_html)
     assert_match(%r{>\s*PF\s*</div>}, digest_html)
     assert_match(/>\s*#{Regexp.escape(task.task_definition.abbreviation)}\s*</, digest_html)
   end

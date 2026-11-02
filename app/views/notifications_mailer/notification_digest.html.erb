@@ -57,13 +57,13 @@
               <% end %>
               <% group_section[:groups].each do |group| %>
                 <article class="notification-box" style="font-family:Inter,Roboto,-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Helvetica,Arial,sans-serif; background:#fafafa; border-left:4px solid <%= group[:severity] == 'critical' ? '#c62828' : group[:severity] == 'warning' ? '#ed6c02' : '#1565c0' %>; padding:14px 16px; margin:0 0 10px; line-height:1.55;">
-                  <div style="display:flex; align-items:flex-start;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%; border-collapse:collapse;"><tr>
                     <% if group[:task] %>
-                      <div style="flex:none; width:40px; height:40px; margin-right:12px; border-radius:6px; background:#e5e7eb; color:#111827; text-align:center; font-size:13px; font-weight:600; line-height:40px; white-space:nowrap; overflow:hidden;"><%= group[:task][:abbreviation] %></div>
+                      <td style="width:40px; padding:0 12px 0 0; vertical-align:top;"><div style="width:40px; height:40px; border-radius:6px; background:#e5e7eb; color:#111827; text-align:center; font-size:13px; font-weight:600; line-height:40px; white-space:nowrap; overflow:hidden;"><%= group[:task][:abbreviation] %></div></td>
                     <% else %>
-                      <div style="flex:none; box-sizing:border-box; width:64px; height:40px; margin-right:12px; padding:0 6px 0 30px; border-radius:6px; background-color:#e5e7eb; background-image:url('<%= group_icon_url(group) %>'); background-repeat:no-repeat; background-position:6px center; background-size:20px 20px; color:#111827; text-align:center; font-size:12px; font-weight:600; line-height:40px; white-space:nowrap; overflow:hidden;"><%= group_badge_label(group) %></div>
+                      <td style="width:64px; padding:0 12px 0 0; vertical-align:top;"><div style="box-sizing:border-box; width:64px; height:40px; padding:0 6px 0 30px; border-radius:6px; background-color:#e5e7eb; background-image:url('<%= group_icon_url(group) %>'); background-repeat:no-repeat; background-position:6px center; background-size:20px 20px; color:#111827; text-align:center; font-size:12px; font-weight:600; line-height:40px; white-space:nowrap; overflow:hidden;"><%= group_badge_label(group) %></div></td>
                     <% end %>
-                    <div style="flex:1; min-width:0;">
+                    <td style="vertical-align:top;">
                       <div class="notification-heading" style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding-bottom:2px;">
                         <div style="min-width:0; font-weight:bold; color:#333; font-size:1.1em; line-height:1.4;">
                           <% if group[:task] %>
@@ -89,14 +89,6 @@
                       <% end %>
                       <% unless group_section[:kind] && group[:event_count] == group[:counts][group_section[:kind]] %>
                         <div style="color:#555;"><%= group[:detail] %></div>
-                      <% end %>
-                      <% if (chip = status_chip(group)) %>
-                        <div style="padding-top:7px;">
-                          <span style="display:inline-block; padding:2px; border:1px solid #e5e7eb; border-radius:4px; background:#fff; color:#444; font-size:0.8em; font-weight:bold; line-height:1.4;">
-                            <span style="display:inline-block; padding:2px 8px; vertical-align:middle;"><%= chip[:label] %></span>
-                            <span style="display:inline-block; width:22px; height:22px; border-radius:3px; background-color:<%= chip[:color] %>; background-image:url('<%= chip[:icon_url] %>'); background-repeat:no-repeat; background-position:center; background-size:16px 16px; vertical-align:middle;"></span>
-                          </span>
-                        </div>
                       <% end %>
                       <% if group[:weekly_summary] %>
                         <% summary = group[:weekly_summary] %>
@@ -223,8 +215,13 @@
                           </a>
                         </div>
                       <% end %>
-                    </div>
-                  </div>
+                    </td>
+                    <% if (chip = status_chip(group)) %>
+                      <td align="right" style="width:46px; padding:0 32px 0 12px; vertical-align:middle; white-space:nowrap;">
+                        <span title="<%= chip[:label] %>" role="img" aria-label="<%= chip[:label] %>" style="display:inline-block; width:46px; height:28px; border-radius:999px; background-color:<%= chip[:color] %>; background-image:url('<%= chip[:icon_url] %>'); background-repeat:no-repeat; background-position:center; background-size:18px 18px;"></span>
+                      </td>
+                    <% end %>
+                  </tr></table>
                 </article>
               <% end %>
             <% end %>
