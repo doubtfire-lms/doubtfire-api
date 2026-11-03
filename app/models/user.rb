@@ -15,6 +15,8 @@ class String
 end
 
 class User < ApplicationRecord
+  has_many :course_enrolments, dependent: :destroy
+  has_many :courses, through: :course_enrolments
   include AuthenticationHelpers
 
   include UserTiiModule

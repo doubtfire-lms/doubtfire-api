@@ -29,6 +29,7 @@ class TaskDefinitionsApi < Grape::API
       requires :abbreviation,             type: String,   desc: 'The abbreviation of the task'
       requires :restrict_status_updates,  type: Boolean,  desc: 'Restrict updating of the status to staff'
       optional :staff_managed_task,       type: Boolean,  desc: 'Only staff can upload submissions and change task status'
+      optional :allow_student_skill_selection, type: Boolean, desc: 'Allow students to select additional skills (future stage)'
       optional :upload_requirements,      type: String,   desc: 'Task file upload requirements'
       requires :plagiarism_warn_pct,      type: Integer,  desc: 'The percent at which to record and warn about plagiarism'
       requires :is_graded,                type: Boolean,  desc: 'Whether or not this task definition is a graded task'
@@ -67,6 +68,7 @@ class TaskDefinitionsApi < Grape::API
                                                 :abbreviation,
                                                 :restrict_status_updates,
                                                 :staff_managed_task,
+                                                :allow_student_skill_selection,
                                                 :plagiarism_warn_pct,
                                                 :scorm_enabled,
                                                 :scorm_allow_review,
@@ -178,6 +180,7 @@ class TaskDefinitionsApi < Grape::API
                                                 :abbreviation,
                                                 :restrict_status_updates,
                                                 :staff_managed_task,
+                                                :allow_student_skill_selection,
                                                 :plagiarism_warn_pct,
                                                 :scorm_enabled,
                                                 :scorm_allow_review,
@@ -558,7 +561,7 @@ class TaskDefinitionsApi < Grape::API
     subquery = unit
                .tutorial_enrolments
                .joins(:tutorial)
-               .where('tutorials.tutorial_stream_id = :sid OR tutorials.tutorial_stream_id IS NULL', sid: (stream.present? ? stream.id : nil))
+               .where('tutorials.tutorial_stream_id = :sid OR tutorials.tutorial_stream_id IS NULL', sid: stream.presence&.id)
                .select('tutorials.tutorial_stream_id as tutorial_stream_id', 'tutorials.id as tutorial_id', 'project_id').to_sql
 
     result = unit.student_tasks

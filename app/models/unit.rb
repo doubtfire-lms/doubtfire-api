@@ -176,6 +176,7 @@ class Unit < ApplicationRecord
   # Model associations.
   # When a Unit is destroyed, any TaskDefinitions, Tutorials, and ProjectConvenor instances will also be destroyed.
   has_many :projects, dependent: :destroy, inverse_of: :unit # projects first to remove tasks
+  belongs_to :unit_definition, optional: true
   has_many :group_sets, dependent: :destroy, inverse_of: :unit # group sets next to remove groups
   has_many :task_definitions, dependent: :destroy, inverse_of: :unit
   has_many :tutorials, dependent: :destroy, inverse_of: :unit # tutorials need groups and tasks deleted before it...
@@ -242,6 +243,7 @@ class Unit < ApplicationRecord
 
   before_validation :default_last_teaching_date, on: :create
   before_validation :sync_last_teaching_date_with_end_date, on: :update
+  before_validation :detach_mismatched_unit_definition, if: -> { will_save_change_to_code? || will_save_change_to_unit_definition_id? }
 
   validate :validate_end_date_after_start_date
   validate :validate_last_teaching_date
@@ -654,6 +656,10 @@ class Unit < ApplicationRecord
     self.last_teaching_date ||= teaching_period&.last_teaching_date || end_date&.to_date
   end
 
+  def detach_mismatched_unit_definition
+    self.unit_definition = nil if unit_definition && unit_definition.code != code
+  end
+
   def sync_last_teaching_date_with_end_date
     return unless will_save_change_to_end_date? && !will_save_change_to_last_teaching_date?
     return unless last_teaching_date == end_date_change_to_be_saved.first&.to_date
@@ -677,7 +683,10 @@ class Unit < ApplicationRecord
   def rollover(teaching_period, start_date, end_date, new_code, last_teaching_date = nil)
     new_unit = self.dup
 
-    new_unit.code = new_code if new_code.present?
+    if new_code.present? && new_code != code
+      new_unit.code = new_code
+      new_unit.unit_definition = nil
+    end
 
     if teaching_period.present?
       new_unit.teaching_period = teaching_period
