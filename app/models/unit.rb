@@ -404,7 +404,6 @@ class Unit < ApplicationRecord
   end
 
   def queue_discuss_timeout_email(task, actor, type, expiry_date = nil)
-    return unless send_notifications
     return unless task.project.enrolled
 
     kind = type == :approaching ? 'discuss_warning' : 'discuss_expired'

@@ -131,12 +131,13 @@ class UnitMailTest < ActionMailer::TestCase
     assert_includes missed.html_part.body.to_s, 'Unsubscribe'
   end
 
-  def test_discuss_timeout_notifications_send_emails
+  def test_discuss_timeout_notifications_send_emails_when_digests_are_disabled
     unit = FactoryBot.create(
       :unit,
       discuss_timeout_enabled: true,
       discuss_timeout_warning_days: 7,
-      discuss_timeout_expire_days: 14
+      discuss_timeout_expire_days: 14,
+      send_notifications: false
     )
     project = unit.active_projects.first
     task = project.task_for_task_definition(unit.task_definitions.first)
