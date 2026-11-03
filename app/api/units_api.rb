@@ -321,6 +321,8 @@ class UnitsApi < Grape::API
       result = unit.rollover(nil, params[:start_date], params[:end_date], params[:new_unit_code], params[:last_teaching_date])
     end
 
+    result.employ_staff(current_user, Role.convenor)
+
     my_role = result.role_for(current_user)
 
     present result, with: Entities::UnitEntity, my_role: my_role, user: current_user, in_unit: true

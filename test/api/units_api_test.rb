@@ -125,6 +125,26 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal 403, last_response.status, last_response_body
   end
 
+  def test_rollover_employs_requesting_convenor_without_copying_other_staff
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0, outcome_count: 0, tutorials: 0, staff_count: 0)
+    main_convenor = unit.main_convenor_user
+    requesting_convenor = FactoryBot.create(:user, :convenor)
+    other_convenor = FactoryBot.create(:user, :convenor)
+    unit.employ_staff(requesting_convenor, Role.convenor)
+    unit.employ_staff(other_convenor, Role.convenor)
+    teaching_period = FactoryBot.create(:teaching_period)
+
+    add_auth_header_for(user: requesting_convenor)
+    post_json "/api/units/#{unit.id}/rollover", { teaching_period_id: teaching_period.id }
+
+    assert_equal 201, last_response.status, last_response_body
+    rolled_unit = Unit.find(last_response_body['id'])
+    assert_equal main_convenor, rolled_unit.main_convenor_user
+    assert_equal [main_convenor.id, requesting_convenor.id].sort, rolled_unit.convenors.pluck(:user_id).sort
+    assert_equal Role.convenor, rolled_unit.role_for(requesting_convenor)
+    assert_equal Role.convenor.name, last_response_body['my_role']
+  end
+
   def create_unit
     {
       name: 'Intro to Social Skills',
