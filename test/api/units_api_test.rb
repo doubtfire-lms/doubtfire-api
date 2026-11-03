@@ -145,6 +145,21 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal Role.convenor.name, last_response_body['my_role']
   end
 
+  def test_tutor_cannot_rollover_unit
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0, outcome_count: 0, tutorials: 0)
+    tutor = FactoryBot.create(:user, :tutor)
+    unit.employ_staff(tutor, Role.tutor)
+    teaching_period = FactoryBot.create(:teaching_period)
+    unit_count = Unit.count
+
+    add_auth_header_for(user: tutor)
+    post_json "/api/units/#{unit.id}/rollover", { teaching_period_id: teaching_period.id }
+
+    assert_equal 403, last_response.status, last_response_body
+    assert_equal 'Not authorised to rollover a unit', last_response_body['error']
+    assert_equal unit_count, Unit.count
+  end
+
   def create_unit
     {
       name: 'Intro to Social Skills',
