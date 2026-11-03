@@ -26,9 +26,9 @@ Doubtfire::Application.routes.draw do
   get 'api/internal/downloads/pdf-file', to: 'pdf_file_download_authorizations#show'
   get 'api/internal/downloads/unit-content', to: 'unit_content_download_authorizations#show'
 
+  get "health" => "rails/health#show", as: :rails_health_check
+
   mount ApiRoot => '/'
   mount GrapeSwaggerRails::Engine => '/api/docs'
   mount Sidekiq::Web => "/sidekiq" # mount Sidekiq::Web in your Rails app
-
-  get "health" => "rails/health#show", as: :rails_health_check
 end
