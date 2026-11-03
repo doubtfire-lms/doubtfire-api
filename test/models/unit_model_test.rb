@@ -17,7 +17,7 @@ class UnitModelTest < ActiveSupport::TestCase
     @unit.destroy
   end
 
-  def test_weekly_status_emails_stop_after_last_teaching_date
+  def test_weekly_summaries_stop_after_last_teaching_date
     last_teaching_date = Time.zone.today
     unit = FactoryBot.create(
       :unit,
@@ -27,10 +27,11 @@ class UnitModelTest < ActiveSupport::TestCase
     )
 
     travel_to Time.zone.parse("#{last_teaching_date + 1.day} 08:00:00") do
-      summary_stats = {}
-      unit.send_weekly_status_emails(summary_stats)
+      summary_stats = { week_end: Time.current }
+      unit.create_weekly_summary_notifications(summary_stats)
 
-      assert_empty summary_stats
+      # Returns before gathering any stats.
+      assert_equal [:week_end], summary_stats.keys
     end
   end
 

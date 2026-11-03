@@ -2,6 +2,41 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.1.0-6](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-5...v11.1.0-6) (2026-11-02)
+
+
+### Bug Fixes
+
+* block path traversal in Overseer assessment ZIPs ([#745](https://github.com/b0ink/doubtfire-deploy/issues/745)) ([c5ee4e7](https://github.com/b0ink/doubtfire-deploy/commit/c5ee4e7f8bca9e3127f26e0ac168072fe4871611))
+* parse pdf generator process limit as an integer ([18ed3ed](https://github.com/b0ink/doubtfire-deploy/commit/18ed3edbf72b4290b129f9dc546e2d2cf8ca9a5f))
+
+## [11.1.0-5](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-4...v11.1.0-5) (2026-11-02)
+
+
+### Bug Fixes
+
+* move status icon back to original position ([b43492f](https://github.com/b0ink/doubtfire-deploy/commit/b43492f54f30408f522916e916805de10894a049))
+
+## [11.1.0-4](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-3...v11.1.0-4) (2026-11-02)
+
+
+### Features
+
+* expose Sidekiq and portfolio compilation statistics ([#746](https://github.com/b0ink/doubtfire-deploy/issues/746)) ([a0267a1](https://github.com/b0ink/doubtfire-deploy/commit/a0267a11ed9b263213c0687e892ad160319d1fba))
+* notifications ([#661](https://github.com/b0ink/doubtfire-deploy/issues/661)) ([57cb77d](https://github.com/b0ink/doubtfire-deploy/commit/57cb77d26fe9418f5f9bde0d62cc6cb40edc888b))
+
+
+### Bug Fixes
+
+* keep digest layout readable when email icons are blocked ([0c05e4b](https://github.com/b0ink/doubtfire-deploy/commit/0c05e4b000f650ca7bad34c1d1a40a7f6431263f))
+
+## [11.1.0-3](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-2...v11.1.0-3) (2026-10-30)
+
+
+### Bug Fixes
+
+* prevent TeX injection from notebooks during PDF generation ([#742](https://github.com/b0ink/doubtfire-deploy/issues/742)) ([35a6b54](https://github.com/b0ink/doubtfire-deploy/commit/35a6b5442704a61928fa083fab9674773de7e36e))
+
 ## [11.1.0-2](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-1...v11.1.0-2) (2026-10-28)
 
 

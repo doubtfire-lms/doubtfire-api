@@ -61,6 +61,8 @@ class UsersApi < Grape::API
       optional :receive_feedback_notifications, type: Boolean, desc: 'Allow user to be sent feedback notifications'
       optional :opt_in_to_research, type: Boolean, desc: 'Allow user to opt in to research conducted by Doubtfire'
       optional :has_run_first_time_setup, type: Boolean, desc: 'Whether or not user has run first-time setup'
+      optional :timezone, type: String, desc: 'IANA timezone used to schedule the user\'s notifications'
+      optional :auto_timezone, type: Boolean, desc: 'Whether the timezone follows the user\'s browser'
     end
   end
   put '/users/:id' do
@@ -88,7 +90,9 @@ class UsersApi < Grape::API
                                                       :receive_portfolio_notifications,
                                                       :receive_feedback_notifications,
                                                       :opt_in_to_research,
-                                                      :has_run_first_time_setup
+                                                      :has_run_first_time_setup,
+                                                      :timezone,
+                                                      :auto_timezone
                                                     )
 
       user.role = Role.student if user.role.nil?

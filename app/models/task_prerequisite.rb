@@ -2,6 +2,14 @@ class TaskPrerequisite < ApplicationRecord
   belongs_to :task_definition
   belongs_to :prerequisite, class_name: "TaskDefinition"
 
+  def met_for?(project)
+    task = project.tasks.find_by(task_definition_id: prerequisite_id)
+    return false unless task&.ready_or_complete?
+
+    Task::PREREQUISITE_STATUS_LEVELS[task.status] >=
+      Task::PREREQUISITE_STATUS_LEVELS[TaskStatus.find(task_status_id).status_key]
+  end
+
   # validate :prerequisite_due_date_not_after_task
   validate :cannot_be_its_own_prerequisite
   validate :no_reverse_prerequisite
