@@ -2744,7 +2744,7 @@ class Unit < ApplicationRecord
                        .select('task_id', 'COUNT(*) AS similarity_count', 'SUM(flagged) AS flagged_count')
                        .group(:task_id)
                        .to_sql
-    result =  student_tasks.
+    result = student_tasks.
               joins(:task_status).
               joins("LEFT OUTER JOIN (#{tutorial_enrolment_subquery}) as sq ON sq.project_id = projects.id AND (sq.tutorial_stream_id = task_definitions.tutorial_stream_id OR sq.tutorial_stream_id IS NULL)").
               joins("LEFT JOIN unit_roles task_tutor_roles ON task_tutor_roles.id = COALESCE(sq.unit_role_id, #{main_convenor_id.to_i})").
