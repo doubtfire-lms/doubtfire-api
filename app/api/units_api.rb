@@ -81,7 +81,7 @@ class UnitsApi < Grape::API
       optional :main_convenor_id, type: Integer
       optional :auto_apply_extension_before_deadline, type: Boolean, desc: 'Indicates if extensions before the deadline should be automatically applied'
       optional :mark_late_submissions_as_assess_in_portfolio, type: Boolean, desc: 'Indicates if late submissions should be set Time Exceeded or Assess in Portfolio'
-      optional :send_notifications, type: Boolean, desc: 'Indicates if notification digests and discussion deadline emails are sent'
+      optional :send_notifications, type: Boolean, desc: 'Indicates if notification email digests are sent'
       optional :generate_weekly_summaries, type: Boolean, desc: 'Indicates if weekly summary notifications are created'
       optional :enable_sync_timetable, type: Boolean, desc: 'Sync to timetable automatically if supported by deployment'
       optional :enable_sync_enrolments, type: Boolean, desc: 'Sync student enrolments automatically if supported by deployment'
@@ -186,7 +186,7 @@ class UnitsApi < Grape::API
       optional :main_convenor_user_id, type: Integer
       optional :auto_apply_extension_before_deadline, type: Boolean, desc: 'Indicates if extensions before the deadline should be automatically applied', default: true
       optional :mark_late_submissions_as_assess_in_portfolio, type: Boolean, desc: 'Indicates if late submissions should be set to Time Exceeded or Assess in Portfolio', default: true
-      optional :send_notifications, type: Boolean, desc: 'Indicates if notification digests and discussion deadline emails are sent', default: true
+      optional :send_notifications, type: Boolean, desc: 'Indicates if notification email digests are sent', default: true
       optional :generate_weekly_summaries, type: Boolean, desc: 'Indicates if weekly summary notifications are created', default: true
       optional :enable_sync_timetable, type: Boolean, desc: 'Sync to timetable automatically if supported by deployment', default: true
       optional :enable_sync_enrolments, type: Boolean, desc: 'Sync student enrolments automatically if supported by deployment', default: true
