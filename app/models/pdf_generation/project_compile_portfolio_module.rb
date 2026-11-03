@@ -70,7 +70,7 @@ module PdfGeneration
         @is_retry = is_retry
         @include_pax = !is_retry
         @work_id = FileHelper.sanitized_path(
-          "portfolio-#{Time.current.strftime('%Y%m%d-%H%M')}-#{SecureRandom.hex(12)}-#{project.unit.code}-#{project.student.username}-#{project.id}-#{Process.pid}#{'-retry' if is_retry}"
+          "portfolio-#{Time.current.strftime('%Y%m%d-%H%M')}-#{project.unit.code}-#{project.student.username}-#{project.id}-#{Process.pid}#{'-retry' if is_retry}-#{SecureRandom.hex(12)}"
         )
       end
 
