@@ -24,11 +24,25 @@ module AuthorisationHelpers
     :view_plagiarism,
     :get_discussion,
     :get_staff_note,
+    :get_staff_notes,
     :get_members,
     :get_groups,
     :get_discussion_prompt,
     :get_engagements,
-    :get_tutor_times
+    :get_tutor_times,
+    :get_tutor_times_summary,
+    :get_marking_sessions,
+    :get_los,
+    :view_staff_inbox,
+    :download_overflow_stats
+  ].freeze
+
+  # Some read endpoints use the same permission as their write counterparts.
+  OBSERVER_ONLY_GET_PERMISSIONS = [
+    :update,
+    :provide_feedback,
+    :create_feedback_chips,
+    :manage_unit_content
   ].freeze
 
   #
@@ -44,6 +58,9 @@ module AuthorisationHelpers
     obj_class = object.class == Class ? object : object.class
     perm_hash = obj_class.permissions
 
+    return true if obj_class == User && action == :get_all_units && user.observe_all_units?
+    return true if obj_class == User && action == :get_staff_list && user.observe_all_units?
+
     # System administrator permissions take precedence over contextual roles.
     if user.has_admin_capability?
       system_perms = perm_get_fn.call(user.role.to_sym, perm_hash, other)
@@ -51,8 +68,6 @@ module AuthorisationHelpers
     end
 
     role_obj = object.role_for(user)
-
-    return false if role_obj.nil?
 
     # Attempt to get the unit role from a Unit context
     unit_role = object&.unit_role_for(user) if object.respond_to?(:unit_role_for)
@@ -62,9 +77,19 @@ module AuthorisationHelpers
       unit_role = object.unit.unit_role_for(user)
     end
 
-    if !unit_role.nil? && unit_role.observer_only && !OBSERVER_ONLY_PERMISSIONS.include?(action)
+    global_observer = user.observe_all_units? && unit_role.nil? &&
+                      (object.is_a?(Unit) || object.respond_to?(:unit))
+    if global_observer
+      role_obj = object.is_a?(Project) || object.is_a?(Task) ? Role.tutor : Role.convenor
+    end
+
+    observer_read_permission = OBSERVER_ONLY_PERMISSIONS.include?(action) ||
+                               (OBSERVER_ONLY_GET_PERMISSIONS.include?(action) && respond_to?(:request) && request.get?)
+    if (global_observer || unit_role&.observer_only?) && !observer_read_permission
       return false
     end
+
+    return false if role_obj.nil?
 
     role = role_obj.to_sym
     perms = perm_get_fn.call(role, perm_hash, other)

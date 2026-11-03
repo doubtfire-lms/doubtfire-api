@@ -63,6 +63,7 @@ class UnitsApi < Grape::API
     # Unit uses user from thread to limit exposure
     #
     my_role = unit.role_for(current_user)
+    my_role = Role.convenor if current_user.observe_all_units? && unit.unit_role_for(current_user).nil?
     present unit, with: Entities::UnitEntity, user: current_user, my_role: my_role, in_unit: true
   end
 

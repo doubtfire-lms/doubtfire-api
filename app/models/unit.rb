@@ -814,7 +814,7 @@ class Unit < ApplicationRecord
   end
 
   def self.for_user_admin(user)
-    if user.has_admin_capability?
+    if user.has_admin_capability? || user.observe_all_units?
       Unit.all
     elsif user.has_auditor_capability?
       # Limit range of units that the auditor has access to

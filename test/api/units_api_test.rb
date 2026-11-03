@@ -259,6 +259,80 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal expected_unit.end_date.to_date, actual_unit['end_date'].to_date
   end
 
+  def test_global_observer_reads_all_units_and_explicit_staff_role_takes_precedence
+    observer = FactoryBot.create(:user, :convenor, observe_all_units: true)
+    existing_unit = FactoryBot.create(:unit, with_students: true, task_count: 1, group_sets: 1)
+
+    new_unit = FactoryBot.create(:unit, with_students: false, task_count: 0, active: false)
+
+    add_auth_header_for(user: observer)
+    get '/api/units', { include_in_active: true }
+    assert_equal 200, last_response.status
+    assert_includes last_response_body.map { |row| row['id'] }, existing_unit.id
+    assert_includes last_response_body.map { |row| row['id'] }, new_unit.id
+
+    get "/api/units/#{existing_unit.id}"
+    assert_equal 200, last_response.status
+    assert_equal 'Convenor', last_response_body['my_role']
+
+    get '/api/students', { unit_id: existing_unit.id }
+    assert_equal 200, last_response.status
+
+    get "/api/units/#{existing_unit.id}/tasks/inbox"
+    assert_equal 200, last_response.status
+
+    project = existing_unit.active_projects.first
+    task_definition = existing_unit.task_definitions.first
+    task = project.task_for_task_definition(task_definition)
+    task.save! if task.new_record?
+    get "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/submission_details"
+    assert_equal 200, last_response.status
+
+    get "/api/units/#{existing_unit.id}/stats/task_completion_stats"
+    assert_equal 200, last_response.status
+
+    get "/api/units/#{existing_unit.id}/marking_sessions"
+    assert_equal 200, last_response.status
+
+    get "/api/units/#{existing_unit.id}/group_sets/#{existing_unit.group_sets.first.id}/groups/csv"
+    assert_equal 200, last_response.status
+
+    get "/api/units/#{existing_unit.id}/outcomes/csv"
+    assert_equal 200, last_response.status
+
+    get "/api/units/#{existing_unit.id}/feedback_chips/csv"
+    assert_equal 200, last_response.status
+
+    get "/api/units/#{existing_unit.id}/content/sites"
+    assert_equal 200, last_response.status
+
+    put_json "/api/units/#{existing_unit.id}", { unit: { name: 'Changed name' } }
+    assert_equal 403, last_response.status
+
+    put_json "/api/projects/#{project.id}", { project: { enrolled: false } }
+    assert_equal 403, last_response.status
+
+    unit_role = existing_unit.employ_staff(observer, Role.convenor)
+    unit_role.update!(observer_only: true)
+    get "/api/units/#{existing_unit.id}"
+    assert_equal 200, last_response.status
+    get "/api/units/#{existing_unit.id}/outcomes/csv"
+    assert_equal 200, last_response.status
+    put_json "/api/units/#{existing_unit.id}", { unit: { name: 'Changed name' } }
+    assert_equal 403, last_response.status
+
+    unit_role.update!(observer_only: false)
+    get "/api/units/#{existing_unit.id}"
+    assert_equal 200, last_response.status
+    assert_equal 'Convenor', last_response_body['my_role']
+
+    put_json "/api/units/#{existing_unit.id}", { unit: { name: 'Changed name' } }
+    assert_equal 200, last_response.status
+
+    put_json "/api/units/#{new_unit.id}", { unit: { name: 'Changed name' } }
+    assert_equal 403, last_response.status
+  end
+
   def test_permissions_on_get
     aadmin = User.find_by(username: 'aadmin')
     aauditor = FactoryBot.create :user, :auditor
@@ -865,7 +939,7 @@ class UnitsApiTest < ActiveSupport::TestCase
 
       statuses.each_with_index do |status, index|
         csv << [
-          "#{index + 1}",
+          (index + 1).to_s,
           "student-#{index + 1}",
           "Student #{index + 1}",
           tutorial.campus.abbreviation,
