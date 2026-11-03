@@ -45,6 +45,7 @@ class TaskDefinitionsApi < Grape::API
       optional :requires_discussion,      type: Boolean,  desc: 'Whether task must be discussed in class before it can be signed off as complete'
       optional :use_resources_for_jplag_base_code, type: Boolean, desc: 'Include the common base code from task resources for JPlag comparisons'
       optional :lock_assessments_to_tutorial_stream, type: Boolean, desc: 'Only allow tutors in this tutorial stream to assess this task'
+      optional :submission_opens_at,      type: Date,     desc: 'The date when the task can accept submissions'
     end
   end
   post '/units/:unit_id/task_definitions/' do
@@ -83,7 +84,8 @@ class TaskDefinitionsApi < Grape::API
                                                 :upload_requirements,
                                                 :unit_id,
                                                 :use_resources_for_jplag_base_code,
-                                                :lock_assessments_to_tutorial_stream
+                                                :lock_assessments_to_tutorial_stream,
+                                                :submission_opens_at
                                               )
 
     task_params[:unit_id] = unit.id
@@ -152,6 +154,7 @@ class TaskDefinitionsApi < Grape::API
         optional :target_due_date, type: Date
         optional :start_date, type: Date
       end
+      optional :submission_opens_at,      type: Date, desc: 'The date when the task can accept submissions'
     end
   end
   put '/units/:unit_id/task_definitions/:id' do
@@ -193,7 +196,8 @@ class TaskDefinitionsApi < Grape::API
                                                 :requires_discussion,
                                                 :upload_requirements,
                                                 :use_resources_for_jplag_base_code,
-                                                :lock_assessments_to_tutorial_stream
+                                                :lock_assessments_to_tutorial_stream,
+                                                :submission_opens_at
                                               )
 
     if params[:task_def][:upload_requirements].present?
