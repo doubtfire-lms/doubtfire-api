@@ -221,7 +221,7 @@ GEM
       rdoc (>= 4.0.0)
       reline (>= 0.4.2)
     jaro_winkler (1.7.0)
-    json (3.1.0)
+    json (2.10.2)
     json-jwt (1.16.7)
       activesupport (>= 4.2)
       aes_key_wrap
@@ -635,6 +635,7 @@ DEPENDENCIES
   hirb
   icalendar
   ice_cube
+  json (~> 2.10.0)
   json-jwt
   listen
   minitest
