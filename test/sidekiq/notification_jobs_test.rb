@@ -213,7 +213,7 @@ class NotificationJobsTest < ActiveSupport::TestCase
     assert_not_nil notification.email_sent_at
   end
 
-  def test_unit_email_master_switch_processes_without_sending
+  def test_unit_digest_switch_processes_without_sending
     settings = create_settings
     notification = FactoryBot.create(:notification, recipient: settings.user)
     notification.unit.update!(send_notifications: false)

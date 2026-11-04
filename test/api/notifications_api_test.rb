@@ -254,7 +254,7 @@ class NotificationsApiTest < ActiveSupport::TestCase
     assert_empty last_response_body['email_disabled_unit_ids']
   end
 
-  def test_settings_list_the_users_units_that_do_not_send_email
+  def test_settings_list_the_users_units_with_email_digests_disabled
     @unit.update!(send_notifications: false)
     FactoryBot.create(:unit, send_notifications: false, with_students: false)
 

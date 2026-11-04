@@ -11,7 +11,6 @@ class SendDiscussTimeoutEmailJob
     # The student may have withdrawn after this was queued.
     return unless task.project.enrolled
     return unless task.unit.discuss_timeout_active?
-    return unless task.unit.send_notifications
 
     kind = notification_type == 'approaching' ? 'discuss_warning' : 'discuss_expired'
     return unless NotificationSetting.for(task.project.student).delivers?(task.unit, kind, :email)
