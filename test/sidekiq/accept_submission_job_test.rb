@@ -1,4 +1,5 @@
 require 'test_helper'
+require 'minitest/mock'
 
 class AcceptSubmissionJobTest < ActiveSupport::TestCase
   def test_failed_pdf_conversion_does_not_queue_submission_history

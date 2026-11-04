@@ -2,7 +2,7 @@ module OnTrackSentryRedaction
   FILTERED = "[Filtered]".freeze
   PII_KEY_PATTERN = /(^|_)(email|first_name|last_name|login_id|name|student_id|username|user_id)\z/i
   RAILS_LATEX_TASK_WORK_DIR = %r{(tmp/rails-latex/task-\d{8}-\d{4}-)[^/\s]+?(-[^/\s-]+-\d+-\d+(?:-retry)?)(?=/|\s|$)}
-  RAILS_LATEX_PORTFOLIO_WORK_DIR = %r{(tmp/rails-latex/portfolio-\d{8}-\d{4}-)[^/\s]+?(-\d+-\d+(?:-retry)?)(?=/|\s|$)}
+  RAILS_LATEX_PORTFOLIO_WORK_DIR = %r{(tmp/rails-latex/portfolio-\d{8}-\d{4}-)[^/\s]+?(-\d+-\d+(?:-retry)?(?:-[0-9a-f]{24})?)(?=/|\s|$)}
   PORTFOLIO_FAILURE_DETAILS = /(Failed to convert portfolio to PDF - \d+ - )[^\n]+? \([^)]+\)(?=\s+\S+)/
   SCORM_PATH = %r{(/scorm/[^/?#]+/)[^/?#]+(/)[^/?#]+}i
 
