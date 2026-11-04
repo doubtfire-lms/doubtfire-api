@@ -16,7 +16,7 @@ module Entities
     expose :units, using: NotificationUnitOverrideEntity do |settings|
       settings.user.notification_unit_overrides.order(:unit_id)
     end
-    # The user's units that never email, so their email choices can be shown as unavailable.
+    # The user's units with digests disabled, so digest email choices can be shown as unavailable.
     expose :email_disabled_unit_ids do |settings, _options|
       user = settings.user
       Unit.where(send_notifications: false)

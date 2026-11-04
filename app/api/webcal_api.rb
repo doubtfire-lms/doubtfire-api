@@ -38,8 +38,8 @@ class WebcalApi < Grape::API
 
       # `all_or_none_of` is used here instead of 2 `requires` parameters to allow `reminder` to be set to `null`.
       optional :reminder,            type: Hash do
-        optional :time,              type: Integer
-        optional :unit,              type: String, values: Webcal.valid_time_units, desc: 'w: weeks, d: days, h: hours, m: minutes'
+        optional :time, type: Integer
+        optional :unit, type: String, values: Webcal.valid_time_units, desc: 'w: weeks, d: days, h: hours, m: minutes'
         all_or_none_of :time, :unit
       end
     end

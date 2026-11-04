@@ -69,7 +69,7 @@ module UnitSimilarityModule
 
         # Get server to process files
         logger.debug 'Sending to MOSS...'
-        url = moss.check(to_check, ->(_) { print '.' })
+        url = moss.check(to_check, ->(_) { logger.debug 'MOSS upload progress' })
 
         logger.info "MOSS check for #{code} #{td.abbreviation} url: #{url}"
 
@@ -167,7 +167,7 @@ module UnitSimilarityModule
 
       warn_pct = td.plagiarism_warn_pct || 50
 
-      results = moss.extract_results(url, warn_pct, ->(line) { puts line })
+      results = moss.extract_results(url, warn_pct, ->(line) { logger.debug line })
 
       # Use results
       results.each do |match|
