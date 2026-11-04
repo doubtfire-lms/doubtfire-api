@@ -788,8 +788,11 @@ class Unit < ApplicationRecord
     end
 
     # Duplicate content sites and their links (grade, task sheet and task resource pages)
-    site_mapping = unit_content_sites.to_h { |site| [site.id, site.copy_to(new_unit)] }
+    # Skip sites whose archive is missing on disk, as task sheets and resources do
+    site_mapping = unit_content_sites.select { |site| File.exist?(site.archive_path.to_s) }.to_h { |site| [site.id, site.copy_to(new_unit)] }
     unit_content_links.each do |link|
+      next unless site_mapping.key?(link.unit_content_site_id)
+
       new_link = link.dup
       new_link.unit = new_unit
       new_link.unit_content_site = site_mapping.fetch(link.unit_content_site_id)

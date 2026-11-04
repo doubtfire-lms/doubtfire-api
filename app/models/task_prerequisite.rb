@@ -2,8 +2,8 @@ class TaskPrerequisite < ApplicationRecord
   belongs_to :task_definition
   belongs_to :prerequisite, class_name: "TaskDefinition"
 
-  def met_for?(project)
-    task = project.tasks.find_by(task_definition_id: prerequisite_id)
+  def met_for?(project, tasks_by_definition: nil)
+    task = tasks_by_definition ? tasks_by_definition[prerequisite_id] : project.tasks.find_by(task_definition_id: prerequisite_id)
     return false unless task&.ready_or_complete?
 
     Task::PREREQUISITE_STATUS_LEVELS[task.status] >=

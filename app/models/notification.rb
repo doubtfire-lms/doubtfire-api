@@ -257,11 +257,16 @@ class Notification < ApplicationRecord
     end
 
     created = 0
-    each_task_deadline_candidate(now: now) do |task|
-      kind = task_deadline_kind(task, now: now)
+    each_task_deadline_candidate(now: now) do |task, tasks_by_definition, existing_keys|
+      kind = task_deadline_kind(task, now: now, tasks_by_definition: tasks_by_definition)
       next if kind.nil?
+      deduplication_key = task_deadline_key(task, kind)
+      next if existing_keys.include?([task.student.id, deduplication_key])
+
       # Already in this state when deadline notifications rolled out, so there is nothing new to announce.
-      next if started_at && task_deadline_kind(task, now: started_at) == kind
+      if started_at && task_deadline_kind(task, now: started_at, tasks_by_definition: tasks_by_definition) == kind
+        next
+      end
 
       notification = create_event(
         recipient: task.student,
@@ -269,9 +274,10 @@ class Notification < ApplicationRecord
         project: task.project,
         task: task,
         kind: kind,
-        deduplication_key: task_deadline_key(task, kind)
+        deduplication_key: deduplication_key
       )
       created += 1 if notification&.previously_new_record?
+      existing_keys.add([task.student.id, deduplication_key]) if notification&.persisted?
     end
     created
   end
@@ -322,8 +328,8 @@ class Notification < ApplicationRecord
     created
   end
 
-  def self.task_deadline_kind(task, now: Time.current)
-    return nil unless task_deadline_eligible?(task, now: now)
+  def self.task_deadline_kind(task, now: Time.current, tasks_by_definition: nil)
+    return nil unless task_deadline_eligible?(task, now: now, tasks_by_definition: tasks_by_definition)
 
     today = now.in_time_zone(task.project.student.notification_timezone).to_date
     start_date = task.local_start_date.to_date
@@ -500,9 +506,26 @@ class Notification < ApplicationRecord
 
   def self.each_task_deadline_candidate(now:)
     Unit.within_last_teaching_date(now).where(active: true, start_date: ..now).find_each do |unit|
-      unit.active_projects.includes(:user).find_each do |project|
-        project.assigned_task_defs.includes(:task_prerequisites).find_each do |task_definition|
-          yield project.task_for_task_definition(task_definition)
+      definitions = unit.task_definitions.includes(:task_prerequisites, :grade_due_dates).order(:id).to_a
+
+      unit.active_projects.in_batches(of: 100) do |batch|
+        projects = batch.includes(:user, tasks: :task_status).to_a
+        existing_keys = where(kind: TASK_DEADLINE_KINDS, project_id: projects.map(&:id))
+                        .pluck(:recipient_id, :deduplication_key).to_set
+
+        projects.each do |project|
+          project.unit = unit
+          tasks_by_definition = project.tasks.index_by(&:task_definition_id)
+
+          definitions.each do |task_definition|
+            next if task_definition.target_grade > project.target_grade
+
+            task = tasks_by_definition[task_definition.id] || project.task_for_task_definition(task_definition)
+            tasks_by_definition[task_definition.id] = task
+            task.project = project
+            task.task_definition = task_definition
+            yield task, tasks_by_definition, existing_keys
+          end
         end
       end
     end
@@ -540,7 +563,7 @@ class Notification < ApplicationRecord
       )
   end
 
-  def self.task_deadline_eligible?(task, now:)
+  def self.task_deadline_eligible?(task, now:, tasks_by_definition: nil)
     task.project.enrolled &&
       task.unit.active &&
       task.unit.within_last_teaching_date?(now) &&
@@ -548,7 +571,9 @@ class Notification < ApplicationRecord
       task.task_definition.target_grade <= task.project.target_grade &&
       task.submission_date.nil? &&
       !task.submitted_status? &&
-      task.task_definition.task_prerequisites.all? { |prerequisite| prerequisite.met_for?(task.project) }
+      task.task_definition.task_prerequisites.all? do |prerequisite|
+        prerequisite.met_for?(task.project, tasks_by_definition: tasks_by_definition)
+      end
   end
 
   def self.feedback_warning_eligible?(task, now:, started_at: nil)
