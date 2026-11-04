@@ -315,14 +315,16 @@ class UnitsApi < Grape::API
 
     teaching_period_id = params[:teaching_period_id]
 
-    if teaching_period_id.present?
-      tp = TeachingPeriod.find(teaching_period_id)
-      result = unit.rollover(tp, nil, nil, params[:new_unit_code])
-    else
-      result = unit.rollover(nil, params[:start_date], params[:end_date], params[:new_unit_code], params[:last_teaching_date])
+    # A failed rollover should not leave a partially copied unit behind
+    result = Unit.transaction do
+      new_unit = if teaching_period_id.present?
+                   unit.rollover(TeachingPeriod.find(teaching_period_id), nil, nil, params[:new_unit_code])
+                 else
+                   unit.rollover(nil, params[:start_date], params[:end_date], params[:new_unit_code], params[:last_teaching_date])
+                 end
+      new_unit.employ_staff(current_user, Role.convenor)
+      new_unit
     end
-
-    result.employ_staff(current_user, Role.convenor)
 
     my_role = result.role_for(current_user)
 
