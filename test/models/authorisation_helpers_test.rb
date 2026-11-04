@@ -37,23 +37,24 @@ class AuthorisationHelpersTest < ActiveSupport::TestCase
     request = Rack::Request.new(Rack::MockRequest.env_for('/units/1/communication_sets'))
     authorisation = Object.new.extend(AuthorisationHelpers)
     authorisation.define_singleton_method(:request) { request }
+    authorisation.define_singleton_method(:allowed?) { |user, object, action| authorise?(user, object, action) }
 
-    assert authorisation.authorise?(observer, @unit, :mannage_communications)
-    assert authorisation.authorise?(observer, @unit, :add_task_def)
-    assert authorisation.authorise?(observer, staff_role, :create_tutor_note)
+    assert authorisation.allowed?(observer, @unit, :mannage_communications)
+    assert authorisation.allowed?(observer, @unit, :add_task_def)
+    assert authorisation.allowed?(observer, staff_role, :create_tutor_note)
 
     request = Rack::Request.new(Rack::MockRequest.env_for('/units/1/communication_sets', method: 'POST'))
-    assert_not authorisation.authorise?(observer, @unit, :mannage_communications)
-    assert_not authorisation.authorise?(observer, @unit, :add_task_def)
-    assert_not authorisation.authorise?(observer, staff_role, :create_tutor_note)
+    assert_not authorisation.allowed?(observer, @unit, :mannage_communications)
+    assert_not authorisation.allowed?(observer, @unit, :add_task_def)
+    assert_not authorisation.allowed?(observer, staff_role, :create_tutor_note)
 
     @unit.employ_staff(observer, Role.convenor).update!(observer_only: true)
     request = Rack::Request.new(Rack::MockRequest.env_for('/units/1/communication_sets'))
-    assert authorisation.authorise?(observer, @unit, :mannage_communications)
-    assert authorisation.authorise?(observer, staff_role, :create_tutor_note)
+    assert authorisation.allowed?(observer, @unit, :mannage_communications)
+    assert authorisation.allowed?(observer, staff_role, :create_tutor_note)
 
     request = Rack::Request.new(Rack::MockRequest.env_for('/units/1/communication_sets', method: 'POST'))
-    assert_not authorisation.authorise?(observer, @unit, :mannage_communications)
-    assert_not authorisation.authorise?(observer, staff_role, :create_tutor_note)
+    assert_not authorisation.allowed?(observer, @unit, :mannage_communications)
+    assert_not authorisation.allowed?(observer, staff_role, :create_tutor_note)
   end
 end
