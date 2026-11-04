@@ -95,6 +95,56 @@ class UnitsTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
   end
 
+  def test_only_admin_can_grant_and_revoke_observe_all_units
+    admin = FactoryBot.create(:user, :admin)
+    observer = FactoryBot.create(:user, :tutor)
+    other_tutor = FactoryBot.create(:user, :tutor)
+
+    add_auth_header_for(user: other_tutor)
+    put_json "/api/users/#{observer.id}", { user: { observe_all_units: true } }
+    assert_equal 403, last_response.status
+    assert_not observer.reload.observe_all_units?
+
+    add_auth_header_for(user: admin)
+    put_json "/api/users/#{observer.id}", { user: { observe_all_units: true } }
+    assert_equal 200, last_response.status
+    assert_equal true, last_response_body['observe_all_units']
+    assert observer.reload.observe_all_units?
+
+    add_auth_header_for(user: observer)
+    put_json "/api/users/#{observer.id}", { user: { nickname: 'Observer', observe_all_units: true } }
+    assert_equal 200, last_response.status
+
+    put_json "/api/users/#{observer.id}", { user: { observe_all_units: false } }
+    assert_equal 403, last_response.status
+    assert observer.reload.observe_all_units?
+
+    add_auth_header_for(user: admin)
+    put_json "/api/users/#{observer.id}", { user: { observe_all_units: false } }
+    assert_equal 200, last_response.status
+    assert_equal false, last_response_body['observe_all_units']
+    assert_not observer.reload.observe_all_units?
+  end
+
+  def test_observe_all_units_requires_tutor_or_convenor_system_role
+    admin = FactoryBot.create(:user, :admin)
+    student = FactoryBot.create(:user, :student)
+    convenor = FactoryBot.create(:user, :convenor)
+
+    add_auth_header_for(user: admin)
+    put_json "/api/users/#{student.id}", { user: { observe_all_units: true } }
+    assert_equal 422, last_response.status
+    assert_not student.reload.observe_all_units?
+
+    put_json "/api/users/#{convenor.id}", { user: { observe_all_units: true } }
+    assert_equal 200, last_response.status
+    assert convenor.reload.observe_all_units?
+
+    put_json "/api/users/#{convenor.id}", { user: { system_role: 'Student' } }
+    assert_equal 422, last_response.status
+    assert_equal Role.convenor, convenor.reload.role
+  end
+
   def test_get_no_token
     models = %w[users users/tutors users/convenors]
 

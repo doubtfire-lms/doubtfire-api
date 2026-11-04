@@ -27,7 +27,7 @@ class MarkingSessionsApi < Grape::API
     end
 
     unit_role = unit.unit_role_for(current_user)
-    unless unit_role || current_user.role == Role.admin
+    unless unit_role || current_user.role == Role.admin || current_user.observe_all_units?
       error!({ error: "You are not authorised to view marking sessions for this unit" }, 403)
     end
 

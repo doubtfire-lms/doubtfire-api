@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_27_094931) do
+ActiveRecord::Schema[8.0].define(version: 2026_11_03_052852) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -1144,6 +1144,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_27_094931) do
     t.datetime "last_access_at"
     t.string "timezone", limit: 64
     t.boolean "auto_timezone", default: true, null: false
+    t.boolean "observe_all_units", default: false, null: false
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["login_id"], name: "index_users_on_login_id", unique: true
     t.index ["role_id"], name: "index_users_on_role_id"
