@@ -309,8 +309,9 @@ class UnitsApiTest < ActiveSupport::TestCase
     put_json "/api/units/#{existing_unit.id}", { unit: { name: 'Changed name' } }
     assert_equal 403, last_response.status
 
-    put_json "/api/projects/#{project.id}", { project: { enrolled: false } }
+    put_json "/api/projects/#{project.id}", { enrolled: false }
     assert_equal 403, last_response.status
+    assert project.reload.enrolled?
 
     unit_role = existing_unit.employ_staff(observer, Role.convenor)
     unit_role.update!(observer_only: true)
