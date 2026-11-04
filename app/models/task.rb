@@ -1072,7 +1072,7 @@ class Task < ApplicationRecord
   end
 
   def record_skill_evidence!(submitted_at = Time.zone.now, endorse: false)
-    mappings = task_definition.task_definition_skill_mappings.to_a
+    mappings = task_definition.task_definition_skill_mappings.reload.to_a
     return if mappings.empty?
 
     SkillEvidence.transaction do
