@@ -65,7 +65,7 @@ class UnitRolesTest < ActiveSupport::TestCase
     unit = FactoryBot.create(:unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0)
     admin = FactoryBot.create(:user, :admin)
     unit.employ_staff(admin, Role.convenor).update!(observer_only: true)
-    staff = FactoryBot.create(:user, :tutor)
+    staff = FactoryBot.create(:user, :convenor)
 
     add_auth_header_for(user: admin)
     post_json '/api/unit_roles', { unit_id: unit.id, user_id: staff.id, role: 'Tutor' }
