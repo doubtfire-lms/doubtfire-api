@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_27_094931) do
+ActiveRecord::Schema[8.0].define(version: 2026_11_03_003217) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -686,6 +686,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_27_094931) do
     t.bigint "commentable_id"
     t.string "commentable_type"
     t.integer "attention_audience"
+    t.datetime "submission_assessed_at"
+    t.boolean "submission_granted"
     t.index ["assessor_id"], name: "index_task_comments_on_assessor_id"
     t.index ["commentable_type", "commentable_id"], name: "index_task_comments_on_commentable_type_and_commentable_id"
     t.index ["discussion_comment_id"], name: "index_task_comments_on_discussion_comment_id"
@@ -751,6 +753,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_27_094931) do
     t.boolean "lock_assessments_to_tutorial_stream", default: false, null: false
     t.boolean "requires_discussion", default: false, null: false
     t.boolean "staff_managed_task", default: false, null: false
+    t.date "submission_opens_on"
     t.index ["abbreviation", "unit_id"], name: "index_task_definitions_on_abbreviation_and_unit_id", unique: true
     t.index ["group_set_id"], name: "index_task_definitions_on_group_set_id"
     t.index ["name", "unit_id"], name: "index_task_definitions_on_name_and_unit_id", unique: true
