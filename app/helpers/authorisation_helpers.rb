@@ -37,12 +37,17 @@ module AuthorisationHelpers
     :download_overflow_stats
   ].freeze
 
-  # Some read endpoints use the same permission as their write counterparts.
+  # Observers may use these permissions only on GET requests because the same
+  # actions also authorise write requests.
+  # TODO: Split read and write permissions so this check does not depend on the HTTP method.
   OBSERVER_ONLY_GET_PERMISSIONS = [
     :update,
     :provide_feedback,
     :create_feedback_chips,
-    :manage_unit_content
+    :manage_unit_content,
+    :mannage_communications,
+    :add_task_def,
+    :create_tutor_note
   ].freeze
 
   #
