@@ -11,6 +11,12 @@ class CompetenciesApi < Grape::API
       error!({ error: 'Only administrators can manage competency curricula' }, 403) unless current_user.has_admin_capability?
     end
 
+    def require_unit_definition_editor!(unit)
+      return if current_user.has_admin_capability? || authorise?(current_user, unit, :update)
+
+      error!({ error: 'Not authorised to change the unit definition for this offering' }, 403)
+    end
+
     def level_data(level)
       {
         id: level.id,
@@ -320,13 +326,26 @@ class CompetenciesApi < Grape::API
     unit_definition_data(definition.reload)
   end
 
+  desc 'List the unit definition versions an offering can use'
+  get '/units/:unit_id/unit_definition' do
+    unit = Unit.find(params[:unit_id])
+    error!({ error: 'Not authorised to view this unit' }, 403) unless authorise?(current_user, unit, :get_unit)
+
+    {
+      unit_definition_id: unit.unit_definition_id,
+      options: UnitDefinition.where(code: unit.code).includes(:unit_definition_skill_requirements).order(:version).map do |definition|
+        { id: definition.id, name: definition.name, version: definition.version, required_skill_count: definition.unit_definition_skill_requirements.size }
+      end
+    }
+  end
+
   desc 'Assign a unit offering to a unit definition version'
   params do
     requires :unit_definition_id, type: Integer
   end
   put '/units/:unit_id/unit_definition' do
-    require_competency_admin!
     unit = Unit.find(params[:unit_id])
+    require_unit_definition_editor!(unit)
     definition = UnitDefinition.find(params[:unit_definition_id])
     error!({ error: 'The unit definition code must match the offering code' }, 422) unless definition.code == unit.code
 
@@ -336,8 +355,8 @@ class CompetenciesApi < Grape::API
 
   desc 'Unlink a unit offering from its unit definition version'
   delete '/units/:unit_id/unit_definition' do
-    require_competency_admin!
     unit = Unit.find(params[:unit_id])
+    require_unit_definition_editor!(unit)
     unit.update!(unit_definition: nil)
     { unit_id: unit.id, unit_definition_id: nil }
   end
@@ -355,7 +374,9 @@ class CompetenciesApi < Grape::API
                                           .where(course_unit_definitions: { unit_definition_id: definition.id })
                                           .includes(skill_level: :skill)
                                           .map(&:skill_level)
-    (required + course_levels).uniq(&:id).map { |level| level_data(level) }
+    rows = required.map { |level| level_data(level).merge(source: 'unit_definition') } +
+           course_levels.map { |level| level_data(level).merge(source: 'course') }
+    rows.uniq { |row| row[:id] }
   end
 
   desc 'Replace staff-defined skill mappings for a task definition'
