@@ -21,7 +21,7 @@ module Entities
     expose :my_role do |unit, options|
       role = options[:my_role]
       role = unit.role_for(options[:user]) if role.nil?
-      role.name unless role.nil?
+      role.nil? && options[:user]&.observe_all_units? ? 'Convenor' : role&.name
     end
     expose :main_convenor_id, unless: :summary_only
     expose :main_convenor_user_id, if: :summary_only do |unit, options|

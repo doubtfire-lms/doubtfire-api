@@ -209,6 +209,7 @@ class User < ApplicationRecord
   validates :student_id,  uniqueness: true, allow_nil: true
   validate :can_change_to_role?, if: :will_save_change_to_role_id?
   validate :timezone_supported, if: :will_save_change_to_timezone?
+  validate :observe_all_units_requires_staff_role
 
   # Queries
   scope :tutors,    -> { joins(:role).where('roles.id = :tutor_role or roles.id = :convenor_role or roles.id = :admin_role or roles.id = :auditor_role', tutor_role: Role.tutor_id, convenor_role: Role.convenor_id, admin_role: Role.admin_id, auditor_role: Role.auditor_id) }
@@ -239,6 +240,13 @@ class User < ApplicationRecord
         errors.add :role, "cannot be changed to #{new_role.name} because the user has a #{check_role.name} role in a unit"
       end
     end
+  end
+
+  def observe_all_units_requires_staff_role
+    return unless observe_all_units?
+    return if [Role.tutor_id, Role.convenor_id].include?(role_id)
+
+    errors.add(:observe_all_units, 'requires a Tutor or Convenor system role')
   end
 
   def has_student_capability?

@@ -1284,6 +1284,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_02_072624) do
     t.datetime "last_access_at"
     t.string "timezone", limit: 64
     t.boolean "auto_timezone", default: true, null: false
+    t.boolean "observe_all_units", default: false, null: false
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["login_id"], name: "index_users_on_login_id", unique: true
     t.index ["role_id"], name: "index_users_on_role_id"
