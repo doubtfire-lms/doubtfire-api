@@ -24,7 +24,7 @@ module Entities
     end
 
     expose :system_role, unless: :minimal do |user, options|
-      user.role.name if user.role.present?
+      user.role.presence&.name
     end
   end
 end

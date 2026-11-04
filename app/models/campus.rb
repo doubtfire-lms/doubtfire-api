@@ -1,7 +1,7 @@
 class Campus < ApplicationRecord
   # Relationships
-  has_many    :tutorials, dependent: :restrict_with_exception
-  has_many    :projects, dependent: :restrict_with_exception
+  has_many :tutorials, dependent: :restrict_with_exception
+  has_many :projects, dependent: :restrict_with_exception
 
   # Callbacks - methods called are private
   before_destroy :can_destroy?
