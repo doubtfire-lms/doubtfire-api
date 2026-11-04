@@ -21,6 +21,36 @@ class CompetenciesApi < Grape::API
       }
     end
 
+    def skill_data(skill)
+      {
+        id: skill.id,
+        code: skill.code,
+        name: skill.name,
+        description: skill.description,
+        archived: skill.archived,
+        levels: skill.skill_levels.sort_by(&:rank).map { |level| level_data(level) }
+      }
+    end
+
+    def framework_data(framework)
+      {
+        id: framework.id,
+        code: framework.code,
+        name: framework.name,
+        version: framework.version,
+        description: framework.description,
+        archived: framework.archived,
+        skills: framework.skills.sort_by(&:code).map { |skill| skill_data(skill) }
+      }
+    end
+
+    def save_catalog_record!(record, attributes)
+      record.assign_attributes(attributes)
+      error!({ error: record.errors.full_messages.to_sentence }, 422) unless record.save
+
+      record
+    end
+
     def requirement_data(requirement)
       level = requirement.skill_level
       level_data(level).merge(
@@ -57,7 +87,7 @@ class CompetenciesApi < Grape::API
     end
 
     def replace_requirements!(owner, association_name, level_ids)
-      levels = SkillLevel.includes(:skill).where(id: level_ids).index_by(&:id)
+      levels = SkillLevel.includes(skill: :skill_framework).where(id: level_ids).index_by(&:id)
       error!({ error: 'An unknown skill level was selected' }, 422) unless levels.length == level_ids.uniq.length
 
       skills = level_ids.map { |id| levels.fetch(id).skill_id }
@@ -65,8 +95,10 @@ class CompetenciesApi < Grape::API
 
       if owner.is_a?(TaskDefinition)
         existing_level_ids = owner.task_definition_skill_mappings.pluck(:skill_level_id)
-        archived_levels = levels.values.select { |level| level.skill.archived && !existing_level_ids.include?(level.id) }
-        error!({ error: 'Archived skills cannot be added to tasks' }, 422) if archived_levels.any?
+        archived_levels = levels.values.select do |level|
+          (level.skill.archived || level.skill.skill_framework.archived) && !existing_level_ids.include?(level.id)
+        end
+        error!({ error: 'Archived framework skills cannot be added to tasks' }, 422) if archived_levels.any?
       end
 
       owner.public_send(association_name).delete_all
@@ -79,26 +111,99 @@ class CompetenciesApi < Grape::API
 
   desc 'List skill frameworks and their skills'
   get '/skill_frameworks' do
-    SkillFramework.includes(skills: :skill_levels).order(:code, :version).map do |framework|
-      {
-        id: framework.id,
-        code: framework.code,
-        name: framework.name,
-        version: framework.version,
-        description: framework.description,
-        archived: framework.archived,
-        skills: framework.skills.sort_by(&:code).map do |skill|
-          {
-            id: skill.id,
-            code: skill.code,
-            name: skill.name,
-            description: skill.description,
-            archived: skill.archived,
-            levels: skill.skill_levels.sort_by(&:rank).map { |level| level_data(level) }
-          }
-        end
-      }
+    SkillFramework.includes(skills: :skill_levels).order(:code, :version).map { |framework| framework_data(framework) }
+  end
+
+  desc 'Create a skill framework version'
+  params do
+    requires :skill_framework, type: Hash do
+      requires :code, type: String
+      requires :name, type: String
+      requires :version, type: String
+      optional :description, type: String
+      optional :archived, type: Boolean
     end
+  end
+  post '/skill_frameworks' do
+    require_competency_admin!
+    framework = save_catalog_record!(SkillFramework.new, params[:skill_framework].slice(:code, :name, :version, :description, :archived))
+    framework_data(framework)
+  end
+
+  desc 'Update a skill framework version'
+  params do
+    requires :skill_framework, type: Hash do
+      optional :code, type: String
+      optional :name, type: String
+      optional :version, type: String
+      optional :description, type: String
+      optional :archived, type: Boolean
+    end
+  end
+  put '/skill_frameworks/:id' do
+    require_competency_admin!
+    framework = save_catalog_record!(SkillFramework.find(params[:id]), params[:skill_framework].slice(:code, :name, :version, :description, :archived))
+    framework_data(framework)
+  end
+
+  desc 'Add a skill to a framework version'
+  params do
+    requires :skill, type: Hash do
+      requires :code, type: String
+      requires :name, type: String
+      optional :description, type: String
+      optional :archived, type: Boolean
+    end
+  end
+  post '/skill_frameworks/:framework_id/skills' do
+    require_competency_admin!
+    framework = SkillFramework.find(params[:framework_id])
+    skill = save_catalog_record!(framework.skills.build, params[:skill].slice(:code, :name, :description, :archived))
+    skill_data(skill)
+  end
+
+  desc 'Update a skill'
+  params do
+    requires :skill, type: Hash do
+      optional :code, type: String
+      optional :name, type: String
+      optional :description, type: String
+      optional :archived, type: Boolean
+    end
+  end
+  put '/skills/:id' do
+    require_competency_admin!
+    skill = save_catalog_record!(Skill.find(params[:id]), params[:skill].slice(:code, :name, :description, :archived))
+    skill_data(skill)
+  end
+
+  desc 'Add a level to a skill'
+  params do
+    requires :skill_level, type: Hash do
+      requires :name, type: String
+      requires :rank, type: Integer
+      optional :description, type: String
+    end
+  end
+  post '/skills/:skill_id/levels' do
+    require_competency_admin!
+    skill = Skill.find(params[:skill_id])
+    level = save_catalog_record!(skill.skill_levels.build, params[:skill_level].slice(:name, :rank, :description))
+    level_data(level)
+  end
+
+  desc 'Update a skill level'
+  params do
+    requires :skill_level, type: Hash do
+      optional :name, type: String
+      optional :rank, type: Integer
+      optional :description, type: String
+    end
+  end
+  put '/skill_levels/:id' do
+    require_competency_admin!
+    level = save_catalog_record!(SkillLevel.find(params[:id]), params[:skill_level].slice(:name, :rank, :description))
+    level_data(level)
   end
 
   desc 'List courses for curriculum administration'
