@@ -334,6 +334,14 @@ class CompetenciesApi < Grape::API
     { unit_id: unit.id, unit_definition_id: unit.unit_definition_id }
   end
 
+  desc 'Unlink a unit offering from its unit definition version'
+  delete '/units/:unit_id/unit_definition' do
+    require_competency_admin!
+    unit = Unit.find(params[:unit_id])
+    unit.update!(unit_definition: nil)
+    { unit_id: unit.id, unit_definition_id: nil }
+  end
+
   desc 'Suggest skills for a unit from its definition and courses'
   get '/units/:unit_id/skill_suggestions' do
     unit = Unit.find(params[:unit_id])
