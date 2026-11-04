@@ -108,7 +108,7 @@ class UnitRolesApi < Grape::API
     end
 
     # Prevent staff from setting themselves as read-only
-    if params[:unit_role][:observer_only] && unit_role.user.id == current_user.id
+    if params[:unit_role][:observer_only] && unit_role.user.id == current_user.id && !unit_role.observer_only?
       error!({ error: "You cannot make yourself an observer" }, 403)
     end
 
@@ -120,7 +120,7 @@ class UnitRolesApi < Grape::API
       unless current_user.has_admin_capability?
         error!({ error: "You are not authorised to update this staff member." }, 403)
       end
-    elsif current_unit_role.observer_only
+    elsif current_unit_role.observer_only && !current_user.has_admin_capability?
       # Once they're an observer, they'll no longer have access to this route to remove the observer status from themselves
       # But let's double check just in case this route gets whitelisted...
       error!({ error: "You are not authorised to update this staff member." }, 403)

@@ -22,8 +22,8 @@ class AuthorisationHelpersTest < ActiveSupport::TestCase
     assert AuthorisationHelpers.authorise?(@admin, project, :make_submission)
   end
 
-  test 'system administrator role takes precedence over a tutor unit role' do
-    @unit.employ_staff(@admin, Role.tutor)
+  test 'system administrator role takes precedence over an observer-only tutor unit role' do
+    @unit.employ_staff(@admin, Role.tutor).update!(observer_only: true)
 
     assert_equal Role.tutor, @unit.role_for(@admin)
     assert AuthorisationHelpers.authorise?(@admin, @unit, :update)

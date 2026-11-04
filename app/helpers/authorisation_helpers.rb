@@ -90,7 +90,7 @@ module AuthorisationHelpers
 
     observer_read_permission = OBSERVER_ONLY_PERMISSIONS.include?(action) ||
                                (OBSERVER_ONLY_GET_PERMISSIONS.include?(action) && respond_to?(:request) && request.get?)
-    if (global_observer || unit_role&.observer_only?) && !observer_read_permission
+    if !user.has_admin_capability? && (global_observer || unit_role&.observer_only?) && !observer_read_permission
       return false
     end
 
