@@ -3,6 +3,7 @@
 require 'English'
 require 'zip'
 require 'tmpdir'
+require 'tempfile'
 require 'open3'
 require 'shellwords'
 require 'pdf-reader'
@@ -74,7 +75,7 @@ module FileHelper
       logger.error "Unknown type '#{kind}' provided for '#{name}'"
     end
 
-    extension_check = FileHelper.known_extension?(File.extname(file['tempfile']).downcase[1..])
+    extension_check = FileHelper.known_extension?(File.extname(file[:filename].to_s).downcase[1..])
     unless extension_check
       msg = 'invalid file extension.'
       logger.debug 'File extension check failed'
@@ -551,12 +552,12 @@ module FileHelper
   end
 
   def compress_image_to_dest(source, dest, delete_frames = false)
-    exec = "convert -quiet -define jpeg:size=2048x2048 \
-            \"#{source}\" \
-            #{delete_frames ? '-delete 1--1' : ''} -auto-orient -strip -density 72 -quality 85% -resize 2048x2048\\> -resize 48x48\\< \
-            \"#{dest}\" >>/dev/null 2>>/dev/null"
+    command = ['convert', '-quiet', '-define', 'jpeg:size=2048x2048', source.to_s]
+    command.push('-delete', '1--1') if delete_frames
+    command.push('-auto-orient', '-strip', '-density', '72', '-quality', '85%',
+                 '-resize', '2048x2048>', '-resize', '48x48<', dest.to_s)
 
-    system_try_within 40, 'compressing image using convert', exec
+    system_try_within 40, 'compressing image using convert', command
   end
 
   def compress_pdf(path, max_size: 2_500_000, timeout_seconds: 30)
@@ -578,8 +579,8 @@ module FileHelper
 
       # Pass 1 - qpdf
       logger.debug "Compressing PDF #{path} (#{current_filesize} bytes) using qpdf"
-      exec = "qpdf --recompress-flate --object-streams=generate #{path} #{tmp_file} >>/dev/null 2>>/dev/null"
-      did_compress = system_try_within timeout_seconds, 'compressing PDF using qpdf', exec
+      command = ['qpdf', '--recompress-flate', '--object-streams=generate', path.to_s, tmp_file]
+      did_compress = system_try_within timeout_seconds, 'compressing PDF using qpdf', command
 
       if did_compress
         if File.exist?(tmp_file) && File.size?(tmp_file) < current_filesize
@@ -594,21 +595,15 @@ module FileHelper
       # Pass 2 - ghostscript
 
       logger.debug "Compressing PDF #{path} (#{current_filesize} bytes) using gs"
-      exec = "gs -sDEVICE=pdfwrite \
-                 -dDetectDuplicateImages=true \
-                 -dPDFSETTINGS=/printer \
-                 -dNOPAUSE \
-                 -dBATCH \
-                 -dQUIET \
-                 -sOutputFile=\"#{tmp_file}\" \
-                 \"#{path}\" \
-                 >>/dev/null 2>>/dev/null"
+      command = ['gs', '-sDEVICE=pdfwrite', '-dDetectDuplicateImages=true',
+                 '-dPDFSETTINGS=/printer', '-dNOPAUSE', '-dBATCH', '-dQUIET',
+                 "-sOutputFile=#{tmp_file}", path.to_s]
 
       # try with ghostscript
-      did_compress = system_try_within timeout_seconds, 'compressing PDF using ghostscript', exec
+      did_compress = system_try_within timeout_seconds, 'compressing PDF using ghostscript', command
 
       unless did_compress
-        logger.error "Failed to compress PDF #{path} using convert. Cannot compress this PDF. Command was:\n\t#{exec}"
+        logger.error "Failed to compress PDF #{path} using ghostscript. Command was: #{command.inspect}"
       end
 
       FileUtils.mv tmp_file, path if did_compress && File.size?(tmp_file) < current_filesize
@@ -807,9 +802,7 @@ module FileHelper
   end
 
   def pages_in_pdf(path)
-    exec = "qpdf --show-npages #{path}"
-
-    out_text, _error_text, _exit_status = Open3.capture3(exec)
+    out_text, _error_text, _exit_status = Open3.capture3('qpdf', '--show-npages', path.to_s)
     out_text.to_i # will default to 0 if not a number
   rescue => e
     logger.error "Failed to run QPDF on #{path}. Rescued with error:\n\t#{e.message}"
@@ -817,9 +810,8 @@ module FileHelper
   end
 
   def qpdf(path)
-    exec = "qpdf \"#{path}\" --replace-input >>/dev/null 2>>/dev/null"
     logger.debug "Running QPDF on: #{path}"
-    system_try_within 30, "Failed running QPDF on #{path}", exec
+    system_try_within 30, "Failed running QPDF on #{path}", ['qpdf', path.to_s, '--replace-input']
   rescue => e
     logger.error "Failed to run QPDF on #{path}. Rescued with error:\n\t#{e.message}"
   end
@@ -1044,21 +1036,18 @@ module FileHelper
   # Ensure that the contents of a file appear to be valid UTF8, on retry convert to ASCII to ensure
   #
   def ensure_utf8_code(output_filename, force_ascii)
-    # puts "Converting #{output_filename} to utf8"
-    tmp_filename = Dir::Tmpname.create(["new", ".code"]) { |name| raise Errno::EEXIST if File.exist?(name) }
+    encoding = force_ascii ? 'ascii' : 'UTF-8'
+    converted_text, error_text, status = Open3.capture3('iconv', '-c', '-t', encoding, output_filename.to_s)
+    raise "Failed to convert code file: #{error_text}" unless status.success?
 
-    # Convert to utf8 from read encoding
-    if force_ascii
-      `iconv -c -t ascii "#{output_filename}" > "#{tmp_filename}"`
-    else
-      `iconv -c -t UTF-8 "#{output_filename}" > "#{tmp_filename}"`
+    Tempfile.create(['new', '.code']) do |tmp_file|
+      tmp_file.binmode
+      tmp_file.write(converted_text)
+      tmp_file.flush
+
+      system('perl', '-i', '-pe', FileHelper::REPLACEMENTS_PERL_COMMAND, tmp_file.path, exception: true)
+      FileUtils.mv(tmp_file.path, output_filename)
     end
-
-    # Remove utf8 control character sequences
-    `perl -i -pe '#{FileHelper::REPLACEMENTS_PERL_COMMAND}' "#{tmp_filename}"`
-
-    # Move into place
-    FileUtils.mv(tmp_filename, output_filename)
   end
 
   def process_audio(input_path, output_path)
