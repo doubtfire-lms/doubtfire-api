@@ -10,6 +10,7 @@ cd /workdir/texlive-latex/${OUTPUT_DIR}
 mkdir -p work
 cp *.tex *.py work/
 cd work
+# Keep notebook-generated temporary images inside this disposable job directory.
 export TMPDIR="$PWD"
 
 # Compile PDF
