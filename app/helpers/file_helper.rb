@@ -196,12 +196,12 @@ module FileHelper
   end
 
   def gotenberg_work_id(unit_code:, kind:, username:, label:)
-    [Time.current.to_i, unit_code, kind, username, label, SecureRandom.uuid]
+    [Time.current.to_i, unit_code, kind, username, label, SecureRandom.hex(12)]
       .map { |part| part.to_s.gsub(/[^A-Za-z0-9_-]/, '_') }
       .join('-')
   end
 
-  def convert_word_document_to_pdf(source_path, destination_path, work_id: SecureRandom.uuid)
+  def convert_word_document_to_pdf(source_path, destination_path, work_id: SecureRandom.hex(12))
     work_id = work_id.to_s
     unless work_id.match?(/\A[A-Za-z0-9_-]+\z/)
       raise DocumentConversionError, 'Invalid Gotenberg work id.'

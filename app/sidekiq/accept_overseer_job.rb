@@ -38,7 +38,7 @@ class AcceptOverseerJob
 
     work_dir_name = [
       Time.current.to_i, task.unit.code, 'overseer', task.project.student.username,
-      task_definition.abbreviation, task.id, overseer_assessment_id, SecureRandom.uuid
+      task_definition.abbreviation, task.id, overseer_assessment_id, SecureRandom.hex(12)
     ].map { |part| part.to_s.gsub(/[^A-Za-z0-9_-]/, '_') }.join('-')
 
     work_dir = Rails.root.join("tmp", "overseer", work_dir_name)

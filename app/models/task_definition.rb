@@ -698,7 +698,8 @@ class TaskDefinition < ApplicationRecord
   end
 
   def self.csv_columns
-    [:name, :abbreviation, :description, :weighting, :target_grade, :restrict_status_updates, :max_quality_pts,
+    [:name, :abbreviation, :description, :weighting, :target_grade, :restrict_status_updates,
+     :staff_managed_task, :requires_discussion, :lock_assessments_to_tutorial_stream, :max_quality_pts,
      :is_graded, :plagiarism_warn_pct, :scorm_enabled, :scorm_allow_review, :scorm_bypass_test, :scorm_time_delay_enabled,
      :scorm_attempt_limit, :group_set, :upload_requirements, :start_week, :start_day, :target_week, :target_day,
      :due_week, :due_day, :tutorial_stream, :assess_in_portfolio_only, :task_prerequisites, :discussion_prompts, :overseer_steps]
@@ -706,6 +707,10 @@ class TaskDefinition < ApplicationRecord
 
   def self.required_csv_columns
     csv_columns - [:overseer_steps]
+  end
+
+  def self.csv_boolean(value)
+    %w(Yes y Y yes true TRUE 1).include? value.to_s.strip
   end
 
   def self.task_def_for_csv_row(unit, row)
@@ -746,9 +751,12 @@ class TaskDefinition < ApplicationRecord
     result.description                 = "#{row[:description]}".strip
     result.weighting                   = row[:weighting].to_i
     result.target_grade                = row[:target_grade].to_i
-    result.restrict_status_updates     = %w(Yes y Y yes true TRUE 1).include? "#{row[:restrict_status_updates]}".strip
+    result.restrict_status_updates     = csv_boolean(row[:restrict_status_updates])
+    result.staff_managed_task          = csv_boolean(row[:staff_managed_task])
+    result.requires_discussion         = csv_boolean(row[:requires_discussion])
+    result.lock_assessments_to_tutorial_stream = csv_boolean(row[:lock_assessments_to_tutorial_stream])
     result.max_quality_pts             = row[:max_quality_pts].to_i
-    result.is_graded                   = %w(Yes y Y yes true TRUE 1).include? "#{row[:is_graded]}".strip
+    result.is_graded                   = csv_boolean(row[:is_graded])
     result.start_date                  = start_date
     result.target_date                 = target_date
     unless row[:upload_requirements].nil?
@@ -757,10 +765,10 @@ class TaskDefinition < ApplicationRecord
     end
     result.due_date                    = due_date
 
-    result.scorm_enabled               = %w(Yes y Y yes true TRUE 1).include? "#{row[:scorm_enabled]}".strip
-    result.scorm_allow_review          = %w(Yes y Y yes true TRUE 1).include? "#{row[:scorm_allow_review]}".strip
-    result.scorm_bypass_test           = %w(Yes y Y yes true TRUE 1).include? "#{row[:scorm_bypass_test]}".strip
-    result.scorm_time_delay_enabled    = %w(Yes y Y yes true TRUE 1).include? "#{row[:scorm_time_delay_enabled]}".strip
+    result.scorm_enabled               = csv_boolean(row[:scorm_enabled])
+    result.scorm_allow_review          = csv_boolean(row[:scorm_allow_review])
+    result.scorm_bypass_test           = csv_boolean(row[:scorm_bypass_test])
+    result.scorm_time_delay_enabled    = csv_boolean(row[:scorm_time_delay_enabled])
     result.scorm_attempt_limit         = row[:scorm_attempt_limit].to_i
 
     result.plagiarism_warn_pct         = row[:plagiarism_warn_pct].to_i
@@ -776,7 +784,7 @@ class TaskDefinition < ApplicationRecord
     import_discussion_prompts_from_csv_row(result, row)
     import_overseer_steps_from_csv_row(result, row)
 
-    result.assess_in_portfolio_only = %w(Yes y Y yes true TRUE 1).include? "#{row[:assess_in_portfolio_only]}".strip
+    result.assess_in_portfolio_only = csv_boolean(row[:assess_in_portfolio_only])
 
     if result.valid? && (row[:group_set].blank? || result.group_set.present?)
       begin
