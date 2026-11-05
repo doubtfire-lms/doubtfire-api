@@ -703,7 +703,12 @@ class TasksApiTest < ActiveSupport::TestCase
     unit = FactoryBot.create(:unit, student_count: 1, task_count: 2)
     prerequisite_definition, task_definition = unit.task_definitions.first(2)
     prerequisite_definition.update!(target_grade: 0)
-    task_definition.update!(target_grade: 3, upload_requirements: [])
+    task_definition.update!(
+      target_grade: 3,
+      upload_requirements: [],
+      start_date: Time.zone.now - 2.weeks,
+      target_date: Time.zone.now + 1.week
+    )
     project = unit.active_projects.first
     task = project.task_for_task_definition(task_definition)
     prerequisite_task = project.task_for_task_definition(prerequisite_definition)
