@@ -38,4 +38,21 @@ class CompetenciesApiTest < ActiveSupport::TestCase
     assert_equal 403, last_response.status
     assert_not SkillFramework.exists?(code: 'UNAUTH', version: '1')
   end
+
+  def test_assigning_a_unit_definition_persists_after_reloading_the_offering
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0, outcome_count: 0)
+    legacy = UnitDefinition.create!(code: unit.code, name: unit.name, version: 'legacy')
+    target = UnitDefinition.create!(code: unit.code, name: 'Programming foundations', version: '2027-S1')
+    unit.update!(unit_definition: legacy)
+    add_auth_header_for(user: FactoryBot.create(:user, :admin))
+
+    put_json "/api/units/#{unit.id}/unit_definition", { unit_definition_id: target.id }
+
+    assert_equal 200, last_response.status, last_response_body
+    assert_equal target.id, last_response_body.fetch('unit_definition_id')
+    assert_equal target.id, unit.reload.unit_definition_id
+
+    get "/api/units/#{unit.id}/unit_definition"
+    assert_equal target.id, last_response_body.fetch('unit_definition_id')
+  end
 end
