@@ -31,8 +31,8 @@ FactoryBot.define do
 
   factory :unit_role do
     unit
-    user                      { FactoryBot.create :user, :convenor }
-    role                      { Role.convenor }
+    user { FactoryBot.create :user, :convenor }
+    role { Role.convenor }
   end
 
   factory :unit do

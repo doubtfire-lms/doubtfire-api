@@ -35,19 +35,19 @@ FactoryBot.define do
     end
 
     trait :tutor do
-      role      { Role.tutor }
+      role { Role.tutor }
     end
 
     trait :admin do
-      role      { Role.admin }
+      role { Role.admin }
     end
 
     trait :convenor do
-      role      { Role.convenor }
+      role { Role.convenor }
     end
 
     trait :auditor do
-      role      { Role.auditor }
+      role { Role.auditor }
     end
   end
 end
