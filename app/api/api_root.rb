@@ -80,6 +80,7 @@ class ApiRoot < Grape::API
   mount LtiApi if Doubtfire::Application.config.lti_enabled
   mount TaskPrerequisitesApi
   mount CommunicationRulesApi
+  mount CompetenciesApi
 
   mount Tii::TurnItInApi
   mount Tii::TurnItInHooksApi
@@ -140,6 +141,7 @@ class ApiRoot < Grape::API
   AuthenticationHelpers.add_auth_to LtiApi if Doubtfire::Application.config.lti_enabled
   AuthenticationHelpers.add_auth_to TaskPrerequisitesApi
   AuthenticationHelpers.add_auth_to CommunicationRulesApi
+  AuthenticationHelpers.add_auth_to CompetenciesApi
 
   AuthenticationHelpers.add_auth_to Tii::TurnItInApi
   AuthenticationHelpers.add_auth_to Tii::TiiGroupAttachmentApi

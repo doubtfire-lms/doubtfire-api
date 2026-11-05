@@ -148,6 +148,7 @@ class Task < ApplicationRecord
   has_many :reverse_moss_similarities, class_name: 'MossTaskSimilarity', dependent: :destroy, inverse_of: :other_task, foreign_key: 'other_task_id'
   has_many :task_engagements, dependent: :destroy
   has_many :task_submissions, dependent: :destroy
+  has_many :skill_evidences, dependent: :destroy
   has_many :submission_histories, dependent: :destroy
   has_many :overseer_assessments, dependent: :destroy
   has_many :tii_submissions, dependent: :destroy
@@ -164,6 +165,7 @@ class Task < ApplicationRecord
 
   before_save :set_discuss_timeout_tracking, if: :will_save_change_to_task_status_id?
   after_update :update_task_stats, if: :saved_change_to_task_status_id? # TODO: consider moving to async task
+  after_update :endorse_skill_evidence_on_completion, if: :saved_change_to_task_status_id?
 
   validates :task_definition_id, uniqueness: { scope: :project,
                                                message: 'must be unique within the project' }
@@ -1065,6 +1067,38 @@ class Task < ApplicationRecord
           TaskSubmission.create!(task: self, submission_time: submit_date)
         end
       end
+      record_skill_evidence!(submit_date)
+    end
+  end
+
+  def record_skill_evidence!(submitted_at = Time.zone.now, endorse: false)
+    mappings = task_definition.task_definition_skill_mappings.reload.to_a
+    return if mappings.empty?
+
+    SkillEvidence.transaction do
+      skill_evidences.where(superseded_at: nil).find_each { |evidence| evidence.update!(superseded_at: submitted_at) }
+      submission_key = SecureRandom.uuid
+      mappings.each do |mapping|
+        skill_evidences.create!(
+          skill_level: mapping.skill_level,
+          submission_key: submission_key,
+          submitted_at: submitted_at,
+          endorsed_at: (submitted_at if endorse)
+        )
+      end
+    end
+  end
+
+  def endorse_skill_evidence_on_completion
+    return unless task_status_id == TaskStatus.complete.id
+
+    current_evidence = skill_evidences.current
+    if current_evidence.exists?
+      current_evidence.where(endorsed_at: nil).find_each do |evidence|
+        evidence.update!(endorsed_at: assessment_date || Time.zone.now)
+      end
+    else
+      record_skill_evidence!(assessment_date || Time.zone.now, endorse: true)
     end
   end
 

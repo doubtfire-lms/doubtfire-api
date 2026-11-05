@@ -77,7 +77,8 @@ class TaskDefinition < ApplicationRecord
   belongs_to :tutorial_stream, optional: true
   belongs_to :overseer_image, optional: true
 
-  has_many :tasks, dependent:  :destroy # Destroying a task definition will also nuke any instances
+  has_many :tasks, dependent: :destroy # Destroying a task definition will also nuke any instances
+  has_many :task_definition_skill_mappings, dependent: :destroy
   has_many :group_submissions, dependent: :destroy # Destroying a task definition will also nuke any group submissions
   has_many :learning_outcomes, as: :context, dependent: :destroy
   has_many :overseer_steps, -> { order(:sort_order) }, inverse_of: :task_definition, dependent: :destroy
@@ -262,6 +263,10 @@ class TaskDefinition < ApplicationRecord
     end
 
     new_td.save!
+    task_definition_skill_mappings.find_each do |mapping|
+      new_td.task_definition_skill_mappings.create!(skill: mapping.skill, skill_level: mapping.skill_level)
+    end
+
     overseer_steps.find_each do |step|
       new_td.overseer_steps.create!(
         step.attributes.except('id', 'task_definition_id', 'created_at', 'updated_at')

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_11_03_052852) do
+ActiveRecord::Schema[8.0].define(version: 2026_11_04_025105) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -181,6 +181,59 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_03_052852) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["unit_id"], name: "index_communication_sets_on_unit_id"
+  end
+
+  create_table "course_enrolments", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "course_id", null: false
+    t.bigint "user_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["course_id", "user_id"], name: "index_course_enrolments_on_course_id_and_user_id", unique: true
+    t.index ["course_id"], name: "index_course_enrolments_on_course_id"
+    t.index ["user_id"], name: "index_course_enrolments_on_user_id"
+  end
+
+  create_table "course_frameworks", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "course_id", null: false
+    t.bigint "skill_framework_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["course_id", "skill_framework_id"], name: "idx_course_frameworks_unique", unique: true
+    t.index ["course_id"], name: "index_course_frameworks_on_course_id"
+    t.index ["skill_framework_id"], name: "index_course_frameworks_on_skill_framework_id"
+  end
+
+  create_table "course_skill_requirements", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "course_id", null: false
+    t.bigint "skill_id", null: false
+    t.bigint "skill_level_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["course_id", "skill_id"], name: "idx_course_skill_requirements_unique", unique: true
+    t.index ["course_id"], name: "index_course_skill_requirements_on_course_id"
+    t.index ["skill_id"], name: "index_course_skill_requirements_on_skill_id"
+    t.index ["skill_level_id"], name: "index_course_skill_requirements_on_skill_level_id"
+  end
+
+  create_table "course_unit_definitions", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "course_id", null: false
+    t.bigint "unit_definition_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["course_id", "unit_definition_id"], name: "idx_course_unit_definitions_unique", unique: true
+    t.index ["course_id"], name: "index_course_unit_definitions_on_course_id"
+    t.index ["unit_definition_id"], name: "index_course_unit_definitions_on_unit_definition_id"
+  end
+
+  create_table "courses", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.string "code", null: false
+    t.string "name", null: false
+    t.string "version", null: false
+    t.string "kind", null: false
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["code", "version"], name: "index_courses_on_code_and_version", unique: true
   end
 
   create_table "d2l_assessment_mappings", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
@@ -639,6 +692,56 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_03_052852) do
     t.index ["task_id"], name: "index_session_activities_on_task_id"
   end
 
+  create_table "skill_evidences", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "task_id", null: false
+    t.bigint "skill_level_id", null: false
+    t.string "submission_key", null: false
+    t.datetime "submitted_at", null: false
+    t.datetime "endorsed_at"
+    t.datetime "superseded_at"
+    t.datetime "archived_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["skill_level_id"], name: "index_skill_evidences_on_skill_level_id"
+    t.index ["task_id", "submission_key", "skill_level_id"], name: "idx_skill_evidence_unique_claim", unique: true
+    t.index ["task_id", "superseded_at"], name: "idx_skill_evidence_current"
+    t.index ["task_id"], name: "index_skill_evidences_on_task_id"
+  end
+
+  create_table "skill_frameworks", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.string "code", null: false
+    t.string "name", null: false
+    t.string "version", null: false
+    t.text "description"
+    t.boolean "archived", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["code", "version"], name: "index_skill_frameworks_on_code_and_version", unique: true
+  end
+
+  create_table "skill_levels", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "skill_id", null: false
+    t.string "name", null: false
+    t.integer "rank", null: false
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["skill_id", "rank"], name: "index_skill_levels_on_skill_id_and_rank", unique: true
+    t.index ["skill_id"], name: "index_skill_levels_on_skill_id"
+  end
+
+  create_table "skills", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "skill_framework_id", null: false
+    t.string "code", null: false
+    t.string "name", null: false
+    t.text "description"
+    t.boolean "archived", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["skill_framework_id", "code"], name: "index_skills_on_skill_framework_id_and_code", unique: true
+    t.index ["skill_framework_id"], name: "index_skills_on_skill_framework_id"
+  end
+
   create_table "staff_notes", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.text "note"
     t.bigint "project_id", null: false
@@ -716,6 +819,18 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_03_052852) do
     t.index ["task_definition_id"], name: "index_task_definition_grade_due_dates_on_task_definition_id"
   end
 
+  create_table "task_definition_skill_mappings", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "task_definition_id", null: false
+    t.bigint "skill_id", null: false
+    t.bigint "skill_level_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["skill_id"], name: "index_task_definition_skill_mappings_on_skill_id"
+    t.index ["skill_level_id"], name: "index_task_definition_skill_mappings_on_skill_level_id"
+    t.index ["task_definition_id", "skill_id"], name: "idx_task_definition_skill_mappings_unique", unique: true
+    t.index ["task_definition_id"], name: "idx_task_definition_skill_mappings_on_task_definition"
+  end
+
   create_table "task_definitions", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.bigint "unit_id"
     t.string "name"
@@ -751,6 +866,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_03_052852) do
     t.boolean "lock_assessments_to_tutorial_stream", default: false, null: false
     t.boolean "requires_discussion", default: false, null: false
     t.boolean "staff_managed_task", default: false, null: false
+    t.boolean "allow_student_skill_selection", default: false, null: false
     t.index ["abbreviation", "unit_id"], name: "index_task_definitions_on_abbreviation_and_unit_id", unique: true
     t.index ["group_set_id"], name: "index_task_definitions_on_group_set_id"
     t.index ["name", "unit_id"], name: "index_task_definitions_on_name_and_unit_id", unique: true
@@ -1032,6 +1148,28 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_03_052852) do
     t.index ["unit_id"], name: "index_unit_content_sites_on_unit_id"
   end
 
+  create_table "unit_definition_skill_requirements", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "unit_definition_id", null: false
+    t.bigint "skill_id", null: false
+    t.bigint "skill_level_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["skill_id"], name: "index_unit_definition_skill_requirements_on_skill_id"
+    t.index ["skill_level_id"], name: "index_unit_definition_skill_requirements_on_skill_level_id"
+    t.index ["unit_definition_id", "skill_id"], name: "idx_unit_definition_skill_requirements_unique", unique: true
+    t.index ["unit_definition_id"], name: "index_unit_definition_skill_requirements_on_unit_definition_id"
+  end
+
+  create_table "unit_definitions", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.string "code", null: false
+    t.string "name", null: false
+    t.text "description"
+    t.string "version", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["code", "version"], name: "index_unit_definitions_on_code_and_version", unique: true
+  end
+
   create_table "unit_roles", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.bigint "user_id"
     t.bigint "tutorial_id"
@@ -1086,10 +1224,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_03_052852) do
     t.integer "discuss_timeout_expire_days", default: 14, null: false
     t.date "last_teaching_date", null: false
     t.boolean "generate_weekly_summaries", default: true, null: false
+    t.bigint "unit_definition_id"
     t.index ["draft_task_definition_id"], name: "index_units_on_draft_task_definition_id"
     t.index ["main_convenor_id"], name: "index_units_on_main_convenor_id"
     t.index ["overseer_image_id"], name: "index_units_on_overseer_image_id"
     t.index ["teaching_period_id"], name: "index_units_on_teaching_period_id"
+    t.index ["unit_definition_id"], name: "index_units_on_unit_definition_id"
     t.check_constraint "json_valid(`grade_values`)", name: "grade_values"
   end
 
