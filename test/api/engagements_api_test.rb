@@ -43,7 +43,7 @@ class EngagementsApiTest < ActiveSupport::TestCase
     get "/api/projects/#{@project.id}/engagements"
 
     assert_equal 200, last_response.status
-    assert_equal [earlier.id, later.id], (last_response_body.map { |engagement| engagement['id'] })
+    assert_equal([earlier.id, later.id], last_response_body.map { |engagement| engagement['id'] })
     assert_equal 'negative', last_response_body.first['engagement_type']
     assert_equal @tutor.id, last_response_body.first.dig('user', 'id')
   end

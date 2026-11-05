@@ -312,7 +312,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
       assert_equal task_def.target_day.to_s, task_def_csv['target_day']
       assert_equal task_def.due_week.to_s, task_def_csv['due_week']
       assert_equal task_def.due_day.to_s, task_def_csv['due_day']
-      assert_equal task_def.tutorial_stream.present? ? task_def.tutorial_stream.abbreviation : nil, task_def_csv['tutorial_stream']
+      assert_equal task_def.tutorial_stream.presence&.abbreviation, task_def_csv['tutorial_stream']
 
       prerequisites = task_def.task_prerequisites.map do |tp|
         prereq = TaskDefinition.find(tp.prerequisite_id)
