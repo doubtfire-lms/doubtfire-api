@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.1.0-8](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-7...v11.1.0-8) (2026-11-05)
+
+
+### Bug Fixes
+
+* add consistent random IDs at the end of temp work directory names ([e19f5b0](https://github.com/b0ink/doubtfire-deploy/commit/e19f5b00b91a45b64bc6252454bb72220da7c160))
+* include task restrictions in task definition csv import and export ([#757](https://github.com/b0ink/doubtfire-deploy/issues/757)) ([70037e0](https://github.com/b0ink/doubtfire-deploy/commit/70037e092f042381885181feeeb0db55876e7ec2))
+* stage jplag reports in shared temp storage without student work access ([#759](https://github.com/b0ink/doubtfire-deploy/issues/759)) ([7996057](https://github.com/b0ink/doubtfire-deploy/commit/79960573cbe53a6a741f39292e4c23216fdafcb5))
+
 ## [11.1.0-7](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-6...v11.1.0-7) (2026-11-05)
 
 
