@@ -611,7 +611,7 @@ class DatabasePopulator
 
     pdf_path = task.final_pdf_path
     if pdf_path && !File.exist?(pdf_path)
-      FileUtils.ln_s(Rails.root.join('test_files/unit_files/sample-student-submission.pdf'), pdf_path)
+      FileUtils.cp(Rails.root.join('test_files/unit_files/sample-student-submission.pdf'), pdf_path)
     end
 
     task.save
@@ -622,7 +622,7 @@ class DatabasePopulator
     FileUtils.mkdir_p(portfolio_tmp_dir)
 
     lsr_path = File.join(portfolio_tmp_dir, '000-document-LearningSummaryReport.pdf')
-    FileUtils.ln_s(Rails.root.join('test_files/unit_files/sample-learning-summary.pdf'), lsr_path) unless File.exist? lsr_path
+    FileUtils.cp(Rails.root.join('test_files/unit_files/sample-learning-summary.pdf'), lsr_path) unless File.exist? lsr_path
     project.compile_portfolio = true
     project.create_portfolio
   end

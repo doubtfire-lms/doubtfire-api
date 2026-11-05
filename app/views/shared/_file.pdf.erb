@@ -2,27 +2,26 @@
 \fancyhead[R]{ <%= lesc name %>  }
 
 <% if file_type == 'image' %>
-\graphicspath{ {<%= base_path %>/} }
-\includegraphics[width=\textwidth]{{<%= File.basename(file_name, File.extname(file_name)) %>}<%= File.extname(file_name) %>}
+\includegraphics[width=\textwidth]{<%= latex_file_name %>}
 <% end %>
 
 <%
   if file_type == 'code'
     if (File.extname(file_name)[1..-1]) != 'ipynb'
 %>
-\inputminted[breaklines,linenos,breakanywhere,tabsize=4]{<%= Task.pygments_lang(File.extname(file_name)[1..-1]) %>}{<%= file_name %>}
+\inputminted[breaklines,linenos,breakanywhere,tabsize=4]{<%= Task.pygments_lang(File.extname(file_name)[1..-1]) %>}{<%= latex_file_name %>}
 <%  else %>
-\jupynotex{<%= file_name %>}
+\jupynotex{<%= latex_file_name %>}
 <%
     end
   end
 %>
 
 <% if file_type == 'document'
-    max_pages = [100,FileHelper.pages_in_pdf(file_name)].min
+    max_pages = [100, FileHelper.pages_in_pdf(latex_host_path(latex_file_name))].min
 
     for page_idx in 1..max_pages do %>
-\includepdf[pages={<%= page_idx %>-<%= page_idx %>},fitpaper]{<%= file_name %>}
+\includepdf[pages={<%= page_idx %>-<%= page_idx %>},fitpaper]{<%= latex_file_name %>}
     <% end # end for  %>
 
 <% end %>

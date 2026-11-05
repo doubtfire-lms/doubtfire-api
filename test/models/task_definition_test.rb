@@ -486,6 +486,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     csv = CSV.generate do |rows|
       rows << TaskDefinition.required_csv_columns
       rows << [
+        # We're ensuring that word "Tournament" does not get flagged for containing the keyword "name" inside it
         'Coin Clash (Tournament Mini-Project)',
         'D4',
         'Build an adversarial game agent.',
@@ -526,6 +527,8 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     assert_empty result[:errors], result
     assert target_unit.task_definitions.exists?(abbreviation: 'D4')
+    td = target_unit.task_definitions.find_by(abbreviation: 'D4')
+    assert td.name, 'Coin Clash (Tournament Mini-Project)'
   ensure
     file&.unlink
   end
