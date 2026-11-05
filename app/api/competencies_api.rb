@@ -432,7 +432,7 @@ class CompetenciesApi < Grape::API
           abbreviation: definition.abbreviation,
           name: definition.name,
           task_id: task&.id,
-          status: task&.task_status&.name,
+          status: task&.status&.to_s,
           skills: definition.task_definition_skill_mappings.map { |row| requirement_data(row) },
           evidence: evidence
         }
