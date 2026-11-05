@@ -133,7 +133,6 @@ jobs:
           image: doubtfire-jplag-development:local
           options: >
             --name jplag
-            -v ${{ github.workspace }}/student-work:/student-work
             -v ${{ github.workspace }}/tmp/jplag:/tmp/jplag
             -v ${{ github.workspace }}/test_files/submissions/jplag:/test_files
             --detach
