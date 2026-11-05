@@ -204,7 +204,7 @@ namespace :maintenance do
     Rails.logger.error(message)
 
     mail = ErrorLogMailer.error_message('Plagiarism checks blocked', message, StandardError.new('Stale plagiarism check marker'))
-    mail.presence&.deliver_now
+    mail.presence&.deliver
   end
 
   desc 'Cleanup temporary files'

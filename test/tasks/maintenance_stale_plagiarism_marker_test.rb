@@ -3,6 +3,8 @@ require 'rake'
 require 'tmpdir'
 
 class MaintenanceStalePlagiarismMarkerTest < ActiveSupport::TestCase
+  include ActionMailer::TestHelper
+
   setup do
     Rails.application.load_tasks unless Rake::Task.task_defined?('maintenance:alert_stale_plagiarism_marker')
 
@@ -24,7 +26,7 @@ class MaintenanceStalePlagiarismMarkerTest < ActiveSupport::TestCase
   def test_alerts_when_marker_is_older_than_seven_days
     marker_path = File.join(@student_work_dir, 'rake.plagiarism.running')
     File.write(marker_path, '')
-    stale_time = 8.days.ago
+    stale_time = 8.days.ago.to_time
     File.utime(stale_time, stale_time, marker_path)
 
     assert_emails 1 do
@@ -42,7 +44,7 @@ class MaintenanceStalePlagiarismMarkerTest < ActiveSupport::TestCase
 
     marker_path = File.join(@student_work_dir, 'rake.plagiarism.running')
     File.write(marker_path, '')
-    recent_time = 6.days.ago
+    recent_time = 6.days.ago.to_time
     File.utime(recent_time, recent_time, marker_path)
 
     assert_emails 0 do
