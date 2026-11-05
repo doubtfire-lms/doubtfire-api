@@ -270,7 +270,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
   def test_export_task_definitions_csv
     unit = FactoryBot.create(:unit, with_students: false)
-    stream_1 = FactoryBot.create(:tutorial_stream, unit: unit)
+    FactoryBot.create(:tutorial_stream, unit: unit)
     task_def_with_steps = unit.task_definitions.first
     task_def_with_steps.overseer_steps.create!(
       name: 'compile',
@@ -312,7 +312,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
       assert_equal task_def.target_day.to_s, task_def_csv['target_day']
       assert_equal task_def.due_week.to_s, task_def_csv['due_week']
       assert_equal task_def.due_day.to_s, task_def_csv['due_day']
-      assert_equal task_def.tutorial_stream.present? ? task_def.tutorial_stream.abbreviation : nil, task_def_csv['tutorial_stream']
+      assert_equal task_def.tutorial_stream.presence&.abbreviation, task_def_csv['tutorial_stream']
 
       prerequisites = task_def.task_prerequisites.map do |tp|
         prereq = TaskDefinition.find(tp.prerequisite_id)
@@ -351,6 +351,32 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
       assert_equal overseer_steps, JSON.parse(task_def_csv['overseer_steps'])
     end
+  end
+
+  def test_csv_round_trips_task_restrictions
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 1, stream_count: 1)
+    task_definition = unit.task_definitions.first
+    restrictions = {
+      staff_managed_task: true,
+      requires_discussion: true,
+      lock_assessments_to_tutorial_stream: true
+    }
+    task_definition.update!(restrictions)
+
+    csv = unit.task_definitions_csv
+    row = CSV.parse(csv, headers: true).first
+    restrictions.each_key { |key| assert_equal 'true', row[key.to_s] }
+
+    task_definition.update!(restrictions.transform_values { false })
+    Tempfile.create(['task-definitions', '.csv']) do |file|
+      file.write(csv)
+      file.flush
+      result = unit.import_tasks_from_csv(file.path)
+      assert_empty result[:errors], result
+    end
+
+    task_definition.reload
+    restrictions.each_key { |key| assert task_definition.public_send(key) }
   end
 
   def test_import_overseer_steps_from_csv_fixture
@@ -465,6 +491,9 @@ class TaskDefinitionTest < ActiveSupport::TestCase
         'Build an adversarial game agent.',
         1,
         0,
+        false,
+        false,
+        false,
         false,
         0,
         false,
