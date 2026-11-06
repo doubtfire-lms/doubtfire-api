@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.1.0-10](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-9...v11.1.0-10) (2026-11-06)
+
+
+### Features
+
+* optionally archive delivered emails to disk ([68ddaa0](https://github.com/b0ink/doubtfire-deploy/commit/68ddaa094ffc075c0abeb684d1e971b30fad0537))
+
+
+### Bug Fixes
+
+* include JPlag output in failure errors ([8c64c2d](https://github.com/b0ink/doubtfire-deploy/commit/8c64c2db1df45b9da16efd44b93e5d503ca97ed1))
+* restore deliver_now for mailer emails broken by presence autocorrect ([f8733bb](https://github.com/b0ink/doubtfire-deploy/commit/f8733bb5f824019390639014b1f4ada08daa5bb3))
+
 ## [11.1.0-9](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-8...v11.1.0-9) (2026-11-06)
 
 
