@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.1.0-9](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-8...v11.1.0-9) (2026-11-06)
+
+
+### Features
+
+* email daily when plagiarism marker is stale ([#761](https://github.com/b0ink/doubtfire-deploy/issues/761)) ([8416fb2](https://github.com/b0ink/doubtfire-deploy/commit/8416fb2184ab58948229d6acfaecd0328534d5f6))
+* expose user unit memberships and active status ([#762](https://github.com/b0ink/doubtfire-deploy/issues/762)) ([63cee9c](https://github.com/b0ink/doubtfire-deploy/commit/63cee9c10001d9abb3a656b062a32ea44bb71f93))
+
+
+### Bug Fixes
+
+* clean up staged submissions when scans fail ([#760](https://github.com/b0ink/doubtfire-deploy/issues/760)) ([8508cdf](https://github.com/b0ink/doubtfire-deploy/commit/8508cdfabee1a3c1c07f4edb5d46cbf7e5195a21))
+* disable auth rate limit by default ([2e9e13f](https://github.com/b0ink/doubtfire-deploy/commit/2e9e13f9f87ac3e2f74ad78bc9cbb40274e3780a))
+
 ## [11.1.0-8](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-7...v11.1.0-8) (2026-11-05)
 
 
