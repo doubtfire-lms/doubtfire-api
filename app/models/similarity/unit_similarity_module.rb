@@ -231,6 +231,7 @@ module UnitSimilarityModule
     file_lang = task_definition.similarity_language
     raise ArgumentError, "Unsupported JPlag language: #{file_lang.inspect}" unless TaskDefinition::JPLAG_LANGUAGES.include?(file_lang)
 
+    cleanup_work_dir = true
     # JPlag can write only to its shared working directory. Pdfgen publishes the
     # finished report to student work after the container exits successfully.
     staged_report_path = File.join(tasks_dir, 'result.jplag')
@@ -339,10 +340,13 @@ module UnitSimilarityModule
       File.rename(temporary_report.path, report_path)
     end
 
-    # Delete the extracted code files from tmp
-    logger.info "Deleting files in: #{tasks_dir}"
-    FileUtils.rm_rf(tasks_dir)
     self
+  ensure
+    # Remove extracted student files even when JPlag fails.
+    if cleanup_work_dir
+      logger.info "Deleting files in: #{tasks_dir}"
+      FileUtils.rm_rf(tasks_dir)
+    end
   end
 
   def process_jplag_plagiarism_report(path, warn_pct, is_group)

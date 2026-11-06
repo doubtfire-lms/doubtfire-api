@@ -191,6 +191,22 @@ namespace :maintenance do
     end
   end
 
+  desc 'Email the error-report recipient when the plagiarism check marker has been stale for three days'
+  task alert_stale_plagiarism_marker: :environment do
+    marker_path = File.join(Doubtfire::Application.config.student_work_dir, 'rake.plagiarism.running')
+    next unless File.file?(marker_path)
+
+    modified_at = File.mtime(marker_path)
+    next unless modified_at < 3.days.ago
+
+    message = "The plagiarism check marker at #{marker_path} has been present since #{modified_at.iso8601}. " \
+              'Scheduled plagiarism checks skip while it exists. Confirm no scan is running before removing it.'
+    Rails.logger.error(message)
+
+    mail = ErrorLogMailer.error_message('Plagiarism checks blocked', message, StandardError.new('Stale plagiarism check marker'))
+    mail.presence&.deliver
+  end
+
   desc 'Cleanup temporary files'
   task cleanup: [:environment] do
     path = FileHelper.tmp_file_dir
