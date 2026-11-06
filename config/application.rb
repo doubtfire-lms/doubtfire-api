@@ -45,8 +45,12 @@ module Doubtfire
     config.auth_rate_limit_enabled = %w[true 1].include?(auth_rate_limit_enabled)
     config.auth_rate_limit = Integer(ENV.fetch('ONTRACK_AUTH_RATE_LIMIT', 5))
     config.auth_rate_period_seconds = Integer(ENV.fetch('ONTRACK_AUTH_RATE_PERIOD_SECONDS', 20))
+    config.auth_refresh_rate_limit = Integer(ENV.fetch('ONTRACK_AUTH_REFRESH_RATE_LIMIT', 30))
+    config.auth_refresh_rate_period_seconds = Integer(ENV.fetch('ONTRACK_AUTH_REFRESH_RATE_PERIOD_SECONDS', 60))
     raise ArgumentError, 'ONTRACK_AUTH_RATE_LIMIT must be positive' unless config.auth_rate_limit.positive?
     raise ArgumentError, 'ONTRACK_AUTH_RATE_PERIOD_SECONDS must be positive' unless config.auth_rate_period_seconds.positive?
+    raise ArgumentError, 'ONTRACK_AUTH_REFRESH_RATE_LIMIT must be positive' unless config.auth_refresh_rate_limit.positive?
+    raise ArgumentError, 'ONTRACK_AUTH_REFRESH_RATE_PERIOD_SECONDS must be positive' unless config.auth_refresh_rate_period_seconds.positive?
 
     # ==> Student work directory
     # File server location for storing student's work. Defaults to `student_work`
