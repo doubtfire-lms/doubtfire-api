@@ -5,6 +5,7 @@ PATH=/tmp/texlive/bin/x86_64-linux:/tmp/texlive/bin/aarch64-linux:/usr/local/bun
 10,15,20,25,30,35,40,45,50,55 * * * * /doubtfire/lib/shell/generate_pdfs.sh
 0,10,20,30,40,50 * * * * /doubtfire/lib/shell/send_overseer_notifications.sh
 0 5 * * * /doubtfire/lib/shell/check_plagiarism.sh
+0 6 * * * cd /doubtfire && DF_LOG_TO_STDOUT=true rails maintenance:alert_stale_plagiarism_marker
 0 8 * * * /doubtfire/lib/shell/portfolio_autogen_check.sh
 # Deprecated: notification digests replace the weekly progress summary.
 # 0 7 * * 1 /doubtfire/lib/shell/send_weekly_emails.sh
