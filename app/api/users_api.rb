@@ -29,7 +29,10 @@ class UsersApi < Grape::API
   end
 
   desc 'Get the units a user staffs or studies in'
-  get '/users/:id/unit_memberships', requirements: { id: /[0-9]*/ } do
+  params do
+    requires :id, type: Integer, desc: 'The user whose unit memberships to get'
+  end
+  get '/users/:id/unit_memberships' do
     unless authorise? current_user, User, :list_users
       error!({ error: 'Cannot view user unit memberships - not authorised' }, 403)
     end
