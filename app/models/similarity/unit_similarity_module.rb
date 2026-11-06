@@ -1,5 +1,6 @@
 # freeze_string_literal: true
 
+require 'open3'
 require 'tempfile'
 
 # Provide moss and tii similarity features in unit class
@@ -327,7 +328,8 @@ module UnitSimilarityModule
     ]
 
     logger.debug "Executing command: #{docker_command.inspect}"
-    system(*docker_command) || raise('Failed to run JPlag')
+    output, status = Open3.capture2e(*docker_command)
+    raise "Failed to run JPlag (#{status}): #{output.last(2000)}" unless status.success?
     raise 'JPlag did not create a report' unless File.file?(staged_report_path)
 
     results_dir = File.dirname(report_path)
