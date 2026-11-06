@@ -34,6 +34,7 @@ class Task < ApplicationRecord
       :get_discussion,
       :make_discussion_reply,
       :request_scorm_extension,
+      :request_submission_access,
       # :request_extension -- depends on settings in unit. See specific_permission_hash method
       # :make_scorm_attempt -- depends on task def settings. See specific_permission_hash method
     ]
@@ -51,6 +52,7 @@ class Task < ApplicationRecord
       :delete_discussion,
       :get_discussion,
       :assess_extension,
+      :assess_submission_access,
       :assess_scorm_extension,
       :request_extension,
       :request_scorm_extension
@@ -66,6 +68,7 @@ class Task < ApplicationRecord
       :delete_plagiarism,
       :get_discussion,
       :assess_extension,
+      :assess_submission_access,
       :assess_scorm_extension,
       :request_extension,
       :request_scorm_extension
@@ -360,6 +363,17 @@ class Task < ApplicationRecord
 
   def tutor
     project.tutor_for(task_definition)
+  end
+
+  # Applying for submission access will create a submission comment
+  def apply_for_submission_access(user, text)
+    SubmissionComment.create!(
+      task: self,
+      user: user,
+      recipient: tutor,
+      content_type: 'submission',
+      comment: text
+    )
   end
 
   # Applying for an extension will create an extension comment
