@@ -28,6 +28,49 @@ class UsersApi < Grape::API
     present user, with: Entities::UserEntity
   end
 
+  desc 'Get the units a user staffs or studies in'
+  params do
+    requires :id, type: Integer, desc: 'The user whose unit memberships to get'
+  end
+  get '/users/:id/unit_memberships' do
+    unless authorise? current_user, User, :list_users
+      error!({ error: 'Cannot view user unit memberships - not authorised' }, 403)
+    end
+
+    user = User.find(params[:id])
+    memberships = user.unit_roles.includes(:role, unit: :teaching_period).map do |unit_role|
+      unit = unit_role.unit
+      {
+        kind: 'staff',
+        unit_id: unit.id,
+        unit_code: unit.code,
+        unit_name: unit.name,
+        teaching_period_name: unit.teaching_period&.then { |period| "#{period.period} #{period.year}" },
+        active: unit.active? && (unit.teaching_period.nil? || unit.teaching_period.active?),
+        role: unit_role.observer_only? ? "#{unit_role.role.name} (observer)" : unit_role.role.name,
+        start_date: unit.start_date
+      }
+    end
+
+    user.projects.where(enrolled: true).includes(unit: :teaching_period).find_each do |project|
+      unit = project.unit
+      memberships << {
+        kind: 'student',
+        unit_id: unit.id,
+        unit_code: unit.code,
+        unit_name: unit.name,
+        teaching_period_name: unit.teaching_period&.then { |period| "#{period.period} #{period.year}" },
+        active: unit.active? && (unit.teaching_period.nil? || unit.teaching_period.active?),
+        role: 'Student',
+        project_id: project.id,
+        start_date: unit.start_date
+      }
+    end
+
+    memberships.sort_by { |membership| [-membership[:start_date].to_i, membership[:unit_code]] }
+               .map { |membership| membership.except(:start_date) }
+  end
+
   desc 'Get convenors'
   get '/users/convenors' do
     unless authorise? current_user, User, :get_staff_list
