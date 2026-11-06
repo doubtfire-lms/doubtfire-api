@@ -71,7 +71,7 @@ namespace :maintenance do
     begin
       exception = StandardError.new(message)
       mail = ErrorLogMailer.error_message('Accept Submission Cleanup', message, exception)
-      mail.presence&.deliver_now
+      mail.deliver_now
     rescue StandardError => e
       Rails.logger.error "Failed to send error log to admin for task #{task.id}!\n#{e.message}"
     end
