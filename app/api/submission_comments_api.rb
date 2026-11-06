@@ -19,7 +19,12 @@ class SubmissionCommentsApi < Grape::API
 
     error!({ error: 'Submission access request reason cannot be blank' }, 400) if params[:comment].blank?
 
-    result = task.apply_for_submission_access(current_user, params[:comment])
+    result = task.with_lock do
+      unless task.can_apply_for_submission_access?
+        error!({ error: task.submission_access_request_error }, 409)
+      end
+      task.apply_for_submission_access(current_user, params[:comment])
+    end
     present result.serialize(current_user), Grape::Presenters::Presenter
   end
 

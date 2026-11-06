@@ -14,6 +14,7 @@ class SubmissionTest < ActiveSupport::TestCase
     project = unit.projects.first
     user = project.student
     td = unit.task_definitions.first
+    td.update!(submission_opens_on: Date.current + 7.days)
     task = project.task_for_task_definition(td)
     endpoint = "/api/projects/#{project.id}/task_def_id/#{td.id}"
 
@@ -91,4 +92,66 @@ class SubmissionTest < ActiveSupport::TestCase
 
   #   unit.destroy!
   # end
+
+  def test_opening_date_and_staff_approval
+    unit = FactoryBot.create(:unit)
+    project = unit.projects.first
+    td = unit.task_definitions.first
+    task = project.task_for_task_definition(td)
+
+    td.update!(submission_opens_on: Date.current + 7.days)
+    task.reload
+    assert task.submission_not_open_error
+    assert_not task.submission_open?
+    assert task.can_apply_for_submission_access?
+    assert_nil task.submission_access_request_error
+    request = task.apply_for_submission_access(project.student, 'I have made an attempt at this task.')
+    assert_match(/awaiting assessment/, task.submission_access_request_error)
+    assert_not task.can_apply_for_submission_access?
+    request.assess_submission_access(unit.main_convenor_user, false)
+    assert task.submission_not_open_error
+
+    request = task.apply_for_submission_access(project.student, 'I have now revised my attempt at this task.')
+    request.assess_submission_access(unit.main_convenor_user, true)
+    assert_nil task.submission_not_open_error
+    assert task.submission_open?
+    assert_not task.can_apply_for_submission_access?
+
+    unit.destroy!
+  end
+
+  def test_prerequisite_must_be_satisfied_before_requesting
+    unit = FactoryBot.create(:unit)
+    project = unit.projects.first
+    prerequisite_td, td = unit.task_definitions.order(:target_grade).first(2)
+    td.update!(submission_opens_on: Date.current + 7.days)
+    TaskPrerequisite.create!(task_definition: td, prerequisite: prerequisite_td,
+                             task_status_id: TaskStatus.complete.id)
+    task = project.task_for_task_definition(td)
+
+    assert_match(/prerequisite/, task.submission_access_request_error)
+    assert_not task.can_apply_for_submission_access?
+    prerequisite_task = project.task_for_task_definition(prerequisite_td)
+    prerequisite_task.update!(task_status: TaskStatus.complete)
+    assert_nil task.submission_access_request_error
+    assert task.can_apply_for_submission_access?
+
+    unit.destroy!
+  end
+
+  def test_opening_day_and_unrestricted_tasks_are_open
+    unit = FactoryBot.create(:unit)
+    project = unit.projects.first
+    td = unit.task_definitions.first
+    task = project.task_for_task_definition(td)
+
+    td.update!(submission_opens_on: nil)
+    task.reload
+    assert_nil task.submission_not_open_error
+    td.update!(submission_opens_on: Date.current)
+    task.reload
+    assert_nil task.submission_not_open_error
+
+    unit.destroy!
+  end
 end

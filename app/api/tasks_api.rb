@@ -197,6 +197,11 @@ class TasksApi < Grape::API
           error!({ error: 'This task has no existing submission available for feedback.' }, 409)
         end
 
+        if %w[ready_for_feedback assess_in_portfolio].include?(params[:trigger]) &&
+           !authorise?(current_user, project, :assess) && (opening_error = task.submission_not_open_error)
+          error!({ error: opening_error }, 403)
+        end
+
         if !needs_upload_docs && %w[ready_for_feedback assess_in_portfolio].include?(params[:trigger]) &&
            (prerequisite_error = task.unmet_prerequisite_error)
           error!({ error: prerequisite_error }, 409)
