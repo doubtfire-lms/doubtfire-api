@@ -585,6 +585,7 @@ class TaskDefinitionsApi < Grape::API
                    'grade',
                    'quality_pts',
                    "SUM(case when task_comments.date_extension_assessed IS NULL AND task_comments.type = 'ExtensionComment' AND NOT task_comments.id IS NULL THEN 1 ELSE 0 END) > 0 as has_extensions",
+                   "SUM(case when task_comments.submission_assessed_at IS NULL AND task_comments.type = 'SubmissionComment' AND NOT task_comments.id IS NULL THEN 1 ELSE 0 END) > 0 as has_submission_requests",
                    'SUM(case when task_similarities.flagged then 1 else 0 end) as similar_to_count',
                    'COUNT(distinct task_pins.task_id) != 0 as pinned'
                  )
@@ -618,6 +619,7 @@ class TaskDefinitionsApi < Grape::API
         grade: t.grade,
         quality_pts: t.quality_pts,
         has_extensions: t.has_extensions,
+        has_submission_requests: t.has_submission_requests,
         pinned: t.pinned
       }
     end

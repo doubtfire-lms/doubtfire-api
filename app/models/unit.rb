@@ -2722,7 +2722,8 @@ class Unit < ApplicationRecord
         num_new_comments: t.number_unread,
         similarity_flag: t.similar_to_count > 0,
         pinned: t.pinned,
-        has_extensions: t.has_extensions
+        has_extensions: t.has_extensions,
+        has_submission_requests: t.has_submission_requests,
       }
     end
   end
@@ -2769,6 +2770,7 @@ class Unit < ApplicationRecord
                 'then COALESCE(task_similarity_stats.similarity_count, 1) else 0 end) as number_unread',
                 'COUNT(distinct task_pins.task_id) != 0 as pinned',
                 "SUM(case when task_comments.date_extension_assessed IS NULL AND task_comments.type = 'ExtensionComment' AND NOT task_comments.id IS NULL THEN 1 ELSE 0 END) > 0 as has_extensions",
+                "SUM(case when task_comments.submission_assessed_at IS NULL AND task_comments.type = 'SubmissionComment' AND NOT task_comments.id IS NULL THEN 1 ELSE 0 END) > 0 as has_submission_requests",
                 'project_id',
                 'tasks.id as task_id',
                 'task_definition_id',
@@ -2942,6 +2944,7 @@ class Unit < ApplicationRecord
                 '0 AS similar_to_count',
                 'false AS pinned',
                 'false AS has_extensions',
+                'false AS has_submission_requests',
                 'tasks.*'
           )
               .distinct

@@ -139,6 +139,34 @@ class SubmissionTest < ActiveSupport::TestCase
     unit.destroy!
   end
 
+  def test_submission_request_appears_in_tutor_inbox_until_assessed
+    unit = FactoryBot.create(:unit)
+    project = unit.projects.first
+    td = unit.task_definitions.first
+    td.update!(submission_opens_on: Date.current + 7.days)
+    task = project.task_for_task_definition(td)
+    tutor = project.tutor_for(td)
+
+    request = task.apply_for_submission_access(project.student, 'Please review my early attempt at this task.')
+    inbox = unit.tasks_as_hash(unit.tasks_for_task_inbox(tutor))
+    entry = inbox.find { |item| item[:id] == task.id }
+    assert entry, 'Pending submission request should appear in the tutor inbox'
+    assert_equal 1, entry[:has_submission_requests]
+    assert_operator entry[:num_new_comments], :>, 0
+    assert_equal request.created_at.to_i, entry[:waiting_since].to_i
+
+    request.mark_as_read(tutor)
+    assert_not request.read_by?(tutor), 'Viewing a pending request must not clear it'
+    request.assess_submission_access(tutor, false)
+    assert request.read_by?(tutor)
+    inbox = unit.tasks_as_hash(unit.tasks_for_task_inbox(tutor))
+    assert_nil inbox.find { |item| item[:id] == task.id }
+    entry = unit.tasks_as_hash(unit.get_all_tasks_for(tutor)).find { |item| item[:id] == task.id }
+    assert_equal 0, entry[:has_submission_requests]
+
+    unit.destroy!
+  end
+
   def test_opening_day_and_unrestricted_tasks_are_open
     unit = FactoryBot.create(:unit)
     project = unit.projects.first
