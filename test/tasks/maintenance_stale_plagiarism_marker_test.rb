@@ -23,10 +23,10 @@ class MaintenanceStalePlagiarismMarkerTest < ActiveSupport::TestCase
     FileUtils.remove_entry(@student_work_dir)
   end
 
-  def test_alerts_when_marker_is_older_than_seven_days
+  def test_alerts_when_marker_is_older_than_three_days
     marker_path = File.join(@student_work_dir, 'rake.plagiarism.running')
     File.write(marker_path, '')
-    stale_time = 8.days.ago.to_time
+    stale_time = 4.days.ago.to_time
     File.utime(stale_time, stale_time, marker_path)
 
     assert_emails 1 do
@@ -44,7 +44,7 @@ class MaintenanceStalePlagiarismMarkerTest < ActiveSupport::TestCase
 
     marker_path = File.join(@student_work_dir, 'rake.plagiarism.running')
     File.write(marker_path, '')
-    recent_time = 6.days.ago.to_time
+    recent_time = 2.days.ago.to_time
     File.utime(recent_time, recent_time, marker_path)
 
     assert_emails 0 do
