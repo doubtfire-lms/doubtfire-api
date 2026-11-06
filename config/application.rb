@@ -39,7 +39,7 @@ module Doubtfire
     config.auth_method = (ENV['DF_AUTH_METHOD'] || :database).to_sym
     config.access_token_expiry = ENV.fetch('DF_ACCESS_TOKEN_EXPIRY_SECONDS', 2.hours.to_i).to_i.seconds
     config.refresh_token_expiry = ENV.fetch('DF_REFRESH_TOKEN_EXPIRY_SECONDS', 1.week.to_i).to_i.seconds
-    auth_rate_limit_enabled = ENV.fetch('ONTRACK_AUTH_RATE_LIMIT_ENABLED', 'true').downcase
+    auth_rate_limit_enabled = ENV.fetch('ONTRACK_AUTH_RATE_LIMIT_ENABLED', 'false').downcase
     raise ArgumentError, 'ONTRACK_AUTH_RATE_LIMIT_ENABLED must be true, false, 1, or 0' unless %w[true false 1 0].include?(auth_rate_limit_enabled)
 
     config.auth_rate_limit_enabled = %w[true 1].include?(auth_rate_limit_enabled)

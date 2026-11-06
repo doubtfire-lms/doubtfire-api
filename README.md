@@ -89,7 +89,7 @@ for `DF_SECRET_KEY_BASE`, `DF_SECRET_KEY_ATTR`, `DF_SECRET_KEY_DEVISE`,
 | `DF_AUTH_METHOD`                    | Authentication method: `database`, `ldap`, `aaf`, or `saml`. | `database`                       |
 | `DF_ACCESS_TOKEN_EXPIRY_SECONDS`    | Access-token lifetime in seconds.                            | `7200`                           |
 | `DF_REFRESH_TOKEN_EXPIRY_SECONDS`   | Refresh-token lifetime in seconds.                           | `604800`                         |
-| `ONTRACK_AUTH_RATE_LIMIT_ENABLED`   | Enable auth throttling; accepts true/false or 1/0.           | `true`                           |
+| `ONTRACK_AUTH_RATE_LIMIT_ENABLED`   | Enable auth throttling; accepts true/false or 1/0.           | `false`                          |
 | `ONTRACK_AUTH_RATE_LIMIT`           | Maximum authentication requests per IP in one window.        | `5`                              |
 | `ONTRACK_AUTH_RATE_PERIOD_SECONDS`  | Authentication throttle window in seconds.                   | `20`                             |
 | `DF_SECRET_KEY_BASE`                | Rails secret key base fallback.                              | Required in production           |
