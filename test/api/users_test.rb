@@ -96,6 +96,7 @@ class UnitsTest < ActiveSupport::TestCase
       'kind' => 'staff',
       'unit_id' => unit.id,
       'unit_code' => unit.code,
+      'unit_name' => unit.name,
       'teaching_period_name' => "#{teaching_period.period} #{teaching_period.year}",
       'active' => true,
       'role' => 'Tutor'
@@ -104,6 +105,7 @@ class UnitsTest < ActiveSupport::TestCase
     get "/api/users/#{student.id}/unit_memberships"
     assert_equal 200, last_response.status
     assert_equal project.id, last_response_body.first['project_id']
+    assert_equal unit.name, last_response_body.first['unit_name']
     assert_equal 'Student', last_response_body.first['role']
     assert_equal true, last_response_body.first['active']
 
