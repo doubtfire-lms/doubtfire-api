@@ -28,6 +28,49 @@ class UsersApi < Grape::API
     present user, with: Entities::UserEntity
   end
 
+  desc 'Get the units a user staffs or studies in'
+  params do
+    requires :id, type: Integer, desc: 'The user whose unit memberships to get'
+  end
+  get '/users/:id/unit_memberships' do
+    unless authorise? current_user, User, :list_users
+      error!({ error: 'Cannot view user unit memberships - not authorised' }, 403)
+    end
+
+    user = User.find(params[:id])
+    memberships = user.unit_roles.includes(:role, unit: :teaching_period).map do |unit_role|
+      unit = unit_role.unit
+      {
+        kind: 'staff',
+        unit_id: unit.id,
+        unit_code: unit.code,
+        unit_name: unit.name,
+        teaching_period_name: unit.teaching_period&.then { |period| "#{period.period} #{period.year}" },
+        active: unit.active? && (unit.teaching_period.nil? || unit.teaching_period.active?),
+        role: unit_role.observer_only? ? "#{unit_role.role.name} (observer)" : unit_role.role.name,
+        start_date: unit.start_date
+      }
+    end
+
+    user.projects.where(enrolled: true).includes(unit: :teaching_period).find_each do |project|
+      unit = project.unit
+      memberships << {
+        kind: 'student',
+        unit_id: unit.id,
+        unit_code: unit.code,
+        unit_name: unit.name,
+        teaching_period_name: unit.teaching_period&.then { |period| "#{period.period} #{period.year}" },
+        active: unit.active? && (unit.teaching_period.nil? || unit.teaching_period.active?),
+        role: 'Student',
+        project_id: project.id,
+        start_date: unit.start_date
+      }
+    end
+
+    memberships.sort_by { |membership| [-membership[:start_date].to_i, membership[:unit_code]] }
+               .map { |membership| membership.except(:start_date) }
+  end
+
   desc 'Get convenors'
   get '/users/convenors' do
     unless authorise? current_user, User, :get_staff_list
@@ -56,6 +99,7 @@ class UsersApi < Grape::API
       optional :student_id, type: String, desc: 'New student_id for user'
       optional :nickname, type: String, desc: 'New nickname for user'
       optional :system_role, type: String, desc: 'New role for user [Admin, Auditor, Convenor, Tutor, Student]'
+      optional :observe_all_units, type: Boolean, desc: 'Grant read-only access to every unit'
       optional :receive_task_notifications, type: Boolean, desc: 'Allow user to be sent task notifications'
       optional :receive_portfolio_notifications, type: Boolean, desc: 'Allow user to be sent portfolio notifications'
       optional :receive_feedback_notifications, type: Boolean, desc: 'Allow user to be sent feedback notifications'
@@ -78,6 +122,13 @@ class UsersApi < Grape::API
 
       user = User.eager_load(:role).find(params[:id])
 
+      if params[:user].key?(:observe_all_units) && (change_self || !current_user.has_admin_capability?)
+        if params[:user][:observe_all_units] != user.observe_all_units?
+          error!({ error: 'Only an administrator can change another user\'s Observe Units access' }, 403)
+        end
+        params[:user].delete(:observe_all_units)
+      end
+
       user_parameters = ActionController::Parameters.new(params)
                                                     .require(:user)
                                                     .permit(
@@ -92,7 +143,8 @@ class UsersApi < Grape::API
                                                       :opt_in_to_research,
                                                       :has_run_first_time_setup,
                                                       :timezone,
-                                                      :auto_timezone
+                                                      :auto_timezone,
+                                                      :observe_all_units
                                                     )
 
       user.role = Role.student if user.role.nil?
@@ -136,6 +188,12 @@ class UsersApi < Grape::API
       end
 
       # Update changes made to user
+      role = user_parameters[:role] || user.role
+      observe_all_units = user_parameters.fetch(:observe_all_units, user.observe_all_units?)
+      if observe_all_units && ![Role.tutor_id, Role.convenor_id].include?(role.id)
+        error!({ error: 'Observe Units requires a Tutor or Convenor system role' }, 422)
+      end
+
       user.update!(user_parameters)
       present user, with: Entities::UserEntity
     else

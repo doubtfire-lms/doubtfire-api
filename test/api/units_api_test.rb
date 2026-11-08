@@ -125,6 +125,41 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal 403, last_response.status, last_response_body
   end
 
+  def test_rollover_employs_requesting_convenor_without_copying_other_staff
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0, outcome_count: 0, tutorials: 0, staff_count: 0)
+    main_convenor = unit.main_convenor_user
+    requesting_convenor = FactoryBot.create(:user, :convenor)
+    other_convenor = FactoryBot.create(:user, :convenor)
+    unit.employ_staff(requesting_convenor, Role.convenor)
+    unit.employ_staff(other_convenor, Role.convenor)
+    teaching_period = FactoryBot.create(:teaching_period)
+
+    add_auth_header_for(user: requesting_convenor)
+    post_json "/api/units/#{unit.id}/rollover", { teaching_period_id: teaching_period.id }
+
+    assert_equal 201, last_response.status, last_response_body
+    rolled_unit = Unit.find(last_response_body['id'])
+    assert_equal main_convenor, rolled_unit.main_convenor_user
+    assert_equal [main_convenor.id, requesting_convenor.id].sort, rolled_unit.convenors.pluck(:user_id).sort
+    assert_equal Role.convenor, rolled_unit.role_for(requesting_convenor)
+    assert_equal Role.convenor.name, last_response_body['my_role']
+  end
+
+  def test_tutor_cannot_rollover_unit
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0, outcome_count: 0, tutorials: 0)
+    tutor = FactoryBot.create(:user, :tutor)
+    unit.employ_staff(tutor, Role.tutor)
+    teaching_period = FactoryBot.create(:teaching_period)
+    unit_count = Unit.count
+
+    add_auth_header_for(user: tutor)
+    post_json "/api/units/#{unit.id}/rollover", { teaching_period_id: teaching_period.id }
+
+    assert_equal 403, last_response.status, last_response_body
+    assert_equal 'Not authorised to rollover a unit', last_response_body['error']
+    assert_equal unit_count, Unit.count
+  end
+
   def create_unit
     {
       name: 'Intro to Social Skills',
@@ -222,6 +257,81 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal expected_unit.code, actual_unit['code']
     assert_equal expected_unit.start_date.to_date, actual_unit['start_date'].to_date
     assert_equal expected_unit.end_date.to_date, actual_unit['end_date'].to_date
+  end
+
+  def test_global_observer_reads_all_units_and_explicit_staff_role_takes_precedence
+    observer = FactoryBot.create(:user, :convenor, observe_all_units: true)
+    existing_unit = FactoryBot.create(:unit, with_students: true, task_count: 1, group_sets: 1)
+
+    new_unit = FactoryBot.create(:unit, with_students: false, task_count: 0, active: false)
+
+    add_auth_header_for(user: observer)
+    get '/api/units', { include_in_active: true }
+    assert_equal 200, last_response.status
+    assert_includes last_response_body.map { |row| row['id'] }, existing_unit.id
+    assert_includes last_response_body.map { |row| row['id'] }, new_unit.id
+
+    get "/api/units/#{existing_unit.id}"
+    assert_equal 200, last_response.status
+    assert_equal 'Convenor', last_response_body['my_role']
+
+    get '/api/students', { unit_id: existing_unit.id }
+    assert_equal 200, last_response.status
+
+    get "/api/units/#{existing_unit.id}/tasks/inbox"
+    assert_equal 200, last_response.status
+
+    project = existing_unit.active_projects.first
+    task_definition = existing_unit.task_definitions.first
+    task = project.task_for_task_definition(task_definition)
+    task.save! if task.new_record?
+    get "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/submission_details"
+    assert_equal 200, last_response.status
+
+    get "/api/units/#{existing_unit.id}/stats/task_completion_stats"
+    assert_equal 200, last_response.status
+
+    get "/api/units/#{existing_unit.id}/marking_sessions"
+    assert_equal 200, last_response.status
+
+    get "/api/units/#{existing_unit.id}/group_sets/#{existing_unit.group_sets.first.id}/groups/csv"
+    assert_equal 200, last_response.status
+
+    get "/api/units/#{existing_unit.id}/outcomes/csv"
+    assert_equal 200, last_response.status
+
+    get "/api/units/#{existing_unit.id}/feedback_chips/csv"
+    assert_equal 200, last_response.status
+
+    get "/api/units/#{existing_unit.id}/content/sites"
+    assert_equal 200, last_response.status
+
+    put_json "/api/units/#{existing_unit.id}", { unit: { name: 'Changed name' } }
+    assert_equal 403, last_response.status
+
+    put_json "/api/projects/#{project.id}", { enrolled: false }
+    assert_equal 403, last_response.status
+    assert project.reload.enrolled?
+
+    unit_role = existing_unit.employ_staff(observer, Role.convenor)
+    unit_role.update!(observer_only: true)
+    get "/api/units/#{existing_unit.id}"
+    assert_equal 200, last_response.status
+    get "/api/units/#{existing_unit.id}/outcomes/csv"
+    assert_equal 200, last_response.status
+    put_json "/api/units/#{existing_unit.id}", { unit: { name: 'Changed name' } }
+    assert_equal 403, last_response.status
+
+    unit_role.update!(observer_only: false)
+    get "/api/units/#{existing_unit.id}"
+    assert_equal 200, last_response.status
+    assert_equal 'Convenor', last_response_body['my_role']
+
+    put_json "/api/units/#{existing_unit.id}", { unit: { name: 'Changed name' } }
+    assert_equal 200, last_response.status
+
+    put_json "/api/units/#{new_unit.id}", { unit: { name: 'Changed name' } }
+    assert_equal 403, last_response.status
   end
 
   def test_permissions_on_get
@@ -830,7 +940,7 @@ class UnitsApiTest < ActiveSupport::TestCase
 
       statuses.each_with_index do |status, index|
         csv << [
-          "#{index + 1}",
+          (index + 1).to_s,
           "student-#{index + 1}",
           "Student #{index + 1}",
           tutorial.campus.abbreviation,

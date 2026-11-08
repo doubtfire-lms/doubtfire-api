@@ -24,7 +24,10 @@ module Entities
     end
 
     expose :system_role, unless: :minimal do |user, options|
-      user.role.name if user.role.present?
+      user.role.presence&.name
+    end
+    expose :observe_all_units, unless: :minimal do |user, _options|
+      user.observe_all_units?
     end
   end
 end

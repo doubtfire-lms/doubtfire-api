@@ -404,7 +404,6 @@ class Unit < ApplicationRecord
   end
 
   def queue_discuss_timeout_email(task, actor, type, expiry_date = nil)
-    return unless send_notifications
     return unless task.project.enrolled
 
     kind = type == :approaching ? 'discuss_warning' : 'discuss_expired'
@@ -780,8 +779,11 @@ class Unit < ApplicationRecord
     end
 
     # Duplicate content sites and their links (grade, task sheet and task resource pages)
-    site_mapping = unit_content_sites.to_h { |site| [site.id, site.copy_to(new_unit)] }
+    # Skip sites whose archive is missing on disk, as task sheets and resources do
+    site_mapping = unit_content_sites.select { |site| File.exist?(site.archive_path.to_s) }.to_h { |site| [site.id, site.copy_to(new_unit)] }
     unit_content_links.each do |link|
+      next unless site_mapping.key?(link.unit_content_site_id)
+
       new_link = link.dup
       new_link.unit = new_unit
       new_link.unit_content_site = site_mapping.fetch(link.unit_content_site_id)
@@ -815,7 +817,7 @@ class Unit < ApplicationRecord
   end
 
   def self.for_user_admin(user)
-    if user.has_admin_capability?
+    if user.has_admin_capability? || user.observe_all_units?
       Unit.all
     elsif user.has_auditor_capability?
       # Limit range of units that the auditor has access to
@@ -2746,7 +2748,7 @@ class Unit < ApplicationRecord
                        .select('task_id', 'COUNT(*) AS similarity_count', 'SUM(flagged) AS flagged_count')
                        .group(:task_id)
                        .to_sql
-    result =  student_tasks.
+    result = student_tasks.
               joins(:task_status).
               joins("LEFT OUTER JOIN (#{tutorial_enrolment_subquery}) as sq ON sq.project_id = projects.id AND (sq.tutorial_stream_id = task_definitions.tutorial_stream_id OR sq.tutorial_stream_id IS NULL)").
               joins("LEFT JOIN unit_roles task_tutor_roles ON task_tutor_roles.id = COALESCE(sq.unit_role_id, #{main_convenor_id.to_i})").

@@ -314,7 +314,7 @@ class UnitContentSite < ApplicationRecord
     normalized = entry_name.to_s.tr('\\', '/')
     parts = normalized.split('/').reject(&:blank?)
     raise Zip::Error, 'Unit content archive contains an unsafe path' if normalized.start_with?('/') || parts.blank?
-    raise Zip::Error, 'Unit content archive contains an unsafe path' if parts.any? { |part| ['.', '..'].include?(part) }
+    raise Zip::Error, 'Unit content archive contains an unsafe path' if parts.intersect?(['.', '..'])
     return nil if parts.any? { |part| self.class.ignored_archive_path?(part) }
 
     parts.join('/')
@@ -418,7 +418,7 @@ class UnitContentSite < ApplicationRecord
   def normalized_content_route(route)
     decoded = URI::DEFAULT_PARSER.unescape(route.to_s).tr('\\', '/')
     parts = decoded.split('/').reject(&:blank?)
-    return nil if parts.any? { |part| ['.', '..'].include?(part) }
+    return nil if parts.intersect?(['.', '..'])
 
     parts.join('/').presence || 'index.html'
   rescue ArgumentError

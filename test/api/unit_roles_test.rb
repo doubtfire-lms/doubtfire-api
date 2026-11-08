@@ -61,6 +61,22 @@ class UnitRolesTest < ActiveSupport::TestCase
     unit.destroy
   end
 
+  def test_admin_unit_observer_role_does_not_restrict_staff_management
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0)
+    admin = FactoryBot.create(:user, :admin)
+    unit.employ_staff(admin, Role.convenor).update!(observer_only: true)
+    staff = FactoryBot.create(:user, :convenor)
+
+    add_auth_header_for(user: admin)
+    post_json '/api/unit_roles', { unit_id: unit.id, user_id: staff.id, role: 'Tutor' }
+    assert_equal 201, last_response.status
+
+    staff_role = unit.unit_role_for(staff)
+    put_json "/api/unit_roles/#{staff_role.id}", { unit_role: { role_id: Role.convenor.id } }
+    assert_equal 200, last_response.status
+    assert_equal Role.convenor, staff_role.reload.role
+  end
+
   # DELETE tests
   # Delete a unit role
   def test_delete_unit_role

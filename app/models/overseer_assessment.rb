@@ -113,7 +113,7 @@ class OverseerAssessment < ApplicationRecord
     )
   end
 
-  delegate :has_submission_files?,
+  delegate :submission_files?,
            :submission_zip_file_name,
            :output_path,
            to: :submission_history
@@ -167,7 +167,7 @@ class OverseerAssessment < ApplicationRecord
     # TODO: Check status and do not queue if already queued
     puts "********* Sending #{self.id} to overseer"
 
-    unless has_submission_files?
+    unless submission_files?
       puts "ERROR: Attempting to send submission to Overseer without associated submission files - OverseerAssessment #{id}"
       return { error: "Your submission does not include any files to be processed." }
     end
@@ -192,7 +192,7 @@ class OverseerAssessment < ApplicationRecord
       return { error: "This assessment is no longer setup for automated feedback. Automated feedback is turned off at either the unit or task level, or the task does not have the scripts needed to automate assessment." }
     end
 
-    unless has_submission_files?
+    unless submission_files?
       puts "ERROR: Student submission history zip file doesn't exist #{submission_zip_file_name}. Unable to send - OverseerAssessment #{id}"
       return { error: "We no longer have the files associated with this submission. Please test a later submission, or upload your work again." }
     end

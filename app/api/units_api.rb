@@ -63,6 +63,7 @@ class UnitsApi < Grape::API
     # Unit uses user from thread to limit exposure
     #
     my_role = unit.role_for(current_user)
+    my_role = Role.convenor if current_user.observe_all_units? && unit.unit_role_for(current_user).nil?
     present unit, with: Entities::UnitEntity, user: current_user, my_role: my_role, in_unit: true
   end
 
@@ -81,7 +82,7 @@ class UnitsApi < Grape::API
       optional :main_convenor_id, type: Integer
       optional :auto_apply_extension_before_deadline, type: Boolean, desc: 'Indicates if extensions before the deadline should be automatically applied'
       optional :mark_late_submissions_as_assess_in_portfolio, type: Boolean, desc: 'Indicates if late submissions should be set Time Exceeded or Assess in Portfolio'
-      optional :send_notifications, type: Boolean, desc: 'Indicates if notification digests and discussion deadline emails are sent'
+      optional :send_notifications, type: Boolean, desc: 'Indicates if notification email digests are sent'
       optional :generate_weekly_summaries, type: Boolean, desc: 'Indicates if weekly summary notifications are created'
       optional :enable_sync_timetable, type: Boolean, desc: 'Sync to timetable automatically if supported by deployment'
       optional :enable_sync_enrolments, type: Boolean, desc: 'Sync student enrolments automatically if supported by deployment'
@@ -186,7 +187,7 @@ class UnitsApi < Grape::API
       optional :main_convenor_user_id, type: Integer
       optional :auto_apply_extension_before_deadline, type: Boolean, desc: 'Indicates if extensions before the deadline should be automatically applied', default: true
       optional :mark_late_submissions_as_assess_in_portfolio, type: Boolean, desc: 'Indicates if late submissions should be set to Time Exceeded or Assess in Portfolio', default: true
-      optional :send_notifications, type: Boolean, desc: 'Indicates if notification digests and discussion deadline emails are sent', default: true
+      optional :send_notifications, type: Boolean, desc: 'Indicates if notification email digests are sent', default: true
       optional :generate_weekly_summaries, type: Boolean, desc: 'Indicates if weekly summary notifications are created', default: true
       optional :enable_sync_timetable, type: Boolean, desc: 'Sync to timetable automatically if supported by deployment', default: true
       optional :enable_sync_enrolments, type: Boolean, desc: 'Sync student enrolments automatically if supported by deployment', default: true
@@ -314,11 +315,15 @@ class UnitsApi < Grape::API
 
     teaching_period_id = params[:teaching_period_id]
 
-    if teaching_period_id.present?
-      tp = TeachingPeriod.find(teaching_period_id)
-      result = unit.rollover(tp, nil, nil, params[:new_unit_code])
-    else
-      result = unit.rollover(nil, params[:start_date], params[:end_date], params[:new_unit_code], params[:last_teaching_date])
+    # A failed rollover should not leave a partially copied unit behind
+    result = Unit.transaction do
+      new_unit = if teaching_period_id.present?
+                   unit.rollover(TeachingPeriod.find(teaching_period_id), nil, nil, params[:new_unit_code])
+                 else
+                   unit.rollover(nil, params[:start_date], params[:end_date], params[:new_unit_code], params[:last_teaching_date])
+                 end
+      new_unit.employ_staff(current_user, Role.convenor)
+      new_unit
     end
 
     my_role = result.role_for(current_user)

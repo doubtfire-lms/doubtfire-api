@@ -71,11 +71,11 @@ class DiscussionPromptsApiTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status, last_response_body.inspect
     assert_equal 3, last_response_body.count
 
-    project1_task1 =  project1.task_for_task_definition(td1)
-    project1_task2 =  project1.task_for_task_definition(td2)
+    project1_task1 = project1.task_for_task_definition(td1)
+    project1_task2 = project1.task_for_task_definition(td2)
 
-    project2_task1 =  project2.task_for_task_definition(td1)
-    project2_task2 =  project2.task_for_task_definition(td2)
+    project2_task1 = project2.task_for_task_definition(td1)
+    project2_task2 = project2.task_for_task_definition(td2)
 
     project1_task1.update!(task_status: TaskStatus.discuss)
     project1_task2.update!(task_status: TaskStatus.complete)

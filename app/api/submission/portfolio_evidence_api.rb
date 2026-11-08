@@ -190,7 +190,7 @@ module Submission
       task = project.task_for_task_definition(task_definition)
       history = task&.related_submission_histories&.find_by(id: params[:history_id])
       error!({ error: 'Submission history was not found' }, 404) unless history
-      error!({ error: 'Submission history files are not available' }, 404) unless history.has_submission_files?
+      error!({ error: 'Submission history files are not available' }, 404) unless history.submission_files?
 
       filename = "#{project.student.username}-#{task_definition.abbreviation}-#{history.submission_timestamp}.zip"
 
@@ -307,7 +307,7 @@ module Submission
         error!({ error: "No submission history found for timestamp '#{params[:timestamp]}'" }, 404)
       end
 
-      unless history.has_submission_files?
+      unless history.submission_files?
         error!({ error: "No submission files are available for timestamp '#{params[:timestamp]}'" }, 404)
       end
 

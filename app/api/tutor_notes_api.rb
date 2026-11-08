@@ -11,6 +11,7 @@ class TutorNotesApi < Grape::API
   helpers do
     def can_access_tutor_notes?(unit, current_user, unit_role)
       current_user_role = unit.unit_role_for(current_user)
+      return false if current_user_role.nil?
 
       current_user_role.role == Role.convenor ||
         unit_role.mentor_id == current_user_role.id ||
@@ -29,11 +30,8 @@ class TutorNotesApi < Grape::API
       error!({ error: 'You do not have permission to access this unit' }, 403)
     end
 
-    unless authorise? current_user, unit_role, :create_tutor_note
-      error!({ error: 'You do not have permission to access this.' }, 403)
-    end
-
-    unless can_access_tutor_notes?(unit, current_user, unit_role)
+    global_observer = unit.unit_role_for(current_user).nil? && authorise?(current_user, unit, :get_staff_notes)
+    unless global_observer || (authorise?(current_user, unit_role, :create_tutor_note) && can_access_tutor_notes?(unit, current_user, unit_role))
       error!({ error: 'You do not have permission to access this.' }, 403)
     end
 

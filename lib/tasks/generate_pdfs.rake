@@ -142,7 +142,7 @@ namespace :submission do
               # Notify system admin
               Sentry.capture_exception(e) if defined?(Sentry)
               mail = ErrorLogMailer.error_message("Failed portfolio job: #{project.log_details}", "Failed to create portfolio for project #{project.log_details}", e)
-              mail.deliver if mail.present?
+              mail.presence&.deliver
             rescue StandardError => e
               logger.error "Failed to send error log to admin"
             end
@@ -158,7 +158,7 @@ namespace :submission do
 
           begin
             mail = success ? PortfolioEvidenceMailer.portfolio_ready(project) : PortfolioEvidenceMailer.portfolio_failed(project)
-            mail.deliver_now if mail.present?
+            mail.deliver_now
           rescue StandardError => e
             logger.error "Failed to send portfolio email for project #{project.id}!\n#{e.message}"
           end

@@ -2,6 +2,59 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.1.0-10](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-9...v11.1.0-10) (2026-11-06)
+
+
+### Features
+
+* optionally archive delivered emails to disk ([68ddaa0](https://github.com/b0ink/doubtfire-deploy/commit/68ddaa094ffc075c0abeb684d1e971b30fad0537))
+
+
+### Bug Fixes
+
+* include JPlag output in failure errors ([8c64c2d](https://github.com/b0ink/doubtfire-deploy/commit/8c64c2db1df45b9da16efd44b93e5d503ca97ed1))
+* restore deliver_now for mailer emails broken by presence autocorrect ([f8733bb](https://github.com/b0ink/doubtfire-deploy/commit/f8733bb5f824019390639014b1f4ada08daa5bb3))
+
+## [11.1.0-9](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-8...v11.1.0-9) (2026-11-06)
+
+
+### Features
+
+* email daily when plagiarism marker is stale ([#761](https://github.com/b0ink/doubtfire-deploy/issues/761)) ([8416fb2](https://github.com/b0ink/doubtfire-deploy/commit/8416fb2184ab58948229d6acfaecd0328534d5f6))
+* expose user unit memberships and active status ([#762](https://github.com/b0ink/doubtfire-deploy/issues/762)) ([63cee9c](https://github.com/b0ink/doubtfire-deploy/commit/63cee9c10001d9abb3a656b062a32ea44bb71f93))
+
+
+### Bug Fixes
+
+* clean up staged submissions when scans fail ([#760](https://github.com/b0ink/doubtfire-deploy/issues/760)) ([8508cdf](https://github.com/b0ink/doubtfire-deploy/commit/8508cdfabee1a3c1c07f4edb5d46cbf7e5195a21))
+* disable auth rate limit by default ([2e9e13f](https://github.com/b0ink/doubtfire-deploy/commit/2e9e13f9f87ac3e2f74ad78bc9cbb40274e3780a))
+
+## [11.1.0-8](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-7...v11.1.0-8) (2026-11-05)
+
+
+### Bug Fixes
+
+* add consistent random IDs at the end of temp work directory names ([e19f5b0](https://github.com/b0ink/doubtfire-deploy/commit/e19f5b00b91a45b64bc6252454bb72220da7c160))
+* include task restrictions in task definition csv import and export ([#757](https://github.com/b0ink/doubtfire-deploy/issues/757)) ([70037e0](https://github.com/b0ink/doubtfire-deploy/commit/70037e092f042381885181feeeb0db55876e7ec2))
+* stage jplag reports in shared temp storage without student work access ([#759](https://github.com/b0ink/doubtfire-deploy/issues/759)) ([7996057](https://github.com/b0ink/doubtfire-deploy/commit/79960573cbe53a6a741f39292e4c23216fdafcb5))
+
+## [11.1.0-7](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-6...v11.1.0-7) (2026-11-05)
+
+
+### Features
+
+* add global read-only unit access for staff observers ([#750](https://github.com/b0ink/doubtfire-deploy/issues/750)) ([3c56e2c](https://github.com/b0ink/doubtfire-deploy/commit/3c56e2c32d9ec7a941e0f622e0cb75ee8dd7f917))
+
+
+### Bug Fixes
+
+* add rollover initiator as a convenor of the new unit ([072f98e](https://github.com/b0ink/doubtfire-deploy/commit/072f98ee8f0b865dd68ce4fee28ced02b3a4aa84))
+* reduce redundant queries in moderation feedback refresh job ([#755](https://github.com/b0ink/doubtfire-deploy/issues/755)) ([10daf0f](https://github.com/b0ink/doubtfire-deploy/commit/10daf0fd87f633cde0b7d926cec8e36931d06450))
+* reduce redundant queries in task deadline notifications ([#752](https://github.com/b0ink/doubtfire-deploy/issues/752)) ([234c652](https://github.com/b0ink/doubtfire-deploy/commit/234c652af1a245b4f5166ecc69d478ab489f4fce))
+* send discussion timeout emails when digests are disabled ([#749](https://github.com/b0ink/doubtfire-deploy/issues/749)) ([60b4039](https://github.com/b0ink/doubtfire-deploy/commit/60b4039d8bd48382cfa458afa580c6a724063ffe))
+* test ([5a1f217](https://github.com/b0ink/doubtfire-deploy/commit/5a1f217e2404e1193fd2c401396aca501807fcc4))
+* unit rollover missing content site ([#754](https://github.com/b0ink/doubtfire-deploy/issues/754)) ([2dd7690](https://github.com/b0ink/doubtfire-deploy/commit/2dd76905ebdc5df53055d2245fe22f653ed47c38))
+
 ## [11.1.0-6](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-5...v11.1.0-6) (2026-11-02)
 
 
