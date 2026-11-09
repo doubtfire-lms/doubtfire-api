@@ -246,7 +246,8 @@ class NotificationJobsTest < ActiveSupport::TestCase
     assert_includes digest_html, '/assets/images/email/status-complete.png'
     assert_includes digest_html, '/assets/images/email/kind-notifications.png'
     assert_match(/<td align="right"[^>]*>\s*<span title="Complete"/, digest_html)
-    assert_match(%r{>\s*PF\s*</div>}, digest_html)
+    assert_match(%r{<img src="[^"]*/assets/images/email/kind-notifications\.png" alt=""}, digest_html)
+    assert_includes digest_html, '/assets/images/logo.png'
     assert_match(/>\s*#{Regexp.escape(task.task_definition.abbreviation)}\s*</, digest_html)
   end
 
