@@ -98,9 +98,6 @@ module UnitSimilarityModule
 
     completed_all_checks = true
 
-    # making temp directory for unit - jplag
-    root_work_dir = Rails.root.join("tmp", "jplag", "#{code}-#{id}")
-
     logger.info "Checking plagiarsm for unit #{code} - #{name} (id=#{id})"
 
     task_definitions.each do |td|
@@ -121,11 +118,8 @@ module UnitSimilarityModule
                     force
                   )
 
-      # Ensure work directory for the unit is created
-      FileUtils.mkdir_p(root_work_dir)
-
-      # Init work directory for each task definition
-      tasks_dir = root_work_dir.join(td.id.to_s)
+      work_dir_name = FileHelper.sanitized_filename("#{code}-#{id}-#{td.id}-#{td.abbreviation}")
+      tasks_dir = Rails.root.join('tmp', 'jplag', work_dir_name)
       FileUtils.mkdir_p(tasks_dir)
 
       # There are new tasks, check these with JPLAG
@@ -232,7 +226,6 @@ module UnitSimilarityModule
     file_lang = task_definition.similarity_language
     raise ArgumentError, "Unsupported JPlag language: #{file_lang.inspect}" unless TaskDefinition::JPLAG_LANGUAGES.include?(file_lang)
 
-    cleanup_work_dir = true
     # JPlag can write only to its shared working directory. Pdfgen publishes the
     # finished report to student work after the container exits successfully.
     staged_report_path = File.join(tasks_dir, 'result.jplag')
@@ -345,10 +338,8 @@ module UnitSimilarityModule
     self
   ensure
     # Remove extracted student files even when JPlag fails.
-    if cleanup_work_dir
-      logger.info "Deleting files in: #{tasks_dir}"
-      FileUtils.rm_rf(tasks_dir)
-    end
+    logger.info "Deleting files in: #{tasks_dir}"
+    FileUtils.rm_rf(tasks_dir)
   end
 
   def process_jplag_plagiarism_report(path, warn_pct, is_group)
