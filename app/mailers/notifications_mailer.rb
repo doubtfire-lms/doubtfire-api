@@ -46,7 +46,7 @@ class NotificationsMailer < ApplicationMailer
     @notification_count = @units.sum { |section| section[:groups].count }
 
     subject = "#{@notification_count} new #{'notification'.pluralize(@notification_count)}"
-    # Undocumented, but asks Gmail not to thread digests that share a subject.
+    # Stops Gmail threading digests that share a subject (undocumented Gmail behaviour).
     headers['X-Entity-Ref-ID'] = SecureRandom.uuid
     mail(
       to: %("#{@recipient.name}" <#{@recipient.email}>),
