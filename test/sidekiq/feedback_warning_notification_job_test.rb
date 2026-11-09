@@ -153,11 +153,13 @@ class FeedbackWarningNotificationJobTest < ActiveSupport::TestCase
 
   def test_groups_pending_tasks_then_starts_a_new_group_after_email_delivery
     create_warning_task(submitted_at: @now - 6.days)
-    Notification.refresh_feedback_warning_notifications!(now: @now)
-    settings = NotificationSetting.for(@tutor)
+    travel_to(@now) do
+      Notification.refresh_feedback_warning_notifications!(now: @now)
+      settings = NotificationSetting.for(@tutor)
 
-    assert_emails 1 do
-      SendNotificationDigestJob.new.perform(settings.id)
+      assert_emails 1 do
+        SendNotificationDigestJob.new.perform(settings.id)
+      end
     end
 
     delivered = Notification.where(recipient: @tutor, kind: 'feedback_warning')
@@ -168,7 +170,7 @@ class FeedbackWarningNotificationJobTest < ActiveSupport::TestCase
                     "/units/#{@unit.id}/tasks/inbox"
 
     create_warning_task(submitted_at: @now - 7.days)
-    Notification.refresh_feedback_warning_notifications!(now: @now + 1.hour)
+    travel_to(@now + 1.hour) { Notification.refresh_feedback_warning_notifications!(now: @now + 1.hour) }
     groups = NotificationGroupBuilder.new(
       Notification.where(recipient: @tutor, kind: 'feedback_warning').unread
     ).groups

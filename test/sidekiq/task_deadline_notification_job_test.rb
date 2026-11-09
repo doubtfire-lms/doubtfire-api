@@ -198,7 +198,8 @@ class TaskDeadlineNotificationJobTest < ActiveSupport::TestCase
         assert_includes text, due_text
         assert_includes html, due_text
       end
-      assert_equal 1, text.scan('7th September 2026 at 09:00').count
+      local_now = @now.in_time_zone(@student.notification_timezone)
+      assert_equal 1, text.scan("#{local_now.day.ordinalize} #{local_now.strftime('%B %Y at %H:%M')}").count
       assert_includes html, 'justify-content:space-between'
       start_heading = text.index('Tasks ready to start')
       due_heading = text.index('Tasks due within five days')
