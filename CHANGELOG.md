@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.1.0-13](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-12...v11.1.0-13) (2026-11-09)
+
+
+### Bug Fixes
+
+* stop email clients threading notification digests together ([65e9d77](https://github.com/b0ink/doubtfire-deploy/commit/65e9d778dca5bc4465f607fdafb0ee2210b9423d))
+
 ## [11.1.0-12](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-11...v11.1.0-12) (2026-11-09)
 
 
