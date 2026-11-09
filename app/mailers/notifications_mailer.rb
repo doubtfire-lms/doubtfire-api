@@ -46,6 +46,8 @@ class NotificationsMailer < ApplicationMailer
     @notification_count = @units.sum { |section| section[:groups].count }
 
     subject = "#{@notification_count} new #{'notification'.pluralize(@notification_count)}"
+    # Undocumented, but asks Gmail not to thread digests that share a subject.
+    headers['X-Entity-Ref-ID'] = SecureRandom.uuid
     mail(
       to: %("#{@recipient.name}" <#{@recipient.email}>),
       from: %("#{@doubtfire_product_name}" <#{Doubtfire::Application.config.notification_emails_from}>),
