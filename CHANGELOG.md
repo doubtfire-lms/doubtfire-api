@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.1.0-12](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-11...v11.1.0-12) (2026-11-09)
+
+
+### Bug Fixes
+
+* align logo ([0d9f41b](https://github.com/b0ink/doubtfire-deploy/commit/0d9f41b6cbedc899251d7b0ece36403717b9f392))
+
 ## [11.1.0-11](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-10...v11.1.0-11) (2026-11-09)
 
 
