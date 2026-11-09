@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.1.0-11](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-10...v11.1.0-11) (2026-11-09)
+
+
+### Features
+
+* include unit code in subject for portfolio notification emails ([3991eaf](https://github.com/b0ink/doubtfire-deploy/commit/3991eafb242f8afb3642f4f70a54716be08bd941))
+
+
+### Bug Fixes
+
+* build marking session test times in the app timezone ([7e3f971](https://github.com/b0ink/doubtfire-deploy/commit/7e3f971816599d5d23ba8abdb4ac4f756661f625))
+* flatten JPlag work dirs and clean up empty ones ([8d3f6a2](https://github.com/b0ink/doubtfire-deploy/commit/8d3f6a261b57325bacd28fb5e21d9657f114d6bd))
+* restore logo and icon-only badges in notification digest ([#763](https://github.com/b0ink/doubtfire-deploy/issues/763)) ([acbd57a](https://github.com/b0ink/doubtfire-deploy/commit/acbd57a2fa4c72e9656293e633b0be846ef9ca19))
+
 ## [11.1.0-10](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-9...v11.1.0-10) (2026-11-06)
 
 
