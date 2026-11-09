@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.1.0-14](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-13...v11.1.0-14) (2026-11-09)
+
+
+### Bug Fixes
+
+* stop JPlag language test deleting tmp/jplag ([40b30b4](https://github.com/b0ink/doubtfire-deploy/commit/40b30b4688ba96acac8e3e25575760ec5a67a204))
+
 ## [11.1.0-13](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-12...v11.1.0-13) (2026-11-09)
 
 
