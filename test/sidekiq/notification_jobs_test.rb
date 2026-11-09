@@ -34,7 +34,7 @@ class NotificationJobsTest < ActiveSupport::TestCase
 
     digest_html = ActionMailer::Base.deliveries.last.html_part.body.to_s
     assert_equal 1, digest_html.scan('<style type="text/css">').count
-    assert_no_match(/<img\b/, digest_html)
+    assert_includes digest_html, '/assets/images/logo.png'
     assert_includes digest_html, 'notification-box'
     assert_includes digest_html, 'Unsubscribe'
     assert_includes digest_html, unit.code
