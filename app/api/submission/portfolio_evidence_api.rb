@@ -43,6 +43,11 @@ module Submission
 
       task = project.task_for_task_definition(task_definition)
 
+      # Check if user is allowed to submit
+      if !authorise?(current_user, project, :assess) && (opening_error = task.submission_not_open_error)
+        error!({ error: opening_error }, 403)
+      end
+
       if task.group_task? && !task.group
         error!({ error: "This task requires a group submission. Ensure you are in a group for the unit's #{task_definition.group_set.name}" }, 403)
       end
