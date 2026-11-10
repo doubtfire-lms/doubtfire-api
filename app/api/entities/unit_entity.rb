@@ -16,6 +16,7 @@ module Entities
 
     expose :code
     expose :id
+    expose :unit_definition_id
     expose :name
     expose :my_role do |unit, options|
       role = options[:my_role]

@@ -14,6 +14,7 @@ module Entities
     expose :abbreviation
     expose :name
     expose :description
+    expose :allow_student_skill_selection, if: ->(_task_definition, options) { staff?(options[:my_role]) }
     expose :weighting
     expose :target_grade
 
