@@ -46,7 +46,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     task_definition.plagiarism_warn_pct = 50
 
     assert_raises(ArgumentError) do
-      unit.send(:run_jplag_on_done_files, task_definition, Rails.root.join('tmp/jplag'), [], '/tmp/report.jplag')
+      unit.send(:run_jplag_on_done_files, task_definition, Rails.root.join('tmp/jplag/invalid-language-test'), [], '/tmp/report.jplag')
     end
   end
 

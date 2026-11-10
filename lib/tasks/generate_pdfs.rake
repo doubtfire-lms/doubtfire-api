@@ -158,7 +158,7 @@ namespace :submission do
 
           begin
             mail = success ? PortfolioEvidenceMailer.portfolio_ready(project) : PortfolioEvidenceMailer.portfolio_failed(project)
-            mail.presence&.deliver_now
+            mail.deliver_now
           rescue StandardError => e
             logger.error "Failed to send portfolio email for project #{project.id}!\n#{e.message}"
           end

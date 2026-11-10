@@ -39,7 +39,7 @@ module Doubtfire
     config.auth_method = (ENV['DF_AUTH_METHOD'] || :database).to_sym
     config.access_token_expiry = ENV.fetch('DF_ACCESS_TOKEN_EXPIRY_SECONDS', 2.hours.to_i).to_i.seconds
     config.refresh_token_expiry = ENV.fetch('DF_REFRESH_TOKEN_EXPIRY_SECONDS', 1.week.to_i).to_i.seconds
-    auth_rate_limit_enabled = ENV.fetch('ONTRACK_AUTH_RATE_LIMIT_ENABLED', 'true').downcase
+    auth_rate_limit_enabled = ENV.fetch('ONTRACK_AUTH_RATE_LIMIT_ENABLED', 'false').downcase
     raise ArgumentError, 'ONTRACK_AUTH_RATE_LIMIT_ENABLED must be true, false, 1, or 0' unless %w[true false 1 0].include?(auth_rate_limit_enabled)
 
     config.auth_rate_limit_enabled = %w[true 1].include?(auth_rate_limit_enabled)
@@ -204,6 +204,8 @@ module Doubtfire
     # ==> Notification emails
     # Digests are not emailed until a sender address is configured.
     config.notification_emails_from = ENV.fetch('ONTRACK_NOTIFICATION_EMAILS_FROM', nil).presence
+    # Optional host for email images, if different from the app host.
+    config.email_asset_host = ENV.fetch('ONTRACK_EMAIL_ASSET_HOST', nil).presence
 
     # ==> Institution settings
     # Institution YAML and ENV (override) config load

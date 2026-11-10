@@ -1,5 +1,8 @@
 # freeze_string_literal: true
 
+require 'open3'
+require 'tempfile'
+
 # Provide moss and tii similarity features in unit class
 module UnitSimilarityModule
   #
@@ -95,9 +98,6 @@ module UnitSimilarityModule
 
     completed_all_checks = true
 
-    # making temp directory for unit - jplag
-    root_work_dir = Rails.root.join("tmp", "jplag", "#{code}-#{id}")
-
     logger.info "Checking plagiarsm for unit #{code} - #{name} (id=#{id})"
 
     task_definitions.each do |td|
@@ -118,11 +118,8 @@ module UnitSimilarityModule
                     force
                   )
 
-      # Ensure work directory for the unit is created
-      FileUtils.mkdir_p(root_work_dir)
-
-      # Init work directory for each task definition
-      tasks_dir = root_work_dir.join(td.id.to_s)
+      work_dir_name = FileHelper.sanitized_filename("#{code}-#{id}-#{td.id}-#{td.abbreviation}")
+      tasks_dir = Rails.root.join('tmp', 'jplag', work_dir_name)
       FileUtils.mkdir_p(tasks_dir)
 
       # There are new tasks, check these with JPLAG
@@ -229,12 +226,10 @@ module UnitSimilarityModule
     file_lang = task_definition.similarity_language
     raise ArgumentError, "Unsupported JPlag language: #{file_lang.inspect}" unless TaskDefinition::JPLAG_LANGUAGES.include?(file_lang)
 
-    # Check if the directory exists and create it if it doesn't
-    results_dir = File.dirname(report_path)
-    system('docker', 'exec', '-i', 'jplag', 'mkdir', '-p', results_dir) || raise('Failed to create JPlag results directory')
-
-    # Remove existing result file if it exists
-    system('docker', 'exec', '-i', 'jplag', 'rm', '-f', report_path) || raise('Failed to remove previous JPlag report')
+    # JPlag can write only to its shared working directory. Pdfgen publishes the
+    # finished report to student work after the container exits successfully.
+    staged_report_path = File.join(tasks_dir, 'result.jplag')
+    FileUtils.rm_f(staged_report_path)
 
     # Extract task resources for base code
     use_base_code = false
@@ -321,19 +316,30 @@ module UnitSimilarityModule
     docker_command << '--cluster-skip' if skip_cluster_check
     docker_command += [
       '-M', 'RUN',
-      '-r', report_path.delete_suffix('.jplag'),
+      '-r', File.join(tasks_dir_split, 'result'),
       '--overwrite'
     ]
 
     logger.debug "Executing command: #{docker_command.inspect}"
-    system(*docker_command) || raise('Failed to run JPlag')
+    output, status = Open3.capture2e(*docker_command)
+    raise "Failed to run JPlag (#{status}): #{output.last(2000)}" unless status.success?
+    raise 'JPlag did not create a report' unless File.file?(staged_report_path)
 
-    # Delete the extracted code files from tmp
-    tmp_dir = Rails.root.join("tmp/jplag")
-    logger.info "Deleting files in: #{tmp_dir}"
-    logger.info "Files to delete: #{Dir.glob("#{tmp_dir}/*")}"
-    FileUtils.rm_rf(Dir.glob("#{tmp_dir}/*"))
+    results_dir = File.dirname(report_path)
+    FileUtils.mkdir_p(results_dir)
+    # Rename from the same directory so readers only see a complete report.
+    Tempfile.create([".#{File.basename(report_path)}-", '.tmp'], results_dir) do |temporary_report|
+      File.open(staged_report_path, 'rb') { |source| IO.copy_stream(source, temporary_report) }
+      temporary_report.chmod(0o644)
+      temporary_report.flush
+      File.rename(temporary_report.path, report_path)
+    end
+
     self
+  ensure
+    # Remove extracted student files even when JPlag fails.
+    logger.info "Deleting files in: #{tasks_dir}"
+    FileUtils.rm_rf(tasks_dir)
   end
 
   def process_jplag_plagiarism_report(path, warn_pct, is_group)

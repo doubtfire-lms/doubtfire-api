@@ -2,6 +2,77 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.1.0-14](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-13...v11.1.0-14) (2026-11-09)
+
+
+### Bug Fixes
+
+* stop JPlag language test deleting tmp/jplag ([40b30b4](https://github.com/b0ink/doubtfire-deploy/commit/40b30b4688ba96acac8e3e25575760ec5a67a204))
+
+## [11.1.0-13](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-12...v11.1.0-13) (2026-11-09)
+
+
+### Bug Fixes
+
+* stop email clients threading notification digests together ([65e9d77](https://github.com/b0ink/doubtfire-deploy/commit/65e9d778dca5bc4465f607fdafb0ee2210b9423d))
+
+## [11.1.0-12](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-11...v11.1.0-12) (2026-11-09)
+
+
+### Bug Fixes
+
+* align logo ([0d9f41b](https://github.com/b0ink/doubtfire-deploy/commit/0d9f41b6cbedc899251d7b0ece36403717b9f392))
+
+## [11.1.0-11](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-10...v11.1.0-11) (2026-11-09)
+
+
+### Features
+
+* include unit code in subject for portfolio notification emails ([3991eaf](https://github.com/b0ink/doubtfire-deploy/commit/3991eafb242f8afb3642f4f70a54716be08bd941))
+
+
+### Bug Fixes
+
+* build marking session test times in the app timezone ([7e3f971](https://github.com/b0ink/doubtfire-deploy/commit/7e3f971816599d5d23ba8abdb4ac4f756661f625))
+* flatten JPlag work dirs and clean up empty ones ([8d3f6a2](https://github.com/b0ink/doubtfire-deploy/commit/8d3f6a261b57325bacd28fb5e21d9657f114d6bd))
+* restore logo and icon-only badges in notification digest ([#763](https://github.com/b0ink/doubtfire-deploy/issues/763)) ([acbd57a](https://github.com/b0ink/doubtfire-deploy/commit/acbd57a2fa4c72e9656293e633b0be846ef9ca19))
+
+## [11.1.0-10](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-9...v11.1.0-10) (2026-11-06)
+
+
+### Features
+
+* optionally archive delivered emails to disk ([68ddaa0](https://github.com/b0ink/doubtfire-deploy/commit/68ddaa094ffc075c0abeb684d1e971b30fad0537))
+
+
+### Bug Fixes
+
+* include JPlag output in failure errors ([8c64c2d](https://github.com/b0ink/doubtfire-deploy/commit/8c64c2db1df45b9da16efd44b93e5d503ca97ed1))
+* restore deliver_now for mailer emails broken by presence autocorrect ([f8733bb](https://github.com/b0ink/doubtfire-deploy/commit/f8733bb5f824019390639014b1f4ada08daa5bb3))
+
+## [11.1.0-9](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-8...v11.1.0-9) (2026-11-06)
+
+
+### Features
+
+* email daily when plagiarism marker is stale ([#761](https://github.com/b0ink/doubtfire-deploy/issues/761)) ([8416fb2](https://github.com/b0ink/doubtfire-deploy/commit/8416fb2184ab58948229d6acfaecd0328534d5f6))
+* expose user unit memberships and active status ([#762](https://github.com/b0ink/doubtfire-deploy/issues/762)) ([63cee9c](https://github.com/b0ink/doubtfire-deploy/commit/63cee9c10001d9abb3a656b062a32ea44bb71f93))
+
+
+### Bug Fixes
+
+* clean up staged submissions when scans fail ([#760](https://github.com/b0ink/doubtfire-deploy/issues/760)) ([8508cdf](https://github.com/b0ink/doubtfire-deploy/commit/8508cdfabee1a3c1c07f4edb5d46cbf7e5195a21))
+* disable auth rate limit by default ([2e9e13f](https://github.com/b0ink/doubtfire-deploy/commit/2e9e13f9f87ac3e2f74ad78bc9cbb40274e3780a))
+
+## [11.1.0-8](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-7...v11.1.0-8) (2026-11-05)
+
+
+### Bug Fixes
+
+* add consistent random IDs at the end of temp work directory names ([e19f5b0](https://github.com/b0ink/doubtfire-deploy/commit/e19f5b00b91a45b64bc6252454bb72220da7c160))
+* include task restrictions in task definition csv import and export ([#757](https://github.com/b0ink/doubtfire-deploy/issues/757)) ([70037e0](https://github.com/b0ink/doubtfire-deploy/commit/70037e092f042381885181feeeb0db55876e7ec2))
+* stage jplag reports in shared temp storage without student work access ([#759](https://github.com/b0ink/doubtfire-deploy/issues/759)) ([7996057](https://github.com/b0ink/doubtfire-deploy/commit/79960573cbe53a6a741f39292e4c23216fdafcb5))
+
 ## [11.1.0-7](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-6...v11.1.0-7) (2026-11-05)
 
 

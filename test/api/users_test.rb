@@ -79,6 +79,55 @@ class UnitsTest < ActiveSupport::TestCase
     assert_json_matches_model(expected_user, returned_user, response_keys)
   end
 
+  def test_get_user_unit_memberships
+    admin = FactoryBot.create(:user, :admin)
+    staff = FactoryBot.create(:user, :tutor)
+    student = FactoryBot.create(:user, :student)
+    teaching_period = FactoryBot.create(:teaching_period)
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0, staff_count: 0, teaching_period: teaching_period)
+    FactoryBot.create(:unit_role, unit: unit, user: staff, role: Role.tutor)
+    project = FactoryBot.create(:project, unit: unit, user: student)
+
+    add_auth_header_for(user: admin)
+
+    get "/api/users/#{staff.id}/unit_memberships"
+    assert_equal 200, last_response.status
+    assert_equal [{
+      'kind' => 'staff',
+      'unit_id' => unit.id,
+      'unit_code' => unit.code,
+      'unit_name' => unit.name,
+      'teaching_period_name' => "#{teaching_period.period} #{teaching_period.year}",
+      'active' => true,
+      'role' => 'Tutor'
+    }], last_response_body
+
+    get "/api/users/#{student.id}/unit_memberships"
+    assert_equal 200, last_response.status
+    assert_equal project.id, last_response_body.first['project_id']
+    assert_equal unit.name, last_response_body.first['unit_name']
+    assert_equal 'Student', last_response_body.first['role']
+    assert_equal true, last_response_body.first['active']
+
+    unit.update!(active: false)
+    get "/api/users/#{staff.id}/unit_memberships"
+    assert_equal false, last_response_body.first['active']
+
+    project.update!(enrolled: false)
+    get "/api/users/#{student.id}/unit_memberships"
+    assert_equal [], last_response_body
+  end
+
+  def test_students_cannot_get_other_users_unit_memberships
+    student = FactoryBot.create(:user, :student)
+    other_user = FactoryBot.create(:user, :student)
+
+    add_auth_header_for(user: student)
+    get "/api/users/#{other_user.id}/unit_memberships"
+
+    assert_equal 403, last_response.status
+  end
+
   def test_get_convenors
     # Add username and auth_token to Header
     add_auth_header_for(user: User.first)

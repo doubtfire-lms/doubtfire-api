@@ -11,6 +11,7 @@ class NotificationsMailer < ApplicationMailer
   def add_general
     @doubtfire_host = Doubtfire::Application.config.institution[:host]
     @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
+    @email_asset_host = Doubtfire::Application.config.email_asset_host || @doubtfire_host
     @unsubscribe_url = "#{@doubtfire_host}/notifications/settings"
   end
 
@@ -45,6 +46,8 @@ class NotificationsMailer < ApplicationMailer
     @notification_count = @units.sum { |section| section[:groups].count }
 
     subject = "#{@notification_count} new #{'notification'.pluralize(@notification_count)}"
+    # Stops Gmail threading digests that share a subject (undocumented Gmail behaviour).
+    headers['X-Entity-Ref-ID'] = SecureRandom.uuid
     mail(
       to: %("#{@recipient.name}" <#{@recipient.email}>),
       from: %("#{@doubtfire_product_name}" <#{Doubtfire::Application.config.notification_emails_from}>),
@@ -83,9 +86,9 @@ class NotificationsMailer < ApplicationMailer
     )
   end
 
-  # Background images are optional decoration; the email also renders text labels.
+  # Icons are hosted PNGs, since mail clients drop icon fonts and SVG.
   def email_icon_url(name)
-    "#{@doubtfire_host}/assets/images/email/#{name}.png"
+    "#{@email_asset_host}/assets/images/email/#{name}.png"
   end
 
   def status_chip(group)
@@ -109,21 +112,11 @@ class NotificationsMailer < ApplicationMailer
     email_icon_url("kind-#{icon}")
   end
 
-  def group_badge_label(group)
-    return 'EM' if group[:counts]['communication_email'].positive?
-    return 'WK' if group[:counts]['weekly_summary'].positive?
-    return 'IN' if group.dig(:destination, :type) == 'unit_inbox'
-    return 'PF' if group[:project_id] && Notification::PORTFOLIO_KINDS.any? { |kind| group[:counts][kind].positive? }
-
-    'NT'
-  end
-
   helper_method :notification_timestamp
   helper_method :notification_due_date
   helper_method :weekly_summary_period
   helper_method :status_chip
   helper_method :group_icon_url
-  helper_method :group_badge_label
 
   private
 
