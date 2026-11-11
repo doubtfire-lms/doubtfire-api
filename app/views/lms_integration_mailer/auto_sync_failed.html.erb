@@ -48,6 +48,7 @@
   </style>
 </head>
 <body>
+  <%= render 'shared/email_preheader', text: "Daily LMS #{@sync_name} for #{@unit.code} failed and was turned off. Review the unit's LMS tab to restore syncing." %>
   <div class="main">
     <h1><%= @unit.name %> - Daily LMS Sync Turned Off</h1>
     <p class="subtext"><%= @unit.code %></p>

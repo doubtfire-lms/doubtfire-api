@@ -41,6 +41,7 @@
   </style>
 </head>
 <body>
+  <%= render 'shared/email_preheader', text: "Automated assessment did not pass. Review the Overseer report in #{@doubtfire_product_name}, verify your output, and resubmit." %>
   <div class="main">
     <h1> <%= @doubtfire_product_name %> Notification </h1>
     <p>Hi <%= @student.first_name %>,</p>
