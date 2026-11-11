@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.1.0-15](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-14...v11.1.0-15) (2026-11-11)
+
+
+### Features
+
+* allow download of portfolio additional files ([#766](https://github.com/b0ink/doubtfire-deploy/issues/766)) ([da47b60](https://github.com/b0ink/doubtfire-deploy/commit/da47b6029bde4f024a684ca36ea7ee72721bcc91))
+
+
+### Bug Fixes
+
+* correct portfolio generation wording in email notifications ([9b82783](https://github.com/b0ink/doubtfire-deploy/commit/9b82783422f37422a06adc94d79332c86e84ad21))
+
 ## [11.1.0-14](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-13...v11.1.0-14) (2026-11-09)
 
 
