@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.1.0-16](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-15...v11.1.0-16) (2026-11-11)
+
+
+### Features
+
+* show task abbreviations in portfolio pdf headings ([ab4f588](https://github.com/b0ink/doubtfire-deploy/commit/ab4f5881884d272a41ca64e908a01ebeb67f9f93))
+
 ## [11.1.0-15](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-14...v11.1.0-15) (2026-11-11)
 
 
