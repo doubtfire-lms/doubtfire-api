@@ -54,6 +54,7 @@ module PdfGeneration
                     :files,
                     :institution_name,
                     :doubtfire_product_name,
+                    :additional_files_url,
                     :is_retry
 
       def init(project, is_retry)
@@ -70,6 +71,9 @@ module PdfGeneration
         @outcomes = project.unit.learning_outcomes # .order(:ilo_number)
         @institution_name = Doubtfire::Application.config.institution[:name]
         @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
+        host = Doubtfire::Application.config.institution[:host].to_s
+        host = "http://#{host}" unless host.match?(%r{\Ahttps?://})
+        @additional_files_url = "#{host.sub(%r{/*\z}, '')}/projects/#{project.id}/portfolio/additional_files/download"
         @is_retry = is_retry
         @include_pax = !is_retry
         @work_id = FileHelper.sanitized_path(
