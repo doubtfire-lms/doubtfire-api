@@ -1,3 +1,6 @@
+require 'digest'
+require 'zip'
+
 module PdfGeneration
   module ProjectCompilePortfolioModule
     def projects_awaiting_auto_generation
@@ -51,6 +54,7 @@ module PdfGeneration
                     :files,
                     :institution_name,
                     :doubtfire_product_name,
+                    :additional_files_url,
                     :is_retry
 
       def init(project, is_retry)
@@ -67,6 +71,9 @@ module PdfGeneration
         @outcomes = project.unit.learning_outcomes # .order(:ilo_number)
         @institution_name = Doubtfire::Application.config.institution[:name]
         @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
+        host = Doubtfire::Application.config.institution[:host].to_s
+        host = "http://#{host}" unless host.match?(%r{\Ahttps?://})
+        @additional_files_url = "#{host.sub(%r{/*\z}, '')}/projects/#{project.id}/portfolio/additional_files/download"
         @is_retry = is_retry
         @include_pax = !is_retry
         @work_id = FileHelper.sanitized_path(
@@ -348,6 +355,36 @@ module PdfGeneration
         result << { kind: kind, name: name, idx: idx }
 
         FileHelper.ensure_utf8_code(File.join(portfolio_tmp_dir, file), force_ascii) if ensure_valid && kind == "code"
+      end
+
+      result
+    end
+
+    def downloadable_portfolio_files_zip_path
+      files = portfolio_files.reject { |file| file[:idx].zero? }
+      return nil if files.empty?
+
+      sources = files.map { |file| [file, portfolio_tmp_file_path(file)] }
+      return nil unless sources.all? { |_, path| File.file?(path) }
+
+      signature = sources.map do |file, path|
+        stat = File.stat(path)
+        [file[:idx], file[:name], stat.size, stat.mtime.to_r].join(':')
+      end.join('|')
+      fingerprint = Digest::SHA256.hexdigest(signature)
+      result = File.join(FileHelper.student_portfolio_dir(unit, student.username), "additional-files-#{fingerprint}.zip")
+      return result if File.file?(result)
+
+      partial_result = "#{result}.partial-#{SecureRandom.hex(8)}"
+      begin
+        Zip::File.open(partial_result, create: true) do |zip|
+          sources.each do |file, path|
+            zip.add("#{file[:idx].to_s.rjust(3, '0')}-#{file[:name]}", path)
+          end
+        end
+        File.rename(partial_result, result)
+      ensure
+        FileUtils.rm_f(partial_result)
       end
 
       result

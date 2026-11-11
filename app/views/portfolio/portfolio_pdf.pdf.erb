@@ -118,6 +118,7 @@ No Tutor
 
 \pagestyle{body}
 
+\setcounter{tocdepth}{5}
 \tableofcontents
 
 \clearpage
@@ -196,7 +197,7 @@ end # if there are linked outcomes
 <%
   end # if there are outcomes
 
-  if @files.count > 1
+  if @files.any? { |file| file[:idx] != 0 }
 %>
 % -----------------------------------------------------------------------------
 % Additional Files
@@ -212,21 +213,25 @@ end # if there are linked outcomes
     <% end %>
   \end{enumerate}
 
-  <% @files.each do |f| %>
-    <% next if f[:idx] == 0 %>
+  <% additional_files = @files.reject { |file| file[:idx] == 0 } %>
+  <% additional_files.each_with_index do |f, index| %>
     \clearpage
 
     \phantomsection
+    \refstepcounter{subsection}
     \label{additional_file_<%= f[:idx] %>}
-    \addcontentsline{toc}{subsection}{<%= lesc f[:name] %>}
+    \addcontentsline{toc}{subsection}{\protect\numberline{\thesubsection}<%= lesc f[:name] %>}
 
     % add additional PDF files to the document list for annotation extraction
     <% if f[:kind] == "document" %>
          <% document_list.append(f[:latex_path]) unless @is_retry %>
     <% end %>
 
-    <%= render partial:"shared/file", locals: {idx: f[:idx] - 1, count: @files.count - 1, name: f[:name], file_name: @project.portfolio_tmp_file_path(f), latex_file_name: f[:latex_path], file_type: f[:kind]} %>
+    <%= render partial:"shared/file", locals: {idx: index + 1, count: additional_files.count, name: f[:name], file_name: @project.portfolio_tmp_file_path(f), latex_file_name: f[:latex_path], file_type: f[:kind], additional_files_url: @additional_files_url} %>
   <% end %>
+  \clearpage
+  \fancyhead[L]{}
+  \fancyhead[R]{}
 <% end %>
 
 % -----------------------------------------------------------------------------
