@@ -41,6 +41,7 @@
   </style>
 </head>
 <body>
+  <%= render 'shared/email_preheader', text: "Your portfolio has been compiled and is ready to view or download in #{@doubtfire_product_name}. Open #{@doubtfire_product_name} to review your completed portfolio." %>
   <div class="main">
     <h1> <%= @doubtfire_product_name %> Notification </h1>
     <p>Hi <%= @student.first_name %>,</p>
