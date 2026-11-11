@@ -1,3 +1,5 @@
-<div class="preheader" style="display: none; font-size: 0; max-height: 0; line-height: 0; mso-hide: all; padding: 0;">
+<div class="preheader" style="display: none; font-size: 0; max-height: 0; line-height: 0; overflow: hidden; mso-hide: all; padding: 0;">
   <%= text %>
+  <%# Fill remaining preview space so the visible email body does not follow the preheader. %>
+  <% 24.times do %>&#847;&zwnj;&nbsp;&#8199;&shy;<% end %>
 </div>
