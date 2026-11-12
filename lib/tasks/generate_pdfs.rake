@@ -93,9 +93,11 @@ namespace :submission do
     # Reduce logging verbosity for the generate_pdfs task in production
     logger.level = :warn if Rails.configuration.pdfgen_quiet
 
-    if is_executing? || !should_run?
-      logger.error 'Skip generate pdf -- already executing'
-      puts 'Skip generate pdf -- already executing'
+    paused = File.exist?('/tmp/doubtfire-pdfgen.pause')
+    if paused || is_executing? || !should_run?
+      reason = paused ? 'paused' : 'already executing'
+      logger.error "Skip generate pdf -- #{reason}"
+      puts "Skip generate pdf -- #{reason}"
     else
       start_executing
 
@@ -130,6 +132,9 @@ namespace :submission do
 
         # Now compile the portfolios
         Project.where(compile_portfolio: true, portfolio_generation_pid: Process.pid).find_each do |project|
+          # Finish the current portfolio, then release any remaining reservations in ensure.
+          break if File.exist?('/tmp/doubtfire-pdfgen.pause')
+
           next unless project.portfolio_generation_pid == Process.pid
 
           begin
