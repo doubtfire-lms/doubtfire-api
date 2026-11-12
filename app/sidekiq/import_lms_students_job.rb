@@ -63,6 +63,11 @@ class ImportLmsStudentsJob
         end
 
         user = UserIdentity.find_user(login_id: lms_member[:login_id], email: lms_member[:email])
+        mapped_user = user || build_user(settings, lms_member)
+        row.merge!(ontrack_fields(mapped_user))
+        if user && UserIdentity.institution_login_id(user.login_id).nil?
+          row[:ontrack_login_id] = UserIdentity.institution_login_id(lms_member[:login_id]) || user.login_id
+        end
         active_student_count += 1 if enrol
         active_student_user_ids << user.id if enrol && user
 
@@ -76,9 +81,10 @@ class ImportLmsStudentsJob
         if preview_only
           record_preview(result, unit, row, user, staff_role, enrol, mapping_errors)
         else
-          user ||= create_user(settings, lms_member)
+          user ||= create_user(mapped_user)
           UserIdentity.link_identity(user, login_id: lms_member[:login_id])
           user.update!(has_run_first_time_setup: true) unless user.has_run_first_time_setup?
+          row.merge!(ontrack_fields(user))
           active_student_user_ids << user.id if enrol
           import_member(result, unit, row, user, staff_role, enrol, member_mappings, mapping_errors)
         end
@@ -120,8 +126,11 @@ class ImportLmsStudentsJob
     {
       unit_code: unit.code,
       lms_username: lms_member[:login_id],
-      student_id: lms_member[:student_id],
+      lms_student_id: lms_member[:student_id],
       lis_person_sourcedid: lms_member[:lis_person_sourcedid],
+      ontrack_username: nil,
+      ontrack_student_id: nil,
+      ontrack_login_id: nil,
       first_name: lms_member[:first_name],
       last_name: lms_member[:last_name],
       email: lms_member[:email],
@@ -133,12 +142,20 @@ class ImportLmsStudentsJob
     }
   end
 
-  def create_user(settings, lms_member)
+  def build_user(settings, lms_member)
     user_id_data = UserIdentity.user_id_data(login_id: lms_member[:login_id], email: lms_member[:email])
-    user = User.create! do |new_user|
-      settings.update_user_from_lti_response(new_user, user_id_data, lms_member[:member])
+    User.new.tap do |user|
+      settings.update_user_from_lti_response(user, user_id_data, lms_member[:member])
+      user.student_id = lms_member[:student_id] if lms_member[:student_id].present?
     end
-    user.update!(student_id: lms_member[:student_id]) if lms_member[:student_id].present? && user.student_id.blank?
+  end
+
+  def ontrack_fields(user)
+    { ontrack_username: user.username, ontrack_student_id: user.student_id, ontrack_login_id: user.login_id }
+  end
+
+  def create_user(user)
+    user.save!
     user
   end
 
@@ -212,8 +229,9 @@ class ImportLmsStudentsJob
       row = nil
       row = {
         unit_code: unit.code,
-        username: project.user.username,
-        student_id: project.user.student_id,
+        ontrack_username: project.user.username,
+        ontrack_student_id: project.user.student_id,
+        ontrack_login_id: project.user.login_id,
         first_name: project.user.first_name,
         last_name: project.user.last_name,
         email: project.user.email
