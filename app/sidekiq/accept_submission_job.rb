@@ -2,6 +2,9 @@ class AcceptSubmissionJob
   include Sidekiq::Job
   include LogHelper
 
+  SUBMISSION_VISIBILITY_WAIT_SECONDS = 30
+  SUBMISSION_VISIBILITY_POLL_SECONDS = 0.5
+
   sidekiq_options queue: 'default',
                   lock: :until_executed,
                   lock_args_method: ->(args) { [args.first] },
@@ -19,6 +22,8 @@ class AcceptSubmissionJob
 
     begin
       logger.info "Accepting submission for task #{task.id} by user #{user.id}"
+      return unless wait_for_new_submission_files(task.id)
+
       # Convert submission to PDF
       raise "Failed to convert submission to PDF for task #{task.id}" unless task.convert_submission_to_pdf(log_to_stdout: true)
     rescue StandardError => e
@@ -90,5 +95,31 @@ class AcceptSubmissionJob
       )
     end
     task.clear_in_process
+  end
+
+  def wait_for_new_submission_files(task_id)
+    source_dir = File.join(Doubtfire::Application.config.student_work_dir, 'new', task_id.to_s)
+    if Dir.exist?(source_dir)
+      logger.info "New submission folder for task #{task_id} is visible to Sidekiq at job start"
+      return true
+    end
+
+    logger.warn "New submission folder for task #{task_id} is not visible to Sidekiq; waiting up to #{SUBMISSION_VISIBILITY_WAIT_SECONDS}s"
+    start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+
+    loop do
+      elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - start
+      if elapsed >= SUBMISSION_VISIBILITY_WAIT_SECONDS
+        logger.error "New submission folder for task #{task_id} is still not visible after #{elapsed.round(1)}s; skipping old done archive"
+        return false
+      end
+
+      sleep SUBMISSION_VISIBILITY_POLL_SECONDS
+      next unless Dir.exist?(source_dir)
+
+      elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - start
+      logger.info "New submission folder for task #{task_id} became visible to Sidekiq after #{elapsed.round(1)}s"
+      return true
+    end
   end
 end
