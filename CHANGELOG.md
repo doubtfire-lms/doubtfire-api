@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.1.0-17](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-16...v11.1.0-17) (2026-11-12)
+
+
+### Features
+
+* add preheaders for cleaner notification previews ([#768](https://github.com/b0ink/doubtfire-deploy/issues/768)) ([7b26aea](https://github.com/b0ink/doubtfire-deploy/commit/7b26aeaf692684e17933322b052bc1f20ce83db2))
+
+
+### Bug Fixes
+
+* reword notification preheader ([80c73f5](https://github.com/b0ink/doubtfire-deploy/commit/80c73f5e736964f663a6fcf6c35fd9f82be24e45))
+* show fields that are mapped to ontrack ([32b11c1](https://github.com/b0ink/doubtfire-deploy/commit/32b11c1bc202ca97ff3e2a4ceb44c8d4d6dc71b4))
+
 ## [11.1.0-16](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-15...v11.1.0-16) (2026-11-11)
 
 
