@@ -22,15 +22,57 @@ class ImportLmsStudentsJobTest < ActiveSupport::TestCase
     assert_equal login_id, student.reload.login_id
     assert_equal username, student.username
     assert unit.projects.find_by(user_id: student.id).enrolled
+    assert_equal username, result['success'].first['row']['ontrack_username']
+    assert_equal student.student_id, result['success'].first['row']['ontrack_student_id']
+    assert_equal login_id, result['success'].first['row']['ontrack_login_id']
   end
 
   def test_preview_does_not_link_the_login_id
     unit = FactoryBot.create(:unit, with_students: false)
     student = FactoryBot.create(:user, :student)
 
-    run_job(unit, FakeSource.new([lms_member('10', SecureRandom.uuid, student)]), preview_only: true)
+    login_id = SecureRandom.uuid
+    result = run_job(unit, FakeSource.new([lms_member('10', login_id, student)]), preview_only: true)
 
     assert_nil student.reload.login_id
+    assert_equal student.username, result['success'].first['row']['ontrack_username']
+    assert_equal student.student_id, result['success'].first['row']['ontrack_student_id']
+    assert_equal login_id, result['success'].first['row']['ontrack_login_id']
+  end
+
+  def test_preview_shows_the_account_fields_for_a_new_student
+    unit = FactoryBot.create(:unit, with_students: false)
+    student = FactoryBot.build(:user, :student)
+    login_id = SecureRandom.uuid
+    member = lms_member('10', login_id, student)
+    member[:student_id] = '12345678'
+
+    result = run_job(unit, FakeSource.new([member]), preview_only: true)
+
+    row = result['success'].first['row']
+    assert_equal login_id, row['lms_username']
+    assert_equal '12345678', row['lms_student_id']
+    assert_equal student.email.split('@').first, row['ontrack_username']
+    assert_equal '12345678', row['ontrack_student_id']
+    assert_equal login_id, row['ontrack_login_id']
+    assert_nil User.find_by(email: student.email)
+  end
+
+  def test_import_shows_the_saved_account_fields_for_a_new_student
+    unit = FactoryBot.create(:unit, with_students: false)
+    student = FactoryBot.build(:user, :student)
+    login_id = SecureRandom.uuid
+    member = lms_member('10', login_id, student)
+    member[:student_id] = '87654321'
+
+    result = run_job(unit, FakeSource.new([member]), preview_only: false)
+
+    user = User.find_by!(email: student.email)
+    row = result['success'].first['row']
+    assert_equal user.username, row['ontrack_username']
+    assert_equal user.student_id, row['ontrack_student_id']
+    assert_equal user.login_id, row['ontrack_login_id']
+    assert_equal '87654321', row['ontrack_student_id']
   end
 
   def test_student_linked_to_a_different_login_id_is_not_imported_when_enforced
