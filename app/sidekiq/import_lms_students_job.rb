@@ -78,6 +78,7 @@ class ImportLmsStudentsJob
         else
           user ||= create_user(settings, lms_member)
           UserIdentity.link_identity(user, login_id: lms_member[:login_id])
+          user.update!(has_run_first_time_setup: true) unless user.has_run_first_time_setup?
           active_student_user_ids << user.id if enrol
           import_member(result, unit, row, user, staff_role, enrol, member_mappings, mapping_errors)
         end
