@@ -265,8 +265,14 @@ class AuthenticationApi < Grape::API
 
       user.update!(has_run_first_time_setup: true) unless user.has_run_first_time_setup?
 
-      # Fill a missing student ID from the LMS person identifier when it is available and unused.
-      sourced_id = member['lis_person_sourcedid'].to_s.strip.presence
+      # Fill a missing student ID from the institution's LTI mapping, or the LMS person identifier by default.
+      settings = Doubtfire::Application.config.institution_settings
+      sourced_id = if settings.respond_to?(:map_lti_member_to_student_id)
+                     settings.map_lti_member_to_student_id(member)
+                   else
+                     member['lis_person_sourcedid']
+                   end
+      sourced_id = sourced_id.to_s.strip.presence
       if user.role_id == Role.student_id && user.student_id.blank? && sourced_id.present? &&
          !User.exists?(student_id: sourced_id)
         begin

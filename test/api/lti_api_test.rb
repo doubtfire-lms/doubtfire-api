@@ -182,6 +182,26 @@ class LtiApiTest < ActiveSupport::TestCase
     assert_nil user.reload.student_id
   end
 
+  def test_lti_launch_uses_the_institution_student_id_mapping
+    user = FactoryBot.create(:user, :student)
+    user.update!(student_id: nil)
+    member = launch_member(user, SecureRandom.uuid).merge(
+      lis_person_sourcedid: 'original-source-id', institutional_student_id: 'mapped-student-id'
+    )
+    config = Doubtfire::Application.config
+    original_settings = config.institution_settings
+    mapped_settings = original_settings.dup
+    mapped_settings.define_singleton_method(:map_lti_member_to_student_id) { |details| details['institutional_student_id'] }
+    config.institution_settings = mapped_settings
+
+    post '/api/auth/lti', { ltik: lti_token('auth', member: member) }
+
+    assert_equal 201, last_response.status
+    assert_equal 'mapped-student-id', user.reload.student_id
+  ensure
+    config.institution_settings = original_settings
+  end
+
   def test_lti_launch_links_login_id_without_renaming_an_existing_user
     user = FactoryBot.create(:user, :student)
     username = user.username

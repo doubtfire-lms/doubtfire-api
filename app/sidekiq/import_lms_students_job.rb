@@ -77,16 +77,22 @@ class ImportLmsStudentsJob
           next
         end
 
+        student_id_to_assign = missing_student_id_for(user, settings, lms_member)
         mapping_errors = enrol ? LmsGroupMappingApplier.mapping_errors(member_mappings) : []
         if preview_only
-          record_preview(result, unit, row, user, staff_role, enrol, mapping_errors)
+          row[:ontrack_student_id] = student_id_to_assign if student_id_to_assign
+          record_preview(result, unit, row, user, staff_role, enrol, mapping_errors,
+                         student_id_update: student_id_to_assign.present?)
         else
           user ||= create_user(mapped_user)
+          user.update!(student_id: student_id_to_assign) if student_id_to_assign
           UserIdentity.link_identity(user, login_id: lms_member[:login_id])
           user.update!(has_run_first_time_setup: true) unless user.has_run_first_time_setup?
           row.merge!(ontrack_fields(user))
           active_student_user_ids << user.id if enrol
-          import_member(result, unit, row, user, staff_role, enrol, member_mappings, mapping_errors)
+          mapping_plan = { mappings: member_mappings, errors: mapping_errors }
+          import_member(result, unit, row, user, staff_role, enrol, mapping_plan,
+                        student_id_updated: student_id_to_assign.present?)
         end
       rescue StandardError => e
         result[:errors] << { row: row, message: e.message }
@@ -147,7 +153,24 @@ class ImportLmsStudentsJob
     User.new.tap do |user|
       settings.update_user_from_lti_response(user, user_id_data, lms_member[:member])
       user.student_id = lms_member[:student_id] if lms_member[:student_id].present?
+      if user.role_id == Role.student_id && user.student_id.blank?
+        mapped_id = mapped_lti_student_id(settings, lms_member[:member])
+        user.student_id = mapped_id if mapped_id && !User.exists?(student_id: mapped_id)
+      end
     end
+  end
+
+  def mapped_lti_student_id(settings, member)
+    return unless settings.respond_to?(:map_lti_member_to_student_id)
+
+    settings.map_lti_member_to_student_id(member).to_s.strip.presence
+  end
+
+  def missing_student_id_for(user, settings, lms_member)
+    return unless user&.role_id == Role.student_id && user.student_id.blank?
+
+    student_id = lms_member[:student_id].to_s.strip.presence || mapped_lti_student_id(settings, lms_member[:member])
+    student_id if student_id && !User.exists?(student_id: student_id)
   end
 
   def ontrack_fields(user)
@@ -159,8 +182,9 @@ class ImportLmsStudentsJob
     user
   end
 
-  def record_preview(result, unit, row, user, staff_role, enrol, mapping_errors)
+  def record_preview(result, unit, row, user, staff_role, enrol, mapping_errors, student_id_update:)
     messages = []
+    messages << 'Would set student ID' if student_id_update
     messages << "Would add staff (#{staff_role.name})" if staff_role && (user.nil? || unit.unit_role_for(user).nil?)
 
     if enrol
@@ -184,8 +208,9 @@ class ImportLmsStudentsJob
     end
   end
 
-  def import_member(result, unit, row, user, staff_role, enrol, mappings, mapping_errors)
+  def import_member(result, unit, row, user, staff_role, enrol, mapping_plan, student_id_updated:)
     messages = []
+    messages << 'Set student ID' if student_id_updated
     if staff_role && unit.unit_role_for(user).nil?
       staff = unit.employ_staff(user, staff_role)
       messages << "Added staff (#{staff_role.name})" if staff&.persisted?
@@ -197,11 +222,11 @@ class ImportLmsStudentsJob
       project = unit.enrol_student(user, project&.campus)
       messages << (was_enrolled.nil? ? 'Enrolled student' : 'Re-enrolled student') unless was_enrolled
 
-      if mapping_errors.any?
-        result[:errors] << { row: row, message: ([messages.join('; ')].compact_blank + mapping_errors).join('; ') }
+      if mapping_plan[:errors].any?
+        result[:errors] << { row: row, message: ([messages.join('; ')].compact_blank + mapping_plan[:errors]).join('; ') }
         return
       end
-      messages << 'LMS group mappings updated' if mappings.any? && LmsGroupMappingApplier.apply(project, mappings)
+      messages << 'LMS group mappings updated' if mapping_plan[:mappings].any? && LmsGroupMappingApplier.apply(project, mapping_plan[:mappings])
     end
 
     if messages.any?

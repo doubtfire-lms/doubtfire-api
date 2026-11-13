@@ -75,6 +75,64 @@ class ImportLmsStudentsJobTest < ActiveSupport::TestCase
     assert_equal '87654321', row['ontrack_student_id']
   end
 
+  def test_preview_and_import_map_the_lti_person_id_for_a_new_student_when_configured
+    unit = FactoryBot.create(:unit, with_students: false)
+    student = FactoryBot.build(:user, :student)
+    member = lms_member_with_sourced_id('10', SecureRandom.uuid, student, '12345678')
+
+    with_student_id_mapping do
+      preview = run_job(unit, FakeSource.new([member]), preview_only: true)
+
+      assert_empty preview['errors']
+      assert_nil preview['success'].first['row']['lms_student_id']
+      assert_equal '12345678', preview['success'].first['row']['ontrack_student_id']
+      assert_nil User.find_by(email: student.email)
+
+      import = run_job(unit, FakeSource.new([member]), preview_only: false)
+
+      assert_empty import['errors']
+      assert_equal '12345678', User.find_by!(email: student.email).student_id
+      assert_equal '12345678', import['success'].first['row']['ontrack_student_id']
+    end
+  end
+
+  def test_preview_and_import_fill_a_missing_student_id_for_an_existing_student
+    unit = FactoryBot.create(:unit, with_students: false)
+    student = FactoryBot.create(:user, :student)
+    student.update!(student_id: nil)
+    member = lms_member_with_sourced_id('10', SecureRandom.uuid, student, '12345678')
+
+    with_student_id_mapping do
+      preview = run_job(unit, FakeSource.new([member]), preview_only: true)
+
+      assert_equal '12345678', preview['success'].first['row']['ontrack_student_id']
+      assert_includes preview['success'].first['message'], 'Would set student ID'
+      assert_nil student.reload.student_id
+
+      import = run_job(unit, FakeSource.new([member]), preview_only: false)
+
+      assert_empty import['errors']
+      assert_equal '12345678', student.reload.student_id
+      assert_includes import['success'].first['message'], 'Set student ID'
+    end
+  end
+
+  def test_import_does_not_claim_another_users_student_id_from_the_lti_person_id
+    unit = FactoryBot.create(:unit, with_students: false)
+    taken_id = FactoryBot.create(:user, :student).student_id
+    student = FactoryBot.build(:user, :student)
+    member = lms_member_with_sourced_id('10', SecureRandom.uuid, student, taken_id)
+
+    with_student_id_mapping do
+      preview = run_job(unit, FakeSource.new([member]), preview_only: true)
+      import = run_job(unit, FakeSource.new([member]), preview_only: false)
+
+      assert_nil preview['success'].first['row']['ontrack_student_id']
+      assert_nil import['success'].first['row']['ontrack_student_id']
+      assert_nil User.find_by!(email: student.email).student_id
+    end
+  end
+
   def test_student_linked_to_a_different_login_id_is_not_imported_when_enforced
     unit = FactoryBot.create(:unit, with_students: false)
     student = FactoryBot.create(:user, :student, login_id: SecureRandom.uuid)
@@ -112,6 +170,24 @@ class ImportLmsStudentsJobTest < ActiveSupport::TestCase
       group_ids: [],
       member: member
     }
+  end
+
+  def lms_member_with_sourced_id(id, login_id, user, student_id)
+    lms_member(id, login_id, user).tap do |member|
+      member[:lis_person_sourcedid] = student_id
+      member[:member]['lis_person_sourcedid'] = student_id
+    end
+  end
+
+  def with_student_id_mapping
+    config = Doubtfire::Application.config
+    original_settings = config.institution_settings
+    mapped_settings = original_settings.dup
+    mapped_settings.define_singleton_method(:map_lti_member_to_student_id) { |member| member['lis_person_sourcedid'] }
+    config.institution_settings = mapped_settings
+    yield
+  ensure
+    config.institution_settings = original_settings
   end
 
   def run_job(unit, source, preview_only:)
