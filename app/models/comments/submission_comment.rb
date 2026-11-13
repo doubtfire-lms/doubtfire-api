@@ -16,9 +16,9 @@ class SubmissionComment < TaskComment
     assessed? && submission_granted?
   end
 
-  # Do not let the recipient tutor mark the request as read before assessing it.
+  # Keep actionable requests unread for the recipient tutor until assessed.
   def mark_as_read(user)
-    super if assessed? || user == project.student || user != recipient
+    super if assessed? || user == project.student || user != recipient || task.submission_open?
   end
 
   def assess_submission_access(user, granted)
