@@ -11,6 +11,97 @@ class TasksApiTest < ActiveSupport::TestCase
     Rails.application
   end
 
+  def test_submission_upload_rejects_students_before_opening_without_approved_access
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 1)
+    project = unit.active_projects.first
+    td = unit.task_definitions.first
+    td.update!(submission_opens_on: Date.current + 7.days,
+               start_date: Date.current - 1.week,
+               target_date: Date.current + 2.weeks,
+               upload_requirements: [{ 'key' => 'file0', 'name' => 'Work', 'type' => 'code' }])
+    task = project.task_for_task_definition(td)
+    endpoint = "/api/projects/#{project.id}/task_def_id/#{td.id}/submission"
+    add_auth_header_for(user: project.student)
+
+    # Neither a missing, pending, nor denied request permits an early upload.
+    [nil, :pending, :denied].each do |request_state|
+      if request_state == :pending
+        task.apply_for_submission_access(project.student, 'Please review my early attempt.')
+      elsif request_state == :denied
+        task.comments.where(type: 'SubmissionComment').first.assess_submission_access(unit.main_convenor_user, false)
+      end
+
+      %w[ready_for_feedback need_help assess_in_portfolio].each do |trigger|
+        data = with_file('test_files/submissions/program.cs', 'application/json',
+                         { trigger: trigger, comment: 'This comment must not be saved.' })
+
+        assert_no_difference ['TaskComment.count', 'TaskSubmission.count', 'AcceptSubmissionJob.jobs.size'] do
+          post endpoint, data
+          assert_equal 403, last_response.status, "#{request_state.inspect}: #{trigger}: #{last_response_body}"
+          assert_equal task.submission_not_open_error, last_response_body['error']
+        end
+        assert_equal TaskStatus.not_started, task.reload.task_status
+        assert_nil task.submission_date
+        assert_not task.processing_pdf?
+      end
+    end
+  end
+
+  def test_submission_upload_allows_students_with_approved_early_access
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 1)
+    project = unit.active_projects.first
+    td = unit.task_definitions.first
+    td.update!(submission_opens_on: Date.current + 7.days,
+               upload_requirements: [{ 'key' => 'file0', 'name' => 'Work', 'type' => 'code' }])
+    task = project.task_for_task_definition(td)
+    request = task.apply_for_submission_access(project.student, 'Please review my early attempt.')
+    request.assess_submission_access(unit.main_convenor_user, true)
+    add_auth_header_for(user: project.student)
+
+    data = with_file('test_files/submissions/program.cs', 'application/json', { trigger: 'ready_for_feedback' })
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data
+
+    assert_equal 201, last_response.status, last_response_body
+    assert_equal TaskStatus.ready_for_feedback, task.reload.task_status
+  end
+
+  def test_submission_upload_allows_staff_before_opening_without_approval
+    unit = FactoryBot.create(:unit, student_count: 1, task_count: 1)
+    project = unit.active_projects.first
+    td = unit.task_definitions.first
+    td.update!(submission_opens_on: Date.current + 7.days,
+               upload_requirements: [{ 'key' => 'file0', 'name' => 'Work', 'type' => 'code' }])
+    task = project.task_for_task_definition(td)
+    add_auth_header_for(user: unit.main_convenor_user)
+
+    data = with_file('test_files/submissions/program.cs', 'application/json', { trigger: 'ready_for_feedback' })
+    post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data
+
+    assert_equal 201, last_response.status, last_response_body
+    assert_equal TaskStatus.ready_for_feedback, task.reload.task_status
+    assert_not task.submission_access_granted?
+  end
+
+  def test_submission_upload_allows_students_when_opening_date_has_arrived_or_is_unset
+    [nil, Date.current, Date.current - 1.day].each do |opens_on|
+      unit = FactoryBot.create(:unit, student_count: 1, task_count: 1)
+      project = unit.active_projects.first
+      td = unit.task_definitions.first
+      td.update!(submission_opens_on: opens_on,
+           start_date: Date.current - 1.week,
+           target_date: Date.current + 2.weeks,
+           upload_requirements: [{ 'key' => 'file0', 'name' => 'Work', 'type' => 'code' }])
+      task = project.task_for_task_definition(td)
+      add_auth_header_for(user: project.student)
+
+      data = with_file('test_files/submissions/program.cs', 'application/json', { trigger: 'ready_for_feedback' })
+      post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", data
+
+      assert_equal 201, last_response.status, "#{opens_on.inspect}: #{last_response_body}"
+      assert_equal TaskStatus.ready_for_feedback, task.reload.task_status
+    end
+  end
+
   def test_staff_can_request_feedback_using_existing_submission
     unit = FactoryBot.create(:unit, student_count: 1, task_count: 1)
     task_definition = unit.task_definitions.first

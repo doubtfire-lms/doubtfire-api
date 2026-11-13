@@ -25,6 +25,9 @@ module Entities
     expose :extensions
     expose :scorm_extensions
 
+    expose :submission_access_granted?, as: :submission_access_granted
+    expose :submission_access_request_error
+
     expose :times_assessed
     expose :grade, expose_nil: false
     expose :quality_pts, expose_nil: false
