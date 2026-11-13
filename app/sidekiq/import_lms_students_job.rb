@@ -90,7 +90,8 @@ class ImportLmsStudentsJob
           user.update!(has_run_first_time_setup: true) unless user.has_run_first_time_setup?
           row.merge!(ontrack_fields(user))
           active_student_user_ids << user.id if enrol
-          import_member(result, unit, row, user, staff_role, enrol, member_mappings, mapping_errors,
+          mapping_plan = { mappings: member_mappings, errors: mapping_errors }
+          import_member(result, unit, row, user, staff_role, enrol, mapping_plan,
                         student_id_updated: student_id_to_assign.present?)
         end
       rescue StandardError => e
@@ -207,7 +208,7 @@ class ImportLmsStudentsJob
     end
   end
 
-  def import_member(result, unit, row, user, staff_role, enrol, mappings, mapping_errors, student_id_updated:)
+  def import_member(result, unit, row, user, staff_role, enrol, mapping_plan, student_id_updated:)
     messages = []
     messages << 'Set student ID' if student_id_updated
     if staff_role && unit.unit_role_for(user).nil?
@@ -221,11 +222,11 @@ class ImportLmsStudentsJob
       project = unit.enrol_student(user, project&.campus)
       messages << (was_enrolled.nil? ? 'Enrolled student' : 'Re-enrolled student') unless was_enrolled
 
-      if mapping_errors.any?
-        result[:errors] << { row: row, message: ([messages.join('; ')].compact_blank + mapping_errors).join('; ') }
+      if mapping_plan[:errors].any?
+        result[:errors] << { row: row, message: ([messages.join('; ')].compact_blank + mapping_plan[:errors]).join('; ') }
         return
       end
-      messages << 'LMS group mappings updated' if mappings.any? && LmsGroupMappingApplier.apply(project, mappings)
+      messages << 'LMS group mappings updated' if mapping_plan[:mappings].any? && LmsGroupMappingApplier.apply(project, mapping_plan[:mappings])
     end
 
     if messages.any?
