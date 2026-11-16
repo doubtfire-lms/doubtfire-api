@@ -445,11 +445,22 @@ class ProjectModelTest < ActiveSupport::TestCase
                                 'tempfile' => File.new(test_file_path("submissions/vectorial_graph.ipynb"))
                               }, "vectorial_graph.ipynb", "code")
 
+    Tempfile.create(['portfolio-source-', '.zip']) do |archive|
+      Zip::File.open(archive.path, create: true) do |zip|
+        zip.get_output_stream('src/program.py') { |stream| stream.write('print("hello")') }
+      end
+      project.move_to_portfolio({ filename: 'source.zip', 'tempfile' => archive }, 'source.zip', 'zip')
+    end
+
     project.create_portfolio
     assert_not project.reload.compile_portfolio
     assert project.portfolio_exists?
 
     assert File.exist?(project.portfolio_path)
+    pdf_text = PDF::Reader.new(project.portfolio_path).pages.map(&:text).join("\n")
+    assert_includes pdf_text, 'Zip contents'
+    assert_includes pdf_text, 'program.py'
+    assert_match(/File\s+5\s+of\s+5/, pdf_text)
 
     unit.destroy!
   end

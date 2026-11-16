@@ -41,6 +41,7 @@
   </style>
 </head>
 <body>
+  <%= render 'shared/email_preheader', text: "Scheduled rule #{@rule.name} affected #{@affected_students_count} students. Review the attached CSV for the full action log." %>
   <div class="main">
     <h1><%= @doubtfire_product_name %> Notification</h1>
 

@@ -12,7 +12,7 @@ class Tutorial < ApplicationRecord
   has_many   :projects, through: :tutorial_enrolments
 
   # Callbacks - methods called are private
-  before_destroy :can_destroy?
+  before_destroy :can_destroy?, prepend: true
 
   validates :abbreviation, uniqueness: { scope: :unit,
                                          message: 'must be unique within the unit' }

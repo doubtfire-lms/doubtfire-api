@@ -56,6 +56,7 @@ class ImportStudentsLtiJob
       UserIdentity.link_identity(user, login_id: user_id_data[:login_id], username: user_id_data[:username])
 
       if user.valid?
+        user.update!(has_run_first_time_setup: true) unless user.has_run_first_time_setup?
         unit_role = Doubtfire::Application.config.institution_settings.should_employ_lti_member(member)
         unless unit_role.nil?
           staff = unit.employ_staff(user, unit_role)

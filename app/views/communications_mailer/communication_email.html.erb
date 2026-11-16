@@ -41,6 +41,9 @@
   </style>
 </head>
 <body>
+  <% if @body_paragraphs.any? %>
+    <%= render 'shared/email_preheader', text: @body_paragraphs.first %>
+  <% end %>
   <div class="main">
     <h1><%= @doubtfire_product_name %> Notification</h1>
 

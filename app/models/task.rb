@@ -34,6 +34,7 @@ class Task < ApplicationRecord
       :get_discussion,
       :make_discussion_reply,
       :request_scorm_extension,
+      :request_submission_access,
       # :request_extension -- depends on settings in unit. See specific_permission_hash method
       # :make_scorm_attempt -- depends on task def settings. See specific_permission_hash method
     ]
@@ -51,6 +52,7 @@ class Task < ApplicationRecord
       :delete_discussion,
       :get_discussion,
       :assess_extension,
+      :assess_submission_access,
       :assess_scorm_extension,
       :request_extension,
       :request_scorm_extension
@@ -66,6 +68,7 @@ class Task < ApplicationRecord
       :delete_plagiarism,
       :get_discussion,
       :assess_extension,
+      :assess_submission_access,
       :assess_scorm_extension,
       :request_extension,
       :request_scorm_extension
@@ -443,6 +446,56 @@ class Task < ApplicationRecord
     else
       return false
     end
+  end
+
+  # Submission access is granted once a tutor has approved a request.
+  def submission_access_granted?
+    comments.where(type: 'SubmissionComment', submission_granted: true)
+            .where.not(submission_assessed_at: nil).exists?
+  end
+
+  # Submissions open on the configured date, or earlier with tutor approval.
+  def submission_open?
+    opens_on = task_definition.submission_opens_on
+    opens_on.nil? || Date.current >= opens_on || submission_access_granted?
+  end
+
+  # Check eligibility before creating a request.
+  def can_apply_for_submission_access?
+    submission_access_request_error.nil?
+  end
+
+  def submission_not_open_error
+    return nil if submission_open?
+
+    opens_on = task_definition.submission_opens_on
+    "Submissions open on #{opens_on.strftime('%d %b %Y')}. Request submission access to submit early."
+  end
+
+  # Explain why the student cannot apply for early submission access.
+  def submission_access_request_error
+    return 'Only teaching staff can submit this task.' if task_definition.staff_managed_task
+    prerequisite_error = unmet_prerequisite_error
+    return prerequisite_error if prerequisite_error
+    return 'Submissions are already open for this task.' if submission_open?
+    if comments.where(type: 'SubmissionComment', submission_assessed_at: nil).exists?
+      return 'A submission access request is already awaiting assessment.'
+    end
+
+    nil
+  end
+
+  # Applying for submission access will create a submission comment
+  def apply_for_submission_access(user, text)
+    submission = SubmissionComment.create
+    submission.task = self
+    submission.user = user
+    submission.content_type = :submission
+    submission.comment = text
+    submission.recipient = tutor
+    submission.save!
+
+    submission
   end
 
   def due_date

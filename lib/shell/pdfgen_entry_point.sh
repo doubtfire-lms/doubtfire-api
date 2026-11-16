@@ -16,6 +16,7 @@ touch /var/log/cron.log
 sleep 1
 
 # Setup crontab - clear then load with file
+rm -f /tmp/doubtfire-pdfgen.pause
 crontab -r
 crontab /etc/cron.d/container_cronjob
 

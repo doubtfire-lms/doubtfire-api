@@ -2,6 +2,52 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.1.0-19](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-18...v11.1.0-19) (2026-11-12)
+
+
+### Bug Fixes
+
+* return tutorial deletion validation errors ([db8fe78](https://github.com/b0ink/doubtfire-deploy/commit/db8fe789cf3519d444b8c20ce77117f348678081))
+
+## [11.1.0-18](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-17...v11.1.0-18) (2026-11-12)
+
+
+### Features
+
+* pause pdf generation after the current portfolio ([c7843ce](https://github.com/b0ink/doubtfire-deploy/commit/c7843ce392cb5189681860eda4f544cf98e52f88))
+
+## [11.1.0-17](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-16...v11.1.0-17) (2026-11-12)
+
+
+### Features
+
+* add preheaders for cleaner notification previews ([#768](https://github.com/b0ink/doubtfire-deploy/issues/768)) ([7b26aea](https://github.com/b0ink/doubtfire-deploy/commit/7b26aeaf692684e17933322b052bc1f20ce83db2))
+
+
+### Bug Fixes
+
+* reword notification preheader ([80c73f5](https://github.com/b0ink/doubtfire-deploy/commit/80c73f5e736964f663a6fcf6c35fd9f82be24e45))
+* show fields that are mapped to ontrack ([32b11c1](https://github.com/b0ink/doubtfire-deploy/commit/32b11c1bc202ca97ff3e2a4ceb44c8d4d6dc71b4))
+
+## [11.1.0-16](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-15...v11.1.0-16) (2026-11-11)
+
+
+### Features
+
+* show task abbreviations in portfolio pdf headings ([ab4f588](https://github.com/b0ink/doubtfire-deploy/commit/ab4f5881884d272a41ca64e908a01ebeb67f9f93))
+
+## [11.1.0-15](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-14...v11.1.0-15) (2026-11-11)
+
+
+### Features
+
+* allow download of portfolio additional files ([#766](https://github.com/b0ink/doubtfire-deploy/issues/766)) ([da47b60](https://github.com/b0ink/doubtfire-deploy/commit/da47b6029bde4f024a684ca36ea7ee72721bcc91))
+
+
+### Bug Fixes
+
+* correct portfolio generation wording in email notifications ([9b82783](https://github.com/b0ink/doubtfire-deploy/commit/9b82783422f37422a06adc94d79332c86e84ad21))
+
 ## [11.1.0-14](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-13...v11.1.0-14) (2026-11-09)
 
 

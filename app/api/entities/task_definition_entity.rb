@@ -79,5 +79,6 @@ module Entities
     end
     expose :overseer_resource_files, if: ->(task_def, options) { staff?(options[:my_role]) }
 
+    expose :submission_opens_on
   end
 end

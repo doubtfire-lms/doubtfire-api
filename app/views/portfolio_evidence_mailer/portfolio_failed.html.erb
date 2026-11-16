@@ -41,6 +41,7 @@
   </style>
 </head>
 <body>
+  <%= render 'shared/email_preheader', text: "Your portfolio could not be compiled. Check your task PDFs in #{@doubtfire_product_name}, then schedule compilation again." %>
   <div class="main">
     <h1> <%= @doubtfire_product_name %> Notification </h1>
     <p>Hi <%= @student.first_name %>,</p>
