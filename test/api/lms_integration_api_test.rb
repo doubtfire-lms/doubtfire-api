@@ -20,6 +20,34 @@ class LmsIntegrationApiTest < ActiveSupport::TestCase
     Doubtfire::Application.config.lti_internal_key = @original_lti_internal_key
   end
 
+  def test_admin_can_manage_lms_for_unit_without_staff_role
+    unit = FactoryBot.create(:unit, with_students: false)
+    admin = FactoryBot.create(:user, :admin)
+    add_auth_header_for(user: admin)
+    stub_link(unit)
+
+    get "/api/units/#{unit.id}/lms"
+
+    assert_equal 200, last_response.status, last_response.inspect
+  end
+
+  def test_other_convenor_cannot_manage_lms
+    unit = FactoryBot.create(:unit, with_students: false)
+    other_convenor = FactoryBot.create(:user, :convenor)
+    unit.employ_staff(other_convenor, Role.convenor)
+    add_auth_header_for(user: other_convenor)
+
+    get "/api/units/#{unit.id}/lms"
+    assert_equal 403, last_response.status, last_response.inspect
+
+    patch "/api/units/#{unit.id}/lms/settings", { auto_sync_students: true }
+    assert_equal 403, last_response.status, last_response.inspect
+
+    post "/api/units/#{unit.id}/lms/import_students", { preview_only: true }
+    assert_equal 403, last_response.status, last_response.inspect
+    assert_empty ImportLmsStudentsJob.jobs
+  end
+
   def test_convenor_can_retry_grade_line_item_setup
     unit = FactoryBot.create(:unit, with_students: false)
     add_auth_header_for(user: unit.main_convenor_user)
