@@ -41,7 +41,10 @@ class SubmissionCommentsApi < Grape::API
       error!({ error: 'Not authorised to assess submission access for this task' }, 403)
     end
 
-    task_comment = task.all_comments.find(params[:task_comment_id]).becomes(SubmissionComment)
+    task_comment = task.all_comments.find(params[:task_comment_id])
+    unless task_comment.is_a?(SubmissionComment)
+      error!({ error: 'Submission access request not found' }, 404)
+    end
 
     unless task_comment.assess_submission_access(current_user, params[:granted])
       if task_comment.errors.count >= 1

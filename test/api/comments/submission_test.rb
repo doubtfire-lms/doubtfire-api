@@ -68,30 +68,30 @@ class SubmissionTest < ActiveSupport::TestCase
     unit.destroy!
   end
 
-  # def test_staff_can_deny_but_cannot_assess_an_ordinary_comment
-  #   unit = FactoryBot.create(:unit)
-  #   project = unit.projects.first
-  #   user = project.student
-  #   td = unit.task_definitions.first
-  #   task = project.task_for_task_definition(td)
-  #   endpoint = "/api/projects/#{project.id}/task_def_id/#{td.id}"
+  def test_staff_can_deny_but_cannot_assess_an_ordinary_comment
+    unit = FactoryBot.create(:unit)
+    project = unit.projects.first
+    user = project.student
+    td = unit.task_definitions.first
+    task = project.task_for_task_definition(td)
+    endpoint = "/api/projects/#{project.id}/task_def_id/#{td.id}"
 
-  #   # Create a submission access request for the student.
-  #   request = task.apply_for_submission_access(user, 'Please review my early submission request.')
-  #   add_auth_header_for(user: unit.main_convenor_user)
-  #   put_json "#{endpoint}/assess_submission_access/#{request.id}", { granted: false }
-  #   assert_equal 200, last_response.status
-  #   assert request.reload.assessed?
-  #   assert_not request.approved?
+    # Create a submission access request for the student.
+    request = task.apply_for_submission_access(user, 'Please review my early submission request.')
+    add_auth_header_for(user: unit.main_convenor_user)
+    put_json "#{endpoint}/assess_submission_access/#{request.id}", { granted: false }
+    assert_equal 200, last_response.status
+    assert request.reload.assessed?
+    assert_not request.approved?
 
-  #   # An ordinary comment must not be assessed as a submission access request.
-  #   comment = task.add_text_comment(user, 'An ordinary task comment')
-  #   add_auth_header_for(user: unit.main_convenor_user)
-  #   put_json "#{endpoint}/assess_submission_access/#{comment.id}", { granted: true }
-  #   assert_equal 404, last_response.status
+    # An ordinary comment must not be assessed as a submission access request.
+    comment = task.add_text_comment(user, 'An ordinary task comment')
+    add_auth_header_for(user: unit.main_convenor_user)
+    put_json "#{endpoint}/assess_submission_access/#{comment.id}", { granted: true }
+    assert_equal 404, last_response.status
 
-  #   unit.destroy!
-  # end
+    unit.destroy!
+  end
 
   def test_opening_date_and_staff_approval
     unit = FactoryBot.create(:unit)
