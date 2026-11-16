@@ -98,6 +98,24 @@ class TutorialsApi < Grape::API
     present tutorial, with: Entities::TutorialEntity
   end
 
+  desc 'Download CSV of all tutorials (and their tutorial streams) for the given unit'
+  params do
+    requires :unit_id, type: Integer, desc: 'The unit to download tutorials from'
+  end
+  get '/units/:unit_id/tutorials/csv' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :download_unit_csv
+      error!({ error: 'Not authorised to download CSV of tutorials' }, 403)
+    end
+
+    content_type 'application/octet-stream'
+    header['Content-Disposition'] = "attachment; filename=#{unit.code}-Tutorials.csv"
+    header['Access-Control-Expose-Headers'] = 'Content-Disposition'
+    env['api.format'] = :binary
+    unit.tutorials_csv
+  end
+
   desc 'Delete a tutorial'
   params do
     requires :id, type: Integer, desc: 'The tutorial id to delete'

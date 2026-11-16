@@ -80,6 +80,37 @@ class Tutorial < ApplicationRecord
     projects.where('enrolled = true').count
   end
 
+  # Columns used to export and import tutorials (and their streams) via CSV
+  def self.csv_columns
+    %w[abbreviation tutorial_stream meeting_day meeting_time meeting_location duration_minutes
+       capacity tutor_username campus tutorial_stream_name activity_type]
+  end
+
+  def self.to_csv(tutorials)
+    CSV.generate do |csv|
+      csv << csv_columns
+      tutorials.each do |tutorial|
+        csv << CsvHelper.escape_spreadsheet_formulas(tutorial.to_csv_row)
+      end
+    end
+  end
+
+  def to_csv_row
+    [
+      abbreviation,
+      tutorial_stream&.abbreviation,
+      meeting_day,
+      meeting_time,
+      meeting_location,
+      duration_minutes,
+      capacity,
+      tutor&.username,
+      campus&.abbreviation,
+      tutorial_stream&.name,
+      tutorial_stream&.activity_type&.abbreviation
+    ]
+  end
+
   private
 
   def can_destroy?

@@ -2006,6 +2006,10 @@ class Unit < ApplicationRecord
     TaskDefinition.to_csv(self, task_definitions)
   end
 
+  def tutorials_csv
+    Tutorial.to_csv(tutorials.includes({ tutorial_stream: :activity_type }, :campus, { unit_role: :user }).order(:abbreviation))
+  end
+
   def task_definitions_by_grade
     # Need to search as relation is already ordered
     TaskDefinition.where(unit_id: id).order('target_grade ASC, start_date ASC, abbreviation ASC')
