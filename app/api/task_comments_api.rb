@@ -183,6 +183,7 @@ class TaskCommentsApi < Grape::API
     protected_comment_types = [
       AssessmentComment,
       ExtensionComment,
+      SubmissionComment,
       ScormComment,
       TaskCheckedInComment,
       TaskDiscussedComment,
