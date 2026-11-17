@@ -18,8 +18,19 @@ class AcceptSubmissionJob
   end
 
   sidekiq_retries_exhausted do |job, exception|
-    Sidekiq.logger.error "Submission files for task #{job['args'].first} remained invisible after retries: #{exception.message}"
-    Sentry.capture_exception(exception, extra: { task_id: job['args'].first }) if defined?(Sentry)
+    task_id = job['args'].first
+    message = "Submission files for task #{task_id} remained invisible after #{SUBMISSION_VISIBILITY_RETRIES} retries"
+    Sidekiq.logger.error "#{message}: #{exception.message}"
+
+    if Doubtfire::Application.config.email_errors_to.present?
+      begin
+        ErrorLogMailer.error_message('Accept Submission', message, exception).deliver_now
+      rescue StandardError => e
+        Sidekiq.logger.error "Failed to email submission visibility error for task #{task_id}: #{e.message}"
+      end
+    end
+
+    Sentry.capture_exception(exception, extra: { task_id: task_id }) if defined?(Sentry)
   end
 
   def perform(task_id, user_id, accepted_tii_eula, test_submission)
