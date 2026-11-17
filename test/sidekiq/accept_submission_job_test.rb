@@ -18,7 +18,7 @@ class AcceptSubmissionJobTest < ActiveSupport::TestCase
           task.stub(:convert_submission_to_pdf, false) do
             ErrorLogMailer.stub(:error_message, nil) do
               job = AcceptSubmissionJob.new
-              job.stub(:wait_for_new_submission_files, true) do
+              job.stub(:ensure_submission_files_visible!, nil) do
                 job.perform(task.id, user.id, false, false)
               end
             end
@@ -44,14 +44,35 @@ class AcceptSubmissionJobTest < ActiveSupport::TestCase
 
     Task.stub(:find, task) do
       User.stub(:find, user) do
-        job.stub(:wait_for_new_submission_files, false) do
+        Dir.stub(:children, ->(_path) { raise Errno::ENOENT }) do
           task.stub(:convert_submission_to_pdf, ->(**) { flunk 'Processed the previous archive' }) do
-            job.perform(task.id, user.id, false, false)
+            assert_raises(AcceptSubmissionJob::SubmissionFilesNotVisible) do
+              job.perform(task.id, user.id, false, false)
+            end
           end
         end
       end
     end
 
     assert_empty CreateSubmissionHistoryJob.jobs
+  end
+
+  def test_retries_when_some_uploaded_files_are_not_visible
+    task = FactoryBot.create(:task)
+    task.task_definition.update!(
+      upload_requirements: [
+        { 'key' => 'file0', 'name' => 'main.rb', 'type' => 'code', 'submission_history' => true },
+        { 'key' => 'file1', 'name' => 'report.pdf', 'type' => 'document' }
+      ]
+    )
+
+    Dir.stub(:children, ['000-code.rb']) do
+      File.stub(:file?, true) do
+        error = assert_raises(AcceptSubmissionJob::SubmissionFilesNotVisible) do
+          AcceptSubmissionJob.new.ensure_submission_files_visible!(task)
+        end
+        assert_match(%r{1/2}, error.message)
+      end
+    end
   end
 end

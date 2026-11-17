@@ -2,14 +2,25 @@ class AcceptSubmissionJob
   include Sidekiq::Job
   include LogHelper
 
-  SUBMISSION_VISIBILITY_WAIT_SECONDS = 30
-  SUBMISSION_VISIBILITY_POLL_SECONDS = 0.5
+  class SubmissionFilesNotVisible < StandardError; end
+
+  SUBMISSION_VISIBILITY_RETRIES = 12
+  SUBMISSION_VISIBILITY_RETRY_SECONDS = 5
 
   sidekiq_options queue: 'default',
                   lock: :until_executed,
                   lock_args_method: ->(args) { [args.first] },
                   on_conflict: :reject,
-                  retry: false
+                  retry: SUBMISSION_VISIBILITY_RETRIES
+
+  sidekiq_retry_in do |_count, exception|
+    SUBMISSION_VISIBILITY_RETRY_SECONDS if exception.is_a?(SubmissionFilesNotVisible)
+  end
+
+  sidekiq_retries_exhausted do |job, exception|
+    Sidekiq.logger.error "Submission files for task #{job['args'].first} remained invisible after retries: #{exception.message}"
+    Sentry.capture_exception(exception, extra: { task_id: job['args'].first }) if defined?(Sentry)
+  end
 
   def perform(task_id, user_id, accepted_tii_eula, test_submission)
     begin
@@ -20,10 +31,10 @@ class AcceptSubmissionJob
       return
     end
 
-    begin
-      logger.info "Accepting submission for task #{task.id} by user #{user.id}"
-      return unless wait_for_new_submission_files(task.id)
+    logger.info "Accepting submission for task #{task.id} by user #{user.id}"
+    ensure_submission_files_visible!(task)
 
+    begin
       # Convert submission to PDF
       raise "Failed to convert submission to PDF for task #{task.id}" unless task.convert_submission_to_pdf(log_to_stdout: true)
     rescue StandardError => e
@@ -83,6 +94,9 @@ class AcceptSubmissionJob
     elsif task.overseer_enabled? || test_submission
       logger.error "Overseer assessment was not performed because task definition #{task.task_definition.id} has no submission history files configured"
     end
+  rescue SubmissionFilesNotVisible => e
+    logger.warn e.message
+    raise
   rescue StandardError => e # to raise error message to avoid unnecessary retry
     logger.error e
     if defined?(Sentry)
@@ -97,29 +111,19 @@ class AcceptSubmissionJob
     task.clear_in_process
   end
 
-  def wait_for_new_submission_files(task_id)
-    source_dir = File.join(Doubtfire::Application.config.student_work_dir, 'new', task_id.to_s)
-    if Dir.exist?(source_dir)
-      logger.info "New submission folder for task #{task_id} is visible to Sidekiq at job start"
-      return true
+  def ensure_submission_files_visible!(task)
+    source_dir = File.join(Doubtfire::Application.config.student_work_dir, 'new', task.id.to_s)
+    files = Dir.children(source_dir).select do |name|
+      name.match?(/\A\d{3}-(?:cover|document|code|image|zip|archive)/) && File.file?(File.join(source_dir, name))
+    end
+    expected = task.task_definition.number_of_uploaded_files
+
+    if files.length != expected
+      raise SubmissionFilesNotVisible, "Submission files for task #{task.id} are not all visible (#{files.length}/#{expected})"
     end
 
-    logger.warn "New submission folder for task #{task_id} is not visible to Sidekiq; waiting up to #{SUBMISSION_VISIBILITY_WAIT_SECONDS}s"
-    start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-
-    loop do
-      elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - start
-      if elapsed >= SUBMISSION_VISIBILITY_WAIT_SECONDS
-        logger.error "New submission folder for task #{task_id} is still not visible after #{elapsed.round(1)}s; skipping old done archive"
-        return false
-      end
-
-      sleep SUBMISSION_VISIBILITY_POLL_SECONDS
-      next unless Dir.exist?(source_dir)
-
-      elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - start
-      logger.info "New submission folder for task #{task_id} became visible to Sidekiq after #{elapsed.round(1)}s"
-      return true
-    end
+    logger.info "New submission files for task #{task.id} are visible to Sidekiq"
+  rescue Errno::ENOENT
+    raise SubmissionFilesNotVisible, "Submission folder for task #{task.id} is not yet visible to Sidekiq"
   end
 end
