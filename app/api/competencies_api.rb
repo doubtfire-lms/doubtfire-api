@@ -349,7 +349,7 @@ class CompetenciesApi < Grape::API
     definition = UnitDefinition.find(params[:unit_definition_id])
     error!({ error: 'The unit definition code must match the offering code' }, 422) unless definition.code == unit.code
 
-    unit.update!(unit_definition_id: definition.id)
+    unit.update!(unit_definition: definition)
     unit.reload
     error!({ error: 'The unit definition update did not persist' }, 409) unless unit.unit_definition_id == definition.id
 

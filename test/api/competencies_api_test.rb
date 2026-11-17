@@ -44,6 +44,8 @@ class CompetenciesApiTest < ActiveSupport::TestCase
     legacy = UnitDefinition.create!(code: unit.code, name: unit.name, version: 'legacy')
     target = UnitDefinition.create!(code: unit.code, name: 'Programming foundations', version: '2027-S1')
     unit.update!(unit_definition: legacy)
+    another_offering = FactoryBot.create(:unit, code: unit.code, unit_definition: target,
+                                                with_students: false, task_count: 0, outcome_count: 0)
     add_auth_header_for(user: FactoryBot.create(:user, :admin))
 
     put_json "/api/units/#{unit.id}/unit_definition", { unit_definition_id: target.id }
@@ -51,6 +53,7 @@ class CompetenciesApiTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status, last_response_body
     assert_equal target.id, last_response_body.fetch('unit_definition_id')
     assert_equal target.id, unit.reload.unit_definition_id
+    assert_equal target.id, another_offering.reload.unit_definition_id
 
     get "/api/units/#{unit.id}/unit_definition"
     assert_equal target.id, last_response_body.fetch('unit_definition_id')
