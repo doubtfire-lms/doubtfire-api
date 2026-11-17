@@ -7,6 +7,11 @@ require 'zip'
 class TaskCompletionSnapshot < ApplicationRecord
   include FileHelper
 
+  SUBMITTED_STATUS_KEYS = Set[
+    :feedback_exceeded, :ready_for_feedback, :discuss, :demonstrate, :complete,
+    :fail, :time_exceeded, :assess_in_portfolio, :attention_required, :rediscuss
+  ].freeze
+
   belongs_to :unit
 
   validates :snapshot_timestamp, presence: true
@@ -150,6 +155,28 @@ class TaskCompletionSnapshot < ApplicationRecord
       'target_grade_student_counts' => {},
       'target_grade_campus_student_counts' => {}
     }
+  end
+
+  # Count submitted task statuses in the saved CSV, once per student.
+  def load_submitted_task_count_student_counts
+    csv_text = snapshot_contents
+    return {} if csv_text.blank?
+
+    task_headers = unit.task_definitions_by_grade.map(&:abbreviation)
+    distribution = Hash.new(0)
+    seen_students = Set.new
+    CSV.parse(csv_text, headers: true).each do |row|
+      student = row['Username'].presence || row['Student ID'].presence
+      next if student.blank? || !seen_students.add?(student)
+
+      submitted_count = task_headers.count do |header|
+        SUBMITTED_STATUS_KEYS.include?(TaskStatus.id_to_key(row[header].to_i))
+      end
+      distribution[submitted_count.to_s] += 1
+    end
+    distribution
+  rescue CSV::MalformedCSVError
+    {}
   end
 
   def store_stats!(payload)

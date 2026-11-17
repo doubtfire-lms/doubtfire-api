@@ -4179,7 +4179,7 @@ class Unit < ApplicationRecord
     cached = File.exist?(path) ? JSON.parse(Zlib::GzipReader.open(path, &:read)) : nil
 
     if cached.present? &&
-        cached.all? { |entry| entry.key?('student_count') && entry.key?('campus_student_counts') && entry.key?('target_grade_student_counts') && entry.key?('target_grade_campus_student_counts') && entry.key?('target_grade_stats') && entry.key?('status_population_stats') } &&
+        cached.all? { |entry| entry.key?('student_count') && entry.key?('campus_student_counts') && entry.key?('target_grade_student_counts') && entry.key?('target_grade_campus_student_counts') && entry.key?('target_grade_stats') && entry.key?('status_population_stats') && entry.key?('submitted_task_count_student_counts') } &&
        cached.map { |entry| entry['snapshot_timestamp'] }.sort == TaskCompletionSnapshot.where(unit_id: id).pluck(:snapshot_timestamp).sort
       return cached
     end
@@ -4204,6 +4204,7 @@ class Unit < ApplicationRecord
             'stats' => changed_snapshot.load_stats,
             'target_grade_stats' => changed_snapshot.load_target_grade_stats,
             'status_population_stats' => changed_snapshot.load_status_population_stats,
+            'submitted_task_count_student_counts' => changed_snapshot.load_submitted_task_count_student_counts,
             'student_count' => student_counts['student_count'],
             'campus_student_counts' => student_counts['campus_student_counts'],
             'target_grade_student_counts' => student_counts['target_grade_student_counts'],
@@ -4218,6 +4219,7 @@ class Unit < ApplicationRecord
             'stats' => snapshot.load_stats,
             'target_grade_stats' => snapshot.load_target_grade_stats,
             'status_population_stats' => snapshot.load_status_population_stats,
+            'submitted_task_count_student_counts' => snapshot.load_submitted_task_count_student_counts,
             'student_count' => student_counts['student_count'],
             'campus_student_counts' => student_counts['campus_student_counts'],
             'target_grade_student_counts' => student_counts['target_grade_student_counts'],
