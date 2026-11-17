@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_11_09_231433) do
+ActiveRecord::Schema[8.0].define(version: 2026_11_17_004438) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -868,8 +868,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_09_231433) do
     t.boolean "lock_assessments_to_tutorial_stream", default: false, null: false
     t.boolean "requires_discussion", default: false, null: false
     t.boolean "staff_managed_task", default: false, null: false
-    t.boolean "allow_student_skill_selection", default: false, null: false
     t.date "submission_opens_on"
+    t.boolean "allow_student_skill_selection", default: false, null: false
     t.index ["abbreviation", "unit_id"], name: "index_task_definitions_on_abbreviation_and_unit_id", unique: true
     t.index ["group_set_id"], name: "index_task_definitions_on_group_set_id"
     t.index ["name", "unit_id"], name: "index_task_definitions_on_name_and_unit_id", unique: true
