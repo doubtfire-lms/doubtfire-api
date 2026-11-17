@@ -2007,7 +2007,11 @@ class Unit < ApplicationRecord
   end
 
   def tutorials_csv
-    Tutorial.to_csv(tutorials.includes({ tutorial_stream: :activity_type }, :campus, { unit_role: :user }).order(:abbreviation))
+    Tutorial.to_csv(tutorials.includes(:tutorial_stream, :campus, { unit_role: :user }).order(:abbreviation))
+  end
+
+  def tutorial_streams_csv
+    TutorialStream.to_csv(tutorial_streams.includes(:activity_type).order(:abbreviation))
   end
 
   def task_definitions_by_grade

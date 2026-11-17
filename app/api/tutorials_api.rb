@@ -98,7 +98,7 @@ class TutorialsApi < Grape::API
     present tutorial, with: Entities::TutorialEntity
   end
 
-  desc 'Download CSV of all tutorials (and their tutorial streams) for the given unit'
+  desc 'Download CSV of all tutorials for the given unit'
   params do
     requires :unit_id, type: Integer, desc: 'The unit to download tutorials from'
   end

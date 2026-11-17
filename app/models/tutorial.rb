@@ -80,10 +80,11 @@ class Tutorial < ApplicationRecord
     projects.where('enrolled = true').count
   end
 
-  # Columns used to export and import tutorials (and their streams) via CSV
+  # Columns used to export and import tutorials via CSV
+  # Tutorial streams are managed in their own CSV - see TutorialStream.csv_columns
   def self.csv_columns
     %w[abbreviation tutorial_stream meeting_day meeting_time meeting_location duration_minutes
-       capacity tutor_username campus tutorial_stream_name activity_type]
+       capacity tutor_username campus]
   end
 
   def self.to_csv(tutorials)
@@ -105,9 +106,7 @@ class Tutorial < ApplicationRecord
       duration_minutes,
       capacity,
       tutor&.username,
-      campus&.abbreviation,
-      tutorial_stream&.name,
-      tutorial_stream&.activity_type&.abbreviation
+      campus&.abbreviation
     ]
   end
 
