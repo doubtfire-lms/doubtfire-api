@@ -11,7 +11,19 @@
 %>
 \inputminted[breaklines,linenos,breakanywhere,tabsize=4]{<%= Task.pygments_lang(File.extname(file_name)[1..-1]) %>}{<%= latex_file_name %>}
 <%  else %>
+\begingroup
+\setcounter{secnumdepth}{5}
+\let\portfolioSubsubsection\subsubsection
+\makeatletter
+\def\portfolioNotebookParagraph{\@startsection{paragraph}{4}{\z@}{3.25ex \@plus 1ex \@minus .2ex}{1.5ex \@plus .2ex}{\normalfont\normalsize\bfseries}}
+\def\portfolioNotebookSubparagraph{\@startsection{subparagraph}{5}{\z@}{3.25ex \@plus 1ex \@minus .2ex}{1.5ex \@plus .2ex}{\normalfont\normalsize\bfseries}}
+\makeatother
+\let\section\portfolioSubsubsection
+\let\subsection\portfolioNotebookParagraph
+\let\subsubsection\portfolioNotebookSubparagraph
 \jupynotex{<%= latex_file_name %>}
+\endgroup
+\setcounter{secnumdepth}{3}
 <%
     end
   end
@@ -27,7 +39,41 @@
 <% end %>
 
 <% if %w[zip archive].include?(file_type) %>
-\begin{tcolorbox}[colback=blue!5!white,colframe=blue!75!black]
-  This zip file was uploaded with the portfolio. Zip contents are not expanded into this PDF.
+<% archive_tree = FileHelper.zip_file_tree(file_name, name) %>
+\begin{tcolorbox}[enhanced,breakable,colback=orange!8!white,colframe=orange!80!black,boxrule=0.9pt,left=4mm,right=4mm,top=3mm,bottom=3mm]
+\begin{minipage}{0.12\textwidth}
+\centering
+{\Huge \faFileArchiveO}
+\end{minipage}
+\hfill
+\begin{minipage}{0.82\textwidth}
+\textbf{Portfolio zip file}\\[0.35em]
+This zip file was uploaded with the portfolio. Zip contents are not expanded into this PDF.\\[0.65em]
+\href{<%= additional_files_url %>}{\faDownload\ Download additional files} {\footnotesize (Must be already authenticated in <%= lesc @doubtfire_product_name %>)}
+\end{minipage}
+
+\tcblower
+\textbf{Zip contents}\\[0.35em]
+<% if archive_tree[:error] %>
+The zip file tree could not be read while generating this PDF. Download the additional files to inspect the contents.
+<% elsif archive_tree[:lines].empty? %>
+No readable file entries were found in this zip.
+<% else %>
+{\footnotesize\ttfamily
+\begin{tabular}{@{}p{0.96\textwidth}@{}}
+<% archive_tree[:lines].each do |line| %>
+<%
+  indent = line[/\A */].length
+  content = line.lstrip
+  indent_width = indent * 0.45
+%>
+\hspace*{<%= indent_width %>em}<%= raw lesc(content).to_s.gsub('↳', '\\ensuremath{\\hookrightarrow}') %>\\
+<% end %>
+\end{tabular}
+}
+<% if archive_tree[:truncated] %>
+\\[0.35em]\emph{Showing the first <%= archive_tree[:lines].length %> of <%= archive_tree[:tree_lines] %> tree lines. Download the additional files to inspect everything.}
+<% end %>
+<% end %>
 \end{tcolorbox}
 <% end %>

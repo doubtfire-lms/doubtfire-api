@@ -109,7 +109,12 @@ class TutorialsApi < Grape::API
       error!({ error: 'Cannot delete tutorial - not authorised' }, 403)
     end
 
-    tutorial.destroy!
+    begin
+      tutorial.destroy!
+    rescue ActiveRecord::DeleteRestrictionError, ActiveRecord::RecordNotDestroyed => e
+      message = tutorial.errors.full_messages.to_sentence.presence || e.message
+      error!({ error: message }, 422)
+    end
     present true, with: Grape::Presenters::Presenter
   end
 end
