@@ -3,6 +3,7 @@ require 'grape'
 class TutorialStreamsApi < Grape::API
   helpers AuthenticationHelpers
   helpers AuthorisationHelpers
+  helpers MimeCheckHelpers
 
   before do
     authenticated?
@@ -59,6 +60,28 @@ class TutorialStreamsApi < Grape::API
     header['Access-Control-Expose-Headers'] = 'Content-Disposition'
     env['api.format'] = :binary
     unit.tutorial_streams_csv
+  end
+
+  desc 'Upload CSV of tutorial streams to the given unit'
+  params do
+    requires :unit_id, type: Integer, desc: 'The unit to upload tutorial streams to'
+    requires :file, type: File, desc: 'CSV upload file.'
+  end
+  post '/units/:unit_id/tutorial_streams/csv' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :upload_csv
+      error!({ error: 'Not authorised to upload CSV of tutorial streams' }, 403)
+    end
+
+    if params[:file].blank?
+      error!({ error: 'No file uploaded' }, 403)
+    end
+
+    # check mime is correct before uploading
+    ensure_csv!(params[:file][:tempfile])
+
+    present unit.import_tutorial_streams_from_csv(params[:file][:tempfile]), with: Grape::Presenters::Presenter
   end
 
   desc 'Delete a tutorial stream in the unit'
