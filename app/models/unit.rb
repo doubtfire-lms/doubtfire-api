@@ -2094,6 +2094,61 @@ class Unit < ApplicationRecord
     { success: success, ignored: ignored, errors: errors }
   end
 
+  # Import tutorials from a CSV (see Tutorial.csv_columns).
+  # Rows are matched to existing tutorials by abbreviation. Tutorials are never deleted.
+  # Tutorial streams must already exist - import them first with the tutorial streams CSV.
+  # As with streams, a blank cell keeps an existing tutorial's current value. A new tutorial needs a
+  # stream, meeting day, time and location; a blank tutor defaults to the unit's main convenor.
+  def import_tutorials_from_csv(file)
+    results = { success: [], ignored: [], errors: [] }
+
+    csv = parse_import_csv(file)
+
+    missing = Tutorial.csv_columns - csv.headers
+    if missing.any?
+      results[:errors] << { row: csv.headers, message: "Missing headers: #{missing.join(', ')}" }
+      return results
+    end
+
+    seen_abbreviations = []
+
+    csv.each do |row|
+      values = Tutorial.csv_columns.index_with { |col| unescape_spreadsheet_formula(row[col]&.strip).presence }
+      abbreviation = values['abbreviation']
+
+      if abbreviation.nil?
+        results[:errors] << { row: row, message: 'Abbreviation cannot be empty.' }
+        next
+      end
+
+      if seen_abbreviations.include?(abbreviation)
+        results[:errors] << { row: row, message: "Tutorial #{abbreviation} appears more than once in the file." }
+        next
+      end
+      seen_abbreviations << abbreviation
+
+      found, lookup_error = tutorial_csv_lookups(values)
+      if lookup_error
+        results[:errors] << { row: row, message: lookup_error }
+        next
+      end
+
+      begin
+        tutorial = tutorials.find_by(abbreviation: abbreviation)
+        outcome, message = Tutorial.transaction do
+          tutorial.nil? ? create_tutorial_from_csv(values, found) : update_tutorial_from_csv(tutorial, values, found)
+        end
+        results[outcome] << { row: row, message: message }
+      rescue ActiveRecord::RecordInvalid => e
+        results[:errors] << { row: row, message: e.record.errors.full_messages.to_sentence }
+      rescue StandardError => e
+        results[:errors] << { row: row, message: e.message }
+      end
+    end
+
+    results
+  end
+
   def task_definitions_by_grade
     # Need to search as relation is already ordered
     TaskDefinition.where(unit_id: id).order('target_grade ASC, start_date ASC, abbreviation ASC')
@@ -4335,6 +4390,79 @@ class Unit < ApplicationRecord
               headers: true,
               header_converters: [->(hdr) { hdr.to_s.strip.downcase.tr(' ', '_') }],
               converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }])
+  end
+
+  # Resolve the non-blank lookup and number columns of a tutorials CSV row.
+  # Returns [found_values, nil], or [nil, error_message] when a value is not valid for this unit.
+  def tutorial_csv_lookups(values)
+    found = {}
+
+    if values['tutorial_stream']
+      found[:tutorial_stream] = tutorial_streams.find_by(abbreviation: values['tutorial_stream'])
+      return [nil, "Tutorial stream '#{values['tutorial_stream']}' not found -- import it with the tutorial streams CSV first."] if found[:tutorial_stream].nil?
+    end
+
+    if values['tutor_username']
+      # Same rule as Tutorial#assign_tutor: a tutor or convenor of this unit who can tutor
+      user = User.find_by(username: values['tutor_username'])
+      unit_role = user && unit_roles.find_by(user: user)
+      unless unit_role && user.has_tutor_capability? && [Role.tutor, Role.convenor].include?(unit_role.role)
+        return [nil, "#{values['tutor_username']} is not a tutor or convenor in this unit."]
+      end
+
+      found[:unit_role] = unit_role
+    end
+
+    if values['campus']
+      found[:campus] = Campus.find_by(abbreviation: values['campus']) || Campus.find_by(name: values['campus'])
+      return [nil, "Campus '#{values['campus']}' not found."] if found[:campus].nil?
+    end
+
+    { 'duration_minutes' => 1, 'capacity' => -1 }.each do |col, minimum|
+      next if values[col].nil?
+
+      number = Integer(values[col], 10, exception: false)
+      return [nil, "#{col} must be a whole number of #{minimum} or more (got '#{values[col]}')."] if number.nil? || number < minimum
+
+      found[col.to_sym] = number
+    end
+
+    [found, nil]
+  end
+
+  # Returns [:success, message] or [:errors, message]
+  def create_tutorial_from_csv(values, found)
+    abbreviation = values['abbreviation']
+    required = %w[tutorial_stream meeting_day meeting_time meeting_location].select { |col| values[col].nil? }
+    return [:errors, "#{required.join(', ')} required to create tutorial #{abbreviation}."] if required.any?
+
+    tutor_role = found[:unit_role] || main_convenor
+    return [:errors, "No tutor given for #{abbreviation} and the unit has no main convenor."] if tutor_role.nil?
+
+    tutorial = add_tutorial(values['meeting_day'], values['meeting_time'], values['meeting_location'], tutor_role.user,
+                            found[:campus], found.fetch(:capacity, -1), abbreviation, found[:tutorial_stream])
+    return [:errors, "Unable to create tutorial #{abbreviation} with tutor #{tutor_role.user.username}."] if tutorial.nil?
+
+    tutorial.update!(duration_minutes: found[:duration_minutes]) if found.key?(:duration_minutes)
+
+    message = "Created tutorial #{abbreviation}."
+    message += " Tutor set to the main convenor #{tutor_role.user.username}." unless found.key?(:unit_role)
+    [:success, message]
+  end
+
+  # Returns [:success, message] or [:ignored, message]. Blank cells keep the current value.
+  def update_tutorial_from_csv(tutorial, values, found)
+    tutorial.tutorial_stream = found[:tutorial_stream] if found.key?(:tutorial_stream)
+    tutorial.unit_role = found[:unit_role] if found.key?(:unit_role)
+    tutorial.campus = found[:campus] if found.key?(:campus)
+    tutorial.capacity = found[:capacity] if found.key?(:capacity)
+    tutorial.duration_minutes = found[:duration_minutes] if found.key?(:duration_minutes)
+    %w[meeting_day meeting_time meeting_location].each { |col| tutorial[col] = values[col] if values[col] }
+
+    return [:ignored, "No changes to tutorial #{tutorial.abbreviation}."] unless tutorial.changed?
+
+    tutorial.save!
+    [:success, "Updated tutorial #{tutorial.abbreviation}."]
   end
 
   def delete_associated_files
