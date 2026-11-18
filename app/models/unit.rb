@@ -2014,6 +2014,86 @@ class Unit < ApplicationRecord
     TutorialStream.to_csv(tutorial_streams.includes(:activity_type).order(:abbreviation))
   end
 
+  # Import tutorial streams from a CSV (see TutorialStream.csv_columns).
+  # Rows are matched to existing streams by abbreviation, the unique key. Streams are never deleted.
+  # The expected workflow is download CSV -> edit -> upload, so cells are rarely blank; a blank
+  # cell keeps the stream's current value, but a new stream needs both a name and an activity type.
+  def import_tutorial_streams_from_csv(file)
+    success = []
+    errors = []
+    ignored = []
+
+    csv = parse_import_csv(file)
+
+    missing = TutorialStream.csv_columns - csv.headers
+    if missing.any?
+      errors << { row: csv.headers, message: "Missing headers: #{missing.join(', ')}" }
+      return { success: success, ignored: ignored, errors: errors }
+    end
+
+    seen_abbreviations = []
+
+    csv.each do |row|
+      abbreviation, name, activity_type_text = TutorialStream.csv_columns.map { |col| unescape_spreadsheet_formula(row[col]&.strip) }
+
+      if abbreviation.blank?
+        errors << { row: row, message: 'Abbreviation cannot be empty.' }
+        next
+      end
+
+      if seen_abbreviations.include?(abbreviation)
+        errors << { row: row, message: "Stream #{abbreviation} appears more than once in the file." }
+        next
+      end
+      seen_abbreviations << abbreviation
+
+      activity_type = nil
+      if activity_type_text.present?
+        activity_type = ActivityType.find_by(abbreviation: activity_type_text) || ActivityType.find_by(name: activity_type_text)
+        if activity_type.nil?
+          errors << { row: row, message: "Unknown activity type '#{activity_type_text}' -- use one of: #{ActivityType.pluck(:abbreviation).sort.join(', ')}" }
+          next
+        end
+      end
+
+      begin
+        tutorial_stream = tutorial_streams.find_by(abbreviation: abbreviation)
+
+        if tutorial_stream.nil?
+          if name.blank? || activity_type.nil?
+            errors << { row: row, message: "Name and activity type are required to create stream #{abbreviation}." }
+            next
+          end
+
+          first_stream = !tutorial_streams.exists?
+          add_tutorial_stream(name, abbreviation, activity_type)
+
+          message = "Created stream #{abbreviation}."
+          # The first stream in a unit takes all existing tasks (see TutorialStream#handle_associated_task_defs)
+          message += " All #{task_definitions.count} tasks were assigned to it as it is the first stream in the unit." if first_stream && task_definitions.exists?
+          success << { row: row, message: message }
+        else
+          tutorial_stream.name = name if name.present?
+          tutorial_stream.activity_type = activity_type if activity_type.present?
+
+          unless tutorial_stream.changed?
+            ignored << { row: row, message: "No changes to stream #{abbreviation}." }
+            next
+          end
+
+          tutorial_stream.save!
+          success << { row: row, message: "Updated stream #{abbreviation}." }
+        end
+      rescue ActiveRecord::RecordInvalid => e
+        errors << { row: row, message: e.record.errors.full_messages.to_sentence }
+      rescue StandardError => e
+        errors << { row: row, message: e.message }
+      end
+    end
+
+    { success: success, ignored: ignored, errors: errors }
+  end
+
   def task_definitions_by_grade
     # Need to search as relation is already ordered
     TaskDefinition.where(unit_id: id).order('target_grade ASC, start_date ASC, abbreviation ASC')
@@ -4248,6 +4328,14 @@ class Unit < ApplicationRecord
   end
 
   private
+
+  # Read an uploaded CSV with normalised headers (lowercase, spaces as underscores) for the tutorial imports
+  def parse_import_csv(file)
+    CSV.parse(read_file_to_str(file),
+              headers: true,
+              header_converters: [->(hdr) { hdr.to_s.strip.downcase.tr(' ', '_') }],
+              converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }])
+  end
 
   def delete_associated_files
     unit_path = FileHelper.unit_dir(self, create: false)
