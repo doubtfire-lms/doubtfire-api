@@ -644,6 +644,16 @@ class UnitsApi < Grape::API
     present job, with: Entities::SidekiqJobEntity
   end
 
+  desc 'Get the number of overflow tasks available to claim'
+  get '/units/:id/stats/overflow_queue' do
+    unit = Unit.find(params[:id])
+    unless unit.unit_role_for(current_user)&.can_view_overflow_metrics?
+      error!({ error: 'Not authorised to view overflow queue statistics' }, 403)
+    end
+
+    { available_to_claim_count: unit.overflow_available_to_claim_count }
+  end
+
   desc 'Download the stats related to the number of students aiming for each grade'
   get '/units/:id/stats/student_target_grade' do
     unit = Unit.find(params[:id])
