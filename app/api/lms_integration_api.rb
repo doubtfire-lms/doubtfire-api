@@ -10,7 +10,6 @@ require 'entities/sidekiq_job_entity'
 #
 class LmsIntegrationApi < Grape::API
   helpers AuthenticationHelpers
-  helpers AuthorisationHelpers
   helpers SidekiqHelper
 
   before do
@@ -18,11 +17,13 @@ class LmsIntegrationApi < Grape::API
   end
 
   helpers do
-    def lms_unit!(permission = :update)
+    def lms_unit!
       error!({ error: 'LTI is not enabled for this OnTrack deployment' }, 404) unless Doubtfire::Application.config.lti_enabled
 
       unit = Unit.find(params[:unit_id])
-      error!({ error: 'Not authorised to manage the LMS integration for this unit' }, 403) unless authorise?(current_user, unit, permission)
+      unless current_user.has_admin_capability? || unit.main_convenor&.user_id == current_user.id
+        error!({ error: 'Not authorised to manage the LMS integration for this unit' }, 403)
+      end
       unit
     end
 
@@ -230,7 +231,7 @@ class LmsIntegrationApi < Grape::API
     optional :withdraw_missing, type: Boolean, desc: 'Withdraw enrolled students who are not active students in the LMS'
   end
   post '/units/:unit_id/lms/import_students' do
-    unit = lms_unit!(:upload_csv)
+    unit = lms_unit!
     link = require_link!(unit)
 
     integration = unit.lms_integration
