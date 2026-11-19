@@ -1,7 +1,7 @@
 #
 # deployAppSrc.Dockerfile - the container used for back end processing
 #
-FROM ruby:3.4-bookworm
+FROM ruby:3.4.13-bookworm
 
 # Setup dependencies
 ARG DEBIAN_FRONTEND=noninteractive
