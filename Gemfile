@@ -13,7 +13,7 @@ ruby_versions = {
 ruby ruby_versions[(ENV['RAILS_ENV'] || 'development').to_sym]
 
 # The venerable, almighty Rails
-gem 'rails', '~>8.0'
+gem 'rails', '~> 8.0.5', '>= 8.0.5.2'
 
 group :development, :test do
   gem 'better_errors'
