@@ -375,4 +375,27 @@ class UnitRolesTest < ActiveSupport::TestCase
       assert_not_equal 403, last_response.status, "#{route}: (#{last_response_body})"
     end
   end
+
+  def test_student_cannot_moderate_feedback
+    unit = FactoryBot.create :unit, with_students: true, task_count: 1, outcome_count: 0, staff_count: 0
+    project = unit.active_projects.first
+    task = project.task_for_task_definition(unit.task_definitions.first)
+    task.save! if task.new_record?
+
+    # Tutors without a mentor have a nil mentor, as do users without a unit role
+    tutor_role = unit.unit_role_for(project.tutor_for(task.task_definition))
+    tutor_role.update!(mentor: nil)
+
+    moderated_task = ModeratedTask.create!(task: task, task_definition: task.task_definition, state: :open, moderation_type: :escalation)
+
+    add_auth_header_for(user: project.student)
+    post "/api/unit_roles/#{tutor_role.id}/moderation/#{task.id}", { action: 'overturn' }
+
+    assert_equal 400, last_response.status, last_response_body
+    assert moderated_task.reload.open?
+    assert_nil moderated_task.outcome
+    assert_nil TutorFeedbackScore.find_by(unit_role: tutor_role, task_definition: task.task_definition)
+
+    unit.destroy
+  end
 end

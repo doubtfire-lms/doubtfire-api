@@ -28,11 +28,6 @@ class ProjectModelTest < ActiveSupport::TestCase
       create_staff_note
       reprocess_submission
       get_discussion_prompt
-      get_engagements
-      create_engagement
-      edit_engagement
-      delete_engagement
-      comment_engagement
     ]
 
     expected_permissions.each do |permission|

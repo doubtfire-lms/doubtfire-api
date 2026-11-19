@@ -6,6 +6,10 @@ module Tii
     helpers AuthorisationHelpers
     include LogHelper
 
+    before do
+      authenticated?
+    end
+
     desc 'Get the group attachments for a given task definition'
     get '/units/:unit_id/task_definitions/:task_def_id/tii_group_attachments' do
       unit = Unit.find(params[:unit_id])

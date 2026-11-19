@@ -4,6 +4,33 @@ require 'test_helper'
 # Contains tests for TaskDefinition model objects - not accessed via API
 #
 class TaskDefinitionTest < ActiveSupport::TestCase
+  def test_similarity_language_accepts_supported_languages_and_rejects_commands
+    task_definition = FactoryBot.create(:unit, task_count: 1).task_definitions.first
+
+    [nil, 'java', 'python3'].each do |language|
+      task_definition.similarity_language = language
+      task_definition.validate
+      assert_empty task_definition.errors[:similarity_language]
+    end
+
+    ['java; touch /tmp/injected', 'unknown', 'moss java'].each do |language|
+      task_definition.similarity_language = language
+      task_definition.validate
+      assert_not_empty task_definition.errors[:similarity_language]
+    end
+  end
+
+  def test_jplag_rejects_an_invalid_stored_language_before_running_commands
+    unit = FactoryBot.create(:unit, task_count: 1)
+    task_definition = unit.task_definitions.first
+    task_definition.similarity_language = 'java; touch /tmp/injected'
+    task_definition.plagiarism_warn_pct = 50
+
+    assert_raises(ArgumentError) do
+      unit.send(:run_jplag_on_done_files, task_definition, Rails.root.join('tmp/jplag'), [], 'report')
+    end
+  end
+
   def app
     Rails.application
   end
