@@ -117,6 +117,18 @@ class TaskDefinitionsTest < ActiveSupport::TestCase
     assert last_response_body.key?('error')
   end
 
+  def test_update_rejects_unsupported_similarity_language
+    unit = FactoryBot.create(:unit, task_count: 1)
+    task_definition = unit.task_definitions.first
+    add_auth_header_for(user: unit.main_convenor_user)
+
+    put_json "/api/units/#{unit.id}/task_definitions/#{task_definition.id}",
+             { task_def: { similarity_language: 'java; touch /tmp/injected' } }
+
+    assert_equal 400, last_response.status, last_response_body
+    assert_nil task_definition.reload.similarity_language
+  end
+
   def test_post_tasksheet
     test_unit = Unit.first
     test_task_definition = TaskDefinition.first

@@ -60,6 +60,14 @@ def _validator_positive_int(value):
     return value
 
 
+ENV_END_RE = re.compile(r"\\(?=end\s*\{\s*(?:minted|markdown)\s*\})")
+
+
+def _guard_env_end(lines):
+    """Break minted and markdown end markers in notebook text."""
+    return [ENV_END_RE.sub("\\\u200b", line) for line in lines]
+
+
 def _process_plain_text(lines, config_options=None):
     """Wrap a series of lines around a verbatim indication."""
     if config_options is None:
@@ -83,7 +91,7 @@ def _process_plain_text(lines, config_options=None):
         else:
             lines = [line]
 
-        result.extend(lines)
+        result.extend(_guard_env_end(lines))
     result.extend(VERBATIM_END)
     return result
 
@@ -148,10 +156,10 @@ class ItemProcessor:
     # mimetype and list of functions to apply; order is important here as we want to
     # prioritize getting some mimetypes over others when multiple are present
     PROCESSORS = [
-        ('text/latex',),
         ('image/svg+xml', process_svg, include_graphics, listwrap),
         ('image/png', process_png, include_graphics, listwrap),
         ('text/plain', process_plain_text),
+        ('text/latex', process_plain_text),
     ]
 
 
@@ -191,15 +199,17 @@ class Notebook:
         if content['cell_type'] == 'code':
             begin, end = self._highlight_delimiters
             result.extend(begin)
-            result.extend(textwrap.fill(line[:1000] + ' [The rest of this line has been truncated by the system to improve readability.] ' * (len(line) > 1000), width=90, subsequent_indent='    ') for line in source)
+            result.extend(_guard_env_end(textwrap.fill(line[:1000] + ' [The rest of this line has been truncated by the system to improve readability.] ' * (len(line) > 1000), width=90, subsequent_indent='    ') for line in source))
             result.extend(end)
         elif content['cell_type'] == 'markdown':
             result.extend(MARKDOWN_BEGIN)
-            result.extend(line.replace('```markdown', '```md').strip() for line in source)
+            markdown_lines = _guard_env_end(line.replace('```markdown', '```md').strip() for line in source)
+            # This version has no managed notebook attachments, so image paths cannot be trusted.
+            result.extend(re.sub(r'!\[([^\]\n]*)\]\(([^)\n]*)\)', r'!\\[\1](\2)', line) for line in markdown_lines)
             result.extend(MARKDOWN_END)
         elif content['cell_type'] == 'raw':
             result.extend(VERBATIM_BEGIN)
-            result.extend(textwrap.fill(line[:1000] + ' [The rest of this line has been truncated by the system to improve readability.] ' * (len(line) > 1000), width=90, subsequent_indent='    ') for line in source)
+            result.extend(_guard_env_end(textwrap.fill(line[:1000] + ' [The rest of this line has been truncated by the system to improve readability.] ' * (len(line) > 1000), width=90, subsequent_indent='    ') for line in source))
             result.extend(VERBATIM_END)
         else:
             raise ValueError(
