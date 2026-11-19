@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [11.0.4](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.3...v11.0.4) (2026-11-19)
+
+
+### Bug Fixes
+
+* block path traversal in Overseer assessment ZIPs ([#745](https://github.com/b0ink/doubtfire-deploy/issues/745)) ([9c0b4e8](https://github.com/b0ink/doubtfire-deploy/commit/9c0b4e8037e0c105d18744e9285b6bc146f8e9f6))
+* build marking session test times in the app timezone ([f92ad61](https://github.com/b0ink/doubtfire-deploy/commit/f92ad61b0f6724dfd04c4b3a01994b1eab60e329))
+* include task restrictions in task definition csv import and export ([#757](https://github.com/b0ink/doubtfire-deploy/issues/757)) ([b698cd0](https://github.com/b0ink/doubtfire-deploy/commit/b698cd03892a157fd3db43ee53232a8e77edfee8))
+* parse pdf generator process limit as an integer ([cca5618](https://github.com/b0ink/doubtfire-deploy/commit/cca56188c48370bda10b0aafae45bf126f4026dd))
+* reduce redundant queries in moderation feedback refresh job ([#755](https://github.com/b0ink/doubtfire-deploy/issues/755)) ([ae0cab9](https://github.com/b0ink/doubtfire-deploy/commit/ae0cab93071db4b3216ecd1bf631c7e80878b4c2))
+* unit rollover missing content site ([#754](https://github.com/b0ink/doubtfire-deploy/issues/754)) ([9d1522d](https://github.com/b0ink/doubtfire-deploy/commit/9d1522db92e1dcda0c150da3b26610940ed9d510))
+
 ### [11.0.3](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.2...v11.0.3) (2026-11-02)
 
 
