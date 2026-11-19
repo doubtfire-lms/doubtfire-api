@@ -1026,7 +1026,7 @@ class TasksApiTest < ActiveSupport::TestCase
                                 })
 
     project = unit.active_projects.first
-    top_grade = unit.grade_definitions.map { |definition| definition['value'] }.max
+    top_grade = GradeHelper::HD_VALUE
 
     add_auth_header_for(user: project.student)
     put "/api/projects/#{project.id}/task_def_id/#{td.id}", { grade: top_grade }
