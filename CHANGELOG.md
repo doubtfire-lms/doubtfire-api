@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.1.0-20](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-19...v11.1.0-20) (2026-11-19)
+
+
+### Features
+
+* prevent submissions until specified date ([#748](https://github.com/b0ink/doubtfire-deploy/issues/748)) ([0364fc3](https://github.com/b0ink/doubtfire-deploy/commit/0364fc3671bdd19f54db23eaadfbdbe142ea3365))
+
+
+### Bug Fixes
+
+* allow main convenors to manage lms ([2562c71](https://github.com/b0ink/doubtfire-deploy/commit/2562c710033de1c41b2572dc006b95fcd244eacc))
+* wait for new submission files before PDF conversion ([#767](https://github.com/b0ink/doubtfire-deploy/issues/767)) ([0d98999](https://github.com/b0ink/doubtfire-deploy/commit/0d9899901fc7fb46cd3b2326d3b6db0ba8015c8a))
+
 ## [11.1.0-19](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-18...v11.1.0-19) (2026-11-12)
 
 
