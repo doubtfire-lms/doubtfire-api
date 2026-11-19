@@ -27,7 +27,7 @@ class NotebookShellProbeTest < ActiveSupport::TestCase
   end
 
   def test_student_notebook_markdown_cannot_embed_files_outside_its_attachments
-    FileUtils.cp('test_files/submissions/Deakin_Logo.jpeg', OUTSIDE_IMAGE_PATH)
+    FileUtils.cp(Rails.root.join('test_files/submissions/Deakin_Logo.jpeg'), OUTSIDE_IMAGE_PATH)
     unit = FactoryBot.create(:unit, student_count: 1, task_count: 0)
     task = submit_notebook(unit, 'test_files/submissions/notebook_image_probe.ipynb')
 
