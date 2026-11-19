@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [10.0.4](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.3...v10.0.4) (2026-11-19)
+
+
+### Bug Fixes
+
+* allow students to submit tasks locked to a tutorial stream ([ae6144a](https://github.com/b0ink/doubtfire-deploy/commit/ae6144acf39e79a05fb061d87622e723f6732210))
+* backport security fixes to 10.0.x ([2bf48bc](https://github.com/b0ink/doubtfire-deploy/commit/2bf48bc13aa4c63162965d7f36ee6683df219935))
+* backport security fixes to 10.0.x ([#774](https://github.com/b0ink/doubtfire-deploy/issues/774)) ([4833f3b](https://github.com/b0ink/doubtfire-deploy/commit/4833f3b37cc150e410f684060deaa72560ff5fd4))
+* prioritise unit staff role for owned projects ([524ac45](https://github.com/b0ink/doubtfire-deploy/commit/524ac457912144e8bb36d1dedea53c4ae180daff))
+* use jemalloc in 10.x production images ([b98bf3e](https://github.com/b0ink/doubtfire-deploy/commit/b98bf3efac5e08b62bf1a01b520c694d32493ae9))
+* use legacy hd value ([2eb7b48](https://github.com/b0ink/doubtfire-deploy/commit/2eb7b48cdd5e8d81413e8244612a3297dc3b1612))
+
 ### [10.0.3](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.2...v10.0.3) (2026-09-02)
 
 ### [10.0.2](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.1...v10.0.2) (2026-09-02)
