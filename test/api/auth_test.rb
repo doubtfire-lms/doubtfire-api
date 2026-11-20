@@ -110,6 +110,30 @@ class AuthTest < ActiveSupport::TestCase
     assert_match(/username=#{User.first.username};/, last_response.cookies['username'].to_s, 'Expect username to be set')
   end
 
+  def test_student_login_cannot_issue_admin_refresh_cookie
+    student = User.find_by!(username: 'astudent')
+    admin = User.find_by!(username: 'aadmin')
+
+    header 'Username', admin.username
+    post_json '/api/auth.json', username: student.username, password: 'password', remember: true
+
+    assert_equal 201, last_response.status
+    assert_equal student.username, last_response_body.dig('user', 'username')
+
+    cookie_username = last_response.cookies['username'].to_s[/username=([^;]+)/, 1]
+    cookie_token = last_response.cookies['refresh_token'].to_s[/refresh_token=([^;]+)/, 1]
+    assert cookie_username.present?
+    assert cookie_token.present?
+
+    header 'Username', nil
+    set_cookie "username=#{cookie_username}"
+    set_cookie "refresh_token=#{cookie_token}"
+    post_json '/api/auth/access-token', delete_auth_token: false
+
+    assert_equal 201, last_response.status
+    assert_equal student.username, last_response_body.dig('user', 'username')
+  end
+
   # Signing in again shortly before the refresh token expires must issue a new one, rather than
   # handing back the old cookie that will expire within hours.
   def test_auth_post_rotates_refresh_token_near_expiry

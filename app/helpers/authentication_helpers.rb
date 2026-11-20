@@ -253,19 +253,16 @@ module AuthenticationHelpers
     Doubtfire::Application.config.auth_method == :database
   end
 
-  # rubocop:disable Naming/AccessorMethodName
-  def set_refresh_cookie_in_response(remember)
-    # rubocop:enable Naming/AccessorMethodName
-
+  def set_refresh_cookie_in_response(remember, user = nil)
     if remember
       # Reuse a recent refresh token, but rotate it once it is past 75% of its lifetime (or
       # expired) so that signing in again always yields a cookie with most of its life left.
-      token = current_user.generate_authentication_token!(token_type: :refresh_token, force_new: false)
+      token = user.generate_authentication_token!(token_type: :refresh_token, force_new: false)
 
       domain = Doubtfire::Application.config.institution[:cookie_domain]
 
       cookies[:username] = {
-        value: current_user.username,
+        value: user.username,
         expires: token.auth_token_expiry,
         domain: domain,
         path: '/api/auth',
