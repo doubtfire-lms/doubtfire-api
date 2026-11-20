@@ -107,8 +107,7 @@ No Tutor % Supervisor's Name
 \fancyhead[R]{ <%= lesc @task.upload_requirements[idx]['name'] %>  }
 
   <% if file[:type] == 'image' %>
-\graphicspath{ {<%= @base_path %>} }
-\includegraphics[width=\textwidth]{<%= File.basename(file[:path]) %>}
+\includegraphics[width=\textwidth]{<%= file[:latex_path] %>}
   <% end %>
 
   <%
@@ -121,19 +120,19 @@ No Tutor % Supervisor's Name
   This file has additional line breaks applied by <%= @doubtfire_product_name %> because they contain lines longer than the configured limit. Lines over 1000 characters long have been truncated to limit PDF page count. The orginal submission can be retrieved via the "Download Uploaded Files" function.
 \end{tcolorbox}
 <%      end # if truncated %>
-\inputminted[breaklines,linenos,breakanywhere,tabsize=4]{<%= pygments_lang %>}{<%= file[:path] %>}
+\inputminted[breaklines,linenos,breakanywhere,tabsize=4]{<%= pygments_lang %>}{<%= file[:latex_path] %>}
 <%    else # is ipynb %>
-\jupynotex{<%= file[:path] %>}
+\jupynotex{<%= file[:latex_path] %>}
 <%
       end
     end
 
     if file[:type] == 'document' %>
 % add document paths to document_list to generate lua calls to newpax later
-    <% document_list.append(file[:path]) unless !@include_pax %>
+    <% document_list.append(file[:latex_path]) if @include_pax %>
     <%
-    for page_idx in 1..FileHelper.pages_in_pdf(file[:path]) do %>
-\includepdf[pages={<%= page_idx %>-<%= page_idx %>},fitpaper]{<%= file[:path] %>}
+    for page_idx in 1..FileHelper.pages_in_pdf(latex_host_path(file[:latex_path])) do %>
+\includepdf[pages={<%= page_idx %>-<%= page_idx %>},fitpaper]{<%= file[:latex_path] %>}
     <% end # end for  %>
   <% end # end if  %>
   <% if %w[zip archive].include?(file[:type]) %>

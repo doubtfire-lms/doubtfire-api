@@ -34,6 +34,7 @@ class Task < ApplicationRecord
       :get_discussion,
       :make_discussion_reply,
       :request_scorm_extension,
+      :request_submission_access,
       # :request_extension -- depends on settings in unit. See specific_permission_hash method
       # :make_scorm_attempt -- depends on task def settings. See specific_permission_hash method
     ]
@@ -51,6 +52,7 @@ class Task < ApplicationRecord
       :delete_discussion,
       :get_discussion,
       :assess_extension,
+      :assess_submission_access,
       :assess_scorm_extension,
       :request_extension,
       :request_scorm_extension
@@ -66,6 +68,7 @@ class Task < ApplicationRecord
       :delete_plagiarism,
       :get_discussion,
       :assess_extension,
+      :assess_submission_access,
       :assess_scorm_extension,
       :request_extension,
       :request_scorm_extension
@@ -153,6 +156,7 @@ class Task < ApplicationRecord
   has_many :tii_submissions, dependent: :destroy
   has_many :test_attempts, dependent: :destroy
   has_many :session_activities, dependent: :destroy
+  has_many :notifications, dependent: :destroy
 
   delegate :unit, to: :project
   delegate :student, to: :project
@@ -444,6 +448,56 @@ class Task < ApplicationRecord
     end
   end
 
+  # Submission access is granted once a tutor has approved a request.
+  def submission_access_granted?
+    comments.where(type: 'SubmissionComment', submission_granted: true)
+            .where.not(submission_assessed_at: nil).exists?
+  end
+
+  # Submissions open on the configured date, or earlier with tutor approval.
+  def submission_open?
+    opens_on = task_definition.submission_opens_on
+    opens_on.nil? || Date.current >= opens_on || submission_access_granted?
+  end
+
+  # Check eligibility before creating a request.
+  def can_apply_for_submission_access?
+    submission_access_request_error.nil?
+  end
+
+  def submission_not_open_error
+    return nil if submission_open?
+
+    opens_on = task_definition.submission_opens_on
+    "Submissions open on #{opens_on.strftime('%d %b %Y')}. Request submission access to submit early."
+  end
+
+  # Explain why the student cannot apply for early submission access.
+  def submission_access_request_error
+    return 'Only teaching staff can submit this task.' if task_definition.staff_managed_task
+    prerequisite_error = unmet_prerequisite_error
+    return prerequisite_error if prerequisite_error
+    return 'Submissions are already open for this task.' if submission_open?
+    if comments.where(type: 'SubmissionComment', submission_assessed_at: nil).exists?
+      return 'A submission access request is already awaiting assessment.'
+    end
+
+    nil
+  end
+
+  # Applying for submission access will create a submission comment
+  def apply_for_submission_access(user, text)
+    submission = SubmissionComment.create
+    submission.task = self
+    submission.user = user
+    submission.content_type = :submission
+    submission.comment = text
+    submission.recipient = tutor
+    submission.save!
+
+    submission
+  end
+
   def due_date
     return target_date if extensions == 0
 
@@ -566,13 +620,10 @@ class Task < ApplicationRecord
 
   def unmet_prerequisite_error
     task_definition.task_prerequisites.each do |prerequisite|
+      next if prerequisite.met_for?(project)
+
       prereq_td = prerequisite.prerequisite
       minimum_status = TaskStatus.find(prerequisite.task_status_id)
-      prereq_task = project.task_for_task_definition(prereq_td)
-
-      next if prereq_task.ready_or_complete? &&
-              PREREQUISITE_STATUS_LEVELS[prereq_task.status] >= PREREQUISITE_STATUS_LEVELS[minimum_status.status_key]
-
       verb = case minimum_status
              when TaskStatus.complete then 'completed'
              when TaskStatus.discuss then 'discussed'
@@ -1474,8 +1525,7 @@ class Task < ApplicationRecord
     File.join(in_dir, result) unless result.nil?
   end
 
-  def in_process_files_for_task(is_retry)
-    magic = FileMagic.new(FileMagic::MAGIC_MIME)
+  def in_process_files_for_task(_is_retry)
     in_process_dir = student_work_dir(:in_process, false)
     return [] unless Dir.exist? in_process_dir
 
@@ -1494,16 +1544,7 @@ class Task < ApplicationRecord
         logger.error "Error processing task #{log_details} - missing file #{file_req}"
         raise "File `#{file_req['name']}` missing from submission."
       else
-        truncated = false
-
-        if file_req['type'] == 'code'
-          FileHelper.ensure_utf8_code(output_filename, is_retry)
-          extension = File.extname(output_filename)[1..-1]
-          unless extension.eql?("ipynb")
-            truncated = FileHelper.line_wrap(output_filename)
-          end
-        end
-        result << { path: output_filename, type: file_req['type'], truncated: truncated }
+        result << { path: output_filename, type: file_req['type'], truncated: false }
 
         idx += 1 # next file index
       end
@@ -1518,22 +1559,22 @@ class Task < ApplicationRecord
     attr_accessor :task
     attr_accessor :submission_date
     attr_accessor :files
-    attr_accessor :base_path
     attr_accessor :image_path
     attr_accessor :include_pax
+    attr_accessor :is_retry
     attr_accessor :submitted_files_url
 
     def init(task, is_retry)
       @task = task
       @submission_date = task.submission_date || task.file_uploaded_at || task.task_submissions.maximum(:submission_time)
       @files = task.in_process_files_for_task(is_retry)
-      @base_path = task.student_work_dir(:in_process, false)
-      @image_path = Rails.root.join('public/assets/images')
+      @image_path = LatexHelper::LATEX_ASSET_IMAGE_PATH
       @institution_name = Doubtfire::Application.config.institution[:name]
       @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
       @include_pax = !is_retry
+      @is_retry = is_retry
       @work_id = FileHelper.sanitized_path(
-        "task-#{Time.current.strftime('%Y%m%d-%H%M')}-#{task.unit.code}-#{task.project.student.username}-#{task.task_definition.abbreviation}-#{task.id}-#{Process.pid}#{'-retry' if is_retry}"
+        "task-#{Time.current.strftime('%Y%m%d-%H%M')}-#{task.unit.code}-#{task.project.student.username}-#{task.task_definition.abbreviation}-#{task.id}-#{Process.pid}#{'-retry' if is_retry}-#{SecureRandom.hex(12)}"
       )
       host = Doubtfire::Application.config.institution[:host].to_s
       host = "http://#{host}" unless host.match?(%r{\Ahttps?://})
@@ -1542,15 +1583,22 @@ class Task < ApplicationRecord
     end
 
     def make_pdf
-      logger.debug "Rendering PDF for a task, preprocessing attachments."
-      @files.each do |f|
-        if f[:type] == "document"
-          logger.debug "Running QPDF on #{f[:path]} before rendering to repair any potential broken files."
-          FileHelper.qpdf(f[:path])
+      logger.debug 'Rendering PDF for a task, staging attachments.'
+      generate_pdf(template: '/task/task_pdf') do
+        @files.each do |file|
+          next unless %w[image code document].include?(file[:type])
+
+          file[:latex_path] = stage_latex_file(file[:path])
+          staged_path = latex_host_path(file[:latex_path])
+          if file[:type] == 'document'
+            logger.debug "Running QPDF on staged file #{staged_path} before rendering."
+            FileHelper.qpdf(staged_path)
+          elsif file[:type] == 'code'
+            FileHelper.ensure_utf8_code(staged_path, @is_retry)
+            file[:truncated] = FileHelper.line_wrap(staged_path) unless File.extname(file[:path]) == '.ipynb'
+          end
         end
       end
-      logger.debug 'Preprocessing complete, rendering file.'
-      generate_pdf(template: '/task/task_pdf')
     end
   end
 

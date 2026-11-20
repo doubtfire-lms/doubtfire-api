@@ -57,7 +57,7 @@ module D2lIntegrationApi
         error!({ error: 'D2L details not found' }, 404)
       end
 
-      d2l.destroy if d2l.present?
+      d2l.presence&.destroy
       status 204
     end
 

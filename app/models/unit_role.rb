@@ -174,17 +174,23 @@ class UnitRole < ApplicationRecord
                 .where(content_type: :discussed_in_class)
 
     data[:weekly_tasks_discussed] = data[:total_tasks_discussed]
-                .where("task_comments.created_at > :start", start: Time.zone.now - 7.days)
+                .where(
+                  "task_comments.created_at >= :start AND task_comments.created_at < :end",
+                  start: summary_stats[:week_start],
+                  end: summary_stats[:week_end]
+                )
 
     data[:received_comments] = total_comments
-      .where("recipient_id = :staff_id AND task_comments.created_at > :start",
+      .where("recipient_id = :staff_id AND task_comments.created_at >= :start AND task_comments.created_at < :end",
              staff_id: data[:staff].id,
-             start: Time.zone.now - 7.days)
+             start: summary_stats[:week_start],
+             end: summary_stats[:week_end])
 
     data[:sent_comments] = total_comments
-      .where("task_comments.user_id = :staff_id AND task_comments.created_at > :start",
+      .where("task_comments.user_id = :staff_id AND task_comments.created_at >= :start AND task_comments.created_at < :end",
              staff_id: data[:staff].id,
-             start: Time.zone.now - 7.days)
+             start: summary_stats[:week_start],
+             end: summary_stats[:week_end])
 
     data[:total_comments] = total_comments
 
@@ -200,14 +206,11 @@ class UnitRole < ApplicationRecord
     row.replace(data)
   end
 
-  def send_weekly_status_email(summary_stats)
-    return unless user.receive_feedback_notifications
+  def create_weekly_summary_notification(summary_stats)
+    return unless NotificationSetting.for(user).weekly_summary_for?(unit)
 
-    begin
-      NotificationsMailer.weekly_staff_summary(self, summary_stats).deliver_now
-    rescue StandardError => e
-      Rails.logger.error "Failed to send weekly staff summary email to #{user.email} - #{e.message}"
-    end
+    data = WeeklySummaryNotificationBuilder.for_staff(self, summary_stats)
+    Notification.create_weekly_summary(recipient: user, unit: unit, data: data)
   end
 
   def ensure_valid_user_for_role

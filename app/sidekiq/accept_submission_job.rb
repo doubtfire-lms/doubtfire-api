@@ -2,11 +2,36 @@ class AcceptSubmissionJob
   include Sidekiq::Job
   include LogHelper
 
+  class SubmissionFilesNotVisible < StandardError; end
+
+  SUBMISSION_VISIBILITY_RETRIES = 12
+  SUBMISSION_VISIBILITY_RETRY_SECONDS = 5
+
   sidekiq_options queue: 'default',
                   lock: :until_executed,
                   lock_args_method: ->(args) { [args.first] },
                   on_conflict: :reject,
-                  retry: false
+                  retry: SUBMISSION_VISIBILITY_RETRIES
+
+  sidekiq_retry_in do |_count, exception|
+    SUBMISSION_VISIBILITY_RETRY_SECONDS if exception.is_a?(SubmissionFilesNotVisible)
+  end
+
+  sidekiq_retries_exhausted do |job, exception|
+    task_id = job['args'].first
+    message = "Submission files for task #{task_id} remained invisible after #{SUBMISSION_VISIBILITY_RETRIES} retries"
+    Sidekiq.logger.error "#{message}: #{exception.message}"
+
+    if Doubtfire::Application.config.email_errors_to.present?
+      begin
+        ErrorLogMailer.error_message('Accept Submission', message, exception).deliver_now
+      rescue StandardError => e
+        Sidekiq.logger.error "Failed to email submission visibility error for task #{task_id}: #{e.message}"
+      end
+    end
+
+    Sentry.capture_exception(exception, extra: { task_id: task_id }) if defined?(Sentry)
+  end
 
   def perform(task_id, user_id, accepted_tii_eula, test_submission)
     begin
@@ -17,17 +42,19 @@ class AcceptSubmissionJob
       return
     end
 
+    logger.info "Accepting submission for task #{task.id} by user #{user.id}"
+    ensure_submission_files_visible!(task)
+
     begin
-      logger.info "Accepting submission for task #{task.id} by user #{user.id}"
       # Convert submission to PDF
       raise "Failed to convert submission to PDF for task #{task.id}" unless task.convert_submission_to_pdf(log_to_stdout: true)
     rescue StandardError => e
       logger.error e
 
-      # Send email to student if task pdf failed
-      if task.project.student.receive_task_notifications
+      Notification.create_pdf_failure(task)
+      if NotificationSetting.for(task.project.student).delivers?(task.unit, 'pdf_generation_failed', :email)
         begin
-          PortfolioEvidenceMailer.task_pdf_failed(task.project, [task]).deliver
+          PortfolioEvidenceMailer.task_pdf_failed(task.project, [task]).deliver_now
         rescue StandardError => mail_error
           logger.error "Failed to send task pdf failed email for project #{task.project.id}!\n#{mail_error.message}"
         end
@@ -54,6 +81,8 @@ class AcceptSubmissionJob
       return
     end
 
+    Notification.resolve_task_kinds(task, 'pdf_generation_failed')
+
     # Mark this task for moderation
     tutor_user = task.project.tutor_for(task.task_definition)
     if tutor_user && !test_submission
@@ -76,6 +105,9 @@ class AcceptSubmissionJob
     elsif task.overseer_enabled? || test_submission
       logger.error "Overseer assessment was not performed because task definition #{task.task_definition.id} has no submission history files configured"
     end
+  rescue SubmissionFilesNotVisible => e
+    logger.warn e.message
+    raise
   rescue StandardError => e # to raise error message to avoid unnecessary retry
     logger.error e
     if defined?(Sentry)
@@ -88,5 +120,21 @@ class AcceptSubmissionJob
       )
     end
     task.clear_in_process
+  end
+
+  def ensure_submission_files_visible!(task)
+    source_dir = File.join(Doubtfire::Application.config.student_work_dir, 'new', task.id.to_s)
+    files = Dir.children(source_dir).select do |name|
+      name.match?(/\A\d{3}-(?:cover|document|code|image|zip|archive)/) && File.file?(File.join(source_dir, name))
+    end
+    expected = task.task_definition.number_of_uploaded_files
+
+    if files.length != expected
+      raise SubmissionFilesNotVisible, "Submission files for task #{task.id} are not all visible (#{files.length}/#{expected})"
+    end
+
+    logger.info "New submission files for task #{task.id} are visible to Sidekiq"
+  rescue Errno::ENOENT
+    raise SubmissionFilesNotVisible, "Submission folder for task #{task.id} is not yet visible to Sidekiq"
   end
 end

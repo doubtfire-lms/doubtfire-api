@@ -1,0 +1,186 @@
+# frozen_string_literal: true
+
+# A user's notification settings: the one digest schedule they choose, and the
+# channel defaults every unit follows until it is customised.
+class NotificationSetting < ApplicationRecord
+  FREQUENCIES = %w[off hourly daily weekly].freeze
+  DIGEST_INTERVAL_HOURS = [1, 2, 3, 4, 6, 12].freeze
+  TIME_FORMAT = /\A(?:[01]\d|2[0-3]):[0-5]\d\z/
+  MINUTES_PER_DAY = 24 * 60
+
+  attribute :channels, :json
+
+  belongs_to :user
+
+  validates :channels, notification_channels: true
+  validates :digest_frequency, inclusion: { in: FREQUENCIES }
+  validates :digest_interval_hours, inclusion: { in: DIGEST_INTERVAL_HOURS }
+  validates :digest_start_time, format: { with: TIME_FORMAT }
+  validates :digest_end_time, format: { with: TIME_FORMAT }
+  validates :digest_time, format: { with: TIME_FORMAT }
+  validates :digest_weekday, inclusion: { in: 1..7 }
+  validate :digest_timezone_supported
+
+  before_validation :apply_defaults
+  before_save :refresh_next_digest_at, if: :schedule_changed?
+  after_commit :process_pending_notifications, if: :saved_change_to_digest_off?
+
+  scope :due, -> { where.not(digest_frequency: 'off').where(next_digest_at: ..Time.current) }
+
+  def self.for(user)
+    find_or_create_by!(user: user)
+  rescue ActiveRecord::RecordNotUnique
+    find_by!(user: user)
+  end
+
+  def self.default_channels
+    Notification::KINDS.index_with do |kind|
+      Notification::COMMUNICATION_KINDS.include?(kind) ? ['in_app'] : %w[in_app email]
+    end
+  end
+
+  def self.default_digest_timezone
+    configured_timezone = ENV.fetch('TZ', nil).presence
+    return configured_timezone if configured_timezone && ActiveSupport::TimeZone[configured_timezone].present?
+
+    Time.zone.tzinfo.name
+  end
+
+  def resolved_digest_timezone
+    user.notification_timezone
+  end
+
+  # The channels a unit delivers a kind on, honouring its override when it has
+  # one. A muted unit delivers nothing.
+  def channels_for_unit_id(unit_id, kind)
+    override = override_for(unit_id)
+    return [] if override&.muted
+    return ['in_app'] if Notification::COMMUNICATION_KINDS.include?(kind.to_s)
+
+    Array((override&.customised? ? override.channels : channels)[kind.to_s])
+  end
+
+  def delivers?(unit, kind, channel)
+    channels_for_unit_id(unit&.id, kind).include?(channel.to_s)
+  end
+
+  def weekly_summary_for?(unit)
+    channels_for_unit_id(unit&.id, 'weekly_summary').any?
+  end
+
+  # Notifications are always recorded so the digest has something to send, so the
+  # in-app list has to filter them out rather than rely on them never existing.
+  def shows_in_app?(unit_id, kind)
+    channels_for_unit_id(unit_id, kind).include?('in_app')
+  end
+
+  # Move the schedule on before a digest is delivered, so a delivery that raises
+  # cannot leave this setting due for the five minute poll to enqueue again on
+  # every cycle. Returns false when the slot has already been claimed, which is
+  # how a retry of the same digest avoids advancing the schedule a second time.
+  def claim_digest!(from: Time.current)
+    return false unless next_digest_at.nil? || next_digest_at <= from
+
+    update!(next_digest_at: next_occurrence(from))
+    true
+  end
+
+  def record_digest_sent!(at = Time.current)
+    update!(last_digest_at: at)
+  end
+
+  def next_occurrence(from = Time.current)
+    return nil if digest_frequency == 'off'
+
+    local_from = from.in_time_zone(digest_time_zone)
+    return next_hourly_occurrence(local_from) if digest_frequency == 'hourly'
+
+    hour, minute = digest_time.split(':').map(&:to_i)
+    date = local_from.to_date
+    date += (digest_weekday - date.cwday) % 7 if digest_frequency == 'weekly'
+
+    candidate = digest_time_zone.local(date.year, date.month, date.day, hour, minute)
+    candidate += digest_frequency == 'weekly' ? 1.week : 1.day if candidate <= local_from
+    candidate
+  end
+
+  private
+
+  def override_for(unit_id)
+    return nil if unit_id.nil?
+
+    @overrides_by_unit ||= user.notification_unit_overrides.index_by(&:unit_id)
+    @overrides_by_unit[unit_id]
+  end
+
+  def apply_defaults
+    self.channels = self.class.default_channels if channels.nil?
+    self.digest_timezone = resolved_digest_timezone
+  end
+
+  def refresh_next_digest_at
+    self.next_digest_at = next_occurrence(Time.current)
+  end
+
+  def schedule_changed?
+    next_digest_at.nil? ||
+      will_save_change_to_digest_frequency? ||
+      will_save_change_to_digest_interval_hours? ||
+      will_save_change_to_digest_start_time? ||
+      will_save_change_to_digest_end_time? ||
+      will_save_change_to_digest_time? ||
+      will_save_change_to_digest_timezone? ||
+      will_save_change_to_digest_weekday?
+  end
+
+  def saved_change_to_digest_off?
+    digest_frequency == 'off' && saved_change_to_digest_frequency?
+  end
+
+  # Slots run every interval from the start time until the end time, which may be
+  # after midnight, then pause until the next day's start. They are rebuilt from
+  # wall-clock times each day so job delays and daylight saving cannot shift them.
+  # Yesterday is checked for a window that runs past midnight.
+  def next_hourly_occurrence(from)
+    start_minutes = minutes_of_day(digest_start_time)
+    window = (minutes_of_day(digest_end_time) - start_minutes) % MINUTES_PER_DAY
+    # Matching start and end times mean all day.
+    window = MINUTES_PER_DAY - 1 if window.zero?
+
+    slots = (from.to_date.yesterday..from.to_date.tomorrow).flat_map do |date|
+      (0..window).step(digest_interval_hours * 60).map { |offset| local_slot(date, start_minutes + offset) }
+    end
+    slots.find { |slot| slot > from }
+  end
+
+  def local_slot(date, minutes)
+    date += minutes / MINUTES_PER_DAY
+    minutes %= MINUTES_PER_DAY
+    digest_time_zone.local(date.year, date.month, date.day, minutes / 60, minutes % 60)
+  end
+
+  def minutes_of_day(time)
+    hour, minute = time.split(':').map(&:to_i)
+    (hour * 60) + minute
+  end
+
+  def digest_time_zone
+    ActiveSupport::TimeZone[digest_timezone || resolved_digest_timezone]
+  end
+
+  def digest_timezone_supported
+    return if digest_timezone.present? && digest_time_zone.present?
+
+    errors.add(:digest_timezone, 'must be a valid timezone')
+  end
+
+  # Nothing is left waiting for a digest that will never run.
+  def process_pending_notifications
+    now = Time.current
+    # rubocop:disable Rails/SkipsModelValidations
+    user.received_notifications
+        .email_pending
+        .update_all(email_processed_at: now, updated_at: now)
+    # rubocop:enable Rails/SkipsModelValidations
+  end
+end

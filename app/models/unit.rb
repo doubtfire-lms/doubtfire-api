@@ -189,6 +189,8 @@ class Unit < ApplicationRecord
   has_many :communication_set_schedules, through: :communication_sets, class_name: 'CommunicationSetSchedule'
   has_many :unit_content_sites, dependent: :destroy
   has_many :unit_content_links, dependent: :destroy
+  has_many :notifications, dependent: :destroy
+  has_many :notification_unit_overrides, dependent: :destroy
 
   has_many :comments, through: :projects
   has_many :tasks, through: :projects
@@ -402,9 +404,10 @@ class Unit < ApplicationRecord
   end
 
   def queue_discuss_timeout_email(task, actor, type, expiry_date = nil)
-    return unless send_notifications
     return unless task.project.enrolled
-    return unless task.project.student.receive_feedback_notifications
+
+    kind = type == :approaching ? 'discuss_warning' : 'discuss_expired'
+    return unless NotificationSetting.for(task.project.student).delivers?(self, kind, :email)
 
     SendDiscussTimeoutEmailJob.perform_async(task.id, actor.id, type.to_s, expiry_date&.iso8601)
   end
@@ -776,8 +779,11 @@ class Unit < ApplicationRecord
     end
 
     # Duplicate content sites and their links (grade, task sheet and task resource pages)
-    site_mapping = unit_content_sites.to_h { |site| [site.id, site.copy_to(new_unit)] }
+    # Skip sites whose archive is missing on disk, as task sheets and resources do
+    site_mapping = unit_content_sites.select { |site| File.exist?(site.archive_path.to_s) }.to_h { |site| [site.id, site.copy_to(new_unit)] }
     unit_content_links.each do |link|
+      next unless site_mapping.key?(link.unit_content_site_id)
+
       new_link = link.dup
       new_link.unit = new_unit
       new_link.unit_content_site = site_mapping.fetch(link.unit_content_site_id)
@@ -811,7 +817,7 @@ class Unit < ApplicationRecord
   end
 
   def self.for_user_admin(user)
-    if user.has_admin_capability?
+    if user.has_admin_capability? || user.observe_all_units?
       Unit.all
     elsif user.has_auditor_capability?
       # Limit range of units that the auditor has access to
@@ -2718,7 +2724,8 @@ class Unit < ApplicationRecord
         num_new_comments: t.number_unread,
         similarity_flag: t.similar_to_count > 0,
         pinned: t.pinned,
-        has_extensions: t.has_extensions
+        has_extensions: t.has_extensions,
+        has_submission_requests: t.has_submission_requests,
       }
     end
   end
@@ -2741,7 +2748,7 @@ class Unit < ApplicationRecord
                        .select('task_id', 'COUNT(*) AS similarity_count', 'SUM(flagged) AS flagged_count')
                        .group(:task_id)
                        .to_sql
-    result =  student_tasks.
+    result = student_tasks.
               joins(:task_status).
               joins("LEFT OUTER JOIN (#{tutorial_enrolment_subquery}) as sq ON sq.project_id = projects.id AND (sq.tutorial_stream_id = task_definitions.tutorial_stream_id OR sq.tutorial_stream_id IS NULL)").
               joins("LEFT JOIN unit_roles task_tutor_roles ON task_tutor_roles.id = COALESCE(sq.unit_role_id, #{main_convenor_id.to_i})").
@@ -2765,6 +2772,7 @@ class Unit < ApplicationRecord
                 'then COALESCE(task_similarity_stats.similarity_count, 1) else 0 end) as number_unread',
                 'COUNT(distinct task_pins.task_id) != 0 as pinned',
                 "SUM(case when task_comments.date_extension_assessed IS NULL AND task_comments.type = 'ExtensionComment' AND NOT task_comments.id IS NULL THEN 1 ELSE 0 END) > 0 as has_extensions",
+                "SUM(case when task_comments.submission_assessed_at IS NULL AND task_comments.type = 'SubmissionComment' AND NOT task_comments.id IS NULL THEN 1 ELSE 0 END) > 0 as has_submission_requests",
                 'project_id',
                 'tasks.id as task_id',
                 'task_definition_id',
@@ -2938,6 +2946,7 @@ class Unit < ApplicationRecord
                 '0 AS similar_to_count',
                 'false AS pinned',
                 'false AS has_extensions',
+                'false AS has_submission_requests',
                 'tasks.*'
           )
               .distinct
@@ -3403,20 +3412,6 @@ class Unit < ApplicationRecord
         done[task.project] = [] if done[task.project].nil?
         done[task.project] << task
       end
-    end
-
-    # send emails...
-    begin
-      done.each do |project, tasks|
-        logger.info "Checking feedback email for project #{project.id}"
-        next unless project.enrolled
-        next unless project.student.receive_feedback_notifications
-
-        logger.info "Emailing feedback notification to #{project.student.name}"
-        PortfolioEvidenceMailer.task_feedback_ready(project, tasks).deliver
-      end
-    rescue => e
-      logger.error "Failed to send emails from feedback submission. Rescued with error: #{e.message}"
     end
 
     true
@@ -3885,9 +3880,14 @@ class Unit < ApplicationRecord
     repacked_zip.close! if defined?(repacked_zip) && repacked_zip.present?
   end
 
-  def send_weekly_status_emails(summary_stats)
-    return unless send_notifications
-    return unless within_last_teaching_date?
+  def create_weekly_summary_notifications(summary_stats, recipient_ids: nil)
+    return unless generate_weekly_summaries
+    return unless within_last_teaching_date?(summary_stats[:week_end])
+
+    summary_recipients = recipient_ids.presence
+    student_projects = summary_recipients ? active_projects.where(user_id: summary_recipients) : active_projects
+    staff_recipients = summary_recipients ? staff.where(user_id: summary_recipients) : staff
+    build_staff_summaries = staff_recipients.exists?
 
     summary_stats[:unit] = self
     summary_stats[:tutorials] = {}
@@ -3905,24 +3905,29 @@ class Unit < ApplicationRecord
 
     summary_stats[:unit_week_engagements] = task_engagements.where("task_engagements.engagement_time > :start AND task_engagements.engagement_time < :end", start: summary_stats[:week_start], end: summary_stats[:week_end]).count
 
-    days_to_end_of_unit = (end_date.to_date - DateTime.now).to_i
-    days_from_start_of_unit = (DateTime.now - start_date.to_date).to_i
+    summary_date = summary_stats[:week_end].to_date
+    days_to_end_of_unit = (end_date.to_date - summary_date).to_i
+    days_from_start_of_unit = (summary_date - start_date.to_date).to_i
 
     return if days_from_start_of_unit < 4 || days_to_end_of_unit < 0
 
-    staff.each do |ur|
-      summary_stats[:staff][ur.user] ||= {}
-      summary_stats[:staff][ur.user][:staff_engagements] ||= 0
-      summary_stats[:staff][ur.user][:tasks_awaiting_feedback_count] ||= 0
-      summary_stats[:staff][ur.user][:weekly_engagements_count] ||= 0
-      summary_stats[:staff][ur.user][:weekly_total_tasks_discussed] ||= 0
-      summary_stats[:staff][ur.user][:oldest_task_days] ||= 0
-      summary_stats[:revert][ur.user] = []
+    if build_staff_summaries
+      staff.each do |ur|
+        summary_stats[:staff][ur.user] ||= {}
+        summary_stats[:staff][ur.user][:staff_engagements] ||= 0
+        summary_stats[:staff][ur.user][:tasks_awaiting_feedback_count] ||= 0
+        summary_stats[:staff][ur.user][:weekly_engagements_count] ||= 0
+        summary_stats[:staff][ur.user][:weekly_total_tasks_discussed] ||= 0
+        summary_stats[:staff][ur.user][:oldest_task_days] ||= 0
+        summary_stats[:revert][ur.user] = []
+      end
     end
 
-    active_projects.each do |project|
-      project.send_weekly_status_email(summary_stats, days_from_start_of_unit > 28 && days_to_end_of_unit > 14)
+    student_projects.each do |project|
+      project.create_weekly_summary_notification(summary_stats, days_from_start_of_unit > 28 && days_to_end_of_unit > 14)
     end
+
+    return unless build_staff_summaries
 
     tutorial_streams.each do |tutorial_stream|
       summary_stats[:tutorial_streams][tutorial_stream] ||= {}
@@ -3960,8 +3965,8 @@ class Unit < ApplicationRecord
     # Group tutorials by tutor
     group_tutorials_by_tutor(summary_stats)
 
-    staff.each do |ur|
-        ur.send_weekly_status_email(summary_stats)
+    staff_recipients.each do |ur|
+        ur.create_weekly_summary_notification(summary_stats)
     end
 
     summary_stats[:staff] = {}

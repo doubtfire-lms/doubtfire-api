@@ -265,8 +265,8 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
         create(:marking_session,
                user: convenor,
                unit: unit,
-               start_time: date.to_time + rand(0..12).hours,
-               end_time: date.to_time + rand(13..23).hours,
+               start_time: date.in_time_zone + rand(0..12).hours,
+               end_time: date.in_time_zone + rand(13..23).hours,
                ip_address: '127.0.0.1')
       end
     end
@@ -411,8 +411,8 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
       current_time += 5.minutes
     end
 
-    start_time = thursday.to_time.change(hour: 17, min: 0) # 12:05pm
-    end_time   = thursday.to_time.change(hour: 18, min: 0) # 3:00pm
+    start_time = thursday.in_time_zone.change(hour: 17, min: 0) # 5:00pm
+    end_time   = thursday.in_time_zone.change(hour: 18, min: 0) # 6:00pm
 
     current_time = start_time
 

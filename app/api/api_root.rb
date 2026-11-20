@@ -59,6 +59,7 @@ class ApiRoot < Grape::API
   mount DiscussionCommentApi
   mount EngagementsApi
   mount ExtensionCommentsApi
+  mount SubmissionCommentsApi
   mount LmsIntegrationApi
   mount ScormExtensionCommentsApi
   mount GroupSetsApi
@@ -97,6 +98,7 @@ class ApiRoot < Grape::API
   mount UnitContentsApi
   mount UnitsApi
   mount TutorNotesApi
+  mount NotificationsApi
 
   mount D2lIntegrationApi::D2lApi
   mount D2lIntegrationApi::OauthPublicApi
@@ -120,6 +122,7 @@ class ApiRoot < Grape::API
   AuthenticationHelpers.add_auth_to DiscussionCommentApi
   AuthenticationHelpers.add_auth_to EngagementsApi
   AuthenticationHelpers.add_auth_to ExtensionCommentsApi
+  AuthenticationHelpers.add_auth_to SubmissionCommentsApi
   AuthenticationHelpers.add_auth_to LmsIntegrationApi
   AuthenticationHelpers.add_auth_to ScormExtensionCommentsApi
   AuthenticationHelpers.add_auth_to GroupSetsApi
@@ -161,6 +164,7 @@ class ApiRoot < Grape::API
   AuthenticationHelpers.add_auth_to DiscussionPromptsApi
   AuthenticationHelpers.add_auth_to OverseerStepsApi
   AuthenticationHelpers.add_auth_to TutorNotesApi
+  AuthenticationHelpers.add_auth_to NotificationsApi
 
   add_swagger_documentation \
     base_path: nil,

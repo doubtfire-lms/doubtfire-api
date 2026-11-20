@@ -685,14 +685,17 @@ class TaskTest < ActiveSupport::TestCase
     assert File.exist? path
     assert File.exist? task.final_pdf_path
 
-    # Test if latex math was rendered properly
     reader = PDF::Reader.new(task.final_pdf_path)
 
-    # PDF-reader incorrectly parses "weight (kg) / height (m)^2" as "weight (2g) / height (m)", misplacing the ^2
-    # Detecting "height" and "weight" confirms correct LaTeX rendering
-    assert reader.pages.last.text.include?("BMI: bmi ="), reader.pages.last.text
-    assert reader.pages.last.text.include?("weight")
-    assert reader.pages.last.text.include?("height (m)")
+    # Markdown math is no longer rendered (texMathDollars is off to block TeX injection), so it shows as literal text
+    assert reader.pages.last.text.include?('BMI: $\text{bmi}='), reader.pages.last.text
+
+    # # Test if latex math was rendered properly
+    # # PDF-reader incorrectly parses "weight (kg) / height (m)^2" as "weight (2g) / height (m)", misplacing the ^2
+    # # Detecting "height" and "weight" confirms correct LaTeX rendering
+    # assert reader.pages.last.text.include?("BMI: bmi ="), reader.pages.last.text
+    # assert reader.pages.last.text.include?("weight")
+    # assert reader.pages.last.text.include?("height (m)")
 
     # ensure the notice is not included when the notebook doesn't have long lines source code cells
     # and no errors
@@ -1111,7 +1114,7 @@ class TaskTest < ActiveSupport::TestCase
     unit_code = task.unit.code.gsub(/[^A-Za-z0-9_-]/, '_')
     username = task.project.student.username.gsub(/[^A-Za-z0-9_-]/, '_')
     abbreviation = task.task_definition.abbreviation.gsub(/[^A-Za-z0-9_-]/, '_')
-    assert_match(/\A\d+-#{Regexp.escape(unit_code)}-task-#{Regexp.escape(username)}-#{Regexp.escape(abbreviation)}-[0-9a-f-]{36}\z/, conversion_work_id)
+    assert_match(/\A\d+-#{Regexp.escape(unit_code)}-task-#{Regexp.escape(username)}-#{Regexp.escape(abbreviation)}-[0-9a-f]{24}\z/, conversion_work_id)
     assert FileHelper.validate_pdf(task.final_pdf_path)[:valid]
 
     Zip::File.open(task.zip_file_path_for_done_task) do |archive|

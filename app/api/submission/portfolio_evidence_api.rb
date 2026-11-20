@@ -43,6 +43,11 @@ module Submission
 
       task = project.task_for_task_definition(task_definition)
 
+      # Check if user is allowed to submit
+      if !authorise?(current_user, project, :assess) && (opening_error = task.submission_not_open_error)
+        error!({ error: opening_error }, 403)
+      end
+
       if task.group_task? && !task.group
         error!({ error: "This task requires a group submission. Ensure you are in a group for the unit's #{task_definition.group_set.name}" }, 403)
       end
@@ -190,7 +195,7 @@ module Submission
       task = project.task_for_task_definition(task_definition)
       history = task&.related_submission_histories&.find_by(id: params[:history_id])
       error!({ error: 'Submission history was not found' }, 404) unless history
-      error!({ error: 'Submission history files are not available' }, 404) unless history.has_submission_files?
+      error!({ error: 'Submission history files are not available' }, 404) unless history.submission_files?
 
       filename = "#{project.student.username}-#{task_definition.abbreviation}-#{history.submission_timestamp}.zip"
 
@@ -307,7 +312,7 @@ module Submission
         error!({ error: "No submission history found for timestamp '#{params[:timestamp]}'" }, 404)
       end
 
-      unless history.has_submission_files?
+      unless history.submission_files?
         error!({ error: "No submission files are available for timestamp '#{params[:timestamp]}'" }, 404)
       end
 

@@ -1,4 +1,4 @@
-FROM ruby:3.4-bookworm
+FROM ruby:3.4.13-bookworm
 
 # DEBIAN_FRONTEND=noninteractive is required to install tzdata in non interactive way
 ENV DEBIAN_FRONTEND=noninteractive

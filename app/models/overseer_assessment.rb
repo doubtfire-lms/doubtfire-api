@@ -6,6 +6,7 @@ class OverseerAssessment < ApplicationRecord
   has_one :project, through: :task
   has_many :assessment_comments, as: :commentable, dependent: :destroy
   has_many :overseer_step_results, dependent: :destroy
+  has_many :notifications, dependent: :destroy
 
   validates :status,                  presence: true
   validates :task_id,                 presence: true
@@ -14,6 +15,10 @@ class OverseerAssessment < ApplicationRecord
   validates :submission_timestamp, uniqueness: { scope: :task_id }
   validates :submission_history_id, uniqueness: true
   validate :submission_history_matches_task
+
+  after_update_commit do
+    Notification.create_for_overseer(self) if saved_change_to_status? && failed?
+  end
 
   enum :status, { pre_queued: 0, passed: 1, failed: 2 }
 
@@ -43,7 +48,6 @@ class OverseerAssessment < ApplicationRecord
          AND student_read_cursor.user_id = projects.user_id
       SQL
       .where(status: statuses[:failed], student_notified_at: nil)
-      .where(users: { receive_task_notifications: true })
       .where('overseer_assessments.updated_at <= ?', notification_cutoff)
       .where(
         'student_read_cursor.last_read_comment_id IS NULL ' \
@@ -109,7 +113,7 @@ class OverseerAssessment < ApplicationRecord
     )
   end
 
-  delegate :has_submission_files?,
+  delegate :submission_files?,
            :submission_zip_file_name,
            :output_path,
            to: :submission_history
@@ -119,7 +123,7 @@ class OverseerAssessment < ApplicationRecord
   end
 
   def add_assessment_comment(text = 'Automated Assessment Started')
-    text.strip!
+    text = text.strip
     return nil if text.blank?
 
     tutor = project.tutor_for(task.task_definition)
@@ -139,7 +143,7 @@ class OverseerAssessment < ApplicationRecord
   end
 
   def update_assessment_comment(text)
-    text.strip!
+    text = text.strip
     return nil if text.blank?
 
     assessment_comment = assessment_comments.last
@@ -163,7 +167,7 @@ class OverseerAssessment < ApplicationRecord
     # TODO: Check status and do not queue if already queued
     puts "********* Sending #{self.id} to overseer"
 
-    unless has_submission_files?
+    unless submission_files?
       puts "ERROR: Attempting to send submission to Overseer without associated submission files - OverseerAssessment #{id}"
       return { error: "Your submission does not include any files to be processed." }
     end
@@ -188,7 +192,7 @@ class OverseerAssessment < ApplicationRecord
       return { error: "This assessment is no longer setup for automated feedback. Automated feedback is turned off at either the unit or task level, or the task does not have the scripts needed to automate assessment." }
     end
 
-    unless has_submission_files?
+    unless submission_files?
       puts "ERROR: Student submission history zip file doesn't exist #{submission_zip_file_name}. Unable to send - OverseerAssessment #{id}"
       return { error: "We no longer have the files associated with this submission. Please test a later submission, or upload your work again." }
     end

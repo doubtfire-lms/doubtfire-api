@@ -1,3 +1,4 @@
+<%= render 'shared/email_preheader', text: "Discuss #{@task.task_definition.abbreviation} with your tutor by #{@deadline} to avoid Fix and Resubmit. Open #{@doubtfire_product_name} to view the task." %>
 <h1><%= @unit.name %> - Discussion Deadline Approaching</h1>
 <p class="subtext"><%= @task.task_definition.abbreviation %> - <%= @task.task_definition.name %></p>
 

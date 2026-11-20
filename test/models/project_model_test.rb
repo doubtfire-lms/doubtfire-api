@@ -5,6 +5,46 @@ require "test_helper"
 class ProjectModelTest < ActiveSupport::TestCase
   include TestHelpers::TestFileHelper
 
+  def test_top_tasks_excludes_tasks_until_prerequisites_are_met
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0)
+    project = FactoryBot.create(:project, unit: unit, target_grade: 0)
+    prerequisite_definition = FactoryBot.create(
+      :task_definition,
+      unit: unit,
+      abbreviation: 'PREREQ',
+      target_grade: 0,
+      start_date: Time.zone.today - 1.day,
+      target_date: Time.zone.today + 3.days
+    )
+    dependent_definition = FactoryBot.create(
+      :task_definition,
+      unit: unit,
+      abbreviation: 'DEPENDENT',
+      target_grade: 0,
+      start_date: Time.zone.today - 1.day,
+      target_date: Time.zone.today + 3.days
+    )
+    prerequisite = TaskPrerequisite.create!(
+      task_definition: dependent_definition,
+      prerequisite: prerequisite_definition,
+      task_status_id: TaskStatus.complete.id
+    )
+
+    assert_not_includes project.top_tasks.map { |entry| entry[:task_definition] }, dependent_definition
+    assert_not project.tasks.exists?(task_definition: prerequisite_definition)
+
+    prerequisite_task = project.task_for_task_definition(prerequisite_definition)
+    prerequisite_task.update!(task_status: TaskStatus.assess_in_portfolio)
+    assert_not_includes project.top_tasks.map { |entry| entry[:task_definition] }, dependent_definition
+
+    prerequisite.update!(task_status_id: TaskStatus.ready_for_feedback.id)
+    assert_includes project.top_tasks.map { |entry| entry[:task_definition] }, dependent_definition
+
+    prerequisite.update!(task_status_id: TaskStatus.complete.id)
+    prerequisite_task.update!(task_status: TaskStatus.complete)
+    assert_includes project.top_tasks.map { |entry| entry[:task_definition] }, dependent_definition
+  end
+
   def test_unit_staff_role_takes_precedence_when_staff_owns_project
     unit = FactoryBot.create(:unit, with_students: false)
     staff = FactoryBot.create(:user, :tutor)
@@ -334,8 +374,8 @@ class ProjectModelTest < ActiveSupport::TestCase
     assert_equal [source.path, source.path], conversion_calls.map(&:first)
     unit_code = project.unit.code.gsub(/[^A-Za-z0-9_-]/, '_')
     username = project.student.username.gsub(/[^A-Za-z0-9_-]/, '_')
-    assert_match(/\A\d+-#{Regexp.escape(unit_code)}-portfolio-#{Regexp.escape(username)}-lsr-[0-9a-f-]{36}\z/, conversion_calls[0][1])
-    assert_match(/\A\d+-#{Regexp.escape(unit_code)}-portfolio-#{Regexp.escape(username)}-document-[0-9a-f-]{36}\z/, conversion_calls[1][1])
+    assert_match(/\A\d+-#{Regexp.escape(unit_code)}-portfolio-#{Regexp.escape(username)}-lsr-[0-9a-f]{24}\z/, conversion_calls[0][1])
+    assert_match(/\A\d+-#{Regexp.escape(unit_code)}-portfolio-#{Regexp.escape(username)}-document-[0-9a-f]{24}\z/, conversion_calls[1][1])
   ensure
     FileHelper.define_singleton_method(:convert_word_document_to_pdf, original_converter) if original_converter
     source&.close
@@ -405,11 +445,22 @@ class ProjectModelTest < ActiveSupport::TestCase
                                 'tempfile' => File.new(test_file_path("submissions/vectorial_graph.ipynb"))
                               }, "vectorial_graph.ipynb", "code")
 
+    Tempfile.create(['portfolio-source-', '.zip']) do |archive|
+      Zip::File.open(archive.path, create: true) do |zip|
+        zip.get_output_stream('src/program.py') { |stream| stream.write('print("hello")') }
+      end
+      project.move_to_portfolio({ filename: 'source.zip', 'tempfile' => archive }, 'source.zip', 'zip')
+    end
+
     project.create_portfolio
     assert_not project.reload.compile_portfolio
     assert project.portfolio_exists?
 
     assert File.exist?(project.portfolio_path)
+    pdf_text = PDF::Reader.new(project.portfolio_path).pages.map(&:text).join("\n")
+    assert_includes pdf_text, 'Zip contents'
+    assert_includes pdf_text, 'program.py'
+    assert_match(/File\s+5\s+of\s+5/, pdf_text)
 
     unit.destroy!
   end

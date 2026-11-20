@@ -298,80 +298,80 @@ class D2lTest < ActiveSupport::TestCase
     assert_equal 3, unit.active_projects.count
     assert_equal 4, unit.projects.count
 
-    post_grade_request =  stub_request(:post, "https://api.brightspace.com/d2l/api/le/1.47/12345/grades/")
-                          .to_return(
-                            status: 200,
-                            body: {
-                              "Id" => 98701
-                            }.to_json,
-                            headers: { 'Content-Type' => 'application/json;charset=UTF-8' }
-                          )
+    post_grade_request = stub_request(:post, "https://api.brightspace.com/d2l/api/le/1.47/12345/grades/")
+                         .to_return(
+                           status: 200,
+                           body: {
+                             "Id" => 98701
+                           }.to_json,
+                           headers: { 'Content-Type' => 'application/json;charset=UTF-8' }
+                         )
 
-    class_list_request =  stub_request(:get, "https://api.brightspace.com/d2l/api/le/1.47/12345/classlist/")
-                          .to_return(
-                            status: 200,
-                            body: [
-                              {
-                                'Identifier' => '12345',
-                                'FirstName' => p1.student.first_name,
-                                'LastName' => p1.student.last_name,
-                                'UserName' => p1.student.username,
-                                'OrgDefinedId' => p1.student.student_id,
-                                'Email' => p1.student.email,
-                                'ClasslistRoleDisplayName' => 'Student'
-                              },
-                              {
-                                "Identifier" => "12346",
-                                "FirstName" => p2.student.first_name,
-                                "LastName" => p2.student.last_name,
-                                "UserName" => p2.student.username,
-                                "OrgDefinedId" => "#{p2.student.student_id} - somehow mismatch",
-                                "Email" => p2.student.email,
-                                'ClasslistRoleDisplayName' => 'Student'
-                              },
-                              {
-                                "Identifier" => "12347",
-                                "FirstName" => p3.student.first_name,
-                                "LastName" => p3.student.last_name,
-                                "UserName" => "#{p3.student.username} - somehow mismatch",
-                                "OrgDefinedId" => "#{p3.student.student_id} - somehow mismatch",
-                                "Email" => p3.student.email,
-                                'ClasslistRoleDisplayName' => 'Student'
-                              },
-                              {
-                                "Identifier" => "12348",
-                                "FirstName" => s1.first_name,
-                                "LastName" => s1.last_name,
-                                "UserName" => s1.username,
-                                "OrgDefinedId" => s1.student_id,
-                                "Email" => s1.email,
-                                'ClasslistRoleDisplayName' => 'Student'
-                              }
-                            ].to_json,
-                            headers: { 'Content-Type' => 'application/json;charset=UTF-8' }
-                          )
+    class_list_request = stub_request(:get, "https://api.brightspace.com/d2l/api/le/1.47/12345/classlist/")
+                         .to_return(
+                           status: 200,
+                           body: [
+                             {
+                               'Identifier' => '12345',
+                               'FirstName' => p1.student.first_name,
+                               'LastName' => p1.student.last_name,
+                               'UserName' => p1.student.username,
+                               'OrgDefinedId' => p1.student.student_id,
+                               'Email' => p1.student.email,
+                               'ClasslistRoleDisplayName' => 'Student'
+                             },
+                             {
+                               "Identifier" => "12346",
+                               "FirstName" => p2.student.first_name,
+                               "LastName" => p2.student.last_name,
+                               "UserName" => p2.student.username,
+                               "OrgDefinedId" => "#{p2.student.student_id} - somehow mismatch",
+                               "Email" => p2.student.email,
+                               'ClasslistRoleDisplayName' => 'Student'
+                             },
+                             {
+                               "Identifier" => "12347",
+                               "FirstName" => p3.student.first_name,
+                               "LastName" => p3.student.last_name,
+                               "UserName" => "#{p3.student.username} - somehow mismatch",
+                               "OrgDefinedId" => "#{p3.student.student_id} - somehow mismatch",
+                               "Email" => p3.student.email,
+                               'ClasslistRoleDisplayName' => 'Student'
+                             },
+                             {
+                               "Identifier" => "12348",
+                               "FirstName" => s1.first_name,
+                               "LastName" => s1.last_name,
+                               "UserName" => s1.username,
+                               "OrgDefinedId" => s1.student_id,
+                               "Email" => s1.email,
+                               'ClasslistRoleDisplayName' => 'Student'
+                             }
+                           ].to_json,
+                           headers: { 'Content-Type' => 'application/json;charset=UTF-8' }
+                         )
 
     assert_equal p1, D2lIntegration.find_project_for_d2l_user(unit, { "OrgDefinedId" => p1.student.student_id, "UserName" => p1.student.username, "Email" => p1.student.email })
     assert_equal p2, D2lIntegration.find_project_for_d2l_user(unit, { "OrgDefinedId" => 'BLAH', "UserName" => p2.student.username, "Email" => p2.student.email })
     assert_equal p3, D2lIntegration.find_project_for_d2l_user(unit, { "OrgDefinedId" => 'BLAH', "UserName" => 'BLEE', "Email" => p3.student.email })
     assert_nil D2lIntegration.find_project_for_d2l_user(unit, { "OrgDefinedId" => 'BLAH', "UserName" => 'BLEE', "Email" => 'BLAH' })
 
-    p1_put_request =  stub_request(:put, "https://api.brightspace.com/d2l/api/le/1.47/12345/grades/98701/values/12345")
-                      .with(
-                        body: { "{\"GradeObjectType\":1,\"PointsNumerator\":50}" => nil }
-                      ).to_return(
-                        status: 200,
-                        headers: {
-                          'X-Rate-Limit-Remaining' => 2,
-                          'X-Request-Cost' => 1,
-                          'X-Rate-Limit-Reset' => 1
-                        }
-                      )
+    p1_put_request = stub_request(:put, "https://api.brightspace.com/d2l/api/le/1.47/12345/grades/98701/values/12345")
+                     .with(
+                       body: { "{\"GradeObjectType\":1,\"PointsNumerator\":50}" => nil }
+                     ).to_return(
+                       status: 200,
+                       headers: {
+                         'X-Rate-Limit-Remaining' => 2,
+                         'X-Request-Cost' => 1,
+                         'X-Rate-Limit-Reset' => 1
+                       }
+                     )
 
-    p2_put_request =  stub_request(:put, "https://api.brightspace.com/d2l/api/le/1.47/12345/grades/98701/values/12346")
-                      .with(
-                        body: { "{\"GradeObjectType\":1,\"PointsNumerator\":60}" => nil }
-                      ).to_return(status: 200, headers: {})
+    p2_put_request = stub_request(:put, "https://api.brightspace.com/d2l/api/le/1.47/12345/grades/98701/values/12346")
+                     .with(
+                       body: { "{\"GradeObjectType\":1,\"PointsNumerator\":60}" => nil }
+                     ).to_return(status: 200, headers: {})
 
     D2lAssessmentMapping.create(unit: unit, org_unit_id: '12345')
     UserOauthToken.create(user: unit.main_convenor_user, provider: :d2l, token: 'test', expires_at: 30.minutes.from_now)

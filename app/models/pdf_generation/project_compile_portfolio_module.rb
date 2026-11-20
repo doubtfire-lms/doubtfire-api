@@ -1,3 +1,6 @@
+require 'digest'
+require 'zip'
+
 module PdfGeneration
   module ProjectCompilePortfolioModule
     def projects_awaiting_auto_generation
@@ -39,7 +42,6 @@ module PdfGeneration
 
       attr_accessor :student,
                     :project,
-                    :base_path,
                     :image_path,
                     :learning_summary_report,
                     :submission_date,
@@ -52,6 +54,7 @@ module PdfGeneration
                     :files,
                     :institution_name,
                     :doubtfire_product_name,
+                    :additional_files_url,
                     :is_retry
 
       def init(project, is_retry)
@@ -60,25 +63,43 @@ module PdfGeneration
         @learning_summary_report = project.learning_summary_report_path
         @submission_date = project.portfolio_submission_date
         @formatted_submission_date, @formatted_submission_time = format_submission_date(project)
-        @files = project.portfolio_files(ensure_valid: true, force_ascii: is_retry)
-        @base_path = project.portfolio_temp_path
-        @image_path = Rails.root.join('public/assets/images')
+        @files = project.portfolio_files
+        @image_path = LatexHelper::LATEX_ASSET_IMAGE_PATH
         @ordered_tasks = project.tasks.joins(:task_definition).order('task_definitions.start_date, task_definitions.abbreviation').where("task_definitions.target_grade <= #{project.target_grade}")
         @portfolio_tasks = project.portfolio_tasks
         @task_defs = project.unit.task_definitions.order(:start_date)
         @outcomes = project.unit.learning_outcomes # .order(:ilo_number)
         @institution_name = Doubtfire::Application.config.institution[:name]
         @doubtfire_product_name = Doubtfire::Application.config.institution[:product_name]
+        host = Doubtfire::Application.config.institution[:host].to_s
+        host = "http://#{host}" unless host.match?(%r{\Ahttps?://})
+        @additional_files_url = "#{host.sub(%r{/*\z}, '')}/projects/#{project.id}/portfolio/additional_files/download"
         @is_retry = is_retry
         @include_pax = !is_retry
         @work_id = FileHelper.sanitized_path(
-          "portfolio-#{Time.current.strftime('%Y%m%d-%H%M')}-#{project.unit.code}-#{project.student.username}-#{project.id}-#{Process.pid}#{'-retry' if is_retry}"
+          "portfolio-#{Time.current.strftime('%Y%m%d-%H%M')}-#{project.unit.code}-#{project.student.username}-#{project.id}-#{Process.pid}#{'-retry' if is_retry}-#{SecureRandom.hex(12)}"
         )
       end
 
       def make_pdf
         logger.debug 'Running make_pdf: (portfolio)'
-        generate_pdf(template: '/portfolio/portfolio_pdf')
+        generate_pdf(template: '/portfolio/portfolio_pdf') do
+          @learning_summary_report_latex_path = stage_latex_file(@learning_summary_report) if @learning_summary_report
+
+          @files.each do |file|
+            next if file[:idx] == 0 || !%w[image code document].include?(file[:kind])
+
+            source_path = @project.portfolio_tmp_file_path(file)
+            file[:latex_path] = stage_latex_file(source_path)
+            FileHelper.ensure_utf8_code(latex_host_path(file[:latex_path]), @is_retry) if file[:kind] == 'code'
+          end
+
+          @task_pdf_latex_paths = {}
+          @portfolio_tasks.each do |task|
+            source_path = task.final_pdf_path
+            @task_pdf_latex_paths[task.id] = stage_latex_file(source_path) if File.exist?(source_path)
+          end
+        end
       end
 
       private
@@ -334,6 +355,36 @@ module PdfGeneration
         result << { kind: kind, name: name, idx: idx }
 
         FileHelper.ensure_utf8_code(File.join(portfolio_tmp_dir, file), force_ascii) if ensure_valid && kind == "code"
+      end
+
+      result
+    end
+
+    def downloadable_portfolio_files_zip_path
+      files = portfolio_files.reject { |file| file[:idx].zero? }
+      return nil if files.empty?
+
+      sources = files.map { |file| [file, portfolio_tmp_file_path(file)] }
+      return nil unless sources.all? { |_, path| File.file?(path) }
+
+      signature = sources.map do |file, path|
+        stat = File.stat(path)
+        [file[:idx], file[:name], stat.size, stat.mtime.to_r].join(':')
+      end.join('|')
+      fingerprint = Digest::SHA256.hexdigest(signature)
+      result = File.join(FileHelper.student_portfolio_dir(unit, student.username), "additional-files-#{fingerprint}.zip")
+      return result if File.file?(result)
+
+      partial_result = "#{result}.partial-#{SecureRandom.hex(8)}"
+      begin
+        Zip::File.open(partial_result, create: true) do |zip|
+          sources.each do |file, path|
+            zip.add("#{file[:idx].to_s.rjust(3, '0')}-#{file[:name]}", path)
+          end
+        end
+        File.rename(partial_result, result)
+      ensure
+        FileUtils.rm_f(partial_result)
       end
 
       result

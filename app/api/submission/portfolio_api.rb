@@ -13,8 +13,8 @@ module Submission
 
     desc "Upload documents for inclusion in a project's portfolio"
     params do
-      requires :name,  type: String,                        desc: 'Name of the part being uploaded'
-      requires :kind,  type: String,                        desc: 'The kind of file being uploaded: document, code, or image'
+      requires :name,  type: String, desc: 'Name of the part being uploaded'
+      requires :kind,  type: String, desc: 'The kind of file being uploaded: document, code, or image'
       requires :file0, type: File, desc: 'file 0.'
     end
     post '/submission/project/:id/portfolio' do
@@ -106,6 +106,27 @@ module Submission
 
       stream_file evidence_loc
     end # get
+
+    desc 'Download the additional files uploaded with a portfolio'
+    get '/submission/project/:id/portfolio/additional_files' do
+      project = Project.find(params[:id])
+
+      unless authorise? current_user, project, :get_submission
+        error!({ error: "Not authorised to download portfolio for project '#{params[:id]}'" }, 401)
+      end
+
+      error!({ error: 'Portfolio not available' }, 404) unless project.portfolio_available
+
+      archive = project.downloadable_portfolio_files_zip_path
+      error!({ error: 'No additional files to download' }, 404) unless archive
+
+      filename = FileHelper.sanitized_filename("#{project.unit.code}-#{project.student.username}-additional-files.zip")
+      header['Content-Disposition'] = "attachment; filename=#{filename}"
+      content_type 'application/zip'
+      env['api.format'] = :binary
+
+      stream_file archive
+    end
 
     # "Retrieve portfolios for a unit" done using controller
   end

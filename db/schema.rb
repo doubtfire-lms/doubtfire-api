@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_26_053206) do
+ActiveRecord::Schema[8.0].define(version: 2026_11_09_231433) do
   create_table "activity_types", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "abbreviation", null: false
@@ -417,6 +417,70 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_26_053206) do
     t.index ["task_id"], name: "index_moderated_tasks_on_task_id"
   end
 
+  create_table "notification_settings", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.text "channels", size: :long, null: false, collation: "utf8mb4_bin"
+    t.string "digest_frequency", limit: 16, default: "weekly", null: false
+    t.integer "digest_interval_hours", default: 4, null: false
+    t.string "digest_start_time", limit: 5, default: "07:00", null: false
+    t.string "digest_end_time", limit: 5, default: "22:00", null: false
+    t.string "digest_time", limit: 5, default: "07:00", null: false
+    t.string "digest_timezone", limit: 64, null: false
+    t.integer "digest_weekday", default: 1, null: false
+    t.datetime "next_digest_at"
+    t.datetime "last_digest_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["next_digest_at"], name: "index_notification_settings_on_next_digest_at"
+    t.index ["user_id"], name: "index_notification_settings_on_user_id", unique: true
+    t.check_constraint "json_valid(`channels`)", name: "channels"
+  end
+
+  create_table "notification_unit_overrides", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "unit_id", null: false
+    t.boolean "muted", default: false, null: false
+    t.text "channels", size: :long, collation: "utf8mb4_bin"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["unit_id"], name: "index_notification_unit_overrides_on_unit_id"
+    t.index ["user_id", "unit_id"], name: "index_notification_unit_overrides_on_user_and_unit", unique: true
+    t.check_constraint "json_valid(`channels`)", name: "channels"
+  end
+
+  create_table "notifications", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.bigint "recipient_id", null: false
+    t.bigint "unit_id", null: false
+    t.bigint "project_id"
+    t.bigint "task_id"
+    t.bigint "actor_id"
+    t.string "kind", limit: 64, null: false
+    t.string "deduplication_key", limit: 191, null: false
+    t.string "message_subject"
+    t.text "message_body"
+    t.bigint "task_comment_id"
+    t.bigint "overseer_assessment_id"
+    t.bigint "tutor_note_id"
+    t.bigint "task_status_id"
+    t.bigint "unit_role_id"
+    t.date "discuss_deadline"
+    t.datetime "read_at"
+    t.datetime "email_processed_at"
+    t.datetime "email_sent_at"
+    t.datetime "email_not_before"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["actor_id"], name: "index_notifications_on_actor_id"
+    t.index ["project_id"], name: "index_notifications_on_project_id"
+    t.index ["recipient_id", "deduplication_key"], name: "index_notifications_on_recipient_and_deduplication_key", unique: true
+    t.index ["recipient_id", "read_at", "created_at"], name: "index_notifications_on_recipient_read_created"
+    t.index ["recipient_id", "task_id", "read_at"], name: "index_notifications_on_recipient_task_read"
+    t.index ["recipient_id", "unit_id", "email_processed_at"], name: "index_notifications_for_email_delivery"
+    t.index ["task_comment_id"], name: "index_notifications_on_task_comment_id"
+    t.index ["task_id"], name: "index_notifications_on_task_id"
+    t.index ["unit_id"], name: "index_notifications_on_unit_id"
+  end
+
   create_table "overflow_task_claim_logs", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.bigint "unit_id", null: false
     t.bigint "task_id", null: false
@@ -622,6 +686,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_26_053206) do
     t.bigint "commentable_id"
     t.string "commentable_type"
     t.integer "attention_audience"
+    t.datetime "submission_assessed_at"
+    t.boolean "submission_granted"
     t.index ["assessor_id"], name: "index_task_comments_on_assessor_id"
     t.index ["commentable_type", "commentable_id"], name: "index_task_comments_on_commentable_type_and_commentable_id"
     t.index ["discussion_comment_id"], name: "index_task_comments_on_discussion_comment_id"
@@ -687,6 +753,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_26_053206) do
     t.boolean "lock_assessments_to_tutorial_stream", default: false, null: false
     t.boolean "requires_discussion", default: false, null: false
     t.boolean "staff_managed_task", default: false, null: false
+    t.date "submission_opens_on"
     t.index ["abbreviation", "unit_id"], name: "index_task_definitions_on_abbreviation_and_unit_id", unique: true
     t.index ["group_set_id"], name: "index_task_definitions_on_group_set_id"
     t.index ["name", "unit_id"], name: "index_task_definitions_on_name_and_unit_id", unique: true
@@ -1021,6 +1088,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_26_053206) do
     t.integer "discuss_timeout_warning_days", default: 7, null: false
     t.integer "discuss_timeout_expire_days", default: 14, null: false
     t.date "last_teaching_date", null: false
+    t.boolean "generate_weekly_summaries", default: true, null: false
     t.index ["draft_task_definition_id"], name: "index_units_on_draft_task_definition_id"
     t.index ["main_convenor_id"], name: "index_units_on_main_convenor_id"
     t.index ["overseer_image_id"], name: "index_units_on_overseer_image_id"
@@ -1077,6 +1145,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_26_053206) do
     t.datetime "tii_eula_date"
     t.boolean "tii_eula_version_confirmed", default: false, null: false
     t.datetime "last_access_at"
+    t.string "timezone", limit: 64
+    t.boolean "auto_timezone", default: true, null: false
+    t.boolean "observe_all_units", default: false, null: false
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["login_id"], name: "index_users_on_login_id", unique: true
     t.index ["role_id"], name: "index_users_on_role_id"

@@ -13,7 +13,7 @@ ruby_versions = {
 ruby ruby_versions[(ENV['RAILS_ENV'] || 'development').to_sym]
 
 # The venerable, almighty Rails
-gem 'rails', '~>8.0'
+gem 'rails', '~> 8.0.5', '>= 8.0.5.2'
 
 group :development, :test do
   gem 'better_errors'
@@ -52,6 +52,7 @@ gem 'puma', '~> 7.2', '>= 7.2.1'
 
 gem 'bootsnap', require: false
 gem 'csv'
+gem 'json', '~> 2.10.0'
 gem 'uri', '>= 1.1.1' # CVE-2025-61594
 
 # Extend irb for better output

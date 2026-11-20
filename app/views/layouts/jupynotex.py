@@ -76,6 +76,15 @@ def _as_lines(value):
     return value
 
 
+# an end marker in notebook text would close its block early and run the rest as TeX
+ENV_END_RE = re.compile(r"\\(?=end\s*\{\s*(?:minted|markdown)\s*\})")
+
+
+def _guard_env_end(lines):
+    """Break any minted/markdown end marker in notebook text with a zero-width space."""
+    return [ENV_END_RE.sub("\\\u200b", line) for line in lines]
+
+
 def _process_plain_text(lines, config_options=None):
     """Wrap a series of lines around a verbatim indication."""
     if config_options is None:
@@ -100,7 +109,7 @@ def _process_plain_text(lines, config_options=None):
         else:
             lines = [line]
 
-        result.extend(lines)
+        result.extend(_guard_env_end(lines))
     result.extend(VERBATIM_END)
     return result
 
@@ -166,10 +175,10 @@ class ItemProcessor:
     # mimetype and list of functions to apply; order is important here as we want to
     # prioritize getting some mimetypes over others when multiple are present
     PROCESSORS = [
-        ('text/latex',),
         ('image/svg+xml', process_svg, include_graphics, listwrap),
         ('image/png', process_png, include_graphics, listwrap),
         ('text/plain', process_plain_text),
+        ('text/latex', process_plain_text),  # never emit notebook LaTeX as TeX
     ]
 
 
@@ -235,6 +244,7 @@ class Notebook:
         # Use the longest names first so one attachment name cannot partially
         # replace another, for example image.png and my-image.png.
         attachments = content.get('attachments') or {}
+        saved_paths = set()
         for name in sorted(attachments, key=len, reverse=True):
             try:
                 attachment_path = self._save_markdown_attachment(attachments[name])
@@ -243,6 +253,7 @@ class Notebook:
 
             if not attachment_path:
                 continue
+            saved_paths.add(attachment_path)
 
             # Notebook editors may leave spaces literal or URL-encode them.
             references = {
@@ -264,6 +275,13 @@ class Notebook:
             source_text,
         )
 
+        # any other image path would reach \includegraphics and embed files from the TeX container
+        source_text = re.sub(
+            r'!\[(?:[^\]\n]*\]\(([^)\n]*)\))?',
+            lambda match: match.group(0) if match.group(1) in saved_paths else '!\\[' + match.group(0)[2:],
+            source_text,
+        )
+
         return source_text.splitlines()
 
     def _proc_src(self, content):
@@ -273,16 +291,16 @@ class Notebook:
         if content['cell_type'] == 'code':
             begin, end = self._highlight_delimiters
             result.extend(begin)
-            result.extend(textwrap.fill(line[:1000] + ' [The rest of this line has been truncated by the system to improve readability.] ' * (len(line) > 1000), width=90, subsequent_indent='    ') for line in source)
+            result.extend(_guard_env_end(textwrap.fill(line[:1000] + ' [The rest of this line has been truncated by the system to improve readability.] ' * (len(line) > 1000), width=90, subsequent_indent='    ') for line in source))
             result.extend(end)
         elif content['cell_type'] == 'markdown':
             source = self._process_markdown_attachments(content, source)
             result.extend(MARKDOWN_BEGIN)
-            result.extend(line.replace('```markdown', '```md').strip() for line in source)
+            result.extend(_guard_env_end(line.replace('```markdown', '```md').strip() for line in source))
             result.extend(MARKDOWN_END)
         elif content['cell_type'] == 'raw':
             result.extend(VERBATIM_BEGIN)
-            result.extend(textwrap.fill(line[:1000] + ' [The rest of this line has been truncated by the system to improve readability.] ' * (len(line) > 1000), width=90, subsequent_indent='    ') for line in source)
+            result.extend(_guard_env_end(textwrap.fill(line[:1000] + ' [The rest of this line has been truncated by the system to improve readability.] ' * (len(line) > 1000), width=90, subsequent_indent='    ') for line in source))
             result.extend(VERBATIM_END)
         else:
             raise ValueError(

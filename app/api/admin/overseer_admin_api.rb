@@ -1,4 +1,5 @@
 require 'grape'
+require 'sidekiq/api'
 
 module Admin
   class OverseerAdminApi < Grape::API
@@ -166,20 +167,41 @@ module Admin
 
       disk_space_gb = nil
       if Doubtfire::Application.config.disk_space_endpoint_enabled
-        stat = Sys::Filesystem.stat('/')
-        disk_space_gb = (stat.block_size * stat.blocks_available).to_f / 1024 / 1024 / 1024
+        begin
+          stat = Sys::Filesystem.stat('/')
+          disk_space_gb = (stat.block_size * stat.blocks_available).to_f / 1024 / 1024 / 1024
+        rescue Sys::Filesystem::Error
+          disk_space_gb = nil
+        end
       end
+
+      sidekiq_stats = begin
+        active_jobs = Sidekiq::WorkSet.new.map do |_process_id, _thread_id, work|
+          { jobClass: work.job.display_class, queue: work.queue }
+        end
+        queues = Sidekiq::Queue.all.map do |queue|
+          { name: queue.name, size: queue.size }
+        end
+
+        { activeJobs: active_jobs, queuedJobs: queues.sum { |queue| queue[:size] }, queues: queues }
+      rescue StandardError => e
+        Rails.logger.warn("Could not read Sidekiq statistics: #{e.class}: #{e.message}")
+        nil
+      end
+
+      queued_projects, claimed_projects = Project.where(compile_portfolio: true)
+                                                 .pick(Arel.sql('COUNT(*)'), Arel.sql('COUNT(portfolio_generation_pid)'))
 
       present({
                 activeUsers: active_users,
                 totalUsers: User.count,
-                diskSpaceGb: disk_space_gb&.round(2)
-              }, with: Grape::Presenters::Presenter)
-    rescue Sys::Filesystem::Error
-      present({
-                activeUsers: active_users,
-                totalUsers: User.count,
-                diskSpaceGb: nil
+                diskSpaceGb: disk_space_gb&.round(2),
+                sidekiq: sidekiq_stats,
+                portfolioCompilation: {
+                  queuedProjects: queued_projects,
+                  waitingProjects: queued_projects - claimed_projects,
+                  claimedProjects: claimed_projects
+                }
               }, with: Grape::Presenters::Presenter)
     end
   end
