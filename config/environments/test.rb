@@ -57,4 +57,7 @@ Doubtfire::Application.configure do
   ENV.store('D2L_OAUTH_SITE_TOKEN_URL', 'core/connect/token')
   ENV.store('D2L_API_HOST', 'https://api.brightspace.com')
   ENV.store('D2L_API_VERSION', '1.47')
+
+  # Ensure cookie domain is set for test environment
+  config.institution[:cookie_domain] = config.institution[:cookie_domain].presence || "ontrack.test"
 end
