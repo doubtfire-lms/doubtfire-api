@@ -247,6 +247,23 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
     assert_equal "get-submission-files", last_activity.action
   end
 
+  def test_convenor_sees_distinct_assessed_project_ids_for_a_session
+    second_project = FactoryBot.create(:project, unit: @unit)
+    comment_only_project = FactoryBot.create(:project, unit: @unit)
+    activities = @marking_session.session_activities
+    2.times { activities.create!(action: 'assessing', project: @project) }
+    activities.create!(action: 'assessing', project: second_project)
+    activities.create!(action: 'add-comment', project: comment_only_project)
+
+    add_auth_header_for(user: @convenor)
+    get "/api/units/#{@unit.id}/marking_sessions"
+
+    assert_equal 200, last_response.status
+    session = JSON.parse(last_response.body).find { |row| row['id'] == @marking_session.id }
+    assert_not_nil session
+    assert_equal [@project.id, second_project.id].sort, session.fetch('assessed_project_ids').sort
+  end
+
   def test_get_marking_sessions
     unit = FactoryBot.create(:unit, student_count: 2, task_count: 2)
     convenor = FactoryBot.create(:user, :convenor)
