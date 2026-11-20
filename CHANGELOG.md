@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [11.0.7](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.6...v11.0.7) (2026-11-20)
+
+
+### Bug Fixes
+
+* bind login tokens and refresh cookies to verified user ([#775](https://github.com/b0ink/doubtfire-deploy/issues/775)) ([17f7a59](https://github.com/b0ink/doubtfire-deploy/commit/17f7a59a02996cdfbe6313c3d3949a280b72fd10))
+* prevent path traversal in JPlag resource ZIP extraction ([#776](https://github.com/b0ink/doubtfire-deploy/issues/776)) ([9a178d3](https://github.com/b0ink/doubtfire-deploy/commit/9a178d30551ac1ef0f4dfdc07f95362b26c85d40))
+* require authentication for extensions ([75326b4](https://github.com/b0ink/doubtfire-deploy/commit/75326b4b172296f657fad976bb7c97a22bbe5cae))
+* validate upload extensions and escape conversion file paths ([#729](https://github.com/b0ink/doubtfire-deploy/issues/729)) ([57b8317](https://github.com/b0ink/doubtfire-deploy/commit/57b83178ac66c5a8a68b40bd625ff32fc7104bae))
+
 ### [11.0.6](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.5...v11.0.6) (2026-11-20)
 
 ### [11.0.5](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.4...v11.0.5) (2026-11-19)
