@@ -52,6 +52,8 @@ class TasksApiTest < ActiveSupport::TestCase
     project = unit.active_projects.first
     td = unit.task_definitions.first
     td.update!(submission_opens_on: Date.current + 7.days,
+               start_date: Date.current - 1.week,
+               target_date: Date.current + 2.weeks,
                upload_requirements: [{ 'key' => 'file0', 'name' => 'Work', 'type' => 'code' }])
     task = project.task_for_task_definition(td)
     request = task.apply_for_submission_access(project.student, 'Please review my early attempt.')
@@ -70,6 +72,8 @@ class TasksApiTest < ActiveSupport::TestCase
     project = unit.active_projects.first
     td = unit.task_definitions.first
     td.update!(submission_opens_on: Date.current + 7.days,
+               start_date: Date.current - 1.week,
+               target_date: Date.current + 2.weeks,
                upload_requirements: [{ 'key' => 'file0', 'name' => 'Work', 'type' => 'code' }])
     task = project.task_for_task_definition(td)
     add_auth_header_for(user: unit.main_convenor_user)
@@ -88,9 +92,9 @@ class TasksApiTest < ActiveSupport::TestCase
       project = unit.active_projects.first
       td = unit.task_definitions.first
       td.update!(submission_opens_on: opens_on,
-           start_date: Date.current - 1.week,
-           target_date: Date.current + 2.weeks,
-           upload_requirements: [{ 'key' => 'file0', 'name' => 'Work', 'type' => 'code' }])
+                 start_date: Date.current - 1.week,
+                 target_date: Date.current + 2.weeks,
+                 upload_requirements: [{ 'key' => 'file0', 'name' => 'Work', 'type' => 'code' }])
       task = project.task_for_task_definition(td)
       add_auth_header_for(user: project.student)
 
