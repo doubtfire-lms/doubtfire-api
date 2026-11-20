@@ -61,4 +61,6 @@ Doubtfire::Application.configure do
 
   # Rack::Test requests connect from 127.0.0.1
   config.lti_service_hosts = %w[127.0.0.1]
+  # Ensure cookie domain is set for test environment
+  config.institution[:cookie_domain] = config.institution[:cookie_domain].presence || "ontrack.test"
 end

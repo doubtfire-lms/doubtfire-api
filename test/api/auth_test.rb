@@ -476,4 +476,33 @@ class AuthTest < ActiveSupport::TestCase
   ensure
     unit.destroy
   end
+
+  def test_potential_esc
+    student = FactoryBot.create :user, :student
+    admin = FactoryBot.create :user, :admin
+
+    data_to_post = {
+      username: student.username,
+      password: 'password',
+      remember: true
+    }
+
+    assert_equal 0, admin.auth_tokens.count
+    assert_equal 0, student.auth_tokens.count
+
+    header 'Username', admin.username
+
+    # Get response back for logging in with username 'aadmin' password 'password'
+    post_json '/api/auth.json', data_to_post
+
+    assert_equal 0, admin.auth_tokens.count
+    assert_equal 2, student.auth_tokens.count
+
+    # Attempt to use token with different user header
+    add_auth_header_for(user: admin, auth_token: last_response_body['auth_token'])
+
+    # Check that we cannot get the auth token for the admin user
+    get '/api/projects'
+    assert_equal 419, last_response.status, last_response_body
+  end
 end
