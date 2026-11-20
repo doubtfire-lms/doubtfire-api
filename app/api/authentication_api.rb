@@ -53,7 +53,7 @@ class AuthenticationApi < Grape::API
       if password.present? && !user.authenticate?(password)
         error!({ error: 'Invalid email or password.' }, 401)
         return
-      elsif auth_token.present? && !authenticated?(:login)
+      elsif auth_token.present? && (!authenticated?(:login) || current_user != user)
         error!({ error: 'Invalid user or auth token.' }, 401)
         return
       end
@@ -70,10 +70,10 @@ class AuthenticationApi < Grape::API
         user.save
       end
 
+      request.env['ontrack.current_user'] = user
       logger.info "Login #{username} from #{request.ip}"
 
-      user = User.find_by(username: params[:username])
-      token = user&.token_for_text?(params[:auth_token], :login)
+      token = user.token_for_text?(auth_token, :login)
 
       token&.destroy!
       token = user.generate_authentication_token!
@@ -81,7 +81,7 @@ class AuthenticationApi < Grape::API
       # Return user details
       present :user, user, with: Entities::UserEntity
       present :auth_token, token.authentication_token
-      set_refresh_cookie_in_response(remember)
+      set_refresh_cookie_in_response(remember, user)
     end
   end
 
@@ -390,7 +390,7 @@ class AuthenticationApi < Grape::API
         # Respond user details with new auth token
         present :user, user, with: Entities::UserEntity
         present :auth_token, token.authentication_token
-        set_refresh_cookie_in_response(params[:remember])
+        set_refresh_cookie_in_response(params[:remember], user)
       end
     end
   end
