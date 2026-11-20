@@ -2019,79 +2019,50 @@ class Unit < ApplicationRecord
   # The expected workflow is download CSV -> edit -> upload, so cells are rarely blank; a blank
   # cell keeps the stream's current value, but a new stream needs both a name and an activity type.
   def import_tutorial_streams_from_csv(file)
-    success = []
-    errors = []
-    ignored = []
+    results = { success: [], ignored: [], errors: [] }
 
     csv = parse_import_csv(file)
 
     missing = TutorialStream.csv_columns - csv.headers
     if missing.any?
-      errors << { row: csv.headers, message: "Missing headers: #{missing.join(', ')}" }
-      return { success: success, ignored: ignored, errors: errors }
+      results[:errors] << { row: csv.headers, message: "Missing headers: #{missing.join(', ')}" }
+      return results
     end
 
     seen_abbreviations = []
 
     csv.each do |row|
-      abbreviation, name, activity_type_text = TutorialStream.csv_columns.map { |col| unescape_spreadsheet_formula(row[col]&.strip) }
+      abbreviation, name, activity_type_text = TutorialStream.csv_columns.map { |col| unescape_spreadsheet_formula(row[col]&.strip).presence }
 
-      if abbreviation.blank?
-        errors << { row: row, message: 'Abbreviation cannot be empty.' }
+      if abbreviation.nil?
+        results[:errors] << { row: row, message: 'Abbreviation cannot be empty.' }
         next
       end
 
       if seen_abbreviations.include?(abbreviation)
-        errors << { row: row, message: "Stream #{abbreviation} appears more than once in the file." }
+        results[:errors] << { row: row, message: "Stream #{abbreviation} appears more than once in the file." }
         next
       end
       seen_abbreviations << abbreviation
 
-      activity_type = nil
-      if activity_type_text.present?
-        activity_type = ActivityType.find_by(abbreviation: activity_type_text) || ActivityType.find_by(name: activity_type_text)
-        if activity_type.nil?
-          errors << { row: row, message: "Unknown activity type '#{activity_type_text}' -- use one of: #{ActivityType.pluck(:abbreviation).sort.join(', ')}" }
-          next
-        end
+      activity_type, lookup_error = tutorial_stream_csv_activity_type(activity_type_text)
+      if lookup_error
+        results[:errors] << { row: row, message: lookup_error }
+        next
       end
 
       begin
         tutorial_stream = tutorial_streams.find_by(abbreviation: abbreviation)
-
-        if tutorial_stream.nil?
-          if name.blank? || activity_type.nil?
-            errors << { row: row, message: "Name and activity type are required to create stream #{abbreviation}." }
-            next
-          end
-
-          first_stream = !tutorial_streams.exists?
-          add_tutorial_stream(name, abbreviation, activity_type)
-
-          message = "Created stream #{abbreviation}."
-          # The first stream in a unit takes all existing tasks (see TutorialStream#handle_associated_task_defs)
-          message += " All #{task_definitions.count} tasks were assigned to it as it is the first stream in the unit." if first_stream && task_definitions.exists?
-          success << { row: row, message: message }
-        else
-          tutorial_stream.name = name if name.present?
-          tutorial_stream.activity_type = activity_type if activity_type.present?
-
-          unless tutorial_stream.changed?
-            ignored << { row: row, message: "No changes to stream #{abbreviation}." }
-            next
-          end
-
-          tutorial_stream.save!
-          success << { row: row, message: "Updated stream #{abbreviation}." }
-        end
+        outcome, message = tutorial_stream.nil? ? create_tutorial_stream_from_csv(abbreviation, name, activity_type) : update_tutorial_stream_from_csv(tutorial_stream, name, activity_type)
+        results[outcome] << { row: row, message: message }
       rescue ActiveRecord::RecordInvalid => e
-        errors << { row: row, message: e.record.errors.full_messages.to_sentence }
+        results[:errors] << { row: row, message: e.record.errors.full_messages.to_sentence }
       rescue StandardError => e
-        errors << { row: row, message: e.message }
+        results[:errors] << { row: row, message: e.message }
       end
     end
 
-    { success: success, ignored: ignored, errors: errors }
+    results
   end
 
   # Import tutorials from a CSV (see Tutorial.csv_columns).
@@ -4390,6 +4361,41 @@ class Unit < ApplicationRecord
               headers: true,
               header_converters: [->(hdr) { hdr.to_s.strip.downcase.tr(' ', '_') }],
               converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }])
+  end
+
+  # Find the activity type named in a tutorial streams CSV row, by abbreviation or name.
+  # Returns [activity_type_or_nil, nil], or [nil, error_message] when it is not a known activity type.
+  def tutorial_stream_csv_activity_type(activity_type_text)
+    return [nil, nil] if activity_type_text.nil?
+
+    activity_type = ActivityType.find_by(abbreviation: activity_type_text) || ActivityType.find_by(name: activity_type_text)
+    return [activity_type, nil] if activity_type
+
+    [nil, "Unknown activity type '#{activity_type_text}' -- use one of: #{ActivityType.pluck(:abbreviation).sort.join(', ')}"]
+  end
+
+  # Returns [:success, message] or [:errors, message]
+  def create_tutorial_stream_from_csv(abbreviation, name, activity_type)
+    return [:errors, "Name and activity type are required to create stream #{abbreviation}."] if name.nil? || activity_type.nil?
+
+    first_stream = !tutorial_streams.exists?
+    add_tutorial_stream(name, abbreviation, activity_type)
+
+    message = "Created stream #{abbreviation}."
+    # The first stream in a unit takes all existing tasks (see TutorialStream#handle_associated_task_defs)
+    message += " All #{task_definitions.count} tasks were assigned to it as it is the first stream in the unit." if first_stream && task_definitions.exists?
+    [:success, message]
+  end
+
+  # Returns [:success, message] or [:ignored, message]. Blank cells keep the current value.
+  def update_tutorial_stream_from_csv(tutorial_stream, name, activity_type)
+    tutorial_stream.name = name if name
+    tutorial_stream.activity_type = activity_type if activity_type
+
+    return [:ignored, "No changes to stream #{tutorial_stream.abbreviation}."] unless tutorial_stream.changed?
+
+    tutorial_stream.save!
+    [:success, "Updated stream #{tutorial_stream.abbreviation}."]
   end
 
   # Resolve the non-blank lookup and number columns of a tutorials CSV row.
