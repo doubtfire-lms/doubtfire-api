@@ -19,30 +19,36 @@ module AuthenticationHelpers
   #   :valid if the user and token are valid
   #   :token_expired if the token is expired
   def user_auth_token_type(user_param, auth_param, token_type)
-    # Check for valid auth token  and username in request header
+    # Check for valid auth token and username in request header
     user = current_user
 
-    # Authenticate from header or params
-    if auth_param.present? && user_param.present? && user.present?
+    # Ensure provided user param and expected current user match - if not, return error
+    if user_param.present? && user.present? && user.username != user_param
+      logger.info("Error attemt by #{user_param} / #{auth_param} to auth for #{user.username} from #{request.ip}")
+      :error
+    elsif auth_param.present? && user_param.present? && user.present?
+      # Authenticate from header or params
       # Get the list of tokens for a user
       token = user.token_for_text?(auth_param, token_type)
-    end
 
-    # Check user and token
-    if user.present? && token.present?
-      # has the tolken not expired?
-      if token.auth_token_expiry > Time.zone.now
-        logger.info("Authenticated #{user.username} from #{request.ip}")
-        :valid
+      # Check user and token
+      if user.present? && token.present?
+        # has the token not expired?
+        if token.auth_token_expiry > Time.zone.now
+          logger.info("Authenticated #{user.username} from #{request.ip}")
+          :valid
+        else
+          # Token is timed out - destroy it and return error
+          token.destroy!
+          logger.info("Timing out token for #{user.username} from #{request.ip}")
+          :token_expired
+        end
+      elsif token.present?
+        logger.info("Error logging in for #{user_param} / #{auth_param} from #{request.ip}")
+        :error
       else
-        # Token is timed out - destroy it and return error
-        token.destroy!
-        logger.info("Timing out token for #{user.username} from #{request.ip}")
-        :token_expired
+        :missing_details
       end
-    elsif token.present?
-      logger.info("Error logging in for #{user_param} / #{auth_param} from #{request.ip}")
-      :error
     else
       :missing_details
     end
@@ -63,7 +69,7 @@ module AuthenticationHelpers
       true
     when :token_expired, :error, :missing_details
       # Token expired - remove cookies
-      set_refresh_cookie_in_response(false)
+      set_refresh_cookie_in_response(false, nil)
       false
     end
   end
@@ -253,19 +259,16 @@ module AuthenticationHelpers
     Doubtfire::Application.config.auth_method == :database
   end
 
-  # rubocop:disable Naming/AccessorMethodName
-  def set_refresh_cookie_in_response(remember)
-    # rubocop:enable Naming/AccessorMethodName
-
+  def set_refresh_cookie_in_response(remember, user)
     if remember
       # Reuse a recent refresh token, but rotate it once it is past 75% of its lifetime (or
       # expired) so that signing in again always yields a cookie with most of its life left.
-      token = current_user.generate_authentication_token!(token_type: :refresh_token, force_new: false)
+      token = user.generate_authentication_token!(token_type: :refresh_token, force_new: false)
 
       domain = Doubtfire::Application.config.institution[:cookie_domain]
 
       cookies[:username] = {
-        value: current_user.username,
+        value: user.username,
         expires: token.auth_token_expiry,
         domain: domain,
         path: '/api/auth',
