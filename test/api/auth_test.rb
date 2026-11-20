@@ -110,6 +110,58 @@ class AuthTest < ActiveSupport::TestCase
     assert_match(/username=#{User.first.username};/, last_response.cookies['username'].to_s, 'Expect username to be set')
   end
 
+  def test_student_login_cannot_issue_admin_refresh_cookie
+    student = User.find_by!(username: 'astudent')
+    admin = User.find_by!(username: 'aadmin')
+
+    header 'Username', admin.username
+    post_json '/api/auth.json', username: student.username, password: 'password', remember: true
+
+    assert_equal 201, last_response.status
+    assert_equal student.username, last_response_body.dig('user', 'username')
+
+    cookie_username = last_response.cookies['username'].to_s[/username=([^;]+)/, 1]
+    cookie_token = last_response.cookies['refresh_token'].to_s[/refresh_token=([^;]+)/, 1]
+    assert cookie_username.present?
+    assert cookie_token.present?
+
+    header 'Username', nil
+    set_cookie "username=#{cookie_username}"
+    set_cookie "refresh_token=#{cookie_token}"
+    post_json '/api/auth/access-token', delete_auth_token: false
+
+    assert_equal 201, last_response.status
+    assert_equal student.username, last_response_body.dig('user', 'username')
+  end
+
+  def test_refresh_cookie_identity_is_not_changed_by_auth_headers
+    student = User.find_by!(username: 'astudent')
+    admin = User.find_by!(username: 'aadmin')
+    refresh_token = student.generate_authentication_token!(token_type: :refresh_token)
+    admin_token = admin.generate_authentication_token!
+
+    set_cookie "username=#{student.username}"
+    set_cookie "refresh_token=#{refresh_token.authentication_token}"
+    header 'Username', admin.username
+    header 'Auth-Token', admin_token.authentication_token
+
+    post_json '/api/auth/access-token', delete_auth_token: true
+
+    assert_equal 201, last_response.status
+    assert_equal student.username, last_response_body.dig('user', 'username')
+    assert AuthToken.exists?(admin_token.id)
+  end
+
+  def test_student_token_cannot_authenticate_as_admin_header
+    student = User.find_by!(username: 'astudent')
+    admin = User.find_by!(username: 'aadmin')
+    add_auth_header_for(user: student, username: admin.username)
+
+    get '/api/auth/content'
+
+    assert_equal 419, last_response.status
+  end
+
   # Signing in again shortly before the refresh token expires must issue a new one, rather than
   # handing back the old cookie that will expire within hours.
   def test_auth_post_rotates_refresh_token_near_expiry
