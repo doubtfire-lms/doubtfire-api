@@ -251,10 +251,11 @@ module UnitSimilarityModule
     if task_definition.has_task_resources? && task_definition.use_resources_for_jplag_base_code
       use_base_code = true
       path = task_definition.task_resources
+      base_dir = File.expand_path(File.join(tasks_dir, 'base'))
 
       Zip::File.open(path) do |zip_file|
-        zip_file.each do |entry|
-          dest = File.join(tasks_dir, 'base', entry.name)
+        entries = zip_file.map { |entry| [entry, safe_jplag_base_path!(entry, base_dir)] }
+        entries.each do |entry, dest|
           FileUtils.mkdir_p(File.dirname(dest))
           entry.extract(dest) { true }
         end
@@ -336,6 +337,25 @@ module UnitSimilarityModule
     logger.info "Files to delete: #{Dir.glob("#{tmp_dir}/*")}"
     FileUtils.rm_rf(Dir.glob("#{tmp_dir}/*"))
     self
+  end
+
+  def safe_jplag_base_path!(entry, root)
+    name = entry.name.to_s
+    if name.blank? || name.start_with?('/') || name.include?('\\') || name.include?("\0") ||
+       name.split('/').include?('..') || entry.symlink? || File.symlink?(root)
+      raise Zip::Error, 'Unsafe JPlag base code path'
+    end
+
+    dest = File.expand_path(name, root)
+    raise Zip::Error, 'Unsafe JPlag base code path' unless dest.start_with?("#{root}/")
+
+    current_path = root
+    name.split('/').each do |part|
+      current_path = File.join(current_path, part)
+      raise Zip::Error, 'Unsafe JPlag base code path' if File.symlink?(current_path)
+    end
+
+    dest
   end
 
   def process_jplag_plagiarism_report(path, warn_pct, is_group)

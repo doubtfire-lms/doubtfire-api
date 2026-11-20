@@ -31,6 +31,68 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     end
   end
 
+  def test_jplag_base_code_zip_cannot_escape_its_directory
+    unit = FactoryBot.create(:unit, task_count: 1)
+    task_definition = unit.task_definitions.first
+    task_definition.assign_attributes(similarity_language: 'java', plagiarism_warn_pct: 50,
+                                      use_resources_for_jplag_base_code: true)
+    stub_jplag_setup(unit)
+
+    Dir.mktmpdir('jplag-base') do |root|
+      archive_path = File.join(root, 'resources.zip')
+      Zip::File.open(archive_path, Zip::File::CREATE) do |zip|
+        zip.get_output_stream('starter/main.rb') { |stream| stream.write('safe') }
+        zip.get_output_stream('../../escaped.rb') { |stream| stream.write('outside') }
+      end
+      task_definition.add_task_resources(archive_path, copy: true)
+
+      work_dir = File.join(root, 'work')
+      assert_raises(Zip::Error) do
+        unit.send(:run_jplag_on_done_files, task_definition, work_dir, [], 'test-unit')
+      end
+      assert_not File.exist?(File.join(root, 'escaped.rb'))
+      assert_not File.exist?(File.join(work_dir, 'base', 'starter', 'main.rb'))
+    end
+  ensure
+    task_definition&.remove_task_resources if task_definition&.has_task_resources?
+  end
+
+  def test_jplag_base_code_zip_cannot_follow_an_existing_symlink
+    unit = FactoryBot.create(:unit, task_count: 1)
+    task_definition = unit.task_definitions.first
+    task_definition.assign_attributes(similarity_language: 'java', plagiarism_warn_pct: 50,
+                                      use_resources_for_jplag_base_code: true)
+    stub_jplag_setup(unit)
+
+    Dir.mktmpdir('jplag-base') do |root|
+      archive_path = File.join(root, 'resources.zip')
+      Zip::File.open(archive_path, Zip::File::CREATE) do |zip|
+        zip.get_output_stream('link/escaped.rb') { |stream| stream.write('outside') }
+      end
+      task_definition.add_task_resources(archive_path, copy: true)
+
+      work_dir = File.join(root, 'work')
+      base_dir = File.join(work_dir, 'base')
+      FileUtils.mkdir_p(base_dir)
+      File.symlink(root, File.join(base_dir, 'link'))
+
+      assert_raises(Zip::Error) do
+        unit.send(:run_jplag_on_done_files, task_definition, work_dir, [], 'test-unit')
+      end
+      assert_not File.exist?(File.join(root, 'escaped.rb'))
+    end
+  ensure
+    task_definition&.remove_task_resources if task_definition&.has_task_resources?
+  end
+
+  def stub_jplag_setup(unit)
+    unit.define_singleton_method(:system) do |*args|
+      raise 'JPlag ran before ZIP validation' if args.include?('java')
+
+      true
+    end
+  end
+
   def app
     Rails.application
   end
