@@ -134,6 +134,34 @@ class AuthTest < ActiveSupport::TestCase
     assert_equal student.username, last_response_body.dig('user', 'username')
   end
 
+  def test_refresh_cookie_identity_is_not_changed_by_auth_headers
+    student = User.find_by!(username: 'astudent')
+    admin = User.find_by!(username: 'aadmin')
+    refresh_token = student.generate_authentication_token!(token_type: :refresh_token)
+    admin_token = admin.generate_authentication_token!
+
+    set_cookie "username=#{student.username}"
+    set_cookie "refresh_token=#{refresh_token.authentication_token}"
+    header 'Username', admin.username
+    header 'Auth-Token', admin_token.authentication_token
+
+    post_json '/api/auth/access-token', delete_auth_token: true
+
+    assert_equal 201, last_response.status
+    assert_equal student.username, last_response_body.dig('user', 'username')
+    assert AuthToken.exists?(admin_token.id)
+  end
+
+  def test_student_token_cannot_authenticate_as_admin_header
+    student = User.find_by!(username: 'astudent')
+    admin = User.find_by!(username: 'aadmin')
+    add_auth_header_for(user: student, username: admin.username)
+
+    get '/api/auth/content'
+
+    assert_equal 419, last_response.status
+  end
+
   # Signing in again shortly before the refresh token expires must issue a new one, rather than
   # handing back the old cookie that will expire within hours.
   def test_auth_post_rotates_refresh_token_near_expiry

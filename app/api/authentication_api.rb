@@ -72,6 +72,7 @@ class AuthenticationApi < Grape::API
         user.save
       end
 
+      request.env['ontrack.current_user'] = user
       logger.info "Login #{username} from #{request.ip}"
 
       token = user.token_for_text?(auth_token, :login)

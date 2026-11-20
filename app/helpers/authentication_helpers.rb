@@ -19,8 +19,8 @@ module AuthenticationHelpers
   #   :valid if the user and token are valid
   #   :token_expired if the token is expired
   def user_auth_token_type(user_param, auth_param, token_type)
-    # Check for valid auth token  and username in request header
-    user = current_user
+    # Look up the account named alongside the token, then verify the token belongs to it.
+    user = User.eager_load(:role, :auth_tokens).find_by(username: user_param)
 
     # Authenticate from header or params
     if auth_param.present? && user_param.present? && user.present?
@@ -32,6 +32,7 @@ module AuthenticationHelpers
     if user.present? && token.present?
       # has the tolken not expired?
       if token.auth_token_expiry > Time.zone.now
+        request.env['ontrack.current_user'] ||= user
         logger.info("Authenticated #{user.username} from #{request.ip}")
         :valid
       else
@@ -124,11 +125,10 @@ module AuthenticationHelpers
   end
 
   #
-  # Get the current user either from warden or from the header
+  # Get the user established by a verified credential
   #
   def current_user
-    username = request.headers['username'] || request.headers['Username'] || params['username'] || cookies['username']
-    User.eager_load(:role, :auth_tokens).find_by(username: username)
+    request.env['ontrack.current_user']
   end
 
   #
