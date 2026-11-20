@@ -380,18 +380,24 @@ class FileHelperTest < ActiveSupport::TestCase
     end
   end
 
-  def test_ensure_utf8_code_does_not_interpret_uploaded_filename_as_shell
-    uploaded_filename = 'solution.rb$(true)'
+  def test_ensure_utf8_code_does_not_execute_uploaded_filename_extension
+    uploaded_filename = 'solution.rb$(touch${IFS}$CODE_UPLOAD_INJECTION_MARKER)'
     stored_filename = "000-code#{File.extname(uploaded_filename)}"
     contents = "puts 'safe'\n"
 
     Dir.mktmpdir do |dir|
       path = File.join(dir, stored_filename)
+      marker = File.join(dir, 'injected')
       File.write(path, contents)
+      previous_marker = ENV.fetch('CODE_UPLOAD_INJECTION_MARKER', nil)
+      ENV['CODE_UPLOAD_INJECTION_MARKER'] = marker
 
       FileHelper.ensure_utf8_code(path, false)
 
+      assert_not File.exist?(marker)
       assert_equal contents, File.read(path)
+    ensure
+      ENV['CODE_UPLOAD_INJECTION_MARKER'] = previous_marker
     end
   end
 
@@ -401,7 +407,7 @@ class FileHelperTest < ActiveSupport::TestCase
       uploaded_file.flush
 
       result = FileHelper.accept_file(
-        { filename: 'solution.rb$(true)', 'tempfile' => uploaded_file },
+        { filename: 'solution.rb$(touch${IFS}$CODE_UPLOAD_INJECTION_MARKER)', 'tempfile' => uploaded_file },
         'Code',
         'code'
       )
@@ -413,23 +419,35 @@ class FileHelperTest < ActiveSupport::TestCase
 
   def test_image_conversion_does_not_interpret_filename_as_shell
     Dir.mktmpdir do |dir|
-      source = File.join(dir, 'upload$(true).gif')
-      destination = File.join(dir, 'converted$(true).jpg')
+      source = File.join(dir, 'upload$(touch${IFS}$IMAGE_INJECTION_MARKER).gif')
+      destination = File.join(dir, 'converted.jpg')
+      marker = File.join(dir, 'injected')
       FileUtils.cp(Rails.root.join('test_files/submissions/unbelievable.gif'), source)
+      previous_marker = ENV.fetch('IMAGE_INJECTION_MARKER', nil)
+      ENV['IMAGE_INJECTION_MARKER'] = marker
 
       assert FileHelper.compress_image_to_dest(source, destination, true)
+      assert_not File.exist?(marker)
       assert File.exist?(destination)
+    ensure
+      ENV['IMAGE_INJECTION_MARKER'] = previous_marker
     end
   end
 
-  def test_pdf_page_count_does_not_interpret_filename_as_shell
+  def test_qpdf_does_not_execute_commands_in_filename
     Dir.mktmpdir do |dir|
-      path = File.join(dir, 'submission$(true).pdf')
+      path = File.join(dir, 'submission$(touch${IFS}$QPDF_INJECTION_MARKER).pdf')
+      marker = File.join(dir, 'injected')
       FileUtils.cp(Rails.root.join('test_files/submissions/valid.pdf'), path)
+      previous_marker = ENV.fetch('QPDF_INJECTION_MARKER', nil)
+      ENV['QPDF_INJECTION_MARKER'] = marker
 
-      assert_operator FileHelper.pages_in_pdf(path), :>, 0
-      assert FileHelper.qpdf(path)
+      result = FileHelper.qpdf(path)
+      assert_not File.exist?(marker)
+      assert result
       assert File.exist?(path)
+    ensure
+      ENV['QPDF_INJECTION_MARKER'] = previous_marker
     end
   end
 
