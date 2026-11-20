@@ -218,10 +218,7 @@ module AuthenticationHelpers
     Doubtfire::Application.config.auth_method == :database
   end
 
-  # rubocop:disable Naming/AccessorMethodName
   def set_refresh_cookie_in_response(remember, user)
-    # rubocop:enable Naming/AccessorMethodName
-
     if remember
       token = user.auth_tokens.where(token_type: :refresh_token).last
 
