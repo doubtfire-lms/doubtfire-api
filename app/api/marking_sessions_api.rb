@@ -53,6 +53,6 @@ class MarkingSessionsApi < Grape::API
 
     sessions = sessions.where(user_id: current_user.id) if unit_role && unit_role&.role != Role.convenor
 
-    present sessions, with: Entities::MarkingSessionEntity
+    present sessions, with: Entities::MarkingSessionEntity, include_assessed_projects: unit_role&.role == Role.convenor
   end
 end
