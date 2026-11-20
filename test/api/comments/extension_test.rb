@@ -359,4 +359,25 @@ class ExtensionTest < ActiveSupport::TestCase
     td.destroy!
     unit.destroy!
   end
+
+  def test_requires_auth
+    unit = FactoryBot.create(:unit)
+    project = unit.projects.first
+    user = project.student
+
+    data_to_post = {
+      weeks_requested: '1',
+      comment: "I need a lot of help"
+    }
+
+    # Add auth_token and username to header
+    clear_auth_header
+
+    # Only add user details
+    header 'username', user.username
+
+    # Request a 2 day extension
+    post_json "/api/projects/#{project.id}/task_def_id/#{unit.task_definitions.first.id}/request_extension", data_to_post
+    assert_equal 419, last_response.status
+  end
 end
