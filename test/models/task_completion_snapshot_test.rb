@@ -89,6 +89,51 @@ class TaskCompletionSnapshotTest < ActiveSupport::TestCase
     assert_equal({}, snapshot.load_stats)
   end
 
+  test 'submitted task count distribution includes all submitted statuses and zero counts' do
+    task = @unit.task_definitions_by_grade.first.abbreviation
+    submitted_statuses = %i[
+      feedback_exceeded ready_for_feedback discuss demonstrate complete fail
+      time_exceeded assess_in_portfolio attention_required rediscuss
+    ]
+    payload = CSV.generate do |csv|
+      csv << ['Student ID', 'Username', task]
+      submitted_statuses.each_with_index do |status, index|
+        csv << [index + 1, "student-#{index + 1}", TaskStatus.public_send(status).id]
+      end
+      csv << [11, 'student-11', TaskStatus.fix_and_resubmit.id]
+      csv << [1, 'student-1', TaskStatus.feedback_exceeded.id]
+    end
+    @snapshot.store_stats!(payload)
+
+    assert_equal({ '0' => 1, '1' => 10 }, @snapshot.load_submitted_task_count_student_counts)
+  end
+
+  test 'resetting a task lowers its submitted count in the next snapshot' do
+    first_task = @unit.task_definitions_by_grade.first.abbreviation
+    second_task = FactoryBot.create(:task_definition, unit: @unit, target_grade: 0).abbreviation
+    later_snapshot = FactoryBot.create(
+      :task_completion_snapshot,
+      unit: @unit,
+      snapshot_timestamp: (@snapshot.snapshot_timestamp.to_i + 1.day.to_i).to_s
+    )
+
+    first_payload = CSV.generate do |csv|
+      csv << ['Student ID', 'Username', first_task, second_task]
+      csv << [1, 'student-1', TaskStatus.ready_for_feedback.id, TaskStatus.complete.id]
+      csv << [2, 'student-2', TaskStatus.working_on_it.id, TaskStatus.not_started.id]
+    end
+    later_payload = CSV.generate do |csv|
+      csv << ['Student ID', 'Username', first_task, second_task]
+      csv << [1, 'student-1', TaskStatus.fix_and_resubmit.id, TaskStatus.complete.id]
+      csv << [2, 'student-2', TaskStatus.working_on_it.id, TaskStatus.not_started.id]
+    end
+    @snapshot.store_stats!(first_payload)
+    later_snapshot.store_stats!(later_payload)
+
+    assert_equal({ '0' => 1, '2' => 1 }, @snapshot.load_submitted_task_count_student_counts)
+    assert_equal({ '0' => 1, '1' => 1 }, later_snapshot.load_submitted_task_count_student_counts)
+  end
+
   test 'status population counts each student once across tutorial streams' do
     unit = FactoryBot.create(:unit, with_students: false, task_count: 1, stream_count: 2, tutorials: 1, campus_count: 1)
     snapshot = FactoryBot.create(:task_completion_snapshot, unit: unit)
