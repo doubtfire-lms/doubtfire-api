@@ -3,6 +3,7 @@ require 'grape'
 class TutorialStreamsApi < Grape::API
   helpers AuthenticationHelpers
   helpers AuthorisationHelpers
+  helpers MimeCheckHelpers
 
   before do
     authenticated?
@@ -41,6 +42,46 @@ class TutorialStreamsApi < Grape::API
     tutorial_stream = unit.tutorial_streams.find_by!(abbreviation: params[:tutorial_stream_abbr])
     activity_type = ActivityType.find_by!(abbreviation: params[:activity_type]) if params[:activity_type].present?
     present unit.update_tutorial_stream(tutorial_stream, params[:name], params[:abbreviation], activity_type), with: Entities::TutorialStreamEntity
+  end
+
+  desc 'Download CSV of all tutorial streams for the given unit'
+  params do
+    requires :unit_id, type: Integer, desc: 'The unit to download tutorial streams from'
+  end
+  get '/units/:unit_id/tutorial_streams/csv' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :download_unit_csv
+      error!({ error: 'Not authorised to download CSV of tutorial streams' }, 403)
+    end
+
+    content_type 'application/octet-stream'
+    header['Content-Disposition'] = "attachment; filename=#{unit.code}-TutorialStreams.csv"
+    header['Access-Control-Expose-Headers'] = 'Content-Disposition'
+    env['api.format'] = :binary
+    unit.tutorial_streams_csv
+  end
+
+  desc 'Upload CSV of tutorial streams to the given unit'
+  params do
+    requires :unit_id, type: Integer, desc: 'The unit to upload tutorial streams to'
+    requires :file, type: File, desc: 'CSV upload file.'
+  end
+  post '/units/:unit_id/tutorial_streams/csv' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :upload_csv
+      error!({ error: 'Not authorised to upload CSV of tutorial streams' }, 403)
+    end
+
+    if params[:file].blank?
+      error!({ error: 'No file uploaded' }, 403)
+    end
+
+    # check mime is correct before uploading
+    ensure_csv!(params[:file][:tempfile])
+
+    present unit.import_tutorial_streams_from_csv(params[:file][:tempfile]), with: Grape::Presenters::Presenter
   end
 
   desc 'Delete a tutorial stream in the unit'

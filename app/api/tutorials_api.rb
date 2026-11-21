@@ -3,6 +3,7 @@ require 'grape'
 class TutorialsApi < Grape::API
   helpers AuthenticationHelpers
   helpers AuthorisationHelpers
+  helpers MimeCheckHelpers
 
   before do
     authenticated?
@@ -96,6 +97,46 @@ class TutorialsApi < Grape::API
     tutorial&.update!(duration_minutes: tut_params[:duration_minutes]) if tut_params[:duration_minutes].present?
 
     present tutorial, with: Entities::TutorialEntity
+  end
+
+  desc 'Download CSV of all tutorials for the given unit'
+  params do
+    requires :unit_id, type: Integer, desc: 'The unit to download tutorials from'
+  end
+  get '/units/:unit_id/tutorials/csv' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :download_unit_csv
+      error!({ error: 'Not authorised to download CSV of tutorials' }, 403)
+    end
+
+    content_type 'application/octet-stream'
+    header['Content-Disposition'] = "attachment; filename=#{unit.code}-Tutorials.csv"
+    header['Access-Control-Expose-Headers'] = 'Content-Disposition'
+    env['api.format'] = :binary
+    unit.tutorials_csv
+  end
+
+  desc 'Upload CSV of tutorials to the given unit'
+  params do
+    requires :unit_id, type: Integer, desc: 'The unit to upload tutorials to'
+    requires :file, type: File, desc: 'CSV upload file.'
+  end
+  post '/units/:unit_id/tutorials/csv' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :upload_csv
+      error!({ error: 'Not authorised to upload CSV of tutorials' }, 403)
+    end
+
+    if params[:file].blank?
+      error!({ error: 'No file uploaded' }, 403)
+    end
+
+    # check mime is correct before uploading
+    ensure_csv!(params[:file][:tempfile])
+
+    present unit.import_tutorials_from_csv(params[:file][:tempfile]), with: Grape::Presenters::Presenter
   end
 
   desc 'Delete a tutorial'

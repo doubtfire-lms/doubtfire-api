@@ -19,6 +19,24 @@ class TutorialStream < ApplicationRecord
   validates :name,         presence: true, uniqueness: { scope: :unit, message: "%{value} already exists in this unit" }
   validates :abbreviation, presence: true, uniqueness: { scope: :unit, message: "%{value} already exists in this unit" }
 
+  # Columns used to export and import tutorial streams via CSV
+  def self.csv_columns
+    %w[abbreviation name activity_type]
+  end
+
+  def self.to_csv(tutorial_streams)
+    CSV.generate do |csv|
+      csv << csv_columns
+      tutorial_streams.each do |tutorial_stream|
+        csv << CsvHelper.escape_spreadsheet_formulas(tutorial_stream.to_csv_row)
+      end
+    end
+  end
+
+  def to_csv_row
+    [abbreviation, name, activity_type&.abbreviation]
+  end
+
   private
 
   def can_destroy?
