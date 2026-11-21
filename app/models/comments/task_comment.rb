@@ -46,9 +46,15 @@ class TaskComment < ApplicationRecord
     Notification.create_for_task_comment(self)
   end
 
+  after_commit :broadcast_comment_created, on: :create
+
   # Delete action - before dependent association
   before_destroy :rewind_comment_read_cursors, prepend: true
   before_destroy :delete_associated_files
+
+  def broadcast_comment_created
+    task.broadcast_group_event('comment_created')
+  end
 
   def valid_reply_to?
     if reply_to_id.present?

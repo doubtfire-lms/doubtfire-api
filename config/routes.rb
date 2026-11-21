@@ -29,6 +29,7 @@ Doubtfire::Application.routes.draw do
   get "health" => "rails/health#show", as: :rails_health_check
 
   mount ApiRoot => '/'
+  mount ActionCable.server => '/cable'
   mount GrapeSwaggerRails::Engine => '/api/docs'
   mount Sidekiq::Web => "/sidekiq" # mount Sidekiq::Web in your Rails app
 end

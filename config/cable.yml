@@ -1,0 +1,13 @@
+development:
+  # Redis lets broadcasts from Sidekiq, rake and the console reach the web server
+  adapter: "<%= ENV['DF_REDIS_CABLE_URL'] || ENV['DF_REDIS_SIDEKIQ_URL'] ? 'redis' : 'async' %>"
+  url: <%= ENV.fetch("DF_REDIS_CABLE_URL", ENV.fetch("DF_REDIS_SIDEKIQ_URL", "")) %>
+  channel_prefix: doubtfire_development
+
+test:
+  adapter: test
+
+production:
+  adapter: redis
+  url: <%= ENV.fetch("DF_REDIS_CABLE_URL", ENV.fetch("DF_REDIS_SIDEKIQ_URL", "redis://localhost:6379/1")) %>
+  channel_prefix: doubtfire_production
