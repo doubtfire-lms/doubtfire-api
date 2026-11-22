@@ -172,7 +172,7 @@ GEM
       railties (>= 5.0.0)
     faker (3.5.3)
       i18n (>= 1.8.11, < 2)
-    faraday (2.12.3)
+    faraday (2.14.3)
       faraday-net_http (>= 2.0, < 3.5)
       json
       logger
@@ -274,8 +274,9 @@ GEM
       mustermann (>= 1.0.0)
     mysql2 (0.5.7)
       bigdecimal
-    net-http (0.6.0)
-      uri
+    net-http (0.10.0)
+      net-protocol (>= 0.3.0)
+      uri (>= 0.11.1)
     net-imap (0.6.8)
       date
       net-protocol
