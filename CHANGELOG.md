@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [11.0.8](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.7...v11.0.8) (2026-11-22)
+
+
+### Bug Fixes
+
+* update zip handling for rubyzip 3 ([09f56b2](https://github.com/b0ink/doubtfire-deploy/commit/09f56b225ec916170a335e7357987fc60492630a))
+
 ### [11.0.7](https://github.com/b0ink/doubtfire-deploy/compare/v11.0.6...v11.0.7) (2026-11-20)
 
 
