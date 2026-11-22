@@ -58,8 +58,8 @@ class AuthTest < ActiveSupport::TestCase
 
     refresh_token = User.first.auth_tokens.where(token_type: :refresh_token).last
     assert refresh_token.present?
-    assert_match(/refresh_token=#{refresh_token.authentication_token};/, last_response.cookies['refresh_token'].to_s, 'Expect refresh token to be set')
-    assert_match(/username=#{User.first.username};/, last_response.cookies['username'].to_s, 'Expect username to be set')
+    assert_equal(refresh_token.authentication_token, last_response.cookies['refresh_token'].value.first, 'Expect refresh token to be set')
+    assert_equal(User.first.username, last_response.cookies['username'].value.first, 'Expect username to be set')
   end
 
   def test_student_login_cannot_issue_admin_refresh_cookie
@@ -72,8 +72,8 @@ class AuthTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status
     assert_equal student.username, last_response_body.dig('user', 'username')
 
-    cookie_username = last_response.cookies['username'].to_s[/username=([^;]+)/, 1]
-    cookie_token = last_response.cookies['refresh_token'].to_s[/refresh_token=([^;]+)/, 1]
+    cookie_username = last_response.cookies['username']&.value&.first
+    cookie_token = last_response.cookies['refresh_token']&.value&.first
     assert cookie_username.present?
     assert cookie_token.present?
 
@@ -125,8 +125,8 @@ class AuthTest < ActiveSupport::TestCase
 
     assert_equal 201, last_response.status
 
-    assert_match(/refresh_token=;/, last_response.cookies['refresh_token'].to_s, 'Expect refresh token to be deleted')
-    assert_match(/username=;/, last_response.cookies['username'].to_s, 'Expect username to be deleted')
+    assert_equal('', last_response.cookies['refresh_token'].value.first, 'Expect refresh token to be deleted')
+    assert_equal('', last_response.cookies['username'].value.first, 'Expect username to be deleted')
   end
 
   # Test auth when username is invalid
@@ -241,8 +241,8 @@ class AuthTest < ActiveSupport::TestCase
     # 204 response code means success!
     assert_equal 204, last_response.status
 
-    assert_match(/username=;/, last_response.cookies['username'].to_s)
-    assert_match(/refresh_token=;/, last_response.cookies['refresh_token'].to_s)
+    assert_equal('', last_response.cookies['username'].value.first)
+    assert_equal('', last_response.cookies['refresh_token'].value.first)
   end
 
   def test_refresh_token
@@ -370,7 +370,7 @@ class AuthTest < ActiveSupport::TestCase
 
     post 'api/auth'
   ensure
-    unit.destroy
+    unit&.destroy
   end
 
   def test_scorm_token
@@ -385,6 +385,6 @@ class AuthTest < ActiveSupport::TestCase
 
     assert 403, last_response.status
   ensure
-    unit.destroy
+    unit&.destroy
   end
 end
