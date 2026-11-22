@@ -58,7 +58,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     Dir.mktmpdir('jplag-base') do |root|
       archive_path = File.join(root, 'resources.zip')
-      Zip::File.open(archive_path, Zip::File::CREATE) do |zip|
+      Zip::File.open(archive_path, create: true) do |zip|
         zip.get_output_stream('starter/main.rb') { |stream| stream.write('safe') }
         zip.get_output_stream('../../escaped.rb') { |stream| stream.write('outside') }
       end
@@ -81,7 +81,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     Dir.mktmpdir('jplag-base') do |root|
       archive_path = File.join(root, 'resources.zip')
-      Zip::File.open(archive_path, Zip::File::CREATE) do |zip|
+      Zip::File.open(archive_path, create: true) do |zip|
         zip.get_output_stream('link/escaped.rb') { |stream| stream.write('outside') }
       end
       task_definition.add_task_resources(archive_path, copy: true)

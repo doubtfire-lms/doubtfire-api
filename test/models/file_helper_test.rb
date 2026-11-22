@@ -259,7 +259,7 @@ class FileHelperTest < ActiveSupport::TestCase
 
   def test_accept_zip_upload
     Tempfile.create(['submission', '.zip']) do |zip_file|
-      Zip::File.open(zip_file.path, Zip::File::CREATE) do |zip|
+      Zip::File.open(zip_file.path, create: true) do |zip|
         zip.get_output_stream('src/main.rb') { |io| io.write("puts 'hello'\n") }
       end
 
@@ -278,7 +278,7 @@ class FileHelperTest < ActiveSupport::TestCase
 
   def test_zip_upload_rejects_unsafe_paths
     Tempfile.create(['submission', '.zip']) do |zip_file|
-      Zip::File.open(zip_file.path, Zip::File::CREATE) do |zip|
+      Zip::File.open(zip_file.path, create: true) do |zip|
         zip.get_output_stream('../escape.rb') { |io| io.write("puts 'bad'\n") }
       end
 
@@ -298,7 +298,7 @@ class FileHelperTest < ActiveSupport::TestCase
 
   def test_zip_upload_rejects_nested_archives
     Tempfile.create(['submission', '.zip']) do |zip_file|
-      Zip::File.open(zip_file.path, Zip::File::CREATE) do |zip|
+      Zip::File.open(zip_file.path, create: true) do |zip|
         zip.get_output_stream('lib/vendor.zip') { |io| io.write('nested archive') }
       end
 
@@ -321,7 +321,7 @@ class FileHelperTest < ActiveSupport::TestCase
     Doubtfire::Application.config.max_file_size = 1_000
 
     Tempfile.create(['submission', '.zip']) do |zip_file|
-      Zip::File.open(zip_file.path, Zip::File::CREATE) do |zip|
+      Zip::File.open(zip_file.path, create: true) do |zip|
         zip.get_output_stream('large.txt') { |io| io.write('a' * 1_001) }
       end
 
@@ -347,7 +347,7 @@ class FileHelperTest < ActiveSupport::TestCase
     Doubtfire::Application.config.zip_uncompressed_size_multiplier = 2
 
     Tempfile.create(['submission', '.zip']) do |zip_file|
-      Zip::File.open(zip_file.path, Zip::File::CREATE) do |zip|
+      Zip::File.open(zip_file.path, create: true) do |zip|
         3.times do |index|
           zip.get_output_stream("file-#{index}.txt") { |io| io.write('a' * 900) }
         end
@@ -365,7 +365,7 @@ class FileHelperTest < ActiveSupport::TestCase
 
   def test_zip_file_tree_lists_nested_paths
     Tempfile.create(['submission', '.zip']) do |zip_file|
-      Zip::File.open(zip_file.path, Zip::File::CREATE) do |zip|
+      Zip::File.open(zip_file.path, create: true) do |zip|
         zip.get_output_stream('src/main.rb') { |io| io.write("puts 'hello'\n") }
         zip.get_output_stream('README.md') { |io| io.write("# Read me\n") }
       end

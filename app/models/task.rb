@@ -1299,11 +1299,13 @@ class Task < ApplicationRecord
         # Extract to file/directory/symlink
         logger.debug "Extracting file from done: #{entry.name}"
         if entry.name_is_directory?
-          entry.extract(name_fn.call(self, to_path, entry.name)) { true }
+          dest = name_fn.call(self, to_path, entry.name)
+          entry.extract(File.basename(dest), destination_directory: File.dirname(dest)) { true }
         end
       end
       zip.glob("**/#{pattern}").each do |entry|
-        entry.extract(name_fn.call(self, to_path, entry.name)) { true }
+        dest = name_fn.call(self, to_path, entry.name)
+        entry.extract(File.basename(dest), destination_directory: File.dirname(dest)) { true }
       end
     end
   end
@@ -1361,7 +1363,7 @@ class Task < ApplicationRecord
       zip_dir = File.dirname(zip_file)
       FileUtils.mkdir_p zip_dir
 
-      Zip::File.open(zip_file, Zip::File::CREATE) do |zip|
+      Zip::File.open(zip_file, create: true) do |zip|
         zip.mkdir id.to_s
         input_files.each do |in_file|
           final_name = in_file

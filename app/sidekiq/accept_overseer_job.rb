@@ -291,7 +291,7 @@ class AcceptOverseerJob
 
       dest_path = File.join(work_dir, final_name)
       FileUtils.mkdir_p(File.dirname(dest_path))
-      entry.extract(dest_path) { true }
+      entry.extract(File.basename(dest_path), destination_directory: File.dirname(dest_path)) { true }
     end
   end
 
@@ -306,7 +306,7 @@ class AcceptOverseerJob
 
         entries.each do |entry, dest_path|
           FileUtils.mkdir_p(File.dirname(dest_path))
-          zip_file.extract(entry, dest_path) { true } # overwrite if exists
+          zip_file.extract(entry, File.basename(dest_path), destination_directory: File.dirname(dest_path)) { true } # overwrite if exists
         end
       end
     end

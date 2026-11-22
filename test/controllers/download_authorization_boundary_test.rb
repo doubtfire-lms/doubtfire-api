@@ -410,7 +410,7 @@ class DownloadAuthorizationBoundaryTest < ActiveSupport::TestCase
   def create_content_site
     unit = FactoryBot.create(:unit, with_students: false, task_count: 0, stream_count: 0)
     archive = Tempfile.new(['download-authorization-content', '.zip'])
-    Zip::File.open(archive.path, Zip::File::CREATE) do |zip|
+    Zip::File.open(archive.path, create: true) do |zip|
       zip.get_output_stream('index.html') { |stream| stream.write('<h1>Content</h1>') }
     end
     site = UnitContentSite.store_upload!(
