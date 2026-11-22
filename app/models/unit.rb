@@ -2454,7 +2454,7 @@ class Unit < ApplicationRecord
     return result if File.exist?(result)
 
     # Create a new zip
-    Zip::File.open(result, Zip::File::CREATE) do |zip|
+    Zip::File.open(result, create: true) do |zip|
       task_definitions.each do |td|
         if td.has_task_sheet?
           dst_path = FileHelper.sanitized_filename(td.abbreviation.to_s) + '.pdf'
@@ -3223,7 +3223,7 @@ class Unit < ApplicationRecord
     return result if File.exist?(output_zip)
 
     # Create a new zip
-    Zip::File.open(output_zip, Zip::File::CREATE) do |zip|
+    Zip::File.open(output_zip, create: true) do |zip|
       csv_str = mark_csv_headers
 
       # Add individual tasks...
@@ -3529,7 +3529,7 @@ class Unit < ApplicationRecord
           tmp_file = File.join(tmp_dir, File.basename(file.name))
 
           # get file out of zip... to tmp_file
-          file.extract(tmp_file) { true }
+          file.extract(File.basename(tmp_file), destination_directory: tmp_dir) { true }
 
           # copy tmp_file to dest
           destination_path = task.final_pdf_path(ignore_portfolio_evidence: true)
@@ -3853,7 +3853,7 @@ class Unit < ApplicationRecord
         }
       end
 
-      Zip::File.open(repacked_zip.path, Zip::File::CREATE) do |output_zip|
+      Zip::File.open(repacked_zip.path, create: true) do |output_zip|
         output_zip.get_output_stream('marks.csv') do |f|
           f.write(build_batch_feedback_legacy_marks_csv(task_rows))
         end

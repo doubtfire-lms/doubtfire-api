@@ -249,7 +249,7 @@ module UnitSimilarityModule
           entries = zip_file.map { |entry| [entry, safe_jplag_base_path!(entry, base_dir)] }
           entries.each do |entry, dest|
             FileUtils.mkdir_p(File.dirname(dest))
-            entry.extract(dest) { true }
+            entry.extract(File.basename(dest), destination_directory: File.dirname(dest)) { true }
           end
         end
       end
