@@ -175,13 +175,23 @@ class ProjectsApiTest < ActiveSupport::TestCase
     end
 
     assert_equal 403, last_response.status
+  end
 
-    add_auth_header_for(user: FactoryBot.create(:user, :admin))
-    assert_no_difference 'Engagement.count' do
-      get "/api/projects/#{project.id}?record_attendance=true"
+  def test_admin_without_unit_role_can_record_attendance
+    project, _tutor, tutorial = attendance_test_data
+    tutorial.update!(meeting_day: 'Monday', meeting_time: '10:00')
+    admin = FactoryBot.create(:user, :admin)
+    assert_nil project.unit.unit_role_for(admin)
+    add_auth_header_for(user: admin)
+
+    assert_difference 'Engagement.count', 1 do
+      travel_to(Time.zone.parse('2026-07-20 10:30:00 UTC')) do
+        get "/api/projects/#{project.id}?record_attendance=true"
+      end
     end
 
-    assert_equal 403, last_response.status
+    assert_equal 200, last_response.status
+    assert_equal admin, project.engagements.last.user
   end
 
   def test_projects_works_with_inactive_units
