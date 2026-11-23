@@ -105,6 +105,7 @@ class Unit < ApplicationRecord
       :download_overflow_stats,
       :download_unit_csv,
       :download_grades,
+      :upload_grades_csv,
       :exceed_capacity,
       :get_los,
       :create_feedback_chips,
@@ -116,6 +117,11 @@ class Unit < ApplicationRecord
       :upload_staff_notes_csv,
       :get_tutor_times,
       :get_tutor_times_summary,
+      :view_staff_inbox,
+      :provide_feedback,
+      :perform_overseer_assessment_test,
+      :capture_task_completion_snapshot,
+      :delete_engagement,
       :manage_unit_content,
       :mannage_communications,
     ]
@@ -2999,7 +3005,7 @@ class Unit < ApplicationRecord
                   )
                   .distinct
 
-    if my_unit_role.nil? || my_unit_role.role != Role.convenor
+    if !user.has_admin_capability? && (my_unit_role.nil? || my_unit_role.role != Role.convenor)
       tasks = tasks.where(tutorials: { unit_role_id: mentees.select(:id) })
     end
 

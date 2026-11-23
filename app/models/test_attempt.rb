@@ -37,6 +37,7 @@ class TestAttempt < ApplicationRecord
       student: student_role_permissions,
       tutor: tutor_role_permissions,
       convenor: convenor_role_permissions,
+      admin: [:review_other_attempt],
       nil: nil_role_permissions
     }
   end

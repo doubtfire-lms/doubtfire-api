@@ -81,6 +81,15 @@ class BatchFeedbackUploadsApiTest < ActiveSupport::TestCase
     FileUtils.rm_f(path) if path
   end
 
+  def test_admin_without_unit_role_cannot_start_batch_feedback_upload
+    admin = FactoryBot.create(:user, :admin)
+    assert_nil @unit.unit_role_for(admin)
+
+    start_upload(size: 10, user: admin)
+
+    assert_equal 401, last_response.status
+  end
+
   def test_cannot_complete_partial_upload
     id = start_upload(size: 10)
     send_chunk(id, 0, 'abc')

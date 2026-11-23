@@ -10,6 +10,8 @@ class TutorNotesApi < Grape::API
 
   helpers do
     def can_access_tutor_notes?(unit, current_user, unit_role)
+      return true if current_user.has_admin_capability?
+
       current_user_role = unit.unit_role_for(current_user)
       return false if current_user_role.nil?
 

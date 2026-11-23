@@ -465,7 +465,7 @@ class TasksApiTest < ActiveSupport::TestCase
     td.destroy
   end
 
-  def test_convenors_tutors_can_pin_and_unpin_tasks_students_admins_cannot
+  def test_convenors_tutors_and_admins_can_pin_and_unpin_tasks_students_cannot
     unit = FactoryBot.create(:unit, student_count: 1, task_count: 1, perform_submissions: true)
     task = unit.tasks.first
 
@@ -477,6 +477,7 @@ class TasksApiTest < ActiveSupport::TestCase
     unit.employ_staff(convenor, Role.convenor)
     unit.employ_staff(tutor, Role.tutor)
     unit.enrol_student(student, FactoryBot.create(:campus))
+    assert_nil unit.unit_role_for(admin)
 
     add_auth_header_for user: convenor
 
@@ -507,7 +508,10 @@ class TasksApiTest < ActiveSupport::TestCase
     add_auth_header_for user: admin
     # Admin tries to pin task
     post "/api/tasks/#{task.id}/pin"
-    assert_equal 403, last_response.status
+    assert_equal 201, last_response.status
+
+    delete "/api/tasks/#{task.id}/pin"
+    assert_equal 200, last_response.status
   end
 
   def test_convenors_tutors_can_pin_tasks_of_their_units_only

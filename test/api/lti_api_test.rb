@@ -545,7 +545,7 @@ class LtiApiTest < ActiveSupport::TestCase
     unit.employ_staff(convenor, Role.convenor)
 
     admin = FactoryBot.create(:user, :admin)
-    unit.employ_staff(admin, Role.admin)
+    assert_nil unit.unit_role_for(admin)
 
     users_cant = [
       student1,
@@ -556,12 +556,7 @@ class LtiApiTest < ActiveSupport::TestCase
       tutor
     ]
 
-    users_can = [
-      # Admins have :convene_units permissions, but do not have :assess permissions
-      # They will instead receive -1 to indicate they dont have permissions to retrieve grades
-      admin,
-      convenor
-    ]
+    users_can = [admin, convenor]
 
     users_can.each do |user|
       add_auth_header_for(user: user)
@@ -600,11 +595,7 @@ class LtiApiTest < ActiveSupport::TestCase
       assert_equal 201, last_response.status
       assert_equal unit.projects.count, last_response_body.count
       last_response_body.each do |email, grade|
-        if unit.role_for(user) == Role.admin
-          assert_equal(-1, grade)
-        else
-          assert_equal(expected_grades[email], grade)
-        end
+        assert_equal expected_grades[email], grade
         assert payload[:student_emails].include?(email)
       end
     end
