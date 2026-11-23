@@ -581,15 +581,17 @@ class UnitsApi < Grape::API
     end
 
     unit_role = unit.unit_role_for(current_user)
-    unless unit_role
+    unless unit_role || current_user.has_admin_capability?
       error!({ error: "Not authorised to download CSV of marking sessions for #{unit.code}" }, 403)
     end
 
     job_id = DownloadMarkingSessionsJob.perform_async(
-      unit_role.id,
+      unit_role&.id,
       params[:start_date]&.to_s,
       params[:end_date]&.to_s,
       params[:timezone]&.to_s,
+      current_user.id,
+      unit.id,
     )
 
     job = setup_job(job_id)

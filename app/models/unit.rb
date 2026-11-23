@@ -115,6 +115,7 @@ class Unit < ApplicationRecord
       :get_staff_notes,
       :upload_staff_notes_csv,
       :get_tutor_times,
+      :get_tutor_times_summary,
       :manage_unit_content,
       :mannage_communications,
     ]

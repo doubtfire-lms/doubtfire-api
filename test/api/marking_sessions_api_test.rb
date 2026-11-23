@@ -35,6 +35,7 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
     student = unit.projects.first.user
     tutor = FactoryBot.create(:user, :tutor)
     convenor = FactoryBot.create(:user, :convenor)
+    admin = FactoryBot.create(:user, :admin)
 
     unit.employ_staff(tutor, Role.tutor)
     unit.employ_staff(convenor, Role.convenor)
@@ -75,7 +76,7 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
     end
 
     users_can_get = [
-      convenor
+      convenor, admin
     ]
 
     users_cant_get = [
@@ -96,6 +97,19 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
         get "/api/csv/units/#{unit.id}/tutor_times_summary"
         assert_equal 403, last_response.status, last_response_body
       end
+    end
+
+    Sidekiq::Testing.inline! do
+      [admin, tutor].each do |user|
+        add_auth_header_for(user: user)
+
+        get "/api/csv/units/#{unit.id}/my_marking_sessions"
+        assert_equal 200, last_response.status, last_response_body
+      end
+
+      add_auth_header_for(user: student)
+      get "/api/csv/units/#{unit.id}/my_marking_sessions"
+      assert_equal 403, last_response.status, last_response_body
     end
 
     users_can_get = [
@@ -121,6 +135,40 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
         assert_equal 403, last_response.status
       end
     end
+  end
+
+  def test_marking_session_visibility_by_role
+    other_tutor = FactoryBot.create(:user, :tutor)
+    @unit.employ_staff(other_tutor, Role.tutor)
+    other_session = FactoryBot.create(:marking_session,
+                                      user: other_tutor,
+                                      unit: @unit,
+                                      ip_address: '127.0.0.1',
+                                      start_time: 1.hour.ago,
+                                      end_time: Time.zone.now)
+    admin = FactoryBot.create(:user, :admin)
+    all_session_ids = [@marking_session.id, other_session.id].sort
+
+    [@convenor, admin].each do |user|
+      add_auth_header_for(user: user)
+      get "/api/units/#{@unit.id}/marking_sessions"
+      assert_equal 200, last_response.status
+      session_ids = JSON.parse(last_response.body).map { |session| session['id'] }
+      assert_equal all_session_ids, session_ids.sort
+    end
+
+    add_auth_header_for(user: @tutor)
+    get "/api/units/#{@unit.id}/marking_sessions"
+    assert_equal 200, last_response.status
+    session_ids = JSON.parse(last_response.body).map { |session| session['id'] }
+    assert_equal [@marking_session.id], session_ids
+
+    @unit.employ_staff(admin, Role.tutor)
+    add_auth_header_for(user: admin)
+    get "/api/units/#{@unit.id}/marking_sessions"
+    assert_equal 200, last_response.status
+    session_ids = JSON.parse(last_response.body).map { |session| session['id'] }
+    assert_equal all_session_ids, session_ids.sort
   end
 
   def test_marking_sessions
