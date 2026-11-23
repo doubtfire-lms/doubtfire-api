@@ -92,10 +92,21 @@ class Project < ApplicationRecord
     # What can admins do with projects?
     admin_role_permissions = [
       :get,
+      :change_tutorial,
+      :make_submission,
       :get_submission,
+      :change,
+      :assess,
+      :change_campus,
+      :get_staff_note,
+      :create_staff_note,
       :reprocess_submission,
       :get_discussion_prompt,
-      :get_engagements
+      :get_engagements,
+      :create_engagement,
+      :edit_engagement,
+      :delete_engagement,
+      :comment_engagement
     ]
 
     # What can auditors do with projects?

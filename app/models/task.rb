@@ -77,6 +77,8 @@ class Task < ApplicationRecord
     admin_role_permissions = [
       :get,
       :get_submission,
+      :make_submission,
+      :delete_own_comment,
       :view_plagiarism,
       :delete_plagiarism,
       :get_discussion

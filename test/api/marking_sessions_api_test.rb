@@ -39,6 +39,7 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
 
     unit.employ_staff(tutor, Role.tutor)
     unit.employ_staff(convenor, Role.convenor)
+    assert_nil unit.unit_role_for(admin)
 
     tracked_users = [
       convenor, tutor
@@ -147,6 +148,7 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
                                       start_time: 1.hour.ago,
                                       end_time: Time.zone.now)
     admin = FactoryBot.create(:user, :admin)
+    assert_nil @unit.unit_role_for(admin)
     all_session_ids = [@marking_session.id, other_session.id].sort
 
     [@convenor, admin].each do |user|
@@ -164,6 +166,7 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
     assert_equal [@marking_session.id], session_ids
 
     @unit.employ_staff(admin, Role.tutor)
+    assert_equal Role.tutor, @unit.unit_role_for(admin).role
     add_auth_header_for(user: admin)
     get "/api/units/#{@unit.id}/marking_sessions"
     assert_equal 200, last_response.status
