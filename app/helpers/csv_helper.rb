@@ -14,6 +14,13 @@ module CsvHelper
     values.map { |value| escape_spreadsheet_formula(value) }
   end
 
+  # Reverse escape_spreadsheet_formula so an exported CSV can be re-imported unchanged
+  def unescape_spreadsheet_formula(value)
+    return value unless value.is_a?(String) && value.start_with?("'") && value[1..].match?(SPREADSHEET_FORMULA_PREFIX)
+
+    value[1..]
+  end
+
   def csv_date_to_date(date)
     return if date.blank?
 
@@ -48,4 +55,5 @@ module CsvHelper
   module_function :missing_headers
   module_function :escape_spreadsheet_formula
   module_function :escape_spreadsheet_formulas
+  module_function :unescape_spreadsheet_formula
 end
