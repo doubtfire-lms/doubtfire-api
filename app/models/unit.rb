@@ -79,6 +79,7 @@ class Unit < ApplicationRecord
       :get_feedback_chips,
       :get_tutor_times,
       :get_tutor_times_summary,
+      :get_task_turnaround,
       :get_marking_sessions,
       :upload_grades_csv,
       :upload_staff_notes_csv,
