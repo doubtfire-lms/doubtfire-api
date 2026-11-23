@@ -53,7 +53,7 @@ class TaskTurnaroundReport
   def assessed_attempts
     candidates = TaskSubmission.where.not(assessment_time: nil).select(:task_id)
     tasks = Task.joins(:project).where(projects: { unit_id: @unit.id }, task_definition: @unit.task_definitions,
-                                      id: candidates).preload(:project, :task_definition)
+                                       id: candidates).preload(:project, :task_definition)
     attempts = []
     tasks.find_in_batches do |batch|
       tasks_by_id = batch.index_by(&:id)
@@ -64,8 +64,8 @@ class TaskTurnaroundReport
         task = tasks_by_id.fetch(task_id)
         first = assessments.first.assessment_time
         next if first < submitted_at
-        if task.group_submission_id || task.task_definition.group_set_id || first == submitted_at
-          next unless evidence.fetch(task_id, []).any? { |time| time >= submitted_at && time < first + 1.second }
+        if (task.group_submission_id || task.task_definition.group_set_id || first == submitted_at) && evidence.fetch(task_id, []).none? { |time| time >= submitted_at && time < first + 1.second }
+          next
         end
 
         attempts << Attempt.new(task: task, submitted_at: submitted_at, assessments: assessments)
