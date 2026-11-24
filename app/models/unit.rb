@@ -4179,7 +4179,10 @@ class Unit < ApplicationRecord
     cached = File.exist?(path) ? JSON.parse(Zlib::GzipReader.open(path, &:read)) : nil
 
     if cached.present? &&
-        cached.all? { |entry| entry.key?('student_count') && entry.key?('campus_student_counts') && entry.key?('target_grade_student_counts') && entry.key?('target_grade_campus_student_counts') && entry.key?('target_grade_stats') && entry.key?('status_population_stats') && entry['submitted_task_count_student_counts'].is_a?(Hash) && entry['submitted_task_count_student_counts'].key?('all') } &&
+        cached.all? do |entry|
+          %w[student_count campus_student_counts target_grade_student_counts target_grade_campus_student_counts target_grade_stats status_population_stats].all? { |key| entry.key?(key) } &&
+            entry['submitted_task_count_student_counts'].is_a?(Hash) && entry['submitted_task_count_student_counts'].key?('all')
+        end &&
        cached.map { |entry| entry['snapshot_timestamp'] }.sort == TaskCompletionSnapshot.where(unit_id: id).pluck(:snapshot_timestamp).sort
       return cached
     end
