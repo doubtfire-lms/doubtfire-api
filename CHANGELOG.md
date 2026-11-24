@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.1.0-22](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-21...v11.1.0-22) (2026-11-24)
+
+
+### Features
+
+* tutorial stream and tutorial CSV import/export ([#772](https://github.com/b0ink/doubtfire-deploy/issues/772)) ([747e00c](https://github.com/b0ink/doubtfire-deploy/commit/747e00cf37801e2678c4498661c6c573b4cefabe))
+
+
+### Bug Fixes
+
+* allow admins to access unit staff workflows without a unit role ([#792](https://github.com/b0ink/doubtfire-deploy/issues/792)) ([4b14090](https://github.com/b0ink/doubtfire-deploy/commit/4b140902d0f2877a01f90baa4ff2906d91ea0d27))
+* allow admins to download unit session time summary ([ce8ce63](https://github.com/b0ink/doubtfire-deploy/commit/ce8ce636e05e15f82b53b13a3e1b71793104d931))
+* update zip handling for rubyzip 3 ([6e38e6c](https://github.com/b0ink/doubtfire-deploy/commit/6e38e6cde7ace3f22c9f0eaa176b36a592681fe7))
+
 ## [11.1.0-21](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-20...v11.1.0-21) (2026-11-20)
 
 
