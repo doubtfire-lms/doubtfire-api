@@ -157,26 +157,50 @@ class TaskCompletionSnapshot < ApplicationRecord
     }
   end
 
-  # Count submitted task statuses in the saved CSV, once per student.
+  # Students per student target grade, campus and tutorial ('__all__' for any tutorial), keyed by
+  # submitted task counts per task grade in unit.grade_values order (e.g. "3,1,0,0").
   def load_submitted_task_count_student_counts
     csv_text = snapshot_contents
-    return {} if csv_text.blank?
+    return { 'all' => {}, 'target_grades' => {} } if csv_text.blank?
 
-    task_headers = unit.task_definitions_by_grade.map(&:abbreviation)
-    distribution = Hash.new(0)
+    stream_headers = unit.tutorial_streams.pluck(:abbreviation)
+    stream_headers = ['Tutorial'] if stream_headers.empty?
+    grade_values = unit.grade_values
+    task_grades = unit.task_definitions_by_grade.pluck(:abbreviation, :target_grade)
+    grade_labels = grade_values.to_h { |grade| [unit.grade_label(grade), grade.to_s] }
+    campus_names = Campus.pluck(:abbreviation, :name).to_h
+    result = { 'all' => {}, 'target_grades' => {} }
     seen_students = Set.new
+
     CSV.parse(csv_text, headers: true).each do |row|
       student = row['Username'].presence || row['Student ID'].presence
-      next if student.blank? || !seen_students.add?(student)
+      campus_abbreviation = row['Campus'].to_s.strip
+      next if student.blank? || campus_abbreviation.blank? || !seen_students.add?(student)
 
-      submitted_count = task_headers.count do |header|
-        SUBMITTED_STATUS_KEYS.include?(TaskStatus.id_to_key(row[header].to_i))
+      submitted_counts = Hash.new(0)
+      task_grades.each do |abbreviation, task_grade|
+        submitted_counts[task_grade] += 1 if SUBMITTED_STATUS_KEYS.include?(TaskStatus.id_to_key(row[abbreviation].to_i))
       end
-      distribution[submitted_count.to_s] += 1
+      key = grade_values.map { |grade| submitted_counts[grade] }.join(',')
+
+      campus = campus_names[campus_abbreviation] || campus_abbreviation
+      tutorials = ['__all__', *stream_headers.filter_map { |header| row[header].to_s.strip.presence }.uniq]
+      target_grade = grade_labels[row['Target Grade'].to_s.strip]
+      scopes = [result['all']]
+      scopes << (result['target_grades'][target_grade] ||= {}) if target_grade
+
+      scopes.each do |scope|
+        campus_stats = scope[campus] ||= {}
+        tutorials.each do |tutorial|
+          distribution = campus_stats[tutorial] ||= {}
+          distribution[key] = (distribution[key] || 0) + 1
+        end
+      end
     end
-    distribution
+
+    result
   rescue CSV::MalformedCSVError
-    {}
+    { 'all' => {}, 'target_grades' => {} }
   end
 
   def store_stats!(payload)
