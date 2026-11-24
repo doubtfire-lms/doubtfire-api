@@ -141,6 +141,26 @@ class NotificationsApi < Grape::API
     }
   end
 
+  desc "Get a staff member's latest weekly summary for a unit"
+  params do
+    requires :unit_id, type: Integer
+    requires :unit_role_id, type: Integer
+  end
+  get '/units/:unit_id/staff/:unit_role_id/weekly_summary' do
+    unit = Unit.find(params[:unit_id])
+    unless unit.convenors.exists?(user_id: current_user.id)
+      error!({ error: 'Only unit convenors can view staff weekly summaries' }, 403)
+    end
+
+    recipient = unit.staff.find(params[:unit_role_id]).user
+    latest = recipient.received_notifications
+                      .where(unit: unit, kind: 'weekly_summary', project_id: nil)
+                      .order(created_at: :desc, id: :desc)
+                      .first
+
+    { weekly_summary: latest&.weekly_summary_data }
+  end
+
   desc 'Get the grouped unread notification count for the current user'
   get '/notifications/unread_count' do
     { count: unread_group_count, unread_counts_by_unit: unread_group_counts_by_unit }

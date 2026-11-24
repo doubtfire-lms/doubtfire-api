@@ -146,6 +146,55 @@ class NotificationsApiTest < ActiveSupport::TestCase
     assert_nil last_response_body.dig('groups', 0, 'message_body')
   end
 
+  
+  def test_staff_weekly_summary_returns_only_the_selected_staff_summary
+    role = FactoryBot.create(:unit_role, unit: @unit, role: Role.tutor)
+    summary = { 'audience' => 'staff', 'assessed_tasks' => 3 }
+    notification = FactoryBot.create(
+      :notification, recipient: role.user, unit: @unit, kind: 'weekly_summary', message_body: summary.to_json
+    )
+    FactoryBot.create(
+      :notification, recipient: role.user, unit: @unit, project: @project, kind: 'weekly_summary',
+                     message_body: { audience: 'student' }.to_json
+    )
+    FactoryBot.create(
+      :notification, recipient: @unit.convenors.first.user, unit: @unit, kind: 'weekly_summary',
+                     message_body: { audience: 'staff', assessed_tasks: 10 }.to_json
+    )
+    add_auth_header_for(user: @unit.convenors.first.user)
+
+    get "/api/units/#{@unit.id}/staff/#{role.id}/weekly_summary"
+
+    assert_equal 200, last_response.status
+    assert_equal({ 'weekly_summary' => summary }, last_response_body)
+    assert_nil notification.reload.read_at
+  end
+
+  def test_staff_weekly_summary_denies_tutor_access_to_another_staff_member_in_the_same_unit
+    tutor = FactoryBot.create(:user, :tutor)
+    FactoryBot.create(:unit_role, unit: @unit, user: tutor, role: Role.tutor)
+    other_staff = @unit.convenors.first
+    add_auth_header_for(user: tutor)
+
+    get "/api/units/#{@unit.id}/staff/#{other_staff.id}/weekly_summary"
+
+    assert_equal 403, last_response.status
+  end
+
+  def test_staff_weekly_summary_requires_a_convenor_in_the_requested_unit
+    role = @unit.staff.first
+    get "/api/units/#{@unit.id}/staff/#{role.id}/weekly_summary"
+    assert_equal 403, last_response.status
+
+    other_unit = FactoryBot.create(:unit, with_students: false, task_count: 0)
+    add_auth_header_for(user: other_unit.convenors.first.user)
+    get "/api/units/#{@unit.id}/staff/#{role.id}/weekly_summary"
+    assert_equal 403, last_response.status
+
+    get "/api/units/#{other_unit.id}/staff/#{role.id}/weekly_summary"
+    assert_equal 404, last_response.status
+  end
+
   def test_get_filters_groups_by_category_and_search
     get '/api/notifications',
         state: 'unread',
