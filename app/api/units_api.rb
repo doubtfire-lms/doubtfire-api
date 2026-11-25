@@ -677,30 +677,28 @@ class UnitsApi < Grape::API
   end
 
   desc 'Get historical task completion snapshots'
-  params do
-    optional :start_date, type: Date, desc: 'Include snapshots captured on or after this date'
-    optional :end_date, type: Date, desc: 'Include snapshots captured on or before this date'
-    optional :limit, type: Integer, desc: 'Maximum number of snapshots to return', default: 365
-  end
   get '/units/:id/stats/task_completion_snapshots' do
     unit = Unit.find(params[:id])
     unless authorise? current_user, unit, :download_stats
       error!({ error: "Not authorised to download stats of student tasks in #{unit.code}" }, 403)
     end
 
-    # Already aggregated and ordered newest first, so this only has to filter.
-    snapshots = unit.task_completion_snapshot_stats
-    if params[:start_date].present?
-      start_timestamp = params[:start_date].in_time_zone.beginning_of_day.to_i
-      snapshots = snapshots.select { |snapshot| snapshot['snapshot_timestamp'].to_i >= start_timestamp }
-    end
-    if params[:end_date].present?
-      end_timestamp = params[:end_date].in_time_zone.end_of_day.to_i
-      snapshots = snapshots.select { |snapshot| snapshot['snapshot_timestamp'].to_i <= end_timestamp }
-    end
-    snapshots = snapshots.first([params[:limit].to_i, 365].min)
+    path = unit.task_completion_snapshot_stats_path
+    if path.nil?
+      job_id = RefreshTaskCompletionSnapshotStatsJob.perform_async(unit.id)
+      if job_id.nil?
+        error!({ error: 'Analytics are rebuilding for this unit. Please try again later.' }, 409)
+      end
 
-    present snapshots, with: Grape::Presenters::Presenter
+      status 202
+      present setup_job(job_id), with: Entities::SidekiqJobEntity
+    else
+      # The file is already gzipped JSON, newest first; the browser inflates it.
+      content_type 'application/json'
+      header 'Content-Encoding', 'gzip'
+      env['api.format'] = :binary
+      sendfile path
+    end
   end
 
   desc 'Capture task completion snapshot immediately for this unit'

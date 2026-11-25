@@ -4293,64 +4293,49 @@ class Unit < ApplicationRecord
     end
   end
 
-  # Stats for every snapshot, read from the aggregated file so no CSV is parsed per request.
-  # Rebuilt only when that file is missing, unreadable, or no longer matches the snapshots on record.
-  def task_completion_snapshot_stats
+  # Bump when the shape of a stats entry changes, so existing files are rebuilt.
+  TASK_COMPLETION_SNAPSHOT_STATS_VERSION = 2
+
+  # Path to the aggregated stats file, or nil when it is missing or outdated and needs a rebuild.
+  # Checked against the small meta file so the stats themselves are never inflated per request.
+  def task_completion_snapshot_stats_path
     path = FileHelper.unit_task_status_snapshot_stats_path(self, create: false)
-    cached = File.exist?(path) ? JSON.parse(Zlib::GzipReader.open(path, &:read)) : nil
+    meta_path = FileHelper.unit_task_status_snapshot_stats_meta_path(self, create: false)
+    return nil unless File.exist?(path) && File.exist?(meta_path)
 
-    if cached.present? &&
-        cached.all? do |entry|
-          %w[student_count campus_student_counts target_grade_student_counts target_grade_campus_student_counts target_grade_stats status_population_stats].all? { |key| entry.key?(key) } &&
-            entry['submitted_task_count_student_counts'].is_a?(Hash) &&
-            entry['submitted_task_count_student_counts']['task_grade_values'] == grade_values &&
-            entry['submitted_task_count_student_counts'].key?('all')
-        end &&
-       cached.map { |entry| entry['snapshot_timestamp'] }.sort == TaskCompletionSnapshot.where(unit_id: id).pluck(:snapshot_timestamp).sort
-      return cached
-    end
+    meta = JSON.parse(File.read(meta_path))
+    return nil unless meta.is_a?(Hash) &&
+                      meta['version'] == TASK_COMPLETION_SNAPSHOT_STATS_VERSION &&
+                      meta['grade_values'] == grade_values &&
+                      meta['snapshot_timestamps'] == TaskCompletionSnapshot.where(unit_id: id).pluck(:snapshot_timestamp).sort
 
-    refresh_task_completion_snapshot_stats!
-  rescue JSON::ParserError, Zlib::Error
-    refresh_task_completion_snapshot_stats!
+    path
+  rescue JSON::ParserError
+    nil
+  end
+
+  # An older file has a different entry shape, so it can only be rebuilt, never merged into.
+  def task_completion_snapshot_stats_version_current?
+    meta_path = FileHelper.unit_task_status_snapshot_stats_meta_path(self, create: false)
+    File.exist?(meta_path) && JSON.parse(File.read(meta_path))['version'] == TASK_COMPLETION_SNAPSHOT_STATS_VERSION
+  rescue JSON::ParserError
+    false
   end
 
   # Writes the aggregated file. Stats for an already captured snapshot never change, so passing the
   # snapshot that just changed merges it in rather than re-parsing every other CSV.
-  def refresh_task_completion_snapshot_stats!(changed_snapshot = nil)
+  def refresh_task_completion_snapshot_stats!(changed_snapshot = nil, &progress)
     path = FileHelper.unit_task_status_snapshot_stats_path(self, create: true)
 
     entries =
-      if changed_snapshot.present? && File.exist?(path)
-        student_counts = changed_snapshot.load_student_counts
+      if changed_snapshot.present? && File.exist?(path) && task_completion_snapshot_stats_version_current?
         JSON.parse(Zlib::GzipReader.open(path, &:read)).reject { |entry| entry['snapshot_timestamp'] == changed_snapshot.snapshot_timestamp } +
-          [{
-            'snapshot_date' => changed_snapshot.snapshot_date&.iso8601,
-            'snapshot_timestamp' => changed_snapshot.snapshot_timestamp,
-            'stats' => changed_snapshot.load_stats,
-            'target_grade_stats' => changed_snapshot.load_target_grade_stats,
-            'status_population_stats' => changed_snapshot.load_status_population_stats,
-            'submitted_task_count_student_counts' => changed_snapshot.load_submitted_task_count_student_counts,
-            'student_count' => student_counts['student_count'],
-            'campus_student_counts' => student_counts['campus_student_counts'],
-            'target_grade_student_counts' => student_counts['target_grade_student_counts'],
-            'target_grade_campus_student_counts' => student_counts['target_grade_campus_student_counts']
-          }]
+          [changed_snapshot.aggregated_stats_entry]
       else
-        task_completion_snapshots.reload.map do |snapshot|
-          student_counts = snapshot.load_student_counts
-          {
-            'snapshot_date' => snapshot.snapshot_date&.iso8601,
-            'snapshot_timestamp' => snapshot.snapshot_timestamp,
-            'stats' => snapshot.load_stats,
-            'target_grade_stats' => snapshot.load_target_grade_stats,
-            'status_population_stats' => snapshot.load_status_population_stats,
-            'submitted_task_count_student_counts' => snapshot.load_submitted_task_count_student_counts,
-            'student_count' => student_counts['student_count'],
-            'campus_student_counts' => student_counts['campus_student_counts'],
-            'target_grade_student_counts' => student_counts['target_grade_student_counts'],
-            'target_grade_campus_student_counts' => student_counts['target_grade_campus_student_counts']
-          }
+        task_completion_snapshots.reload.map.with_index do |snapshot, index|
+          entry = snapshot.aggregated_stats_entry
+          progress&.call(index + 1)
+          entry
         end
       end
 
@@ -4360,11 +4345,19 @@ class Unit < ApplicationRecord
     Zlib::GzipWriter.open(tmp_path) { |gz| gz.write(JSON.generate(entries)) }
     FileUtils.mv(tmp_path, path)
 
+    meta_path = FileHelper.unit_task_status_snapshot_stats_meta_path(self, create: true)
+    File.write("#{meta_path}.tmp", JSON.generate({
+      'version' => TASK_COMPLETION_SNAPSHOT_STATS_VERSION,
+      'grade_values' => grade_values,
+      'snapshot_timestamps' => entries.map { |entry| entry['snapshot_timestamp'] }.sort
+    }))
+    FileUtils.mv("#{meta_path}.tmp", meta_path)
+
     entries
   rescue JSON::ParserError, Zlib::Error
     # An unreadable file cannot be merged into; drop it so the retry does a full rebuild.
     FileUtils.rm_f(path)
-    refresh_task_completion_snapshot_stats!
+    refresh_task_completion_snapshot_stats!(&progress)
   end
 
   private

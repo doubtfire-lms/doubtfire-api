@@ -46,6 +46,7 @@ class QueueRoutingTest < ActiveSupport::TestCase
     PruneNotificationsJob
     PullDockerImageJob
     RefreshModerationFeedbackTimestampsJob
+    RefreshTaskCompletionSnapshotStatsJob
     SendDiscussTimeoutEmailJob
     SendNotificationDigestJob
     SyncLmsGradesJob
