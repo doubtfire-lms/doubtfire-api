@@ -4293,26 +4293,24 @@ class Unit < ApplicationRecord
     end
   end
 
-  # Stats for every snapshot, read from the aggregated file so no CSV is parsed per request.
-  # A missing, unreadable, or outdated file is rebuilt by a background job.
-  def task_completion_snapshot_stats
+  # Bump when the shape of a stats entry changes, so existing files are rebuilt.
+  TASK_COMPLETION_SNAPSHOT_STATS_VERSION = 1
+
+  # Path to the aggregated stats file, or nil when it is missing or outdated and needs a rebuild.
+  # Checked against the small meta file so the stats themselves are never inflated per request.
+  def task_completion_snapshot_stats_path
     path = FileHelper.unit_task_status_snapshot_stats_path(self, create: false)
-    cached = File.exist?(path) ? JSON.parse(Zlib::GzipReader.open(path, &:read)) : nil
+    meta_path = FileHelper.unit_task_status_snapshot_stats_meta_path(self, create: false)
+    return nil unless File.exist?(path) && File.exist?(meta_path)
 
-    if cached.is_a?(Array) &&
-        cached.all? do |entry|
-          entry.is_a?(Hash) &&
-            %w[student_count campus_student_counts target_grade_student_counts target_grade_campus_student_counts target_grade_stats status_population_stats].all? { |key| entry.key?(key) } &&
-            entry['submitted_task_count_student_counts'].is_a?(Hash) &&
-            entry['submitted_task_count_student_counts']['task_grade_values'] == grade_values &&
-            entry['submitted_task_count_student_counts'].key?('all')
-        end &&
-       cached.map { |entry| entry['snapshot_timestamp'] }.sort == TaskCompletionSnapshot.where(unit_id: id).pluck(:snapshot_timestamp).sort
-      return cached
-    end
+    meta = JSON.parse(File.read(meta_path))
+    return nil unless meta.is_a?(Hash) &&
+                      meta['version'] == TASK_COMPLETION_SNAPSHOT_STATS_VERSION &&
+                      meta['grade_values'] == grade_values &&
+                      meta['snapshot_timestamps'] == TaskCompletionSnapshot.where(unit_id: id).pluck(:snapshot_timestamp).sort
 
-    nil
-  rescue JSON::ParserError, Zlib::Error
+    path
+  rescue JSON::ParserError
     nil
   end
 
@@ -4362,6 +4360,14 @@ class Unit < ApplicationRecord
     tmp_path = "#{path}.tmp"
     Zlib::GzipWriter.open(tmp_path) { |gz| gz.write(JSON.generate(entries)) }
     FileUtils.mv(tmp_path, path)
+
+    meta_path = FileHelper.unit_task_status_snapshot_stats_meta_path(self, create: true)
+    File.write("#{meta_path}.tmp", JSON.generate({
+      'version' => TASK_COMPLETION_SNAPSHOT_STATS_VERSION,
+      'grade_values' => grade_values,
+      'snapshot_timestamps' => entries.map { |entry| entry['snapshot_timestamp'] }.sort
+    }))
+    FileUtils.mv("#{meta_path}.tmp", meta_path)
 
     entries
   rescue JSON::ParserError, Zlib::Error

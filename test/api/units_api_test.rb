@@ -814,62 +814,40 @@ class UnitsApiTest < ActiveSupport::TestCase
 
     add_auth_header_for(user: unit.main_convenor_user)
     header 'Host', 'localhost'
-    get "/api/units/#{unit.id}/stats/task_completion_snapshots", { limit: 2 }
+    get "/api/units/#{unit.id}/stats/task_completion_snapshots"
 
-    assert_equal 200, last_response.status, last_response_body
-    assert_equal 2, last_response_body.length
+    assert_equal 200, last_response.status, last_response.body
+    assert_equal 'gzip', last_response.headers['Content-Encoding']
+    body = JSON.parse(Zlib.gunzip(last_response.body))
+    assert_equal 3, body.length
 
-    assert_equal latest_snapshot.snapshot_date.to_s, last_response_body[0]['snapshot_date'].to_date.to_s
-    assert_equal mid_snapshot.snapshot_date.to_s, last_response_body[1]['snapshot_date'].to_date.to_s
+    assert_equal latest_snapshot.snapshot_date.to_s, body[0]['snapshot_date'].to_date.to_s
+    assert_equal mid_snapshot.snapshot_date.to_s, body[1]['snapshot_date'].to_date.to_s
+    assert_equal older_snapshot.snapshot_date.to_s, body[2]['snapshot_date'].to_date.to_s
 
-    latest_stats = last_response_body[0]['stats']
+    latest_stats = body[0]['stats']
     assert_equal 3, latest_stats[tutorial.campus.name][tutorial.abbreviation][task_definition.abbreviation]['complete']
-    assert_equal 3, last_response_body[0]['student_count']
-    assert_equal 3, last_response_body[0]['campus_student_counts'][tutorial.campus.name]
-    assert_equal 3, last_response_body[0]['target_grade_student_counts']['0']
-    assert_equal 3, last_response_body[0]['target_grade_campus_student_counts']['0'][tutorial.campus.name]
+    assert_equal 3, body[0]['student_count']
+    assert_equal 3, body[0]['campus_student_counts'][tutorial.campus.name]
+    assert_equal 3, body[0]['target_grade_student_counts']['0']
+    assert_equal 3, body[0]['target_grade_campus_student_counts']['0'][tutorial.campus.name]
     submitted_key = unit.grade_values.map { |grade| grade == task_definition.target_grade ? 1 : 0 }.join(',')
-    assert_equal({ submitted_key => 3 }, last_response_body[0]['submitted_task_count_student_counts']['all'][tutorial.campus.name]['__all__'])
-    assert_equal 3, last_response_body[0]['status_population_stats']['all'][tutorial.campus.name]['__all__'][task_definition.abbreviation]['complete']
-
-    assert_not_equal older_snapshot.snapshot_date.to_s, last_response_body[1]['snapshot_date'].to_date.to_s
+    assert_equal({ submitted_key => 3 }, body[0]['submitted_task_count_student_counts']['all'][tutorial.campus.name]['__all__'])
+    assert_equal 3, body[0]['status_population_stats']['all'][tutorial.campus.name]['__all__'][task_definition.abbreviation]['complete']
   end
 
-  def test_get_task_completion_snapshots_filters_by_date
+  def test_get_task_completion_snapshots_queues_rebuild_when_snapshot_added
     unit = FactoryBot.create :unit, with_students: false, task_count: 1, stream_count: 0, tutorials: 1, campus_count: 1
-    tutorial = unit.tutorials.first
-    task_definition = unit.task_definitions_by_grade.first
-
-    TaskCompletionSnapshot.create!(
-      unit: unit,
-      snapshot_timestamp: Time.zone.parse('2026-03-30 10:00:00').to_i.to_s
-    )
-
-    included_snapshot = TaskCompletionSnapshot.create!(
-      unit: unit,
-      snapshot_timestamp: Time.zone.parse('2026-04-02 10:00:00').to_i.to_s
-    )
-
-    TaskCompletionSnapshot.create!(
-      unit: unit,
-      snapshot_timestamp: Time.zone.parse('2026-04-05 10:00:00').to_i.to_s
-    )
-
-    unit.task_completion_snapshots.find_each do |snapshot|
-      snapshot.store_stats!(build_task_completion_snapshot_csv(tutorial, task_definition, [TaskStatus.complete.id]))
-    end
+    snapshot = TaskCompletionSnapshot.create!(unit: unit, snapshot_timestamp: 1.day.ago.to_i.to_s)
+    snapshot.store_stats!(build_task_completion_snapshot_csv(unit.tutorials.first, unit.task_definitions_by_grade.first, [TaskStatus.complete.id]))
     unit.refresh_task_completion_snapshot_stats!
+    TaskCompletionSnapshot.create!(unit: unit, snapshot_timestamp: Time.zone.now.to_i.to_s)
 
     add_auth_header_for(user: unit.main_convenor_user)
     header 'Host', 'localhost'
-    get "/api/units/#{unit.id}/stats/task_completion_snapshots", {
-      start_date: Date.new(2026, 4, 1),
-      end_date: Date.new(2026, 4, 3)
-    }
+    get "/api/units/#{unit.id}/stats/task_completion_snapshots"
 
-    assert_equal 200, last_response.status, last_response_body
-    assert_equal 1, last_response_body.length
-    assert_equal included_snapshot.snapshot_date.to_s, last_response_body[0]['snapshot_date'].to_date.to_s
+    assert_equal 202, last_response.status, last_response.body
   end
 
   def test_get_task_completion_snapshots_not_authorised
