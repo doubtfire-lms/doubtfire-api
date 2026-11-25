@@ -108,7 +108,8 @@ class TaskCompletionSnapshotTest < ActiveSupport::TestCase
     @snapshot.store_stats!(payload)
 
     expected = { submitted_key(@unit) => 1, submitted_key(@unit, task_definition.target_grade => 1) => 10 }
-    assert_equal expected, @snapshot.load_submitted_task_count_student_counts['all'][campus.name]['__all__']
+    # No target grade column, so every student lands in the unknown bucket.
+    assert_equal expected, @snapshot.load_submitted_task_count_student_counts['target_grades']['unknown'][campus.name]['__all__']
   end
 
   test 'resetting a task lowers its submitted count in the next snapshot' do
@@ -139,8 +140,8 @@ class TaskCompletionSnapshotTest < ActiveSupport::TestCase
       counts[first_definition.target_grade] += 1
       counts[0] += 1
     end
-    first_counts = @snapshot.load_submitted_task_count_student_counts['all'][campus.name]['__all__']
-    later_counts = later_snapshot.load_submitted_task_count_student_counts['all'][campus.name]['__all__']
+    first_counts = @snapshot.load_submitted_task_count_student_counts['target_grades']['unknown'][campus.name]['__all__']
+    later_counts = later_snapshot.load_submitted_task_count_student_counts['target_grades']['unknown'][campus.name]['__all__']
 
     assert_equal({ submitted_key(@unit) => 1, submitted_key(@unit, both_submitted) => 1 }, first_counts)
     assert_equal({ submitted_key(@unit) => 1, submitted_key(@unit, 0 => 1) => 1 }, later_counts)
@@ -162,12 +163,12 @@ class TaskCompletionSnapshotTest < ActiveSupport::TestCase
     snapshot.store_stats!(payload)
 
     population = snapshot.load_status_population_stats
-    all_tutorials = population['all'][campus.name]
+    tutorials = population['target_grades']['0'][campus.name]
 
-    assert_equal({ 'complete' => 1, 'not_started' => 1 }, all_tutorials['__all__'][task])
-    assert_equal({ 'complete' => 1, 'not_started' => 1 }, all_tutorials['T1'][task])
-    assert_equal({ 'complete' => 1 }, all_tutorials['T2'][task])
-    assert_equal all_tutorials, population['target_grades']['0'][campus.name]
+    assert_equal ['target_grades'], population.keys
+    assert_equal({ 'complete' => 1, 'not_started' => 1 }, tutorials['__all__'][task])
+    assert_equal({ 'complete' => 1, 'not_started' => 1 }, tutorials['T1'][task])
+    assert_equal({ 'complete' => 1 }, tutorials['T2'][task])
   end
 
   test 'deleting snapshot deletes associated zip file' do
@@ -215,9 +216,9 @@ class TaskCompletionSnapshotTest < ActiveSupport::TestCase
     pass_and_credit = submitted_key(unit, 0 => 1, 1 => 1)
 
     assert_equal unit.grade_values, counts['task_grade_values']
-    assert_equal({ pass_only => 1, pass_and_credit => 1 }, counts['all'][campus.name]['__all__'])
-    assert_equal({ pass_only => 1 }, counts['all'][campus.name]['T1'])
-    assert_equal({ pass_and_credit => 1 }, counts['all'][campus.name]['T2'])
+    assert_not counts.key?('all')
+    assert_equal({ pass_only => 1 }, counts['target_grades']['0'][campus.name]['T1'])
+    assert_equal({ pass_and_credit => 1 }, counts['target_grades']['1'][campus.name]['T2'])
     assert_equal({ pass_only => 1 }, counts['target_grades']['0'][campus.name]['__all__'])
     assert_equal({ pass_and_credit => 1 }, counts['target_grades']['1'][campus.name]['__all__'])
   end

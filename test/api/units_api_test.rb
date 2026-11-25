@@ -825,15 +825,18 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal mid_snapshot.snapshot_date.to_s, body[1]['snapshot_date'].to_date.to_s
     assert_equal older_snapshot.snapshot_date.to_s, body[2]['snapshot_date'].to_date.to_s
 
-    latest_stats = body[0]['stats']
-    assert_equal 3, latest_stats[tutorial.campus.name][tutorial.abbreviation][task_definition.abbreviation]['complete']
+    assert_equal %w[campus_student_counts snapshot_date snapshot_timestamp status_population_stats student_count
+                    submitted_task_count_student_counts target_grade_campus_student_counts target_grade_student_counts],
+                 body[0].keys.sort
+    latest_population = body[0]['status_population_stats']['target_grades']['0'][tutorial.campus.name]
+    assert_equal 3, latest_population[tutorial.abbreviation][task_definition.abbreviation]['complete']
+    assert_equal 3, latest_population['__all__'][task_definition.abbreviation]['complete']
     assert_equal 3, body[0]['student_count']
     assert_equal 3, body[0]['campus_student_counts'][tutorial.campus.name]
     assert_equal 3, body[0]['target_grade_student_counts']['0']
     assert_equal 3, body[0]['target_grade_campus_student_counts']['0'][tutorial.campus.name]
     submitted_key = unit.grade_values.map { |grade| grade == task_definition.target_grade ? 1 : 0 }.join(',')
-    assert_equal({ submitted_key => 3 }, body[0]['submitted_task_count_student_counts']['all'][tutorial.campus.name]['__all__'])
-    assert_equal 3, body[0]['status_population_stats']['all'][tutorial.campus.name]['__all__'][task_definition.abbreviation]['complete']
+    assert_equal({ submitted_key => 3 }, body[0]['submitted_task_count_student_counts']['target_grades']['0'][tutorial.campus.name]['__all__'])
   end
 
   def test_get_task_completion_snapshots_queues_rebuild_when_snapshot_added
@@ -848,6 +851,23 @@ class UnitsApiTest < ActiveSupport::TestCase
     get "/api/units/#{unit.id}/stats/task_completion_snapshots"
 
     assert_equal 202, last_response.status, last_response.body
+  end
+
+  def test_refresh_task_completion_snapshot_stats_rebuilds_outdated_file
+    unit = FactoryBot.create :unit, with_students: false, task_count: 1, stream_count: 0, tutorials: 1, campus_count: 1
+    old_snapshot = TaskCompletionSnapshot.create!(unit: unit, snapshot_timestamp: 1.day.ago.to_i.to_s)
+    new_snapshot = TaskCompletionSnapshot.create!(unit: unit, snapshot_timestamp: Time.zone.now.to_i.to_s)
+    [old_snapshot, new_snapshot].each do |snapshot|
+      snapshot.store_stats!(build_task_completion_snapshot_csv(unit.tutorials.first, unit.task_definitions_by_grade.first, [TaskStatus.complete.id]))
+    end
+    path = FileHelper.unit_task_status_snapshot_stats_path(unit)
+    Zlib::GzipWriter.open(path) { |gz| gz.write(JSON.generate([{ 'snapshot_timestamp' => old_snapshot.snapshot_timestamp, 'stats' => {} }])) }
+    File.write(FileHelper.unit_task_status_snapshot_stats_meta_path(unit), JSON.generate({ 'version' => 1 }))
+
+    entries = unit.refresh_task_completion_snapshot_stats!(new_snapshot)
+
+    assert_equal 2, entries.length
+    assert(entries.none? { |entry| entry.key?('stats') })
   end
 
   def test_get_task_completion_snapshots_not_authorised

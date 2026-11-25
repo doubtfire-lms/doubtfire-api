@@ -4294,7 +4294,7 @@ class Unit < ApplicationRecord
   end
 
   # Bump when the shape of a stats entry changes, so existing files are rebuilt.
-  TASK_COMPLETION_SNAPSHOT_STATS_VERSION = 1
+  TASK_COMPLETION_SNAPSHOT_STATS_VERSION = 2
 
   # Path to the aggregated stats file, or nil when it is missing or outdated and needs a rebuild.
   # Checked against the small meta file so the stats themselves are never inflated per request.
@@ -4314,42 +4314,26 @@ class Unit < ApplicationRecord
     nil
   end
 
+  # An older file has a different entry shape, so it can only be rebuilt, never merged into.
+  def task_completion_snapshot_stats_version_current?
+    meta_path = FileHelper.unit_task_status_snapshot_stats_meta_path(self, create: false)
+    File.exist?(meta_path) && JSON.parse(File.read(meta_path))['version'] == TASK_COMPLETION_SNAPSHOT_STATS_VERSION
+  rescue JSON::ParserError
+    false
+  end
+
   # Writes the aggregated file. Stats for an already captured snapshot never change, so passing the
   # snapshot that just changed merges it in rather than re-parsing every other CSV.
   def refresh_task_completion_snapshot_stats!(changed_snapshot = nil, &progress)
     path = FileHelper.unit_task_status_snapshot_stats_path(self, create: true)
 
     entries =
-      if changed_snapshot.present? && File.exist?(path)
-        student_counts = changed_snapshot.load_student_counts
+      if changed_snapshot.present? && File.exist?(path) && task_completion_snapshot_stats_version_current?
         JSON.parse(Zlib::GzipReader.open(path, &:read)).reject { |entry| entry['snapshot_timestamp'] == changed_snapshot.snapshot_timestamp } +
-          [{
-            'snapshot_date' => changed_snapshot.snapshot_date&.iso8601,
-            'snapshot_timestamp' => changed_snapshot.snapshot_timestamp,
-            'stats' => changed_snapshot.load_stats,
-            'target_grade_stats' => changed_snapshot.load_target_grade_stats,
-            'status_population_stats' => changed_snapshot.load_status_population_stats,
-            'submitted_task_count_student_counts' => changed_snapshot.load_submitted_task_count_student_counts,
-            'student_count' => student_counts['student_count'],
-            'campus_student_counts' => student_counts['campus_student_counts'],
-            'target_grade_student_counts' => student_counts['target_grade_student_counts'],
-            'target_grade_campus_student_counts' => student_counts['target_grade_campus_student_counts']
-          }]
+          [changed_snapshot.aggregated_stats_entry]
       else
         task_completion_snapshots.reload.map.with_index do |snapshot, index|
-          student_counts = snapshot.load_student_counts
-          entry = {
-            'snapshot_date' => snapshot.snapshot_date&.iso8601,
-            'snapshot_timestamp' => snapshot.snapshot_timestamp,
-            'stats' => snapshot.load_stats,
-            'target_grade_stats' => snapshot.load_target_grade_stats,
-            'status_population_stats' => snapshot.load_status_population_stats,
-            'submitted_task_count_student_counts' => snapshot.load_submitted_task_count_student_counts,
-            'student_count' => student_counts['student_count'],
-            'campus_student_counts' => student_counts['campus_student_counts'],
-            'target_grade_student_counts' => student_counts['target_grade_student_counts'],
-            'target_grade_campus_student_counts' => student_counts['target_grade_campus_student_counts']
-          }
+          entry = snapshot.aggregated_stats_entry
           progress&.call(index + 1)
           entry
         end
