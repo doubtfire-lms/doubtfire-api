@@ -125,6 +125,19 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal 403, last_response.status, last_response_body
   end
 
+  def test_global_observer_convenor_cannot_create_unit_and_employ_self
+    observer = FactoryBot.create(:user, :convenor, observe_all_units: true)
+    unit_count = Unit.count
+    staff_count = UnitRole.count
+
+    add_auth_header_for(user: observer)
+    post_json '/api/units', { unit: create_unit }
+
+    assert_equal 403, last_response.status, last_response_body
+    assert_equal unit_count, Unit.count
+    assert_equal staff_count, UnitRole.count
+  end
+
   def test_rollover_employs_requesting_convenor_without_copying_other_staff
     unit = FactoryBot.create(:unit, with_students: false, task_count: 0, outcome_count: 0, tutorials: 0, staff_count: 0)
     main_convenor = unit.main_convenor_user

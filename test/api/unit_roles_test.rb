@@ -77,6 +77,57 @@ class UnitRolesTest < ActiveSupport::TestCase
     assert_equal Role.convenor, staff_role.reload.role
   end
 
+  def test_global_observer_convenor_cannot_manage_unit_staff_or_employ_self
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0)
+    observer = FactoryBot.create(:user, :convenor, observe_all_units: true)
+    new_staff = FactoryBot.create(:user, :tutor)
+    existing_staff = FactoryBot.create(:user, :tutor)
+    existing_role = unit.employ_staff(existing_staff, Role.tutor)
+    original_staff_count = unit.staff.count
+
+    add_auth_header_for(user: observer)
+
+    [new_staff, observer].each do |user|
+      post_json '/api/unit_roles', { unit_id: unit.id, user_id: user.id, role: 'Tutor' }
+      assert_equal 403, last_response.status, last_response_body
+      assert_nil unit.unit_role_for(user)
+      assert_equal original_staff_count, unit.staff.count
+    end
+
+    put_json "/api/unit_roles/#{existing_role.id}", { unit_role: { role_id: Role.convenor.id } }
+    assert_equal 403, last_response.status, last_response_body
+    assert_equal Role.tutor, existing_role.reload.role
+
+    delete_json "/api/unit_roles/#{existing_role.id}"
+    assert_equal 403, last_response.status, last_response_body
+    assert UnitRole.exists?(existing_role.id)
+  end
+
+  def test_observer_only_unit_convenor_cannot_manage_unit_staff
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0)
+    observer = FactoryBot.create(:user, :convenor)
+    unit.employ_staff(observer, Role.convenor).update!(observer_only: true)
+    new_staff = FactoryBot.create(:user, :tutor)
+    existing_staff = FactoryBot.create(:user, :tutor)
+    existing_role = unit.employ_staff(existing_staff, Role.tutor)
+    original_staff_count = unit.staff.count
+
+    add_auth_header_for(user: observer)
+
+    post_json '/api/unit_roles', { unit_id: unit.id, user_id: new_staff.id, role: 'Tutor' }
+    assert_equal 403, last_response.status, last_response_body
+    assert_nil unit.unit_role_for(new_staff)
+    assert_equal original_staff_count, unit.staff.count
+
+    put_json "/api/unit_roles/#{existing_role.id}", { unit_role: { role_id: Role.convenor.id } }
+    assert_equal 403, last_response.status, last_response_body
+    assert_equal Role.tutor, existing_role.reload.role
+
+    delete_json "/api/unit_roles/#{existing_role.id}"
+    assert_equal 403, last_response.status, last_response_body
+    assert UnitRole.exists?(existing_role.id)
+  end
+
   # DELETE tests
   # Delete a unit role
   def test_delete_unit_role
