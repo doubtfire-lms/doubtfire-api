@@ -827,6 +827,8 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal 3, last_response_body[0]['campus_student_counts'][tutorial.campus.name]
     assert_equal 3, last_response_body[0]['target_grade_student_counts']['0']
     assert_equal 3, last_response_body[0]['target_grade_campus_student_counts']['0'][tutorial.campus.name]
+    submitted_key = unit.grade_values.map { |grade| grade == task_definition.target_grade ? 1 : 0 }.join(',')
+    assert_equal({ submitted_key => 3 }, last_response_body[0]['submitted_task_count_student_counts']['all'][tutorial.campus.name]['__all__'])
     assert_equal 3, last_response_body[0]['status_population_stats']['all'][tutorial.campus.name]['__all__'][task_definition.abbreviation]['complete']
 
     assert_not_equal older_snapshot.snapshot_date.to_s, last_response_body[1]['snapshot_date'].to_date.to_s
