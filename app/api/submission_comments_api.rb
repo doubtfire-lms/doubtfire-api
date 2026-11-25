@@ -4,6 +4,10 @@ class SubmissionCommentsApi < Grape::API
   helpers AuthenticationHelpers
   helpers AuthorisationHelpers
 
+  before do
+    authenticated?
+  end
+
   desc 'Request early submission access for a task'
   params do
     requires :comment, type: String, desc: 'The reason for requesting submission access'

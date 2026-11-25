@@ -13,7 +13,7 @@ class TaskSubmissionDownloadTest < ActiveSupport::TestCase
     source = task.zip_file_path_for_done_task
     FileUtils.mkdir_p(File.dirname(source))
 
-    Zip::File.open(source, Zip::File::CREATE) do |zip|
+    Zip::File.open(source, create: true) do |zip|
       zip.get_output_stream("#{task.id}/000-document.pdf") { |stream| stream.write('report') }
       zip.get_output_stream("#{task.id}/001-code.py") { |stream| stream.write('code') }
     end
@@ -62,7 +62,7 @@ class TaskSubmissionDownloadTest < ActiveSupport::TestCase
     FileUtils.mkdir_p(File.dirname(pdf_path))
     FileUtils.mkdir_p(File.dirname(source))
     File.write(pdf_path, '%PDF-1.4 submission')
-    Zip::File.open(source, Zip::File::CREATE) do |zip|
+    Zip::File.open(source, create: true) do |zip|
       zip.get_output_stream("#{task.id}/000-code.rb") { |stream| stream.write('code') }
     end
 

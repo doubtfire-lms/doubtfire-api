@@ -231,7 +231,7 @@ class UnitModelTest < ActiveSupport::TestCase
     FactoryBot.create(:task_definition, unit: unit, abbreviation: 'P1', outcome_count: 0)
 
     Tempfile.create(['unit-content', '.zip']) do |archive|
-      Zip::File.open(archive.path, Zip::File::CREATE) do |zip|
+      Zip::File.open(archive.path, create: true) do |zip|
         zip.get_output_stream('dist/index.html') { |s| s.write('<html><head></head></html>') }
         zip.get_output_stream('dist/P1.docx') { |s| s.write('worksheet') }
       end

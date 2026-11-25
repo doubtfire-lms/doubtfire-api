@@ -42,4 +42,18 @@ class TutorNotesApiTest < ActiveSupport::TestCase
     note = last_response_body.find { |result| result['id'] == mine.id }
     assert_not note['requires_current_user_read']
   end
+
+  def test_admin_without_unit_role_can_access_tutor_notes
+    admin = FactoryBot.create(:user, :admin)
+    assert_nil @unit.unit_role_for(admin)
+
+    add_auth_header_for(user: admin)
+
+    get "/api/unit_roles/#{@tutor_role.id}/tutor_notes"
+    assert_equal 200, last_response.status
+
+    post_json "/api/unit_roles/#{@tutor_role.id}/tutor_notes", { note: 'Admin moderation note' }
+    assert_equal 201, last_response.status
+    assert_equal admin.id, last_response_body['user_id']
+  end
 end

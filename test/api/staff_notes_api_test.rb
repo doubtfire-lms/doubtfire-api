@@ -51,6 +51,26 @@ class StaffNotesApiTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
   end
 
+  def test_admin_without_unit_role_can_get_staff_notes
+    unit = FactoryBot.create(:unit)
+    student = FactoryBot.create(:user, :student)
+    student_project = unit.enrol_student(student, nil)
+    tutor = FactoryBot.create(:user, :tutor)
+    unit.employ_staff(tutor, Role.tutor)
+    staff_note = StaffNote.create!(note: 'Test note!', project: student_project, user: tutor)
+
+    admin = FactoryBot.create(:user, :admin)
+    assert_nil unit.unit_role_for(admin)
+
+    add_auth_header_for(user: admin)
+    get "/api/projects/#{student_project.id}/staff_notes"
+    assert_equal 200, last_response.status
+    assert_equal [staff_note.id], last_response_body.pluck('id')
+
+    get "/api/csv/units/#{unit.id}/staff_notes"
+    assert_equal 200, last_response.status
+  end
+
   def test_tutor_can_create_staff_notes
     unit = FactoryBot.create(:unit, code: 'COS10001')
 
@@ -165,6 +185,7 @@ class StaffNotesApiTest < ActiveSupport::TestCase
     admin_unit.enrol_student(student, nil)
     unit.employ_staff(tutor, Role.tutor)
     unit.employ_staff(convenor, Role.convenor)
+    assert_nil admin_unit.unit_role_for(admin)
 
     csv_file = Tempfile.new(['staff-notes-permissions', '.csv'])
     csv_file.write("username,comment\n#{student.username},Permission test note\n")

@@ -74,7 +74,7 @@ module FileHelper
       logger.error "Unknown type '#{kind}' provided for '#{name}'"
     end
 
-    extension_check = FileHelper.known_extension?(File.extname(file['tempfile']).downcase[1..])
+    extension_check = FileHelper.known_extension?(File.extname(file[:filename].to_s).downcase[1..])
     unless extension_check
       msg = 'invalid file extension.'
       logger.debug 'File extension check failed'
@@ -552,9 +552,9 @@ module FileHelper
 
   def compress_image_to_dest(source, dest, delete_frames = false)
     exec = "convert -quiet -define jpeg:size=2048x2048 \
-            \"#{source}\" \
+            #{source.to_s.shellescape} \
             #{delete_frames ? '-delete 1--1' : ''} -auto-orient -strip -density 72 -quality 85% -resize 2048x2048\\> -resize 48x48\\< \
-            \"#{dest}\" >>/dev/null 2>>/dev/null"
+            #{dest.to_s.shellescape} >>/dev/null 2>>/dev/null"
 
     system_try_within 40, 'compressing image using convert', exec
   end
@@ -578,7 +578,7 @@ module FileHelper
 
       # Pass 1 - qpdf
       logger.debug "Compressing PDF #{path} (#{current_filesize} bytes) using qpdf"
-      exec = "qpdf --recompress-flate --object-streams=generate #{path} #{tmp_file} >>/dev/null 2>>/dev/null"
+      exec = "qpdf --recompress-flate --object-streams=generate #{path.to_s.shellescape} #{tmp_file.shellescape} >>/dev/null 2>>/dev/null"
       did_compress = system_try_within timeout_seconds, 'compressing PDF using qpdf', exec
 
       if did_compress
@@ -600,8 +600,8 @@ module FileHelper
                  -dNOPAUSE \
                  -dBATCH \
                  -dQUIET \
-                 -sOutputFile=\"#{tmp_file}\" \
-                 \"#{path}\" \
+                 -sOutputFile=#{tmp_file.shellescape} \
+                 #{path.to_s.shellescape} \
                  >>/dev/null 2>>/dev/null"
 
       # try with ghostscript
@@ -807,9 +807,7 @@ module FileHelper
   end
 
   def pages_in_pdf(path)
-    exec = "qpdf --show-npages #{path}"
-
-    out_text, _error_text, _exit_status = Open3.capture3(exec)
+    out_text, _error_text, _exit_status = Open3.capture3('qpdf', '--show-npages', path.to_s)
     out_text.to_i # will default to 0 if not a number
   rescue => e
     logger.error "Failed to run QPDF on #{path}. Rescued with error:\n\t#{e.message}"
@@ -817,7 +815,7 @@ module FileHelper
   end
 
   def qpdf(path)
-    exec = "qpdf \"#{path}\" --replace-input >>/dev/null 2>>/dev/null"
+    exec = "qpdf #{path.to_s.shellescape} --replace-input >>/dev/null 2>>/dev/null"
     logger.debug "Running QPDF on: #{path}"
     system_try_within 30, "Failed running QPDF on #{path}", exec
   rescue => e
@@ -956,7 +954,7 @@ module FileHelper
 
     input_files = Dir.entries(task_dir).select { |f| (f =~ /^\d{3}\.(cover|document|code|image)/).zero? }
 
-    Zip::File.open(zip_file, Zip::File::CREATE) do |zip|
+    Zip::File.open(zip_file, create: true) do |zip|
       zip.mkdir task.id.to_s
       input_files.each do |in_file|
         zip.add "#{task.id}/#{in_file}", "#{task_dir}#{in_file}"
@@ -1046,12 +1044,13 @@ module FileHelper
   def ensure_utf8_code(output_filename, force_ascii)
     # puts "Converting #{output_filename} to utf8"
     tmp_filename = Dir::Tmpname.create(["new", ".code"]) { |name| raise Errno::EEXIST if File.exist?(name) }
+    escaped_filename = output_filename.to_s.shellescape
 
     # Convert to utf8 from read encoding
     if force_ascii
-      `iconv -c -t ascii "#{output_filename}" > "#{tmp_filename}"`
+      `iconv -c -t ascii #{escaped_filename} > "#{tmp_filename}"`
     else
-      `iconv -c -t UTF-8 "#{output_filename}" > "#{tmp_filename}"`
+      `iconv -c -t UTF-8 #{escaped_filename} > "#{tmp_filename}"`
     end
 
     # Remove utf8 control character sequences

@@ -105,6 +105,7 @@ class Unit < ApplicationRecord
       :download_overflow_stats,
       :download_unit_csv,
       :download_grades,
+      :upload_grades_csv,
       :exceed_capacity,
       :get_los,
       :create_feedback_chips,
@@ -115,6 +116,12 @@ class Unit < ApplicationRecord
       :get_staff_notes,
       :upload_staff_notes_csv,
       :get_tutor_times,
+      :get_tutor_times_summary,
+      :view_staff_inbox,
+      :provide_feedback,
+      :perform_overseer_assessment_test,
+      :capture_task_completion_snapshot,
+      :delete_engagement,
       :manage_unit_content,
       :mannage_communications,
     ]
@@ -2006,6 +2013,120 @@ class Unit < ApplicationRecord
     TaskDefinition.to_csv(self, task_definitions)
   end
 
+  def tutorials_csv
+    Tutorial.to_csv(tutorials.includes(:tutorial_stream, :campus, { unit_role: :user }).order(:abbreviation))
+  end
+
+  def tutorial_streams_csv
+    TutorialStream.to_csv(tutorial_streams.includes(:activity_type).order(:abbreviation))
+  end
+
+  # Import tutorial streams from a CSV (see TutorialStream.csv_columns).
+  # Rows are matched to existing streams by abbreviation, the unique key. Streams are never deleted.
+  # The expected workflow is download CSV -> edit -> upload, so cells are rarely blank; a blank
+  # cell keeps the stream's current value, but a new stream needs both a name and an activity type.
+  def import_tutorial_streams_from_csv(file)
+    results = { success: [], ignored: [], errors: [] }
+
+    csv = parse_import_csv(file)
+
+    missing = TutorialStream.csv_columns - csv.headers
+    if missing.any?
+      results[:errors] << { row: csv.headers, message: "Missing headers: #{missing.join(', ')}" }
+      return results
+    end
+
+    seen_abbreviations = []
+
+    csv.each do |row|
+      abbreviation, name, activity_type_text = TutorialStream.csv_columns.map { |col| unescape_spreadsheet_formula(row[col]&.strip).presence }
+
+      if abbreviation.nil?
+        results[:errors] << { row: row, message: 'Abbreviation cannot be empty.' }
+        next
+      end
+
+      if seen_abbreviations.include?(abbreviation)
+        results[:errors] << { row: row, message: "Stream #{abbreviation} appears more than once in the file." }
+        next
+      end
+      seen_abbreviations << abbreviation
+
+      activity_type, lookup_error = tutorial_stream_csv_activity_type(activity_type_text)
+      if lookup_error
+        results[:errors] << { row: row, message: lookup_error }
+        next
+      end
+
+      begin
+        tutorial_stream = tutorial_streams.find_by(abbreviation: abbreviation)
+        outcome, message = tutorial_stream.nil? ? create_tutorial_stream_from_csv(abbreviation, name, activity_type) : update_tutorial_stream_from_csv(tutorial_stream, name, activity_type)
+        results[outcome] << { row: row, message: message }
+      rescue ActiveRecord::RecordInvalid => e
+        results[:errors] << { row: row, message: e.record.errors.full_messages.to_sentence }
+      rescue StandardError => e
+        results[:errors] << { row: row, message: e.message }
+      end
+    end
+
+    results
+  end
+
+  # Import tutorials from a CSV (see Tutorial.csv_columns).
+  # Rows are matched to existing tutorials by abbreviation. Tutorials are never deleted.
+  # Tutorial streams must already exist - import them first with the tutorial streams CSV.
+  # As with streams, a blank cell keeps an existing tutorial's current value. A new tutorial needs a
+  # stream, meeting day, time and location; a blank tutor defaults to the unit's main convenor.
+  def import_tutorials_from_csv(file)
+    results = { success: [], ignored: [], errors: [] }
+
+    csv = parse_import_csv(file)
+
+    missing = Tutorial.csv_columns - csv.headers
+    if missing.any?
+      results[:errors] << { row: csv.headers, message: "Missing headers: #{missing.join(', ')}" }
+      return results
+    end
+
+    seen_abbreviations = []
+
+    csv.each do |row|
+      values = Tutorial.csv_columns.index_with { |col| unescape_spreadsheet_formula(row[col]&.strip).presence }
+      abbreviation = values['abbreviation']
+
+      if abbreviation.nil?
+        results[:errors] << { row: row, message: 'Abbreviation cannot be empty.' }
+        next
+      end
+
+      if seen_abbreviations.include?(abbreviation)
+        results[:errors] << { row: row, message: "Tutorial #{abbreviation} appears more than once in the file." }
+        next
+      end
+      seen_abbreviations << abbreviation
+
+      found, lookup_error = tutorial_csv_lookups(values)
+      if lookup_error
+        results[:errors] << { row: row, message: lookup_error }
+        next
+      end
+
+      begin
+        tutorial = tutorials.find_by(abbreviation: abbreviation)
+        outcome, message = Tutorial.transaction do
+          tutorial.nil? ? create_tutorial_from_csv(values, found) : update_tutorial_from_csv(tutorial, values, found)
+        end
+        results[outcome] << { row: row, message: message }
+      rescue ActiveRecord::RecordInvalid => e
+        results[:errors] << { row: row, message: e.record.errors.full_messages.to_sentence }
+      rescue StandardError => e
+        results[:errors] << { row: row, message: e.message }
+      end
+    end
+
+    results
+  end
+
   def task_definitions_by_grade
     # Need to search as relation is already ordered
     TaskDefinition.where(unit_id: id).order('target_grade ASC, start_date ASC, abbreviation ASC')
@@ -2454,7 +2575,7 @@ class Unit < ApplicationRecord
     return result if File.exist?(result)
 
     # Create a new zip
-    Zip::File.open(result, Zip::File::CREATE) do |zip|
+    Zip::File.open(result, create: true) do |zip|
       task_definitions.each do |td|
         if td.has_task_sheet?
           dst_path = FileHelper.sanitized_filename(td.abbreviation.to_s) + '.pdf'
@@ -2884,7 +3005,7 @@ class Unit < ApplicationRecord
                   )
                   .distinct
 
-    if my_unit_role.nil? || my_unit_role.role != Role.convenor
+    if !user.has_admin_capability? && (my_unit_role.nil? || my_unit_role.role != Role.convenor)
       tasks = tasks.where(tutorials: { unit_role_id: mentees.select(:id) })
     end
 
@@ -3223,7 +3344,7 @@ class Unit < ApplicationRecord
     return result if File.exist?(output_zip)
 
     # Create a new zip
-    Zip::File.open(output_zip, Zip::File::CREATE) do |zip|
+    Zip::File.open(output_zip, create: true) do |zip|
       csv_str = mark_csv_headers
 
       # Add individual tasks...
@@ -3529,7 +3650,7 @@ class Unit < ApplicationRecord
           tmp_file = File.join(tmp_dir, File.basename(file.name))
 
           # get file out of zip... to tmp_file
-          file.extract(tmp_file) { true }
+          file.extract(File.basename(tmp_file), destination_directory: tmp_dir) { true }
 
           # copy tmp_file to dest
           destination_path = task.final_pdf_path(ignore_portfolio_evidence: true)
@@ -3853,7 +3974,7 @@ class Unit < ApplicationRecord
         }
       end
 
-      Zip::File.open(repacked_zip.path, Zip::File::CREATE) do |output_zip|
+      Zip::File.open(repacked_zip.path, create: true) do |output_zip|
         output_zip.get_output_stream('marks.csv') do |f|
           f.write(build_batch_feedback_legacy_marks_csv(task_rows))
         end
@@ -4247,6 +4368,122 @@ class Unit < ApplicationRecord
   end
 
   private
+
+  # Read an uploaded CSV with normalised headers (lowercase, spaces as underscores) for the tutorial imports
+  def parse_import_csv(file)
+    CSV.parse(read_file_to_str(file),
+              headers: true,
+              header_converters: [->(hdr) { hdr.to_s.strip.downcase.tr(' ', '_') }],
+              converters: [->(body) { body&.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '') }])
+  end
+
+  # Find the activity type named in a tutorial streams CSV row, by abbreviation or name.
+  # Returns [activity_type_or_nil, nil], or [nil, error_message] when it is not a known activity type.
+  def tutorial_stream_csv_activity_type(activity_type_text)
+    return [nil, nil] if activity_type_text.nil?
+
+    activity_type = ActivityType.find_by(abbreviation: activity_type_text) || ActivityType.find_by(name: activity_type_text)
+    return [activity_type, nil] if activity_type
+
+    [nil, "Unknown activity type '#{activity_type_text}' -- use one of: #{ActivityType.pluck(:abbreviation).sort.join(', ')}"]
+  end
+
+  # Returns [:success, message] or [:errors, message]
+  def create_tutorial_stream_from_csv(abbreviation, name, activity_type)
+    return [:errors, "Name and activity type are required to create stream #{abbreviation}."] if name.nil? || activity_type.nil?
+
+    first_stream = !tutorial_streams.exists?
+    add_tutorial_stream(name, abbreviation, activity_type)
+
+    message = "Created stream #{abbreviation}."
+    # The first stream in a unit takes all existing tasks (see TutorialStream#handle_associated_task_defs)
+    message += " All #{task_definitions.count} tasks were assigned to it as it is the first stream in the unit." if first_stream && task_definitions.exists?
+    [:success, message]
+  end
+
+  # Returns [:success, message] or [:ignored, message]. Blank cells keep the current value.
+  def update_tutorial_stream_from_csv(tutorial_stream, name, activity_type)
+    tutorial_stream.name = name if name
+    tutorial_stream.activity_type = activity_type if activity_type
+
+    return [:ignored, "No changes to stream #{tutorial_stream.abbreviation}."] unless tutorial_stream.changed?
+
+    tutorial_stream.save!
+    [:success, "Updated stream #{tutorial_stream.abbreviation}."]
+  end
+
+  # Resolve the non-blank lookup and number columns of a tutorials CSV row.
+  # Returns [found_values, nil], or [nil, error_message] when a value is not valid for this unit.
+  def tutorial_csv_lookups(values)
+    found = {}
+
+    if values['tutorial_stream']
+      found[:tutorial_stream] = tutorial_streams.find_by(abbreviation: values['tutorial_stream'])
+      return [nil, "Tutorial stream '#{values['tutorial_stream']}' not found -- import it with the tutorial streams CSV first."] if found[:tutorial_stream].nil?
+    end
+
+    if values['tutor_username']
+      # Same rule as Tutorial#assign_tutor: a tutor or convenor of this unit who can tutor
+      user = User.find_by(username: values['tutor_username'])
+      unit_role = user && unit_roles.find_by(user: user)
+      unless unit_role && user.has_tutor_capability? && [Role.tutor, Role.convenor].include?(unit_role.role)
+        return [nil, "#{values['tutor_username']} is not a tutor or convenor in this unit."]
+      end
+
+      found[:unit_role] = unit_role
+    end
+
+    if values['campus']
+      found[:campus] = Campus.find_by(abbreviation: values['campus']) || Campus.find_by(name: values['campus'])
+      return [nil, "Campus '#{values['campus']}' not found."] if found[:campus].nil?
+    end
+
+    { 'duration_minutes' => 1, 'capacity' => -1 }.each do |col, minimum|
+      next if values[col].nil?
+
+      number = Integer(values[col], 10, exception: false)
+      return [nil, "#{col} must be a whole number of #{minimum} or more (got '#{values[col]}')."] if number.nil? || number < minimum
+
+      found[col.to_sym] = number
+    end
+
+    [found, nil]
+  end
+
+  # Returns [:success, message] or [:errors, message]
+  def create_tutorial_from_csv(values, found)
+    abbreviation = values['abbreviation']
+    required = %w[tutorial_stream meeting_day meeting_time meeting_location].select { |col| values[col].nil? }
+    return [:errors, "#{required.join(', ')} required to create tutorial #{abbreviation}."] if required.any?
+
+    tutor_role = found[:unit_role] || main_convenor
+    return [:errors, "No tutor given for #{abbreviation} and the unit has no main convenor."] if tutor_role.nil?
+
+    tutorial = add_tutorial(values['meeting_day'], values['meeting_time'], values['meeting_location'], tutor_role.user,
+                            found[:campus], found.fetch(:capacity, -1), abbreviation, found[:tutorial_stream])
+    return [:errors, "Unable to create tutorial #{abbreviation} with tutor #{tutor_role.user.username}."] if tutorial.nil?
+
+    tutorial.update!(duration_minutes: found[:duration_minutes]) if found.key?(:duration_minutes)
+
+    message = "Created tutorial #{abbreviation}."
+    message += " Tutor set to the main convenor #{tutor_role.user.username}." unless found.key?(:unit_role)
+    [:success, message]
+  end
+
+  # Returns [:success, message] or [:ignored, message]. Blank cells keep the current value.
+  def update_tutorial_from_csv(tutorial, values, found)
+    tutorial.tutorial_stream = found[:tutorial_stream] if found.key?(:tutorial_stream)
+    tutorial.unit_role = found[:unit_role] if found.key?(:unit_role)
+    tutorial.campus = found[:campus] if found.key?(:campus)
+    tutorial.capacity = found[:capacity] if found.key?(:capacity)
+    tutorial.duration_minutes = found[:duration_minutes] if found.key?(:duration_minutes)
+    %w[meeting_day meeting_time meeting_location].each { |col| tutorial[col] = values[col] if values[col] }
+
+    return [:ignored, "No changes to tutorial #{tutorial.abbreviation}."] unless tutorial.changed?
+
+    tutorial.save!
+    [:success, "Updated tutorial #{tutorial.abbreviation}."]
+  end
 
   def delete_associated_files
     unit_path = FileHelper.unit_dir(self, create: false)

@@ -106,8 +106,60 @@ class AuthTest < ActiveSupport::TestCase
 
     refresh_token = User.first.auth_tokens.where(token_type: :refresh_token).last
     assert refresh_token.present?
-    assert_match(/refresh_token=#{refresh_token.authentication_token};/, last_response.cookies['refresh_token'].to_s, 'Expect refresh token to be set')
-    assert_match(/username=#{User.first.username};/, last_response.cookies['username'].to_s, 'Expect username to be set')
+    assert_equal(refresh_token.authentication_token, last_response.cookies['refresh_token'].value.first, 'Expect refresh token to be set')
+    assert_equal(User.first.username, last_response.cookies['username'].value.first, 'Expect username to be set')
+  end
+
+  def test_student_login_cannot_issue_admin_refresh_cookie
+    student = User.find_by!(username: 'astudent')
+    admin = User.find_by!(username: 'aadmin')
+
+    header 'Username', admin.username
+    post_json '/api/auth.json', username: student.username, password: 'password', remember: true
+
+    assert_equal 201, last_response.status
+    assert_equal student.username, last_response_body.dig('user', 'username')
+
+    cookie_username = last_response.cookies['username']&.value&.first
+    cookie_token = last_response.cookies['refresh_token']&.value&.first
+    assert cookie_username.present?
+    assert cookie_token.present?
+
+    header 'Username', nil
+    set_cookie "username=#{cookie_username}"
+    set_cookie "refresh_token=#{cookie_token}"
+    post_json '/api/auth/access-token', delete_auth_token: false
+
+    assert_equal 201, last_response.status
+    assert_equal student.username, last_response_body.dig('user', 'username')
+  end
+
+  def test_refresh_cookie_identity_is_not_changed_by_auth_headers
+    student = User.find_by!(username: 'astudent')
+    admin = User.find_by!(username: 'aadmin')
+    refresh_token = student.generate_authentication_token!(token_type: :refresh_token)
+    admin_token = admin.generate_authentication_token!
+
+    set_cookie "username=#{student.username}"
+    set_cookie "refresh_token=#{refresh_token.authentication_token}"
+    header 'Username', admin.username
+    header 'Auth-Token', admin_token.authentication_token
+
+    post_json '/api/auth/access-token', delete_auth_token: true
+
+    assert_equal 201, last_response.status
+    assert_equal student.username, last_response_body.dig('user', 'username')
+    assert AuthToken.exists?(admin_token.id)
+  end
+
+  def test_student_token_cannot_authenticate_as_admin_header
+    student = User.find_by!(username: 'astudent')
+    admin = User.find_by!(username: 'aadmin')
+    add_auth_header_for(user: student, username: admin.username)
+
+    get '/api/auth/content'
+
+    assert_equal 419, last_response.status
   end
 
   # Signing in again shortly before the refresh token expires must issue a new one, rather than
@@ -127,7 +179,7 @@ class AuthTest < ActiveSupport::TestCase
     travel_to(first_sign_in + 1.day) do
       post_json '/api/auth.json', data_to_post
       assert_equal 201, last_response.status
-      assert_match(/refresh_token=#{first_token.authentication_token};/, last_response.cookies['refresh_token'].to_s)
+      assert_equal(first_token.authentication_token, last_response.cookies['refresh_token'].value.first)
     end
 
     # Hours before it expires, a new refresh token with a full lifetime is issued
@@ -139,7 +191,7 @@ class AuthTest < ActiveSupport::TestCase
       new_token = user.auth_tokens.where(token_type: :refresh_token).last
       assert_not_equal first_token.authentication_token, new_token.authentication_token
       assert_in_delta((near_expiry + lifetime).to_i, new_token.auth_token_expiry.to_i, 5)
-      assert_match(/refresh_token=#{new_token.authentication_token};/, last_response.cookies['refresh_token'].to_s)
+      assert_equal(new_token.authentication_token, last_response.cookies['refresh_token'].value.first)
     end
   end
 
@@ -167,8 +219,8 @@ class AuthTest < ActiveSupport::TestCase
 
     assert_equal 201, last_response.status
 
-    assert_match(/refresh_token=;/, last_response.cookies['refresh_token'].to_s, 'Expect refresh token to be deleted')
-    assert_match(/username=;/, last_response.cookies['username'].to_s, 'Expect username to be deleted')
+    assert_equal('', last_response.cookies['refresh_token'].value.first, 'Expect refresh token to be deleted')
+    assert_equal('', last_response.cookies['username'].value.first, 'Expect username to be deleted')
   end
 
   # Test auth when username is invalid
@@ -314,8 +366,8 @@ class AuthTest < ActiveSupport::TestCase
     # 204 response code means success!
     assert_equal 204, last_response.status
 
-    assert_match(/username=;/, last_response.cookies['username'].to_s)
-    assert_match(/refresh_token=;/, last_response.cookies['refresh_token'].to_s)
+    assert_equal('', last_response.cookies['username'].value.first)
+    assert_equal('', last_response.cookies['refresh_token'].value.first)
   end
 
   def test_refresh_token

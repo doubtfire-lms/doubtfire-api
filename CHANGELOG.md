@@ -2,6 +2,44 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.1.0-22](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-21...v11.1.0-22) (2026-11-24)
+
+
+### Features
+
+* tutorial stream and tutorial CSV import/export ([#772](https://github.com/b0ink/doubtfire-deploy/issues/772)) ([747e00c](https://github.com/b0ink/doubtfire-deploy/commit/747e00cf37801e2678c4498661c6c573b4cefabe))
+
+
+### Bug Fixes
+
+* allow admins to access unit staff workflows without a unit role ([#792](https://github.com/b0ink/doubtfire-deploy/issues/792)) ([4b14090](https://github.com/b0ink/doubtfire-deploy/commit/4b140902d0f2877a01f90baa4ff2906d91ea0d27))
+* allow admins to download unit session time summary ([ce8ce63](https://github.com/b0ink/doubtfire-deploy/commit/ce8ce636e05e15f82b53b13a3e1b71793104d931))
+* update zip handling for rubyzip 3 ([6e38e6c](https://github.com/b0ink/doubtfire-deploy/commit/6e38e6cde7ace3f22c9f0eaa176b36a592681fe7))
+
+## [11.1.0-21](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-20...v11.1.0-21) (2026-11-20)
+
+
+### Bug Fixes
+
+* bind login tokens and refresh cookies to verified user ([#775](https://github.com/b0ink/doubtfire-deploy/issues/775)) ([7a73563](https://github.com/b0ink/doubtfire-deploy/commit/7a73563d4d9222343ca79057985e0c98a8b36306))
+* prevent path traversal in JPlag resource ZIP extraction ([#776](https://github.com/b0ink/doubtfire-deploy/issues/776)) ([d5eaa4f](https://github.com/b0ink/doubtfire-deploy/commit/d5eaa4f28034ebf8bc72fb1c1d1808fe81802784))
+* require authentication for extension and submission comments ([b40c073](https://github.com/b0ink/doubtfire-deploy/commit/b40c073cb252fe2303440315a08e887e3f1b3d43))
+* set future deadlines in submission upload tests ([bbae0ec](https://github.com/b0ink/doubtfire-deploy/commit/bbae0eceae663b1d7b179d43270c37029b5f9431))
+* validate upload extensions and escape conversion file paths ([#729](https://github.com/b0ink/doubtfire-deploy/issues/729)) ([14bd482](https://github.com/b0ink/doubtfire-deploy/commit/14bd482b0b1a6659d972d76e0ab49a687298d953))
+
+## [11.1.0-20](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-19...v11.1.0-20) (2026-11-19)
+
+
+### Features
+
+* prevent submissions until specified date ([#748](https://github.com/b0ink/doubtfire-deploy/issues/748)) ([0364fc3](https://github.com/b0ink/doubtfire-deploy/commit/0364fc3671bdd19f54db23eaadfbdbe142ea3365))
+
+
+### Bug Fixes
+
+* allow main convenors to manage lms ([2562c71](https://github.com/b0ink/doubtfire-deploy/commit/2562c710033de1c41b2572dc006b95fcd244eacc))
+* wait for new submission files before PDF conversion ([#767](https://github.com/b0ink/doubtfire-deploy/issues/767)) ([0d98999](https://github.com/b0ink/doubtfire-deploy/commit/0d9899901fc7fb46cd3b2326d3b6db0ba8015c8a))
+
 ## [11.1.0-19](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-18...v11.1.0-19) (2026-11-12)
 
 
