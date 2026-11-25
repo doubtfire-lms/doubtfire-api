@@ -136,7 +136,7 @@ class ProjectsApiTest < ActiveSupport::TestCase
 
     DatabasePopulator.generate_portfolio(project)
 
-    data_to_put['submitted_grade'] = 1
+    data_to_put[:submitted_grade] = 1
 
     put_json "/api/projects/#{project.id}", data_to_put
 
