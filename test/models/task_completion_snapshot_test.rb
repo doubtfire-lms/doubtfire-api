@@ -135,7 +135,10 @@ class TaskCompletionSnapshotTest < ActiveSupport::TestCase
     @snapshot.store_stats!(first_payload)
     later_snapshot.store_stats!(later_payload)
 
-    both_submitted = Hash.new(0).tap { |counts| counts[first_definition.target_grade] += 1; counts[0] += 1 }
+    both_submitted = Hash.new(0).tap do |counts|
+      counts[first_definition.target_grade] += 1
+      counts[0] += 1
+    end
     first_counts = @snapshot.load_submitted_task_count_student_counts['all'][campus.name]['__all__']
     later_counts = later_snapshot.load_submitted_task_count_student_counts['all'][campus.name]['__all__']
 
@@ -211,6 +214,7 @@ class TaskCompletionSnapshotTest < ActiveSupport::TestCase
     pass_only = submitted_key(unit, 0 => 1)
     pass_and_credit = submitted_key(unit, 0 => 1, 1 => 1)
 
+    assert_equal unit.grade_values, counts['task_grade_values']
     assert_equal({ pass_only => 1, pass_and_credit => 1 }, counts['all'][campus.name]['__all__'])
     assert_equal({ pass_only => 1 }, counts['all'][campus.name]['T1'])
     assert_equal({ pass_and_credit => 1 }, counts['all'][campus.name]['T2'])

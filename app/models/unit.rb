@@ -4181,7 +4181,9 @@ class Unit < ApplicationRecord
     if cached.present? &&
         cached.all? do |entry|
           %w[student_count campus_student_counts target_grade_student_counts target_grade_campus_student_counts target_grade_stats status_population_stats].all? { |key| entry.key?(key) } &&
-            entry['submitted_task_count_student_counts'].is_a?(Hash) && entry['submitted_task_count_student_counts'].key?('all')
+            entry['submitted_task_count_student_counts'].is_a?(Hash) &&
+            entry['submitted_task_count_student_counts']['task_grade_values'] == grade_values &&
+            entry['submitted_task_count_student_counts'].key?('all')
         end &&
        cached.map { |entry| entry['snapshot_timestamp'] }.sort == TaskCompletionSnapshot.where(unit_id: id).pluck(:snapshot_timestamp).sort
       return cached

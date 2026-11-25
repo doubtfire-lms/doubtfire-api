@@ -158,18 +158,18 @@ class TaskCompletionSnapshot < ApplicationRecord
   end
 
   # Students per student target grade, campus and tutorial ('__all__' for any tutorial), keyed by
-  # submitted task counts per task grade in unit.grade_values order (e.g. "3,1,0,0").
+  # submitted task counts per task grade in task_grade_values order (e.g. "3,1,0,0").
   def load_submitted_task_count_student_counts
     csv_text = snapshot_contents
-    return { 'all' => {}, 'target_grades' => {} } if csv_text.blank?
+    grade_values = unit.grade_values
+    result = { 'task_grade_values' => grade_values, 'all' => {}, 'target_grades' => {} }
+    return result if csv_text.blank?
 
     stream_headers = unit.tutorial_streams.pluck(:abbreviation)
     stream_headers = ['Tutorial'] if stream_headers.empty?
-    grade_values = unit.grade_values
     task_grades = unit.task_definitions_by_grade.pluck(:abbreviation, :target_grade)
     grade_labels = grade_values.to_h { |grade| [unit.grade_label(grade), grade.to_s] }
     campus_names = Campus.pluck(:abbreviation, :name).to_h
-    result = { 'all' => {}, 'target_grades' => {} }
     seen_students = Set.new
 
     CSV.parse(csv_text, headers: true).each do |row|
@@ -200,7 +200,7 @@ class TaskCompletionSnapshot < ApplicationRecord
 
     result
   rescue CSV::MalformedCSVError
-    { 'all' => {}, 'target_grades' => {} }
+    { 'task_grade_values' => unit.grade_values, 'all' => {}, 'target_grades' => {} }
   end
 
   def store_stats!(payload)
