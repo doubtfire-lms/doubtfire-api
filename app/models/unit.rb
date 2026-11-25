@@ -4314,10 +4314,13 @@ class Unit < ApplicationRecord
     nil
   end
 
-  # An older file has a different entry shape, so it can only be rebuilt, never merged into.
-  def task_completion_snapshot_stats_version_current?
+  # A file in an older format, or built for other grade values, can only be rebuilt, never merged into.
+  def task_completion_snapshot_stats_mergeable?
     meta_path = FileHelper.unit_task_status_snapshot_stats_meta_path(self, create: false)
-    File.exist?(meta_path) && JSON.parse(File.read(meta_path))['version'] == TASK_COMPLETION_SNAPSHOT_STATS_VERSION
+    return false unless File.exist?(meta_path)
+
+    meta = JSON.parse(File.read(meta_path))
+    meta.is_a?(Hash) && meta['version'] == TASK_COMPLETION_SNAPSHOT_STATS_VERSION && meta['grade_values'] == grade_values
   rescue JSON::ParserError
     false
   end
@@ -4328,7 +4331,7 @@ class Unit < ApplicationRecord
     path = FileHelper.unit_task_status_snapshot_stats_path(self, create: true)
 
     entries =
-      if changed_snapshot.present? && File.exist?(path) && task_completion_snapshot_stats_version_current?
+      if changed_snapshot.present? && File.exist?(path) && task_completion_snapshot_stats_mergeable?
         JSON.parse(Zlib::GzipReader.open(path, &:read)).reject { |entry| entry['snapshot_timestamp'] == changed_snapshot.snapshot_timestamp } +
           [changed_snapshot.aggregated_stats_entry]
       else

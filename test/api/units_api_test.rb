@@ -870,6 +870,24 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert(entries.none? { |entry| entry.key?('stats') })
   end
 
+  def test_refresh_task_completion_snapshot_stats_rebuilds_file_for_other_grade_values
+    unit = FactoryBot.create :unit, with_students: false, task_count: 1, stream_count: 0, tutorials: 1, campus_count: 1
+    old_snapshot = TaskCompletionSnapshot.create!(unit: unit, snapshot_timestamp: 1.day.ago.to_i.to_s)
+    new_snapshot = TaskCompletionSnapshot.create!(unit: unit, snapshot_timestamp: Time.zone.now.to_i.to_s)
+    [old_snapshot, new_snapshot].each do |snapshot|
+      snapshot.store_stats!(build_task_completion_snapshot_csv(unit.tutorials.first, unit.task_definitions_by_grade.first, [TaskStatus.complete.id]))
+    end
+    path = FileHelper.unit_task_status_snapshot_stats_path(unit)
+    Zlib::GzipWriter.open(path) { |gz| gz.write(JSON.generate([{ 'snapshot_timestamp' => old_snapshot.snapshot_timestamp, 'stale' => true }])) }
+    meta = { 'version' => Unit::TASK_COMPLETION_SNAPSHOT_STATS_VERSION, 'grade_values' => [*unit.grade_values, 99] }
+    File.write(FileHelper.unit_task_status_snapshot_stats_meta_path(unit), JSON.generate(meta))
+
+    entries = unit.refresh_task_completion_snapshot_stats!(new_snapshot)
+
+    assert_equal 2, entries.length
+    assert(entries.none? { |entry| entry.key?('stale') })
+  end
+
   def test_get_task_completion_snapshots_not_authorised
     unit = FactoryBot.create :unit, with_students: false, task_count: 0
     TaskCompletionSnapshot.create!(
