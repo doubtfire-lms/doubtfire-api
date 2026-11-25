@@ -688,19 +688,29 @@ class UnitsApi < Grape::API
       error!({ error: "Not authorised to download stats of student tasks in #{unit.code}" }, 403)
     end
 
-    # Already aggregated and ordered newest first, so this only has to filter.
     snapshots = unit.task_completion_snapshot_stats
-    if params[:start_date].present?
-      start_timestamp = params[:start_date].in_time_zone.beginning_of_day.to_i
-      snapshots = snapshots.select { |snapshot| snapshot['snapshot_timestamp'].to_i >= start_timestamp }
-    end
-    if params[:end_date].present?
-      end_timestamp = params[:end_date].in_time_zone.end_of_day.to_i
-      snapshots = snapshots.select { |snapshot| snapshot['snapshot_timestamp'].to_i <= end_timestamp }
-    end
-    snapshots = snapshots.first([params[:limit].to_i, 365].min)
+    if snapshots.nil?
+      job_id = RefreshTaskCompletionSnapshotStatsJob.perform_async(unit.id)
+      if job_id.nil?
+        error!({ error: 'Analytics are rebuilding for this unit. Please try again later.' }, 409)
+      end
 
-    present snapshots, with: Grape::Presenters::Presenter
+      status 202
+      present setup_job(job_id), with: Entities::SidekiqJobEntity
+    else
+      # Already aggregated and ordered newest first, so this only has to filter.
+      if params[:start_date].present?
+        start_timestamp = params[:start_date].in_time_zone.beginning_of_day.to_i
+        snapshots = snapshots.select { |snapshot| snapshot['snapshot_timestamp'].to_i >= start_timestamp }
+      end
+      if params[:end_date].present?
+        end_timestamp = params[:end_date].in_time_zone.end_of_day.to_i
+        snapshots = snapshots.select { |snapshot| snapshot['snapshot_timestamp'].to_i <= end_timestamp }
+      end
+      snapshots = snapshots.first([params[:limit].to_i, 365].min)
+
+      present snapshots, with: Grape::Presenters::Presenter
+    end
   end
 
   desc 'Capture task completion snapshot immediately for this unit'

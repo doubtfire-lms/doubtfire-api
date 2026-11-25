@@ -810,6 +810,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     older_snapshot.store_stats!(build_task_completion_snapshot_csv(tutorial, task_definition, [TaskStatus.not_started.id]))
     mid_snapshot.store_stats!(build_task_completion_snapshot_csv(tutorial, task_definition, [TaskStatus.complete.id, TaskStatus.complete.id]))
     latest_snapshot.store_stats!(build_task_completion_snapshot_csv(tutorial, task_definition, [TaskStatus.complete.id, TaskStatus.complete.id, TaskStatus.complete.id]))
+    unit.refresh_task_completion_snapshot_stats!
 
     add_auth_header_for(user: unit.main_convenor_user)
     header 'Host', 'localhost'
@@ -857,6 +858,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     unit.task_completion_snapshots.find_each do |snapshot|
       snapshot.store_stats!(build_task_completion_snapshot_csv(tutorial, task_definition, [TaskStatus.complete.id]))
     end
+    unit.refresh_task_completion_snapshot_stats!
 
     add_auth_header_for(user: unit.main_convenor_user)
     header 'Host', 'localhost'
@@ -882,6 +884,23 @@ class UnitsApiTest < ActiveSupport::TestCase
     get "/api/units/#{unit.id}/stats/task_completion_snapshots"
 
     assert_equal 403, last_response.status
+  end
+
+  def test_get_task_completion_snapshots_queues_rebuild_when_cache_missing
+    unit = FactoryBot.create :unit, with_students: false, task_count: 1, stream_count: 0, tutorials: 1, campus_count: 1
+    snapshot = TaskCompletionSnapshot.create!(unit: unit, snapshot_timestamp: Time.zone.now.to_i.to_s)
+    snapshot.store_stats!(build_task_completion_snapshot_csv(unit.tutorials.first, unit.task_definitions_by_grade.first, [TaskStatus.complete.id]))
+    path = FileHelper.unit_task_status_snapshot_stats_path(unit, create: false)
+    FileUtils.rm_f(path)
+
+    add_auth_header_for(user: unit.main_convenor_user)
+    header 'Host', 'localhost'
+    get "/api/units/#{unit.id}/stats/task_completion_snapshots"
+
+    assert_equal 202, last_response.status, last_response_body
+    assert_not_nil last_response_body['id']
+    assert_equal unit.id, RefreshTaskCompletionSnapshotStatsJob.jobs.last['args'].first
+    assert_not File.exist?(path)
   end
 
   def test_post_capture_task_completion_snapshot

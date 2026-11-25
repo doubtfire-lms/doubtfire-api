@@ -4294,14 +4294,15 @@ class Unit < ApplicationRecord
   end
 
   # Stats for every snapshot, read from the aggregated file so no CSV is parsed per request.
-  # Rebuilt only when that file is missing, unreadable, or no longer matches the snapshots on record.
+  # A missing, unreadable, or outdated file is rebuilt by a background job.
   def task_completion_snapshot_stats
     path = FileHelper.unit_task_status_snapshot_stats_path(self, create: false)
     cached = File.exist?(path) ? JSON.parse(Zlib::GzipReader.open(path, &:read)) : nil
 
-    if cached.present? &&
+    if cached.is_a?(Array) &&
         cached.all? do |entry|
-          %w[student_count campus_student_counts target_grade_student_counts target_grade_campus_student_counts target_grade_stats status_population_stats].all? { |key| entry.key?(key) } &&
+          entry.is_a?(Hash) &&
+            %w[student_count campus_student_counts target_grade_student_counts target_grade_campus_student_counts target_grade_stats status_population_stats].all? { |key| entry.key?(key) } &&
             entry['submitted_task_count_student_counts'].is_a?(Hash) &&
             entry['submitted_task_count_student_counts']['task_grade_values'] == grade_values &&
             entry['submitted_task_count_student_counts'].key?('all')
@@ -4310,14 +4311,14 @@ class Unit < ApplicationRecord
       return cached
     end
 
-    refresh_task_completion_snapshot_stats!
+    nil
   rescue JSON::ParserError, Zlib::Error
-    refresh_task_completion_snapshot_stats!
+    nil
   end
 
   # Writes the aggregated file. Stats for an already captured snapshot never change, so passing the
   # snapshot that just changed merges it in rather than re-parsing every other CSV.
-  def refresh_task_completion_snapshot_stats!(changed_snapshot = nil)
+  def refresh_task_completion_snapshot_stats!(changed_snapshot = nil, &progress)
     path = FileHelper.unit_task_status_snapshot_stats_path(self, create: true)
 
     entries =
@@ -4337,9 +4338,9 @@ class Unit < ApplicationRecord
             'target_grade_campus_student_counts' => student_counts['target_grade_campus_student_counts']
           }]
       else
-        task_completion_snapshots.reload.map do |snapshot|
+        task_completion_snapshots.reload.map.with_index do |snapshot, index|
           student_counts = snapshot.load_student_counts
-          {
+          entry = {
             'snapshot_date' => snapshot.snapshot_date&.iso8601,
             'snapshot_timestamp' => snapshot.snapshot_timestamp,
             'stats' => snapshot.load_stats,
@@ -4351,6 +4352,8 @@ class Unit < ApplicationRecord
             'target_grade_student_counts' => student_counts['target_grade_student_counts'],
             'target_grade_campus_student_counts' => student_counts['target_grade_campus_student_counts']
           }
+          progress&.call(index + 1)
+          entry
         end
       end
 
@@ -4364,7 +4367,7 @@ class Unit < ApplicationRecord
   rescue JSON::ParserError, Zlib::Error
     # An unreadable file cannot be merged into; drop it so the retry does a full rebuild.
     FileUtils.rm_f(path)
-    refresh_task_completion_snapshot_stats!
+    refresh_task_completion_snapshot_stats!(&progress)
   end
 
   private
