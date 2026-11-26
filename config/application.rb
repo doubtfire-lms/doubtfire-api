@@ -204,6 +204,8 @@ module Doubtfire
     # ==> Notification emails
     # Digests are not emailed until a sender address is configured.
     config.notification_emails_from = ENV.fetch('ONTRACK_NOTIFICATION_EMAILS_FROM', nil).presence
+    # Optional host for email images, if different from the app host.
+    config.email_asset_host = ENV.fetch('ONTRACK_EMAIL_ASSET_HOST', nil).presence
 
     # ==> Institution settings
     # Institution YAML and ENV (override) config load

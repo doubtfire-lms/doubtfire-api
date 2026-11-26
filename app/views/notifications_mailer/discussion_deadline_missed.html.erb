@@ -1,3 +1,4 @@
+<%= render 'shared/email_preheader', text: "#{@task.task_definition.abbreviation} moved to Fix and Resubmit after the discussion deadline. Review feedback and resubmit in #{@doubtfire_product_name}." %>
 <h1><%= @unit.name %> - Discussion Deadline Missed</h1>
 <p class="subtext"><%= @task.task_definition.abbreviation %> - <%= @task.task_definition.name %></p>
 

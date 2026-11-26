@@ -182,6 +182,26 @@ class LtiApiTest < ActiveSupport::TestCase
     assert_nil user.reload.student_id
   end
 
+  def test_lti_launch_uses_the_institution_student_id_mapping
+    user = FactoryBot.create(:user, :student)
+    user.update!(student_id: nil)
+    member = launch_member(user, SecureRandom.uuid).merge(
+      lis_person_sourcedid: 'original-source-id', institutional_student_id: 'mapped-student-id'
+    )
+    config = Doubtfire::Application.config
+    original_settings = config.institution_settings
+    mapped_settings = original_settings.dup
+    mapped_settings.define_singleton_method(:map_lti_member_to_student_id) { |details| details['institutional_student_id'] }
+    config.institution_settings = mapped_settings
+
+    post '/api/auth/lti', { ltik: lti_token('auth', member: member) }
+
+    assert_equal 201, last_response.status
+    assert_equal 'mapped-student-id', user.reload.student_id
+  ensure
+    config.institution_settings = original_settings
+  end
+
   def test_lti_launch_links_login_id_without_renaming_an_existing_user
     user = FactoryBot.create(:user, :student)
     username = user.username
@@ -525,7 +545,7 @@ class LtiApiTest < ActiveSupport::TestCase
     unit.employ_staff(convenor, Role.convenor)
 
     admin = FactoryBot.create(:user, :admin)
-    unit.employ_staff(admin, Role.admin)
+    assert_nil unit.unit_role_for(admin)
 
     users_cant = [
       student1,
@@ -536,12 +556,7 @@ class LtiApiTest < ActiveSupport::TestCase
       tutor
     ]
 
-    users_can = [
-      # Admins have :convene_units permissions, but do not have :assess permissions
-      # They will instead receive -1 to indicate they dont have permissions to retrieve grades
-      admin,
-      convenor
-    ]
+    users_can = [admin, convenor]
 
     users_can.each do |user|
       add_auth_header_for(user: user)
@@ -580,11 +595,7 @@ class LtiApiTest < ActiveSupport::TestCase
       assert_equal 201, last_response.status
       assert_equal unit.projects.count, last_response_body.count
       last_response_body.each do |email, grade|
-        if unit.role_for(user) == Role.admin
-          assert_equal(-1, grade)
-        else
-          assert_equal(expected_grades[email], grade)
-        end
+        assert_equal expected_grades[email], grade
         assert payload[:student_emails].include?(email)
       end
     end

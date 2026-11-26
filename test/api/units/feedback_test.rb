@@ -160,6 +160,17 @@ class FeedbackTest < ActiveSupport::TestCase
     expected_ids = unit.tasks_for_task_inbox(tutor, true).map(&:task_id)
     assert_equal expected_ids, last_response_body.pluck('id')
 
+    admin = FactoryBot.create(:user, :admin)
+    assert_nil unit.unit_role_for(admin)
+
+    add_auth_header_for(user: admin)
+    get "/api/units/#{unit.id}/tasks/inbox?my_students_only=true&view_as_unit_role_id=#{tutor_role.id}"
+    assert_equal 200, last_response.status, last_response_body
+    assert_equal expected_ids, last_response_body.pluck('id')
+
+    get "/api/units/#{unit.id}/tasks/moderation"
+    assert_equal 200, last_response.status, last_response_body
+
     add_auth_header_for(user: tutor)
     get "/api/units/#{unit.id}/tasks/inbox?view_as_unit_role_id=#{unit.unit_role_for(convenor).id}"
     assert_equal 403, last_response.status

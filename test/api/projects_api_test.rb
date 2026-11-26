@@ -175,13 +175,23 @@ class ProjectsApiTest < ActiveSupport::TestCase
     end
 
     assert_equal 403, last_response.status
+  end
 
-    add_auth_header_for(user: FactoryBot.create(:user, :admin))
-    assert_no_difference 'Engagement.count' do
-      get "/api/projects/#{project.id}?record_attendance=true"
+  def test_admin_without_unit_role_can_record_attendance
+    project, _tutor, tutorial = attendance_test_data
+    tutorial.update!(meeting_day: 'Monday', meeting_time: '10:00')
+    admin = FactoryBot.create(:user, :admin)
+    assert_nil project.unit.unit_role_for(admin)
+    add_auth_header_for(user: admin)
+
+    assert_difference 'Engagement.count', 1 do
+      travel_to(Time.zone.parse('2026-07-20 10:30:00 UTC')) do
+        get "/api/projects/#{project.id}?record_attendance=true"
+      end
     end
 
-    assert_equal 403, last_response.status
+    assert_equal 200, last_response.status
+    assert_equal admin, project.engagements.last.user
   end
 
   def test_projects_works_with_inactive_units
@@ -234,7 +244,7 @@ class ProjectsApiTest < ActiveSupport::TestCase
 
     DatabasePopulator.generate_portfolio(project)
 
-    data_to_put['submitted_grade'] = 1
+    data_to_put[:submitted_grade] = 1
 
     put_json "/api/projects/#{project.id}", data_to_put
 
@@ -289,6 +299,45 @@ class ProjectsApiTest < ActiveSupport::TestCase
     unit.destroy!
   ensure
     FileUtils.rm_f(project.portfolio_path)
+  end
+
+  def test_download_portfolio_additional_files
+    project = FactoryBot.create(:project)
+    summary = { idx: 0, kind: 'document', name: 'LearningSummaryReport.pdf' }
+    attachment = { idx: 2, kind: 'zip', name: 'source.zip' }
+    FileUtils.mkdir_p(project.portfolio_temp_path)
+    File.write(project.portfolio_tmp_file_path(summary), 'summary')
+    Zip::File.open(project.portfolio_tmp_file_path(attachment), create: true) do |zip|
+      zip.get_output_stream('src/program.py') { |stream| stream.write('print("hello")') }
+    end
+    File.write(project.portfolio_path, '%PDF-1.4 portfolio')
+
+    url = "/api/submission/project/#{project.id}/portfolio/additional_files"
+    add_auth_header_for(user: project.student)
+    get url
+
+    assert_equal 200, last_response.status
+    assert_equal 'application/zip', last_response.headers['Content-Type']
+    assert_includes last_response.headers['Content-Disposition'], 'additional-files.zip'
+    Zip::File.open_buffer(StringIO.new(last_response.body)) do |zip|
+      assert_equal ['002-source.zip'], zip.entries.map(&:name)
+      Zip::File.open_buffer(StringIO.new(zip.read('002-source.zip'))) do |source_zip|
+        assert_equal 'print("hello")', source_zip.read('src/program.py')
+      end
+    end
+
+    add_auth_header_for(user: FactoryBot.create(:user, :student))
+    get url
+    assert_equal 401, last_response.status
+
+    add_auth_header_for(user: project.student)
+    FileUtils.rm_f(project.portfolio_tmp_file_path(attachment))
+    get url
+    assert_equal 404, last_response.status
+  ensure
+    FileUtils.rm_f(project.portfolio_path) if project
+    FileUtils.rm_f(project.portfolio_tmp_file_path(summary)) if project && summary
+    FileUtils.rm_f(project.portfolio_tmp_file_path(attachment)) if project && attachment
   end
 
   private

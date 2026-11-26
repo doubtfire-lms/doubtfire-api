@@ -45,6 +45,7 @@ class TaskDefinitionsApi < Grape::API
       optional :requires_discussion,      type: Boolean,  desc: 'Whether task must be discussed in class before it can be signed off as complete'
       optional :use_resources_for_jplag_base_code, type: Boolean, desc: 'Include the common base code from task resources for JPlag comparisons'
       optional :lock_assessments_to_tutorial_stream, type: Boolean, desc: 'Only allow tutors in this tutorial stream to assess this task'
+      optional :submission_opens_on, type: Date, desc: 'The date when the task can accept submissions'
     end
   end
   post '/units/:unit_id/task_definitions/' do
@@ -83,7 +84,8 @@ class TaskDefinitionsApi < Grape::API
                                                 :upload_requirements,
                                                 :unit_id,
                                                 :use_resources_for_jplag_base_code,
-                                                :lock_assessments_to_tutorial_stream
+                                                :lock_assessments_to_tutorial_stream,
+                                                :submission_opens_on
                                               )
 
     task_params[:unit_id] = unit.id
@@ -152,6 +154,7 @@ class TaskDefinitionsApi < Grape::API
         optional :target_due_date, type: Date
         optional :start_date, type: Date
       end
+      optional :submission_opens_on, type: Date, desc: 'The date when the task can accept submissions'
     end
   end
   put '/units/:unit_id/task_definitions/:id' do
@@ -193,7 +196,8 @@ class TaskDefinitionsApi < Grape::API
                                                 :requires_discussion,
                                                 :upload_requirements,
                                                 :use_resources_for_jplag_base_code,
-                                                :lock_assessments_to_tutorial_stream
+                                                :lock_assessments_to_tutorial_stream,
+                                                :submission_opens_on
                                               )
 
     if params[:task_def][:upload_requirements].present?
@@ -581,6 +585,7 @@ class TaskDefinitionsApi < Grape::API
                    'grade',
                    'quality_pts',
                    "SUM(case when task_comments.date_extension_assessed IS NULL AND task_comments.type = 'ExtensionComment' AND NOT task_comments.id IS NULL THEN 1 ELSE 0 END) > 0 as has_extensions",
+                   "SUM(case when task_comments.submission_assessed_at IS NULL AND task_comments.type = 'SubmissionComment' AND NOT task_comments.id IS NULL THEN 1 ELSE 0 END) > 0 as has_submission_requests",
                    'SUM(case when task_similarities.flagged then 1 else 0 end) as similar_to_count',
                    'COUNT(distinct task_pins.task_id) != 0 as pinned'
                  )
@@ -614,6 +619,7 @@ class TaskDefinitionsApi < Grape::API
         grade: t.grade,
         quality_pts: t.quality_pts,
         has_extensions: t.has_extensions,
+        has_submission_requests: t.has_submission_requests,
         pinned: t.pinned
       }
     end

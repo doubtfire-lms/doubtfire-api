@@ -67,6 +67,11 @@ class UnitRole < ApplicationRecord
       :delete_tutor_note,
       :create_tutor_note
     ]
+    admin_role_permissions = [
+      :get,
+      :delete_tutor_note,
+      :create_tutor_note
+    ]
     # What can nil users do with unit roles?
     nil_role_permissions = []
 
@@ -75,6 +80,7 @@ class UnitRole < ApplicationRecord
       student: student_role_permissions,
       tutor: tutor_role_permissions,
       convenor: convenor_role_permissions,
+      admin: admin_role_permissions,
       nil: nil_role_permissions
     }
   end

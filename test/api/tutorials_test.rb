@@ -1211,6 +1211,46 @@ class TutorialsTest < ActiveSupport::TestCase
     assert_not Tutorial.exists?(tutorial.id)
   end
 
+  def test_cannot_delete_tutorial_with_groups
+    unit = FactoryBot.create(:unit, with_students: false)
+    tutorial = unit.tutorials.first
+    group_set = FactoryBot.create(:group_set, unit: unit)
+    FactoryBot.create(:group, group_set: group_set, tutorial: tutorial)
+
+    add_auth_header_for(user: unit.main_convenor_user)
+    delete_json "/api/tutorials/#{tutorial.id}"
+
+    assert_equal 422, last_response.status
+    assert_equal 'Cannot delete tutorial with groups', last_response_body['error']
+    assert Tutorial.exists?(tutorial.id)
+  end
+
+  def test_cannot_delete_tutorial_with_active_enrolments
+    unit = FactoryBot.create(:unit, student_count: 1, unenrolled_student_count: 0, part_enrolled_student_count: 0, inactive_student_count: 0)
+    tutorial = unit.tutorials.first
+
+    add_auth_header_for(user: unit.main_convenor_user)
+    delete_json "/api/tutorials/#{tutorial.id}"
+
+    assert_equal 422, last_response.status
+    assert_equal 'Cannot delete tutorial with enrolments', last_response_body['error']
+    assert Tutorial.exists?(tutorial.id)
+  end
+
+  def test_cannot_delete_tutorial_with_active_enrolments_and_groups
+    unit = FactoryBot.create(:unit, student_count: 1, unenrolled_student_count: 0, part_enrolled_student_count: 0, inactive_student_count: 0)
+    tutorial = unit.tutorials.first
+    group_set = FactoryBot.create(:group_set, unit: unit)
+    FactoryBot.create(:group, group_set: group_set, tutorial: tutorial)
+
+    add_auth_header_for(user: unit.main_convenor_user)
+    delete_json "/api/tutorials/#{tutorial.id}"
+
+    assert_equal 422, last_response.status
+    assert_equal 'Cannot delete tutorial with enrolments and Cannot delete tutorial with groups', last_response_body['error']
+    assert Tutorial.exists?(tutorial.id)
+  end
+
   # Testing for DELELTE failures
   def test_tutor_cannot_delete_tutorial
     # Create a dummy tutorial

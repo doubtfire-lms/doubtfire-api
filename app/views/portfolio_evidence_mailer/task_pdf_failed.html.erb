@@ -41,6 +41,7 @@
   </style>
 </head>
 <body>
+  <%= render 'shared/email_preheader', text: "Some task submissions could not be processed. Check the affected files and upload them again in #{@doubtfire_product_name}." %>
   <div class="main">
     <h1> <%= @doubtfire_product_name %> Notification </h1>
     <p>Hi <%= @student.first_name %>,</p>

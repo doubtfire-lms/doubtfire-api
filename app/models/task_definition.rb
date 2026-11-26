@@ -3,7 +3,7 @@ require 'json'
 class TaskDefinition < ApplicationRecord
   JPLAG_LANGUAGES = %w[
     java c cpp csharp python3 javascript typescript golang kotlin rlang rust swift
-    scala llvmir scheme emf emf-model scxml text multi
+    scala llvmir scheme emf emf-model scxml text multi ipynb
   ].freeze
 
   include ApplicationHelper

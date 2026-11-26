@@ -51,7 +51,9 @@ class MarkingSessionsApi < Grape::API
                .where(unit: unit)
                .where(start_time: start_date..end_date)
 
-    sessions = sessions.where(user_id: current_user.id) if unit_role && unit_role&.role != Role.convenor
+    if unit_role && unit_role.role != Role.convenor && !current_user.has_admin_capability?
+      sessions = sessions.where(user_id: current_user.id)
+    end
 
     present sessions, with: Entities::MarkingSessionEntity, include_assessed_projects: unit_role&.role == Role.convenor
   end

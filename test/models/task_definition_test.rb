@@ -26,7 +26,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
   def test_similarity_language_accepts_supported_languages_and_rejects_commands
     task_definition = FactoryBot.create(:unit, task_count: 1).task_definitions.first
 
-    [nil, 'java', 'python3'].each do |language|
+    [nil, 'java', 'python3', 'ipynb'].each do |language|
       task_definition.similarity_language = language
       task_definition.validate
       assert_empty task_definition.errors[:similarity_language]
@@ -46,8 +46,110 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     task_definition.plagiarism_warn_pct = 50
 
     assert_raises(ArgumentError) do
-      unit.send(:run_jplag_on_done_files, task_definition, Rails.root.join('tmp/jplag'), [], '/tmp/report.jplag')
+      unit.send(:run_jplag_on_done_files, task_definition, Rails.root.join('tmp/jplag/invalid-language-test'), [], '/tmp/report.jplag')
     end
+  end
+
+  def test_jplag_converts_notebook_code_cells_to_python
+    unit = FactoryBot.create(:unit, task_count: 0)
+
+    Dir.mktmpdir('jplag-notebooks') do |work_dir|
+      notebook = File.join(work_dir, 'submissions', 'student', 'colab.ipynb')
+      FileUtils.mkdir_p(File.dirname(notebook))
+      # Colab omits language_info.file_extension, which nbconvert relied on
+      File.write(notebook, {
+        cells: [
+          { cell_type: 'markdown', source: ['# Title'] },
+          { cell_type: 'code', source: ["!pip install numpy\n", "%matplotlib inline\n", 'x = 1'] },
+          { cell_type: 'code', source: 'print(x)' }
+        ],
+        metadata: { language_info: { name: 'python' } }
+      }.to_json)
+
+      unit.send(:convert_jplag_notebooks, work_dir)
+
+      assert_equal "# # Title\n\n# !pip install numpy\n# %matplotlib inline\nx = 1\n\nprint(x)",
+                   File.read(notebook.sub(/\.ipynb\z/, '.py'))
+    end
+  end
+
+  def test_jplag_skips_invalid_notebooks_without_failing_others
+    unit = FactoryBot.create(:unit, task_count: 0)
+
+    Dir.mktmpdir('jplag-notebooks') do |work_dir|
+      valid = File.join(work_dir, 'submissions', 'a', 'work.ipynb')
+      invalid = File.join(work_dir, 'submissions', 'b', 'work.ipynb')
+      [valid, invalid].each { |path| FileUtils.mkdir_p(File.dirname(path)) }
+      File.write(valid, { cells: [{ cell_type: 'code', source: 'x = 1' }] }.to_json)
+      File.write(invalid, '{')
+
+      unit.send(:convert_jplag_notebooks, work_dir)
+
+      assert File.file?(valid.sub(/\.ipynb\z/, '.py'))
+      assert_not File.exist?(invalid.sub(/\.ipynb\z/, '.py'))
+    end
+  end
+
+  def test_jplag_notebook_conversion_fails_when_nothing_converts
+    unit = FactoryBot.create(:unit, task_count: 0)
+
+    Dir.mktmpdir('jplag-notebooks') do |work_dir|
+      notebook = File.join(work_dir, 'submissions', 'a', 'work.ipynb')
+      FileUtils.mkdir_p(File.dirname(notebook))
+      File.write(notebook, '{}')
+
+      assert_raises(RuntimeError) { unit.send(:convert_jplag_notebooks, work_dir) }
+    end
+  end
+
+  def test_jplag_base_code_zip_cannot_escape_its_directory
+    unit = FactoryBot.create(:unit, task_count: 1)
+    task_definition = unit.task_definitions.first
+    task_definition.assign_attributes(similarity_language: 'java', plagiarism_warn_pct: 50,
+                                      use_resources_for_jplag_base_code: true)
+
+    Dir.mktmpdir('jplag-base') do |root|
+      archive_path = File.join(root, 'resources.zip')
+      Zip::File.open(archive_path, create: true) do |zip|
+        zip.get_output_stream('starter/main.rb') { |stream| stream.write('safe') }
+        zip.get_output_stream('../../escaped.rb') { |stream| stream.write('outside') }
+      end
+      task_definition.add_task_resources(archive_path, copy: true)
+
+      assert_raises(Zip::Error) do
+        unit.send(:run_jplag_on_done_files, task_definition, File.join(root, 'work'), [], File.join(root, 'report.jplag'))
+      end
+      assert_not File.exist?(File.join(root, 'escaped.rb'))
+    end
+  ensure
+    task_definition&.remove_task_resources if task_definition&.has_uploaded_task_resources?
+  end
+
+  def test_jplag_base_code_zip_cannot_follow_an_existing_symlink
+    unit = FactoryBot.create(:unit, task_count: 1)
+    task_definition = unit.task_definitions.first
+    task_definition.assign_attributes(similarity_language: 'java', plagiarism_warn_pct: 50,
+                                      use_resources_for_jplag_base_code: true)
+
+    Dir.mktmpdir('jplag-base') do |root|
+      archive_path = File.join(root, 'resources.zip')
+      Zip::File.open(archive_path, create: true) do |zip|
+        zip.get_output_stream('link/escaped.rb') { |stream| stream.write('outside') }
+      end
+      task_definition.add_task_resources(archive_path, copy: true)
+
+      work_dir = File.join(root, 'work')
+      base_dir = File.join(work_dir, 'base')
+      FileUtils.mkdir_p(base_dir)
+      File.symlink(root, File.join(base_dir, 'link'))
+
+      assert_raises(Zip::Error) do
+        unit.send(:run_jplag_on_done_files, task_definition, work_dir, [], File.join(root, 'report.jplag'))
+      end
+      assert_not File.exist?(File.join(root, 'escaped.rb'))
+    end
+  ensure
+    task_definition&.remove_task_resources if task_definition&.has_uploaded_task_resources?
   end
 
   def test_unit_can_be_destroyed_when_its_tasks_have_prerequisites

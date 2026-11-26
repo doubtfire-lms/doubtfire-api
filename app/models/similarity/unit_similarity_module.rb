@@ -98,9 +98,6 @@ module UnitSimilarityModule
 
     completed_all_checks = true
 
-    # making temp directory for unit - jplag
-    root_work_dir = Rails.root.join("tmp", "jplag", "#{code}-#{id}")
-
     logger.info "Checking plagiarsm for unit #{code} - #{name} (id=#{id})"
 
     task_definitions.each do |td|
@@ -121,11 +118,8 @@ module UnitSimilarityModule
                     force
                   )
 
-      # Ensure work directory for the unit is created
-      FileUtils.mkdir_p(root_work_dir)
-
-      # Init work directory for each task definition
-      tasks_dir = root_work_dir.join(td.id.to_s)
+      work_dir_name = FileHelper.sanitized_filename("#{code}-#{id}-#{td.id}-#{td.abbreviation}")
+      tasks_dir = Rails.root.join('tmp', 'jplag', work_dir_name)
       FileUtils.mkdir_p(tasks_dir)
 
       # There are new tasks, check these with JPLAG
@@ -232,7 +226,6 @@ module UnitSimilarityModule
     file_lang = task_definition.similarity_language
     raise ArgumentError, "Unsupported JPlag language: #{file_lang.inspect}" unless TaskDefinition::JPLAG_LANGUAGES.include?(file_lang)
 
-    cleanup_work_dir = true
     # JPlag can write only to its shared working directory. Pdfgen publishes the
     # finished report to student work after the container exits successfully.
     staged_report_path = File.join(tasks_dir, 'result.jplag')
@@ -250,12 +243,13 @@ module UnitSimilarityModule
         FileUtils.cp(linked_resource[:path], File.join(base_dir, linked_resource[:filename]))
       else
         path = linked_resource ? linked_resource[:path] : task_definition.task_resources
+        base_dir = File.expand_path(File.join(tasks_dir, 'base'))
 
         Zip::File.open(path) do |zip_file|
-          zip_file.each do |entry|
-            dest = File.join(tasks_dir, 'base', entry.name)
+          entries = zip_file.map { |entry| [entry, safe_jplag_base_path!(entry, base_dir)] }
+          entries.each do |entry, dest|
             FileUtils.mkdir_p(File.dirname(dest))
-            entry.extract(dest) { true }
+            entry.extract(File.basename(dest), destination_directory: File.dirname(dest)) { true }
           end
         end
       end
@@ -292,6 +286,10 @@ module UnitSimilarityModule
       end
     end
 
+    # JPlag has no notebook frontend, so compare the extracted Python code
+    convert_jplag_notebooks(tasks_dir) if file_lang == 'ipynb'
+    jplag_language = file_lang == 'ipynb' ? 'python3' : file_lang
+
     logger.info "Starting JPLAG container to run on #{tasks_dir}"
     root_dir = Rails.root.to_s
     tasks_dir_split = tasks_dir.to_s.split(root_dir)[1]
@@ -315,7 +313,7 @@ module UnitSimilarityModule
     ]
     docker_command << "--base-code=#{tasks_dir_split}/base" if use_base_code
     docker_command += [
-      '-l', file_lang,
+      '-l', jplag_language,
       "--similarity-threshold=#{similarity_threshold}",
       "--shown-comparisons=#{max_shown_comparisons}"
     ]
@@ -345,10 +343,54 @@ module UnitSimilarityModule
     self
   ensure
     # Remove extracted student files even when JPlag fails.
-    if cleanup_work_dir
-      logger.info "Deleting files in: #{tasks_dir}"
-      FileUtils.rm_rf(tasks_dir)
+    logger.info "Deleting files in: #{tasks_dir}"
+    FileUtils.rm_rf(tasks_dir)
+  end
+
+  def convert_jplag_notebooks(tasks_dir)
+    notebooks = %w[base submissions].flat_map do |directory|
+      Dir.glob(File.join(tasks_dir, directory, '**', '*.ipynb'))
     end
+    converted = notebooks.count { |notebook| convert_jplag_notebook(notebook) }
+    raise 'No Jupyter notebooks could be converted for JPlag' if converted.zero?
+  end
+
+  # Markdown becomes comments for the report viewer; magics and shell lines would not parse as Python
+  def convert_jplag_notebook(notebook)
+    cells = JSON.parse(File.read(notebook)).fetch('cells')
+    parts = cells.filter_map do |cell|
+      next unless cell.is_a?(Hash)
+
+      source = cell['source']
+      source = source.join if source.is_a?(Array)
+      case cell['cell_type']
+      when 'code' then source.to_s.gsub(/^(\s*)([%!])/, '\\1# \\2')
+      when 'markdown' then source.to_s.gsub(/^/, '# ')
+      end
+    end
+    File.write(notebook.sub(/\.ipynb\z/, '.py'), parts.join("\n\n"))
+    true
+  rescue StandardError => e
+    logger.warn "Skipping Jupyter notebook #{notebook} for JPlag: #{e.message}"
+    false
+  end
+
+  def safe_jplag_base_path!(entry, root)
+    name = entry.name.to_s
+    if !FileHelper.zip_path_safe?(name) || name.include?('\\') || entry.symlink? || File.symlink?(root)
+      raise Zip::Error, 'Unsafe JPlag base code path'
+    end
+
+    dest = File.expand_path(name, root)
+    raise Zip::Error, 'Unsafe JPlag base code path' unless dest.start_with?("#{root}/")
+
+    current_path = root
+    name.split('/').each do |part|
+      current_path = File.join(current_path, part)
+      raise Zip::Error, 'Unsafe JPlag base code path' if File.symlink?(current_path)
+    end
+
+    dest
   end
 
   def process_jplag_plagiarism_report(path, warn_pct, is_group)

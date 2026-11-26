@@ -66,7 +66,7 @@ class PortfolioEvidenceMailer < ApplicationMailer
 
     email_with_name = %("#{@student.name}" <#{@student.email}>)
     convenor_email = %("#{@convenor.name}" <#{@convenor.email}>)
-    subject = "#{project.unit.name}: Portfolio ready to review"
+    subject = "#{project.unit.code} #{project.unit.name}: Portfolio ready to review"
     mail(to: email_with_name, from: convenor_email, subject: subject)
   end
 
@@ -81,7 +81,7 @@ class PortfolioEvidenceMailer < ApplicationMailer
 
     email_with_name = %("#{@student.name}" <#{@student.email}>)
     convenor_email = %("#{@convenor.name}" <#{@convenor.email}>)
-    subject = "#{project.unit.name}: Portfolio failed to compile"
+    subject = "#{project.unit.code} #{project.unit.name}: Portfolio failed to compile"
     mail(to: email_with_name, from: convenor_email, subject: subject)
   end
 

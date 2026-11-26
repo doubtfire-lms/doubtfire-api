@@ -259,7 +259,7 @@ class FileHelperTest < ActiveSupport::TestCase
 
   def test_accept_zip_upload
     Tempfile.create(['submission', '.zip']) do |zip_file|
-      Zip::File.open(zip_file.path, Zip::File::CREATE) do |zip|
+      Zip::File.open(zip_file.path, create: true) do |zip|
         zip.get_output_stream('src/main.rb') { |io| io.write("puts 'hello'\n") }
       end
 
@@ -278,7 +278,7 @@ class FileHelperTest < ActiveSupport::TestCase
 
   def test_zip_upload_rejects_unsafe_paths
     Tempfile.create(['submission', '.zip']) do |zip_file|
-      Zip::File.open(zip_file.path, Zip::File::CREATE) do |zip|
+      Zip::File.open(zip_file.path, create: true) do |zip|
         zip.get_output_stream('../escape.rb') { |io| io.write("puts 'bad'\n") }
       end
 
@@ -298,7 +298,7 @@ class FileHelperTest < ActiveSupport::TestCase
 
   def test_zip_upload_rejects_nested_archives
     Tempfile.create(['submission', '.zip']) do |zip_file|
-      Zip::File.open(zip_file.path, Zip::File::CREATE) do |zip|
+      Zip::File.open(zip_file.path, create: true) do |zip|
         zip.get_output_stream('lib/vendor.zip') { |io| io.write('nested archive') }
       end
 
@@ -321,7 +321,7 @@ class FileHelperTest < ActiveSupport::TestCase
     Doubtfire::Application.config.max_file_size = 1_000
 
     Tempfile.create(['submission', '.zip']) do |zip_file|
-      Zip::File.open(zip_file.path, Zip::File::CREATE) do |zip|
+      Zip::File.open(zip_file.path, create: true) do |zip|
         zip.get_output_stream('large.txt') { |io| io.write('a' * 1_001) }
       end
 
@@ -347,7 +347,7 @@ class FileHelperTest < ActiveSupport::TestCase
     Doubtfire::Application.config.zip_uncompressed_size_multiplier = 2
 
     Tempfile.create(['submission', '.zip']) do |zip_file|
-      Zip::File.open(zip_file.path, Zip::File::CREATE) do |zip|
+      Zip::File.open(zip_file.path, create: true) do |zip|
         3.times do |index|
           zip.get_output_stream("file-#{index}.txt") { |io| io.write('a' * 900) }
         end
@@ -365,7 +365,7 @@ class FileHelperTest < ActiveSupport::TestCase
 
   def test_zip_file_tree_lists_nested_paths
     Tempfile.create(['submission', '.zip']) do |zip_file|
-      Zip::File.open(zip_file.path, Zip::File::CREATE) do |zip|
+      Zip::File.open(zip_file.path, create: true) do |zip|
         zip.get_output_stream('src/main.rb') { |io| io.write("puts 'hello'\n") }
         zip.get_output_stream('README.md') { |io| io.write("# Read me\n") }
       end
@@ -377,6 +377,76 @@ class FileHelperTest < ActiveSupport::TestCase
       assert_includes tree[:lines], '  ↳ main.rb'
       assert_includes tree[:lines], '↳ README.md'
       assert_not tree[:truncated]
+    end
+  end
+
+  def test_ensure_utf8_code_does_not_execute_uploaded_filename_extension
+    uploaded_filename = 'solution.rb$(touch${IFS}$CODE_UPLOAD_INJECTION_MARKER)'
+    stored_filename = "000-code#{File.extname(uploaded_filename)}"
+    contents = "puts 'safe'\n"
+
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, stored_filename)
+      marker = File.join(dir, 'injected')
+      File.write(path, contents)
+      previous_marker = ENV.fetch('CODE_UPLOAD_INJECTION_MARKER', nil)
+      ENV['CODE_UPLOAD_INJECTION_MARKER'] = marker
+
+      FileHelper.ensure_utf8_code(path, false)
+
+      assert_not File.exist?(marker)
+      assert_equal contents, File.read(path)
+    ensure
+      ENV['CODE_UPLOAD_INJECTION_MARKER'] = previous_marker
+    end
+  end
+
+  def test_code_upload_rejects_shell_metacharacters_in_filename_extension
+    Tempfile.create(['code', '.rb']) do |uploaded_file|
+      uploaded_file.write("puts 'safe'\n")
+      uploaded_file.flush
+
+      result = FileHelper.accept_file(
+        { filename: 'solution.rb$(touch${IFS}$CODE_UPLOAD_INJECTION_MARKER)', 'tempfile' => uploaded_file },
+        'Code',
+        'code'
+      )
+
+      assert_not result[:accepted]
+      assert_equal 'invalid file extension.', result[:msg]
+    end
+  end
+
+  def test_image_conversion_does_not_interpret_filename_as_shell
+    Dir.mktmpdir do |dir|
+      source = File.join(dir, 'upload$(touch${IFS}$IMAGE_INJECTION_MARKER).gif')
+      destination = File.join(dir, 'converted.jpg')
+      marker = File.join(dir, 'injected')
+      FileUtils.cp(Rails.root.join('test_files/submissions/unbelievable.gif'), source)
+      previous_marker = ENV.fetch('IMAGE_INJECTION_MARKER', nil)
+      ENV['IMAGE_INJECTION_MARKER'] = marker
+
+      FileHelper.compress_image_to_dest(source, destination, true)
+      assert_not File.exist?(marker)
+    ensure
+      ENV['IMAGE_INJECTION_MARKER'] = previous_marker
+    end
+  end
+
+  def test_qpdf_does_not_execute_commands_in_filename
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'submission$(touch${IFS}$QPDF_INJECTION_MARKER).pdf')
+      marker = File.join(dir, 'injected')
+      FileUtils.cp(Rails.root.join('test_files/submissions/valid.pdf'), path)
+      previous_marker = ENV.fetch('QPDF_INJECTION_MARKER', nil)
+      ENV['QPDF_INJECTION_MARKER'] = marker
+
+      result = FileHelper.qpdf(path)
+      assert_not File.exist?(marker)
+      assert result
+      assert File.exist?(path)
+    ensure
+      ENV['QPDF_INJECTION_MARKER'] = previous_marker
     end
   end
 

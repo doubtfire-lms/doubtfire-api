@@ -1,0 +1,9 @@
+*
+!texlive.Dockerfile
+!lib/
+!lib/shell/
+!lib/shell/latex_build.sh
+!public/
+!public/assets/
+!public/assets/images/
+!public/assets/images/**
