@@ -19,6 +19,7 @@ class AuthorisationHelpersTest < ActiveSupport::TestCase
 
     assert_equal Role.student, @unit.role_for(@admin)
     assert AuthorisationHelpers.authorise?(@admin, @unit, :update)
+    assert AuthorisationHelpers.authorise?(@admin, @unit, :grant_extensions)
     assert AuthorisationHelpers.authorise?(@admin, project, :make_submission)
   end
 

@@ -48,6 +48,7 @@ class Unit < ApplicationRecord
       :download_jplag_report,
       :get_marking_sessions,
       :get_tutor_times,
+      :grant_extensions,
       :get_staff_notes
     ]
 
@@ -86,7 +87,8 @@ class Unit < ApplicationRecord
       :capture_task_completion_snapshot,
       :manage_unit_content,
       :mannage_communications,
-      :delete_engagement
+      :delete_engagement,
+      :grant_extensions,
     ]
 
     # What can admin do with units?
@@ -124,6 +126,7 @@ class Unit < ApplicationRecord
       :delete_engagement,
       :manage_unit_content,
       :mannage_communications,
+      :grant_extensions,
     ]
 
     # What can auditors do with units?
