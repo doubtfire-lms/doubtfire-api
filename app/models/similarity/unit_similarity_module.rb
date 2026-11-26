@@ -381,7 +381,7 @@ module UnitSimilarityModule
                           '--output-dir', str(notebook.parent), str(notebook)], check=True)
     PYTHON
     command = [
-      'docker', 'run', '--rm', '--pull', 'never',
+      'docker', 'run', '--rm', '--pull', 'missing',
       '--network', 'none', '--cpus', '1',
       '--user', "#{Process.uid}:#{Process.gid}",
       *volume_args,
