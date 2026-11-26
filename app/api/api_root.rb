@@ -63,7 +63,6 @@ class ApiRoot < Grape::API
   mount ScormExtensionCommentsApi
   mount GroupSetsApi
   mount LearningOutcomesApi
-  mount NotificationsApi
   mount ProjectsApi
   mount SettingsApi
   mount StaffGrantExtensionApi

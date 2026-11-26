@@ -100,8 +100,7 @@ class StaffGrantExtensionApi < Grape::API
             project_id: project.id,
             weeks_requested: extension_comment.extension_weeks,
             extension_response: extension_comment.extension_response,
-            task_status: extension_comment.task.status,
-            extension_comment: extension_comment # Store internally for notifications
+            task_status: extension_comment.task.status
           }
         else
           results[:failed] << {
@@ -119,54 +118,8 @@ class StaffGrantExtensionApi < Grape::API
         error!({ error: 'Some extensions failed to be granted', results: results }, 400)
       end
 
-      # Send notifications only if successful and after processing all students
-      if results[:successful].any?
-        # Use the extension comments directly from the service results (thread-safe)
-        successful_extensions = results[:successful].map do |result|
-          extension_comment = result[:extension_comment]
-          if extension_comment.nil?
-            Rails.logger.warn "No extension comment found for project #{result[:project_id]}"
-            nil
-          else
-            Rails.logger.debug "Using extension comment: #{extension_comment.id} for project #{result[:project_id]}"
-            extension_comment
-          end
-        end
-
-        # Filter out any nil results in case a comment wasn't found
-        successful_extensions.compact!
-        Rails.logger.info "Processing #{successful_extensions.count} successful extensions for notifications"
-
-        if successful_extensions.any?
-          begin
-            Rails.logger.info "Sending extension notifications for #{successful_extensions.count} extensions"
-            NotificationsMailer.extension_granted(
-              successful_extensions,
-              current_user,
-              params[:student_ids].count,
-              results[:failed],
-              true # is_staff_grant = true
-            ).deliver_now
-            Rails.logger.info "Extension notifications sent successfully"
-          rescue StandardError => e
-            Rails.logger.error "Failed to send extension notifications: #{e.message}"
-            Rails.logger.error e.backtrace.join("\n")
-            # Don't fail the entire request if email fails, but log the error
-          end
-
-          # Create in-system notifications for successful extensions
-          results[:successful].each do |result|
-            student = User.find_by(id: result[:student_id])
-            next unless student
-
-            Notification.create!(
-              user_id: student.id,
-              message: "#{unit.code}: You were granted an extension for task '#{task_definition.name}'."
-            )
-          end
-        end
-      end
-
+      # TODO: After merging 11.1.x, create notifications for successful grants
+      # after the transaction commits. Reuse the retained extension_granted.html.erb template.
       status 201
       present results, with: Grape::Presenters::Presenter
     end
