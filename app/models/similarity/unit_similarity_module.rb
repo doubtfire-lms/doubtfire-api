@@ -286,6 +286,8 @@ module UnitSimilarityModule
       end
     end
 
+    # Jupyter notebooks are essentially a JSON but can converted into a python file
+    # The python code is extracted and the remaining markdown is converted into comments
     convert_jplag_notebooks(tasks_dir) if file_lang == 'ipynb'
     jplag_language = file_lang == 'ipynb' ? 'python3' : file_lang
 
