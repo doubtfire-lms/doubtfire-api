@@ -28,10 +28,10 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
     grp_set.update(keep_groups_in_same_class: true, allow_students_to_manage_groups: false)
 
     # Make sure the first group is in a stream 1 tutorial
-    grp = Group.create!({group_set: unit.group_sets.first, name: 'test-group', tutorial: t1})
+    grp = Group.create!({ group_set: unit.group_sets.first, name: 'test-group', tutorial: t1 })
 
     assert grp_set.keep_groups_in_same_class
-    refute grp_set.allow_students_to_manage_groups
+    assert_not grp_set.allow_students_to_manage_groups
     assert grp.limit_members_to_tutorial?
 
     # Enrol a student - enrol in 2 tutorials to trigger destory of enrolments on cloud change
@@ -56,7 +56,7 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
     other_enrolment = project.enrol_in(t3)
 
     # But they are no longer in the group
-    refute grp.has_user(project.student)
+    assert_not grp.has_user(project.student)
 
     unit.destroy
   end
@@ -72,12 +72,12 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
     grp_set = unit.group_sets.first
 
     # Make sure the first group is in a stream 1 tutorial
-    grp = Group.create!({group_set: unit.group_sets.first, name: 'test-change-streams', tutorial: t1})
+    grp = Group.create!({ group_set: unit.group_sets.first, name: 'test-change-streams', tutorial: t1 })
 
     # Check this is currently a flexible group
-    refute grp_set.keep_groups_in_same_class
+    assert_not grp_set.keep_groups_in_same_class
     assert grp_set.allow_students_to_manage_groups
-    refute grp.limit_members_to_tutorial?
+    assert_not grp.limit_members_to_tutorial?
 
     # Enrol a student
     project = FactoryBot.create(:project, unit: unit)
@@ -103,7 +103,7 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
     # Now make the group more inflexible
     grp_set.update(allow_students_to_manage_groups: false)
     assert grp_set.keep_groups_in_same_class
-    refute grp_set.allow_students_to_manage_groups
+    assert_not grp_set.allow_students_to_manage_groups
     assert grp.limit_members_to_tutorial?
 
     # Now you cannot leave...
@@ -133,7 +133,7 @@ class TutorialEnrolmentModelTest < ActiveSupport::TestCase
     assert unit.group_sets.first.keep_groups_in_same_class
 
     # Make sure the first group is in a stream 1 tutorial
-    grp = Group.create!({group_set: unit.group_sets.first, name: 'test-change-streams', tutorial: t1})
+    grp = Group.create!({ group_set: unit.group_sets.first, name: 'test-change-streams', tutorial: t1 })
     assert grp.limit_members_to_tutorial?
 
     # Enrol a student

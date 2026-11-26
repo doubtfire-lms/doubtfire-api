@@ -36,7 +36,6 @@ class UnitsTest < ActiveSupport::TestCase
 
   # Get users' details
   def test_get_users
-
     # Add username and auth_token to Header
     add_auth_header_for(user: User.first)
 
@@ -53,7 +52,7 @@ class UnitsTest < ActiveSupport::TestCase
     response_keys = %w[first_name last_name email student_id nickname receive_task_notifications receive_portfolio_notifications receive_feedback_notifications opt_in_to_research has_run_first_time_setup]
 
     # Loop through all of the responses
-    last_response_body.each do | data |
+    last_response_body.each do |data|
       # Find the matching user, by id from response
       user = User.find(data['id'])
       # Match json with object
@@ -76,12 +75,60 @@ class UnitsTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
 
     # Check the returned details match as expected
-    response_keys = %w(first_name last_name email student_id nickname receive_task_notifications receive_portfolio_notifications receive_feedback_notifications opt_in_to_research has_run_first_time_setup)
+    response_keys = %w[first_name last_name email student_id nickname receive_task_notifications receive_portfolio_notifications receive_feedback_notifications opt_in_to_research has_run_first_time_setup]
     assert_json_matches_model(expected_user, returned_user, response_keys)
   end
 
-  def test_get_convenors
+  def test_get_user_unit_memberships
+    admin = FactoryBot.create(:user, :admin)
+    staff = FactoryBot.create(:user, :tutor)
+    student = FactoryBot.create(:user, :student)
+    teaching_period = FactoryBot.create(:teaching_period)
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0, staff_count: 0, teaching_period: teaching_period)
+    FactoryBot.create(:unit_role, unit: unit, user: staff, role: Role.tutor)
+    project = FactoryBot.create(:project, unit: unit, user: student)
 
+    add_auth_header_for(user: admin)
+
+    get "/api/users/#{staff.id}/unit_memberships"
+    assert_equal 200, last_response.status
+    assert_equal [{
+      'kind' => 'staff',
+      'unit_id' => unit.id,
+      'unit_code' => unit.code,
+      'unit_name' => unit.name,
+      'teaching_period_name' => "#{teaching_period.period} #{teaching_period.year}",
+      'active' => true,
+      'role' => 'Tutor'
+    }], last_response_body
+
+    get "/api/users/#{student.id}/unit_memberships"
+    assert_equal 200, last_response.status
+    assert_equal project.id, last_response_body.first['project_id']
+    assert_equal unit.name, last_response_body.first['unit_name']
+    assert_equal 'Student', last_response_body.first['role']
+    assert_equal true, last_response_body.first['active']
+
+    unit.update!(active: false)
+    get "/api/users/#{staff.id}/unit_memberships"
+    assert_equal false, last_response_body.first['active']
+
+    project.update!(enrolled: false)
+    get "/api/users/#{student.id}/unit_memberships"
+    assert_equal [], last_response_body
+  end
+
+  def test_students_cannot_get_other_users_unit_memberships
+    student = FactoryBot.create(:user, :student)
+    other_user = FactoryBot.create(:user, :student)
+
+    add_auth_header_for(user: student)
+    get "/api/users/#{other_user.id}/unit_memberships"
+
+    assert_equal 403, last_response.status
+  end
+
+  def test_get_convenors
     # Add username and auth_token to Header
     add_auth_header_for(user: User.first)
 
@@ -90,7 +137,6 @@ class UnitsTest < ActiveSupport::TestCase
   end
 
   def test_get_tutors
-
     # Add username and auth_token to Header
     add_auth_header_for(user: User.first)
 
@@ -98,8 +144,58 @@ class UnitsTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
   end
 
+  def test_only_admin_can_grant_and_revoke_observe_all_units
+    admin = FactoryBot.create(:user, :admin)
+    observer = FactoryBot.create(:user, :tutor)
+    other_tutor = FactoryBot.create(:user, :tutor)
+
+    add_auth_header_for(user: other_tutor)
+    put_json "/api/users/#{observer.id}", { user: { observe_all_units: true } }
+    assert_equal 403, last_response.status
+    assert_not observer.reload.observe_all_units?
+
+    add_auth_header_for(user: admin)
+    put_json "/api/users/#{observer.id}", { user: { observe_all_units: true } }
+    assert_equal 200, last_response.status
+    assert_equal true, last_response_body['observe_all_units']
+    assert observer.reload.observe_all_units?
+
+    add_auth_header_for(user: observer)
+    put_json "/api/users/#{observer.id}", { user: { nickname: 'Observer', observe_all_units: true } }
+    assert_equal 200, last_response.status
+
+    put_json "/api/users/#{observer.id}", { user: { observe_all_units: false } }
+    assert_equal 403, last_response.status
+    assert observer.reload.observe_all_units?
+
+    add_auth_header_for(user: admin)
+    put_json "/api/users/#{observer.id}", { user: { observe_all_units: false } }
+    assert_equal 200, last_response.status
+    assert_equal false, last_response_body['observe_all_units']
+    assert_not observer.reload.observe_all_units?
+  end
+
+  def test_observe_all_units_requires_tutor_or_convenor_system_role
+    admin = FactoryBot.create(:user, :admin)
+    student = FactoryBot.create(:user, :student)
+    convenor = FactoryBot.create(:user, :convenor)
+
+    add_auth_header_for(user: admin)
+    put_json "/api/users/#{student.id}", { user: { observe_all_units: true } }
+    assert_equal 422, last_response.status
+    assert_not student.reload.observe_all_units?
+
+    put_json "/api/users/#{convenor.id}", { user: { observe_all_units: true } }
+    assert_equal 200, last_response.status
+    assert convenor.reload.observe_all_units?
+
+    put_json "/api/users/#{convenor.id}", { user: { system_role: 'Student' } }
+    assert_equal 422, last_response.status
+    assert_equal Role.convenor, convenor.reload.role
+  end
+
   def test_get_no_token
-    models = %w(users users/tutors users/convenors)
+    models = %w[users users/tutors users/convenors]
 
     models.each do |m|
       get "/api/#{m}"
@@ -108,12 +204,12 @@ class UnitsTest < ActiveSupport::TestCase
   end
 
   def test_get_invalid_token
-    models = %w(users users/tutors users/convenors)
+    models = %w[users users/tutors users/convenors]
 
-    models.each { |m|
+    models.each do |m|
       get "/api/#{m}?auth_token=1234"
       assert_equal 419, last_response.status
-    }
+    end
   end
 
   # ========================================================================
@@ -163,7 +259,7 @@ class UnitsTest < ActiveSupport::TestCase
     user = create_user
 
     data_to_post = {
-        user: user
+      user: user
     }
 
     # Add username and auth_token to Header
@@ -186,7 +282,7 @@ class UnitsTest < ActiveSupport::TestCase
     user = create_user
 
     data_to_post = {
-        user: user
+      user: user
     }
 
     # Add username and auth_token to Header
@@ -208,14 +304,14 @@ class UnitsTest < ActiveSupport::TestCase
     pre_count = User.all.length
     user = create_user
 
-    invalid_emails = %w(qwertyuiop qwertyuiop@qwe qwertyuiop@.com qwertyuiop@blah..com)
+    invalid_emails = %w[qwertyuiop qwertyuiop@qwe qwertyuiop@.com qwertyuiop@blah..com]
 
     invalid_emails.each do |email|
       # Assign invalid email
       user[:email] = email
 
       data_to_post = {
-          user: user
+        user: user
       }
 
       # Add username and auth_token to Header
@@ -251,14 +347,14 @@ class UnitsTest < ActiveSupport::TestCase
     end
   end
 
-  def test_post_create_user_custom_role(role='asdasd')
+  def test_post_create_user_custom_role(role = 'asdasd')
     pre_count = User.all.length
     user = create_user
 
     user[:system_role] = role
 
     data_to_post = {
-        user: user
+      user: user
     }
 
     # Add username and auth_token to Header
@@ -274,12 +370,12 @@ class UnitsTest < ActiveSupport::TestCase
     test_post_create_user_custom_role 'root'
   end
 
-  def test_post_create_user_custom_token(token='asdasd')
+  def test_post_create_user_custom_token(token = 'asdasd')
     pre_count = User.all.length
     user = create_user
 
     data_to_post = {
-        user: user
+      user: user
     }
 
     # Add username and auth_token to Header
@@ -287,7 +383,7 @@ class UnitsTest < ActiveSupport::TestCase
 
     # Override header to empty auth_token
     if token == ''
-      header 'auth_token',''
+      header 'auth_token', ''
     end
 
     post_json '/api/users', data_to_post
@@ -325,7 +421,7 @@ class UnitsTest < ActiveSupport::TestCase
     user[:email] = User.third.email
 
     data_to_put = {
-        user: user
+      user: user
     }
 
     # Add username and auth_token to Header
@@ -335,17 +431,28 @@ class UnitsTest < ActiveSupport::TestCase
     assert_equal 400, last_response.status
   end
 
+  def test_put_update_own_timezone
+    user = FactoryBot.create(:user, :student)
+    add_auth_header_for(user: user)
+
+    put_json "/api/users/#{user.id}", { user: { timezone: 'Asia/Shanghai', auto_timezone: false } }
+
+    assert_equal 200, last_response.status
+    assert_equal 'Asia/Shanghai', last_response_body['timezone']
+    assert_not user.reload.auto_timezone
+  end
+
   def test_put_update_user_invalid_email
     user = User.second
 
-    invalid_emails = %w(qwertyuiop qwertyuiop@qwe qwertyuiop@.com qwertyuiop@blah..com)
+    invalid_emails = %w[qwertyuiop qwertyuiop@qwe qwertyuiop@.com qwertyuiop@blah..com]
 
     invalid_emails.each do |email|
       # Assign invalid email
       user[:email] = email
 
       data_to_put = {
-          user: user
+        user: user
       }
 
       # Add username and auth_token to Header
@@ -361,7 +468,7 @@ class UnitsTest < ActiveSupport::TestCase
     user[:email] = ''
 
     data_to_put = {
-        user: user
+      user: user
     }
 
     # Add username and auth_token to Header
@@ -371,19 +478,19 @@ class UnitsTest < ActiveSupport::TestCase
     assert_equal 400, last_response.status
   end
 
-  def test_put_update_user_custom_token(token='asdasd')
+  def test_put_update_user_custom_token(token = 'asdasd')
     user = User.second
     user[:email] = ''
 
     data_to_put = {
-        user: user
+      user: user
     }
 
     # Add username and auth_token to Header
     add_auth_header_for(user: User.first, auth_token: token)
 
     if token == ''
-      header 'auth_token',token
+      header 'auth_token', token
     end
 
     put_json '/api/users/2', data_to_put

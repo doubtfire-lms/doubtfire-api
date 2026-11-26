@@ -5,9 +5,10 @@ class DownloadSubmissionFilesJob
   include Sidekiq::Status::Worker
   include LogHelper
 
-  sidekiq_options lock: :until_executed,
+  sidekiq_options queue: 'parallel',
+                  lock: :until_executed,
                   lock_args_method: ->(args) { args },
-                  on_conflict: :reject,
+                  on_conflict: :log,
                   retry: false
 
   def perform(current_user_id, unit_id, task_definition_id)

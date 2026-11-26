@@ -20,16 +20,16 @@ class StudentsApiTest < ActiveSupport::TestCase
     get "/api/students/?unit_id=#{newUnit.id}"
 
     # check returning number of students
-    assert_equal newUnit.active_projects.all.count,last_response_body.count
+    assert_equal newUnit.active_projects.all.count, last_response_body.count
 
     # check the response
-    last_response_body.each do | data |
+    last_response_body.each do |data|
       pro = newUnit.active_projects.find(data['id'])
       std = pro.student
-      assert_equal data['student']['id'],std['id']
-      assert_equal data['student']['first_name'],std['first_name']
-      assert_equal data['student']['last_name'],std['last_name']
-      assert_equal data['student']['email'],std['email']
+      assert_equal data['student']['id'], std['id']
+      assert_equal data['student']['first_name'], std['first_name']
+      assert_equal data['student']['last_name'], std['last_name']
+      assert_equal data['student']['email'], std['email']
     end
     assert_equal 200, last_response.status
   end

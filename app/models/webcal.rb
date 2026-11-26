@@ -13,6 +13,20 @@ class Webcal < ApplicationRecord
     %w(W D H M)
   end
 
+  def reminder_trigger
+    return nil unless reminder?
+
+    trigger =
+      case reminder_unit
+      when 'W', 'D'
+        "-P#{reminder_time}#{reminder_unit}"
+      when 'H', 'M'
+        "-PT#{reminder_time}#{reminder_unit}"
+      end
+
+    Icalendar::Values::Duration.new(trigger, 'RELATED' => 'START')
+  end
+
   #
   # Represents the presence of `reminder_time` and `reminder_unit`.
   #
@@ -28,7 +42,7 @@ class Webcal < ApplicationRecord
   def task_definitions
     TaskDefinition
       .joins(:unit, unit: :projects)
-      .includes(:unit, unit: :projects)
+      .includes(:grade_due_dates, unit: :projects)
       .where(
         projects: { user_id: user_id, enrolled: true },
         units: { active: true }
@@ -71,8 +85,15 @@ class Webcal < ApplicationRecord
     ical.publish
     ical.prodid = Doubtfire::Application.config.institution[:product_name]
 
-    # load all of the tasks... uses the preloaded project
-    tasks = Task.where(task_definition: task_defs, project: task_defs.map { |t| t.unit.projects.first }.uniq)
+    projects = Project
+               .includes(:unit)
+               .where(user_id: user_id, enrolled: true, unit_id: task_defs.map(&:unit_id).uniq)
+               .index_by(&:unit_id)
+
+    tasks = Task
+            .includes(:project, task_definition: :grade_due_dates)
+            .where(task_definition: task_defs, project: projects.values)
+            .index_by(&:task_definition_id)
 
     # Add iCalendar events for the specified definition.
     task_defs.each do |td|
@@ -83,7 +104,7 @@ class Webcal < ApplicationRecord
 
       ev_date_format = '%Y%m%d'
       ev_reminders = reminder?
-      ev_reminder_trigger = "-PT#{reminder_time}#{reminder_unit}"
+      ev_reminder_trigger = reminder_trigger
 
       # Add event for start date, if the user opted in.
       if include_start_dates
@@ -91,7 +112,8 @@ class Webcal < ApplicationRecord
           ev.uid = "S-#{td.id}"
           ev.summary = event_name_for_task_definition(td, 'start')
           ev.status = 'CONFIRMED'
-          ev.dtstart = ev.dtend = Icalendar::Values::Date.new(td.start_date.strftime(ev_date_format))
+          start_date = Webcal.start_date_for_task_definition(td, tasks[td.id], projects[td.unit_id])
+          ev.dtstart = ev.dtend = Icalendar::Values::Date.new(start_date.strftime(ev_date_format))
 
           Webcal.add_metadata_to_ical_event(ev, td)
 
@@ -110,7 +132,8 @@ class Webcal < ApplicationRecord
         ev.uid = "E-#{td.id}"
         ev.summary = event_name_for_task_definition(td, 'end')
         ev.status = 'CONFIRMED'
-        ev.dtstart = ev.dtend = Icalendar::Values::Date.new(Webcal.end_date_for_task_definition(td, tasks).strftime(ev_date_format))
+        end_date = Webcal.end_date_for_task_definition(td, tasks[td.id], projects[td.unit_id])
+        ev.dtstart = ev.dtend = Icalendar::Values::Date.new(end_date.strftime(ev_date_format))
 
         Webcal.add_metadata_to_ical_event(ev, td)
 
@@ -137,9 +160,27 @@ class Webcal < ApplicationRecord
   #
   # Returns the target/extended date for the specified task definition.
   #
-  def self.end_date_for_task_definition(task_def, tasks)
-    task = tasks.select { |t| t.task_definition_id == task_def.id }.first
-    task.present? ? task.due_date : task_def.target_date
+  def self.end_date_for_task_definition(task_def, task = nil, project = nil)
+    return task.local_due_date if task.present?
+
+    flexible_grade_date_for_task_definition(task_def, project, :target_date) || task_def.target_date
+  end
+
+  #
+  # Returns the start date for the specified task definition.
+  #
+  def self.start_date_for_task_definition(task_def, task = nil, project = nil)
+    return task.local_start_date if task.present?
+
+    flexible_grade_date_for_task_definition(task_def, project, :start_date) || task_def.start_date
+  end
+
+  def self.flexible_grade_date_for_task_definition(task_def, project, date_type)
+    return nil unless project&.unit&.allow_flexible_dates
+
+    return task_def.grade_target_date(project.target_grade) if date_type == :target_date
+
+    task_def.grade_start_date(project.target_grade)
   end
 
   #

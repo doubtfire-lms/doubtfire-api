@@ -31,8 +31,12 @@ class Project < ApplicationRecord
   has_many :comments, through: :tasks
   has_many :tutorial_enrolments, dependent: :destroy
   has_many :session_activities,  dependent: :destroy
+  has_many :notifications, dependent: :destroy
 
   has_many :staff_notes, dependent: :destroy
+  has_many :engagements, dependent: :destroy, inverse_of: :project
+  has_many :engagement_projects, dependent: :destroy
+  has_many :shared_engagements, through: :engagement_projects, source: :engagement
 
   # Callbacks - methods called are private
   before_destroy :can_destroy?
@@ -43,6 +47,7 @@ class Project < ApplicationRecord
   validate :tutorial_enrolment_same_campus, if: :will_save_change_to_enrolled?
 
   after_update :check_withdraw_from_groups, if: :saved_change_to_enrolled?
+  after_update :clear_notifications_on_withdrawal, if: :saved_change_to_enrolled?
   after_update :update_task_stats, if: :saved_change_to_target_grade? # TODO: consider making this an async task!
   after_update :revert_overdue_tasks, if: :saved_change_to_spec_con_days?
 
@@ -59,7 +64,9 @@ class Project < ApplicationRecord
       :make_submission,
       :get_submission,
       :change,
-      :reprocess_submission
+      :reprocess_submission,
+      :get_engagements,
+      :comment_engagement
     ]
     # What can tutors do with projects?
     tutor_role_permissions = [
@@ -74,15 +81,32 @@ class Project < ApplicationRecord
       :get_staff_note,
       :create_staff_note,
       :reprocess_submission,
-      :get_discussion_prompt
+      :get_discussion_prompt,
+      :get_engagements,
+      :create_engagement,
+      :edit_engagement,
+      :delete_engagement,
+      :comment_engagement
     ]
 
     # What can admins do with projects?
     admin_role_permissions = [
       :get,
+      :change_tutorial,
+      :make_submission,
       :get_submission,
+      :change,
+      :assess,
+      :change_campus,
+      :get_staff_note,
+      :create_staff_note,
       :reprocess_submission,
-      :get_discussion_prompt
+      :get_discussion_prompt,
+      :get_engagements,
+      :create_engagement,
+      :edit_engagement,
+      :delete_engagement,
+      :comment_engagement
     ]
 
     # What can auditors do with projects?
@@ -91,7 +115,8 @@ class Project < ApplicationRecord
       :get_submission,
       :get_staff_note,
       :reprocess_submission,
-      :get_discussion_prompt
+      :get_discussion_prompt,
+      :get_engagements
     ]
 
     # What can nil users do with projects?
@@ -224,7 +249,7 @@ class Project < ApplicationRecord
   def tutorial_enrolment_for_stream(tutorial_stream)
     tutorial_enrolments
       .joins(:tutorial)
-      .where('tutorials.tutorial_stream_id = :sid OR tutorials.tutorial_stream_id IS NULL', sid: (tutorial_stream.present? ? tutorial_stream.id : nil))
+      .where('tutorials.tutorial_stream_id = :sid OR tutorials.tutorial_stream_id IS NULL', sid: (tutorial_stream.presence&.id))
       .first
   end
 
@@ -245,8 +270,8 @@ class Project < ApplicationRecord
   delegate :main_convenor_user, to: :unit
 
   def user_role(user)
-    if user == student then :student
-    elsif user.present? && unit.tutors.where(id: user.id).count != 0 then :tutor
+    if user.present? && unit.tutors.where(id: user.id).count != 0 then :tutor
+    elsif user == student then :student
     elsif user.present? && user.role.id == Role.admin_id then :admin
     elsif user.present? && user.role.id == Role.auditor_id then :auditor
     else nil
@@ -261,16 +286,7 @@ class Project < ApplicationRecord
   # Get a string representation of the Target Grade
   #
   def target_grade_desc
-    case target_grade
-    when 1
-      'Credit'
-    when 2
-      'Distinction'
-    when 3
-      'High Distinction'
-    else
-      'Pass'
-    end
+    unit.grade_label(target_grade)
   end
 
   def reference_date
@@ -278,16 +294,25 @@ class Project < ApplicationRecord
   end
 
   def task_details_for_shallow_serializer(user)
+    teaching_breaks = unit.teaching_period&.breaks_for(campus) || []
+    attention_audience = TaskComment.attention_audiences.fetch(user == student ? 'student' : 'staff')
+    similarity_stats = TaskSimilarity
+                       .select('task_id', 'COUNT(*) AS similarity_count', 'SUM(flagged) AS flagged_count')
+                       .group(:task_id)
+                       .to_sql
+
     tasks
       .joins(:task_status)
-      .joins("LEFT JOIN task_comments ON task_comments.task_id = tasks.id AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment')")
-      .joins("LEFT JOIN comments_read_receipts crr ON crr.task_comment_id = task_comments.id AND crr.user_id = #{user.id}")
-      .joins('LEFT OUTER JOIN task_similarities ON tasks.id = task_similarities.task_id')
+      .joins('LEFT JOIN tasks group_comment_tasks ON tasks.group_submission_id IS NOT NULL ' \
+             'AND group_comment_tasks.group_submission_id = tasks.group_submission_id')
+      .joins("LEFT JOIN comment_read_cursors crc ON crc.task_id = COALESCE(group_comment_tasks.id, tasks.id) AND crc.user_id = #{user.id.to_i}")
+      .joins("LEFT JOIN task_comments ON task_comments.task_id = COALESCE(group_comment_tasks.id, tasks.id) AND (task_comments.attention_audience IS NULL OR task_comments.attention_audience = #{attention_audience}) AND (task_comments.type IS NULL OR task_comments.type <> 'TaskStatusComment')")
+      .joins("LEFT JOIN (#{similarity_stats}) task_similarity_stats ON task_similarity_stats.task_id = tasks.id")
       .select(
-        'SUM(case when crr.user_id is null AND NOT task_comments.id is null then 1 else 0 end) as number_unread', 'project_id', 'tasks.id as id',
+        "SUM(case when task_comments.user_id <> #{user.id.to_i} AND (crc.last_read_comment_id IS NULL OR task_comments.id > crc.last_read_comment_id) AND NOT task_comments.id is null then COALESCE(task_similarity_stats.similarity_count, 1) else 0 end) as number_unread", 'project_id', 'tasks.id as id',
         'task_definition_id', 'task_statuses.id as status_id',
         'completion_date', 'times_assessed', 'submission_date', 'tasks.grade as grade', 'quality_pts', 'include_in_portfolio', 'grade',
-        'SUM(case when task_similarities.flagged then 1 else 0 end) as similar_to_count'
+        'COALESCE(MAX(task_similarity_stats.flagged_count), 0) AS similar_to_count'
       )
       .group(
         'task_statuses.id', 'tasks.project_id', 'tasks.id', 'task_definition_id', 'status_id',
@@ -296,6 +321,7 @@ class Project < ApplicationRecord
       )
       .map do |r|
         t = Task.find(r.id)
+        discuss_timeout_expiry_at = t.discuss_timeout_expiry_at(teaching_breaks: teaching_breaks)
         {
           id: r.id,
           status: TaskStatus.id_to_key(r.status_id),
@@ -309,6 +335,9 @@ class Project < ApplicationRecord
           extensions: t.extensions,
           scorm_extensions: t.scorm_extensions,
           due_date: t.due_date,
+          moved_to_discuss_at: t.moved_to_discuss_at,
+          discuss_timeout_expiry_at: discuss_timeout_expiry_at,
+          discuss_timeout_expiry_date: discuss_timeout_expiry_at&.to_date,
           submission_date: t.submission_date,
           completion_date: t.completion_date,
           target_start_date: t.target_start_date,
@@ -330,6 +359,7 @@ class Project < ApplicationRecord
   #
   def task_definitions_and_status(target)
     assigned_task_defs_for_grade(target)
+      .includes(:task_prerequisites)
       .order("start_date ASC, abbreviation ASC")
       .map { |td|
       if has_task_for_task_definition? td
@@ -355,13 +385,16 @@ class Project < ApplicationRecord
     # Get list of tasks that could be top tasks...
     #
     task_states = task_definitions_and_status(target_grade)
+    task_states.select! do |task_state|
+      task_state[:task_definition].task_prerequisites.all? { |prerequisite| prerequisite.met_for?(self) }
+    end
 
     #
     # Start with overdue...
     #
     overdue_tasks = task_states.select { |ts| to_target.call(ts) < Time.zone.today }
 
-    for i in GradeHelper::RANGE
+    for i in unit.grade_values
       graded_tasks = overdue_tasks.select { |ts| ts[:task_definition].target_grade == i  }
 
       graded_tasks.each do |ts|
@@ -377,7 +410,7 @@ class Project < ApplicationRecord
     #
     soon_tasks = task_states.select { |ts| to_target.call(ts) >= Time.zone.today && to_target.call(ts) < Time.zone.today + 7.days }
 
-    for i in GradeHelper::RANGE
+    for i in unit.grade_values
       graded_tasks = soon_tasks.select { |ts| ts[:task_definition].target_grade == i }
 
       graded_tasks.each do |ts|
@@ -392,7 +425,7 @@ class Project < ApplicationRecord
     #
     ahead_tasks = task_states.select { |ts| to_target.call(ts) >= Time.zone.today + 7.days }
 
-    for i in GradeHelper::RANGE
+    for i in unit.grade_values
       graded_tasks = ahead_tasks.select { |ts| ts[:task_definition].target_grade == i }
 
       graded_tasks.each do |ts|
@@ -506,7 +539,7 @@ class Project < ApplicationRecord
 
       red_pct = ((project_task_counts.fail_count + project_task_counts.feedback_exceeded_count + project_task_counts.time_exceeded_count) / total_task_counts[target_grade]).signif(2)
       orange_pct = ((project_task_counts.redo_count + project_task_counts.need_help_count + project_task_counts.fix_and_resubmit_count) / total_task_counts[target_grade]).signif(2)
-      green_pct = ((project_task_counts.discuss_count + project_task_counts.demonstrate_count + project_task_counts.complete_count) / total_task_counts[target_grade]).signif(2)
+      green_pct = ((project_task_counts.discuss_count + project_task_counts.rediscuss_count + project_task_counts.demonstrate_count + project_task_counts.complete_count) / total_task_counts[target_grade]).signif(2)
       blue_pct = (project_task_counts.ready_for_feedback_count / total_task_counts[target_grade]).signif(2)
       grey_pct = (1 - red_pct - orange_pct - green_pct - blue_pct).signif(2)
 
@@ -545,19 +578,14 @@ class Project < ApplicationRecord
   # task_stats field
   def update_task_stats
     # generate SQL for columns that count the number of tasks per grade
-    count_by_grade = (GradeHelper::RANGE).map { |grade_id| "SUM(CASE WHEN target_grade <= #{grade_id} THEN 1 ELSE 0 END) AS count_#{grade_id}" }
+    count_by_grade = unit.grade_values.map { |grade_id| "SUM(CASE WHEN target_grade <= #{grade_id} THEN 1 ELSE 0 END) AS count_#{grade_id}" }
 
     # Get the count of the total number of tasks less than each target grade
     task_count = unit
                  .task_definitions
                  .select(*count_by_grade) # create columns for each grade
                  .map do |r| # map to array
-      [
-        r['count_0'].to_f || 0.0,
-        r['count_1'].to_f || 0.0,
-        r['count_2'].to_f || 0.0,
-        r['count_3'].to_f || 0.0
-      ]
+      unit.grade_values.index_with { |grade_id| r["count_#{grade_id}"].to_f || 0.0 }
     end
                  .first # there is only one row returned...
 
@@ -668,7 +696,7 @@ class Project < ApplicationRecord
     group_memberships.joins(:group).where('groups.group_set_id = :id', id: gs).first
   end
 
-  def send_weekly_status_email(summary_stats, middle_of_unit)
+  def create_weekly_summary_notification(summary_stats, middle_of_unit)
     did_revert_to_pass = false
     # TODO: refactor automatic target grade reset
     # if middle_of_unit && should_revert_to_pass && !portfolio_exists?
@@ -680,14 +708,15 @@ class Project < ApplicationRecord
     #   summary_stats[:revert][main_convenor_user] << self
     # end
 
-    return unless student.receive_feedback_notifications
+    return unless NotificationSetting.for(student).weekly_summary_for?(unit)
     return if portfolio_exists? && !middle_of_unit
 
-    begin
-      NotificationsMailer.weekly_student_summary(self, summary_stats, did_revert_to_pass).deliver_now
-    rescue StandardError => e
-      logger.error "Failed to send weekly status email for project #{id}!\n#{e.message}"
-    end
+    data = WeeklySummaryNotificationBuilder.for_student(
+      self,
+      summary_stats,
+      did_revert_to_pass: did_revert_to_pass
+    )
+    Notification.create_weekly_summary(recipient: student, unit: unit, project: self, data: data)
   end
 
   def archive_submissions(out)
@@ -697,14 +726,14 @@ class Project < ApplicationRecord
     FileUtils.rm_f(portfolio_path) if portfolio_available
   end
 
-  def add_staff_note(user, text, reply_to_id = nil)
-    text = text.strip
-    return nil if user.nil? || text.nil? || text.empty?
+  def add_staff_note(user, text, reply_to_id = nil, attachment: false)
+    text = text.to_s.strip
+    return nil if user.nil? || (text.empty? && !attachment)
 
     ln = staff_notes.last
 
     # don't add if duplicate note
-    return if ln && ln.user == user && ln.note == text
+    return if !attachment && ln && ln.user == user && ln.note == text
 
     note = StaffNote.create
     note.note = text
@@ -728,6 +757,13 @@ class Project < ApplicationRecord
 
     errors.add :base, "Cannot delete project with enrolments"
     throw :abort
+  end
+
+  # A withdrawn student is no longer notified about the unit, so clear what is already waiting for them.
+  def clear_notifications_on_withdrawal
+    return if enrolled
+
+    Notification.mark_read(Notification.where(recipient_id: user_id, project_id: id).unread)
   end
 
   # If someone withdraws from a unit, make sure they are removed from groups

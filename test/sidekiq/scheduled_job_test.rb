@@ -6,14 +6,42 @@ class TiiCheckProgressJobTest < ActiveSupport::TestCase
   def test_jobs_are_scheduled
     Sidekiq::Cron::Job.destroy_all!
     Sidekiq::Cron::Job.load_from_hash!(YAML.load_file(Rails.root.join('config/schedule.yml')))
-    assert_equal 4, Sidekiq::Cron::Job.all.count, Sidekiq::Cron::Job.all.map(&:name)
+    assert_equal 13, Sidekiq::Cron::Job.all.count, Sidekiq::Cron::Job.all.map(&:name)
 
     Sidekiq::Cron::Job.all.each(&:enqueue!)
     assert_equal 1, TiiRegisterWebHookJob.jobs.count
     assert_equal 1, TiiCheckProgressJob.jobs.count
     assert_equal 1, ClearAccessTokensJob.jobs.count
     assert_equal 1, RefreshModerationFeedbackTimestampsJob.jobs.count
+    assert_equal 1, AggregateTaskCompletionStatsJob.jobs.count
+    assert_equal 1, PollCommunicationSetSchedulesJob.jobs.count
+    assert_equal 1, NotifyDiscussTimeoutJob.jobs.count
+    assert_equal 1, NotifyTaskDeadlinesJob.jobs.count
+    assert_equal 1, NotifyFeedbackWarningsJob.jobs.count
+    assert_equal 1, CreateWeeklySummaryNotificationsJob.jobs.count
+    assert_equal 1, PollNotificationDigestsJob.jobs.count
+    assert_equal 1, PruneNotificationsJob.jobs.count
+    assert_equal 1, SyncLmsIntegrationsJob.jobs.count
     # assert_equal 1, ArchiveOldUnitsJob.jobs.count
+
+    scheduled_jobs = [
+      TiiRegisterWebHookJob,
+      TiiCheckProgressJob,
+      ClearAccessTokensJob,
+      RefreshModerationFeedbackTimestampsJob,
+      AggregateTaskCompletionStatsJob,
+      PollCommunicationSetSchedulesJob,
+      NotifyDiscussTimeoutJob,
+      NotifyTaskDeadlinesJob,
+      NotifyFeedbackWarningsJob,
+      CreateWeeklySummaryNotificationsJob,
+      PollNotificationDigestsJob,
+      PruneNotificationsJob,
+      SyncLmsIntegrationsJob
+    ]
+    scheduled_jobs.each do |job_class|
+      assert_equal 'parallel', job_class.jobs.first['queue'], job_class.name
+    end
   end
 
 end

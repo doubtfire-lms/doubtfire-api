@@ -1,3 +1,6 @@
+require 'sidekiq/api'
+require 'set'
+
 class PortfolioEvidence
   include FileHelper
 
@@ -17,13 +20,38 @@ class PortfolioEvidence
     FileHelper.student_work_dir(type, task, create)
   end
 
-  # Move all tasks to a folder with this process's id in "in_process"
+  # Move stale submissions to this PDF generator's processing folder.
   def self.move_to_pid_folder
     pid_folder = File.join(student_work_dir(:in_process), "pid_#{Process.pid}")
+    sidekiq_task_ids = sidekiq_owned_submission_ids
+    FileHelper.move_files(student_work_dir(:new), pid_folder, true, DateTime.now - 30.minutes) do |path|
+      !sidekiq_task_ids.include?(File.basename(path).to_i)
+    end
 
-    # Move everything in "new" to "pid" folder but retain the old "new" folder
-    FileHelper.move_files(student_work_dir(:new), pid_folder, true, DateTime.now - 30.minutes)
     pid_folder
+  end
+
+  def self.sidekiq_owned_submission_ids
+    running_ids = Set.new
+    Sidekiq::Workers.new.each do |_process_id, _thread_id, work|
+      payload = work['payload'].is_a?(String) ? JSON.parse(work['payload']) : work['payload']
+      running_ids.add(payload['args'].first.to_i) if payload['class'] == 'AcceptSubmissionJob'
+    end
+
+    # A queued job only blocks fallback while Sidekiq can drain the default queue.
+    default_queue_running = Sidekiq::ProcessSet.new.any? do |process|
+      Array(process.queues).include?('default') && !process.stopping?
+    end
+    return running_ids unless default_queue_running
+
+    Sidekiq::Queue.new('default').each do |job|
+      running_ids.add(job.args.first.to_i) if job.klass == 'AcceptSubmissionJob'
+    end
+
+    running_ids
+  rescue StandardError => e
+    logger.warn "Could not fully inspect Sidekiq; allowing stale submission fallback: #{e.class}: #{e.message}"
+    running_ids
   end
 
   #
@@ -62,6 +90,7 @@ class PortfolioEvidence
         if success
           done[task.project] = [] if done[task.project].nil?
           done[task.project] << task
+          Notification.resolve_task_kinds(task, 'pdf_generation_failed')
         else
           add_error.call('Failed to convert your submission to pdf.')
         end
@@ -71,12 +100,14 @@ class PortfolioEvidence
     end
 
     errors.each do |project, tasks|
-      logger.debug "checking email for project #{project.id}"
-      next unless project.student.receive_task_notifications
+      tasks.each { |task| Notification.create_pdf_failure(task) }
+
+      next unless project.enrolled
+      next unless NotificationSetting.for(project.student).delivers?(project.unit, 'pdf_generation_failed', :email)
 
       logger.info "emailing task notification to #{project.student.name}"
       begin
-        PortfolioEvidenceMailer.task_pdf_failed(project, tasks).deliver
+        PortfolioEvidenceMailer.task_pdf_failed(project, tasks).deliver_now
       rescue StandardError => e
         logger.error "Failed to send task pdf failed email for project #{project.id}!\n#{e.message}"
       end

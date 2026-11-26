@@ -1,0 +1,18 @@
+Hi <%= @recipient&.nickname.presence || @recipient&.first_name || @recipient&.name %>,
+
+<% @body_paragraphs.each do |paragraph| %>
+<%= paragraph %>
+
+<% end %>
+---
+
+<%= @affected_students_count %> students matched this rule and were affected by the configured actions.
+
+A full log of actions has been attached as a CSV.
+
+Cheers,
+The <%= @doubtfire_product_name %> Team
+
+---
+
+Generated with <%= @doubtfire_product_name %>

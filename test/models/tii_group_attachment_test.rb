@@ -9,7 +9,7 @@ class TiiGroupAttachmentTest < ActiveSupport::TestCase
   def test_can_get_task_def_tii_group_without_update
     td = FactoryBot.create(:task_definition)
 
-    refute td.tii_group_id.present?
+    assert_not td.tii_group_id.present?
 
     td.create_or_get_tii_group
 
@@ -34,14 +34,14 @@ class TiiGroupAttachmentTest < ActiveSupport::TestCase
     ]
 
     # Save will trigger TII integration
-    create_tii_group_stub = stub_request(:put, %r[https://localhost/api/v1/groups/.*]).
-    with(tii_headers).
-    with(body: %r[.*id.*.*name.*type.*ASSIGNMENT.*group_context.*id.*name.*due_date.*report_generation.*IMMEDIATELY_AND_DUE_DATE.*]).
-    to_return(status: 200, body: "", headers: {})
+    create_tii_group_stub = stub_request(:put, %r{https://localhost/api/v1/groups/.*})
+                            .with(tii_headers)
+                            .with(body: /.*id.*.*name.*type.*ASSIGNMENT.*group_context.*id.*name.*due_date.*report_generation.*IMMEDIATELY_AND_DUE_DATE.*/)
+                            .to_return(status: 200, body: "", headers: {})
 
-    delete_stub = stub_request(:delete, %r[https://localhost/api/v1/groups/.*/attachments/.*]).
-      with(tii_headers).
-      to_return(status: 200, body: "", headers: {})
+    delete_stub = stub_request(:delete, %r{https://localhost/api/v1/groups/.*/attachments/.*})
+                  .with(tii_headers)
+                  .to_return(status: 200, body: "", headers: {})
 
     td.save
 
@@ -51,35 +51,35 @@ class TiiGroupAttachmentTest < ActiveSupport::TestCase
     assert td.has_task_resources?
 
     gaid = SecureRandom.uuid
-    req_copy = stub_request(:post, "https://#{ENV['TCA_HOST']}/api/v1/groups/#{td.tii_group_id}/attachments").
-    with(tii_headers).
-    with(body: "{\"title\":\"TestWordDoc copy.docx\",\"template\":false}").
-    to_return(
-      status: 200,
-      body: TCAClient::AddGroupAttachmentResponse.new(
-        id: gaid
-      ).to_json,
-      headers: {}
-    )
+    req_copy = stub_request(:post, "https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/groups/#{td.tii_group_id}/attachments")
+               .with(tii_headers)
+               .with(body: "{\"title\":\"TestWordDoc copy.docx\",\"template\":false}")
+               .to_return(
+                 status: 200,
+                 body: TCAClient::AddGroupAttachmentResponse.new(
+                   id: gaid
+                 ).to_json,
+                 headers: {}
+               )
 
-    req_first = stub_request(:post, "https://#{ENV['TCA_HOST']}/api/v1/groups/#{td.tii_group_id}/attachments").
-    with(tii_headers).
-    with(body: "{\"title\":\"TestWordDoc.docx\",\"template\":false}").
-    to_return(
-      {status: 503, body: "", headers: {}},
-      {
-        status: 200,
-        body: TCAClient::AddGroupAttachmentResponse.new(
-          id: SecureRandom.uuid
-        ).to_json,
-        headers: {}
-      }
-    )
+    req_first = stub_request(:post, "https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/groups/#{td.tii_group_id}/attachments")
+                .with(tii_headers)
+                .with(body: "{\"title\":\"TestWordDoc.docx\",\"template\":false}")
+                .to_return(
+                  { status: 503, body: "", headers: {} },
+                  {
+                    status: 200,
+                    body: TCAClient::AddGroupAttachmentResponse.new(
+                      id: SecureRandom.uuid
+                    ).to_json,
+                    headers: {}
+                  }
+                )
 
-    upload_stub = stub_request(:put, %r[https://localhost/api/v1/groups/.*/attachments/.*/original]).
-      with(tii_headers).
-      with(headers: {'Content-Type'=>'binary/octet-stream'}).
-      to_return(status: 200, body: '{ "message": "Successfully uploaded file for attachment ..." }', headers: {})
+    upload_stub = stub_request(:put, %r{https://localhost/api/v1/groups/.*/attachments/.*/original})
+                  .with(tii_headers)
+                  .with(headers: { 'Content-Type' => 'binary/octet-stream' })
+                  .to_return(status: 200, body: '{ "message": "Successfully uploaded file for attachment ..." }', headers: {})
 
     # Will trigger TII integration - create and send attachments
     # 2 - group attachment for the files and
@@ -107,35 +107,35 @@ class TiiGroupAttachmentTest < ActiveSupport::TestCase
     assert :complete, action.status_sym
 
     # Now test failed action
-    get_status_stub = stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/groups/#{td.tii_group_id}/attachments/#{ga.group_attachment_id}").
-      with(tii_headers).
-      to_return(
-        {
-          status: 200,
-          body: TCAClient::GroupAttachmentResponse.new(
-            id: ga.group_attachment_id,
-            status: 'PROCESSING'
-          ).to_json,
-          headers: {}
-        },
-        {
-          status: 200,
-          body: TCAClient::GroupAttachmentResponse.new(
-            id: ga.group_attachment_id,
-            status: 'COMPLETE'
-          ).to_json,
-          headers: {}
-        },
-        {
-          status: 200,
-          body: TCAClient::GroupAttachmentResponse.new(
-            id: ga.group_attachment_id,
-            status: 'ERROR',
-            error_code: 'TOO_LITTLE_TEXT'
-          ).to_json,
-          headers: {}
-        }
-      )
+    get_status_stub = stub_request(:get, "https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/groups/#{td.tii_group_id}/attachments/#{ga.group_attachment_id}")
+                      .with(tii_headers)
+                      .to_return(
+                        {
+                          status: 200,
+                          body: TCAClient::GroupAttachmentResponse.new(
+                            id: ga.group_attachment_id,
+                            status: 'PROCESSING'
+                          ).to_json,
+                          headers: {}
+                        },
+                        {
+                          status: 200,
+                          body: TCAClient::GroupAttachmentResponse.new(
+                            id: ga.group_attachment_id,
+                            status: 'COMPLETE'
+                          ).to_json,
+                          headers: {}
+                        },
+                        {
+                          status: 200,
+                          body: TCAClient::GroupAttachmentResponse.new(
+                            id: ga.group_attachment_id,
+                            status: 'ERROR',
+                            error_code: 'TOO_LITTLE_TEXT'
+                          ).to_json,
+                          headers: {}
+                        }
+                      )
 
     # Check status
     action.perform
@@ -157,8 +157,8 @@ class TiiGroupAttachmentTest < ActiveSupport::TestCase
     ga.save
     action.save
 
-    refute action.reload.complete
-    refute_equal :complete, ga.reload.status_sym
+    assert_not action.reload.complete
+    assert_not_equal :complete, ga.reload.status_sym
 
     action.perform
 

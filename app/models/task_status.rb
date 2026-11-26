@@ -4,6 +4,25 @@
 class TaskStatus < ApplicationRecord
   # TODO: Consider refactoring this class. Is there any point to having this in the database? Could this become an enum?
 
+  # Must match STATUS_COLORS in the web app's task-status.ts.
+  COLORS = {
+    not_started: '#cccccc',
+    complete: '#5bb75b',
+    need_help: '#a48fce',
+    working_on_it: '#eb8f06',
+    fix_and_resubmit: '#f2d85c',
+    feedback_exceeded: '#d46b54',
+    redo: '#804000',
+    discuss: '#31b0d5',
+    ready_for_feedback: '#0079d8',
+    demonstrate: '#428bca',
+    fail: '#d93713',
+    time_exceeded: '#d93713',
+    assess_in_portfolio: '#f2d85c',
+    attention_required: '#f1814d',
+    rediscuss: '#126352'
+  }.freeze
+
   # Model associations
   has_many :tasks, dependent: :restrict_with_exception
 
@@ -72,6 +91,10 @@ class TaskStatus < ApplicationRecord
     TaskStatus.find(14)
   end
 
+  def self.rediscuss
+    TaskStatus.find(15)
+  end
+
   class << self
     # Provide access to the count from the database via a new db_count method
     alias_method :db_count, :count
@@ -84,7 +107,7 @@ class TaskStatus < ApplicationRecord
   # Keep this hard coded! Saves cache load time.
   # Important: count must equal the largest id in the database
   def self.count
-    14
+    15
   end
 
   def self.status_for_name(name)
@@ -103,6 +126,8 @@ class TaskStatus < ApplicationRecord
       TaskStatus.working_on_it
     when 'discuss', 'd'
       TaskStatus.discuss
+    when 'rediscuss', 're-discuss', 're discuss'
+      TaskStatus.rediscuss
     when 'demonstrate', 'demo'
       TaskStatus.demonstrate
     when 'ready for feedback', 'ready_for_feedback', 'ready to mark', 'ready_to_mark', 'rtm', 'rff'
@@ -142,8 +167,13 @@ class TaskStatus < ApplicationRecord
     when 12 then :time_exceeded
     when 13 then :assess_in_portfolio
     when 14 then :attention_required
+    when 15 then :rediscuss
     else :not_started
     end
+  end
+
+  def color
+    COLORS[status_key]
   end
 
   def status_key
@@ -161,6 +191,7 @@ class TaskStatus < ApplicationRecord
     return :time_exceeded if self == TaskStatus.time_exceeded
     return :assess_in_portfolio if self == TaskStatus.assess_in_portfolio
     return :attention_required if self == TaskStatus.attention_required
+    return :rediscuss if self == TaskStatus.rediscuss
 
     return :not_started
   end

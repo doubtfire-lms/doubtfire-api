@@ -1,4 +1,4 @@
-FROM alpine:3.23.3
+FROM alpine:3.24.2
 
 ENV JPLAG_VERSION=6.3.0
 WORKDIR /jplag

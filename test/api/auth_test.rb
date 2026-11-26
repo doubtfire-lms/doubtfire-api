@@ -2,8 +2,17 @@ require 'test_helper'
 
 class AuthTest < ActiveSupport::TestCase
   include Rack::Test::Methods
+  include ActiveSupport::Testing::TimeHelpers
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
+
+  setup do
+    Rack::Attack.enabled = false
+  end
+
+  teardown do
+    Rack::Attack.enabled = true
+  end
 
   def app
     Rails.application
@@ -16,6 +25,45 @@ class AuthTest < ActiveSupport::TestCase
 
   # --------------------------------------------------------------------------- #
   # POST tests
+
+  def test_auth_post_is_rate_limited
+    original_setting = Doubtfire::Application.config.auth_rate_limit_enabled
+    Doubtfire::Application.config.auth_rate_limit_enabled = true
+    Rack::Attack.cache.store.clear
+    Rack::Attack.enabled = true
+
+    limit = Doubtfire::Application.config.auth_rate_limit
+    credentials = { username: 'aadmin123', password: 'password' }
+
+    limit.times do
+      post_json '/api/auth.json', credentials
+      assert_equal 401, last_response.status
+    end
+
+    post_json '/api/auth.json', credentials
+    assert_equal 429, last_response.status
+    assert_equal 'Too many login attempts. Please try again shortly.', last_response_body['error']
+    assert_operator last_response.headers['Retry-After'].to_i, :>, 0
+  ensure
+    Doubtfire::Application.config.auth_rate_limit_enabled = original_setting
+    Rack::Attack.cache.store.clear
+  end
+
+  def test_auth_post_is_not_rate_limited_when_disabled
+    original_setting = Doubtfire::Application.config.auth_rate_limit_enabled
+    Doubtfire::Application.config.auth_rate_limit_enabled = false
+    Rack::Attack.cache.store.clear
+    Rack::Attack.enabled = true
+
+    credentials = { username: 'aadmin123', password: 'password' }
+    (Doubtfire::Application.config.auth_rate_limit + 1).times do
+      post_json '/api/auth.json', credentials
+      assert_equal 401, last_response.status
+    end
+  ensure
+    Doubtfire::Application.config.auth_rate_limit_enabled = original_setting
+    Rack::Attack.cache.store.clear
+  end
 
   # Test POST for new authentication token
   def test_auth_post
@@ -50,7 +98,7 @@ class AuthTest < ActiveSupport::TestCase
     assert_equal 'general', token.token_type
 
     # User has the token - count of matching tokens for that user is 1
-    assert_equal 1, expected_auth.auth_tokens.select{|t| t.authentication_token == actual_auth['auth_token']}.count
+    assert_equal 1, expected_auth.auth_tokens.select { |t| t.authentication_token == actual_auth['auth_token'] }.count
 
     # Check we got a refresh token
     assert last_response.cookies['refresh_token'], 'Expect refresh token to be set'
@@ -58,8 +106,106 @@ class AuthTest < ActiveSupport::TestCase
 
     refresh_token = User.first.auth_tokens.where(token_type: :refresh_token).last
     assert refresh_token.present?
-    assert_match(/refresh_token=#{refresh_token.authentication_token};/, last_response.cookies['refresh_token'].to_s, 'Expect refresh token to be set')
-    assert_match(/username=#{User.first.username};/, last_response.cookies['username'].to_s, 'Expect username to be set')
+    assert_equal(refresh_token.authentication_token, last_response.cookies['refresh_token'].value.first, 'Expect refresh token to be set')
+    assert_equal(User.first.username, last_response.cookies['username'].value.first, 'Expect username to be set')
+  end
+
+  def test_student_login_cannot_issue_admin_refresh_cookie
+    student = User.find_by!(username: 'astudent')
+    admin = User.find_by!(username: 'aadmin')
+
+    header 'Username', admin.username
+    post_json '/api/auth.json', username: student.username, password: 'password', remember: true
+
+    assert_equal 201, last_response.status
+    assert_equal student.username, last_response_body.dig('user', 'username')
+
+    cookie_username = last_response.cookies['username']&.value&.first
+    cookie_token = last_response.cookies['refresh_token']&.value&.first
+    assert cookie_username.present?
+    assert cookie_token.present?
+
+    header 'Username', nil
+    set_cookie "username=#{cookie_username}"
+    set_cookie "refresh_token=#{cookie_token}"
+    post_json '/api/auth/access-token', delete_auth_token: false
+
+    assert_equal 201, last_response.status
+    assert_equal student.username, last_response_body.dig('user', 'username')
+  end
+
+  def test_refresh_cookie_identity_is_not_changed_by_auth_headers
+    student = User.find_by!(username: 'astudent')
+    admin = User.find_by!(username: 'aadmin')
+    refresh_token = student.generate_authentication_token!(token_type: :refresh_token)
+    admin_token = admin.generate_authentication_token!
+
+    set_cookie "username=#{student.username}"
+    set_cookie "refresh_token=#{refresh_token.authentication_token}"
+    header 'Username', admin.username
+    header 'Auth-Token', admin_token.authentication_token
+
+    post_json '/api/auth/access-token', delete_auth_token: true
+
+    assert_equal 201, last_response.status
+    assert_equal student.username, last_response_body.dig('user', 'username')
+    assert AuthToken.exists?(admin_token.id)
+  end
+
+  def test_student_token_cannot_authenticate_as_admin_header
+    student = User.find_by!(username: 'astudent')
+    admin = User.find_by!(username: 'aadmin')
+    add_auth_header_for(user: student, username: admin.username)
+
+    get '/api/auth/content'
+
+    assert_equal 419, last_response.status
+  end
+
+  # Signing in again shortly before the refresh token expires must issue a new one, rather than
+  # handing back the old cookie that will expire within hours.
+  def test_auth_post_rotates_refresh_token_near_expiry
+    data_to_post = { username: 'aadmin', password: 'password', remember: true }
+    user = User.find_by!(username: 'aadmin')
+    lifetime = Doubtfire::Application.config.refresh_token_expiry
+    first_sign_in = Time.zone.parse('2026-07-21 10:00:00 UTC')
+
+    first_token = travel_to(first_sign_in) do
+      post_json '/api/auth.json', data_to_post
+      user.auth_tokens.where(token_type: :refresh_token).last
+    end
+
+    # Early in its life, the same refresh token is reused
+    travel_to(first_sign_in + 1.day) do
+      post_json '/api/auth.json', data_to_post
+      assert_equal 201, last_response.status
+      assert_equal(first_token.authentication_token, last_response.cookies['refresh_token'].value.first)
+    end
+
+    # Hours before it expires, a new refresh token with a full lifetime is issued
+    near_expiry = first_token.auth_token_expiry - 6.hours
+    travel_to(near_expiry) do
+      post_json '/api/auth.json', data_to_post
+      assert_equal 201, last_response.status
+
+      new_token = user.auth_tokens.where(token_type: :refresh_token).last
+      assert_not_equal first_token.authentication_token, new_token.authentication_token
+      assert_in_delta((near_expiry + lifetime).to_i, new_token.auth_token_expiry.to_i, 5)
+      assert_equal(new_token.authentication_token, last_response.cookies['refresh_token'].value.first)
+    end
+  end
+
+  def test_auth_records_sign_in_and_access_time
+    user = User.find_by!(username: 'aadmin')
+    sign_in_time = Time.zone.parse('2026-07-21 10:00:00 UTC')
+
+    travel_to sign_in_time do
+      post_json '/api/auth.json', username: user.username, password: 'password'
+    end
+
+    assert_equal 201, last_response.status
+    assert_equal sign_in_time, user.reload.last_sign_in_at
+    assert_equal sign_in_time, user.last_access_at
   end
 
   def test_auth_no_remember
@@ -73,8 +219,8 @@ class AuthTest < ActiveSupport::TestCase
 
     assert_equal 201, last_response.status
 
-    assert_match(/refresh_token=;/, last_response.cookies['refresh_token'].to_s, 'Expect refresh token to be deleted')
-    assert_match(/username=;/, last_response.cookies['username'].to_s, 'Expect username to be deleted')
+    assert_equal('', last_response.cookies['refresh_token'].value.first, 'Expect refresh token to be deleted')
+    assert_equal('', last_response.cookies['username'].value.first, 'Expect username to be deleted')
   end
 
   # Test auth when username is invalid
@@ -88,8 +234,8 @@ class AuthTest < ActiveSupport::TestCase
     actual_auth = last_response_body
 
     # Check response body doesn't return 'user' and 'auth_token' values
-    refute actual_auth.key?('user'), 'User not expected if auth fails'
-    refute actual_auth.key?('auth_token'), 'Auth token not expected if auth fails'
+    assert_not actual_auth.key?('user'), 'User not expected if auth fails'
+    assert_not actual_auth.key?('auth_token'), 'Auth token not expected if auth fails'
 
     # 401 response code means invalid username / password
     assert_equal 401, last_response.status
@@ -108,10 +254,41 @@ class AuthTest < ActiveSupport::TestCase
     actual_auth = last_response_body
 
     # Check response body doesn't return 'user' and 'auth_token' values
-    refute actual_auth.key?('user'), 'User not expected if auth fails'
-    refute actual_auth.key?('auth_token'), 'Auth token not expected if auth fails'
+    assert_not actual_auth.key?('user'), 'User not expected if auth fails'
+    assert_not actual_auth.key?('auth_token'), 'Auth token not expected if auth fails'
 
     assert actual_auth.key? 'error'
+  end
+
+  # Blank passwords must still be authenticated rather than bypassing the
+  # password check because ActiveSupport considers them not present.
+  def test_fail_blank_password_auth
+    user = User.find_by!(username: 'aadmin')
+    original_token_count = user.auth_tokens.count
+
+    ['', ' ', "\t\n"].each do |password|
+      post_json '/api/auth.json', username: user.username, password: password
+      actual_auth = last_response_body
+
+      assert_equal 401, last_response.status, "Expected #{password.inspect} to be rejected"
+      assert_equal 'Invalid email or password.', actual_auth['error']
+      assert_not actual_auth.key?('user')
+      assert_not actual_auth.key?('auth_token')
+    end
+
+    assert_equal original_token_count, user.auth_tokens.reload.count
+  end
+
+  def test_blank_password_does_not_create_unknown_user
+    username = "unknown-blank-password-user-#{SecureRandom.hex(8)}"
+
+    ['', ' ', "\t\n"].each do |password|
+      post_json '/api/auth.json', username: username, password: password
+
+      assert_equal 401, last_response.status, "Expected #{password.inspect} to be rejected"
+      assert_equal 'Invalid email or password.', last_response_body['error']
+      assert_not User.exists?(username: username)
+    end
   end
 
   # Test auth with empty request body
@@ -123,8 +300,8 @@ class AuthTest < ActiveSupport::TestCase
     actual_auth = last_response_body
 
     # Check response body doesn't return 'user' and 'auth_token' values
-    refute actual_auth.key?('user'), 'User not expected if auth fails'
-    refute actual_auth.key?('auth_token'), 'Auth token not expected if auth fails'
+    assert_not actual_auth.key?('user'), 'User not expected if auth fails'
+    assert_not actual_auth.key?('auth_token'), 'Auth token not expected if auth fails'
 
     # 400 response code means missing username and password
     assert_equal 400, last_response.status
@@ -189,8 +366,8 @@ class AuthTest < ActiveSupport::TestCase
     # 204 response code means success!
     assert_equal 204, last_response.status
 
-    assert_match(/username=;/, last_response.cookies['username'].to_s)
-    assert_match(/refresh_token=;/, last_response.cookies['refresh_token'].to_s)
+    assert_equal('', last_response.cookies['username'].value.first)
+    assert_equal('', last_response.cookies['refresh_token'].value.first)
   end
 
   def test_refresh_token
@@ -229,6 +406,22 @@ class AuthTest < ActiveSupport::TestCase
 
     assert_not_equal last_response_body['auth_token'], new_token.authentication_token
     assert_equal last_response_body['auth_token'], new_new_token.authentication_token
+  end
+
+  def test_refresh_token_updates_access_but_not_sign_in_time
+    user = FactoryBot.create(:user, last_sign_in_at: 1.day.ago, last_access_at: 1.hour.ago)
+    original_sign_in_time = user.last_sign_in_at
+    token = user.generate_authentication_token!(token_type: :refresh_token)
+    access_time = Time.zone.parse('2026-07-21 11:00:00 UTC')
+
+    set_cookie "username=#{user.username}"
+    set_cookie "refresh_token=#{token.authentication_token}"
+
+    travel_to(access_time) { post '/api/auth/access-token' }
+
+    assert_equal 201, last_response.status
+    assert_equal original_sign_in_time, user.reload.last_sign_in_at
+    assert_equal access_time, user.last_access_at
   end
 
   def test_token_signout_works_with_multiple

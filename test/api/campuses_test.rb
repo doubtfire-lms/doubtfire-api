@@ -13,8 +13,8 @@ class CampusesTest < ActiveSupport::TestCase
     get '/api/campuses'
     expected_data = Campus.all
     assert_equal expected_data.count, last_response_body.count
-    response_keys = %w(name abbreviation)
-    last_response_body.each do | data |
+    response_keys = %w[name abbreviation]
+    last_response_body.each do |data|
       c = Campus.find(data['id'])
       assert_json_matches_model(c, data, response_keys)
     end
@@ -23,7 +23,7 @@ class CampusesTest < ActiveSupport::TestCase
   def test_get_campuses_by_id
     campus = FactoryBot.create(:campus, mode: 'timetable')
     get "/api/campuses/#{campus.id}"
-    response_keys = %w(name abbreviation)
+    response_keys = %w[name abbreviation]
     assert_json_matches_model(campus, last_response_body, response_keys)
   end
 
@@ -37,7 +37,7 @@ class CampusesTest < ActiveSupport::TestCase
 
     post_json '/api/campuses', data_to_post
     assert_equal 201, last_response.status
-    response_keys = %w(name abbreviation)
+    response_keys = %w[name abbreviation]
     campus = Campus.find(last_response_body['id'])
     assert_json_matches_model(campus, last_response_body, response_keys)
     assert_equal 'timetable', campus[:mode], last_response_body.inspect
@@ -67,7 +67,7 @@ class CampusesTest < ActiveSupport::TestCase
     # Update campus with id = 1
     put_json '/api/campuses/1', data_to_put
     assert_equal 200, last_response.status
-    response_keys = %w(name abbreviation)
+    response_keys = %w[name abbreviation]
     first_campus = Campus.first
     assert_json_matches_model(first_campus, last_response_body, response_keys)
     assert_equal 'timetable', first_campus[:mode]
@@ -93,18 +93,18 @@ class CampusesTest < ActiveSupport::TestCase
     # auth_token and username added to header
     add_auth_header_for(user: User.first)
 
-    #Perform the delete
+    # Perform the delete
     delete_json "/api/campuses/#{campus.id}"
 
-    #check the request went through
+    # check the request went through
     assert_equal 200, last_response.status
-    get '/api/campuses' #get number of campuses
+    get '/api/campuses' # get number of campuses
 
     # check if current number of campuses = original number of campuses
     assert_equal initial_num_of_campus - 1, last_response_body.count
 
     # check campus no longer exists
-    refute Campus.exists?(campus.id)
+    assert_not Campus.exists?(campus.id)
   end
 
   def test_student_delete_campus

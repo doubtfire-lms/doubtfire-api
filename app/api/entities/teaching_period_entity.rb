@@ -5,11 +5,12 @@ module Entities
     expose :year
     expose :start_date
     expose :end_date
+    expose :last_teaching_date
     expose :active_until
     expose :active do |teaching_period, options|
-      object.active_until > DateTime.now
+      teaching_period.active?
     end
-    expose :breaks, if: :full_details, using: Entities::BreakEntity
+    expose :breaks, if: :include_breaks, using: Entities::BreakEntity
     expose :units, if: :full_details do |teaching_period, options|
       Entities::UnitEntity.represent teaching_period.units, summary_only: true, user: options[:user]
     end

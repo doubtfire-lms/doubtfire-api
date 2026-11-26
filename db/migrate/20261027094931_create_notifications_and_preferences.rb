@@ -1,0 +1,126 @@
+class CreateNotificationsAndPreferences < ActiveRecord::Migration[8.0]
+  def change
+    create_table :notifications do |t|
+      t.references :recipient, null: false, index: false
+      t.references :unit, null: false
+      t.references :project, null: true
+      t.references :task, null: true
+      t.references :actor, null: true
+
+      t.string :kind, null: false, limit: 64
+      # Identifies the event, so cron re-runs and job retries cannot raise it twice.
+      t.string :deduplication_key, null: false, limit: 191
+
+      # Rendered content for messages sent by the communications system.
+      t.string :message_subject
+      t.text :message_body
+
+      # What raised the notification
+      t.references :task_comment, null: true
+      t.references :overseer_assessment, null: true, index: false
+      t.references :tutor_note, null: true, index: false
+
+      # Set only for the kinds that need them
+      t.references :task_status, null: true, index: false # what a status change moved to
+      t.references :unit_role, null: true, index: false # whose moderation notes were written on
+      t.date :discuss_deadline, null: true # when the task has to be discussed by
+
+      t.datetime :read_at
+      t.datetime :email_processed_at
+      t.datetime :email_sent_at
+      t.datetime :email_not_before # holds a failed run back until the student has had a chance to read it
+
+      t.timestamps
+    end
+
+    add_index :notifications, [:recipient_id, :deduplication_key],
+              unique: true,
+              name: 'index_notifications_on_recipient_and_deduplication_key'
+    add_index :notifications, [:recipient_id, :read_at, :created_at],
+              name: 'index_notifications_on_recipient_read_created'
+    add_index :notifications, [:recipient_id, :unit_id, :email_processed_at],
+              name: 'index_notifications_for_email_delivery'
+    add_index :notifications, [:recipient_id, :task_id, :read_at],
+              name: 'index_notifications_on_recipient_task_read'
+
+    # One row per user. `channels` maps each notification to the channels it is
+    # delivered on, and applies to every unit the user is in:
+    #
+    #   { "new_task_comment" => ["in_app", "email"], "overseer_failed" => [] }
+    #
+    create_table :notification_settings do |t|
+      t.references :user, null: false, index: { unique: true }
+
+      t.json :channels, null: false
+
+      t.string :digest_frequency, null: false, default: 'weekly', limit: 16
+      t.integer :digest_interval_hours, null: false, default: 4
+      # Hourly digests are only sent between these wall-clock times.
+      t.string :digest_start_time, null: false, default: '07:00', limit: 5
+      t.string :digest_end_time, null: false, default: '22:00', limit: 5
+      t.string :digest_time, null: false, default: '07:00', limit: 5
+      t.string :digest_timezone, null: false, limit: 64
+      t.integer :digest_weekday, null: false, default: 1
+      t.datetime :next_digest_at
+      t.datetime :last_digest_at
+
+      t.timestamps
+    end
+
+    add_index :notification_settings, :next_digest_at
+
+    # One row per unit the user has changed, holding only what differs from their
+    # notification_settings. A muted unit sends nothing, and null channels mean
+    # the unit still uses the channels from notification_settings.
+    create_table :notification_unit_overrides do |t|
+      t.references :user, null: false, index: false
+      t.references :unit, null: false
+
+      t.boolean :muted, null: false, default: false
+      t.json :channels, null: true
+
+      t.timestamps
+    end
+
+    add_index :notification_unit_overrides, [:user_id, :unit_id],
+              unique: true,
+              name: 'index_notification_unit_overrides_on_user_and_unit'
+
+    # An IANA timezone, synced from the browser while auto_timezone is on, otherwise chosen by the user.
+    add_column :users, :timezone, :string, limit: 64
+    add_column :users, :auto_timezone, :boolean, null: false, default: true
+
+    # send_notifications only controls email, so weekly summaries are switched separately.
+    add_column :units, :generate_weekly_summaries, :boolean, null: false, default: true
+    # Units that sent no emails sent no summaries either, so they keep doing so.
+    up_only { execute 'UPDATE units SET generate_weekly_summaries = send_notifications' }
+
+    # Keep existing email opt-outs when moving to per-kind settings. Leave the
+    # legacy columns in place for a later major version to remove.
+    up_only do
+      User.reset_column_information
+      NotificationSetting.reset_column_information
+
+      opted_out_users = User.where(receive_task_notifications: [false, nil])
+                            .or(User.where(receive_portfolio_notifications: [false, nil]))
+                            .or(User.where(receive_feedback_notifications: [false, nil]))
+
+      legacy_email_kinds = {
+        receive_task_notifications: %w[task_start_now task_due_soon task_overdue],
+        receive_portfolio_notifications: %w[portfolio_ready portfolio_failed],
+        receive_feedback_notifications: %w[new_task_comment task_status_changed discuss_warning discuss_expired]
+      }
+
+      opted_out_users.find_each do |user|
+        channels = NotificationSetting.default_channels
+        legacy_email_kinds.each do |preference, kinds|
+          next if user.public_send(preference)
+
+          kinds.each { |kind| channels.fetch(kind).delete('email') }
+        end
+
+        NotificationSetting.create!(user: user, channels: channels)
+      end
+    end
+  end
+end

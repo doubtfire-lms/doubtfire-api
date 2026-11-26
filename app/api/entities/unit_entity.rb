@@ -1,3 +1,5 @@
+require 'entities/unit_content_link_entity'
+
 module Entities
   class UnitEntity < Grape::Entity
     format_with(:date_only) do |date|
@@ -18,7 +20,7 @@ module Entities
     expose :my_role do |unit, options|
       role = options[:my_role]
       role = unit.role_for(options[:user]) if role.nil?
-      role.name unless role.nil?
+      role.nil? && options[:user]&.observe_all_units? ? 'Convenor' : role&.name
     end
     expose :main_convenor_id, unless: :summary_only
     expose :main_convenor_user_id, if: :summary_only do |unit, options|
@@ -31,16 +33,35 @@ module Entities
     with_options(format_with: :date_only) do
       expose :start_date
       expose :end_date
+      expose :last_teaching_date
       expose :portfolio_auto_generation_date, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }, expose_nil: false
     end
 
+    expose :current_unit_week do |unit|
+      unit.week_number(Time.current)
+    end
+
     expose :active
+    expose :grade_values
+    expose :grade_definitions
+    expose :has_main_content_site?, as: :has_main_content_site, unless: :summary_only
+    expose :main_content_site_id, unless: :summary_only do |unit|
+      unit.unit_content_sites.find_by(is_main: true)&.id
+    end
+    expose :content_site_versions, unless: :summary_only do |unit|
+      unit.unit_content_sites.pluck(:id, :content_version).to_h
+    end
+    expose :unit_content_links,
+           as: :content_links,
+           using: UnitContentLinkEntity,
+           unless: :summary_only
 
     expose :overseer_image_id, unless: :summary_only, if: lambda { |unit, options| can_read_unit_config?(options[:my_role]) }
     expose :assessment_enabled, unless: :summary_only
 
     expose :auto_apply_extension_before_deadline, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
     expose :send_notifications, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
+    expose :generate_weekly_summaries, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
     expose :enable_sync_enrolments, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
     expose :enable_sync_timetable, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
     expose :draft_task_definition_id, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
@@ -67,5 +88,12 @@ module Entities
 
     expose :feedback_warning_threshold_days, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
     expose :feedback_overflow_threshold_days, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
+
+    expose :discuss_timeout_enabled, unless: :summary_only
+    expose :discuss_timeout_active?, as: :discuss_timeout_active, unless: :summary_only
+    expose :discuss_timeout_warning_days, unless: :summary_only, if: lambda { |unit, options| is_staff?(options[:my_role]) }
+    expose :discuss_timeout_expire_days, unless: :summary_only
+
+    expose :enforce_feedback_before_discussed_in_class, if: lambda { |unit, options| is_staff?(options[:my_role]) }
   end
 end

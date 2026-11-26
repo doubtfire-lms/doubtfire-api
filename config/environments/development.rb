@@ -2,6 +2,11 @@
 Doubtfire::Application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 
+  # Accept requests for the configured institution host, so a local HTTPS
+  # development proxy can forward them. Rails otherwise allows only localhost.
+  institution_host = URI.parse(config.institution[:host].to_s).host
+  config.hosts << institution_host if institution_host.present?
+
   # In the development environment your application's code is reloaded any time
   # it changes. This slows down response time but is perfect for development
   # since you don't have to restart the web server when you make code changes.
@@ -15,7 +20,9 @@ Doubtfire::Application.configure do
 
   # Enable/disable caching. By default caching is disabled.
   # Run rails dev:cache to toggle caching.
-  if ENV['CACHE'] == 'true' || Rails.root.join('tmp/caching-dev.txt').exist?
+  if ENV['CACHE'] == 'true' ||
+     ENV['DF_REDIS_CACHE_URL'].present? ||
+     Rails.root.join('tmp/caching-dev.txt').exist?
     skip_first = true
     ActiveSupport::Reloader.to_prepare do
       if skip_first
@@ -106,7 +113,7 @@ Doubtfire::Application.configure do
   # pdfgen log verbosity
   config.pdfgen_quiet = false
 
-  config.active_record.encryption.key_derivation_salt = ENV['DF_ENCRYPTION_KEY_DERIVATION_SALT'] || 'U9jurHMfZbMpzlbDTMe5OSAhUJYHla9Z'
-  config.active_record.encryption.deterministic_key = ENV['DF_ENCRYPTION_DETERMINISTIC_KEY'] || 'zYtzYUlLFaWdvdUO5eIINRT6ZKDddcgx'
-  config.active_record.encryption.primary_key = ENV['DF_ENCRYPTION_PRIMARY_KEY'] || '92zoF7RJaQ01JEExOgHbP9bRWldNQUz5'
+  config.active_record.encryption.key_derivation_salt = Doubtfire::Application.fetch_credential_or_env(:active_record_encryption, :key_derivation_salt, env_key: 'DF_ENCRYPTION_KEY_DERIVATION_SALT', default: 'U9jurHMfZbMpzlbDTMe5OSAhUJYHla9Z')
+  config.active_record.encryption.deterministic_key = Doubtfire::Application.fetch_credential_or_env(:active_record_encryption, :deterministic_key, env_key: 'DF_ENCRYPTION_DETERMINISTIC_KEY', default: 'zYtzYUlLFaWdvdUO5eIINRT6ZKDddcgx')
+  config.active_record.encryption.primary_key = Doubtfire::Application.fetch_credential_or_env(:active_record_encryption, :primary_key, env_key: 'DF_ENCRYPTION_PRIMARY_KEY', default: '92zoF7RJaQ01JEExOgHbP9bRWldNQUz5')
 end

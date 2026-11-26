@@ -7,6 +7,20 @@ Doubtfire::Application.configure do
   config.consider_all_requests_local = false
   config.action_controller.perform_caching = true
 
+  # Use Redis for the shared production cache when configured. Falling back to
+  # an in-process cache avoids FileStore races during concurrent expiry while
+  # keeping production bootable for deployments without Redis.
+  config.cache_store = if ENV['DF_REDIS_CACHE_URL'].present?
+                         [:redis_cache_store, {
+                           url: ENV.fetch('DF_REDIS_CACHE_URL'),
+                           connect_timeout: 1,
+                           read_timeout: 1,
+                           write_timeout: 1
+                         }]
+                       else
+                         :memory_store
+                       end
+
   # Disable Rails's static asset server (Apache or nginx will already do this)
   config.serve_static_files = true
 
@@ -50,7 +64,7 @@ Doubtfire::Application.configure do
     config.action_mailer.smtp_settings[:authentication] = nil if %w[no_auth none].include?(config.action_mailer.smtp_settings[:authentication])
   end
 
-  config.active_record.encryption.key_derivation_salt = ENV.fetch('DF_ENCRYPTION_KEY_DERIVATION_SALT', nil)
-  config.active_record.encryption.deterministic_key = ENV.fetch('DF_ENCRYPTION_DETERMINISTIC_KEY', nil)
-  config.active_record.encryption.primary_key = ENV.fetch('DF_ENCRYPTION_PRIMARY_KEY', nil)
+  config.active_record.encryption.key_derivation_salt = Doubtfire::Application.fetch_credential_or_env(:active_record_encryption, :key_derivation_salt, env_key: 'DF_ENCRYPTION_KEY_DERIVATION_SALT')
+  config.active_record.encryption.deterministic_key = Doubtfire::Application.fetch_credential_or_env(:active_record_encryption, :deterministic_key, env_key: 'DF_ENCRYPTION_DETERMINISTIC_KEY')
+  config.active_record.encryption.primary_key = Doubtfire::Application.fetch_credential_or_env(:active_record_encryption, :primary_key, env_key: 'DF_ENCRYPTION_PRIMARY_KEY')
 end

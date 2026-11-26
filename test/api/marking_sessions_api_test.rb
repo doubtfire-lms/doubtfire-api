@@ -35,9 +35,11 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
     student = unit.projects.first.user
     tutor = FactoryBot.create(:user, :tutor)
     convenor = FactoryBot.create(:user, :convenor)
+    admin = FactoryBot.create(:user, :admin)
 
     unit.employ_staff(tutor, Role.tutor)
     unit.employ_staff(convenor, Role.convenor)
+    assert_nil unit.unit_role_for(admin)
 
     tracked_users = [
       convenor, tutor
@@ -75,7 +77,7 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
     end
 
     users_can_get = [
-      convenor
+      convenor, admin
     ]
 
     users_cant_get = [
@@ -96,6 +98,19 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
         get "/api/csv/units/#{unit.id}/tutor_times_summary"
         assert_equal 403, last_response.status, last_response_body
       end
+    end
+
+    Sidekiq::Testing.inline! do
+      [admin, tutor].each do |user|
+        add_auth_header_for(user: user)
+
+        get "/api/csv/units/#{unit.id}/my_marking_sessions"
+        assert_equal 200, last_response.status, last_response_body
+      end
+
+      add_auth_header_for(user: student)
+      get "/api/csv/units/#{unit.id}/my_marking_sessions"
+      assert_equal 403, last_response.status, last_response_body
     end
 
     users_can_get = [
@@ -121,6 +136,42 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
         assert_equal 403, last_response.status
       end
     end
+  end
+
+  def test_marking_session_visibility_by_role
+    other_tutor = FactoryBot.create(:user, :tutor)
+    @unit.employ_staff(other_tutor, Role.tutor)
+    other_session = FactoryBot.create(:marking_session,
+                                      user: other_tutor,
+                                      unit: @unit,
+                                      ip_address: '127.0.0.1',
+                                      start_time: 1.hour.ago,
+                                      end_time: Time.zone.now)
+    admin = FactoryBot.create(:user, :admin)
+    assert_nil @unit.unit_role_for(admin)
+    all_session_ids = [@marking_session.id, other_session.id].sort
+
+    [@convenor, admin].each do |user|
+      add_auth_header_for(user: user)
+      get "/api/units/#{@unit.id}/marking_sessions"
+      assert_equal 200, last_response.status
+      session_ids = JSON.parse(last_response.body).map { |session| session['id'] }
+      assert_equal all_session_ids, session_ids.sort
+    end
+
+    add_auth_header_for(user: @tutor)
+    get "/api/units/#{@unit.id}/marking_sessions"
+    assert_equal 200, last_response.status
+    session_ids = JSON.parse(last_response.body).map { |session| session['id'] }
+    assert_equal [@marking_session.id], session_ids
+
+    @unit.employ_staff(admin, Role.tutor)
+    assert_equal Role.tutor, @unit.unit_role_for(admin).role
+    add_auth_header_for(user: admin)
+    get "/api/units/#{@unit.id}/marking_sessions"
+    assert_equal 200, last_response.status
+    session_ids = JSON.parse(last_response.body).map { |session| session['id'] }
+    assert_equal all_session_ids, session_ids.sort
   end
 
   def test_marking_sessions
@@ -223,6 +274,8 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
     assert_equal project.id, last_activity.project.id
     assert_equal "delete-comment", last_activity.action
 
+    project.task_for_task_definition(td).add_text_comment(tutor, 'Manual tutor feedback')
+
     # Test asessment
     put "/api/projects/#{project.id}/task_def_id/#{td.id}", { trigger: 'complete' }
     assert_equal 200, last_response.status
@@ -263,8 +316,8 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
         create(:marking_session,
                user: convenor,
                unit: unit,
-               start_time: date.to_time + rand(0..12).hours,
-               end_time: date.to_time + rand(13..23).hours,
+               start_time: date.in_time_zone + rand(0..12).hours,
+               end_time: date.in_time_zone + rand(13..23).hours,
                ip_address: '127.0.0.1')
       end
     end
@@ -364,7 +417,7 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
 
     # unit = Unit.first
     project = unit.projects.first
-    task = project.tasks.first
+    task = project.task_for_task_definition(unit.task_definitions.first)
 
     while current_time <= end_time
       travel_to current_time do
@@ -409,8 +462,8 @@ class MarkingSessionsApiTest < ActiveSupport::TestCase
       current_time += 5.minutes
     end
 
-    start_time = thursday.to_time.change(hour: 17, min: 0) # 12:05pm
-    end_time   = thursday.to_time.change(hour: 18, min: 0) # 3:00pm
+    start_time = thursday.in_time_zone.change(hour: 17, min: 0) # 5:00pm
+    end_time   = thursday.in_time_zone.change(hour: 18, min: 0) # 6:00pm
 
     current_time = start_time
 

@@ -21,9 +21,9 @@ class TiiUserAcceptEulaTest < ActiveSupport::TestCase
     assert_equal 1, TiiActionJob.jobs.count
 
     # Prepare stub for call when eula is accepted
-    stub_request(:post, "https://#{ENV['TCA_HOST']}/api/v1/eula/v1beta/accept").
-    with(tii_headers).
-    to_return(status: 200, body: "", headers: {})
+    stub_request(:post, "https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/eula/v1beta/accept")
+      .with(tii_headers)
+      .to_return(status: 200, body: "", headers: {})
 
     # Run the job
     TiiActionJob.drain
@@ -57,13 +57,13 @@ class TiiUserAcceptEulaTest < ActiveSupport::TestCase
     assert_equal user, action.entity
 
     # Prepare stub for call when eula is accepted and it fails
-    accept_stub = stub_request(:post, "https://#{ENV['TCA_HOST']}/api/v1/eula/v1beta/accept").
-    with(tii_headers).
-    to_return(
-      {status: 500, body: "", headers: {} },
-      {status: 400, body: "", headers: {} }, # should not reschedule
-      {status: 200, body: "", headers: {} },
-    )
+    accept_stub = stub_request(:post, "https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/eula/v1beta/accept")
+                  .with(tii_headers)
+                  .to_return(
+                    { status: 500, body: "", headers: {} },
+                    { status: 400, body: "", headers: {} }, # should not reschedule
+                    { status: 200, body: "", headers: {} }
+                  )
 
     # Run the job
     TiiActionJob.drain # First fail
@@ -108,12 +108,12 @@ class TiiUserAcceptEulaTest < ActiveSupport::TestCase
     setup_tii_eula
 
     # Prepare stub for call when eula is accepted and it fails
-    accept_stub = stub_request(:post, "https://#{ENV['TCA_HOST']}/api/v1/eula/v1beta/accept").
-      with(tii_headers).
-      to_return(
-        {status: 429, body: "", headers: {} },
-        {status: 200, body: "", headers: {} }, # should not occur
-      )
+    accept_stub = stub_request(:post, "https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/eula/v1beta/accept")
+                  .with(tii_headers)
+                  .to_return(
+                    { status: 429, body: "", headers: {} },
+                    { status: 200, body: "", headers: {} } # should not occur
+                  )
 
     user = FactoryBot.create(:user)
     # Queue job to accept eula

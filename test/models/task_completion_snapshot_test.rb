@@ -1,0 +1,231 @@
+require 'test_helper'
+
+class TaskCompletionSnapshotTest < ActiveSupport::TestCase
+  setup do
+    @unit = FactoryBot.create(:unit, with_students: false, task_count: 1, stream_count: 0, tutorials: 1, campus_count: 1)
+    @snapshot = FactoryBot.create(:task_completion_snapshot, unit: @unit)
+  end
+
+  test 'task_completion_snapshot belongs to unit' do
+    assert @snapshot.unit.is_a?(Unit)
+    assert_equal @unit, @snapshot.unit
+  end
+
+  test 'task_completion_snapshot is valid with all attributes' do
+    assert @snapshot.valid?
+  end
+
+  test 'task_completion_snapshot is invalid without snapshot_timestamp' do
+    snapshot = FactoryBot.build(:task_completion_snapshot, snapshot_timestamp: nil)
+    assert_not snapshot.valid?
+    assert snapshot.errors[:snapshot_timestamp].include?("can't be blank")
+  end
+
+  test 'task_completion_snapshot enforces unique snapshot_timestamp per unit' do
+    duplicate = FactoryBot.build(
+      :task_completion_snapshot,
+      unit: @unit,
+      snapshot_timestamp: @snapshot.snapshot_timestamp
+    )
+
+    assert_not duplicate.valid?
+    assert duplicate.errors[:snapshot_timestamp].include?('has already been taken')
+  end
+
+  test 'task_completion_snapshot allows same snapshot_timestamp for different units' do
+    other_unit = FactoryBot.create(:unit)
+    snapshot = FactoryBot.build(
+      :task_completion_snapshot,
+      unit: other_unit,
+      snapshot_timestamp: @snapshot.snapshot_timestamp
+    )
+
+    assert snapshot.valid?
+  end
+
+  test 'store_stats! writes a csv file contained in a zip that can be loaded' do
+    tutorial = @unit.tutorials.first
+    task_definition = @unit.task_definitions_by_grade.first
+
+    payload = CSV.generate do |csv|
+      csv << ['Student ID', 'Username', 'Student Name', 'Campus', 'Target Grade', 'Email', 'Portfolio', 'Grade', 'Rationale', 'Assessor', 'Tutorial', task_definition.abbreviation]
+      csv << ['1', 'student-1', 'Student 1', tutorial.campus.abbreviation, @unit.grade_label(0), 'student-1@example.com', 'false', '', '', '', tutorial.abbreviation, TaskStatus.complete.id]
+      csv << ['2', 'student-2', 'Student 2', tutorial.campus.abbreviation, @unit.grade_label(0), 'student-2@example.com', 'false', '', '', '', tutorial.abbreviation, TaskStatus.complete.id]
+      csv << ['3', 'student-3', 'Student 3', tutorial.campus.abbreviation, @unit.grade_label(0), 'student-3@example.com', 'false', '', '', '', tutorial.abbreviation, TaskStatus.complete.id]
+      csv << ['4', 'student-4', 'Student 4', tutorial.campus.abbreviation, @unit.grade_label(0), 'student-4@example.com', 'false', '', '', '', tutorial.abbreviation, TaskStatus.complete.id]
+    end
+
+    expected = {
+      tutorial.campus.name => {
+        tutorial.abbreviation => {
+          task_definition.abbreviation => {
+            'complete' => 4
+          }
+        }
+      }
+    }
+
+    @snapshot.store_stats!(payload)
+
+    assert File.exist?(@snapshot.snapshot_file_path)
+    assert_equal expected, @snapshot.load_stats
+    assert_equal 4, @snapshot.load_student_counts['student_count']
+    assert_equal({ tutorial.campus.name => 4 }, @snapshot.load_student_counts['campus_student_counts'])
+    assert_equal({ '0' => 4 }, @snapshot.load_student_counts['target_grade_student_counts'])
+    assert_equal(
+      { '0' => { tutorial.campus.name => 4 } },
+      @snapshot.load_student_counts['target_grade_campus_student_counts']
+    )
+  end
+
+  test 'load_stats returns empty hash if file missing' do
+    snapshot = FactoryBot.create(
+      :task_completion_snapshot,
+      unit: @unit,
+      snapshot_timestamp: (Time.zone.now.to_i + 100).to_s
+    )
+
+    FileUtils.rm_f(snapshot.snapshot_file_path)
+    assert_equal({}, snapshot.load_stats)
+  end
+
+  test 'submitted task count distribution includes all submitted statuses and zero counts' do
+    task_definition = @unit.task_definitions_by_grade.first
+    task = task_definition.abbreviation
+    campus = @unit.tutorials.first.campus
+    submitted_statuses = %i[
+      feedback_exceeded ready_for_feedback discuss demonstrate complete fail
+      time_exceeded assess_in_portfolio attention_required rediscuss
+    ]
+    payload = CSV.generate do |csv|
+      csv << ['Student ID', 'Username', 'Campus', task]
+      submitted_statuses.each_with_index do |status, index|
+        csv << [index + 1, "student-#{index + 1}", campus.abbreviation, TaskStatus.public_send(status).id]
+      end
+      csv << [11, 'student-11', campus.abbreviation, TaskStatus.fix_and_resubmit.id]
+      csv << [1, 'student-1', campus.abbreviation, TaskStatus.feedback_exceeded.id]
+    end
+    @snapshot.store_stats!(payload)
+
+    expected = { submitted_key(@unit) => 1, submitted_key(@unit, task_definition.target_grade => 1) => 10 }
+    # No target grade column, so every student lands in the unknown bucket.
+    assert_equal expected, @snapshot.load_submitted_task_count_student_counts['target_grades']['unknown'][campus.name]['__all__']
+  end
+
+  test 'resetting a task lowers its submitted count in the next snapshot' do
+    first_definition = @unit.task_definitions_by_grade.first
+    first_task = first_definition.abbreviation
+    campus = @unit.tutorials.first.campus
+    second_task = FactoryBot.create(:task_definition, unit: @unit, target_grade: 0).abbreviation
+    later_snapshot = FactoryBot.create(
+      :task_completion_snapshot,
+      unit: @unit,
+      snapshot_timestamp: (@snapshot.snapshot_timestamp.to_i + 1.day.to_i).to_s
+    )
+
+    first_payload = CSV.generate do |csv|
+      csv << ['Student ID', 'Username', 'Campus', first_task, second_task]
+      csv << [1, 'student-1', campus.abbreviation, TaskStatus.ready_for_feedback.id, TaskStatus.complete.id]
+      csv << [2, 'student-2', campus.abbreviation, TaskStatus.working_on_it.id, TaskStatus.not_started.id]
+    end
+    later_payload = CSV.generate do |csv|
+      csv << ['Student ID', 'Username', 'Campus', first_task, second_task]
+      csv << [1, 'student-1', campus.abbreviation, TaskStatus.fix_and_resubmit.id, TaskStatus.complete.id]
+      csv << [2, 'student-2', campus.abbreviation, TaskStatus.working_on_it.id, TaskStatus.not_started.id]
+    end
+    @snapshot.store_stats!(first_payload)
+    later_snapshot.store_stats!(later_payload)
+
+    both_submitted = Hash.new(0).tap do |counts|
+      counts[first_definition.target_grade] += 1
+      counts[0] += 1
+    end
+    first_counts = @snapshot.load_submitted_task_count_student_counts['target_grades']['unknown'][campus.name]['__all__']
+    later_counts = later_snapshot.load_submitted_task_count_student_counts['target_grades']['unknown'][campus.name]['__all__']
+
+    assert_equal({ submitted_key(@unit) => 1, submitted_key(@unit, both_submitted) => 1 }, first_counts)
+    assert_equal({ submitted_key(@unit) => 1, submitted_key(@unit, 0 => 1) => 1 }, later_counts)
+  end
+
+  test 'status population counts each student once across tutorial streams' do
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 1, stream_count: 2, tutorials: 1, campus_count: 1)
+    snapshot = FactoryBot.create(:task_completion_snapshot, unit: unit)
+    campus = unit.tutorials.first.campus
+    task = unit.task_definitions_by_grade.first.abbreviation
+    first_stream, second_stream = unit.tutorial_streams.pluck(:abbreviation)
+
+    payload = CSV.generate do |csv|
+      csv << ['Student ID', 'Username', 'Campus', 'Target Grade', first_stream, second_stream, task]
+      csv << ['1', 'student-1', campus.abbreviation, unit.grade_label(0), 'T1', 'T2', TaskStatus.complete.id]
+      csv << ['2', 'student-2', campus.abbreviation, unit.grade_label(0), 'T1', '', TaskStatus.not_started.id]
+      csv << ['1', 'student-1', campus.abbreviation, unit.grade_label(0), 'T1', 'T2', TaskStatus.complete.id]
+    end
+    snapshot.store_stats!(payload)
+
+    population = snapshot.load_status_population_stats
+    tutorials = population['target_grades']['0'][campus.name]
+
+    assert_equal ['target_grades'], population.keys
+    assert_equal({ 'complete' => 1, 'not_started' => 1 }, tutorials['__all__'][task])
+    assert_equal({ 'complete' => 1, 'not_started' => 1 }, tutorials['T1'][task])
+    assert_equal({ 'complete' => 1 }, tutorials['T2'][task])
+  end
+
+  test 'deleting snapshot deletes associated zip file' do
+    tutorial = @unit.tutorials.first
+    task_definition = @unit.task_definitions_by_grade.first
+
+    payload = CSV.generate do |csv|
+      csv << ['Student ID', 'Username', 'Student Name', 'Target Grade', 'Email', 'Portfolio', 'Grade', 'Rationale', 'Assessor', 'Tutorial', task_definition.abbreviation]
+      csv << ['1', 'student-1', 'Student 1', @unit.grade_label(0), 'student-1@example.com', 'false', '', '', '', tutorial.abbreviation, TaskStatus.complete.id]
+    end
+
+    @snapshot.store_stats!(payload)
+
+    file_path = @snapshot.snapshot_file_path
+    assert File.exist?(file_path)
+
+    @snapshot.destroy
+    assert_not File.exist?(file_path)
+  end
+
+  test 'snapshot_date is derived from snapshot_timestamp' do
+    timestamp = Time.zone.local(2026, 4, 8, 23, 55, 0).to_i.to_s
+    snapshot = FactoryBot.build(:task_completion_snapshot, snapshot_timestamp: timestamp)
+
+    assert_equal Date.new(2026, 4, 8), snapshot.snapshot_date
+  end
+
+  test 'submitted task counts split by student target grade, campus, tutorial and task grade' do
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0, stream_count: 0, tutorials: 1, campus_count: 1)
+    snapshot = FactoryBot.create(:task_completion_snapshot, unit: unit)
+    campus = unit.tutorials.first.campus
+    pass_task = FactoryBot.create(:task_definition, unit: unit, target_grade: 0).abbreviation
+    credit_task = FactoryBot.create(:task_definition, unit: unit, target_grade: 1).abbreviation
+
+    payload = CSV.generate do |csv|
+      csv << ['Student ID', 'Username', 'Campus', 'Target Grade', 'Tutorial', pass_task, credit_task]
+      csv << [1, 'student-1', campus.abbreviation, unit.grade_label(0), 'T1', TaskStatus.complete.id, TaskStatus.not_started.id]
+      csv << [2, 'student-2', campus.abbreviation, unit.grade_label(1), 'T2', TaskStatus.complete.id, TaskStatus.discuss.id]
+      csv << [3, 'student-3', '', unit.grade_label(1), 'T2', TaskStatus.complete.id, TaskStatus.discuss.id]
+    end
+    snapshot.store_stats!(payload)
+
+    counts = snapshot.load_submitted_task_count_student_counts
+    pass_only = submitted_key(unit, 0 => 1)
+    pass_and_credit = submitted_key(unit, 0 => 1, 1 => 1)
+
+    assert_equal unit.grade_values, counts['task_grade_values']
+    assert_not counts.key?('all')
+    assert_equal({ pass_only => 1 }, counts['target_grades']['0'][campus.name]['T1'])
+    assert_equal({ pass_and_credit => 1 }, counts['target_grades']['1'][campus.name]['T2'])
+    assert_equal({ pass_only => 1 }, counts['target_grades']['0'][campus.name]['__all__'])
+    assert_equal({ pass_and_credit => 1 }, counts['target_grades']['1'][campus.name]['__all__'])
+  end
+
+  private
+
+  def submitted_key(unit, counts = {})
+    unit.grade_values.map { |grade| counts.fetch(grade, 0) }.join(',')
+  end
+end

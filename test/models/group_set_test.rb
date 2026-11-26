@@ -6,11 +6,11 @@ class GroupSetModelTest < ActiveSupport::TestCase
     group_set = FactoryBot.create(:group_set)
     assert group_set.valid?
   end
-  
+
   def test_group_set_exists_in_unit
     unit = FactoryBot.create(:unit, with_students: false)
-  	group_set = FactoryBot.create(:group_set, unit: unit)
-  	assert_includes(unit.group_sets,group_set)
+    group_set = FactoryBot.create(:group_set, unit: unit)
+    assert_includes(unit.group_sets, group_set)
   end
- 
-end 
+
+end

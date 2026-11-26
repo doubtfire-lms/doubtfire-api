@@ -6,7 +6,7 @@ module Submission::GenerateHelpers
   # Scoops out a files array from the params provided
   #
   def scoop_files(params, upload_reqs)
-    files = params.reject { |key| !(key =~ /^file\d+$/) }
+    files = params.select { |key, _| /\Afile\d+\z/.match?(key) }
 
     error!({ error: 'Upload requirements mismatch with files provided' }, 403) if files.length != upload_reqs.length
     #
@@ -18,7 +18,7 @@ module Submission::GenerateHelpers
 
       files[key][:id]   = files[key]['name']
       files[key][:name] = detail['name']
-      files[key][:type] = detail['type']
+      files[key][:type] = detail['type'] == 'archive' ? 'zip' : detail['type']
     end
 
     # File didn't get assigned an id above, then reject it since there was a mismatch

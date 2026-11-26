@@ -3,6 +3,7 @@ require 'grape'
 class TutorialsApi < Grape::API
   helpers AuthenticationHelpers
   helpers AuthorisationHelpers
+  helpers MimeCheckHelpers
 
   before do
     authenticated?
@@ -19,6 +20,7 @@ class TutorialsApi < Grape::API
       optional :campus_id, type: Integer, desc: 'Id of the campus'
       optional :capacity, type: Integer, desc: 'Capacity of the tutorial'
       optional :meeting_time, type: String, desc: 'Time of the tutorial'
+      optional :duration_minutes, type: Integer, desc: 'Duration of the tutorial, in minutes'
     end
   end
   put '/tutorials/:id' do
@@ -38,7 +40,8 @@ class TutorialsApi < Grape::API
                                                         :meeting_day,
                                                         :meeting_time,
                                                         :campus_id,
-                                                        :capacity
+                                                        :capacity,
+                                                        :duration_minutes
                                                       )
 
     if tut_params[:tutor_id]
@@ -66,6 +69,7 @@ class TutorialsApi < Grape::API
       requires :meeting_day,          type: String,   desc: 'Day of the tutorial',                            allow_blank: false
       requires :meeting_time,         type: String,   desc: 'Time of the tutorial',                           allow_blank: false
       requires :tutorial_stream_abbr, type: String,   desc: 'Abbreviation of the associated tutorial stream', allow_blank: false
+      optional :duration_minutes,     type: Integer,  desc: 'Duration of the tutorial, in minutes (defaults to 120)', allow_blank: true
     end
   end
   post '/tutorials' do
@@ -89,7 +93,50 @@ class TutorialsApi < Grape::API
 
     tutorial = unit.add_tutorial(tut_params[:meeting_day], tut_params[:meeting_time], tut_params[:meeting_location], tutor, campus, tut_params[:capacity], tut_params[:abbreviation], tutorial_stream)
 
+    # Duration defaults to 120 minutes (2 hours) at the database level - only override it if the caller supplied one.
+    tutorial&.update!(duration_minutes: tut_params[:duration_minutes]) if tut_params[:duration_minutes].present?
+
     present tutorial, with: Entities::TutorialEntity
+  end
+
+  desc 'Download CSV of all tutorials for the given unit'
+  params do
+    requires :unit_id, type: Integer, desc: 'The unit to download tutorials from'
+  end
+  get '/units/:unit_id/tutorials/csv' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :download_unit_csv
+      error!({ error: 'Not authorised to download CSV of tutorials' }, 403)
+    end
+
+    content_type 'application/octet-stream'
+    header['Content-Disposition'] = "attachment; filename=#{unit.code}-Tutorials.csv"
+    header['Access-Control-Expose-Headers'] = 'Content-Disposition'
+    env['api.format'] = :binary
+    unit.tutorials_csv
+  end
+
+  desc 'Upload CSV of tutorials to the given unit'
+  params do
+    requires :unit_id, type: Integer, desc: 'The unit to upload tutorials to'
+    requires :file, type: File, desc: 'CSV upload file.'
+  end
+  post '/units/:unit_id/tutorials/csv' do
+    unit = Unit.find(params[:unit_id])
+
+    unless authorise? current_user, unit, :upload_csv
+      error!({ error: 'Not authorised to upload CSV of tutorials' }, 403)
+    end
+
+    if params[:file].blank?
+      error!({ error: 'No file uploaded' }, 403)
+    end
+
+    # check mime is correct before uploading
+    ensure_csv!(params[:file][:tempfile])
+
+    present unit.import_tutorials_from_csv(params[:file][:tempfile]), with: Grape::Presenters::Presenter
   end
 
   desc 'Delete a tutorial'
@@ -103,7 +150,12 @@ class TutorialsApi < Grape::API
       error!({ error: 'Cannot delete tutorial - not authorised' }, 403)
     end
 
-    tutorial.destroy!
+    begin
+      tutorial.destroy!
+    rescue ActiveRecord::DeleteRestrictionError, ActiveRecord::RecordNotDestroyed => e
+      message = tutorial.errors.full_messages.to_sentence.presence || e.message
+      error!({ error: message }, 422)
+    end
     present true, with: Grape::Presenters::Presenter
   end
 end

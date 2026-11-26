@@ -11,15 +11,15 @@ module TestHelpers
       Rails.root.join('test_files', filename)
     end
 
-    def with_files( files, hash )
-      files.each_with_index do | file, idx |
-        hash[ "file#{idx}".to_sym ] = Rack::Test::UploadedFile.new(Rails.root.join(file[:path]), file[:type])
+    def with_files(files, hash)
+      files.each_with_index do |file, idx|
+        hash[:"file#{idx}"] = Rack::Test::UploadedFile.new(Rails.root.join(file[:path]), file[:type])
       end
       hash
     end
 
     def with_file(path, type, hash)
-      with_files( [ {path: path, type: type} ], hash)
+      with_files([{ path: path, type: type }], hash)
     end
 
     def upload_file_csv(path)
@@ -29,6 +29,5 @@ module TestHelpers
     def upload_file(path, type)
       Rack::Test::UploadedFile.new(Rails.root.join(path), type)
     end
-
   end
 end

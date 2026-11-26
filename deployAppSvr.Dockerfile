@@ -1,7 +1,7 @@
 #
 # deployAppSrc.Dockerfile - the container used for back end processing
 #
-FROM ruby:3.4-bookworm
+FROM ruby:3.4.13-bookworm
 
 # Setup dependencies
 ARG DEBIAN_FRONTEND=noninteractive
@@ -21,6 +21,7 @@ RUN apt-get update \
     ffmpeg \
     ghostscript qpdf \
     imagemagick \
+    libjemalloc2 \
     libmagic-dev \
     libmagickwand-dev \
     libmariadb-dev \
@@ -32,7 +33,11 @@ RUN apt-get update \
     docker-ce \
     docker-ce-cli \
     containerd.io \
-  && apt-get clean
+  && apt-get clean \
+  && ln -s /usr/lib/$(uname -m)-linux-gnu/libjemalloc.so.2 /usr/local/lib/libjemalloc.so
+
+# jemalloc stops glibc arena fragmentation from ratcheting up RSS in threaded Puma/Sidekiq
+ENV LD_PRELOAD="/usr/local/lib/libjemalloc.so"
 
 # Setup the folder where we will deploy the code
 WORKDIR /doubtfire

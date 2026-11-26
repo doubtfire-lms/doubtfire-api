@@ -116,8 +116,8 @@ class GroupSetsApiTest < ActiveSupport::TestCase
       unit_id: new_unit.id,
       group_set_id: new_group_set.id,
       group: {
-        name:new_group.name,
-        tutorial_id:new_tutorial.id
+        name: new_group.name,
+        tutorial_id: new_tutorial.id
       }
     }
 
@@ -128,14 +128,14 @@ class GroupSetsApiTest < ActiveSupport::TestCase
 
     # check if the POST get through
     assert_equal 201, last_response.status
-    #check response
-    response_keys = %w(name tutorial_id group_set_id locked)
+    # check response
+    response_keys = %w[name tutorial_id group_set_id locked]
     responseGroup = Group.find(last_response_body['id'])
     assert_json_matches_model(responseGroup, last_response_body, response_keys)
     assert_equal new_unit.id, responseGroup.group_set.unit.id
     assert_equal new_group.name, responseGroup.name
-    assert_equal new_group_set.id,responseGroup.group_set.id
-    assert_equal new_tutorial.id,responseGroup.group_set.unit.tutorials.first.id
+    assert_equal new_group_set.id, responseGroup.group_set.id
+    assert_equal new_tutorial.id, responseGroup.group_set.unit.tutorials.first.id
   end
 
   def test_get_all_groups_in_unit_without_authorization
@@ -165,8 +165,8 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     assert_equal new_group.group_set.groups.count, last_response_body.count
 
     # Check response
-    response_keys = %w(id name)
-    last_response_body.each do | data |
+    response_keys = %w[id name]
+    last_response_body.each do |data|
       grp = Group.find(data['id'])
       assert_json_matches_model(grp, data, response_keys)
     end
@@ -205,11 +205,11 @@ class GroupSetsApiTest < ActiveSupport::TestCase
     get "/api/units/#{new_unit.id}/group_sets/#{new_group_set.id}/groups"
 
     # Check returning number of groups
-    assert_equal new_group_set.groups.all.count,last_response_body.count
+    assert_equal new_group_set.groups.all.count, last_response_body.count
 
     # Check response
-    response_keys = %w(id name)
-    last_response_body.each do | data |
+    response_keys = %w[id name]
+    last_response_body.each do |data|
       grp = Group.find(data['id'])
       assert_json_matches_model(grp, data, response_keys)
     end
@@ -217,10 +217,9 @@ class GroupSetsApiTest < ActiveSupport::TestCase
   end
 
   def test_groups_unlocked_upon_creation
-
     unit = FactoryBot.create :unit
     unit.save!
-    group_set = GroupSet.create!({name: 'test_groups_unlocked_upon_creation', unit: unit})
+    group_set = GroupSet.create!({ name: 'test_groups_unlocked_upon_creation', unit: unit })
     group_set.save!
 
     # A group should be unlocked upon creation.
@@ -228,8 +227,8 @@ class GroupSetsApiTest < ActiveSupport::TestCase
       group: {
         name: 'test_groups_unlocked_upon_creation',
         tutorial_id: unit.tutorials.first.id,
-        capacity_adjustment: 0,
-      },
+        capacity_adjustment: 0
+      }
     }
     add_auth_header_for(user: unit.main_convenor_user)
     post "/api/units/#{unit.id}/group_sets/#{group_set.id}/groups", data
@@ -243,9 +242,9 @@ class GroupSetsApiTest < ActiveSupport::TestCase
   def test_groups_lockable_only_by_staff
     unit = FactoryBot.create :unit
     unit.save!
-    group_set = GroupSet.create!({name: 'test_groups_lockable_only_by_staff', unit: unit, allow_students_to_manage_groups: true })
+    group_set = GroupSet.create!({ name: 'test_groups_lockable_only_by_staff', unit: unit, allow_students_to_manage_groups: true })
     group_set.save!
-    group = Group.create!({group_set: group_set, name: 'test_groups_lockable_only_by_staff', tutorial: unit.tutorials.first })
+    group = Group.create!({ group_set: group_set, name: 'test_groups_lockable_only_by_staff', tutorial: unit.tutorials.first })
     group.save!
     group.add_member(unit.active_projects[0])
 

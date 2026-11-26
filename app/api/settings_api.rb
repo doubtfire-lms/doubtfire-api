@@ -13,7 +13,8 @@ class SettingsApi < Grape::API
       logoLinkUrl: Doubtfire::Application.config.institution[:logo_link_url],
       overseerEnabled: Doubtfire::Application.config.overseer_enabled,
       tiiEnabled: TurnItIn.enabled?,
-      d2lEnabled: D2lIntegration.enabled?
+      d2lEnabled: D2lIntegration.enabled?,
+      ltiEnabled: Doubtfire::Application.config.lti_enabled == true
     }
 
     present response, with: Grape::Presenters::Presenter

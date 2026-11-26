@@ -13,11 +13,16 @@ class TeachingPeriod < ApplicationRecord
                    inclusion: { in: 2000..2999, message: "%{value} is not a valid year" }
   validates :start_date, presence: true
   validates :end_date, presence: true
+  validates :last_teaching_date, presence: true
   validates :active_until, presence: true
 
-  validate :validate_end_date_after_start_date, :validate_active_until_after_end_date
+  before_validation :default_last_teaching_date, on: :create
+  before_validation :sync_last_teaching_date_with_end_date, on: :update
+
+  validate :validate_end_date_after_start_date, :validate_last_teaching_date, :validate_active_until_after_end_date
 
   after_update :propogate_date_changes
+  after_update :refresh_communication_schedule_caches, if: :saved_change_to_teaching_dates?
 
   # Public methods
 
@@ -25,11 +30,14 @@ class TeachingPeriod < ApplicationRecord
     "#{year} #{period}"
   end
 
-  def add_break(start_date, number_of_weeks)
+  def add_break(start_date, number_of_days, campus_ids = [], label = nil, pause_week_count = nil)
     break_in_teaching_period = Break.new
     break_in_teaching_period.start_date = start_date
-    break_in_teaching_period.number_of_weeks = number_of_weeks
+    break_in_teaching_period.number_of_days = number_of_days
+    break_in_teaching_period.label = label
     break_in_teaching_period.teaching_period = self
+    break_in_teaching_period.campus_ids = campus_ids || []
+    break_in_teaching_period.pause_week_count = pause_week_count unless pause_week_count.nil?
 
     break_in_teaching_period.save!
     # add after save to ensure valid break
@@ -38,33 +46,56 @@ class TeachingPeriod < ApplicationRecord
     break_in_teaching_period
   end
 
-  def update_break(id, start_date, number_of_weeks)
+  def update_break(id, start_date, number_of_days, campus_ids = nil, label = nil, pause_week_count = nil)
     break_in_teaching_period = breaks.find(id)
 
     if start_date.present?
       break_in_teaching_period.start_date = start_date
     end
 
-    if number_of_weeks.present?
-      break_in_teaching_period.number_of_weeks = number_of_weeks
+    if number_of_days.present?
+      break_in_teaching_period.number_of_days = number_of_days
     end
+
+    break_in_teaching_period.label = label unless label.nil?
+
+    break_in_teaching_period.campus_ids = campus_ids if campus_ids.present? || campus_ids == []
+
+    break_in_teaching_period.pause_week_count = pause_week_count unless pause_week_count.nil?
 
     break_in_teaching_period.save!
     break_in_teaching_period
+  end
+
+  def breaks_for(campus)
+    breaks.select { |teaching_break| teaching_break.applies_to?(campus) }
+  end
+
+  # Teaching periods stay active past their end date so that end of semester
+  # marking can finish.
+  def active?(date = Time.zone.now)
+    active_until > date
+  end
+
+  # The breaks that pause the week count for the teaching period. Breaks without
+  # this flag still extend deadlines, but the week number continues through them
+  # so that it stays aligned across campuses.
+  def week_pausing_breaks
+    breaks.select(&:pause_week_count?)
   end
 
   def week_number(date)
     # Calcualte date offset, add 2 so 0-week offset is week 1 not week 0
     result = ((date - start_date) / 1.week).floor + 1
 
-    for a_break in breaks.all do
+    for a_break in week_pausing_breaks do
       if date >= a_break.start_date
         # we are in or after the break, so calculated week needs to
         # be reduced by this break
 
         if date >= a_break.end_date
           # past the end of the break...
-          result -= a_break.number_of_weeks
+          result -= a_break.weeks_spanned
         elsif date == a_break.start_date
           # cant use standard calculation as this give 0 for this exact moment...
           result -= 1 if date >= a_break.first_monday
@@ -94,11 +125,11 @@ class TeachingPeriod < ApplicationRecord
     result = start_date + num.weeks
 
     # check breaks
-    for a_break in breaks do
+    for a_break in week_pausing_breaks do
       if result >= a_break.start_date
         # we are in or after the break, so calculated date is
         # extended by the break period
-        result += a_break.number_of_weeks.weeks
+        result += a_break.duration
       end
     end
 
@@ -115,13 +146,16 @@ class TeachingPeriod < ApplicationRecord
 
     start_day_num = start_date.wday
 
-    result = week_start + (day_num - start_day_num).days
+    day_offset = day_num - start_day_num
+    day_offset += 7 if day_offset.negative?
 
-    for a_break in breaks do
+    result = week_start + day_offset.days
+
+    for a_break in week_pausing_breaks do
       if result >= a_break.start_date && result < a_break.end_date
         # we are in or after the break, so calculated date is
         # extended by the break period
-        result += a_break.number_of_weeks.weeks
+        result += a_break.duration
       end
     end
 
@@ -130,6 +164,13 @@ class TeachingPeriod < ApplicationRecord
 
   def future_teaching_periods
     TeachingPeriod.where("start_date > :end_date", end_date: end_date)
+  end
+
+  def refresh_communication_schedule_caches
+    CommunicationSetSchedule
+      .joins(communication_set: :unit)
+      .where(units: { teaching_period_id: id })
+      .find_each(&:refresh_next_run_at!)
   end
 
   private
@@ -153,11 +194,33 @@ class TeachingPeriod < ApplicationRecord
     end
   end
 
+  def default_last_teaching_date
+    self.last_teaching_date ||= end_date&.to_date
+  end
+
+  def sync_last_teaching_date_with_end_date
+    return unless will_save_change_to_end_date? && !will_save_change_to_last_teaching_date?
+    return unless last_teaching_date == end_date_change_to_be_saved.first&.to_date
+
+    self.last_teaching_date = end_date&.to_date
+  end
+
+  def validate_last_teaching_date
+    return if start_date.blank? || end_date.blank? || last_teaching_date.blank?
+    return if last_teaching_date.between?(start_date.to_date, end_date.to_date)
+
+    errors.add(:last_teaching_date, 'must be between the start and end dates')
+  end
+
   def propogate_date_changes
-    return unless saved_change_to_start_date? || saved_change_to_end_date?
+    return unless saved_change_to_start_date? || saved_change_to_end_date? || saved_change_to_last_teaching_date?
 
     units.each do |u|
-      u.update(start_date: self.start_date, end_date: self.end_date)
+      u.update!(start_date: start_date, end_date: end_date, last_teaching_date: last_teaching_date)
     end
+  end
+
+  def saved_change_to_teaching_dates?
+    saved_change_to_start_date? || saved_change_to_end_date?
   end
 end

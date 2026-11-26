@@ -16,10 +16,17 @@ module Entities
       expose :completion_date, expose_nil: false
       expose :target_due_date, expose_nil: false
       expose :target_start_date, expose_nil: false
+      expose :discuss_timeout_expiry_date, expose_nil: false
     end
+
+    expose :moved_to_discuss_at, expose_nil: false
+    expose :discuss_timeout_expiry_at, expose_nil: false
 
     expose :extensions
     expose :scorm_extensions
+
+    expose :submission_access_granted?, as: :submission_access_granted
+    expose :submission_access_request_error
 
     expose :times_assessed
     expose :grade, expose_nil: false

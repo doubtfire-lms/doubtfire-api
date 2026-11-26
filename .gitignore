@@ -31,6 +31,9 @@ student-work/
 .DS_Store
 .env
 .env*
+/config/credentials/*.yml.enc
+/config/credentials/*.key
+/config/master.key
 
 # IDE configs
 .idea/

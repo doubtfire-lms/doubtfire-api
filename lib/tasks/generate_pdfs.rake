@@ -93,9 +93,11 @@ namespace :submission do
     # Reduce logging verbosity for the generate_pdfs task in production
     logger.level = :warn if Rails.configuration.pdfgen_quiet
 
-    if is_executing? || !should_run?
-      logger.error 'Skip generate pdf -- already executing'
-      puts 'Skip generate pdf -- already executing'
+    paused = File.exist?('/tmp/doubtfire-pdfgen.pause')
+    if paused || is_executing? || !should_run?
+      reason = paused ? 'paused' : 'already executing'
+      logger.error "Skip generate pdf -- #{reason}"
+      puts "Skip generate pdf -- #{reason}"
     else
       start_executing
 
@@ -130,6 +132,9 @@ namespace :submission do
 
         # Now compile the portfolios
         Project.where(compile_portfolio: true, portfolio_generation_pid: Process.pid).find_each do |project|
+          # Finish the current portfolio, then release any remaining reservations in ensure.
+          break if File.exist?('/tmp/doubtfire-pdfgen.pause')
+
           next unless project.portfolio_generation_pid == Process.pid
 
           begin
@@ -140,23 +145,25 @@ namespace :submission do
             success = false
             begin
               # Notify system admin
+              Sentry.capture_exception(e) if defined?(Sentry)
               mail = ErrorLogMailer.error_message("Failed portfolio job: #{project.log_details}", "Failed to create portfolio for project #{project.log_details}", e)
-              mail.deliver if mail.present?
+              mail.presence&.deliver
             rescue StandardError => e
               logger.error "Failed to send error log to admin"
             end
           end
 
-          next unless project.student.receive_portfolio_notifications
+          notification = Notification.create_for_portfolio(project, success: success)
+          next if notification.nil?
+
+          settings = NotificationSetting.for(project.student)
+          next unless settings.delivers?(project.unit, notification.kind, :email)
 
           logger.info "emailing portfolio notification to #{project.student.name}"
 
           begin
-            if success
-              PortfolioEvidenceMailer.portfolio_ready(project).deliver_now
-            else
-              PortfolioEvidenceMailer.portfolio_failed(project).deliver_now
-            end
+            mail = success ? PortfolioEvidenceMailer.portfolio_ready(project) : PortfolioEvidenceMailer.portfolio_failed(project)
+            mail.deliver_now
           rescue StandardError => e
             logger.error "Failed to send portfolio email for project #{project.id}!\n#{e.message}"
           end

@@ -1,0 +1,33 @@
+Hi <%= @convenor.first_name %>,
+
+<% if @failing_since %>
+The daily LMS <%= @sync_name %> for <%= @unit.code %> <%= @unit.name %> has failed every night since <%= @failing_since.strftime('%A %-d %B') %>, so <%= @doubtfire_product_name %> has stopped syncing the unit with the LMS.
+
+This is usually an outage of the LMS or of <%= @doubtfire_product_name %>'s LMS connection rather than a problem with the unit's settings. The last error was: <%= @error_message %>
+<% else %>
+The daily LMS <%= @sync_name %> for <%= @unit.code %> <%= @unit.name %> failed, so <%= @doubtfire_product_name %> has stopped syncing the unit with the LMS until you review it.
+
+<% if @issues.any? %>
+The LMS integration no longer matches the LMS course:
+<% @issues.each do |issue| %>
+  * <%= [issue[:lms_group_name], issue[:message]].compact_blank.join(': ') %>
+<% end %>
+<% else %>
+The error was: <%= @error_message %>
+<% end %>
+<% end %>
+
+These settings have been turned off:
+<% @turned_off.each do |setting| %>
+  * <%= setting %>
+<% end %>
+
+<% if @failing_since %>
+Once the LMS is working again, run a preview import to check what will change, then turn these settings back on in the unit's LMS tab:
+<% else %>
+Fix the integration in the unit's LMS tab, then turn these settings back on:
+<% end %>
+<%= @lms_url %>
+
+Cheers,
+The <%= @doubtfire_product_name %> Team

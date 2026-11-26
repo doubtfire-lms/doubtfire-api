@@ -1,10 +1,7 @@
 class TaskCheckedInComment < TaskComment
   before_create do
     self.content_type = :checked_in
-  end
-
-  after_create do
-    mark_as_read(self.recipient)
+    self.attention_audience = :none
   end
 
   def serialize(user)

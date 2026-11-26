@@ -1,5 +1,16 @@
 class InstitutionSettings
 
+  # Suggests how each LMS group should map into OnTrack when a convenor pre-fills group mappings.
+  def prefill_lms_group_mappings(_unit, groups)
+    groups.map do |group|
+      {
+        lms_group_id: group[:id],
+        lms_group_name: group[:name],
+        target_type: 'ignore'
+      }
+    end
+  end
+
   # Used when importing students from a CSV into a unit. This is called to check if
   # the headers in the CSV match an institution system. If this returns true, the import
   # will be processed using the lambdas you specify in the import_settings.
@@ -120,6 +131,21 @@ class InstitutionSettings
     user.role_id = role_response.include?('Staff') ? Role.tutor.id : Role.student.id
 
     user
+  end
+
+  # The LTI member field stored as the user's login_id, which should never change for a person
+  def map_lti_member_to_user_id(member)
+    email = member['email']
+    {
+      login_id: member['ext_user_username'].presence || member['user_id'],
+      email: email,
+      username: email.to_s[/(.*)@/, 1]
+    }
+  end
+
+  # Whether a stored login_id is a real institution id. Ids that are not are replaced on the next match.
+  def institution_login_id?(_login_id)
+    true
   end
 
   def update_user_from_lti_response(user, user_id_data, member)

@@ -31,9 +31,9 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     )
 
     # destroy will trigger delete of submission
-    delete_request = stub_request(:delete, /https:\/\/#{ENV['TCA_HOST']}\/api\/v1\/submissions\/e884f478-9757-41c7-80da-37b94ebb2838/).
-    with(tii_headers).
-    to_return(status: 200, body: "", headers: {})
+    delete_request = stub_request(:delete, %r{https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/submissions/e884f478-9757-41c7-80da-37b94ebb2838})
+                     .with(tii_headers)
+                     .to_return(status: 200, body: "", headers: {})
 
     data = TCAClient::SubmissionCompleteWebhookRequest.new(
       "id" => "e884f478-9757-41c7-80da-37b94ebb2838",
@@ -45,10 +45,10 @@ class TeachingPeriodTest < ActiveSupport::TestCase
       "word_count" => 145,
       "character_count" => 760,
       "created_time" => "2017-08-30T22:13:41Z",
-      "capabilities" => [
-          "INDEX",
-          "VIEWER",
-          "SIMILARITY"
+      "capabilities" => %w[
+        INDEX
+        VIEWER
+        SIMILARITY
       ],
       "metadata" => {
         "custom" => "{\"Type\":\"Final Paper\"}"
@@ -65,11 +65,11 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     header "X-Turnitin-EventType", "SUBMISSION_COMPLETE"
 
     # Callback will trigger similarity request
-    stub_request(:put, "https://#{ENV['TCA_HOST']}/api/v1/submissions/e884f478-9757-41c7-80da-37b94ebb2838/similarity").
-    with(tii_headers).
-    to_return(
-      { status: 200, body: TCAClient::SimilarityMetadata.new(status: 'PROCESSING').to_hash.to_json, headers: {}},
-    )
+    stub_request(:put, "https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/submissions/e884f478-9757-41c7-80da-37b94ebb2838/similarity")
+      .with(tii_headers)
+      .to_return(
+        { status: 200, body: TCAClient::SimilarityMetadata.new(status: 'PROCESSING').to_hash.to_json, headers: {} }
+      )
 
     post_json '/api/tii_hook', data
 
@@ -105,9 +105,9 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     )
 
     # destroy will trigger delete of submission
-    delete_request = stub_request(:delete, /https:\/\/#{ENV['TCA_HOST']}\/api\/v1\/submissions\/e884f478-9757-41c7-80da-37b94ebb2838/).
-    with(tii_headers).
-    to_return(status: 200, body: "", headers: {})
+    delete_request = stub_request(:delete, %r{https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/submissions/e884f478-9757-41c7-80da-37b94ebb2838})
+                     .with(tii_headers)
+                     .to_return(status: 200, body: "", headers: {})
 
     data = TCAClient::SimilarityCompleteWebhookRequest.new(
       "submission_id" => "e884f478-9757-41c7-80da-37b94ebb2838",
@@ -178,9 +178,9 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     )
 
     # destroy will trigger delete of submission
-    delete_request = stub_request(:delete, /https:\/\/#{ENV['TCA_HOST']}\/api\/v1\/submissions\/e884f478-9757-41c7-80da-37b94ebb2838/).
-    with(tii_headers).
-    to_return(status: 200, body: "", headers: {})
+    delete_request = stub_request(:delete, %r{https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/submissions/e884f478-9757-41c7-80da-37b94ebb2838})
+                     .with(tii_headers)
+                     .to_return(status: 200, body: "", headers: {})
 
     data = TCAClient::SimilarityCompleteWebhookRequest.new(
       "submission_id" => "e884f478-9757-41c7-80da-37b94ebb2838",
@@ -264,9 +264,9 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     )
 
     # destroy will trigger delete of submission
-    delete_request = stub_request(:delete, /https:\/\/#{ENV['TCA_HOST']}\/api\/v1\/submissions\/e884f478-9757-41c7-80da-37b94ebb2838/).
-    with(tii_headers).
-    to_return(status: 200, body: "", headers: {})
+    delete_request = stub_request(:delete, %r{https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/submissions/e884f478-9757-41c7-80da-37b94ebb2838})
+                     .with(tii_headers)
+                     .to_return(status: 200, body: "", headers: {})
 
     data = TCAClient::PDFStatusWebhookRequest.new(
       "status" => "SUCCESS",
@@ -277,9 +277,9 @@ class TeachingPeriodTest < ActiveSupport::TestCase
       }
     )
 
-    download_pdf_request = stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/submissions/e884f478-9757-41c7-80da-37b94ebb2838/similarity/pdf/123312").
-      with(tii_headers).
-      to_return(status: 200, body: File.read(test_file_path('submissions/1.2P.pdf')), headers: {})
+    download_pdf_request = stub_request(:get, "https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/submissions/e884f478-9757-41c7-80da-37b94ebb2838/similarity/pdf/123312")
+                           .with(tii_headers)
+                           .to_return(status: 200, body: File.read(test_file_path('submissions/1.2P.pdf')), headers: {})
 
     # puts data.to_json
 
@@ -299,7 +299,7 @@ class TeachingPeriodTest < ActiveSupport::TestCase
     assert File.exist?(subm.similarity_pdf_path)
 
     task.unit.destroy!
-    refute File.exist?(subm.similarity_pdf_path)
+    assert_not File.exist?(subm.similarity_pdf_path)
   end
 
   # Test the group_attachment webhook
@@ -318,15 +318,15 @@ class TeachingPeriodTest < ActiveSupport::TestCase
 
     grp_attachment.update(group_attachment_id: "16c45fbe-25f5-458b-9a4c-c3deeaff8af4")
 
-    delete_stub = stub_request(:delete, %r[https://#{ENV['TCA_HOST']}/api/v1/groups/#{td.tii_group_id}/attachments/.*]).
-      with(tii_headers).
-      to_return(status: 200, body: "", headers: {})
+    delete_stub = stub_request(:delete, %r{https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/groups/#{td.tii_group_id}/attachments/.*})
+                  .with(tii_headers)
+                  .to_return(status: 200, body: "", headers: {})
 
     data = TCAClient::GroupAttachmentResponse.new(
-        "id": grp_attachment.group_attachment_id,
-        "title": "large2",
-        "status": "COMPLETE",
-        "template": true
+      id: grp_attachment.group_attachment_id,
+      title: "large2",
+      status: "COMPLETE",
+      template: true
     )
 
     # puts data.to_json

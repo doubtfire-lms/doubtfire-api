@@ -112,7 +112,7 @@ class FeedbackChipApiTestCondolidated < ActiveSupport::TestCase
     }
 
     data_to_put = {
-      chip_text: 'Updated text',
+      chip_text: 'Updated text'
     }
 
     FactoryBot.create(:feedback_group_chip, learning_outcome_id: learning_outcome.id)
@@ -252,7 +252,6 @@ class FeedbackChipApiTestCondolidated < ActiveSupport::TestCase
     tutor = FactoryBot.create(:user, :tutor)
     auditor = FactoryBot.create(:user, :auditor)
     student = unit.students.first
-
 
     learning_outcomes = [
       {

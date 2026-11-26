@@ -10,9 +10,6 @@ class ApiRoot < Grape::API
   format :json
 
   before do
-    header['Access-Control-Allow-Origin'] = '*'
-    header['Access-Control-Request-Method'] = '*'
-
     Thread.current.thread_variable_set(:ip, request.ip)
   end
 
@@ -47,6 +44,7 @@ class ApiRoot < Grape::API
       message = "Sorry... something went wrong with your request."
       status = 500
     end
+    Sentry.capture_exception(e)
     Rack::Response.new({ error: message }.to_json, status, { 'Content-type' => 'text/error' })
   end
 
@@ -59,7 +57,10 @@ class ApiRoot < Grape::API
   mount AuthenticationApi
   mount BreaksApi
   mount DiscussionCommentApi
+  mount EngagementsApi
   mount ExtensionCommentsApi
+  mount SubmissionCommentsApi
+  mount LmsIntegrationApi
   mount ScormExtensionCommentsApi
   mount GroupSetsApi
   mount LearningOutcomesApi
@@ -80,6 +81,7 @@ class ApiRoot < Grape::API
   mount SidekiqApi
   mount LtiApi if Doubtfire::Application.config.lti_enabled
   mount TaskPrerequisitesApi
+  mount CommunicationRulesApi
 
   mount Tii::TurnItInApi
   mount Tii::TurnItInHooksApi
@@ -94,8 +96,10 @@ class ApiRoot < Grape::API
   mount TutorialStreamsApi
   mount TutorialEnrolmentsApi
   mount UnitRolesApi
+  mount UnitContentsApi
   mount UnitsApi
   mount TutorNotesApi
+  mount NotificationsApi
 
   mount D2lIntegrationApi::D2lApi
   mount D2lIntegrationApi::OauthPublicApi
@@ -117,7 +121,10 @@ class ApiRoot < Grape::API
   AuthenticationHelpers.add_auth_to ActivityTypesAuthenticatedApi
   AuthenticationHelpers.add_auth_to BreaksApi
   AuthenticationHelpers.add_auth_to DiscussionCommentApi
+  AuthenticationHelpers.add_auth_to EngagementsApi
   AuthenticationHelpers.add_auth_to ExtensionCommentsApi
+  AuthenticationHelpers.add_auth_to SubmissionCommentsApi
+  AuthenticationHelpers.add_auth_to LmsIntegrationApi
   AuthenticationHelpers.add_auth_to ScormExtensionCommentsApi
   AuthenticationHelpers.add_auth_to GroupSetsApi
   AuthenticationHelpers.add_auth_to LearningOutcomesApi
@@ -136,6 +143,7 @@ class ApiRoot < Grape::API
   AuthenticationHelpers.add_auth_to SidekiqApi
   AuthenticationHelpers.add_auth_to LtiApi if Doubtfire::Application.config.lti_enabled
   AuthenticationHelpers.add_auth_to TaskPrerequisitesApi
+  AuthenticationHelpers.add_auth_to CommunicationRulesApi
 
   AuthenticationHelpers.add_auth_to Tii::TurnItInApi
   AuthenticationHelpers.add_auth_to Tii::TiiGroupAttachmentApi
@@ -158,10 +166,11 @@ class ApiRoot < Grape::API
   AuthenticationHelpers.add_auth_to DiscussionPromptsApi
   AuthenticationHelpers.add_auth_to OverseerStepsApi
   AuthenticationHelpers.add_auth_to TutorNotesApi
+  AuthenticationHelpers.add_auth_to NotificationsApi
 
   add_swagger_documentation \
     base_path: nil,
-    doc_version: 'v10.0.0',
+    doc_version: 'v11.0.0',
     hide_documentation_path: true,
     info: {
       title: 'Doubtfire API Documentation',

@@ -79,7 +79,7 @@ class TutorialStreamModelTest < ActiveSupport::TestCase
 
     tutorial_stream_first.destroy
 
-    refute tutorial_stream_first.destroyed?
+    assert_not tutorial_stream_first.destroyed?
     assert_equal 'cannot be deleted as it has task definitions associated with it, and it is not the last (or second last) tutorial stream', tutorial_stream_first.errors.full_messages.last
   end
 

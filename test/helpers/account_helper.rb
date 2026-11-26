@@ -1,7 +1,5 @@
 module TestHelpers
-
   module AccountHelper
-
     ##################################################
     # Student user
     ##################################################
@@ -65,7 +63,5 @@ module TestHelpers
     def last_admin_user
       admin_users.last
     end
-
   end
-
 end

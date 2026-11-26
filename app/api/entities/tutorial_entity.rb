@@ -7,6 +7,7 @@ module Entities
     expose :abbreviation
     expose :campus_id, expose_nil: false
     expose :capacity
+    expose :duration_minutes
     expose :tutorial_stream_abbr, expose_nil: false do |tutorial, options|
       tutorial.tutorial_stream.abbreviation unless tutorial.tutorial_stream.nil?
     end

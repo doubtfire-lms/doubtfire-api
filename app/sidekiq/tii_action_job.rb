@@ -1,6 +1,8 @@
 class TiiActionJob
   include Sidekiq::Job
 
+  sidekiq_options queue: 'parallel'
+
   def perform(id)
     action = TiiAction.find(id)
 

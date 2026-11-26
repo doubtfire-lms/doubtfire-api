@@ -40,6 +40,18 @@ class ScormExtensionTest < ActiveSupport::TestCase
     data_to_post = {
       comment: 'I need more attempts please'
     }
+    extension_count = ScormExtensionComment.count
+
+    clear_auth_header
+    header 'username', user.username
+    post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/request_scorm_extension", data_to_post
+    assert_equal 419, last_response.status
+    assert_equal extension_count, ScormExtensionComment.count
+
+    add_auth_header_for(user: user, auth_token: 'invalid')
+    post_json "/api/projects/#{project.id}/task_def_id/#{td.id}/request_scorm_extension", data_to_post
+    assert_equal 419, last_response.status
+    assert_equal extension_count, ScormExtensionComment.count
 
     add_auth_header_for(user: user)
 
@@ -113,12 +125,12 @@ class ScormExtensionTest < ActiveSupport::TestCase
     tc = TaskComment.find(last_response_body["id"])
 
     # Check it is not read by the main tutor
-    refute tc.read_by?(main_tutor), "Error: Should not be read by main tutor on create"
+    assert_not tc.read_by?(main_tutor), "Error: Should not be read by main tutor on create"
     assert tc.read_by?(user), "Error: Should be read by student on create"
 
     # Check that reading by main tutor does not read the task
     tc.read_by? main_tutor
-    refute tc.read_by?(main_tutor), "Error: Should not be read by main tutor even when they read it"
+    assert_not tc.read_by?(main_tutor), "Error: Should not be read by main tutor even when they read it"
 
     # Check it is read after grant by another user
     tc.assess_scorm_extension other_tutor, true
@@ -214,6 +226,12 @@ class ScormExtensionTest < ActiveSupport::TestCase
     data_to_put = {
       granted: true
     }
+
+    clear_auth_header
+    header 'username', main_tutor.username
+    put_json "/api/projects/#{project.id}/task_def_id/#{td.id}/assess_scorm_extension/#{tc.id}", data_to_put
+    assert_equal 419, last_response.status
+    assert_not tc.reload.assessed?
 
     add_auth_header_for(user: user)
 

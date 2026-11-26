@@ -16,6 +16,7 @@ module Entities
     expose :portfolio_files, unless: :summary_only
     expose :compile_portfolio, unless: :summary_only
     expose :portfolio_available
+    expose :portfolio_submission_date, if: :for_staff
     expose :uses_draft_learning_summary, unless: :summary_only
 
     expose :task_stats, as: :stats, unless: :for_student

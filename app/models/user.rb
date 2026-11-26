@@ -20,6 +20,7 @@ class User < ApplicationRecord
   include UserTiiModule
 
   after_update :move_files_on_username_change, if: :saved_change_to_username?
+  after_update :refresh_notification_schedule, if: :saved_change_to_timezone?
 
   ###
   # Authentication
@@ -90,16 +91,39 @@ class User < ApplicationRecord
     end
   end
 
+  # Record a completed interactive sign in. Signing in is also an access event.
+  def record_sign_in!
+    now = Time.current
+    update!(last_sign_in_at: now, last_access_at: now)
+  end
+
+  # Refresh-token exchanges provide a low-write indication that the user is
+  # still accessing OnTrack without updating the user on every API request.
+  def record_access!
+    update!(last_access_at: Time.current)
+  end
+
   #
   # Force-generates a new authentication token, regardless of whether or not
   # it is actually expired
   #
-  def generate_authentication_token!(remember: false, expiry: Time.zone.now + 2.hours, token_type: :general, force_new: true)
+  def generate_authentication_token!(remember: false, expiry: nil, token_type: :general, force_new: true)
     # Ensure this user is saved... so it has an id
     self.save unless self.persisted?
+    expiry_duration =
+      if token_type.to_sym == :refresh_token
+        Doubtfire::Application.config.refresh_token_expiry
+      else
+        Doubtfire::Application.config.access_token_expiry
+      end
+    expiry ||= Time.zone.now + expiry_duration
+
+    # Reuse tokens for up to 75% of their configured lifetime, then rotate early.
+    token_reuse_duration = expiry_duration * 0.75
+
     # Get a recent token, or create a new one
     token = self.auth_tokens.where(token_type: token_type).last unless force_new
-    if token.nil? || token.created_at <= Time.zone.now - 90.minutes
+    if token.nil? || token.auth_token_expiry <= Time.zone.now || token.created_at <= Time.zone.now - token_reuse_duration
       token = AuthToken.generate(self, remember, expiry, token_type)
     end
 
@@ -118,6 +142,13 @@ class User < ApplicationRecord
   #
   def generate_scorm_authentication_token!
     generate_authentication_token!(token_type: :scorm)
+  end
+
+  #
+  # Generate an authentication token for unit content asset retrieval
+  #
+  def generate_content_authentication_token!
+    generate_authentication_token!(token_type: :content)
   end
 
   #
@@ -143,22 +174,40 @@ class User < ApplicationRecord
   belongs_to  :role, optional: false # Foreign Key
   has_many    :unit_roles, dependent: :destroy, inverse_of: :user
   has_many    :projects, dependent: :restrict_with_exception, inverse_of: :user
+  has_many    :engagements, dependent: :restrict_with_exception, inverse_of: :user
+  has_many    :engagement_comments, dependent: :restrict_with_exception, inverse_of: :user
   has_many    :auth_tokens, dependent: :destroy, inverse_of: :user
+  has_many    :comment_read_cursors, dependent: :destroy, inverse_of: :user
   has_many    :user_oauth_tokens, dependent: :destroy, inverse_of: :user
   has_many    :user_oauth_states, dependent: :destroy, inverse_of: :user
   has_one     :webcal, dependent: :destroy, inverse_of: :user
   has_many    :chip_usage, dependent: :destroy, inverse_of: :tutor, class_name: 'Feedback::ChipUsage'
 
   has_many    :marking_sessions, dependent: :destroy
+  has_many    :received_notifications,
+              class_name: 'Notification',
+              foreign_key: :recipient_id,
+              dependent: :destroy,
+              inverse_of: :recipient
+  has_many    :acted_notifications,
+              class_name: 'Notification',
+              foreign_key: :actor_id,
+              dependent: :nullify,
+              inverse_of: :actor
+  has_many    :notification_unit_overrides, dependent: :destroy
+  has_one     :notification_setting, dependent: :destroy
 
   # Model validations/constraints
-  validates :first_name,  presence: true
-  validates :last_name,   presence: true
+  validates :first_name,  presence: true, allowed_characters: { type: :first_name }
+  validates :last_name,   presence: true, allowed_characters: { type: :last_name }
+  validates :nickname,    allowed_characters: { type: :preferred_name }, allow_blank: true
   validates :role_id,     presence: true
   validates :username,    presence: true, uniqueness: { case_sensitive: false }
   validates :email,       presence: true, uniqueness: { case_sensitive: false }, format: { with: /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\z/i }
   validates :student_id,  uniqueness: true, allow_nil: true
   validate :can_change_to_role?, if: :will_save_change_to_role_id?
+  validate :timezone_supported, if: :will_save_change_to_timezone?
+  validate :observe_all_units_requires_staff_role
 
   # Queries
   scope :tutors,    -> { joins(:role).where('roles.id = :tutor_role or roles.id = :convenor_role or roles.id = :admin_role or roles.id = :auditor_role', tutor_role: Role.tutor_id, convenor_role: Role.convenor_id, admin_role: Role.admin_id, auditor_role: Role.auditor_id) }
@@ -189,6 +238,13 @@ class User < ApplicationRecord
         errors.add :role, "cannot be changed to #{new_role.name} because the user has a #{check_role.name} role in a unit"
       end
     end
+  end
+
+  def observe_all_units_requires_staff_role
+    return unless observe_all_units?
+    return if [Role.tutor_id, Role.convenor_id].include?(role_id)
+
+    errors.add(:observe_all_units, 'requires a Tutor or Convenor system role')
   end
 
   def has_student_capability?
@@ -360,8 +416,7 @@ class User < ApplicationRecord
       :get_scorm_token,
 
       :get_feedback_chips,
-      :get_los,
-      :update_glos
+      :get_los
     ]
 
     # What can tutors do with users?
@@ -372,8 +427,7 @@ class User < ApplicationRecord
       :get_scorm_token,
 
       :get_feedback_chips,
-      :get_los,
-      :update_glos
+      :get_los
     ]
 
     # What can students do with users?
@@ -430,6 +484,11 @@ class User < ApplicationRecord
     "#{fn} #{sn}"
   end
 
+  # Users who have not signed in since timezones were added use the server's.
+  def notification_timezone
+    timezone.presence || NotificationSetting.default_digest_timezone
+  end
+
   def move_files_on_username_change
     old_username = saved_change_to_username[0]
 
@@ -478,7 +537,7 @@ class User < ApplicationRecord
         end
       end
       User.order('id').each do |user|
-        row << user.attributes.select { |attribute| exportables.include? attribute }.map do |key, value|
+        values = user.attributes.select { |attribute| exportables.include? attribute }.map do |key, value|
           # pass in a blank encrypted_password and the role name instead of just role_id
           if key == 'encrypted_password'
             ''
@@ -488,6 +547,7 @@ class User < ApplicationRecord
             value
           end
         end
+        row << CsvHelper.escape_spreadsheet_formulas(values)
       end
     end
   end
@@ -593,5 +653,18 @@ class User < ApplicationRecord
     unless unit_role.nil?
       unit_role.get_marking_sessions(start_date: start_date, end_date: end_date, timezone: timezone)
     end
+  end
+
+  private
+
+  # Saving the settings picks up the new timezone and reschedules the next digest.
+  def refresh_notification_schedule
+    notification_setting&.save!
+  end
+
+  def timezone_supported
+    return if timezone.nil? || ActiveSupport::TimeZone[timezone].present?
+
+    errors.add(:timezone, 'must be a valid timezone')
   end
 end

@@ -12,10 +12,12 @@ class Tutorial < ApplicationRecord
   has_many   :projects, through: :tutorial_enrolments
 
   # Callbacks - methods called are private
-  before_destroy :can_destroy?
+  before_destroy :can_destroy?, prepend: true
 
   validates :abbreviation, uniqueness: { scope: :unit,
                                          message: 'must be unique within the unit' }
+
+  validates :duration_minutes, presence: true, numericality: { only_integer: true, greater_than: 0 }
 
   # Make sure that unit in tutorial and tutorial stream are consistent
   validate :unit_must_be_same
@@ -33,8 +35,13 @@ class Tutorial < ApplicationRecord
     tutorial.meeting_day      = 'Enter a regular meeting day.'
     tutorial.meeting_time     = 'Enter a regular meeting time.'
     tutorial.meeting_location = 'Enter a location.'
+    tutorial.duration_minutes = 120
 
     tutorial
+  end
+
+  def duration_hours
+    duration_minutes.to_f / 60
   end
 
   def self.find_by_user(user)
@@ -71,6 +78,36 @@ class Tutorial < ApplicationRecord
 
   def num_students
     projects.where('enrolled = true').count
+  end
+
+  # Columns used to export and import tutorials via CSV
+  # Tutorial streams are managed in their own CSV - see TutorialStream.csv_columns
+  def self.csv_columns
+    %w[abbreviation tutorial_stream meeting_day meeting_time meeting_location duration_minutes
+       capacity tutor_username campus]
+  end
+
+  def self.to_csv(tutorials)
+    CSV.generate do |csv|
+      csv << csv_columns
+      tutorials.each do |tutorial|
+        csv << CsvHelper.escape_spreadsheet_formulas(tutorial.to_csv_row)
+      end
+    end
+  end
+
+  def to_csv_row
+    [
+      abbreviation,
+      tutorial_stream&.abbreviation,
+      meeting_day,
+      meeting_time,
+      meeting_location,
+      duration_minutes,
+      capacity,
+      tutor&.username,
+      campus&.abbreviation
+    ]
   end
 
   private

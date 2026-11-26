@@ -19,7 +19,6 @@ class LearningOutcome < ApplicationRecord
     convenor_role_permissions = [
       :update,
       :get_los,
-      :update_glos,
       :upload_csv,
       :create_feedback_chips,
       :get_feedback_chips
@@ -36,8 +35,7 @@ class LearningOutcome < ApplicationRecord
 
     tutor_role_permissions = [
       :update,
-      :get_los,
-      :update_glos
+      :get_los
     ]
 
     auditor_role_permissions = [

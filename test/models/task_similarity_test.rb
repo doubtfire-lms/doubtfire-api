@@ -120,7 +120,7 @@ class TaskSimilarityTest < ActiveSupport::TestCase
     zip_path = Rails.root.join("tmp/resources/resources.zip")
     FileUtils.mkdir_p(zip_path.dirname)
 
-    Zip::File.open(zip_path, Zip::File::CREATE) do |zipfile|
+    Zip::File.open(zip_path, create: true) do |zipfile|
       zipfile.add(File.basename(java_file), java_file)
     end
 
@@ -140,6 +140,42 @@ class TaskSimilarityTest < ActiveSupport::TestCase
     assert_nil similarity2, "JPlag base code should have been used to ignore similarity"
   end
 
+  def test_jplag_matches_identical_jupyter_notebooks_from_two_students
+    unit = FactoryBot.create(:unit, code: 'COS10001', with_students: false, stream_count: 0)
+    td = FactoryBot.create(:task_definition, unit: unit, abbreviation: 'notebook-1', outcome_count: 0,
+                                             similarity_language: 'ipynb', plagiarism_warn_pct: 25)
+    td.update!(upload_requirements: [
+                 { 'key' => 'file0', 'name' => 'Notebook', 'type' => 'code', 'tii_check' => true }
+               ])
+
+    tasks = Array.new(2) do
+      student = FactoryBot.create(:user, :student)
+      project = FactoryBot.create(:project, user_id: student.id, unit: unit)
+      add_auth_header_for(user: student)
+      submission = with_file('test_files/submissions/vectorial_graph.ipynb', 'application/json',
+                             trigger: 'ready_for_feedback')
+
+      post "/api/projects/#{project.id}/task_def_id/#{td.id}/submission", submission
+      assert_equal 201, last_response.status, last_response_body
+
+      task = project.task_for_task_definition(td)
+      assert task.convert_submission_to_pdf(log_to_stdout: false)
+      assert task.has_pdf
+      task
+    end
+
+    unit.check_jplag_similarity(force: true)
+
+    assert File.file?(FileHelper.task_jplag_report_path(unit, td)), 'Expected a JPlag report for the notebook task'
+
+    first_to_second = JplagTaskSimilarity.find_by(task_id: tasks.first.id, other_task_id: tasks.last.id)
+    second_to_first = JplagTaskSimilarity.find_by(task_id: tasks.last.id, other_task_id: tasks.first.id)
+    assert_not_nil first_to_second
+    assert_not_nil second_to_first
+    assert_equal 100, first_to_second.pct
+    assert_equal 100, second_to_first.pct
+  end
+
   # Test that when you create a plagiarism match link, that a moss test needs the other task
   def test_other_details
     task = FactoryBot.create(:task)
@@ -149,7 +185,7 @@ class TaskSimilarityTest < ActiveSupport::TestCase
       pct: 10
     )
 
-    refute similarity.valid?, similarity.errors.full_messages
+    assert_not similarity.valid?, similarity.errors.full_messages
 
     similarity.other_task = task
     assert similarity.valid?, similarity.errors.full_messages
@@ -167,7 +203,6 @@ class TaskSimilarityTest < ActiveSupport::TestCase
     )
 
     assert tii_similarity.valid?, tii_similarity.errors.full_messages
-
   ensure
     task&.project&.unit&.destroy
   end
@@ -185,9 +220,9 @@ class TaskSimilarityTest < ActiveSupport::TestCase
     assert similarity.valid?, similarity.errors.full_messages
 
     similarity.pct = -1
-    refute similarity.valid?
+    assert_not similarity.valid?
     similarity.pct = 101
-    refute similarity.valid?
+    assert_not similarity.valid?
 
     similarity.pct = 0
     assert similarity.valid?, similarity.errors.full_messages
@@ -266,10 +301,9 @@ class TaskSimilarityTest < ActiveSupport::TestCase
     add_auth_header_for(user: task.unit.main_convenor_user)
 
     # This will post to get the viewer url
-    viewer_url_request = stub_request(:post, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1223/viewer-url").
-      with(tii_headers).
-      to_return(status: 200, body: TCAClient::SimilarityViewerUrlResponse.new(viewer_url: 'https://viewer.url').to_hash.to_json, headers: {}
-    )
+    viewer_url_request = stub_request(:post, "https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/submissions/1223/viewer-url")
+                         .with(tii_headers)
+                         .to_return(status: 200, body: TCAClient::SimilarityViewerUrlResponse.new(viewer_url: 'https://viewer.url').to_hash.to_json, headers: {})
 
     get "/api/tasks/#{task.id}/similarities/#{sim.id}/viewer_url"
     assert_equal 200, last_response.status

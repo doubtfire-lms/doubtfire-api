@@ -26,9 +26,9 @@ class OverseerImageTest < ActiveSupport::TestCase
       tag: 'image & ls'
     )
 
-    refute oi.valid?
+    assert_not oi.valid?
     # pull from docker, will refuse as invalid
-    refute oi.pull_from_docker
+    assert_not oi.pull_from_docker
   end
 
   def test_cannot_inject_code_in_tag
@@ -37,24 +37,24 @@ class OverseerImageTest < ActiveSupport::TestCase
       tag: 'image & ls'
     )
 
-    refute oi.valid?
+    assert_not oi.valid?
 
     oi.tag = 'image&ls'
-    refute oi.valid?
+    assert_not oi.valid?
 
     oi.tag = 'image|ls'
-    refute oi.valid?
+    assert_not oi.valid?
 
     oi.tag = 'image>ls'
-    refute oi.valid?
+    assert_not oi.valid?
 
     oi.tag = 'image<ls'
-    refute oi.valid?
+    assert_not oi.valid?
 
     oi.tag = 'image($ls)'
-    refute oi.valid?
+    assert_not oi.valid?
 
     oi.tag = 'image$ls'
-    refute oi.valid?
+    assert_not oi.valid?
   end
 end

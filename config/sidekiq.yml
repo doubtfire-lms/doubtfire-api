@@ -1,1 +1,10 @@
-:concurrency: 1
+# Four parallel workers plus one serial submission worker in the same process.
+:concurrency: 4
+:queues:
+  - parallel
+
+:capsules:
+  :submission:
+    :queues:
+      - default
+    :concurrency: 1

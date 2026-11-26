@@ -9,12 +9,10 @@ class DownloadMarkingSessionsJob
   include MimeCheckHelpers
   include CsvHelper
 
-  sidekiq_options lock: :until_executed,
-                  lock_args_method: ->(args) { [args.first] },
-                  on_conflict: :reject,
+  sidekiq_options queue: 'parallel',
                   retry: false
 
-  def perform(unit_role_id, start_date, end_date, timezone)
+  def perform(unit_role_id, start_date, end_date, timezone, user_id = nil, unit_id = nil)
     start_date = Date.parse(start_date) if start_date
     end_date   = Date.parse(end_date) if end_date
     logger.info "Starting tutor marking sessions csv download..."
@@ -22,7 +20,11 @@ class DownloadMarkingSessionsJob
     at(0)
     total(1)
 
-    unit_role = UnitRole.find(unit_role_id)
+    unit_role = if unit_role_id
+                  UnitRole.find(unit_role_id)
+                else
+                  UnitRole.new(user: User.find(user_id), unit: Unit.find(unit_id))
+                end
     csv = unit_role.get_marking_sessions_csv(start_date: start_date, end_date: end_date, timezone: timezone)
 
     store(result: csv)

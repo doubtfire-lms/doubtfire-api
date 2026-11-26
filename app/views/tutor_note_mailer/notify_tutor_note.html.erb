@@ -58,6 +58,7 @@
   </style>
 </head>
 <body>
+  <%= render 'shared/email_preheader', text: "New tutor note from #{@from.name} in #{@unit.name}. Open #{@doubtfire_product_name} to read and respond." %>
   <div class="main">
     <h1><%= @doubtfire_product_name %> Notification</h1>
 

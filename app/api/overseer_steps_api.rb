@@ -14,7 +14,7 @@ class OverseerStepsApi < Grape::API
     requires :overseer_step, type: Hash do
       requires :name, type: String
       optional :description, type: String
-      optional :display_name, type: String
+      requires :display_name, type: String
       optional :display_description, type: String
       optional :run_command, type: String
       optional :timeout, type: Integer
@@ -86,7 +86,9 @@ class OverseerStepsApi < Grape::API
     if result.nil?
       error!({ error: 'No overseer step added' }, 403)
     else
-      present result, with: Entities::OverseerStepEntity
+      present result,
+              with: Entities::OverseerStepEntity,
+              my_role: task_definition.unit.role_for(current_user)
     end
   end
 
@@ -175,7 +177,9 @@ class OverseerStepsApi < Grape::API
 
     overseer_step.update!(overseer_step_params)
 
-    present overseer_step, with: Entities::OverseerStepEntity
+    present overseer_step,
+            with: Entities::OverseerStepEntity,
+            my_role: task_definition.unit.role_for(current_user)
   end
 
   desc 'Delete an overseer step'
@@ -202,8 +206,12 @@ class OverseerStepsApi < Grape::API
     end
 
     unit = project.unit
+    task_definition = unit.task_definitions.find(params[:task_def_id])
+    task = project.task_for_task_definition(task_definition)
 
-    overseer_assessment = OverseerAssessment.find(params[:id])
+    overseer_assessment = OverseerAssessment
+                          .where(submission_history_id: task.related_submission_histories.select(:id))
+                          .find(params[:id])
     present overseer_assessment.overseer_step_results, with: Entities::OverseerStepResultEntity, my_role: unit.role_for(current_user)
   end
 end

@@ -21,14 +21,14 @@ module TaskDefinitionTiiModule
   def tii_checks?
     TurnItIn.enabled? &&
       !upload_requirements.empty? &&
-      ((0..upload_requirements.length - 1).map { |i| use_tii?(i) }.inject(:|) || false)
+      upload_requirements.each_index.any? { |i| use_tii?(i) }
   end
 
   def had_tii_checks_before_last_save?
     TurnItIn.enabled? &&
       upload_requirements_before_last_save.present? &&
       !upload_requirements_before_last_save.empty? &&
-      ((0..upload_requirements_before_last_save.length - 1).map { |i| use_tii?(i, upload_requirements_before_last_save) }.inject(:|) || false)
+      upload_requirements_before_last_save.each_index.any? { |i| use_tii?(i, upload_requirements_before_last_save) }
   end
 
   # Send all doc and docx files from the task resources to turn it in
@@ -37,10 +37,21 @@ module TaskDefinitionTiiModule
     return if tii_group_id.blank?
     return unless has_task_resources?
 
+    linked_resource = linked_task_resource
+    if linked_resource && !task_resource_zip?(linked_resource)
+      filename = linked_resource[:filename]
+      return unless filename.downcase.end_with?('.doc', '.docx')
+      return if filename.include?('__MACOSX') || File.size(linked_resource[:path]) < 50
+
+      TiiGroupAttachment.find_or_create_from_task_definition(self, filename)
+      return
+    end
+
     count = 0
 
     # loop through files in the task resources zip file
-    Zip::File.open(task_resources) do |zip_file|
+    resource_path = linked_resource ? linked_resource[:path] : task_resources
+    Zip::File.open(resource_path) do |zip_file|
       zip_file.each do |entry|
         next unless entry.file?
         next unless entry.name.end_with?('.doc', '.docx')

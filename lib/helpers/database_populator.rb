@@ -64,6 +64,7 @@ class DatabasePopulator
     generate_global_learning_outcomes()
     generate_campuses
     generate_activity_types
+    generate_overseer_images
   end
 
   def generate_teaching_periods
@@ -76,7 +77,7 @@ class DatabasePopulator
     }
     tp = TeachingPeriod.create!(data)
 
-    tp.add_break Date.parse('2018-03-30'), 1
+    tp.add_break Date.parse('2018-03-30'), 7
 
     data = {
       period: 'T2',
@@ -87,7 +88,7 @@ class DatabasePopulator
     }
     tp = TeachingPeriod.create! data
 
-    tp.add_break Date.parse('2018-08-13'), 1
+    tp.add_break Date.parse('2018-08-13'), 7
 
     data = {
       period: 'T3',
@@ -98,7 +99,7 @@ class DatabasePopulator
     }
     tp = TeachingPeriod.create! data
 
-    tp.add_break Date.parse('2018-12-24'), 2
+    tp.add_break Date.parse('2018-12-24'), 14
   end
 
   def generate_global_learning_outcomes
@@ -164,6 +165,18 @@ class DatabasePopulator
       abbreviation: 'cls',
     }
     ActivityType.create! data
+  end
+
+  def generate_overseer_images
+    echo_line "--> Generating overseer images"
+
+    overseer_image = OverseerImage.create!(
+      name: 'Bash',
+      tag: 'bash:latest'
+    )
+
+    echo_line "---> Pulling overseer image #{overseer_image.tag}"
+    overseer_image.pull_from_docker
   end
 
   #
@@ -598,7 +611,7 @@ class DatabasePopulator
 
     pdf_path = task.final_pdf_path
     if pdf_path && !File.exist?(pdf_path)
-      FileUtils.ln_s(Rails.root.join('test_files/unit_files/sample-student-submission.pdf'), pdf_path)
+      FileUtils.cp(Rails.root.join('test_files/unit_files/sample-student-submission.pdf'), pdf_path)
     end
 
     task.save
@@ -609,7 +622,7 @@ class DatabasePopulator
     FileUtils.mkdir_p(portfolio_tmp_dir)
 
     lsr_path = File.join(portfolio_tmp_dir, '000-document-LearningSummaryReport.pdf')
-    FileUtils.ln_s(Rails.root.join('test_files/unit_files/sample-learning-summary.pdf'), lsr_path) unless File.exist? lsr_path
+    FileUtils.cp(Rails.root.join('test_files/unit_files/sample-learning-summary.pdf'), lsr_path) unless File.exist? lsr_path
     project.compile_portfolio = true
     project.create_portfolio
   end

@@ -10,12 +10,19 @@ cd /workdir/texlive-latex/${OUTPUT_DIR}
 mkdir -p work
 cp *.tex *.py work/
 cd work
+# Keep notebook-generated temporary images inside this disposable job directory.
+export TMPDIR="$PWD"
 
 # Compile PDF
 lualatex -shell-escape -interaction=batchmode -halt-on-error input.tex
 RESULT=$?
 if [ $RESULT -eq 0 ]; then
-  echo "Running lualatex a second time to remove temporary last page..."
+  echo "Running lualatex a second time to remove temporary last page and update references..."
+  lualatex -shell-escape -interaction=batchmode -halt-on-error input.tex
+  RESULT=$?
+fi
+if [ $RESULT -eq 0 ]; then
+  echo "Running lualatex a third time to stabilise page references..."
   lualatex -shell-escape -interaction=batchmode -halt-on-error input.tex
   RESULT=$?
 fi

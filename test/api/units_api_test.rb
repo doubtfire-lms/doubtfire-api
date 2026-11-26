@@ -125,21 +125,56 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal 403, last_response.status, last_response_body
   end
 
+  def test_rollover_employs_requesting_convenor_without_copying_other_staff
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0, outcome_count: 0, tutorials: 0, staff_count: 0)
+    main_convenor = unit.main_convenor_user
+    requesting_convenor = FactoryBot.create(:user, :convenor)
+    other_convenor = FactoryBot.create(:user, :convenor)
+    unit.employ_staff(requesting_convenor, Role.convenor)
+    unit.employ_staff(other_convenor, Role.convenor)
+    teaching_period = FactoryBot.create(:teaching_period)
+
+    add_auth_header_for(user: requesting_convenor)
+    post_json "/api/units/#{unit.id}/rollover", { teaching_period_id: teaching_period.id }
+
+    assert_equal 201, last_response.status, last_response_body
+    rolled_unit = Unit.find(last_response_body['id'])
+    assert_equal main_convenor, rolled_unit.main_convenor_user
+    assert_equal [main_convenor.id, requesting_convenor.id].sort, rolled_unit.convenors.pluck(:user_id).sort
+    assert_equal Role.convenor, rolled_unit.role_for(requesting_convenor)
+    assert_equal Role.convenor.name, last_response_body['my_role']
+  end
+
+  def test_tutor_cannot_rollover_unit
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0, outcome_count: 0, tutorials: 0)
+    tutor = FactoryBot.create(:user, :tutor)
+    unit.employ_staff(tutor, Role.tutor)
+    teaching_period = FactoryBot.create(:teaching_period)
+    unit_count = Unit.count
+
+    add_auth_header_for(user: tutor)
+    post_json "/api/units/#{unit.id}/rollover", { teaching_period_id: teaching_period.id }
+
+    assert_equal 403, last_response.status, last_response_body
+    assert_equal 'Not authorised to rollover a unit', last_response_body['error']
+    assert_equal unit_count, Unit.count
+  end
+
   def create_unit
     {
-      name:'Intro to Social Skills',
-      code:'JRRW40003',
-      start_date:'2016-05-14T00:00:00.000Z',
-      end_date:'2017-05-14T00:00:00.000Z'
+      name: 'Intro to Social Skills',
+      code: 'JRRW40003',
+      start_date: '2016-05-14T00:00:00.000Z',
+      end_date: '2017-05-14T00:00:00.000Z'
     }
   end
 
-  def test_post_create_unit_custom_token(token='abcdef')
+  def test_post_create_unit_custom_token(token = 'abcdef')
     count = Unit.all.length
     unit = create_unit
 
     data_to_post = {
-        unit: unit
+      unit: unit
     }
 
     # Add username and auth_token to Header
@@ -147,7 +182,7 @@ class UnitsApiTest < ActiveSupport::TestCase
 
     # Override the header for empty auth_token
     if token == ''
-      header 'auth_token',''
+      header 'auth_token', ''
     end
 
     post_json '/api/units', data_to_post
@@ -189,7 +224,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal 201, last_response.status, last_response_body
     # Check there is a new tutorial
     assert_equal count_tutorials + 1, Tutorial.all.length, last_response_body
-    assert_json_matches_model tutorial, last_response_body, ["abbreviation", "capacity", "meeting_location", "meeting_day", "meeting_time"]
+    assert_json_matches_model tutorial, last_response_body, %w[abbreviation capacity meeting_location meeting_day meeting_time]
 
     unit.destroy
   end
@@ -222,6 +257,81 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal expected_unit.code, actual_unit['code']
     assert_equal expected_unit.start_date.to_date, actual_unit['start_date'].to_date
     assert_equal expected_unit.end_date.to_date, actual_unit['end_date'].to_date
+  end
+
+  def test_global_observer_reads_all_units_and_explicit_staff_role_takes_precedence
+    observer = FactoryBot.create(:user, :convenor, observe_all_units: true)
+    existing_unit = FactoryBot.create(:unit, with_students: true, task_count: 1, group_sets: 1)
+
+    new_unit = FactoryBot.create(:unit, with_students: false, task_count: 0, active: false)
+
+    add_auth_header_for(user: observer)
+    get '/api/units', { include_in_active: true }
+    assert_equal 200, last_response.status
+    assert_includes last_response_body.map { |row| row['id'] }, existing_unit.id
+    assert_includes last_response_body.map { |row| row['id'] }, new_unit.id
+
+    get "/api/units/#{existing_unit.id}"
+    assert_equal 200, last_response.status
+    assert_equal 'Convenor', last_response_body['my_role']
+
+    get '/api/students', { unit_id: existing_unit.id }
+    assert_equal 200, last_response.status
+
+    get "/api/units/#{existing_unit.id}/tasks/inbox"
+    assert_equal 200, last_response.status
+
+    project = existing_unit.active_projects.first
+    task_definition = existing_unit.task_definitions.first
+    task = project.task_for_task_definition(task_definition)
+    task.save! if task.new_record?
+    get "/api/projects/#{project.id}/task_def_id/#{task_definition.id}/submission_details"
+    assert_equal 200, last_response.status
+
+    get "/api/units/#{existing_unit.id}/stats/task_completion_stats"
+    assert_equal 200, last_response.status
+
+    get "/api/units/#{existing_unit.id}/marking_sessions"
+    assert_equal 200, last_response.status
+
+    get "/api/units/#{existing_unit.id}/group_sets/#{existing_unit.group_sets.first.id}/groups/csv"
+    assert_equal 200, last_response.status
+
+    get "/api/units/#{existing_unit.id}/outcomes/csv"
+    assert_equal 200, last_response.status
+
+    get "/api/units/#{existing_unit.id}/feedback_chips/csv"
+    assert_equal 200, last_response.status
+
+    get "/api/units/#{existing_unit.id}/content/sites"
+    assert_equal 200, last_response.status
+
+    put_json "/api/units/#{existing_unit.id}", { unit: { name: 'Changed name' } }
+    assert_equal 403, last_response.status
+
+    put_json "/api/projects/#{project.id}", { enrolled: false }
+    assert_equal 403, last_response.status
+    assert project.reload.enrolled?
+
+    unit_role = existing_unit.employ_staff(observer, Role.convenor)
+    unit_role.update!(observer_only: true)
+    get "/api/units/#{existing_unit.id}"
+    assert_equal 200, last_response.status
+    get "/api/units/#{existing_unit.id}/outcomes/csv"
+    assert_equal 200, last_response.status
+    put_json "/api/units/#{existing_unit.id}", { unit: { name: 'Changed name' } }
+    assert_equal 403, last_response.status
+
+    unit_role.update!(observer_only: false)
+    get "/api/units/#{existing_unit.id}"
+    assert_equal 200, last_response.status
+    assert_equal 'Convenor', last_response_body['my_role']
+
+    put_json "/api/units/#{existing_unit.id}", { unit: { name: 'Changed name' } }
+    assert_equal 200, last_response.status
+
+    put_json "/api/units/#{new_unit.id}", { unit: { name: 'Changed name' } }
+    assert_equal 403, last_response.status
   end
 
   def test_permissions_on_get
@@ -261,8 +371,8 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
 
     assert last_response_body.map { |r| r['id'] }.include? test_unit_inside.id
-    refute last_response_body.map { |r| r['id'] }.include? test_unit_before.id
-    refute last_response_body.map { |r| r['id'] }.include? test_unit_after.id
+    assert_not last_response_body.map { |r| r['id'] }.include? test_unit_before.id
+    assert_not last_response_body.map { |r| r['id'] }.include? test_unit_after.id
 
     # Test convenor can not get all
     add_auth_header_for(user: aconvenor)
@@ -325,7 +435,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal actual_unit['start_date'].to_date, expected_unit.start_date.to_date
     assert_equal actual_unit['end_date'].to_date, expected_unit.end_date.to_date
 
-    keys = %w[code id name main_convenor_id description active auto_apply_extension_before_deadline send_notifications enable_sync_enrolments enable_sync_timetable draft_task_definition_id allow_student_extension_requests extension_weeks_on_resubmit_request allow_student_change_tutorial]
+    keys = %w[code id name main_convenor_id description active auto_apply_extension_before_deadline send_notifications generate_weekly_summaries enable_sync_enrolments enable_sync_timetable draft_task_definition_id allow_student_extension_requests extension_weeks_on_resubmit_request allow_student_change_tutorial]
 
     assert actual_unit.key?("my_role"), actual_unit.inspect
     assert_equal expected_unit.role_for(expected_unit.main_convenor_user).name, actual_unit["my_role"]
@@ -342,7 +452,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert actual_unit.key?("tutorials"), actual_unit.inspect
     # assert actual_unit.key?("tutorial_enrolments"), actual_unit.inspect
     assert actual_unit.key?("task_definitions"), actual_unit.inspect
-    #TODO: expand tests to check details returned
+    # TODO: expand tests to check details returned
 
     assert actual_unit.key?("staff"), actual_unit.inspect
     assert_equal expected_unit.staff.count, actual_unit["staff"].count, actual_unit["staff"].inspect
@@ -380,7 +490,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert actual_unit.key?("groups"), actual_unit.inspect
     assert_equal expected_unit.groups.count, actual_unit["groups"].count, actual_unit["groups"].inspect
     actual_unit["groups"].each do |group|
-      keys = %w(id name tutorial_id group_set_id student_count capacity_adjustment locked)
+      keys = %w[id name tutorial_id group_set_id student_count capacity_adjustment locked]
       assert_json_limit_keys_to_exactly keys, group
       assert_json_matches_model Group.find(group['id']), group, keys
     end
@@ -421,9 +531,8 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal 3, actual_unit['tutorial_streams'].count
   end
 
-  #Test GET for getting the unit details of current user
+  # Test GET for getting the unit details of current user
   def test_units_current
-
     # Add username and auth_token to Header
     add_auth_header_for(user: User.first)
 
@@ -431,20 +540,20 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
   end
 
-
-  #Test PUT for updating unit details with valid id
+  # Test PUT for updating unit details with valid id
   def test_units_put
     original = FactoryBot.create(:unit, with_students: false)
 
-    unit={}
+    unit = {}
     unit['name'] = 'Intro to python'
     unit['code'] = 'JRSW40004'
     unit['description'] = 'new language'
     unit['start_date'] = '2018-12-14T00:00:00.000Z'
-    unit['end_date']='2019-05-14T00:00:00.000Z'
+    unit['end_date'] = '2019-05-14T00:00:00.000Z'
     unit['active'] = false
     unit['auto_apply_extension_before_deadline'] = false
     unit['send_notifications'] = false
+    unit['generate_weekly_summaries'] = false
 
     data_to_put = {
       unit: unit
@@ -456,16 +565,71 @@ class UnitsApiTest < ActiveSupport::TestCase
     put_json "/api/units/#{original.id}", data_to_put
     assert_equal 200, last_response.status
 
-    assert_json_matches_model original.reload, unit, %w( name code description start_date end_date active auto_apply_extension_before_deadline send_notifications )
+    assert_json_matches_model original.reload, unit, %w[name code description start_date end_date active auto_apply_extension_before_deadline send_notifications generate_weekly_summaries]
   end
 
-  #Test PUT for updating unit details with empty name
+  def test_units_put_rejects_unsupported_name_and_code_characters
+    unit = FactoryBot.create(:unit, with_students: false, name: 'Original-Unit #1 (Core)', code: 'ABC1001-ABC1002')
+    add_auth_header_for(user: unit.main_convenor_user)
+
+    ['={', 'Unit+Name', 'Unit@Name'].each do |name|
+      put_json "/api/units/#{unit.id}", { unit: { name: name } }
+
+      assert_equal 400, last_response.status, last_response_body
+      assert_equal 'Original-Unit #1 (Core)', unit.reload.name
+    end
+
+    put_json "/api/units/#{unit.id}", { unit: { code: 'ABC1001-ABC1002=' } }
+
+    assert_equal 400, last_response.status, last_response_body
+    assert_equal 'ABC1001-ABC1002', unit.reload.code
+  end
+
+  def test_units_put_allows_hash_in_unit_code
+    unit = FactoryBot.create(:unit, with_students: false, code: 'ABC1001-ABC1002')
+    add_auth_header_for(user: unit.main_convenor_user)
+
+    put_json "/api/units/#{unit.id}", { unit: { code: 'ABC1001-ABC1002C#' } }
+
+    assert_equal 200, last_response.status, last_response_body
+    assert_equal 'ABC1001-ABC1002C#', unit.reload.code
+  end
+
+  def test_system_administrator_enrolled_as_student_can_update_unit
+    unit = FactoryBot.create(:unit, with_students: false)
+    administrator = FactoryBot.create(:user, :admin)
+    unit.enrol_student(administrator, Campus.first)
+
+    assert_equal Role.student, unit.role_for(administrator)
+
+    add_auth_header_for(user: administrator)
+    put_json "/api/units/#{unit.id}", { unit: { name: 'Updated by student administrator' } }
+
+    assert_equal 200, last_response.status, last_response_body
+    assert_equal 'Updated by student administrator', unit.reload.name
+  end
+
+  def test_system_administrator_employed_as_tutor_can_update_unit
+    unit = FactoryBot.create(:unit, with_students: false)
+    administrator = FactoryBot.create(:user, :admin)
+    unit.employ_staff(administrator, Role.tutor)
+
+    assert_equal Role.tutor, unit.role_for(administrator)
+
+    add_auth_header_for(user: administrator)
+    put_json "/api/units/#{unit.id}", { unit: { name: 'Updated by tutor administrator' } }
+
+    assert_equal 200, last_response.status, last_response_body
+    assert_equal 'Updated by tutor administrator', unit.reload.name
+  end
+
+  # Test PUT for updating unit details with empty name
   def test_put_update_unit_empty_name
     unit = Unit.first
     unit[:name] = ''
 
     data_to_put = {
-        unit: unit
+      unit: unit
     }
 
     # Add username and auth_token to Header
@@ -475,10 +639,10 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal 400, last_response.status
   end
 
-  #Test PUT for updating unit details with invalid id
+  # Test PUT for updating unit details with invalid id
   def test_put_update_unit_invalid_id
     data_to_put = {
-        unit: { name: 'test'}
+      unit: { name: 'test' }
     }
 
     # Add username and auth_token to Header
@@ -516,7 +680,7 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal 404, last_response.status
   end
 
-  def test_put_update_unit_custom_token()
+  def test_put_update_unit_custom_token
     unit = Unit.first
     token = 'abcdef'
     data_to_put = {
@@ -576,9 +740,9 @@ class UnitsApiTest < ActiveSupport::TestCase
 
   def test_draft_learning_summary_upload_requirements
     unit = FactoryBot.create :unit, student_count: 1, task_count: 0
-    task_def_code = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [{'key' => 'file0','name' => 'Code file','type' => 'code'}])
-    task_def_doc = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [{'key' => 'file0','name' => 'Draft learning summary','type' => 'document'}])
-    task_def_doc_code = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [{'key' => 'file0','name' => 'Draft learning summary','type' => 'document'}, {'key' => 'file1','name' => 'Code file','type' => 'code'}])
+    task_def_code = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [{ 'key' => 'file0', 'name' => 'Code file', 'type' => 'code' }])
+    task_def_doc = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [{ 'key' => 'file0', 'name' => 'Draft learning summary', 'type' => 'document' }])
+    task_def_doc_code = FactoryBot.create(:task_definition, unit: unit, upload_requirements: [{ 'key' => 'file0', 'name' => 'Draft learning summary', 'type' => 'document' }, { 'key' => 'file1', 'name' => 'Code file', 'type' => 'code' }])
 
     # Test with a task containing non document upload requirement
     data_to_put = {
@@ -621,5 +785,212 @@ class UnitsApiTest < ActiveSupport::TestCase
     assert_equal 200, last_response.status
     unit.reload
     assert_equal task_def_doc.id, unit.draft_task_definition_id
+  end
+
+  def test_get_task_completion_snapshots
+    unit = FactoryBot.create :unit, with_students: false, task_count: 1, stream_count: 0, tutorials: 1, campus_count: 1
+    tutorial = unit.tutorials.first
+    task_definition = unit.task_definitions_by_grade.first
+
+    older_snapshot = TaskCompletionSnapshot.create!(
+      unit: unit,
+      snapshot_timestamp: Time.zone.parse('2026-04-01 10:00:00').to_i.to_s
+    )
+
+    mid_snapshot = TaskCompletionSnapshot.create!(
+      unit: unit,
+      snapshot_timestamp: Time.zone.parse('2026-04-02 10:00:00').to_i.to_s
+    )
+
+    latest_snapshot = TaskCompletionSnapshot.create!(
+      unit: unit,
+      snapshot_timestamp: Time.zone.parse('2026-04-03 10:00:00').to_i.to_s
+    )
+
+    older_snapshot.store_stats!(build_task_completion_snapshot_csv(tutorial, task_definition, [TaskStatus.not_started.id]))
+    mid_snapshot.store_stats!(build_task_completion_snapshot_csv(tutorial, task_definition, [TaskStatus.complete.id, TaskStatus.complete.id]))
+    latest_snapshot.store_stats!(build_task_completion_snapshot_csv(tutorial, task_definition, [TaskStatus.complete.id, TaskStatus.complete.id, TaskStatus.complete.id]))
+    unit.refresh_task_completion_snapshot_stats!
+
+    add_auth_header_for(user: unit.main_convenor_user)
+    header 'Host', 'localhost'
+    get "/api/units/#{unit.id}/stats/task_completion_snapshots"
+
+    assert_equal 200, last_response.status, last_response.body
+    assert_equal 'gzip', last_response.headers['Content-Encoding']
+    body = JSON.parse(Zlib.gunzip(last_response.body))
+    assert_equal 3, body.length
+
+    assert_equal latest_snapshot.snapshot_date.to_s, body[0]['snapshot_date'].to_date.to_s
+    assert_equal mid_snapshot.snapshot_date.to_s, body[1]['snapshot_date'].to_date.to_s
+    assert_equal older_snapshot.snapshot_date.to_s, body[2]['snapshot_date'].to_date.to_s
+
+    assert_equal %w[campus_student_counts snapshot_date snapshot_timestamp status_population_stats student_count
+                    submitted_task_count_student_counts target_grade_campus_student_counts target_grade_student_counts],
+                 body[0].keys.sort
+    latest_population = body[0]['status_population_stats']['target_grades']['0'][tutorial.campus.name]
+    assert_equal 3, latest_population[tutorial.abbreviation][task_definition.abbreviation]['complete']
+    assert_equal 3, latest_population['__all__'][task_definition.abbreviation]['complete']
+    assert_equal 3, body[0]['student_count']
+    assert_equal 3, body[0]['campus_student_counts'][tutorial.campus.name]
+    assert_equal 3, body[0]['target_grade_student_counts']['0']
+    assert_equal 3, body[0]['target_grade_campus_student_counts']['0'][tutorial.campus.name]
+    submitted_key = unit.grade_values.map { |grade| grade == task_definition.target_grade ? 1 : 0 }.join(',')
+    assert_equal({ submitted_key => 3 }, body[0]['submitted_task_count_student_counts']['target_grades']['0'][tutorial.campus.name]['__all__'])
+  end
+
+  def test_get_task_completion_snapshots_queues_rebuild_when_snapshot_added
+    unit = FactoryBot.create :unit, with_students: false, task_count: 1, stream_count: 0, tutorials: 1, campus_count: 1
+    snapshot = TaskCompletionSnapshot.create!(unit: unit, snapshot_timestamp: 1.day.ago.to_i.to_s)
+    snapshot.store_stats!(build_task_completion_snapshot_csv(unit.tutorials.first, unit.task_definitions_by_grade.first, [TaskStatus.complete.id]))
+    unit.refresh_task_completion_snapshot_stats!
+    TaskCompletionSnapshot.create!(unit: unit, snapshot_timestamp: Time.zone.now.to_i.to_s)
+
+    add_auth_header_for(user: unit.main_convenor_user)
+    header 'Host', 'localhost'
+    get "/api/units/#{unit.id}/stats/task_completion_snapshots"
+
+    assert_equal 202, last_response.status, last_response.body
+  end
+
+  def test_refresh_task_completion_snapshot_stats_rebuilds_outdated_file
+    unit = FactoryBot.create :unit, with_students: false, task_count: 1, stream_count: 0, tutorials: 1, campus_count: 1
+    old_snapshot = TaskCompletionSnapshot.create!(unit: unit, snapshot_timestamp: 1.day.ago.to_i.to_s)
+    new_snapshot = TaskCompletionSnapshot.create!(unit: unit, snapshot_timestamp: Time.zone.now.to_i.to_s)
+    [old_snapshot, new_snapshot].each do |snapshot|
+      snapshot.store_stats!(build_task_completion_snapshot_csv(unit.tutorials.first, unit.task_definitions_by_grade.first, [TaskStatus.complete.id]))
+    end
+    path = FileHelper.unit_task_status_snapshot_stats_path(unit)
+    Zlib::GzipWriter.open(path) { |gz| gz.write(JSON.generate([{ 'snapshot_timestamp' => old_snapshot.snapshot_timestamp, 'stats' => {} }])) }
+    File.write(FileHelper.unit_task_status_snapshot_stats_meta_path(unit), JSON.generate({ 'version' => 1 }))
+
+    entries = unit.refresh_task_completion_snapshot_stats!(new_snapshot)
+
+    assert_equal 2, entries.length
+    assert(entries.none? { |entry| entry.key?('stats') })
+  end
+
+  def test_refresh_task_completion_snapshot_stats_rebuilds_file_for_other_grade_values
+    unit = FactoryBot.create :unit, with_students: false, task_count: 1, stream_count: 0, tutorials: 1, campus_count: 1
+    old_snapshot = TaskCompletionSnapshot.create!(unit: unit, snapshot_timestamp: 1.day.ago.to_i.to_s)
+    new_snapshot = TaskCompletionSnapshot.create!(unit: unit, snapshot_timestamp: Time.zone.now.to_i.to_s)
+    [old_snapshot, new_snapshot].each do |snapshot|
+      snapshot.store_stats!(build_task_completion_snapshot_csv(unit.tutorials.first, unit.task_definitions_by_grade.first, [TaskStatus.complete.id]))
+    end
+    path = FileHelper.unit_task_status_snapshot_stats_path(unit)
+    Zlib::GzipWriter.open(path) { |gz| gz.write(JSON.generate([{ 'snapshot_timestamp' => old_snapshot.snapshot_timestamp, 'stale' => true }])) }
+    meta = { 'version' => Unit::TASK_COMPLETION_SNAPSHOT_STATS_VERSION, 'grade_values' => [*unit.grade_values, 99] }
+    File.write(FileHelper.unit_task_status_snapshot_stats_meta_path(unit), JSON.generate(meta))
+
+    entries = unit.refresh_task_completion_snapshot_stats!(new_snapshot)
+
+    assert_equal 2, entries.length
+    assert(entries.none? { |entry| entry.key?('stale') })
+  end
+
+  def test_get_task_completion_snapshots_not_authorised
+    unit = FactoryBot.create :unit, with_students: false, task_count: 0
+    TaskCompletionSnapshot.create!(
+      unit: unit,
+      snapshot_timestamp: Time.zone.now.to_i.to_s
+    )
+
+    add_auth_header_for(user: User.where(role: Role.student).first)
+    header 'Host', 'localhost'
+    get "/api/units/#{unit.id}/stats/task_completion_snapshots"
+
+    assert_equal 403, last_response.status
+  end
+
+  def test_get_task_completion_snapshots_queues_rebuild_when_cache_missing
+    unit = FactoryBot.create :unit, with_students: false, task_count: 1, stream_count: 0, tutorials: 1, campus_count: 1
+    snapshot = TaskCompletionSnapshot.create!(unit: unit, snapshot_timestamp: Time.zone.now.to_i.to_s)
+    snapshot.store_stats!(build_task_completion_snapshot_csv(unit.tutorials.first, unit.task_definitions_by_grade.first, [TaskStatus.complete.id]))
+    path = FileHelper.unit_task_status_snapshot_stats_path(unit, create: false)
+    FileUtils.rm_f(path)
+
+    add_auth_header_for(user: unit.main_convenor_user)
+    header 'Host', 'localhost'
+    get "/api/units/#{unit.id}/stats/task_completion_snapshots"
+
+    assert_equal 202, last_response.status, last_response_body
+    assert_not_nil last_response_body['id']
+    assert_equal unit.id, RefreshTaskCompletionSnapshotStatsJob.jobs.last['args'].first
+    assert_not File.exist?(path)
+  end
+
+  def test_post_capture_task_completion_snapshot
+    Sidekiq::Testing.inline! do
+      unit = FactoryBot.create :unit
+
+      count_before = TaskCompletionSnapshot.where(unit: unit).count
+
+      add_auth_header_for(user: unit.main_convenor_user)
+      header 'Host', 'localhost'
+      post "/api/units/#{unit.id}/stats/task_completion_snapshots/capture"
+
+      assert_equal 201, last_response.status, last_response_body
+      assert_not_nil last_response_body['id']
+
+      snapshot = TaskCompletionSnapshot.where(unit: unit).order(snapshot_timestamp: :desc).first
+      assert_not_nil snapshot
+      assert_equal count_before + 1, TaskCompletionSnapshot.where(unit: unit).count
+
+      assert_equal Date.current.to_s, snapshot.snapshot_date.to_s
+      assert_not_empty snapshot.load_stats
+      assert File.exist?(snapshot.snapshot_file_path)
+    ensure
+      Sidekiq::Testing.fake!
+    end
+  end
+
+  def test_post_capture_task_completion_snapshot_not_authorised
+    unit = FactoryBot.create :unit, with_students: false, task_count: 0
+
+    add_auth_header_for(user: User.where(role: Role.student).first)
+    header 'Host', 'localhost'
+    post "/api/units/#{unit.id}/stats/task_completion_snapshots/capture"
+
+    assert_equal 403, last_response.status
+  end
+
+  private
+
+  def build_task_completion_snapshot_csv(tutorial, task_definition, statuses)
+    headers = [
+      'Student ID',
+      'Username',
+      'Student Name',
+      'Campus',
+      'Target Grade',
+      'Email',
+      'Portfolio',
+      'Grade',
+      'Rationale',
+      'Assessor',
+      'Tutorial',
+      task_definition.abbreviation
+    ]
+
+    CSV.generate do |csv|
+      csv << headers
+
+      statuses.each_with_index do |status, index|
+        csv << [
+          (index + 1).to_s,
+          "student-#{index + 1}",
+          "Student #{index + 1}",
+          tutorial.campus.abbreviation,
+          tutorial.unit.grade_label(0),
+          "student-#{index + 1}@example.com",
+          'false',
+          '',
+          '',
+          '',
+          tutorial.abbreviation,
+          status
+        ]
+      end
+    end
   end
 end

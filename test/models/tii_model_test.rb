@@ -10,42 +10,42 @@ class TiiModelTest < ActiveSupport::TestCase
     skip "TurnItIn Integration Tests Skipped" unless TurnItIn.enabled?
     clear_tii_eula
 
-    refute Rails.cache.fetch('tii.eula_version').present?
+    assert_not Rails.cache.fetch('tii.eula_version').present?
 
     eula_response = TCAClient::EulaVersion.new(
       version: "v1beta",
       valid_from: "2018-04-30T17:00:00Z",
       valid_until: nil,
       url: "https://static.turnitin.com/eula/v1beta/fr-fr/eula.html",
-      available_languages: [
-          "sv-SE",
-          "zh-CN",
-          "ja-JP",
-          "ko-KR",
-          "es-MX",
-          "nl-NL",
-          "ru-RU",
-          "zh-TW",
-          "ar-SA",
-          "pt-BR",
-          "de-DE",
-          "el-GR",
-          "nb-NO",
-          "cs-CZ",
-          "da-DK",
-          "tr-TR",
-          "pl-PL",
-          "fi-FI",
-          "it-IT",
-          "bl-AH",
-          "vi-VN",
-          "fr-FR",
-          "en-US",
-          "ro-RO"
+      available_languages: %w[
+        sv-SE
+        zh-CN
+        ja-JP
+        ko-KR
+        es-MX
+        nl-NL
+        ru-RU
+        zh-TW
+        ar-SA
+        pt-BR
+        de-DE
+        el-GR
+        nb-NO
+        cs-CZ
+        da-DK
+        tr-TR
+        pl-PL
+        fi-FI
+        it-IT
+        bl-AH
+        vi-VN
+        fr-FR
+        en-US
+        ro-RO
       ]
     ).to_hash.to_json
 
-    eula_page = '''
+    eula_page = '
 <!DOCTYPE html>
 <html>
     <head>
@@ -56,19 +56,19 @@ class TiiModelTest < ActiveSupport::TestCase
             <p>This is an end-user license agreement.</p>
         </div>
     </body>
-</html>'''
+</html>'
 
-    eula_version_stub = stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/eula/latest").
-    with(tii_headers).
-    to_return(
-      body: eula_response,
-      status: 200,
-      headers: {
-        'Content-Type' => 'application/json'
-      }
-    )
+    eula_version_stub = stub_request(:get, "https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/eula/latest")
+                        .with(tii_headers)
+                        .to_return(
+                          body: eula_response,
+                          status: 200,
+                          headers: {
+                            'Content-Type' => 'application/json'
+                          }
+                        )
 
-    eula_page_stub = stub_request(:get, /https:\/\/#{ENV['TCA_HOST']}\/api\/v1\/eula\/v1beta\/view/).to_return(body: eula_page, status: 200)
+    eula_page_stub = stub_request(:get, %r{https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/eula/v1beta/view}).to_return(body: eula_page, status: 200)
 
     assert_equal 'v1beta', TurnItIn.eula_version
     assert_equal eula_page, TurnItIn.eula_html
@@ -88,15 +88,15 @@ class TiiModelTest < ActiveSupport::TestCase
     skip "TurnItIn Integration Tests Skipped" unless TurnItIn.enabled?
     clear_tii_eula
 
-    eula_version_stub = stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/eula/latest").
-    with(tii_headers).
-    to_return(
-      body: 'An unexpected error was encountered',
-      status: 500,
-      headers: {
-        'Content-Type' => 'application/json'
-      }
-    )
+    eula_version_stub = stub_request(:get, "https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/eula/latest")
+                        .with(tii_headers)
+                        .to_return(
+                          body: 'An unexpected error was encountered',
+                          status: 500,
+                          headers: {
+                            'Content-Type' => 'application/json'
+                          }
+                        )
 
     assert_nil TurnItIn.eula_version
 
@@ -149,15 +149,15 @@ class TiiModelTest < ActiveSupport::TestCase
       ]
   }'
 
-    feature_stub = stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/features-enabled").
-    with(tii_headers).
-    to_return(
-      status: 200,
-      body: body,
-      headers: {
-        'Content-Type' => 'application/json'
-      }
-    )
+    feature_stub = stub_request(:get, "https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/features-enabled")
+                   .with(tii_headers)
+                   .to_return(
+                     status: 200,
+                     body: body,
+                     headers: {
+                       'Content-Type' => 'application/json'
+                     }
+                   )
 
     # Eula not required if not read
     assert TiiActionFetchFeaturesEnabled.eula_required?
@@ -214,9 +214,9 @@ class TiiModelTest < ActiveSupport::TestCase
     ]
 
     # Stub requests to create the group
-    grp_put_stub = stub_request(:put, %r[https://#{ENV['TCA_HOST']}/api/v1/groups.*]).
-    with(tii_headers).
-    to_return(status: 200, body: "", headers: {})
+    grp_put_stub = stub_request(:put, %r{https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/groups.*})
+                   .with(tii_headers)
+                   .to_return(status: 200, body: "", headers: {})
 
     # Saving task def will trigger TII group creation
     task_definition.save!
@@ -232,10 +232,10 @@ class TiiModelTest < ActiveSupport::TestCase
     assert_equal 4, task_definition.number_of_documents
 
     assert task_definition.use_tii?(0)
-    refute task_definition.use_tii?(1)
-    refute task_definition.use_tii?(2)
+    assert_not task_definition.use_tii?(1)
+    assert_not task_definition.use_tii?(2)
     assert task_definition.use_tii?(3)
-    refute task_definition.use_tii?(4)
+    assert_not task_definition.use_tii?(4)
 
     pre_id = task_definition.tii_group_id
     # Change the due date of the task and check update
@@ -247,19 +247,19 @@ class TiiModelTest < ActiveSupport::TestCase
     assert_equal pre_id, task_definition.reload.tii_group_id
 
     # Adding task resources will trigger creation and upload of the group attachments
-    post_grp_attachment_stub = stub_request(:post, "https://#{ENV['TCA_HOST']}/api/v1/groups/#{task_definition.tii_group_id}/attachments").
-      with(tii_headers).
-      with(body: "{\"title\":\"TestWordDoc.docx\",\"template\":false}").
-      to_return(status: 200, body: TCAClient::AddGroupAttachmentResponse.new(id: SecureRandom.uuid).to_json, headers: {})
+    post_grp_attachment_stub = stub_request(:post, "https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/groups/#{task_definition.tii_group_id}/attachments")
+                               .with(tii_headers)
+                               .with(body: "{\"title\":\"TestWordDoc.docx\",\"template\":false}")
+                               .to_return(status: 200, body: TCAClient::AddGroupAttachmentResponse.new(id: SecureRandom.uuid).to_json, headers: {})
 
-    upload_stub = stub_request(:put, %r[https://#{ENV['TCA_HOST']}/api/v1/groups/#{task_definition.tii_group_id}/attachments/.*/original]).
-      with(tii_headers).
-      with(headers: {'Content-Type'=>'binary/octet-stream'}).
-      to_return(status: 200, body: '{ "message": "Successfully uploaded file for attachment ..." }', headers: {})
+    upload_stub = stub_request(:put, %r{https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/groups/#{task_definition.tii_group_id}/attachments/.*/original})
+                  .with(tii_headers)
+                  .with(headers: { 'Content-Type' => 'binary/octet-stream' })
+                  .to_return(status: 200, body: '{ "message": "Successfully uploaded file for attachment ..." }', headers: {})
 
-    delete_stub = stub_request(:delete, %r[https://#{ENV['TCA_HOST']}/api/v1/groups/#{task_definition.tii_group_id}/attachments/.*]).
-      with(tii_headers).
-      to_return(status: 200, body: "", headers: {})
+    delete_stub = stub_request(:delete, %r{https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/groups/#{task_definition.tii_group_id}/attachments/.*})
+                  .with(tii_headers)
+                  .to_return(status: 200, body: "", headers: {})
 
     # Lets add task resources + template
     task_definition.add_task_resources(test_file_path('TestWordDoc.docx.zip'), copy: true)
@@ -309,40 +309,40 @@ class TiiModelTest < ActiveSupport::TestCase
         type: 'document',
         filename: 'file4.pdf',
         "tempfile" => File.new(test_file_path('submissions/1.2P.pdf'))
-      },
+      }
 
     ], nil, nil, 'ready_for_feedback', nil, accepted_tii_eula: true
 
     # Check that the submission is going to be progressed
     assert_equal 1, AcceptSubmissionJob.jobs.count
-    refute File.exist?(task.final_pdf_path)
+    assert_not File.exist?(task.final_pdf_path)
     assert File.directory?(FileHelper.student_work_dir(:new, task, false))
 
     # Check accept submission job
     response1 = TCAClient::SimpleSubmissionResponse.new id: '1222'
     response2 = TCAClient::SimpleSubmissionResponse.new id: '1223'
 
-    submission_request = stub_request(:post, "https://#{ENV['TCA_HOST']}/api/v1/submissions").
-    with(tii_headers).
-    to_return(
-      {status: 200, body: response1.to_json, headers: {}},
-      {status: 200, body: response2.to_json, headers: {}},
-    )
+    submission_request = stub_request(:post, "https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/submissions")
+                         .with(tii_headers)
+                         .to_return(
+                           { status: 200, body: response1.to_json, headers: {} },
+                           { status: 200, body: response2.to_json, headers: {} }
+                         )
 
-    file1_upload_req = stub_request(:put, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1223/original").
-      with {|request| request.body.starts_with?('%PDF-') }.
-      to_return(status: 200, body: "", headers: {})
+    file1_upload_req = stub_request(:put, "https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/submissions/1223/original")
+                       .with { |request| request.body.starts_with?('%PDF-') }
+                       .to_return(status: 200, body: "", headers: {})
 
-    file2_upload_req = stub_request(:put, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1222/original").
-      with {|request| request.body.starts_with?('%PDF-') }.
-      to_return(status: 200, body: "", headers: {})
+    file2_upload_req = stub_request(:put, "https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/submissions/1222/original")
+                       .with { |request| request.body.starts_with?('%PDF-') }
+                       .to_return(status: 200, body: "", headers: {})
 
     # Run the accept submission job - and check it all worked
     AcceptSubmissionJob.drain
 
     assert File.exist?(task.final_pdf_path)
 
-    refute File.directory?(FileHelper.student_work_dir(:new, task, false))
+    assert_not File.directory?(FileHelper.student_work_dir(:new, task, false))
     assert File.exist?(task.zip_file_path_for_done_task)
 
     assert_requested submission_request, times: 2
@@ -364,23 +364,23 @@ class TiiModelTest < ActiveSupport::TestCase
     assert_equal :uploaded, subm.status_sym
 
     # task destroy will trigger delete of submission
-    delete_request = stub_request(:delete, /https:\/\/#{ENV['TCA_HOST']}\/api\/v1\/submissions\/\d+/).
-      with(tii_headers).
-      to_return(status: 200, body: "", headers: {})
+    delete_request = stub_request(:delete, %r{https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/submissions/\d+})
+                     .with(tii_headers)
+                     .to_return(status: 200, body: "", headers: {})
 
     # and delete of attachments
-    delete_Attachment_request = stub_request(:delete, %r[https://localhost/api/v1/groups/1/attachments/.*]).
-      with(tii_headers).
-      to_return(status: 200, body: "", headers: {})
+    delete_Attachment_request = stub_request(:delete, %r{https://localhost/api/v1/groups/1/attachments/.*})
+                                .with(tii_headers)
+                                .to_return(status: 200, body: "", headers: {})
 
     # Now trigger next step - processing to complete
     # Processing will not progress to next step
-    subm_status_req = stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1223").
-      with(tii_headers).
-      to_return(
-        {status: 200, body: TCAClient::Submission.new(status: 'PROCESSING').to_hash.to_json(), headers: {}},
-        {status: 200, body: TCAClient::Submission.new(status: 'COMPLETE').to_hash.to_json(), headers: {}},
-      )
+    subm_status_req = stub_request(:get, "https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/submissions/1223")
+                      .with(tii_headers)
+                      .to_return(
+                        { status: 200, body: TCAClient::Submission.new(status: 'PROCESSING').to_hash.to_json, headers: {} },
+                        { status: 200, body: TCAClient::Submission.new(status: 'COMPLETE').to_hash.to_json, headers: {} }
+                      )
 
     # Now run for "still processing"
     subm_act.perform
@@ -390,43 +390,43 @@ class TiiModelTest < ActiveSupport::TestCase
     assert_equal 1, subm_act.reload.retries
 
     # Now run for processing complete
-    similarity_request = stub_request(:put, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1223/similarity").
-    with(tii_headers).
-    with(
-      body: "{\"indexing_settings\":{\"add_to_index\":false},\"generation_settings\":{\"search_repositories\":[\"INTERNET\",\"SUBMITTED_WORK\",\"PUBLICATION\",\"CROSSREF\",\"CROSSREF_POSTED_CONTENT\"],\"auto_exclude_self_matching_scope\":\"GROUP_CONTEXT\",\"priority\":\"LOW\"}}",
-    ).
-    to_return(status: 200, body: "", headers: {})
+    similarity_request = stub_request(:put, "https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/submissions/1223/similarity")
+                         .with(tii_headers)
+                         .with(
+                           body: "{\"indexing_settings\":{\"add_to_index\":false},\"generation_settings\":{\"search_repositories\":[\"INTERNET\",\"SUBMITTED_WORK\",\"PUBLICATION\",\"CROSSREF\",\"CROSSREF_POSTED_CONTENT\"],\"auto_exclude_self_matching_scope\":\"GROUP_CONTEXT\",\"priority\":\"LOW\"}}"
+                         )
+                         .to_return(status: 200, body: "", headers: {})
 
     subm_act.perform
 
     assert_requested subm_status_req, times: 2
     assert_equal :similarity_report_requested, subm.reload.status_sym
     assert_equal 0, subm_act.reload.retries
-    refute subm.reload.tii_task_similarity.present?
+    assert_not subm.reload.tii_task_similarity.present?
 
     # Now check the status of the similarity report
     # response = TCAClient::SimilarityMetadata.new(
     #   status: 'PROCESSING'
     # )
 
-    stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1223/similarity").
-    with(tii_headers).
-    to_return(
-      { status: 200, body: TCAClient::SimilarityMetadata.new(status: 'PROCESSING').to_hash.to_json, headers: {}},
-      { status: 200, body: TCAClient::SimilarityMetadata.new(status: 'COMPLETE', overall_match_percentage: 50).to_hash.to_json, headers: {}}
-    )
+    stub_request(:get, "https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/submissions/1223/similarity")
+      .with(tii_headers)
+      .to_return(
+        { status: 200, body: TCAClient::SimilarityMetadata.new(status: 'PROCESSING').to_hash.to_json, headers: {} },
+        { status: 200, body: TCAClient::SimilarityMetadata.new(status: 'COMPLETE', overall_match_percentage: 50).to_hash.to_json, headers: {} }
+      )
 
     subm_act.perform
     assert_equal :similarity_report_requested, subm.reload.status_sym
 
     # Next call will request to download PDF as complete...
-    similarity_pdf_request = stub_request(:post, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1223/similarity/pdf").
-      with(tii_headers).
-      with(body: "{\"locale\":\"en-US\"}").
-      to_return(
-        {status: 500, body: 'error', headers: {}},
-        {status: 200, body: TCAClient::RequestPdfResponse.new(id: '9876').to_hash.to_json, headers: {}}
-      )
+    similarity_pdf_request = stub_request(:post, "https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/submissions/1223/similarity/pdf")
+                             .with(tii_headers)
+                             .with(body: "{\"locale\":\"en-US\"}")
+                             .to_return(
+                               { status: 500, body: 'error', headers: {} },
+                               { status: 200, body: TCAClient::RequestPdfResponse.new(id: '9876').to_hash.to_json, headers: {} }
+                             )
 
     # Check we got the submission details
     subm_act.perform
@@ -444,18 +444,19 @@ class TiiModelTest < ActiveSupport::TestCase
 
     # Get the PDF - after asking for status
 
-    pdf_status_request = stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1223/similarity/pdf/9876/status").
-      with(tii_headers).
-      to_return(
-        {status: 200, body: TCAClient::PdfStatusResponse.new(status: 'PENDING').to_hash.to_json, headers: {}},
-        {status: 200, body: TCAClient::PdfStatusResponse.new(status: 'SUCCESS').to_hash.to_json, headers: {}})
+    pdf_status_request = stub_request(:get, "https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/submissions/1223/similarity/pdf/9876/status")
+                         .with(tii_headers)
+                         .to_return(
+                           { status: 200, body: TCAClient::PdfStatusResponse.new(status: 'PENDING').to_hash.to_json, headers: {} },
+                           { status: 200, body: TCAClient::PdfStatusResponse.new(status: 'SUCCESS').to_hash.to_json, headers: {} }
+                         )
 
     subm_act.perform
     assert_equal :similarity_pdf_requested, subm.reload.status_sym
 
-    download_pdf_request = stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1223/similarity/pdf/9876").
-      with(tii_headers).
-      to_return(status: 200, body: File.read(test_file_path('NotAPdf.pdf')), headers: {})
+    download_pdf_request = stub_request(:get, "https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/submissions/1223/similarity/pdf/9876")
+                           .with(tii_headers)
+                           .to_return(status: 200, body: File.read(test_file_path('NotAPdf.pdf')), headers: {})
 
     subm_act.perform
     assert_equal :similarity_pdf_downloaded, subm.reload.status_sym
@@ -463,10 +464,9 @@ class TiiModelTest < ActiveSupport::TestCase
     assert File.exist?(subm.similarity_pdf_path)
 
     # Get the viewer url
-    viewer_url_request = stub_request(:post, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1223/viewer-url").
-      with(tii_headers).
-      to_return(status: 200, body: TCAClient::SimilarityViewerUrlResponse.new(viewer_url: 'https://viewer.url').to_hash.to_json, headers: {}
-    )
+    viewer_url_request = stub_request(:post, "https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/submissions/1223/viewer-url")
+                         .with(tii_headers)
+                         .to_return(status: 200, body: TCAClient::SimilarityViewerUrlResponse.new(viewer_url: 'https://viewer.url').to_hash.to_json, headers: {})
 
     viewer_act = subm.create_viewer_url(subm.task.tutor)
 
@@ -475,23 +475,23 @@ class TiiModelTest < ActiveSupport::TestCase
 
     # Now for submission 1
     # Stub ssubmission 1 as well
-    subm_status_req = stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1222").
-      with(tii_headers).
-      to_return(
-        {status: 200, body: TCAClient::Submission.new(status: 'COMPLETE').to_hash.to_json(), headers: {}},
-      )
+    subm_status_req = stub_request(:get, "https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/submissions/1222")
+                      .with(tii_headers)
+                      .to_return(
+                        { status: 200, body: TCAClient::Submission.new(status: 'COMPLETE').to_hash.to_json, headers: {} }
+                      )
 
-    similarity_request = stub_request(:put, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1222/similarity").
-      with(tii_headers).
-      with(
-        body: "{\"indexing_settings\":{\"add_to_index\":false},\"generation_settings\":{\"search_repositories\":[\"INTERNET\",\"SUBMITTED_WORK\",\"PUBLICATION\",\"CROSSREF\",\"CROSSREF_POSTED_CONTENT\"],\"auto_exclude_self_matching_scope\":\"GROUP_CONTEXT\",\"priority\":\"LOW\"}}",
-      ).
-      to_return(status: 200, body: "", headers: {})
+    similarity_request = stub_request(:put, "https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/submissions/1222/similarity")
+                         .with(tii_headers)
+                         .with(
+                           body: "{\"indexing_settings\":{\"add_to_index\":false},\"generation_settings\":{\"search_repositories\":[\"INTERNET\",\"SUBMITTED_WORK\",\"PUBLICATION\",\"CROSSREF\",\"CROSSREF_POSTED_CONTENT\"],\"auto_exclude_self_matching_scope\":\"GROUP_CONTEXT\",\"priority\":\"LOW\"}}"
+                         )
+                         .to_return(status: 200, body: "", headers: {})
 
-    stub_request(:get, "https://#{ENV['TCA_HOST']}/api/v1/submissions/1222/similarity").
-      with(tii_headers).
-      to_return(
-        { status: 200, body: TCAClient::SimilarityMetadata.new(status: 'COMPLETE', overall_match_percentage: 5).to_hash.to_json, headers: {}}
+    stub_request(:get, "https://#{ENV.fetch('TCA_HOST', nil)}/api/v1/submissions/1222/similarity")
+      .with(tii_headers)
+      .to_return(
+        { status: 200, body: TCAClient::SimilarityMetadata.new(status: 'COMPLETE', overall_match_percentage: 5).to_hash.to_json, headers: {} }
       )
 
     subm1_act.perform
