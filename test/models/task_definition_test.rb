@@ -26,7 +26,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
   def test_similarity_language_accepts_supported_languages_and_rejects_commands
     task_definition = FactoryBot.create(:unit, task_count: 1).task_definitions.first
 
-    [nil, 'java', 'python3'].each do |language|
+    [nil, 'java', 'python3', 'ipynb'].each do |language|
       task_definition.similarity_language = language
       task_definition.validate
       assert_empty task_definition.errors[:similarity_language]
@@ -47,6 +47,43 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     assert_raises(ArgumentError) do
       unit.send(:run_jplag_on_done_files, task_definition, Rails.root.join('tmp/jplag/invalid-language-test'), [], '/tmp/report.jplag')
+    end
+  end
+
+  def test_jplag_converts_nested_notebooks_in_one_isolated_container
+    unit = FactoryBot.create(:unit, task_count: 0)
+
+    Dir.mktmpdir('jplag-notebooks') do |root|
+      work_dir = File.join(root, 'work')
+      notebooks = %w[base/starter.ipynb submissions/student/first.ipynb submissions/student/second.ipynb].map do |name|
+        path = File.join(work_dir, name)
+        FileUtils.mkdir_p(File.dirname(path))
+        File.write(path, '{}')
+        path
+      end
+
+      status = Object.new
+      def status.success?
+        true
+      end
+
+      config = Doubtfire::Application.config
+      config.stub(:jplag_notebook_converter_image, 'converter-image') do
+        config.stub(:jplag_workdir_volume_mount, '/host/jplag') do
+          Open3.stub(:capture2e, lambda { |*command|
+            mount_index = command.index('--mount')
+            assert_equal 'type=bind,src=/host/jplag/work,dst=/work', command[mount_index + 1]
+            assert_includes command, 'none'
+            assert_includes command.last, "rglob('*.ipynb')"
+            notebooks.each { |path| File.write(path.sub(/\.ipynb\z/, '.py'), 'print(1)') }
+            ['', status]
+          }) do
+            unit.send(:convert_jplag_notebooks, work_dir)
+          end
+        end
+      end
+
+      assert(notebooks.all? { |path| File.file?(path.sub(/\.ipynb\z/, '.py')) })
     end
   end
 

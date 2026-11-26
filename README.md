@@ -167,20 +167,26 @@ for `DF_SECRET_KEY_BASE`, `DF_SECRET_KEY_ATTR`, `DF_SECRET_KEY_DEVISE`,
 
 ### Integrations and background services
 
-| Variable                         | Purpose                                                         | Default |
-| -------------------------------- | --------------------------------------------------------------- | ------- |
-| `TII_ENABLED`                    | Enable Turnitin integration.                                    | `false` |
-| `TII_INDEX_SUBMISSIONS`          | Index submissions in Turnitin.                                  | `false` |
-| `TII_REGISTER_WEBHOOK`           | Register the Turnitin webhook.                                  | `false` |
-| `TCA_API_KEY`                    | Turnitin Core API key.                                          | Unset   |
-| `TCA_HOST`                       | Turnitin institution host.                                      | Unset   |
-| `DF_JPLAG_MIN_TOKENS`            | Minimum matching-token threshold used by JPlag.                 | `-1`    |
-| `DF_JPLAG_SKIP_CLUSTER_CHECK`    | Skip JPlag cluster calculation.                                 | `false` |
-| `DF_JPLAG_MAX_SHOWN_COMPARISONS` | Maximum comparisons retained in a JPlag report; `-1` means all. | `2500`  |
-| `LTI_ENABLED`                    | Enable LTI routes and authentication.                           | `false` |
-| `LTI_SHARED_API_SECRET`          | Shared secret between the Rails and LTI APIs.                   | Unset   |
-| `DF_ENFORCE_LOGIN_ID_MATCH`      | Refuse accounts that already belong to a different login id.    | `false` |
-| `MODERATION_SCORE_FACTOR`        | Multiplier applied to moderation score changes.                 | `1.0`   |
+| Variable                            | Purpose                                                                                         | Default |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------- | ------- |
+| `TII_ENABLED`                       | Enable Turnitin integration.                                                                    | `false` |
+| `TII_INDEX_SUBMISSIONS`             | Index submissions in Turnitin.                                                                  | `false` |
+| `TII_REGISTER_WEBHOOK`              | Register the Turnitin webhook.                                                                  | `false` |
+| `TCA_API_KEY`                       | Turnitin Core API key.                                                                          | Unset   |
+| `TCA_HOST`                          | Turnitin institution host.                                                                      | Unset   |
+| `DF_JPLAG_MIN_TOKENS`               | Minimum matching-token threshold used by JPlag.                                                 | `-1`    |
+| `DF_JPLAG_SKIP_CLUSTER_CHECK`       | Skip JPlag cluster calculation.                                                                 | `false` |
+| `DF_JPLAG_MAX_SHOWN_COMPARISONS`    | Maximum comparisons retained in a JPlag report; `-1` means all.                                 | `2500`  |
+| `DF_JPLAG_NOTEBOOK_CONVERTER_IMAGE` | Locally pulled Jupyter image used for notebook conversion.                                      | Unset   |
+| `DF_JPLAG_WORKDIR_VOLUME_MOUNT`     | Absolute host path for the JPlag work directory, mounted one task at a time into the converter. | Unset   |
+
+Select **Python (Jupyter Notebook)** for tasks that submit `.ipynb` files. On the Docker host, build or pull the image named by `DF_JPLAG_NOTEBOOK_CONVERTER_IMAGE` before running a check. In production, set `DF_JPLAG_WORKDIR_VOLUME_MOUNT` in the Compose `.env` to the absolute path mounted at `/doubtfire/tmp/jplag` in `pdfgen` and `/tmp/jplag` in `jplag`. The converter mounts only the current task's subdirectory, writes a `.py` file beside each notebook (including nested notebooks and base code), and exits before JPlag starts. The task work directory is removed after the check.
+
+The minimal converter image can be built locally with `docker build -f jplag-notebook-converter.Dockerfile -t doubtfire-jplag-notebook-converter:local .` from this directory. Set `DF_JPLAG_NOTEBOOK_CONVERTER_IMAGE=doubtfire-jplag-notebook-converter:local` in the API environment. CI builds the same Dockerfile under a local development tag.
+| `LTI_ENABLED` | Enable LTI routes and authentication. | `false` |
+| `LTI_SHARED_API_SECRET` | Shared secret between the Rails and LTI APIs. | Unset |
+| `DF_ENFORCE_LOGIN_ID_MATCH` | Refuse accounts that already belong to a different login id. | `false` |
+| `MODERATION_SCORE_FACTOR` | Multiplier applied to moderation score changes. | `1.0` |
 
 ### Overseer and container access
 

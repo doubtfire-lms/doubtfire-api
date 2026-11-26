@@ -286,6 +286,9 @@ module UnitSimilarityModule
       end
     end
 
+    convert_jplag_notebooks(tasks_dir) if file_lang == 'ipynb'
+    jplag_language = file_lang == 'ipynb' ? 'python3' : file_lang
+
     logger.info "Starting JPLAG container to run on #{tasks_dir}"
     root_dir = Rails.root.to_s
     tasks_dir_split = tasks_dir.to_s.split(root_dir)[1]
@@ -309,7 +312,7 @@ module UnitSimilarityModule
     ]
     docker_command << "--base-code=#{tasks_dir_split}/base" if use_base_code
     docker_command += [
-      '-l', file_lang,
+      '-l', jplag_language,
       "--similarity-threshold=#{similarity_threshold}",
       "--shown-comparisons=#{max_shown_comparisons}"
     ]
@@ -341,6 +344,41 @@ module UnitSimilarityModule
     # Remove extracted student files even when JPlag fails.
     logger.info "Deleting files in: #{tasks_dir}"
     FileUtils.rm_rf(tasks_dir)
+  end
+
+  def convert_jplag_notebooks(tasks_dir)
+    notebooks = %w[base submissions].flat_map do |directory|
+      Dir.glob(File.join(tasks_dir, directory, '**', '*.ipynb'))
+    end
+    raise 'No Jupyter notebooks were extracted for JPlag' if notebooks.empty?
+
+    config = Doubtfire::Application.config
+    image = config.jplag_notebook_converter_image
+    mount = config.jplag_workdir_volume_mount
+    raise 'Set DF_JPLAG_NOTEBOOK_CONVERTER_IMAGE for JPlag notebook conversion' if image.blank?
+    raise 'Set DF_JPLAG_WORKDIR_VOLUME_MOUNT to the host JPlag work directory' if mount.blank? || !Pathname.new(mount).absolute?
+
+    host_work_dir = File.join(mount, File.basename(tasks_dir.to_s))
+    script = <<~PYTHON
+      from pathlib import Path
+      import subprocess
+
+      for notebook in sorted(Path('/work').rglob('*.ipynb')):
+          subprocess.run(['jupyter', 'nbconvert', '--to', 'script',
+                          '--output-dir', str(notebook.parent), str(notebook)], check=True)
+    PYTHON
+    command = [
+      'docker', 'run', '--rm', '--pull', 'never',
+      '--network', 'none', '--cpus', '1',
+      '--user', "#{Process.uid}:#{Process.gid}",
+      '--mount', "type=bind,src=#{host_work_dir},dst=/work",
+      '--entrypoint', 'python3', image, '-c', script
+    ]
+    output, status = Open3.capture2e(*command)
+    raise "Failed to convert Jupyter notebooks (#{status}): #{output.last(2000)}" unless status.success?
+
+    missing = notebooks.reject { |notebook| File.file?(notebook.sub(/\.ipynb\z/, '.py')) }
+    raise "Jupyter conversion did not produce Python files for: #{missing.join(', ')}" if missing.any?
   end
 
   def safe_jplag_base_path!(entry, root)

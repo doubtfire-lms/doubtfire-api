@@ -33,6 +33,8 @@ env:
   LATEX_BUILD_PATH: /texlive/shell/latex_build.sh
   GOTENBERG_IMAGE: doubtfire-gotenberg-development:local
   GOTENBERG_FALLBACK_VOLUME_CONTAINER: doubtfire-gotenberg-volumes
+  DF_JPLAG_NOTEBOOK_CONVERTER_IMAGE: doubtfire-jplag-notebook-converter-development:local
+  DF_JPLAG_WORKDIR_VOLUME_MOUNT: ${{ github.workspace }}/tmp/jplag
   LTI_SHARED_API_SECRET: "3e46c34bd730233ac1d503059f3aa92ef5e2dc15614f5cc9ba6bb2a9196476a9"
   LTI_ENABLED: true
   DF_INITIAL_ADMIN_PASSWORD: "password"
@@ -88,6 +90,16 @@ jobs:
           tags: doubtfire-jplag-development:local
           cache-from: type=gha,scope=jplag
           cache-to: type=gha,mode=max,scope=jplag
+      - name: Build JPlag notebook converter image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: jplag-notebook-converter.Dockerfile
+          push: false
+          load: true
+          tags: ${{ env.DF_JPLAG_NOTEBOOK_CONVERTER_IMAGE }}
+          cache-from: type=gha,scope=jplag-notebook-converter
+          cache-to: type=gha,mode=max,scope=jplag-notebook-converter
       - name: Build base doubtfire-api development image
         uses: docker/build-push-action@v5
         with:
@@ -177,6 +189,8 @@ jobs:
             -e LATEX_BUILD_PATH
             -e GOTENBERG_IMAGE
             -e GOTENBERG_FALLBACK_VOLUME_CONTAINER
+            -e DF_JPLAG_NOTEBOOK_CONVERTER_IMAGE
+            -e DF_JPLAG_WORKDIR_VOLUME_MOUNT
             -e LTI_SHARED_API_SECRET
             -e LTI_ENABLED
             -e DF_INITIAL_ADMIN_PASSWORD
@@ -211,6 +225,8 @@ jobs:
             -e LATEX_BUILD_PATH
             -e GOTENBERG_IMAGE
             -e GOTENBERG_FALLBACK_VOLUME_CONTAINER
+            -e DF_JPLAG_NOTEBOOK_CONVERTER_IMAGE
+            -e DF_JPLAG_WORKDIR_VOLUME_MOUNT
             -e LTI_SHARED_API_SECRET
             -e LTI_ENABLED
           run: TERM=xterm bundle exec rails test
