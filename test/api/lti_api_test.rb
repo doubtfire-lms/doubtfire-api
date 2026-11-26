@@ -422,7 +422,7 @@ class LtiApiTest < ActiveSupport::TestCase
       post '/api/lti/enrol', { ltik: lti_token('enrol', unit_id: unit.id, email: observer.email, member: member) }
     end
 
-    assert_equal 204, last_response.status, last_response_body
+    assert_equal 204, last_response.status, last_response.body
     assert_nil unit.unit_role_for(observer)
   end
 
