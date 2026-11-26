@@ -355,17 +355,20 @@ module UnitSimilarityModule
     raise 'No Jupyter notebooks could be converted for JPlag' if converted.zero?
   end
 
-  # Keep code cells only; magics and shell lines would not parse as Python
+  # Markdown becomes comments for the report viewer; magics and shell lines would not parse as Python
   def convert_jplag_notebook(notebook)
     cells = JSON.parse(File.read(notebook)).fetch('cells')
-    code = cells.filter_map do |cell|
-      next unless cell.is_a?(Hash) && cell['cell_type'] == 'code'
+    parts = cells.filter_map do |cell|
+      next unless cell.is_a?(Hash)
 
       source = cell['source']
       source = source.join if source.is_a?(Array)
-      source.to_s.gsub(/^(\s*)([%!])/, '\\1# \\2')
+      case cell['cell_type']
+      when 'code' then source.to_s.gsub(/^(\s*)([%!])/, '\\1# \\2')
+      when 'markdown' then source.to_s.gsub(/^/, '# ')
+      end
     end
-    File.write(notebook.sub(/\.ipynb\z/, '.py'), code.join("\n\n"))
+    File.write(notebook.sub(/\.ipynb\z/, '.py'), parts.join("\n\n"))
     true
   rescue StandardError => e
     logger.warn "Skipping Jupyter notebook #{notebook} for JPlag: #{e.message}"

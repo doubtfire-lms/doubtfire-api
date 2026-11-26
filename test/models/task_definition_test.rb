@@ -68,7 +68,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
       unit.send(:convert_jplag_notebooks, work_dir)
 
-      assert_equal "# !pip install numpy\n# %matplotlib inline\nx = 1\n\nprint(x)",
+      assert_equal "# # Title\n\n# !pip install numpy\n# %matplotlib inline\nx = 1\n\nprint(x)",
                    File.read(notebook.sub(/\.ipynb\z/, '.py'))
     end
   end
