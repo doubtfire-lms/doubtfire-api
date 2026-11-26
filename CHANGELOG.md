@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.1.0-23](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-22...v11.1.0-23) (2026-11-26)
+
+
+### Features
+
+* expose submission count stats ([#770](https://github.com/b0ink/doubtfire-deploy/issues/770)) ([1e8bd53](https://github.com/b0ink/doubtfire-deploy/commit/1e8bd53c2858f554dbd9c9cf487da7a48a3d81b7))
+
+
+### Bug Fixes
+
+* pin TeX Live snapshot to restore PDF generation ([8f1a947](https://github.com/b0ink/doubtfire-deploy/commit/8f1a9474b79b2e86faf86566209e6608c1d1b0ca))
+* rebuild snapshot stats when grade values change ([9f909da](https://github.com/b0ink/doubtfire-deploy/commit/9f909da0f4ab8fc4c233791230ff9a3c90913bc4))
+
 ## [11.1.0-22](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-21...v11.1.0-22) (2026-11-24)
 
 
