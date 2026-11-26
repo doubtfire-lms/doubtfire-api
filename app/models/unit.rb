@@ -126,6 +126,7 @@ class Unit < ApplicationRecord
       :delete_engagement,
       :manage_unit_content,
       :mannage_communications,
+      :grant_extensions,
     ]
 
     # What can auditors do with units?
