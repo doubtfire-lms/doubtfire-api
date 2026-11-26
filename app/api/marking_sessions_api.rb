@@ -55,6 +55,19 @@ class MarkingSessionsApi < Grape::API
       sessions = sessions.where(user_id: current_user.id)
     end
 
-    present sessions, with: Entities::MarkingSessionEntity
+    present sessions, with: Entities::MarkingSessionEntity, include_assessed_projects: unit_role&.role == Role.convenor
+  end
+
+  desc 'Retrieve whole-unit feedback wait and estimated marking time by task definition'
+  params do
+    requires :unit_id, type: Integer
+  end
+  get '/units/:unit_id/task_turnaround' do
+    unit = Unit.find(params[:unit_id])
+    unless authorise?(current_user, unit, :get_task_turnaround)
+      error!({ error: 'Not authorised to view task turnaround for this unit' }, 403)
+    end
+
+    { unit_id: unit.id, task_definitions: TaskTurnaroundReport.new(unit).rows }
   end
 end

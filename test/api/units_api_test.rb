@@ -993,4 +993,59 @@ class UnitsApiTest < ActiveSupport::TestCase
       end
     end
   end
+
+  def test_overflow_queue_stats_require_a_convenor_or_marker_in_the_requested_unit
+    unit = create(:unit, with_students: false, task_count: 0)
+    other_unit = create(:unit, with_students: false, task_count: 0)
+    convenor = unit.unit_roles.convenors.first
+    convenor.update!(can_mark_overflow_tasks: false)
+    marker = unit.employ_staff(create(:user, :tutor), Role.tutor)
+    marker.update!(can_mark_overflow_tasks: true)
+
+    [convenor.user, marker.user].each do |user|
+      add_auth_header_for(user: user)
+      get "/api/units/#{unit.id}/stats/overflow_queue"
+      assert_equal 200, last_response.status
+      assert_equal({ 'available_to_claim_count' => 0 }, last_response_body)
+    end
+
+    get "/api/units/#{other_unit.id}/stats/overflow_queue"
+    assert_equal 403, last_response.status
+
+    marker.update!(can_mark_overflow_tasks: false)
+    [marker.user, create(:user, :admin), create(:user, :convenor, observe_all_units: true)].each do |user|
+      add_auth_header_for(user: user)
+      get "/api/units/#{unit.id}/stats/overflow_queue"
+      assert_equal 403, last_response.status
+    end
+  end
+
+  def test_overflow_queue_stats_exclude_active_claims_and_include_expired_claims
+    unit = create(:unit, student_count: 1, unenrolled_student_count: 0, part_enrolled_student_count: 0,
+                  inactive_student_count: 0, task_count: 1,
+                  feedback_warning_threshold_days: 3, feedback_overflow_threshold_days: 3)
+    project = unit.active_projects.first
+    task = project.task_for_task_definition(unit.task_definitions.first)
+    task.update!(task_status: TaskStatus.ready_for_feedback, submission_date: 2.days.ago)
+    convenor = unit.unit_roles.convenors.first
+    add_auth_header_for(user: convenor.user)
+    path = "/api/units/#{unit.id}/stats/overflow_queue"
+
+    get path
+    assert_equal 0, last_response_body['available_to_claim_count']
+    task.update!(submission_date: 4.days.ago)
+    get path
+    assert_equal 1, last_response_body['available_to_claim_count']
+
+    claim = create(:overflow_task_claim, task: task, claimed_by_unit_role: convenor)
+    get path
+    assert_equal 0, last_response_body['available_to_claim_count']
+    claim.update!(created_at: 31.minutes.ago)
+    task.add_text_comment(project.student, 'Student follow-up')
+    get path
+    assert_equal 1, last_response_body['available_to_claim_count']
+    task.add_text_comment(convenor.user, 'Feedback in progress')
+    get path
+    assert_equal 0, last_response_body['available_to_claim_count']
+  end
 end

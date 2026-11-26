@@ -9,6 +9,10 @@ module Entities
 
     expose :duration_minutes
 
+    expose :assessed_project_ids, if: :include_assessed_projects do |session, _options|
+      session.session_activities.filter_map { |activity| activity.project_id if activity.action == 'assessing' }.uniq
+    end
+
     expose :comments_added do |session, _options|
       session.session_activities.count { |act| act.action == 'add-comment' }
     end

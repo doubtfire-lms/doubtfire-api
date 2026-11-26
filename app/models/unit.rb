@@ -79,6 +79,7 @@ class Unit < ApplicationRecord
       :get_feedback_chips,
       :get_tutor_times,
       :get_tutor_times_summary,
+      :get_task_turnaround,
       :get_marking_sessions,
       :upload_grades_csv,
       :upload_staff_notes_csv,
@@ -3027,6 +3028,16 @@ class Unit < ApplicationRecord
     tasks.sort_by { |task| [task.moderated_task.escalation? ? 0 : 1, task.last_tutor_feedback_at || Time.zone.at(0)] }
   end
 
+  #
+  # Return the number of tasks that are waiting for feedback past the unit's feedback threshold setting and have not yet been claimed.
+  #
+  def overflow_available_to_claim_count
+    tasks = student_tasks.where(task_status_id: TaskStatus.ready_for_feedback.id,
+                                submission_date: ..feedback_overflow_threshold_days.days.ago)
+    tasks.includes(:overflow_task_claim).find_each.count do |task|
+      task.active_overflow_task_claim.nil?
+    end
+  end
 
   #
   # Return the tasks that have been waiting for feedback the longest (past the unit's feedback threshold setting)

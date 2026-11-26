@@ -33,6 +33,10 @@ class UnitRole < ApplicationRecord
   scope :tutors,    -> { joins(:role).where('roles.name = :role', role: 'Tutor') }
   scope :convenors, -> { joins(:role).where('roles.name = :role', role: 'Convenor') }
 
+  def can_view_overflow_metrics?
+    role == Role.convenor || can_mark_overflow_tasks?
+  end
+
   def tasks_awaiting_feedback
     tasks.joins(:task_definition).where('projects.enrolled = TRUE AND projects.target_grade >= task_definitions.target_grade AND tasks.task_status_id = :status', status: TaskStatus.ready_for_feedback)
   end
