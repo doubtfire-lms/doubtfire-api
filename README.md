@@ -185,8 +185,6 @@ for `DF_SECRET_KEY_BASE`, `DF_SECRET_KEY_ATTR`, `DF_SECRET_KEY_DEVISE`,
 | `DF_ENFORCE_LOGIN_ID_MATCH`          | Refuse accounts that already belong to a different login id.                                    | `false` |
 | `MODERATION_SCORE_FACTOR`            | Multiplier applied to moderation score changes.                                                 | `1.0`   |
 
-For development without a host path, set `DF_JPLAG_FALLBACK_VOLUME_CONTAINER=jplag` instead. This shares the running JPlag container's entire work volume with the converter, so use the host path in production. The minimal converter image can be built locally with `docker build -f jplag-notebook-converter.Dockerfile -t doubtfire-jplag-notebook-converter:local .` from this directory. Set `DF_JPLAG_NOTEBOOK_CONVERTER_IMAGE=doubtfire-jplag-notebook-converter:local` in the API environment. CI builds the same Dockerfile under a local development tag.
-
 ### Overseer and container access
 
 | Variable                                             | Purpose                                                       | Default                           |
