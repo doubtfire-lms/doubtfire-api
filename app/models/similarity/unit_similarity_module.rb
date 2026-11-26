@@ -286,6 +286,10 @@ module UnitSimilarityModule
       end
     end
 
+    # JPlag has no notebook frontend, so compare the extracted Python code
+    convert_jplag_notebooks(tasks_dir) if file_lang == 'ipynb'
+    jplag_language = file_lang == 'ipynb' ? 'python3' : file_lang
+
     logger.info "Starting JPLAG container to run on #{tasks_dir}"
     root_dir = Rails.root.to_s
     tasks_dir_split = tasks_dir.to_s.split(root_dir)[1]
@@ -309,7 +313,7 @@ module UnitSimilarityModule
     ]
     docker_command << "--base-code=#{tasks_dir_split}/base" if use_base_code
     docker_command += [
-      '-l', file_lang,
+      '-l', jplag_language,
       "--similarity-threshold=#{similarity_threshold}",
       "--shown-comparisons=#{max_shown_comparisons}"
     ]
@@ -341,6 +345,34 @@ module UnitSimilarityModule
     # Remove extracted student files even when JPlag fails.
     logger.info "Deleting files in: #{tasks_dir}"
     FileUtils.rm_rf(tasks_dir)
+  end
+
+  def convert_jplag_notebooks(tasks_dir)
+    notebooks = %w[base submissions].flat_map do |directory|
+      Dir.glob(File.join(tasks_dir, directory, '**', '*.ipynb'))
+    end
+    converted = notebooks.count { |notebook| convert_jplag_notebook(notebook) }
+    raise 'No Jupyter notebooks could be converted for JPlag' if converted.zero?
+  end
+
+  # Markdown becomes comments for the report viewer; magics and shell lines would not parse as Python
+  def convert_jplag_notebook(notebook)
+    cells = JSON.parse(File.read(notebook)).fetch('cells')
+    parts = cells.filter_map do |cell|
+      next unless cell.is_a?(Hash)
+
+      source = cell['source']
+      source = source.join if source.is_a?(Array)
+      case cell['cell_type']
+      when 'code' then source.to_s.gsub(/^(\s*)([%!])/, '\\1# \\2')
+      when 'markdown' then source.to_s.gsub(/^/, '# ')
+      end
+    end
+    File.write(notebook.sub(/\.ipynb\z/, '.py'), parts.join("\n\n"))
+    true
+  rescue StandardError => e
+    logger.warn "Skipping Jupyter notebook #{notebook} for JPlag: #{e.message}"
+    false
   end
 
   def safe_jplag_base_path!(entry, root)

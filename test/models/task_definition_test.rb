@@ -26,7 +26,7 @@ class TaskDefinitionTest < ActiveSupport::TestCase
   def test_similarity_language_accepts_supported_languages_and_rejects_commands
     task_definition = FactoryBot.create(:unit, task_count: 1).task_definitions.first
 
-    [nil, 'java', 'python3'].each do |language|
+    [nil, 'java', 'python3', 'ipynb'].each do |language|
       task_definition.similarity_language = language
       task_definition.validate
       assert_empty task_definition.errors[:similarity_language]
@@ -47,6 +47,58 @@ class TaskDefinitionTest < ActiveSupport::TestCase
 
     assert_raises(ArgumentError) do
       unit.send(:run_jplag_on_done_files, task_definition, Rails.root.join('tmp/jplag/invalid-language-test'), [], '/tmp/report.jplag')
+    end
+  end
+
+  def test_jplag_converts_notebook_code_cells_to_python
+    unit = FactoryBot.create(:unit, task_count: 0)
+
+    Dir.mktmpdir('jplag-notebooks') do |work_dir|
+      notebook = File.join(work_dir, 'submissions', 'student', 'colab.ipynb')
+      FileUtils.mkdir_p(File.dirname(notebook))
+      # Colab omits language_info.file_extension, which nbconvert relied on
+      File.write(notebook, {
+        cells: [
+          { cell_type: 'markdown', source: ['# Title'] },
+          { cell_type: 'code', source: ["!pip install numpy\n", "%matplotlib inline\n", 'x = 1'] },
+          { cell_type: 'code', source: 'print(x)' }
+        ],
+        metadata: { language_info: { name: 'python' } }
+      }.to_json)
+
+      unit.send(:convert_jplag_notebooks, work_dir)
+
+      assert_equal "# # Title\n\n# !pip install numpy\n# %matplotlib inline\nx = 1\n\nprint(x)",
+                   File.read(notebook.sub(/\.ipynb\z/, '.py'))
+    end
+  end
+
+  def test_jplag_skips_invalid_notebooks_without_failing_others
+    unit = FactoryBot.create(:unit, task_count: 0)
+
+    Dir.mktmpdir('jplag-notebooks') do |work_dir|
+      valid = File.join(work_dir, 'submissions', 'a', 'work.ipynb')
+      invalid = File.join(work_dir, 'submissions', 'b', 'work.ipynb')
+      [valid, invalid].each { |path| FileUtils.mkdir_p(File.dirname(path)) }
+      File.write(valid, { cells: [{ cell_type: 'code', source: 'x = 1' }] }.to_json)
+      File.write(invalid, '{')
+
+      unit.send(:convert_jplag_notebooks, work_dir)
+
+      assert File.file?(valid.sub(/\.ipynb\z/, '.py'))
+      assert_not File.exist?(invalid.sub(/\.ipynb\z/, '.py'))
+    end
+  end
+
+  def test_jplag_notebook_conversion_fails_when_nothing_converts
+    unit = FactoryBot.create(:unit, task_count: 0)
+
+    Dir.mktmpdir('jplag-notebooks') do |work_dir|
+      notebook = File.join(work_dir, 'submissions', 'a', 'work.ipynb')
+      FileUtils.mkdir_p(File.dirname(notebook))
+      File.write(notebook, '{}')
+
+      assert_raises(RuntimeError) { unit.send(:convert_jplag_notebooks, work_dir) }
     end
   end
 
