@@ -405,6 +405,27 @@ class LtiApiTest < ActiveSupport::TestCase
     end
   end
 
+  def test_global_observer_convenor_cannot_employ_self_from_lti
+    unit = FactoryBot.create(:unit, with_students: false, task_count: 0, tutorials: 0, outcome_count: 0, staff_count: 0)
+    observer = FactoryBot.create(:user, :convenor, observe_all_units: true)
+    member = {
+      user_id: '2',
+      name: 'Observer',
+      given_name: observer.first_name,
+      family_name: observer.last_name,
+      email: observer.email,
+      roles: ['Instructor']
+    }
+
+    add_auth_header_for(user: observer)
+    Doubtfire::Application.config.institution_settings.stub(:should_employ_lti_member, Role.tutor) do
+      post '/api/lti/enrol', { ltik: lti_token('enrol', unit_id: unit.id, email: observer.email, member: member) }
+    end
+
+    assert_equal 204, last_response.status, last_response.body
+    assert_nil unit.unit_role_for(observer)
+  end
+
   def test_enrol_students_bulk
     Sidekiq::Testing.inline! do
       unit = FactoryBot.create(:unit, with_students: false, student_count: 0)

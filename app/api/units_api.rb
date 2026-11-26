@@ -216,7 +216,7 @@ class UnitsApi < Grape::API
     end
   end
   post '/units' do
-    unless authorise? current_user, User, :create_unit
+    if current_user.observe_all_units? || !authorise?(current_user, User, :create_unit)
       error!({ error: 'Not authorised to create a unit' }, 403)
     end
 

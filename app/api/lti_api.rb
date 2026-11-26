@@ -88,7 +88,7 @@ class LtiApi < Grape::API
     # end
 
     unit_role = Doubtfire::Application.config.institution_settings.should_employ_lti_member(member)
-    unless unit_role.nil?
+    unless unit_role.nil? || current_user.observe_all_units?
       unit.employ_staff(current_user, unit_role)
     end
 

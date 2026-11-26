@@ -4,6 +4,7 @@ class UnitsTest < ActiveSupport::TestCase
   include Rack::Test::Methods
   include TestHelpers::AuthHelper
   include TestHelpers::JsonHelper
+  include TestHelpers::TestFileHelper
 
   def app
     Rails.application
@@ -231,6 +232,58 @@ class UnitsTest < ActiveSupport::TestCase
     assert_equal pre_count + 1, User.all.length
     assert_users_model_response last_response_body, User.last
     assert_equal 201, last_response.status
+  end
+
+  def test_global_observer_convenor_cannot_create_users
+    observer = FactoryBot.create(:user, :convenor, observe_all_units: true)
+    pre_count = User.count
+
+    add_auth_header_for(user: observer)
+
+    %w[Student Tutor].each do |role|
+      post_json '/api/users', { user: create_user.merge(system_role: role) }
+      assert_equal 403, last_response.status, last_response.body
+    end
+
+    post '/api/csv/users', { file: upload_file_csv('test_files/user_import.csv') }
+    assert_equal 403, last_response.status, last_response.body
+
+    assert_equal pre_count, User.count
+  end
+
+  def test_global_observer_convenor_cannot_edit_or_change_role_of_other_users
+    observer = FactoryBot.create(:user, :convenor, observe_all_units: true)
+    student = FactoryBot.create(:user, :student)
+    tutor = FactoryBot.create(:user, :tutor)
+
+    add_auth_header_for(user: observer)
+
+    put_json "/api/users/#{student.id}", { user: { first_name: 'Changed', email: 'changed@doubtfire.com' } }
+    assert_equal 403, last_response.status, last_response.body
+    assert_not_equal 'Changed', student.reload.first_name
+
+    put_json "/api/users/#{student.id}", { user: { system_role: 'Tutor' } }
+    assert_equal 403, last_response.status, last_response.body
+    assert_equal Role.student, student.reload.role
+
+    put_json "/api/users/#{tutor.id}", { user: { system_role: 'Student' } }
+    assert_equal 403, last_response.status, last_response.body
+    assert_equal Role.tutor, tutor.reload.role
+
+    put_json "/api/users/#{observer.id}", { user: { nickname: 'Obs' } }
+    assert_equal 200, last_response.status, last_response.body
+    assert_equal 'Obs', observer.reload.nickname
+  end
+
+  def test_convenor_can_create_tutor
+    convenor = FactoryBot.create(:user, :convenor)
+    pre_count = User.count
+
+    add_auth_header_for(user: convenor)
+    post_json '/api/users', { user: create_user.merge(system_role: 'Tutor') }
+
+    assert_equal 201, last_response.status, last_response.body
+    assert_equal pre_count + 1, User.count
   end
 
   def test_post_create_same_user_again
