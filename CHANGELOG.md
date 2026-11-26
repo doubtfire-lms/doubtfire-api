@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [10.0.7](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.6...v10.0.7) (2026-11-26)
+
+
+### Bug Fixes
+
+* pin TeX Live snapshot to restore PDF generation ([d7ecb13](https://github.com/b0ink/doubtfire-deploy/commit/d7ecb131917f6f17d06ef89ced255119ea93c368))
+
 ### [10.0.6](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.5...v10.0.6) (2026-11-22)
 
 ### [10.0.5](https://github.com/b0ink/doubtfire-deploy/compare/v10.0.4...v10.0.5) (2026-11-20)
