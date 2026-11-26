@@ -50,73 +50,55 @@ class TaskDefinitionTest < ActiveSupport::TestCase
     end
   end
 
-  def test_jplag_converts_nested_notebooks_in_one_isolated_container
+  def test_jplag_converts_notebook_code_cells_to_python
     unit = FactoryBot.create(:unit, task_count: 0)
 
-    Dir.mktmpdir('jplag-notebooks') do |root|
-      work_dir = File.join(root, 'work')
-      notebooks = %w[base/starter.ipynb submissions/student/first.ipynb submissions/student/second.ipynb].map do |name|
-        path = File.join(work_dir, name)
-        FileUtils.mkdir_p(File.dirname(path))
-        File.write(path, '{}')
-        path
-      end
+    Dir.mktmpdir('jplag-notebooks') do |work_dir|
+      notebook = File.join(work_dir, 'submissions', 'student', 'colab.ipynb')
+      FileUtils.mkdir_p(File.dirname(notebook))
+      # Colab omits language_info.file_extension, which nbconvert relied on
+      File.write(notebook, {
+        cells: [
+          { cell_type: 'markdown', source: ['# Title'] },
+          { cell_type: 'code', source: ["!pip install numpy\n", "%matplotlib inline\n", 'x = 1'] },
+          { cell_type: 'code', source: 'print(x)' }
+        ],
+        metadata: { language_info: { name: 'python' } }
+      }.to_json)
 
-      status = Object.new
-      def status.success?
-        true
-      end
+      unit.send(:convert_jplag_notebooks, work_dir)
 
-      config = Doubtfire::Application.config
-      config.stub(:jplag_notebook_converter_image, 'converter-image') do
-        config.stub(:jplag_workdir_volume_mount, '/host/jplag') do
-          Open3.stub(:capture2e, lambda { |*command|
-            mount_index = command.index('--mount')
-            assert_equal 'type=bind,src=/host/jplag/work,dst=/work', command[mount_index + 1]
-            assert_includes command, 'none'
-            assert_includes command[-2], "rglob('*.ipynb')"
-            assert_equal '/work', command.last
-            notebooks.each { |path| File.write(path.sub(/\.ipynb\z/, '.py'), 'print(1)') }
-            ['', status]
-          }) do
-            unit.send(:convert_jplag_notebooks, work_dir)
-          end
-        end
-      end
-
-      assert(notebooks.all? { |path| File.file?(path.sub(/\.ipynb\z/, '.py')) })
+      assert_equal "# !pip install numpy\n# %matplotlib inline\nx = 1\n\nprint(x)",
+                   File.read(notebook.sub(/\.ipynb\z/, '.py'))
     end
   end
 
-  def test_jplag_notebook_converter_uses_shared_volume_fallback
+  def test_jplag_skips_invalid_notebooks_without_failing_others
     unit = FactoryBot.create(:unit, task_count: 0)
 
-    Dir.mktmpdir('jplag-notebooks') do |root|
-      work_dir = File.join(root, 'work')
-      notebook = File.join(work_dir, 'submissions', 'student', 'work.ipynb')
+    Dir.mktmpdir('jplag-notebooks') do |work_dir|
+      valid = File.join(work_dir, 'submissions', 'a', 'work.ipynb')
+      invalid = File.join(work_dir, 'submissions', 'b', 'work.ipynb')
+      [valid, invalid].each { |path| FileUtils.mkdir_p(File.dirname(path)) }
+      File.write(valid, { cells: [{ cell_type: 'code', source: 'x = 1' }] }.to_json)
+      File.write(invalid, '{')
+
+      unit.send(:convert_jplag_notebooks, work_dir)
+
+      assert File.file?(valid.sub(/\.ipynb\z/, '.py'))
+      assert_not File.exist?(invalid.sub(/\.ipynb\z/, '.py'))
+    end
+  end
+
+  def test_jplag_notebook_conversion_fails_when_nothing_converts
+    unit = FactoryBot.create(:unit, task_count: 0)
+
+    Dir.mktmpdir('jplag-notebooks') do |work_dir|
+      notebook = File.join(work_dir, 'submissions', 'a', 'work.ipynb')
       FileUtils.mkdir_p(File.dirname(notebook))
       File.write(notebook, '{}')
 
-      status = Object.new
-      def status.success?
-        true
-      end
-
-      config = Doubtfire::Application.config
-      config.stub(:jplag_notebook_converter_image, 'converter-image') do
-        config.stub(:jplag_workdir_volume_mount, nil) do
-          config.stub(:jplag_fallback_volume_container, 'jplag') do
-            Open3.stub(:capture2e, lambda { |*command|
-              assert_equal 'jplag', command[command.index('--volumes-from') + 1]
-              assert_equal '/tmp/jplag/work', command.last
-              File.write(notebook.sub(/\.ipynb\z/, '.py'), 'print(1)')
-              ['', status]
-            }) do
-              unit.send(:convert_jplag_notebooks, work_dir)
-            end
-          end
-        end
-      end
+      assert_raises(RuntimeError) { unit.send(:convert_jplag_notebooks, work_dir) }
     end
   end
 

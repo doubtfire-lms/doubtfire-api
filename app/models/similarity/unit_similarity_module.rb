@@ -286,8 +286,7 @@ module UnitSimilarityModule
       end
     end
 
-    # Jupyter notebooks are essentially a JSON but can converted into a python file
-    # The python code is extracted and the remaining markdown is converted into comments
+    # JPlag has no notebook frontend, so compare the extracted Python code
     convert_jplag_notebooks(tasks_dir) if file_lang == 'ipynb'
     jplag_language = file_lang == 'ipynb' ? 'python3' : file_lang
 
@@ -352,48 +351,25 @@ module UnitSimilarityModule
     notebooks = %w[base submissions].flat_map do |directory|
       Dir.glob(File.join(tasks_dir, directory, '**', '*.ipynb'))
     end
-    raise 'No Jupyter notebooks were extracted for JPlag' if notebooks.empty?
+    converted = notebooks.count { |notebook| convert_jplag_notebook(notebook) }
+    raise 'No Jupyter notebooks could be converted for JPlag' if converted.zero?
+  end
 
-    config = Doubtfire::Application.config
-    image = config.jplag_notebook_converter_image
-    mount = config.jplag_workdir_volume_mount
-    fallback = config.jplag_fallback_volume_container
-    raise 'Set DF_JPLAG_NOTEBOOK_CONVERTER_IMAGE for JPlag notebook conversion' if image.blank?
+  # Keep code cells only; magics and shell lines would not parse as Python
+  def convert_jplag_notebook(notebook)
+    cells = JSON.parse(File.read(notebook)).fetch('cells')
+    code = cells.filter_map do |cell|
+      next unless cell.is_a?(Hash) && cell['cell_type'] == 'code'
 
-    work_dir_name = File.basename(tasks_dir.to_s)
-    if mount.present?
-      raise 'DF_JPLAG_WORKDIR_VOLUME_MOUNT must be an absolute host path' unless Pathname.new(mount).absolute?
-
-      volume_args = ['--mount', "type=bind,src=#{File.join(mount, work_dir_name)},dst=/work"]
-      container_work_dir = '/work'
-    elsif fallback.present?
-      volume_args = ['--volumes-from', fallback]
-      container_work_dir = File.join('/tmp/jplag', work_dir_name)
-    else
-      raise 'Set DF_JPLAG_WORKDIR_VOLUME_MOUNT or DF_JPLAG_FALLBACK_VOLUME_CONTAINER'
+      source = cell['source']
+      source = source.join if source.is_a?(Array)
+      source.to_s.gsub(/^(\s*)([%!])/, '\\1# \\2')
     end
-
-    script = <<~PYTHON
-      from pathlib import Path
-      import subprocess
-      import sys
-
-      for notebook in sorted(Path(sys.argv[1]).rglob('*.ipynb')):
-          subprocess.run(['jupyter', 'nbconvert', '--to', 'script',
-                          '--output-dir', str(notebook.parent), str(notebook)], check=True)
-    PYTHON
-    command = [
-      'docker', 'run', '--rm', '--pull', 'missing',
-      '--network', 'none', '--cpus', '1',
-      '--user', "#{Process.uid}:#{Process.gid}",
-      *volume_args,
-      '--entrypoint', 'python3', image, '-c', script, container_work_dir
-    ]
-    output, status = Open3.capture2e(*command)
-    raise "Failed to convert Jupyter notebooks (#{status}): #{output.last(2000)}" unless status.success?
-
-    missing = notebooks.reject { |notebook| File.file?(notebook.sub(/\.ipynb\z/, '.py')) }
-    raise "Jupyter conversion did not produce Python files for: #{missing.join(', ')}" if missing.any?
+    File.write(notebook.sub(/\.ipynb\z/, '.py'), code.join("\n\n"))
+    true
+  rescue StandardError => e
+    logger.warn "Skipping Jupyter notebook #{notebook} for JPlag: #{e.message}"
+    false
   end
 
   def safe_jplag_base_path!(entry, root)

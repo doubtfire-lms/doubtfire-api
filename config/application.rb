@@ -150,11 +150,6 @@ module Doubtfire
     # if set to -1 all comparisons will be shown
     config.jplag_max_shown_comparisons = ENV.fetch('DF_JPLAG_MAX_SHOWN_COMPARISONS', 2500)
 
-    # Optional one-shot Jupyter conversion for task definitions using the ipynb mode.
-    config.jplag_notebook_converter_image = ENV.fetch('DF_JPLAG_NOTEBOOK_CONVERTER_IMAGE', nil)
-    config.jplag_workdir_volume_mount = ENV.fetch('DF_JPLAG_WORKDIR_VOLUME_MOUNT', nil)
-    config.jplag_fallback_volume_container = ENV.fetch('DF_JPLAG_FALLBACK_VOLUME_CONTAINER', nil)
-
     # ==> File size limits
     # Sets the global file size limit per upload requirement
     # Defaults to 10MB (10,000,000 bytes)

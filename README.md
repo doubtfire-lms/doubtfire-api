@@ -167,23 +167,20 @@ for `DF_SECRET_KEY_BASE`, `DF_SECRET_KEY_ATTR`, `DF_SECRET_KEY_DEVISE`,
 
 ### Integrations and background services
 
-| Variable                             | Purpose                                                                                         | Default |
-| ------------------------------------ | ----------------------------------------------------------------------------------------------- | ------- |
-| `TII_ENABLED`                        | Enable Turnitin integration.                                                                    | `false` |
-| `TII_INDEX_SUBMISSIONS`              | Index submissions in Turnitin.                                                                  | `false` |
-| `TII_REGISTER_WEBHOOK`               | Register the Turnitin webhook.                                                                  | `false` |
-| `TCA_API_KEY`                        | Turnitin Core API key.                                                                          | Unset   |
-| `TCA_HOST`                           | Turnitin institution host.                                                                      | Unset   |
-| `DF_JPLAG_MIN_TOKENS`                | Minimum matching-token threshold used by JPlag.                                                 | `-1`    |
-| `DF_JPLAG_SKIP_CLUSTER_CHECK`        | Skip JPlag cluster calculation.                                                                 | `false` |
-| `DF_JPLAG_MAX_SHOWN_COMPARISONS`     | Maximum comparisons retained in a JPlag report; `-1` means all.                                 | `2500`  |
-| `DF_JPLAG_NOTEBOOK_CONVERTER_IMAGE`  | Locally available image with `jupyter nbconvert` for notebook conversion.                       | Unset   |
-| `DF_JPLAG_WORKDIR_VOLUME_MOUNT`      | Absolute host path for the JPlag work directory, mounted one task at a time into the converter. | Unset   |
-| `DF_JPLAG_FALLBACK_VOLUME_CONTAINER` | Existing JPlag container whose work volume is shared with the converter in development.         | Unset   |
-| `LTI_ENABLED`                        | Enable LTI routes and authentication.                                                           | `false` |
-| `LTI_SHARED_API_SECRET`              | Shared secret between the Rails and LTI APIs.                                                   | Unset   |
-| `DF_ENFORCE_LOGIN_ID_MATCH`          | Refuse accounts that already belong to a different login id.                                    | `false` |
-| `MODERATION_SCORE_FACTOR`            | Multiplier applied to moderation score changes.                                                 | `1.0`   |
+| Variable                         | Purpose                                                         | Default |
+| -------------------------------- | --------------------------------------------------------------- | ------- |
+| `TII_ENABLED`                    | Enable Turnitin integration.                                    | `false` |
+| `TII_INDEX_SUBMISSIONS`          | Index submissions in Turnitin.                                  | `false` |
+| `TII_REGISTER_WEBHOOK`           | Register the Turnitin webhook.                                  | `false` |
+| `TCA_API_KEY`                    | Turnitin Core API key.                                          | Unset   |
+| `TCA_HOST`                       | Turnitin institution host.                                      | Unset   |
+| `DF_JPLAG_MIN_TOKENS`            | Minimum matching-token threshold used by JPlag.                 | `-1`    |
+| `DF_JPLAG_SKIP_CLUSTER_CHECK`    | Skip JPlag cluster calculation.                                 | `false` |
+| `DF_JPLAG_MAX_SHOWN_COMPARISONS` | Maximum comparisons retained in a JPlag report; `-1` means all. | `2500`  |
+| `LTI_ENABLED`                    | Enable LTI routes and authentication.                           | `false` |
+| `LTI_SHARED_API_SECRET`          | Shared secret between the Rails and LTI APIs.                   | Unset   |
+| `DF_ENFORCE_LOGIN_ID_MATCH`      | Refuse accounts that already belong to a different login id.    | `false` |
+| `MODERATION_SCORE_FACTOR`        | Multiplier applied to moderation score changes.                 | `1.0`   |
 
 ### Overseer and container access
 
