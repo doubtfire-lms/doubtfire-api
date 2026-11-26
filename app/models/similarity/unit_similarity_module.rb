@@ -355,15 +355,28 @@ module UnitSimilarityModule
     config = Doubtfire::Application.config
     image = config.jplag_notebook_converter_image
     mount = config.jplag_workdir_volume_mount
+    fallback = config.jplag_fallback_volume_container
     raise 'Set DF_JPLAG_NOTEBOOK_CONVERTER_IMAGE for JPlag notebook conversion' if image.blank?
-    raise 'Set DF_JPLAG_WORKDIR_VOLUME_MOUNT to the host JPlag work directory' if mount.blank? || !Pathname.new(mount).absolute?
 
-    host_work_dir = File.join(mount, File.basename(tasks_dir.to_s))
+    work_dir_name = File.basename(tasks_dir.to_s)
+    if mount.present?
+      raise 'DF_JPLAG_WORKDIR_VOLUME_MOUNT must be an absolute host path' unless Pathname.new(mount).absolute?
+
+      volume_args = ['--mount', "type=bind,src=#{File.join(mount, work_dir_name)},dst=/work"]
+      container_work_dir = '/work'
+    elsif fallback.present?
+      volume_args = ['--volumes-from', fallback]
+      container_work_dir = File.join('/tmp/jplag', work_dir_name)
+    else
+      raise 'Set DF_JPLAG_WORKDIR_VOLUME_MOUNT or DF_JPLAG_FALLBACK_VOLUME_CONTAINER'
+    end
+
     script = <<~PYTHON
       from pathlib import Path
       import subprocess
+      import sys
 
-      for notebook in sorted(Path('/work').rglob('*.ipynb')):
+      for notebook in sorted(Path(sys.argv[1]).rglob('*.ipynb')):
           subprocess.run(['jupyter', 'nbconvert', '--to', 'script',
                           '--output-dir', str(notebook.parent), str(notebook)], check=True)
     PYTHON
@@ -371,8 +384,8 @@ module UnitSimilarityModule
       'docker', 'run', '--rm', '--pull', 'never',
       '--network', 'none', '--cpus', '1',
       '--user', "#{Process.uid}:#{Process.gid}",
-      '--mount', "type=bind,src=#{host_work_dir},dst=/work",
-      '--entrypoint', 'python3', image, '-c', script
+      *volume_args,
+      '--entrypoint', 'python3', image, '-c', script, container_work_dir
     ]
     output, status = Open3.capture2e(*command)
     raise "Failed to convert Jupyter notebooks (#{status}): #{output.last(2000)}" unless status.success?

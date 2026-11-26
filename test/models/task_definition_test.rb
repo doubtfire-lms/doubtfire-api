@@ -74,7 +74,8 @@ class TaskDefinitionTest < ActiveSupport::TestCase
             mount_index = command.index('--mount')
             assert_equal 'type=bind,src=/host/jplag/work,dst=/work', command[mount_index + 1]
             assert_includes command, 'none'
-            assert_includes command.last, "rglob('*.ipynb')"
+            assert_includes command[-2], "rglob('*.ipynb')"
+            assert_equal '/work', command.last
             notebooks.each { |path| File.write(path.sub(/\.ipynb\z/, '.py'), 'print(1)') }
             ['', status]
           }) do
@@ -84,6 +85,38 @@ class TaskDefinitionTest < ActiveSupport::TestCase
       end
 
       assert(notebooks.all? { |path| File.file?(path.sub(/\.ipynb\z/, '.py')) })
+    end
+  end
+
+  def test_jplag_notebook_converter_uses_shared_volume_fallback
+    unit = FactoryBot.create(:unit, task_count: 0)
+
+    Dir.mktmpdir('jplag-notebooks') do |root|
+      work_dir = File.join(root, 'work')
+      notebook = File.join(work_dir, 'submissions', 'student', 'work.ipynb')
+      FileUtils.mkdir_p(File.dirname(notebook))
+      File.write(notebook, '{}')
+
+      status = Object.new
+      def status.success?
+        true
+      end
+
+      config = Doubtfire::Application.config
+      config.stub(:jplag_notebook_converter_image, 'converter-image') do
+        config.stub(:jplag_workdir_volume_mount, nil) do
+          config.stub(:jplag_fallback_volume_container, 'jplag') do
+            Open3.stub(:capture2e, lambda { |*command|
+              assert_equal 'jplag', command[command.index('--volumes-from') + 1]
+              assert_equal '/tmp/jplag/work', command.last
+              File.write(notebook.sub(/\.ipynb\z/, '.py'), 'print(1)')
+              ['', status]
+            }) do
+              unit.send(:convert_jplag_notebooks, work_dir)
+            end
+          end
+        end
+      end
     end
   end
 

@@ -153,6 +153,7 @@ module Doubtfire
     # Optional one-shot Jupyter conversion for task definitions using the ipynb mode.
     config.jplag_notebook_converter_image = ENV.fetch('DF_JPLAG_NOTEBOOK_CONVERTER_IMAGE', nil)
     config.jplag_workdir_volume_mount = ENV.fetch('DF_JPLAG_WORKDIR_VOLUME_MOUNT', nil)
+    config.jplag_fallback_volume_container = ENV.fetch('DF_JPLAG_FALLBACK_VOLUME_CONTAINER', nil)
 
     # ==> File size limits
     # Sets the global file size limit per upload requirement
