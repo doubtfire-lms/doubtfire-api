@@ -2924,7 +2924,6 @@ class Unit < ApplicationRecord
                 'grade',
                 'quality_pts'
               )
-
     if my_tutorials_only
       unit_role = unit_role_for(user)
       unless unit_role.nil?
