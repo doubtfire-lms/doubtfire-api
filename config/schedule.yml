@@ -60,6 +60,11 @@ prune_notifications:
   class: "PruneNotificationsJob"
   queue: parallel
 
+calculate_student_work_usage:
+  cron: "every day at 2am"
+  class: "CalculateStudentWorkUsageJob"
+  queue: parallel
+
 sync_lms_integrations:
   cron: "every day at 3am"
   class: "SyncLmsIntegrationsJob"
