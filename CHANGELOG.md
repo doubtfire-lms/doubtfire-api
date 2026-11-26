@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [11.1.0-24](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-23...v11.1.0-24) (2026-11-26)
+
+
+### Features
+
+* convert jupyter notebooks to python code for jplag ([#799](https://github.com/b0ink/doubtfire-deploy/issues/799)) ([3a2c1ec](https://github.com/b0ink/doubtfire-deploy/commit/3a2c1ecc689735d42a8a6c8ea91c58c91201dcb8))
+
 ## [11.1.0-23](https://github.com/b0ink/doubtfire-deploy/compare/v11.1.0-22...v11.1.0-23) (2026-11-26)
 
 
