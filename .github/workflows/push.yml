@@ -214,9 +214,6 @@ jobs:
             -e LTI_SHARED_API_SECRET
             -e LTI_ENABLED
           run: TERM=xterm bundle exec rails test
-      - name: Show JPlag errors on test failure
-        if: failure()
-        run: grep 'Failed to check JPlag similarity' log/test.log | tail -n 20 || true
       - name: Stop TexLive service
         run: docker rm -f ${{ env.LATEX_CONTAINER_NAME }}
       - name: Stop JPlag service
