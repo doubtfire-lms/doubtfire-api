@@ -65,6 +65,7 @@ module AuthorisationHelpers
 
     return true if obj_class == User && action == :get_all_units && user.observe_all_units?
     return true if obj_class == User && action == :get_staff_list && user.observe_all_units?
+    return false if obj_class == User && %i[create_user upload_csv update_user promote_user demote_user].include?(action) && user.observe_all_units? && !user.has_admin_capability?
 
     # System administrator permissions take precedence over contextual roles.
     if user.has_admin_capability?
