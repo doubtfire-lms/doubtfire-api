@@ -2805,7 +2805,8 @@ class Unit < ApplicationRecord
           task_definitions.sort_by { |td| -td.abbreviation.size }.each do |td|
             next unless /^#{td.abbreviation}/ =~ file_name
 
-            file.extract ("#{task_path}#{FileHelper.sanitized_filename(td.abbreviation)}#{File.extname(file.name)}") { true }
+            dest = "#{task_path}#{FileHelper.sanitized_filename(td.abbreviation)}#{File.extname(file.name)}"
+            file.extract(File.basename(dest), destination_directory: File.dirname(dest)) { true }
             result[:success] << { row: file.name, message: "Added as task #{td.abbreviation}" }
             found = true
 
