@@ -12,6 +12,7 @@ class QueueRoutingTest < ActiveSupport::TestCase
   PARALLEL_JOBS = %w[
     AggregateTaskCompletionStatsJob
     ArchiveOldUnitsJob
+    CalculateStudentWorkUsageJob
     ClearAccessTokensJob
     CommunicationRuleJob
     CreateWeeklySummaryNotificationsJob

@@ -42,4 +42,25 @@ class StatisticsApiTest < ActiveSupport::TestCase
 
     assert_equal 403, last_response.status
   end
+
+  def test_get_statistics_reports_student_work_filesystem_usage
+    stat = Struct.new(:block_size, :fragment_size, :blocks, :blocks_free, :blocks_available)
+                 .new(1024 * 1024, 1024, 10 * 1024 * 1024, 4 * 1024 * 1024, 3 * 1024 * 1024)
+    paths = []
+    filesystem_stat = lambda do |path|
+      paths << path
+      stat
+    end
+
+    add_auth_header_for(user: FactoryBot.create(:user, :admin))
+    Doubtfire::Application.config.stub(:disk_space_endpoint_enabled, true) do
+      Sys::Filesystem.stub(:stat, filesystem_stat) do
+        get '/api/admin/statistics'
+      end
+    end
+
+    assert_equal 200, last_response.status
+    assert_includes paths, Doubtfire::Application.config.student_work_dir
+    assert_equal({ 'usedGb' => 6.0, 'totalGb' => 10.0 }, last_response_body['studentWorkStorage'])
+  end
 end

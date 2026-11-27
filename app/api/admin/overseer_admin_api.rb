@@ -166,6 +166,8 @@ module Admin
       end
 
       disk_space_gb = nil
+      student_work_storage = nil
+      student_work_usage = nil
       if Doubtfire::Application.config.disk_space_endpoint_enabled
         begin
           stat = Sys::Filesystem.stat('/')
@@ -173,6 +175,20 @@ module Admin
         rescue Sys::Filesystem::Error
           disk_space_gb = nil
         end
+
+        begin
+          stat = Sys::Filesystem.stat(Doubtfire::Application.config.student_work_dir)
+          # Filesystem block counts use the fragment size, which can differ from the I/O block size.
+          student_work_storage = {
+            usedGb: ((stat.blocks - stat.blocks_free) * stat.fragment_size).to_f / 1024 / 1024 / 1024,
+            totalGb: (stat.blocks * stat.fragment_size).to_f / 1024 / 1024 / 1024
+          }.transform_values { |gb| gb.round(2) }
+        rescue Sys::Filesystem::Error
+          student_work_storage = nil
+        end
+
+        student_work_usage = CalculateStudentWorkUsageJob.cached
+        CalculateStudentWorkUsageJob.perform_async if student_work_usage.nil?
       end
 
       sidekiq_stats = begin
@@ -196,6 +212,8 @@ module Admin
                 activeUsers: active_users,
                 totalUsers: User.count,
                 diskSpaceGb: disk_space_gb&.round(2),
+                studentWorkStorage: student_work_storage,
+                studentWorkUsage: student_work_usage,
                 sidekiq: sidekiq_stats,
                 portfolioCompilation: {
                   queuedProjects: queued_projects,
